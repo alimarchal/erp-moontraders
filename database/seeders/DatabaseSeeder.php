@@ -26,8 +26,8 @@ class DatabaseSeeder extends Seeder
             AccountTypeSeeder::class,
             AccountingPeriodSeeder::class,
             ChartOfAccountSeeder::class,
-            // JournalEntrySeeder::class,
-            // JournalEntryDetailSeeder::class,
+            JournalEntrySeeder::class,
+            JournalEntryDetailSeeder::class,
         ]);
     }
 }

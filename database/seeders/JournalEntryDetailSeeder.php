@@ -18,206 +18,69 @@ class JournalEntryDetailSeeder extends Seeder
     {
         $now = Carbon::now();
 
-        DB::table('journal_entry_details')->insert([
-            // Transaction 1: Initial capital investment - $50,000
-            [
-                'journal_entry_id' => 1,
-                'chart_of_account_id' => 11, // Bank - Checking Account (1020)
-                'debit' => 50000.00,
-                'credit' => 0.00,
-                'description' => 'Cash received from owner investment',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'journal_entry_id' => 1,
-                'chart_of_account_id' => 17, // Owner's Capital (3010)
-                'debit' => 0.00,
-                'credit' => 50000.00,
-                'description' => 'Initial capital investment',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+        // Resolve account IDs by account_name that exist in your Chart of Accounts seeder
+        $id = fn(string $name) => DB::table('chart_of_accounts')->where('account_name', $name)->value('id');
 
-            // Transaction 2: Purchase office equipment - $5,000
-            [
-                'journal_entry_id' => 2,
-                'chart_of_account_id' => 16, // Equipment (1510)
-                'debit' => 5000.00,
-                'credit' => 0.00,
-                'description' => 'Office computer and furniture',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'journal_entry_id' => 2,
-                'chart_of_account_id' => 11, // Bank - Checking Account (1020)
-                'debit' => 0.00,
-                'credit' => 5000.00,
-                'description' => 'Payment for equipment',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+        $rows = [
+            // 1) Initial capital investment - $50,000
+            ['journal_entry_id' => 1, 'account' => 'Cash', 'debit' => 50000.00, 'credit' => 0.00, 'description' => 'Cash received from owner investment'],
+            ['journal_entry_id' => 1, 'account' => 'Capital Stock', 'debit' => 0.00, 'credit' => 50000.00, 'description' => 'Initial capital investment'],
 
-            // Transaction 3: Paid monthly rent - $2,000
-            [
-                'journal_entry_id' => 3,
-                'chart_of_account_id' => 26, // Rent Expense (5020)
-                'debit' => 2000.00,
-                'credit' => 0.00,
-                'description' => 'January office rent',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'journal_entry_id' => 3,
-                'chart_of_account_id' => 11, // Bank - Checking Account (1020)
-                'debit' => 0.00,
-                'credit' => 2000.00,
-                'description' => 'Rent payment',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+            // 2) Purchase office equipment - $5,000
+            ['journal_entry_id' => 2, 'account' => 'Office Equipments', 'debit' => 5000.00, 'credit' => 0.00, 'description' => 'Office equipment purchase'],
+            ['journal_entry_id' => 2, 'account' => 'Cash', 'debit' => 0.00, 'credit' => 5000.00, 'description' => 'Payment for equipment'],
 
-            // Transaction 4: Service revenue - $8,500
-            [
-                'journal_entry_id' => 4,
-                'chart_of_account_id' => 13, // Accounts Receivable (1100)
-                'debit' => 8500.00,
-                'credit' => 0.00,
-                'description' => 'Consulting services to ABC Corp',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'journal_entry_id' => 4,
-                'chart_of_account_id' => 20, // Service Revenue (4010)
-                'debit' => 0.00,
-                'credit' => 8500.00,
-                'description' => 'Revenue from consulting',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+            // 3) Paid monthly rent - $2,000
+            ['journal_entry_id' => 3, 'account' => 'Office Rent', 'debit' => 2000.00, 'credit' => 0.00, 'description' => 'Monthly office rent'],
+            ['journal_entry_id' => 3, 'account' => 'Cash', 'debit' => 0.00, 'credit' => 2000.00, 'description' => 'Rent payment'],
 
-            // Transaction 5: Purchase office supplies - $300
-            [
-                'journal_entry_id' => 5,
-                'chart_of_account_id' => 36, // Office Supplies (6030)
-                'debit' => 300.00,
-                'credit' => 0.00,
-                'description' => 'Stationery and printer supplies',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'journal_entry_id' => 5,
-                'chart_of_account_id' => 11, // Bank - Checking Account (1020)
-                'debit' => 0.00,
-                'credit' => 300.00,
-                'description' => 'Payment for supplies',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+            // 4) Service revenue on credit - $8,500
+            ['journal_entry_id' => 4, 'account' => 'Debtors', 'debit' => 8500.00, 'credit' => 0.00, 'description' => 'Consulting services to ABC Corp'],
+            ['journal_entry_id' => 4, 'account' => 'Service', 'debit' => 0.00, 'credit' => 8500.00, 'description' => 'Revenue from consulting'],
 
-            // Transaction 6: Received payment from client - $8,500
-            [
-                'journal_entry_id' => 6,
-                'chart_of_account_id' => 11, // Bank - Checking Account (1020)
-                'debit' => 8500.00,
-                'credit' => 0.00,
-                'description' => 'Payment received from ABC Corp',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'journal_entry_id' => 6,
-                'chart_of_account_id' => 13, // Accounts Receivable (1100)
-                'debit' => 0.00,
-                'credit' => 8500.00,
-                'description' => 'Collection of receivable',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+            // 5) Purchase office supplies - $300
+            ['journal_entry_id' => 5, 'account' => 'Print and Stationery', 'debit' => 300.00, 'credit' => 0.00, 'description' => 'Stationery and supplies'],
+            ['journal_entry_id' => 5, 'account' => 'Cash', 'debit' => 0.00, 'credit' => 300.00, 'description' => 'Payment for supplies'],
 
-            // Transaction 7: Paid utility bills - $450
-            [
-                'journal_entry_id' => 7,
-                'chart_of_account_id' => 27, // Utilities Expense (5030)
-                'debit' => 450.00,
-                'credit' => 0.00,
-                'description' => 'Electricity and internet bills',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'journal_entry_id' => 7,
-                'chart_of_account_id' => 11, // Bank - Checking Account (1020)
-                'debit' => 0.00,
-                'credit' => 450.00,
-                'description' => 'Utility payments',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+            // 6) Received payment from client - $8,500
+            ['journal_entry_id' => 6, 'account' => 'Cash', 'debit' => 8500.00, 'credit' => 0.00, 'description' => 'Payment received from ABC Corp'],
+            ['journal_entry_id' => 6, 'account' => 'Debtors', 'debit' => 0.00, 'credit' => 8500.00, 'description' => 'Collection of receivable'],
 
-            // Transaction 8: Owner withdrawal - $3,000
-            [
-                'journal_entry_id' => 8,
-                'chart_of_account_id' => 18, // Owner's Drawings (3020)
-                'debit' => 3000.00,
-                'credit' => 0.00,
-                'description' => 'Personal withdrawal by owner',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'journal_entry_id' => 8,
-                'chart_of_account_id' => 11, // Bank - Checking Account (1020)
-                'debit' => 0.00,
-                'credit' => 3000.00,
-                'description' => 'Cash withdrawal',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+            // 7) Paid utility bills - $450
+            ['journal_entry_id' => 7, 'account' => 'Utility Expenses', 'debit' => 450.00, 'credit' => 0.00, 'description' => 'Utilities bill'],
+            ['journal_entry_id' => 7, 'account' => 'Cash', 'debit' => 0.00, 'credit' => 450.00, 'description' => 'Utility payments'],
 
-            // Transaction 9: Bank loan received - $20,000
-            [
-                'journal_entry_id' => 9,
-                'chart_of_account_id' => 11, // Bank - Checking Account (1020)
-                'debit' => 20000.00,
-                'credit' => 0.00,
-                'description' => 'Loan proceeds received',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-            [
-                'journal_entry_id' => 9,
-                'chart_of_account_id' => 21, // Bank Loan (2510)
-                'debit' => 0.00,
-                'credit' => 20000.00,
-                'description' => 'Long-term bank loan',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
+            // 8) Owner withdrawal - $3,000
+            ['journal_entry_id' => 8, 'account' => 'Dividends Paid', 'debit' => 3000.00, 'credit' => 0.00, 'description' => 'Owner withdrawal'],
+            ['journal_entry_id' => 8, 'account' => 'Cash', 'debit' => 0.00, 'credit' => 3000.00, 'description' => 'Cash withdrawal'],
 
-            // Transaction 10: Monthly depreciation - $250
-            [
-                'journal_entry_id' => 10,
-                'chart_of_account_id' => 38, // Depreciation Expense (6050)
-                'debit' => 250.00,
-                'credit' => 0.00,
-                'description' => 'Depreciation on equipment',
+            // 9) Bank loan received - $20,000
+            ['journal_entry_id' => 9, 'account' => 'Cash', 'debit' => 20000.00, 'credit' => 0.00, 'description' => 'Loan proceeds received'],
+            ['journal_entry_id' => 9, 'account' => 'Secured Loans', 'debit' => 0.00, 'credit' => 20000.00, 'description' => 'Loan liability recorded'],
+
+            // 10) Monthly depreciation - $250
+            ['journal_entry_id' => 10, 'account' => 'Depreciation', 'debit' => 250.00, 'credit' => 0.00, 'description' => 'Depreciation expense'],
+            ['journal_entry_id' => 10, 'account' => 'Accumulated Depreciation', 'debit' => 0.00, 'credit' => 250.00, 'description' => 'Accumulated depreciation'],
+        ];
+
+        $payload = [];
+        foreach ($rows as $r) {
+            $accountId = $id($r['account']);
+            if (!$accountId) {
+                // Skip if account not found to avoid seeder failure; could also throw exception
+                continue;
+            }
+            $payload[] = [
+                'journal_entry_id' => $r['journal_entry_id'],
+                'chart_of_account_id' => $accountId,
+                'debit' => $r['debit'],
+                'credit' => $r['credit'],
+                'description' => $r['description'],
                 'created_at' => $now,
                 'updated_at' => $now,
-            ],
-            [
-                'journal_entry_id' => 10,
-                'chart_of_account_id' => 16, // Equipment (1510)
-                'debit' => 0.00,
-                'credit' => 250.00,
-                'description' => 'Accumulated depreciation',
-                'created_at' => $now,
-                'updated_at' => $now,
-            ],
-        ]);
+            ];
+        }
+
+        DB::table('journal_entry_details')->insert($payload);
     }
 }

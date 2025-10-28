@@ -45,7 +45,7 @@ class AccountTypeSeeder extends Seeder
             ],
             [
                 'id' => 4,
-                'type_name' => 'Revenue',
+                'type_name' => 'Income',
                 'report_group' => 'IncomeStatement',
                 'description' => 'Money earned from sales and services.',
                 'created_at' => $now,

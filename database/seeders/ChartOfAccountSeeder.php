@@ -111,17 +111,9 @@ class ChartOfAccountSeeder extends Seeder
         $idCounter = 1;
 
         // --- Helper maps for code generation ---
-
-        // Maps account_name -> new_id
         $nameToIdMap = [];
-
-        // Maps new_id -> ['code' => '...', 'level' => 0]
-        // This stores the generated code and level for each parent
-        $idToDataMap = [];
-
-        // Maps parent_id -> next_child_index
-        // e.g., $parentChildCounter[15] = 3 (next child of parent 15 is index 3)
-        $parentChildCounter = [];
+        $idToDataMap = []; // Stores ['code' => '...', 'level' => 0, 'id' => 1]
+        $parentChildCounter = []; // Stores [parentId => nextChildIndex]
 
         foreach ($csvData as $row) {
             $newId = $idCounter++;
@@ -161,40 +153,26 @@ class ChartOfAccountSeeder extends Seeder
 
                 // --- Generate Code based on Level ---
                 if ($level == 1) {
-                    // Child of a Root (e.g., Current Assets, Fixed Assets)
-                    // Use your specific list for Asset children
-                    if ($parentCode == '1000') {
-                        if ($accountName === 'Current Assets')
-                            $newCode = '1100';
-                        elseif ($accountName === 'Fixed Assets')
-                            $newCode = '1200';
-                        elseif ($accountName === 'Investments')
-                            $newCode = '1300';
-                        elseif ($accountName === 'Temporary Accounts')
-                            $newCode = '1400';
-                        // Fallback just in case
-                        else
-                            $newCode = '1' . $childIndex . '00';
-                    } else {
-                        // Generic logic for other roots (Liability, Equity, etc.)
-                        $rootPrefix = substr($parentCode, 0, 1);
-                        $newCode = $rootPrefix . $childIndex . "00"; // e.g., 2100, 4100
-                    }
+                    // Child of a Root (e.g., Current Assets) -> 1100
+                    $base = substr($parentCode, 0, 1); // "1"
+                    $newCode = $base . $childIndex . "00"; // "1" + "1" + "00" = "1100"
                 } elseif ($level == 2) {
-                    // Child of Level 1 (e.g., Accounts Receivable)
-                    $base = substr($parentCode, 0, 2); // e.g., "11" from "1100"
-                    $suffix = str_pad($childIndex, 2, '0', STR_PAD_LEFT); // "01", "02"
-                    $newCode = $base . $suffix; // "1101"
+                    // Child of Level 1 (e.g., Accounts Receivable) -> 1110
+                    $base = substr($parentCode, 0, 2); // "11"
+                    $newCode = $base . $childIndex . "0"; // "11" + "1" + "0" = "1110"
+                } elseif ($level == 3) {
+                    // Child of Level 2 (e.g., Debtors) -> 1111
+                    $base = substr($parentCode, 0, 3); // "111"
+                    $newCode = $base . $childIndex; // "111" + "1" = "1111"
                 } else {
-                    // Child of Level 2+ (e.g., Debtors)
-                    $base = $parentCode; // e.g., "1101"
-                    $suffix = str_pad($childIndex, 2, '0', STR_PAD_LEFT); // "01"
-                    $newCode = $base . $suffix; // "110101"
+                    // Deeper levels -> 11111, 111111
+                    $base = $parentCode;
+                    $newCode = $base . $childIndex; // "1111" + "1" = "11111"
                 }
             }
 
             // Store this account's data for its future children
-            $idToDataMap[$newId] = ['code' => $newCode, 'level' => $level];
+            $idToDataMap[$newId] = ['code' => $newCode, 'level' => $level, 'id' => $newId];
 
             // --- Add to final insert array ---
             $accountsToInsert[] = [
@@ -217,7 +195,7 @@ class ChartOfAccountSeeder extends Seeder
     }
 
     /**
-     * Maps the JSON root_type string to the account_type_id.
+     * Maps the CSV root_type string to the account_type_id.
      */
     private function getAccountTypeId(string $rootType): int
     {
@@ -225,7 +203,7 @@ class ChartOfAccountSeeder extends Seeder
             'Asset' => 1,
             'Liability' => 2,
             'Equity' => 3,
-            'Income' => 4, // Maps CSV "Income" to your "Revenue" type
+            'Income' => 4, // Income type
             'Expense' => 5,
             default => 1, // Default to Asset
         };
@@ -240,7 +218,7 @@ class ChartOfAccountSeeder extends Seeder
             1 => '1', // Asset
             2 => '2', // Liability
             3 => '3', // Equity
-            4 => '4', // Revenue
+            4 => '4', // Income
             5 => '5', // Expense
             default => '9', // Fallback
         };
@@ -253,7 +231,7 @@ class ChartOfAccountSeeder extends Seeder
     {
         return match ($accountTypeId) {
             1, 5 => 'debit', // Asset, Expense
-            2, 3, 4 => 'credit', // Liability, Equity, Revenue
+            2, 3, 4 => 'credit', // Liability, Equity, Income
             default => 'debit',
         };
     }

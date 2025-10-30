@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\JournalEntryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -14,4 +15,21 @@ Route::middleware([
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
+
+    // Journal Entry Routes
+    Route::resource('journal-entries', JournalEntryController::class);
+
+    // Additional journal entry actions
+    Route::post('journal-entries/{journalEntry}/post', [JournalEntryController::class, 'post'])
+        ->name('journal-entries.post');
+    Route::post('journal-entries/{journalEntry}/reverse', [JournalEntryController::class, 'reverse'])
+        ->name('journal-entries.reverse');
+
+    // Quick transaction helpers
+    Route::post('transactions/cash-receipt', [JournalEntryController::class, 'recordCashReceipt'])
+        ->name('transactions.cash-receipt');
+    Route::post('transactions/cash-payment', [JournalEntryController::class, 'recordCashPayment'])
+        ->name('transactions.cash-payment');
+    Route::post('transactions/opening-balance', [JournalEntryController::class, 'recordOpeningBalance'])
+        ->name('transactions.opening-balance');
 });

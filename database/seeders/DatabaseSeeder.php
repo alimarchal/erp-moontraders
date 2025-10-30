@@ -24,10 +24,13 @@ class DatabaseSeeder extends Seeder
         // Seed accounting data in the correct order
         $this->call([
             AccountTypeSeeder::class,
+            CurrencySeeder::class,              // Add currencies before accounts
             AccountingPeriodSeeder::class,
             ChartOfAccountSeeder::class,
+            CostCenterSeeder::class,            // Add cost centers before journal entries
             JournalEntrySeeder::class,
             JournalEntryDetailSeeder::class,
+            AttachmentSeeder::class,            // Add attachments last
         ]);
     }
 }

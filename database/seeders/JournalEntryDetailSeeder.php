@@ -64,15 +64,26 @@ class JournalEntryDetailSeeder extends Seeder
         ];
 
         $payload = [];
+        $lineNo = 1;
+        $currentJournalId = null;
+
         foreach ($rows as $r) {
             $accountId = $id($r['account']);
             if (!$accountId) {
                 // Skip if account not found to avoid seeder failure; could also throw exception
                 continue;
             }
+
+            // Reset line number for new journal entry
+            if ($currentJournalId !== $r['journal_entry_id']) {
+                $lineNo = 1;
+                $currentJournalId = $r['journal_entry_id'];
+            }
+
             $payload[] = [
                 'journal_entry_id' => $r['journal_entry_id'],
                 'chart_of_account_id' => $accountId,
+                'line_no' => $lineNo++,
                 'debit' => $r['debit'],
                 'credit' => $r['credit'],
                 'description' => $r['description'],

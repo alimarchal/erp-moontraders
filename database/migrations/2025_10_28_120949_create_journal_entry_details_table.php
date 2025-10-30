@@ -20,6 +20,9 @@ return new class extends Migration {
             // This correctly links to your Chart of Accounts
             $table->foreignId('chart_of_account_id')->constrained()->onDelete('restrict')->comment('Links to the specific account.');
 
+            // Optional cost center / project for analytics
+            $table->foreignId('cost_center_id')->nullable()->constrained()->onDelete('restrict')->comment('Optional: Links to cost center or project for analytics.');
+
             // STEP 2: Removed the redundant 'transaction_date' column.
             // The date is already in the 'journal_entries' header.
 

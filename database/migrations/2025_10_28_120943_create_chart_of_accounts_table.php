@@ -18,6 +18,7 @@ return new class extends Migration {
             // --- Hierarchy & Type ---
             $table->foreignId('parent_id')->nullable()->comment('Self-referencing key for parent account.')->constrained('chart_of_accounts')->onDelete('restrict');
             $table->foreignId('account_type_id')->constrained()->onUpdate('cascade')->onDelete('restrict')->comment('Foreign key to the account_types table.');
+            $table->foreignId('currency_id')->constrained()->onUpdate('cascade')->onDelete('restrict')->comment('Foreign key to the currencies table.');
 
             // --- Account Details ---
             $table->string('account_code', 20)->unique()->comment('The unique number/code for the account (e.g., 1110).');

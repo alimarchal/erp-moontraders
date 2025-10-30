@@ -21,6 +21,12 @@ class ChartOfAccountSeeder extends Seeder
         // Clear the table to avoid conflicts on re-seed
         DB::table('chart_of_accounts')->delete();
 
+        // Get the base currency (PKR)
+        $baseCurrency = DB::table('currencies')->where('is_base_currency', true)->first();
+        if (!$baseCurrency) {
+            throw new \Exception('Base currency not found. Please run CurrencySeeder first.');
+        }
+
         // This is the raw data parsed from your 82-record CSV
         $csvData = [
             ['name' => 'Application of Funds (Assets)', 'parent' => 'Application of Funds (Assets)', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
@@ -179,6 +185,7 @@ class ChartOfAccountSeeder extends Seeder
                 'id' => $newId,
                 'parent_id' => $parentId,
                 'account_type_id' => $accountTypeId,
+                'currency_id' => $baseCurrency->id,
                 'account_code' => $newCode,
                 'account_name' => $accountName,
                 'normal_balance' => $normalBalance,

@@ -19,9 +19,17 @@ class JournalEntryDetail extends Model
     protected $fillable = [
         'journal_entry_id',
         'chart_of_account_id',
+        'cost_center_id',
+        'line_no',
         'debit',
         'credit',
         'description',
+    ];
+
+    protected $casts = [
+        'debit' => 'decimal:2',
+        'credit' => 'decimal:2',
+        'line_no' => 'integer',
     ];
 
     /**
@@ -38,5 +46,13 @@ class JournalEntryDetail extends Model
     public function account(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'chart_of_account_id');
+    }
+
+    /**
+     * Get the cost center linked to this detail line.
+     */
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 }

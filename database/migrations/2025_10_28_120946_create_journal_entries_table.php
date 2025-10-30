@@ -13,6 +13,7 @@ return new class extends Migration {
         // This is the "Header" table for the entire transaction
         Schema::create('journal_entries', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('currency_id')->constrained()->onUpdate('cascade')->onDelete('restrict')->comment('Foreign key to the currencies table.');
             $table->date('entry_date')->comment('The date the transaction occurred.');
             $table->text('description')->nullable()->comment('Memo for the entire journal entry (e.g., "Paid monthly rent").');
             $table->string('reference')->nullable()->comment('Optional reference like invoice #, check #, etc.');

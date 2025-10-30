@@ -12,9 +12,10 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('journal_entry_details', function (Blueprint $table) {
-            // Add line number for ordering
-            $table->unsignedInteger('line_no')->default(1)->after('journal_entry_id')
-                ->comment('Line number within the journal entry.');
+            // Add line number for ordering - NO DEFAULT to avoid unique constraint collisions
+            // Application MUST set line_no explicitly (1, 2, 3, ...)
+            $table->unsignedInteger('line_no')->after('journal_entry_id')
+                ->comment('Line number within the journal entry. Must be set explicitly by application.');
 
             // Add unique constraint for journal_entry_id + line_no
             $table->unique(['journal_entry_id', 'line_no'], 'ux_journal_line');

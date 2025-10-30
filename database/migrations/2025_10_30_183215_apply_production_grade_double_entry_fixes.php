@@ -209,6 +209,46 @@ return new class extends Migration {
             WHEN (NEW.status = 'posted' AND OLD.status != 'posted')
             EXECUTE FUNCTION check_accounting_period();
         ");
+
+        // Auto-set accounting_period_id based on entry_date
+        DB::unprepared("
+            CREATE OR REPLACE FUNCTION auto_set_accounting_period()
+            RETURNS TRIGGER AS $$
+            DECLARE
+                v_period_id BIGINT;
+                v_period_status VARCHAR(20);
+            BEGIN
+                -- Find the accounting period for the entry_date
+                SELECT id, status INTO v_period_id, v_period_status
+                FROM accounting_periods
+                WHERE NEW.entry_date BETWEEN start_date AND end_date
+                LIMIT 1;
+
+                IF v_period_id IS NULL THEN
+                    RAISE EXCEPTION 'No accounting period found for date %', NEW.entry_date;
+                END IF;
+
+                -- Auto-set the period_id
+                NEW.accounting_period_id := v_period_id;
+
+                -- If posting, verify period is open
+                IF NEW.status = 'posted' AND v_period_status != 'open' THEN
+                    RAISE EXCEPTION 'Cannot post to % accounting period', v_period_status;
+                END IF;
+
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        ");
+
+        DB::unprepared("
+            DROP TRIGGER IF EXISTS trg_auto_set_accounting_period ON journal_entries;
+            
+            CREATE TRIGGER trg_auto_set_accounting_period
+            BEFORE INSERT OR UPDATE ON journal_entries
+            FOR EACH ROW
+            EXECUTE FUNCTION auto_set_accounting_period();
+        ");
     }
 
     /**
@@ -361,6 +401,94 @@ return new class extends Migration {
                 \Log::warning('Skipped trg_check_accounting_period_update: ' . $e->getMessage());
             }
 
+            // Auto-set accounting_period_id based on entry_date
+            try {
+                DB::unprepared("DROP TRIGGER IF EXISTS trg_auto_set_accounting_period");
+            } catch (\Exception $e) {
+                // Ignore
+            }
+
+            try {
+                DB::unprepared("
+                    CREATE TRIGGER trg_auto_set_accounting_period
+                    BEFORE INSERT ON journal_entries
+                    FOR EACH ROW
+                    BEGIN
+                        DECLARE v_period_id BIGINT;
+                        DECLARE v_period_status VARCHAR(20);
+                        DECLARE v_error_msg VARCHAR(500);
+
+                        -- Find the accounting period for the entry_date
+                        SELECT id, status INTO v_period_id, v_period_status
+                        FROM accounting_periods
+                        WHERE NEW.entry_date BETWEEN start_date AND end_date
+                        LIMIT 1;
+
+                        IF v_period_id IS NULL THEN
+                            SET v_error_msg = CONCAT('No accounting period found for date ', NEW.entry_date);
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = v_error_msg;
+                        END IF;
+
+                        -- Auto-set the period_id
+                        SET NEW.accounting_period_id = v_period_id;
+
+                        -- If posting, verify period is open
+                        IF NEW.status = 'posted' AND v_period_status <> 'open' THEN
+                            SET v_error_msg = CONCAT('Cannot post to ', v_period_status, ' accounting period');
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = v_error_msg;
+                        END IF;
+                    END
+                ");
+            } catch (\Exception $e) {
+                \Log::warning('Skipped trg_auto_set_accounting_period: ' . $e->getMessage());
+            }
+
+            // Auto-set on UPDATE as well
+            try {
+                DB::unprepared("DROP TRIGGER IF EXISTS trg_auto_set_accounting_period_update");
+            } catch (\Exception $e) {
+                // Ignore
+            }
+
+            try {
+                DB::unprepared("
+                    CREATE TRIGGER trg_auto_set_accounting_period_update
+                    BEFORE UPDATE ON journal_entries
+                    FOR EACH ROW
+                    BEGIN
+                        DECLARE v_period_id BIGINT;
+                        DECLARE v_period_status VARCHAR(20);
+                        DECLARE v_error_msg VARCHAR(500);
+
+                        -- Find the accounting period for the entry_date
+                        SELECT id, status INTO v_period_id, v_period_status
+                        FROM accounting_periods
+                        WHERE NEW.entry_date BETWEEN start_date AND end_date
+                        LIMIT 1;
+
+                        IF v_period_id IS NULL THEN
+                            SET v_error_msg = CONCAT('No accounting period found for date ', NEW.entry_date);
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = v_error_msg;
+                        END IF;
+
+                        -- Auto-set the period_id
+                        SET NEW.accounting_period_id = v_period_id;
+
+                        -- If posting, verify period is open
+                        IF NEW.status = 'posted' AND v_period_status <> 'open' THEN
+                            SET v_error_msg = CONCAT('Cannot post to ', v_period_status, ' accounting period');
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = v_error_msg;
+                        END IF;
+                    END
+                ");
+            } catch (\Exception $e) {
+                \Log::warning('Skipped trg_auto_set_accounting_period_update: ' . $e->getMessage());
+            }
+
         } catch (\Exception $e) {
             \Log::warning('Some MySQL triggers could not be created: ' . $e->getMessage());
         }
@@ -389,9 +517,11 @@ return new class extends Migration {
             DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_detail_updates ON journal_entry_details");
             DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_detail_deletes ON journal_entry_details");
             DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_update ON journal_entries");
+            DB::unprepared("DROP TRIGGER IF EXISTS trg_auto_set_accounting_period ON journal_entries");
             DB::unprepared("DROP FUNCTION IF EXISTS block_posted_journal_changes()");
             DB::unprepared("DROP FUNCTION IF EXISTS block_posted_journal_deletes()");
             DB::unprepared("DROP FUNCTION IF EXISTS block_posted_detail_changes()");
+            DB::unprepared("DROP FUNCTION IF EXISTS auto_set_accounting_period()");
         } else {
             try {
                 DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_journal_updates");
@@ -399,6 +529,8 @@ return new class extends Migration {
                 DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_detail_updates");
                 DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_detail_deletes");
                 DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_update");
+                DB::unprepared("DROP TRIGGER IF EXISTS trg_auto_set_accounting_period");
+                DB::unprepared("DROP TRIGGER IF EXISTS trg_auto_set_accounting_period_update");
             } catch (\Exception $e) {
                 // Ignore
             }

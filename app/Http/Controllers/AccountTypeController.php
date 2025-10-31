@@ -45,7 +45,7 @@ class AccountTypeController extends Controller
                 AllowedFilter::exact('report_group'),        // Filter by exact report group
             ])
             ->latest()                                       // Order by newest first
-            ->paginate(10);                                  // Paginate results
+            ->paginate(3);                                  // Paginate results
 
         return view('accounting.account-types.index', compact('accountTypes', 'reportGroups', 'typeNames'));
     }
@@ -92,13 +92,16 @@ class AccountTypeController extends Controller
             if ($e->getCode() === '23000' && str_contains($e->getMessage(), 'type_name')) {
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', 'Account type name already exists. Please use a different name.');
+                    ->with('error', 'An account type with this name already exists. Please choose a unique name for your account type.');
             }
 
-            // Handle other database errors
+            // Show friendly error and actual DB error
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Database error occurred. Please try again.');
+                ->with('error', [
+                    'message' => 'Something went wrong. Please try again.',
+                    'db' => $e->getMessage()
+                ]);
 
         } catch (\Exception $e) {
             // Rollback transaction on any other error
@@ -168,7 +171,7 @@ class AccountTypeController extends Controller
             if ($e->getCode() === '23000' && str_contains($e->getMessage(), 'type_name')) {
                 return redirect()->back()
                     ->withInput()
-                    ->with('error', 'Account type name already exists. Please use a different name.');
+                    ->with('error', 'An account type with this name already exists. Please choose a unique name for your account type.');
             }
 
             // Log database errors for debugging
@@ -180,7 +183,10 @@ class AccountTypeController extends Controller
 
             return redirect()->back()
                 ->withInput()
-                ->with('error', 'Database error occurred. Please try again.');
+                ->with('error', [
+                    'message' => 'Something went wrong. Please try again.',
+                    'db' => $e->getMessage()
+                ]);
 
         } catch (\Exception $e) {
             // Rollback transaction on any other error

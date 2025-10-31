@@ -17,8 +17,9 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <x-status-message class="mb-4 mt-4 shadow-md" />
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
-                <x-status-message class="mb-4 mt-4" />
+
                 <div class="p-6">
                     <x-validation-errors class="mb-4 mt-4" />
                     <form method="POST" action="{{ route('account-types.store') }}">

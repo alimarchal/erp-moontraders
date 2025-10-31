@@ -28,6 +28,9 @@ class DatabaseSeeder extends Seeder
             AccountingPeriodSeeder::class,
             ChartOfAccountSeeder::class,
             CostCenterSeeder::class,            // Add cost centers before journal entries
+            CompanySeeder::class,               // Add company after currencies and cost centers
+            WarehouseTypeSeeder::class,         // Add warehouse types after companies
+            SupplierSeeder::class,              // Add suppliers after currencies
             JournalEntrySeeder::class,
             JournalEntryDetailSeeder::class,
             AttachmentSeeder::class,            // Add attachments last

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\JournalEntryController;
+use App\Http\Controllers\AccountTypeController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -32,4 +33,10 @@ Route::middleware([
         ->name('transactions.cash-payment');
     Route::post('transactions/opening-balance', [JournalEntryController::class, 'recordOpeningBalance'])
         ->name('transactions.opening-balance');
+
+    // Settings Routes
+    Route::prefix('settings')->group(function () {
+        // Account Types CRUD
+        Route::resource('account-types', AccountTypeController::class);
+    });
 });

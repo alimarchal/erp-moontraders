@@ -26,6 +26,8 @@ return new class extends Migration {
             $table->string('report_group')
                 ->comment('Financial report group (e.g., BalanceSheet, IncomeStatement).');
             $table->string('description')->nullable()->comment('Optional description of the account type.');
+            $table->userTracking();
+            $table->softDeletes();
             $table->timestamps();
         });
     }

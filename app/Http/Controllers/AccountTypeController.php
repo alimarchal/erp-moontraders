@@ -26,22 +26,22 @@ class AccountTypeController extends Controller
      */
     public function index(Request $request)
     {
+        // Get unique report groups for filter dropdown
+        $reportGroups = AccountType::whereNotNull('report_group')
+            ->distinct()
+            ->orderBy('report_group')
+            ->pluck('report_group');
+
         // Build query with filters using Spatie QueryBuilder
         $accountTypes = QueryBuilder::for(AccountType::class)
             ->allowedFilters([
                 AllowedFilter::partial('type_name'),         // Search by type name
-                AllowedFilter::partial('report_group'),      // Search by report group
-                AllowedFilter::callback('date_from', function ($query, $value) {
-                    $query->whereDate('created_at', '>=', $value);
-                }),
-                AllowedFilter::callback('date_to', function ($query, $value) {
-                    $query->whereDate('created_at', '<=', $value);
-                })
+                AllowedFilter::exact('report_group'),        // Filter by exact report group
             ])
             ->latest()                                       // Order by newest first
             ->paginate(10);                                  // Paginate results
 
-        return view('accounting.account-types.index', compact('accountTypes'));
+        return view('accounting.account-types.index', compact('accountTypes', 'reportGroups'));
     }
 
     /**

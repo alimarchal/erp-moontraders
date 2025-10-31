@@ -48,24 +48,25 @@
             style="display: none">
             <div class="p-6">
                 <form method="GET" action="{{ route('account-types.index') }}">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <!-- Filter by Type Name -->
                         <div>
                             <x-input-filters name="type_name" label="Type Name" type="text" />
                         </div>
 
-                        <!-- Filter by Report Group -->
+                        <!-- Filter by Report Group (Dropdown) -->
                         <div>
-                            <x-input-filters name="report_group" label="Report Group" type="text" />
-                        </div>
-
-                        <!-- Filter by Date Range -->
-                        <div>
-                            <x-date-from />
-                        </div>
-
-                        <div>
-                            <x-date-to />
+                            <x-label for="filter_report_group" value="Report Group" />
+                            <select name="filter[report_group]" id="filter_report_group"
+                                class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                                <option value="">All Report Groups</option>
+                                @foreach($reportGroups as $group)
+                                <option value="{{ $group }}" {{ request('filter.report_group')==$group ? 'selected' : ''
+                                    }}>
+                                    {{ $group }}
+                                </option>
+                                @endforeach
+                            </select>
                         </div>
                     </div>
 
@@ -90,7 +91,6 @@
                             <th class="py-2 px-2 text-left">Type Name</th>
                             <th class="py-2 px-2 text-left">Report Group</th>
                             <th class="py-2 px-2 text-left">Description</th>
-                            <th class="py-2 px-2 text-left">Created Date</th>
                             <th class="py-2 px-2 text-center print:hidden">Actions</th>
                         </tr>
                     </thead>
@@ -111,16 +111,13 @@
                                     {{ Str::limit($accountType->description, 50) ?? '-' }}
                                 </div>
                             </td>
-                            <td class="py-1 px-2 text-left">
-                                {{ $accountType->created_at->format('d-m-Y') }}
-                            </td>
                             <td class="py-1 px-2 text-center">
                                 <div class="flex justify-center space-x-2">
-                                    <a href="{{ route('account-types.show', $accountType) }}"
+                                    <a href="{{ route('account-types.show', $accountType->id) }}"
                                         class="inline-flex items-center px-3 py-1 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
                                         View
                                     </a>
-                                    <a href="{{ route('account-types.edit', $accountType) }}"
+                                    <a href="{{ route('account-types.edit', $accountType->id) }}"
                                         class="inline-flex items-center px-3 py-1 bg-blue-800 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
                                         Edit
                                     </a>

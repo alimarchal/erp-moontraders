@@ -20,19 +20,22 @@ return new class extends Migration {
             // Add unique constraint for journal_entry_id + line_no
             $table->unique(['journal_entry_id', 'line_no'], 'ux_journal_line');
 
-            // Add check constraint for debit XOR credit (PostgreSQL/MySQL 8+)
-            // Either debit > 0 and credit = 0, OR credit > 0 and debit = 0
+            // Add indexes for reporting
+            $table->index('chart_of_account_id');
+            $table->index('cost_center_id');
+        });
+
+        // Add check constraint for debit XOR credit (PostgreSQL/MySQL 8+ only, not SQLite)
+        // Either debit > 0 and credit = 0, OR credit > 0 and debit = 0
+        $driver = DB::connection()->getDriverName();
+        if ($driver !== 'sqlite') {
             DB::statement('ALTER TABLE journal_entry_details ADD CONSTRAINT chk_debit_xor_credit 
                 CHECK (
                     (debit > 0 AND credit = 0) OR 
                     (credit > 0 AND debit = 0) OR
                     (debit = 0 AND credit = 0)
                 )');
-
-            // Add indexes for reporting
-            $table->index('chart_of_account_id');
-            $table->index('cost_center_id');
-        });
+        }
     }
 
     /**
@@ -40,8 +43,14 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        Schema::table('journal_entry_details', function (Blueprint $table) {
+        $driver = DB::connection()->getDriverName();
+
+        // Drop constraint only if not SQLite
+        if ($driver !== 'sqlite') {
             DB::statement('ALTER TABLE journal_entry_details DROP CONSTRAINT IF EXISTS chk_debit_xor_credit');
+        }
+
+        Schema::table('journal_entry_details', function (Blueprint $table) {
             $table->dropUnique('ux_journal_line');
             $table->dropIndex(['chart_of_account_id']);
             $table->dropIndex(['cost_center_id']);

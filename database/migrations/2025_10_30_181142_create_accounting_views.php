@@ -9,9 +9,12 @@ return new class extends Migration {
      */
     public function up(): void
     {
+        $driver = DB::connection()->getDriverName();
+        $createOrReplace = $driver === 'sqlite' ? 'CREATE VIEW IF NOT EXISTS' : 'CREATE OR REPLACE VIEW';
+
         // View for Trial Balance
         DB::statement("
-            CREATE OR REPLACE VIEW vw_trial_balance AS
+            {$createOrReplace} vw_trial_balance AS
             SELECT
                 SUM(debit) AS total_debits,
                 SUM(credit) AS total_credits,
@@ -23,7 +26,7 @@ return new class extends Migration {
 
         // View for Account Balances
         DB::statement("
-            CREATE OR REPLACE VIEW vw_account_balances AS
+            {$createOrReplace} vw_account_balances AS
             SELECT
                 a.id AS account_id,
                 a.account_code,
@@ -48,7 +51,7 @@ return new class extends Migration {
 
         // View for General Ledger (Account-wise detail)
         DB::statement("
-            CREATE OR REPLACE VIEW vw_general_ledger AS
+            {$createOrReplace} vw_general_ledger AS
             SELECT
                 je.id AS journal_entry_id,
                 je.entry_date,
@@ -76,7 +79,7 @@ return new class extends Migration {
 
         // View for Balance Sheet accounts
         DB::statement("
-            CREATE OR REPLACE VIEW vw_balance_sheet AS
+            {$createOrReplace} vw_balance_sheet AS
             SELECT
                 a.id AS account_id,
                 a.account_code,
@@ -100,7 +103,7 @@ return new class extends Migration {
 
         // View for Income Statement accounts
         DB::statement("
-            CREATE OR REPLACE VIEW vw_income_statement AS
+            {$createOrReplace} vw_income_statement AS
             SELECT
                 a.id AS account_id,
                 a.account_code,

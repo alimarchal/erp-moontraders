@@ -46,19 +46,24 @@ return new class extends Migration {
      */
     private function fixDebitCreditXOR(): void
     {
-        DB::statement("
-            ALTER TABLE journal_entry_details
-            DROP CONSTRAINT IF EXISTS chk_debit_xor_credit
-        ");
+        $driver = DB::connection()->getDriverName();
 
-        DB::statement("
-            ALTER TABLE journal_entry_details
-            ADD CONSTRAINT chk_debit_xor_credit
-            CHECK (
-                (debit > 0 AND credit = 0) OR
-                (credit > 0 AND debit = 0)
-            )
-        ");
+        // SQLite doesn't support ALTER TABLE ADD/DROP CONSTRAINT
+        if ($driver !== 'sqlite') {
+            DB::statement("
+                ALTER TABLE journal_entry_details
+                DROP CONSTRAINT IF EXISTS chk_debit_xor_credit
+            ");
+
+            DB::statement("
+                ALTER TABLE journal_entry_details
+                ADD CONSTRAINT chk_debit_xor_credit
+                CHECK (
+                    (debit > 0 AND credit = 0) OR
+                    (credit > 0 AND debit = 0)
+                )
+            ");
+        }
     }
 
     /**
@@ -66,11 +71,16 @@ return new class extends Migration {
      */
     private function addFxRateConstraint(): void
     {
-        DB::statement("
-            ALTER TABLE journal_entries
-            ADD CONSTRAINT chk_fx_rate_positive
-            CHECK (fx_rate_to_base > 0)
-        ");
+        $driver = DB::connection()->getDriverName();
+
+        // SQLite doesn't support ALTER TABLE ADD CONSTRAINT
+        if ($driver !== 'sqlite') {
+            DB::statement("
+                ALTER TABLE journal_entries
+                ADD CONSTRAINT chk_fx_rate_positive
+                CHECK (fx_rate_to_base > 0)
+            ");
+        }
     }
 
     /**
@@ -501,10 +511,23 @@ return new class extends Migration {
     {
         $driver = DB::connection()->getDriverName();
 
-        // Drop constraints
-        DB::statement("ALTER TABLE journal_entry_details DROP CONSTRAINT IF EXISTS chk_debit_xor_credit");
-        DB::statement("ALTER TABLE journal_entries DROP CONSTRAINT IF EXISTS chk_fx_rate_positive");
-        DB::statement("ALTER TABLE account_types DROP CONSTRAINT IF EXISTS chk_report_group");
+        // Drop constraints (skip on SQLite)
+        if ($driver !== 'sqlite') {
+            DB::statement("ALTER TABLE journal_entry_details DROP CONSTRAINT IF EXISTS chk_debit_xor_credit");
+            DB::statement("ALTER TABLE journal_entries DROP CONSTRAINT IF EXISTS chk_fx_rate_positive");
+            DB::statement("ALTER TABLE account_types DROP CONSTRAINT IF EXISTS chk_report_group");
+
+            // Restore old XOR constraint (allowing both zero)
+            DB::statement("
+                ALTER TABLE journal_entry_details
+                ADD CONSTRAINT chk_debit_xor_credit
+                CHECK (
+                    (debit > 0 AND credit = 0) OR
+                    (credit > 0 AND debit = 0) OR
+                    (debit = 0 AND credit = 0)
+                )
+            ");
+        }
 
         Schema::table('account_types', function (Blueprint $table) {
             $table->dropUnique(['type_name']);
@@ -535,16 +558,5 @@ return new class extends Migration {
                 // Ignore
             }
         }
-
-        // Restore old XOR constraint (allowing both zero)
-        DB::statement("
-            ALTER TABLE journal_entry_details
-            ADD CONSTRAINT chk_debit_xor_credit
-            CHECK (
-                (debit > 0 AND credit = 0) OR
-                (credit > 0 AND debit = 0) OR
-                (debit = 0 AND credit = 0)
-            )
-        ");
     }
 };

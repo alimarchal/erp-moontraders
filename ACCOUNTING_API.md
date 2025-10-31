@@ -44,14 +44,14 @@ This API provides transactional endpoints for double-entry accounting operations
     "auto_post": true,
     "lines": [
         {
-            "account_id": 15,
+            "account_id": 58,
             "debit": 50000,
             "credit": 0,
             "description": "Salary expense",
             "cost_center_id": null
         },
         {
-            "account_id": 1,
+            "account_id": 7,
             "debit": 0,
             "credit": 50000,
             "description": "Cash payment",
@@ -102,8 +102,8 @@ curl -X POST http://localhost/api/transactions/journal-entry \
     "description": "Salary payment",
     "auto_post": true,
     "lines": [
-        {"account_id": 15, "debit": 50000, "credit": 0},
-        {"account_id": 1, "debit": 0, "credit": 50000}
+        {"account_id": 58, "debit": 50000, "credit": 0},
+        {"account_id": 7, "debit": 0, "credit": 50000}
     ]
 }'
 ```
@@ -202,8 +202,8 @@ curl -X POST http://localhost/api/transactions/123/reverse \
 
 **What it does:**
 ```
-Dr. Cash (Account #1)              ₨500,000
-    Cr. Owner Capital (Account #4)            ₨500,000
+Dr. Cash (Account #7)              ₨500,000
+    Cr. Capital Stock (Account #29)           ₨500,000
 ```
 
 **Success Response (201):**
@@ -237,7 +237,7 @@ curl -X POST http://localhost/api/transactions/opening-balance \
 ```json
 {
     "amount": 100000,
-    "revenue_account_id": 9,
+    "revenue_account_id": 67,
     "description": "Service income - Web development project",
     "reference": "INV-001",
     "cost_center_id": null,
@@ -255,8 +255,8 @@ curl -X POST http://localhost/api/transactions/opening-balance \
 
 **What it does:**
 ```
-Dr. Cash (Account #1)              ₨100,000
-    Cr. Service Revenue (Account #9)          ₨100,000
+Dr. Cash (Account #7)              ₨100,000
+    Cr. Service (Account #67)                 ₨100,000
 ```
 
 **Success Response (201):**
@@ -278,7 +278,7 @@ curl -X POST http://localhost/api/transactions/cash-receipt \
   -H "Content-Type: application/json" \
   -d '{
     "amount": 100000,
-    "revenue_account_id": 9,
+    "revenue_account_id": 67,
     "description": "Web development service",
     "auto_post": true
 }'
@@ -295,7 +295,7 @@ curl -X POST http://localhost/api/transactions/cash-receipt \
 ```json
 {
     "amount": 25000,
-    "expense_account_id": 15,
+    "expense_account_id": 54,
     "description": "Monthly office rent",
     "reference": "RENT-JAN-2025",
     "cost_center_id": null,
@@ -313,8 +313,8 @@ curl -X POST http://localhost/api/transactions/cash-receipt \
 
 **What it does:**
 ```
-Dr. Rent Expense (Account #15)     ₨25,000
-    Cr. Cash (Account #1)                     ₨25,000
+Dr. Office Rent (Account #54)      ₨25,000
+    Cr. Cash (Account #7)                     ₨25,000
 ```
 
 **Success Response (201):**
@@ -336,7 +336,7 @@ curl -X POST http://localhost/api/transactions/cash-payment \
   -H "Content-Type: application/json" \
   -d '{
     "amount": 25000,
-    "expense_account_id": 15,
+    "expense_account_id": 54,
     "description": "Office rent payment",
     "auto_post": true
 }'
@@ -353,7 +353,7 @@ curl -X POST http://localhost/api/transactions/cash-payment \
 ```json
 {
     "amount": 150000,
-    "revenue_account_id": 10,
+    "revenue_account_id": 66,
     "customer_reference": "CUST-001 - ABC Company",
     "description": "Product sale on credit - Invoice #INV-202501",
     "reference": "INV-202501",
@@ -373,8 +373,8 @@ curl -X POST http://localhost/api/transactions/cash-payment \
 
 **What it does:**
 ```
-Dr. Accounts Receivable (Account #3)  ₨150,000
-    Cr. Sales Revenue (Account #10)              ₨150,000
+Dr. Debtors (Account #4)           ₨150,000
+    Cr. Sales (Account #66)                   ₨150,000
 ```
 
 **Success Response (201):**
@@ -397,7 +397,7 @@ curl -X POST http://localhost/api/transactions/credit-sale \
   -H "Content-Type: application/json" \
   -d '{
     "amount": 150000,
-    "revenue_account_id": 10,
+    "revenue_account_id": 66,
     "customer_reference": "ABC Company",
     "description": "Product sale on credit",
     "auto_post": true
@@ -431,8 +431,8 @@ curl -X POST http://localhost/api/transactions/credit-sale \
 
 **What it does:**
 ```
-Dr. Cash (Account #1)                     ₨150,000
-    Cr. Accounts Receivable (Account #3)            ₨150,000
+Dr. Cash (Account #7)              ₨150,000
+    Cr. Debtors (Account #4)                  ₨150,000
 ```
 
 **Success Response (201):**
@@ -468,20 +468,20 @@ curl -X POST http://localhost/api/transactions/payment-received \
 These are the default account IDs from the seeder. Query your database for actual IDs:
 
 ```sql
-SELECT id, code, name, account_type_id FROM chart_of_accounts ORDER BY code;
+SELECT id, account_code, account_name, account_type_id FROM chart_of_accounts ORDER BY account_code;
 ```
 
 | ID | Code | Account Name | Type | Usage |
 |----|------|--------------|------|-------|
-| 1 | 1010 | Cash | Asset | Cash receipts/payments |
-| 2 | 1020 | Bank Account | Asset | Bank transactions |
-| 3 | 1100 | Accounts Receivable | Asset | Credit sales/payments |
-| 4 | 3010 | Owner Capital | Equity | Opening balance |
-| 9 | 4010 | Service Revenue | Revenue | Service income |
-| 10 | 4020 | Sales Revenue | Revenue | Product sales |
-| 15 | 5010 | Rent Expense | Expense | Rent payments |
-| 16 | 5020 | Salaries Expense | Expense | Salary payments |
-| 17 | 5030 | Utilities Expense | Expense | Utility bills |
+| 7 | 1131 | Cash | Asset | Cash receipts/payments |
+| 5 | 1120 | Bank Accounts | Asset | Bank transactions |
+| 4 | 1111 | Debtors | Asset | Credit sales/payments (A/R) |
+| 29 | 3100 | Capital Stock | Equity | Opening balance |
+| 67 | 4120 | Service | Revenue | Service income |
+| 66 | 4110 | Sales | Revenue | Product sales |
+| 54 | 52130 | Office Rent | Expense | Rent payments |
+| 58 | 52170 | Salary | Expense | Salary payments |
+| 62 | 52210 | Utility Expenses | Expense | Utility bills |
 
 ---
 
@@ -534,7 +534,7 @@ curl -X POST http://localhost/api/transactions/cash-receipt \
   -H "Content-Type: application/json" \
   -d '{
     "amount": 100000,
-    "revenue_account_id": 9,
+    "revenue_account_id": 67,
     "description": "Web development service",
     "auto_post": true
 }'
@@ -544,7 +544,7 @@ curl -X POST http://localhost/api/transactions/cash-payment \
   -H "Content-Type: application/json" \
   -d '{
     "amount": 25000,
-    "expense_account_id": 15,
+    "expense_account_id": 54,
     "description": "Office rent - January 2025",
     "auto_post": true
 }'
@@ -554,7 +554,7 @@ curl -X POST http://localhost/api/transactions/credit-sale \
   -H "Content-Type: application/json" \
   -d '{
     "amount": 150000,
-    "revenue_account_id": 10,
+    "revenue_account_id": 66,
     "customer_reference": "ABC Company",
     "description": "Product sale on credit",
     "auto_post": true
@@ -607,7 +607,7 @@ Import this collection for easy testing:
         "url": "{{base_url}}/api/transactions/cash-receipt",
         "body": {
           "mode": "raw",
-          "raw": "{\"amount\": 100000, \"revenue_account_id\": 9, \"description\": \"Service income\", \"auto_post\": true}"
+          "raw": "{\"amount\": 100000, \"revenue_account_id\": 67, \"description\": \"Service income\", \"auto_post\": true}"
         }
       }
     }

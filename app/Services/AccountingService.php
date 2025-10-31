@@ -21,8 +21,8 @@ class AccountingService
      *   'cost_center_id' => null (optional),
      *   'auto_post' => false,
      *   'lines' => [
-     *       ['account_id' => 1131, 'debit' => 1000, 'credit' => 0, 'description' => 'Line desc'],
-     *       ['account_id' => 4100, 'debit' => 0, 'credit' => 1000, 'description' => 'Line desc'],
+     *       ['account_id' => 7, 'debit' => 1000, 'credit' => 0, 'description' => 'Line desc'],
+     *       ['account_id' => 67, 'debit' => 0, 'credit' => 1000, 'description' => 'Line desc'],
      *   ]
      * ]
      * @return array ['success' => bool, 'data' => JournalEntry|null, 'message' => string]
@@ -268,7 +268,7 @@ class AccountingService
             'cost_center_id' => $options['cost_center_id'] ?? null,
             'lines' => [
                 [
-                    'account_id' => 1131, // Cash account
+                    'account_id' => 7, // Cash account (code: 1131)
                     'debit' => $amount,
                     'credit' => 0,
                     'description' => 'Cash received'
@@ -308,7 +308,7 @@ class AccountingService
                     'description' => $description
                 ],
                 [
-                    'account_id' => 1131, // Cash account
+                    'account_id' => 7, // Cash account (code: 1131)
                     'debit' => 0,
                     'credit' => $amount,
                     'description' => 'Cash paid'
@@ -337,7 +337,7 @@ class AccountingService
             'cost_center_id' => $options['cost_center_id'] ?? null,
             'lines' => [
                 [
-                    'account_id' => 1111, // Debtors/Accounts Receivable
+                    'account_id' => 4, // Debtors/Accounts Receivable (code: 1111)
                     'debit' => $amount,
                     'credit' => 0,
                     'description' => 'Invoice to ' . $customerReference
@@ -369,13 +369,13 @@ class AccountingService
             'description' => 'Payment received from ' . $customerReference,
             'lines' => [
                 [
-                    'account_id' => 1131, // Cash
+                    'account_id' => 7, // Cash (code: 1131)
                     'debit' => $amount,
                     'credit' => 0,
                     'description' => 'Cash received from ' . $customerReference
                 ],
                 [
-                    'account_id' => 1111, // Debtors/Accounts Receivable
+                    'account_id' => 4, // Debtors/Accounts Receivable (code: 1111)
                     'debit' => 0,
                     'credit' => $amount,
                     'description' => 'Settlement of invoice ' . ($options['invoice_ref'] ?? '')
@@ -401,13 +401,13 @@ class AccountingService
             'description' => $description,
             'lines' => [
                 [
-                    'account_id' => 1131, // Cash
+                    'account_id' => 7, // Cash (code: 1131)
                     'debit' => $cashAmount,
                     'credit' => 0,
                     'description' => 'Opening cash balance'
                 ],
                 [
-                    'account_id' => 3100, // Capital Stock
+                    'account_id' => 29, // Capital Stock (code: 3100)
                     'debit' => 0,
                     'credit' => $cashAmount,
                     'description' => 'Owner initial investment'

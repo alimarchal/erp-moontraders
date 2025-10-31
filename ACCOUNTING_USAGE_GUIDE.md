@@ -56,7 +56,7 @@ DB::transaction(function () {
     // Line 1: Debit Cash (increases asset)
     JournalEntryDetail::create([
         'journal_entry_id' => $journalEntry->id,
-        'chart_of_account_id' => 1131,   // Cash account ID
+        'chart_of_account_id' => 7,      // Cash account ID (code: 1131)
         'line_no' => 1,                   // ✅ Must set explicitly
         'debit' => 500.00,
         'credit' => 0.00,
@@ -66,7 +66,7 @@ DB::transaction(function () {
     // Line 2: Credit Capital Stock (increases equity)
     JournalEntryDetail::create([
         'journal_entry_id' => $journalEntry->id,
-        'chart_of_account_id' => 3100,   // Capital Stock account ID
+        'chart_of_account_id' => 29,     // Capital Stock account ID (code: 3100)
         'line_no' => 2,                   // ✅ Next line number
         'debit' => 0.00,
         'credit' => 500.00,
@@ -118,7 +118,7 @@ DB::transaction(function () {
     // Line 1: Debit Cash (increases asset)
     JournalEntryDetail::create([
         'journal_entry_id' => $journalEntry->id,
-        'chart_of_account_id' => 1131,   // Cash account
+        'chart_of_account_id' => 7,      // Cash account (code: 1131)
         'line_no' => 1,
         'debit' => 1000.00,
         'credit' => 0.00,
@@ -128,7 +128,7 @@ DB::transaction(function () {
     // Line 2: Credit Service Revenue (increases income)
     JournalEntryDetail::create([
         'journal_entry_id' => $journalEntry->id,
-        'chart_of_account_id' => 4100,   // Service Revenue account ID
+        'chart_of_account_id' => 67,     // Service account ID (code: 4120)
         'line_no' => 2,
         'debit' => 0.00,
         'credit' => 1000.00,
@@ -166,7 +166,7 @@ DB::transaction(function () {
     // Dr. Office Equipment (Asset increases)
     JournalEntryDetail::create([
         'journal_entry_id' => $je->id,
-        'chart_of_account_id' => 1270,   // Office Equipment
+        'chart_of_account_id' => 22,     // Office Equipment (code: 1270)
         'line_no' => 1,
         'debit' => 5000.00,
         'credit' => 0.00,
@@ -176,7 +176,7 @@ DB::transaction(function () {
     // Cr. Cash (Asset decreases)
     JournalEntryDetail::create([
         'journal_entry_id' => $je->id,
-        'chart_of_account_id' => 1131,   // Cash
+        'chart_of_account_id' => 7,      // Cash (code: 1131)
         'line_no' => 2,
         'debit' => 0.00,
         'credit' => 5000.00,
@@ -203,7 +203,7 @@ DB::transaction(function () {
     // Dr. Rent Expense (Expense increases)
     JournalEntryDetail::create([
         'journal_entry_id' => $je->id,
-        'chart_of_account_id' => 5210,   // Rent Expense
+        'chart_of_account_id' => 54,     // Office Rent (code: 52130)
         'line_no' => 1,
         'debit' => 2000.00,
         'credit' => 0.00,
@@ -213,7 +213,7 @@ DB::transaction(function () {
     // Cr. Cash (Asset decreases)
     JournalEntryDetail::create([
         'journal_entry_id' => $je->id,
-        'chart_of_account_id' => 1131,   // Cash
+        'chart_of_account_id' => 7,      // Cash (code: 1131)
         'line_no' => 2,
         'debit' => 0.00,
         'credit' => 2000.00,
@@ -240,7 +240,7 @@ DB::transaction(function () {
     // Dr. Accounts Receivable / Debtors (Asset increases)
     JournalEntryDetail::create([
         'journal_entry_id' => $je->id,
-        'chart_of_account_id' => 1111,   // Debtors
+        'chart_of_account_id' => 4,      // Debtors (code: 1111)
         'line_no' => 1,
         'debit' => 3000.00,
         'credit' => 0.00,
@@ -250,7 +250,7 @@ DB::transaction(function () {
     // Cr. Service Revenue (Income increases)
     JournalEntryDetail::create([
         'journal_entry_id' => $je->id,
-        'chart_of_account_id' => 4100,   // Service Revenue
+        'chart_of_account_id' => 67,     // Service (code: 4120)
         'line_no' => 2,
         'debit' => 0.00,
         'credit' => 3000.00,
@@ -277,7 +277,7 @@ DB::transaction(function () {
     // Dr. Cash (Asset increases)
     JournalEntryDetail::create([
         'journal_entry_id' => $je->id,
-        'chart_of_account_id' => 1131,   // Cash
+        'chart_of_account_id' => 7,      // Cash (code: 1131)
         'line_no' => 1,
         'debit' => 3000.00,
         'credit' => 0.00,
@@ -287,7 +287,7 @@ DB::transaction(function () {
     // Cr. Accounts Receivable / Debtors (Asset decreases)
     JournalEntryDetail::create([
         'journal_entry_id' => $je->id,
-        'chart_of_account_id' => 1111,   // Debtors
+        'chart_of_account_id' => 4,      // Debtors (code: 1111)
         'line_no' => 2,
         'debit' => 0.00,
         'credit' => 3000.00,
@@ -314,7 +314,7 @@ DB::transaction(function () {
     // Dr. Inventory (Asset increases)
     JournalEntryDetail::create([
         'journal_entry_id' => $je->id,
-        'chart_of_account_id' => 1140,   // Inventory
+        'chart_of_account_id' => 13,     // Stock In Hand (code: 1161)
         'line_no' => 1,
         'debit' => 1500.00,
         'credit' => 0.00,
@@ -324,7 +324,7 @@ DB::transaction(function () {
     // Cr. Cash (Asset decreases)
     JournalEntryDetail::create([
         'journal_entry_id' => $je->id,
-        'chart_of_account_id' => 1131,   // Cash
+        'chart_of_account_id' => 7,      // Cash (code: 1131)
         'line_no' => 2,
         'debit' => 0.00,
         'credit' => 1500.00,
@@ -427,7 +427,7 @@ class AccountingService
             'reference' => 'CR-' . date('YmdHis'),
             'description' => $description,
             'lines' => [
-                ['account_id' => 1131, 'debit' => $amount, 'credit' => 0, 'description' => 'Cash received'],
+                ['account_id' => 7, 'debit' => 1000, 'credit' => 0, 'description' => 'Cash received'],
                 ['account_id' => $revenueAccountId, 'debit' => 0, 'credit' => $amount, 'description' => $description],
             ],
             'auto_post' => true,
@@ -445,7 +445,7 @@ class AccountingService
             'description' => $description,
             'lines' => [
                 ['account_id' => $expenseAccountId, 'debit' => $amount, 'credit' => 0, 'description' => $description],
-                ['account_id' => 1131, 'debit' => 0, 'credit' => $amount, 'description' => 'Cash paid'],
+                ['account_id' => 7, 'debit' => 0, 'credit' => $amount, 'description' => 'Cash paid'],
             ],
             'auto_post' => true,
         ]);
@@ -475,8 +475,8 @@ class TransactionController extends Controller
             'reference' => 'OB-001',
             'description' => 'Opening balance',
             'lines' => [
-                ['account_id' => 1131, 'debit' => 500, 'credit' => 0, 'description' => 'Opening cash'],
-                ['account_id' => 3100, 'debit' => 0, 'credit' => 500, 'description' => 'Owner capital'],
+                ['account_id' => 7, 'debit' => 500, 'credit' => 0, 'description' => 'Opening cash'],
+                ['account_id' => 29, 'debit' => 0, 'credit' => 500, 'description' => 'Owner capital'],
             ],
             'auto_post' => true,
         ]);
@@ -488,7 +488,7 @@ class TransactionController extends Controller
     {
         $entry = $this->accounting->recordCashReceipt(
             amount: 1000.00,
-            revenueAccountId: 4100, // Service Revenue
+            revenueAccountId: 67, // Service (code: 4120)
             description: 'Web development services'
         );
 
@@ -499,7 +499,7 @@ class TransactionController extends Controller
     {
         $entry = $this->accounting->recordCashPayment(
             amount: 2000.00,
-            expenseAccountId: 5210, // Rent Expense
+            expenseAccountId: 54, // Office Rent (code: 52130)
             description: 'Monthly office rent'
         );
 
@@ -514,29 +514,30 @@ class TransactionController extends Controller
 
 ```php
 // Assets
-1131 => 'Cash',
-1111 => 'Debtors (Accounts Receivable)',
-1121 => 'Bank Account',
-1140 => 'Inventory',
-1270 => 'Office Equipments',
+7   => 'Cash (code: 1131)',
+4   => 'Debtors / Accounts Receivable (code: 1111)',
+5   => 'Bank Accounts (code: 1120)',
+13  => 'Stock In Hand / Inventory (code: 1161)',
+22  => 'Office Equipments (code: 1270)',
 
 // Liabilities
-2110 => 'Creditors (Accounts Payable)',
-2120 => 'Bank Loan',
+72  => 'Creditors / Accounts Payable (code: 2111)',
+78  => 'Secured Loans (code: 2132)',
 
 // Equity
-3100 => 'Capital Stock',
+29  => 'Capital Stock (code: 3100)',
+32  => 'Retained Earnings (code: 3400)',
 
-// Revenue
-4100 => 'Service Revenue',
-4200 => 'Sales Revenue',
+// Revenue (Income)
+66  => 'Sales (code: 4110)',
+67  => 'Service (code: 4120)',
 
 // Expenses
-5110 => 'Cost of Goods Sold',
-5210 => 'Rent Expense',
-5220 => 'Salary Expense',
-5230 => 'Utilities Expense',
-5240 => 'Depreciation Expense',
+37  => 'Cost of Goods Sold (code: 5111)',
+54  => 'Office Rent (code: 52130)',
+58  => 'Salary (code: 52170)',
+62  => 'Utility Expenses (code: 52210)',
+44  => 'Depreciation (code: 5230)',
 ```
 
 ---

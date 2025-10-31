@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\AccountTypeController;
+use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -36,6 +37,9 @@ Route::middleware([
 
     // Settings Routes
     Route::prefix('settings')->group(function () {
+        // Settings Index
+        Route::get('/', [SettingsController::class, 'index'])->name('settings.index');
+
         // Account Types CRUD
         Route::resource('account-types', AccountTypeController::class);
     });

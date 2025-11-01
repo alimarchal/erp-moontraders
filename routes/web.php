@@ -1,7 +1,8 @@
 <?php
 
-use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\AccountTypeController;
+use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,5 +43,8 @@ Route::middleware([
 
         // Account Types CRUD
         Route::resource('account-types', AccountTypeController::class);
+
+        // Chart of Accounts CRUD
+        Route::resource('chart-of-accounts', ChartOfAccountController::class);
     });
 });

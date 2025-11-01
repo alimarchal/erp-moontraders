@@ -186,6 +186,11 @@ return new class extends Migration {
                 IF v_status = 'posted' THEN
                     RAISE EXCEPTION 'Lines of a posted journal are immutable. Create a reversing entry instead.';
                 END IF;
+
+                IF TG_OP = 'DELETE' THEN
+                    RETURN OLD;
+                END IF;
+
                 RETURN NEW;
             END;
             $$ LANGUAGE plpgsql;

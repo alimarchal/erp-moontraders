@@ -67,6 +67,10 @@ return new class extends Migration {
                         v_journal_id, v_debits, v_credits;
                 END IF;
 
+                IF TG_OP = 'DELETE' THEN
+                    RETURN OLD;
+                END IF;
+
                 RETURN NEW;
             END;
             \$\$ LANGUAGE plpgsql;

@@ -73,7 +73,7 @@
                         </button>
                     </div>
                 </div>
-                <div class="px-4 pb-4">
+                <div class="px-4 py-4">
                     @if($roots->isEmpty())
                     <div class="text-center py-16 text-gray-500 dark:text-gray-400">
                         <p>No chart of account records found.</p>

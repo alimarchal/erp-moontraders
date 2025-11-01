@@ -60,5 +60,9 @@ class AccountTypeSeeder extends Seeder
                 'updated_at' => $now
             ],
         ]);
+
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("SELECT setval(pg_get_serial_sequence('account_types', 'id'), MAX(id)) FROM account_types");
+        }
     }
 }

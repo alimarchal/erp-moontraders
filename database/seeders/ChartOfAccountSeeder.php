@@ -199,6 +199,10 @@ class ChartOfAccountSeeder extends Seeder
 
         // Insert all accounts
         DB::table('chart_of_accounts')->insert($accountsToInsert);
+
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("SELECT setval(pg_get_serial_sequence('chart_of_accounts', 'id'), MAX(id)) FROM chart_of_accounts");
+        }
     }
 
     /**

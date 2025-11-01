@@ -203,6 +203,28 @@ class ChartOfAccountController extends Controller
     }
 
     /**
+     * Display the chart of accounts tree.
+     */
+    public function tree()
+    {
+        $roots = ChartOfAccount::with(['accountType', 'childrenRecursive'])
+            ->whereNull('parent_id')
+            ->orderBy('account_code')
+            ->get();
+
+        $totalAccounts = ChartOfAccount::count();
+        $groupAccounts = ChartOfAccount::where('is_group', true)->count();
+        $postingAccounts = $totalAccounts - $groupAccounts;
+
+        return view('accounting.chart-of-accounts.tree', [
+            'roots' => $roots,
+            'totalAccounts' => $totalAccounts,
+            'groupAccounts' => $groupAccounts,
+            'postingAccounts' => $postingAccounts,
+        ]);
+    }
+
+    /**
      * Prepare select options for forms.
      */
     protected function formOptions(?ChartOfAccount $chartOfAccount = null): array

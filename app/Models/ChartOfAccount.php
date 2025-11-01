@@ -68,7 +68,8 @@ class ChartOfAccount extends Model
      */
     public function children(): HasMany
     {
-        return $this->hasMany(ChartOfAccount::class, 'parent_id');
+        return $this->hasMany(ChartOfAccount::class, 'parent_id')
+            ->orderBy('account_code');
     }
 
     /**
@@ -77,5 +78,13 @@ class ChartOfAccount extends Model
     public function descendants(): HasMany
     {
         return $this->children()->with('descendants');
+    }
+
+    /**
+     * Children relationship prepared for tree rendering.
+     */
+    public function childrenRecursive(): HasMany
+    {
+        return $this->children()->with(['childrenRecursive', 'accountType']);
     }
 }

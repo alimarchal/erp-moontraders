@@ -44,6 +44,10 @@ Route::middleware([
         // Account Types CRUD
         Route::resource('account-types', AccountTypeController::class);
 
+        // Chart of Accounts Tree View
+        Route::get('chart-of-accounts/manage-tree-structure', [ChartOfAccountController::class, 'tree'])
+            ->name('chart-of-accounts.tree');
+
         // Chart of Accounts CRUD
         Route::resource('chart-of-accounts', ChartOfAccountController::class);
     });

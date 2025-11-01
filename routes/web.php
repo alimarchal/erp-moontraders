@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,9 @@ Route::middleware([
 
         // Account Types CRUD
         Route::resource('account-types', AccountTypeController::class);
+
+        // Currencies CRUD
+        Route::resource('currencies', CurrencyController::class);
 
         // Chart of Accounts Tree View
         Route::get('chart-of-accounts/manage-tree-structure', [ChartOfAccountController::class, 'tree'])

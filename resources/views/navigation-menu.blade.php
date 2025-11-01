@@ -16,7 +16,7 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('settings.index') }}"
-                        :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*')">
+                        :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*')">
                         {{ __('Settings') }}
                     </x-nav-link>
                 </div>
@@ -158,7 +158,7 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('settings.index') }}"
-                :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*')">
+                :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*')">
                 {{ __('Settings') }}
             </x-responsive-nav-link>
         </div>

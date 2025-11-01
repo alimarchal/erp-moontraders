@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AccountTypeController;
+use App\Http\Controllers\AccountingPeriodController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\JournalEntryController;
@@ -44,6 +45,9 @@ Route::middleware([
 
         // Account Types CRUD
         Route::resource('account-types', AccountTypeController::class);
+
+        // Accounting Periods CRUD
+        Route::resource('accounting-periods', AccountingPeriodController::class);
 
         // Currencies CRUD
         Route::resource('currencies', CurrencyController::class);

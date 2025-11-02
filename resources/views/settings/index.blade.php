@@ -5,7 +5,7 @@
         </h2>
 
         <div class="flex justify-center items-center float-right">
-            <a href="{{ route('dashboard') }}"
+            <a href="{{ route('companies.edit', 1) }}"
                 class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                 <!-- Arrow Left Icon SVG -->
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -23,7 +23,7 @@
 
                 <!-- Account Types Module Card -->
                 <a href="{{ route('account-types.index') }}"
-                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
                     <div class="p-5 flex justify-between">
                         <div>
                             <div class="text-3xl font-bold leading-8">{{ \App\Models\AccountType::count() }}</div>
@@ -45,7 +45,7 @@
 
                 <!-- Currencies Module Card -->
                 <a href="{{ route('currencies.index') }}"
-                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
                     <div class="p-5 flex justify-between">
                         <div>
                             <div class="text-3xl font-bold leading-8">{{ \App\Models\Currency::count() }}</div>
@@ -61,7 +61,7 @@
 
                 <!-- Accounting Periods Module Card -->
                 <a href="{{ route('accounting-periods.index') }}"
-                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
                     <div class="p-5 flex justify-between">
                         <div>
                             <div class="text-3xl font-bold leading-8">{{ \App\Models\AccountingPeriod::count() }}</div>
@@ -77,7 +77,7 @@
 
                 <!-- Chart of Accounts Module Card -->
                 <a href="{{ route('chart-of-accounts.index') }}"
-                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
                     <div class="p-5 flex justify-between">
                         <div>
                             <div class="text-3xl font-bold leading-8">{{ \App\Models\ChartOfAccount::count() }}</div>
@@ -93,7 +93,7 @@
 
                 <!-- Cost Centers Module Card -->
                 <a href="{{ route('cost-centers.index') }}"
-                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 intro-y bg-white block">
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">
                     <div class="p-5 flex justify-between">
                         <div>
                             <div class="text-3xl font-bold leading-8">{{ \App\Models\CostCenter::count() }}</div>
@@ -108,8 +108,8 @@
                 </a>
 
                 <!-- Companies Module Card -->
-                <a href="{{ route('dashboard') }}"
-                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 intro-y bg-white block">
+                <a href="{{ route('companies.index', 1) }}"
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">
                     <div class="p-5 flex justify-between">
                         <div>
                             <div class="text-3xl font-bold leading-8">{{ \App\Models\Company::count() }}</div>
@@ -125,7 +125,7 @@
 
                 <!-- Warehouses Module Card -->
                 <a href="{{ route('dashboard') }}"
-                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 intro-y bg-white block">
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">
                     <div class="p-5 flex justify-between">
                         <div>
                             <div class="text-3xl font-bold leading-8">{{ \App\Models\Warehouse::count() }}</div>

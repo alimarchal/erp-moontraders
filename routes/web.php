@@ -1,13 +1,14 @@
 <?php
 
-use App\Http\Controllers\AccountTypeController;
-use App\Http\Controllers\AccountingPeriodController;
-use App\Http\Controllers\ChartOfAccountController;
-use App\Http\Controllers\CostCenterController;
-use App\Http\Controllers\CurrencyController;
-use App\Http\Controllers\JournalEntryController;
-use App\Http\Controllers\SettingsController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\CostCenterController;
+use App\Http\Controllers\AccountTypeController;
+use App\Http\Controllers\JournalEntryController;
+use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\AccountingPeriodController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -57,10 +58,12 @@ Route::middleware([
         Route::resource('cost-centers', CostCenterController::class);
 
         // Chart of Accounts Tree View
-        Route::get('chart-of-accounts/manage-tree-structure', [ChartOfAccountController::class, 'tree'])
-            ->name('chart-of-accounts.tree');
+        Route::get('chart-of-accounts/manage-tree-structure', [ChartOfAccountController::class, 'tree'])->name('chart-of-accounts.tree');
 
         // Chart of Accounts CRUD
         Route::resource('chart-of-accounts', ChartOfAccountController::class);
+
+        // Company CRUD
+        Route::resource('companies', CompanyController::class);
     });
 });

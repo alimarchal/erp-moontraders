@@ -3,8 +3,9 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
-        "dev": "vite"
+          "build": "vite build",
+          "dev": "vite",
+          "mcp:db": "sh ./scripts/mcp-postgres.sh"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.10",

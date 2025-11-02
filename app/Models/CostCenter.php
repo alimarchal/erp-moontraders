@@ -10,6 +10,9 @@ class CostCenter extends Model
     /** @use HasFactory<\Database\Factories\CostCenterFactory> */
     use HasFactory;
 
+    public const TYPE_COST_CENTER = 'cost_center';
+    public const TYPE_PROJECT = 'project';
+
     protected $fillable = [
         'parent_id',
         'code',
@@ -41,5 +44,16 @@ class CostCenter extends Model
     public function journalEntryDetails()
     {
         return $this->hasMany(JournalEntryDetail::class);
+    }
+
+    /**
+     * Map of available cost center types for forms/validation.
+     */
+    public static function typeOptions(): array
+    {
+        return [
+            self::TYPE_COST_CENTER => 'Cost Center',
+            self::TYPE_PROJECT => 'Project',
+        ];
     }
 }

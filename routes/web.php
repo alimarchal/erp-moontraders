@@ -3,6 +3,7 @@
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\AccountingPeriodController;
 use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\CostCenterController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\SettingsController;
@@ -51,6 +52,9 @@ Route::middleware([
 
         // Currencies CRUD
         Route::resource('currencies', CurrencyController::class);
+
+        // Cost Centers CRUD
+        Route::resource('cost-centers', CostCenterController::class);
 
         // Chart of Accounts Tree View
         Route::get('chart-of-accounts/manage-tree-structure', [ChartOfAccountController::class, 'tree'])

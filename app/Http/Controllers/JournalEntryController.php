@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreJournalEntryRequest;
 use App\Http\Requests\UpdateJournalEntryRequest;
-use App\Models\JournalEntry;
 use App\Models\ChartOfAccount;
-use App\Models\Currency;
 use App\Models\CostCenter;
+use App\Models\Currency;
+use App\Models\JournalEntry;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
 
@@ -23,13 +23,39 @@ class JournalEntryController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $entries = JournalEntry::with(['details.account', 'currency', 'costCenter', 'accountingPeriod'])
-            ->latest('entry_date')
-            ->paginate(20);
+        $query = JournalEntry::query()
+            ->with(['currency'])
+            ->withSum('details as total_debit', 'debit')
+            ->withSum('details as total_credit', 'credit')
+            ->latest('entry_date');
 
-        return view('journal-entries.index', compact('entries'));
+        if ($status = $request->input('filter.status')) {
+            $query->where('status', $status);
+        }
+
+        if ($reference = $request->input('filter.reference')) {
+            $query->where('reference', 'like', '%' . $reference . '%');
+        }
+
+        if ($dateFrom = $request->input('filter.date_from')) {
+            $query->whereDate('entry_date', '>=', $dateFrom);
+        }
+
+        if ($dateTo = $request->input('filter.date_to')) {
+            $query->whereDate('entry_date', '<=', $dateTo);
+        }
+
+        $entries = $query->paginate(20)->withQueryString();
+
+        $statusOptions = [
+            'draft' => 'Draft',
+            'posted' => 'Posted',
+            'void' => 'Void',
+        ];
+
+        return view('journal-entries.index', compact('entries', 'statusOptions'));
     }
 
     /**
@@ -37,14 +63,27 @@ class JournalEntryController extends Controller
      */
     public function create()
     {
-        $accounts = ChartOfAccount::where('is_leaf', true)
+        $accounts = ChartOfAccount::query()
+            ->where('is_group', false)
+            ->where('is_active', true)
+            ->orderBy('account_code')
+            ->get(['id', 'account_code', 'account_name']);
+
+        $currencies = Currency::query()
+            ->where('is_active', true)
+            ->orderBy('currency_code')
+            ->get(['id', 'currency_code', 'currency_name', 'is_base_currency']);
+
+        $costCenters = CostCenter::query()
+            ->where('is_active', true)
             ->orderBy('code')
-            ->get();
+            ->get(['id', 'code', 'name']);
 
-        $currencies = Currency::where('is_active', true)->get();
-        $costCenters = CostCenter::where('is_active', true)->get();
+        $defaultCurrencyId = $currencies->firstWhere('is_base_currency', true)->id
+            ?? $currencies->first()->id
+            ?? null;
 
-        return view('journal-entries.create', compact('accounts', 'currencies', 'costCenters'));
+        return view('journal-entries.create', compact('accounts', 'currencies', 'costCenters', 'defaultCurrencyId'));
     }
 
     /**
@@ -52,7 +91,7 @@ class JournalEntryController extends Controller
      */
     public function store(StoreJournalEntryRequest $request)
     {
-        $result = $this->accountingService->createJournalEntry($request->all());
+        $result = $this->accountingService->createJournalEntry($request->validated());
 
         if ($result['success']) {
             return redirect()
@@ -60,8 +99,7 @@ class JournalEntryController extends Controller
                 ->with('success', $result['message']);
         }
 
-        return redirect()
-            ->back()
+        return back()
             ->withInput()
             ->with('error', $result['message']);
     }
@@ -71,7 +109,14 @@ class JournalEntryController extends Controller
      */
     public function show(JournalEntry $journalEntry)
     {
-        $journalEntry->load(['details.account', 'currency', 'costCenter', 'accountingPeriod']);
+        $journalEntry->load([
+            'details' => fn ($query) => $query->orderBy('line_no'),
+            'details.account',
+            'details.costCenter',
+            'currency',
+            'accountingPeriod',
+            'attachments',
+        ]);
 
         return view('journal-entries.show', compact('journalEntry'));
     }
@@ -81,21 +126,33 @@ class JournalEntryController extends Controller
      */
     public function edit(JournalEntry $journalEntry)
     {
-        // Only allow editing draft entries
         if ($journalEntry->status === 'posted') {
             return redirect()
-                ->route('journal-entries.show', $journalEntry)
+                ->route('journal-entries.show', $journalEntry->id)
                 ->with('error', 'Posted entries cannot be edited. Create a reversing entry instead.');
         }
 
-        $journalEntry->load('details');
+        $journalEntry->load([
+            'details' => fn ($query) => $query->orderBy('line_no'),
+            'details.account',
+            'details.costCenter',
+        ]);
 
-        $accounts = ChartOfAccount::where('is_leaf', true)
+        $accounts = ChartOfAccount::query()
+            ->where('is_group', false)
+            ->where('is_active', true)
+            ->orderBy('account_code')
+            ->get(['id', 'account_code', 'account_name']);
+
+        $currencies = Currency::query()
+            ->where('is_active', true)
+            ->orderBy('currency_code')
+            ->get(['id', 'currency_code', 'currency_name', 'is_base_currency']);
+
+        $costCenters = CostCenter::query()
+            ->where('is_active', true)
             ->orderBy('code')
-            ->get();
-
-        $currencies = Currency::where('is_active', true)->get();
-        $costCenters = CostCenter::where('is_active', true)->get();
+            ->get(['id', 'code', 'name']);
 
         return view('journal-entries.edit', compact('journalEntry', 'accounts', 'currencies', 'costCenters'));
     }
@@ -105,28 +162,21 @@ class JournalEntryController extends Controller
      */
     public function update(UpdateJournalEntryRequest $request, JournalEntry $journalEntry)
     {
-        // Only allow updating draft entries
         if ($journalEntry->status === 'posted') {
             return redirect()
-                ->route('journal-entries.show', $journalEntry)
+                ->route('journal-entries.show', $journalEntry->id)
                 ->with('error', 'Posted entries cannot be edited.');
         }
 
-        // Delete existing details and recreate (easier than updating)
-        $journalEntry->details()->delete();
-
-        $result = $this->accountingService->createJournalEntry(
-            array_merge($request->all(), ['entry_id' => $journalEntry->id])
-        );
+        $result = $this->accountingService->updateJournalEntry($journalEntry, $request->validated());
 
         if ($result['success']) {
             return redirect()
-                ->route('journal-entries.show', $journalEntry)
-                ->with('success', 'Journal entry updated successfully');
+                ->route('journal-entries.show', $result['data']->id)
+                ->with('success', $result['message']);
         }
 
-        return redirect()
-            ->back()
+        return back()
             ->withInput()
             ->with('error', $result['message']);
     }
@@ -136,23 +186,21 @@ class JournalEntryController extends Controller
      */
     public function destroy(JournalEntry $journalEntry)
     {
-        // Only allow deleting draft entries
         if ($journalEntry->status === 'posted') {
             return redirect()
                 ->route('journal-entries.index')
                 ->with('error', 'Posted entries cannot be deleted. Create a reversing entry instead.');
         }
 
-        $journalEntry->details()->delete();
         $journalEntry->delete();
 
         return redirect()
             ->route('journal-entries.index')
-            ->with('success', 'Draft journal entry deleted successfully');
+            ->with('success', 'Draft journal entry deleted successfully.');
     }
 
     /**
-     * Post a draft journal entry
+     * Post a draft journal entry.
      */
     public function post(JournalEntry $journalEntry)
     {
@@ -160,17 +208,15 @@ class JournalEntryController extends Controller
 
         if ($result['success']) {
             return redirect()
-                ->route('journal-entries.show', $journalEntry)
+                ->route('journal-entries.show', $result['data']->id)
                 ->with('success', $result['message']);
         }
 
-        return redirect()
-            ->back()
-            ->with('error', $result['message']);
+        return back()->with('error', $result['message']);
     }
 
     /**
-     * Create a reversing entry
+     * Create a reversing entry.
      */
     public function reverse(Request $request, JournalEntry $journalEntry)
     {
@@ -185,9 +231,7 @@ class JournalEntryController extends Controller
                 ->with('success', $result['message']);
         }
 
-        return redirect()
-            ->back()
-            ->with('error', $result['message']);
+        return back()->with('error', $result['message']);
     }
 
     /**
@@ -195,11 +239,20 @@ class JournalEntryController extends Controller
      */
     public function recordCashReceipt(Request $request)
     {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'revenue_account_id' => ['required', 'exists:chart_of_accounts,id'],
+            'description' => ['required', 'string'],
+            'reference' => ['nullable', 'string', 'max:191'],
+            'cost_center_id' => ['nullable', 'exists:cost_centers,id'],
+            'auto_post' => ['sometimes', 'boolean'],
+        ]);
+
         $result = $this->accountingService->recordCashReceipt(
-            $request->input('amount'),
-            $request->input('revenue_account_id'),
-            $request->input('description'),
-            $request->only(['reference', 'cost_center_id', 'auto_post'])
+            (float) $validated['amount'],
+            (int) $validated['revenue_account_id'],
+            $validated['description'],
+            $validated
         );
 
         if ($result['success']) {
@@ -208,19 +261,25 @@ class JournalEntryController extends Controller
                 ->with('success', $result['message']);
         }
 
-        return redirect()
-            ->back()
-            ->withInput()
-            ->with('error', $result['message']);
+        return back()->withInput()->with('error', $result['message']);
     }
 
     public function recordCashPayment(Request $request)
     {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'expense_account_id' => ['required', 'exists:chart_of_accounts,id'],
+            'description' => ['required', 'string'],
+            'reference' => ['nullable', 'string', 'max:191'],
+            'cost_center_id' => ['nullable', 'exists:cost_centers,id'],
+            'auto_post' => ['sometimes', 'boolean'],
+        ]);
+
         $result = $this->accountingService->recordCashPayment(
-            $request->input('amount'),
-            $request->input('expense_account_id'),
-            $request->input('description'),
-            $request->only(['reference', 'cost_center_id', 'auto_post'])
+            (float) $validated['amount'],
+            (int) $validated['expense_account_id'],
+            $validated['description'],
+            $validated
         );
 
         if ($result['success']) {
@@ -229,18 +288,23 @@ class JournalEntryController extends Controller
                 ->with('success', $result['message']);
         }
 
-        return redirect()
-            ->back()
-            ->withInput()
-            ->with('error', $result['message']);
+        return back()->withInput()->with('error', $result['message']);
     }
 
     public function recordOpeningBalance(Request $request)
     {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'gt:0'],
+            'description' => ['nullable', 'string'],
+            'entry_date' => ['nullable', 'date'],
+            'reference' => ['nullable', 'string', 'max:191'],
+            'auto_post' => ['sometimes', 'boolean'],
+        ]);
+
         $result = $this->accountingService->recordOpeningBalance(
-            $request->input('amount'),
-            $request->input('description', 'Opening balance - Owner capital'),
-            $request->only(['entry_date', 'reference', 'auto_post'])
+            (float) $validated['amount'],
+            $validated['description'] ?? 'Opening balance - Owner capital',
+            $validated
         );
 
         if ($result['success']) {
@@ -249,9 +313,6 @@ class JournalEntryController extends Controller
                 ->with('success', $result['message']);
         }
 
-        return redirect()
-            ->back()
-            ->withInput()
-            ->with('error', $result['message']);
+        return back()->withInput()->with('error', $result['message']);
     }
 }

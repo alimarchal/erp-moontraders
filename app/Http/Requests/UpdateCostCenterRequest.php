@@ -2,27 +2,34 @@
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
-class UpdateCostCenterRequest extends FormRequest
+class UpdateCostCenterRequest extends StoreCostCenterRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
-    public function authorize(): bool
-    {
-        return false;
-    }
-
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
-        return [
-            //
+        $rules = parent::rules();
+        $costCenterId = $this->route('cost_center')?->id;
+
+        $rules['code'] = [
+            'required',
+            'string',
+            'max:20',
+            'regex:/^[A-Z0-9\-_]+$/i',
+            Rule::unique('cost_centers', 'code')->ignore($costCenterId),
         ];
+
+        $rules['parent_id'] = [
+            'nullable',
+            'exists:cost_centers,id',
+            Rule::notIn([$costCenterId]),
+        ];
+
+        return $rules;
     }
 }

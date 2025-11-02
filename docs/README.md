@@ -1,61 +1,64 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# MoonTrader ERP Documentation
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Welcome to the MoonTrader ERP System documentation. This directory contains comprehensive guides, API references, and implementation details for all system modules.
 
-## About Laravel
+## 📚 Documentation Index
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### Core Accounting System
+1. **ACCOUNTING_USAGE_GUIDE.md** - Complete double-entry accounting guide
+2. **ACCOUNTING_API.md** - API endpoints for accounting operations
+3. **ACCOUNTING_WEB_USAGE.md** - Web interface guide
+4. **ACCOUNT_IDS_REFERENCE.md** - Chart of accounts reference
+5. **DOUBLE_ENTRY_ENHANCEMENTS.md** - System improvements
+6. **DOUBLE_ENTRY_ALIGNMENT_SUMMARY.md** - Migration alignment
+7. **PRODUCTION_GRADE_SUMMARY.md** - Production features
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### Financial Operations
+8. **FINANCIAL_OPERATIONS_SUMMARY.md** - Cheques, salaries, expenses, UOM
+9. **CREDITOR_MANAGEMENT.md** ⭐ NEW - Accounts payable tracking
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### Inventory & Delivery
+10. **INVENTORY_ACCOUNTING_INTEGRATION.md** - Inventory tracking
+11. **DELIVERY_SYSTEM.md** ⭐ NEW - Vehicle-based delivery system
+12. **ACCOUNTING_FLOW_DIAGRAMS.md** - Visual workflows
 
-## Learning Laravel
+### Quick Reference
+13. **QUICK_REFERENCE.md** ⭐ NEW - Quick lookup guide
+14. **IMPLEMENTATION_SUMMARY.md** ⭐ NEW - Complete implementation overview
+15. **MCP_SETUP.md** - Development environment setup
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+## 🚀 Getting Started
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+### New Users
+1. ACCOUNTING_USAGE_GUIDE.md - Understand the foundation
+2. QUICK_REFERENCE.md - Common operations
+3. IMPLEMENTATION_SUMMARY.md - System overview
 
-## Laravel Sponsors
+### Accountants
+1. ACCOUNTING_USAGE_GUIDE.md
+2. CREDITOR_MANAGEMENT.md
+3. FINANCIAL_OPERATIONS_SUMMARY.md
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Operations Team
+1. DELIVERY_SYSTEM.md
+2. INVENTORY_ACCOUNTING_INTEGRATION.md
+3. QUICK_REFERENCE.md
 
-### Premium Partners
+---
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## 🎯 Key Features
 
-## Contributing
+✅ Double-Entry Accounting
+✅ Vehicle Delivery Tracking
+✅ Transit Warehouse Concept
+✅ Creditor Management & Aging
+✅ Financial Operations (Cheques, Salaries, Expenses)
+✅ Perpetual Inventory
+✅ Comprehensive Reporting
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
-
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
-
-## Security Vulnerabilities
-
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
-
-## License
-
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+**Last Updated:** November 2, 2025
+**Version:** 1.0

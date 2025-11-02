@@ -25,19 +25,11 @@ class AccountingPeriodController extends Controller
             ->allowedFilters([
                 AllowedFilter::partial('name'),
                 AllowedFilter::exact('status'),
+                AllowedFilter::callback('start_date_from', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('start_date', '>=', $value) : null),
+                AllowedFilter::callback('start_date_to', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('start_date', '<=', $value) : null),
+                AllowedFilter::callback('end_date_from', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('end_date', '>=', $value) : null),
+                AllowedFilter::callback('end_date_to', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('end_date', '<=', $value) : null),
             ])
-            ->when($request->filled('filter.start_date_from'), function ($query) use ($request) {
-                $query->whereDate('start_date', '>=', $request->input('filter.start_date_from'));
-            })
-            ->when($request->filled('filter.start_date_to'), function ($query) use ($request) {
-                $query->whereDate('start_date', '<=', $request->input('filter.start_date_to'));
-            })
-            ->when($request->filled('filter.end_date_from'), function ($query) use ($request) {
-                $query->whereDate('end_date', '>=', $request->input('filter.end_date_from'));
-            })
-            ->when($request->filled('filter.end_date_to'), function ($query) use ($request) {
-                $query->whereDate('end_date', '<=', $request->input('filter.end_date_to'));
-            })
             ->orderByDesc('start_date')
             ->paginate(10)
             ->withQueryString();

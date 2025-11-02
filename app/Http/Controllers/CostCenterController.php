@@ -28,22 +28,24 @@ class CostCenterController extends Controller
                 AllowedFilter::partial('name'),
                 AllowedFilter::partial('code'),
                 AllowedFilter::exact('type'),
+                AllowedFilter::callback('is_active', function ($query, $value) {
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+
+                    $flag = filter_var($value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+
+                    if ($flag === null) {
+                        return;
+                    }
+
+                    $query->where('is_active', $flag);
+                }),
+                AllowedFilter::callback('start_date_from', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('start_date', '>=', $value) : null),
+                AllowedFilter::callback('start_date_to', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('start_date', '<=', $value) : null),
+                AllowedFilter::callback('end_date_from', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('end_date', '>=', $value) : null),
+                AllowedFilter::callback('end_date_to', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('end_date', '<=', $value) : null),
             ])
-            ->when($request->filled('filter.is_active'), function ($query) use ($request) {
-                $query->where('is_active', (bool) $request->boolean('filter.is_active'));
-            })
-            ->when($request->filled('filter.start_date_from'), function ($query) use ($request) {
-                $query->whereDate('start_date', '>=', $request->input('filter.start_date_from'));
-            })
-            ->when($request->filled('filter.start_date_to'), function ($query) use ($request) {
-                $query->whereDate('start_date', '<=', $request->input('filter.start_date_to'));
-            })
-            ->when($request->filled('filter.end_date_from'), function ($query) use ($request) {
-                $query->whereDate('end_date', '>=', $request->input('filter.end_date_from'));
-            })
-            ->when($request->filled('filter.end_date_to'), function ($query) use ($request) {
-                $query->whereDate('end_date', '<=', $request->input('filter.end_date_to'));
-            })
             ->orderBy('code')
             ->paginate(10)
             ->withQueryString();

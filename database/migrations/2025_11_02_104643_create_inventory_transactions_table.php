@@ -32,7 +32,8 @@ return new class extends Migration {
             $table->decimal('balance_value', 15, 2)->comment('Total inventory value after transaction');
 
             // Source document references
-            $table->morphs('transactionable'); // Polymorphic relation to StockReceipt, Sale, etc.
+            // Provide a short index name for MySQL (64-char identifier limit)
+            $table->morphs('transactionable', 'inv_txn_morph_idx'); // Polymorphic relation to StockReceipt, Sale, etc.
 
             // Double-entry link
             $table->foreignId('journal_entry_id')->nullable()->constrained('journal_entries')->nullOnDelete()
@@ -41,9 +42,9 @@ return new class extends Migration {
             $table->text('notes')->nullable();
             $table->timestamps();
 
-            // Indexes for reporting
-            $table->index(['product_id', 'warehouse_id', 'transaction_date']);
-            $table->index(['transaction_type', 'transaction_date']);
+            // Indexes for reporting (short names for MySQL 64-char limit)
+            $table->index(['product_id', 'warehouse_id', 'transaction_date'], 'inv_txn_prod_wh_date_idx');
+            $table->index(['transaction_type', 'transaction_date'], 'inv_txn_type_date_idx');
             // Note: morphs() already creates an index on transactionable_type and transactionable_id
         });
     }

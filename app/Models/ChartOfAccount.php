@@ -87,4 +87,12 @@ class ChartOfAccount extends Model
     {
         return $this->children()->with(['childrenRecursive', 'accountType']);
     }
+
+    /**
+     * Get the warehouses using this account.
+     */
+    public function warehouses(): HasMany
+    {
+        return $this->hasMany(Warehouse::class, 'account_id');
+    }
 }

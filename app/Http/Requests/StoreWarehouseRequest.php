@@ -22,21 +22,23 @@ class StoreWarehouseRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255'],
-            'is_group_warehouse' => ['boolean'],
-            'chart_of_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
-            'is_rejected_warehouse' => ['boolean'],
-            'company' => ['nullable', 'string', 'max:255'],
+            'warehouse_name' => ['required', 'string', 'max:255', 'unique:warehouses,warehouse_name'],
+            'disabled' => ['sometimes', 'boolean'],
+            'is_group' => ['sometimes', 'boolean'],
+            'parent_warehouse_id' => ['nullable', 'exists:warehouses,id'],
+            'company_id' => ['nullable', 'exists:companies,id'],
+            'warehouse_type_id' => ['nullable', 'exists:warehouse_types,id'],
+            'is_rejected_warehouse' => ['sometimes', 'boolean'],
+            'default_in_transit_warehouse_id' => ['nullable', 'exists:warehouses,id'],
+            'account_id' => ['nullable', 'exists:chart_of_accounts,id'],
+            'email_id' => ['nullable', 'email', 'max:255'],
             'phone_no' => ['nullable', 'string', 'max:255'],
             'mobile_no' => ['nullable', 'string', 'max:255'],
             'address_line_1' => ['nullable', 'string', 'max:255'],
             'address_line_2' => ['nullable', 'string', 'max:255'],
             'city' => ['nullable', 'string', 'max:255'],
-            'state_province' => ['nullable', 'string', 'max:255'],
-            'postal_code' => ['nullable', 'string', 'max:255'],
-            'country' => ['nullable', 'string', 'max:255'],
-            'notes' => ['nullable', 'string'],
-            'is_active' => ['boolean'],
+            'state' => ['nullable', 'string', 'max:255'],
+            'pin' => ['nullable', 'string', 'max:255'],
         ];
     }
 }

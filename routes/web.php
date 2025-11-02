@@ -9,6 +9,8 @@ use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\AccountingPeriodController;
+use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\WarehouseTypeController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -65,5 +67,11 @@ Route::middleware([
 
         // Company CRUD
         Route::resource('companies', CompanyController::class);
+
+        // Warehouses CRUD
+        Route::resource('warehouses', WarehouseController::class);
+
+        // Warehouse Types CRUD
+        Route::resource('warehouse-types', WarehouseTypeController::class);
     });
 });

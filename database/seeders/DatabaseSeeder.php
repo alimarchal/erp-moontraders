@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             CostCenterSeeder::class,            // Add cost centers before journal entries
             CompanySeeder::class,               // Add company after currencies and cost centers
             WarehouseTypeSeeder::class,         // Add warehouse types after companies
+            WarehouseSeeder::class,             // Add warehouses after warehouse types
             SupplierSeeder::class,              // Add suppliers after currencies
             JournalEntrySeeder::class,
             JournalEntryDetailSeeder::class,

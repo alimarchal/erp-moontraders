@@ -45,7 +45,7 @@ class AccountTypeController extends Controller
                 AllowedFilter::exact('report_group'),        // Filter by exact report group
             ])
             ->latest()                                       // Order by newest first
-            ->paginate(3);                                  // Paginate results
+            ->paginate(5);                                  // Paginate results
 
         return view('accounting.account-types.index', compact('accountTypes', 'reportGroups', 'typeNames'));
     }

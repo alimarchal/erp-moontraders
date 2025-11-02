@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             WarehouseTypeSeeder::class,         // Add warehouse types after companies
             WarehouseSeeder::class,             // Add warehouses after warehouse types
             SupplierSeeder::class,              // Add suppliers after currencies
+            UomSeeder::class,                   // Add units of measurement before products
             JournalEntrySeeder::class,
             JournalEntryDetailSeeder::class,
             AttachmentSeeder::class,            // Add attachments last

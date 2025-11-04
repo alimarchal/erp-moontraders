@@ -172,11 +172,24 @@ class JournalEntrySeeder extends Seeder
             ],
         ]);
 
-        DB::statement("
-            SELECT setval(
-                pg_get_serial_sequence('journal_entries', 'id'),
-                (SELECT COALESCE(MAX(id), 0) FROM journal_entries)
-            )
-        ");
+        $connection = DB::connection();
+        $driver = $connection->getDriverName();
+
+        if ($driver === 'pgsql') {
+            DB::statement("
+                SELECT setval(
+                    pg_get_serial_sequence('journal_entries', 'id'),
+                    (SELECT COALESCE(MAX(id), 0) FROM journal_entries)
+                )
+            ");
+        } elseif (in_array($driver, ['mysql', 'mariadb'])) {
+            $nextId = DB::table('journal_entries')->max('id') + 1;
+
+            if ($nextId < 1) {
+                $nextId = 1;
+            }
+
+            DB::statement("ALTER TABLE journal_entries AUTO_INCREMENT = {$nextId}");
+        }
     }
 }

@@ -235,7 +235,15 @@ return new class extends Migration {
             AFTER INSERT ON journal_entry_details
             FOR EACH ROW
             BEGIN
-                CALL sp_check_journal_balance(NEW.journal_entry_id);
+                DECLARE v_status VARCHAR(20);
+
+                SELECT status INTO v_status
+                FROM journal_entries
+                WHERE id = NEW.journal_entry_id;
+
+                IF v_status = 'posted' THEN
+                    CALL sp_check_journal_balance(NEW.journal_entry_id);
+                END IF;
             END
         ");
 
@@ -249,7 +257,15 @@ return new class extends Migration {
             AFTER UPDATE ON journal_entry_details
             FOR EACH ROW
             BEGIN
-                CALL sp_check_journal_balance(NEW.journal_entry_id);
+                DECLARE v_status VARCHAR(20);
+
+                SELECT status INTO v_status
+                FROM journal_entries
+                WHERE id = NEW.journal_entry_id;
+
+                IF v_status = 'posted' THEN
+                    CALL sp_check_journal_balance(NEW.journal_entry_id);
+                END IF;
             END
         ");
 
@@ -263,7 +279,31 @@ return new class extends Migration {
             AFTER DELETE ON journal_entry_details
             FOR EACH ROW
             BEGIN
-                CALL sp_check_journal_balance(OLD.journal_entry_id);
+                DECLARE v_status VARCHAR(20);
+
+                SELECT status INTO v_status
+                FROM journal_entries
+                WHERE id = OLD.journal_entry_id;
+
+                IF v_status = 'posted' THEN
+                    CALL sp_check_journal_balance(OLD.journal_entry_id);
+                END IF;
+            END
+        ");
+
+        try {
+            DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_before_post");
+        } catch (\Exception $e) {
+            // Ignore errors on drop
+        }
+        DB::unprepared("
+            CREATE TRIGGER trg_journal_balance_before_post
+            BEFORE UPDATE ON journal_entries
+            FOR EACH ROW
+            BEGIN
+                IF NEW.status = 'posted' AND OLD.status <> 'posted' THEN
+                    CALL sp_check_journal_balance(NEW.id);
+                END IF;
             END
         ");
 
@@ -444,6 +484,11 @@ return new class extends Migration {
         }
         try {
             DB::unprepared("DROP TRIGGER IF EXISTS trg_single_base_currency_update");
+        } catch (\Exception $e) {
+            // Ignore errors
+        }
+        try {
+            DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_before_post");
         } catch (\Exception $e) {
             // Ignore errors
         }

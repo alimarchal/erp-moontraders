@@ -171,5 +171,12 @@ class JournalEntrySeeder extends Seeder
                 'updated_at' => $now,
             ],
         ]);
+
+        DB::statement("
+            SELECT setval(
+                pg_get_serial_sequence('journal_entries', 'id'),
+                (SELECT COALESCE(MAX(id), 0) FROM journal_entries)
+            )
+        ");
     }
 }

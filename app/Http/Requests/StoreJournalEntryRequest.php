@@ -67,7 +67,9 @@ class StoreJournalEntryRequest extends FormRequest
             'lines' => ['required', 'array', 'min:2'],
             'lines.*.account_id' => [
                 'required',
-                Rule::exists('chart_of_accounts', 'id')->where('is_group', false)->where('is_active', true),
+                Rule::exists('chart_of_accounts', 'id')->where(function ($query) {
+                    $query->where('is_group', false)->where('is_active', true);
+                }),
             ],
             'lines.*.debit' => ['nullable', 'numeric', 'gte:0'],
             'lines.*.credit' => ['nullable', 'numeric', 'gte:0'],

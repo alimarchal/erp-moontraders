@@ -76,29 +76,15 @@ return new class extends Migration {
             \$\$ LANGUAGE plpgsql;
         ");
 
-        // Trigger for INSERT
+        // Constraint trigger to enforce balance (deferrable to end of transaction)
         DB::unprepared("
             DROP TRIGGER IF EXISTS trg_journal_balance_insert ON journal_entry_details;
-            CREATE TRIGGER trg_journal_balance_insert
-            AFTER INSERT ON journal_entry_details
-            FOR EACH ROW
-            EXECUTE FUNCTION check_journal_balance();
-        ");
-
-        // Trigger for UPDATE
-        DB::unprepared("
             DROP TRIGGER IF EXISTS trg_journal_balance_update ON journal_entry_details;
-            CREATE TRIGGER trg_journal_balance_update
-            AFTER UPDATE ON journal_entry_details
-            FOR EACH ROW
-            EXECUTE FUNCTION check_journal_balance();
-        ");
-
-        // Trigger for DELETE
-        DB::unprepared("
             DROP TRIGGER IF EXISTS trg_journal_balance_delete ON journal_entry_details;
-            CREATE TRIGGER trg_journal_balance_delete
-            AFTER DELETE ON journal_entry_details
+            DROP TRIGGER IF EXISTS trg_journal_balance ON journal_entry_details;
+            CREATE CONSTRAINT TRIGGER trg_journal_balance
+            AFTER INSERT OR UPDATE OR DELETE ON journal_entry_details
+            DEFERRABLE INITIALLY DEFERRED
             FOR EACH ROW
             EXECUTE FUNCTION check_journal_balance();
         ");
@@ -402,6 +388,7 @@ return new class extends Migration {
         DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_insert ON journal_entry_details");
         DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_update ON journal_entry_details");
         DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_delete ON journal_entry_details");
+        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance ON journal_entry_details");
         DB::unprepared("DROP FUNCTION IF EXISTS check_journal_balance()");
 
         DB::unprepared("DROP TRIGGER IF EXISTS trg_leaf_account_only ON journal_entry_details");

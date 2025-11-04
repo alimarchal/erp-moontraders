@@ -145,19 +145,14 @@
     <x-data-table :items="$entries" :headers="[
         ['label' => '#', 'align' => 'text-center'],
         ['label' => 'Entry Date'],
-        ['label' => 'Journal #', 'align' => 'text-center'],
-        ['label' => 'Line #', 'align' => 'text-center'],
         ['label' => 'Reference'],
         ['label' => 'Journal Description'],
         ['label' => 'Account'],
-        ['label' => 'Account ID', 'align' => 'text-center'],
         ['label' => 'Line Description'],
         ['label' => 'Debit', 'align' => 'text-right'],
         ['label' => 'Credit', 'align' => 'text-right'],
         ['label' => 'Cost Center'],
         ['label' => 'Status', 'align' => 'text-center'],
-        ['label' => 'Currency', 'align' => 'text-center'],
-        ['label' => 'FX Rate', 'align' => 'text-right'],
     ]" emptyMessage="No general ledger entries found.">
         @php
         $statusClasses = [
@@ -172,13 +167,7 @@
                 {{ $entries->firstItem() + $index }}
             </td>
             <td class="py-1 px-2 whitespace-nowrap">
-                {{ optional($entry->entry_date)->format('Y-m-d') }}
-            </td>
-            <td class="py-1 px-2 text-center">
-                {{ $entry->journal_entry_id }}
-            </td>
-            <td class="py-1 px-2 text-center">
-                {{ $entry->line_no }}
+                {{ optional($entry->entry_date)->format('d-m-Y') }}
             </td>
             <td class="py-1 px-2">
                 {{ $entry->reference ?? '—' }}
@@ -188,10 +177,8 @@
             </td>
             <td class="py-1 px-2">
                 <div class="font-semibold uppercase">{{ $entry->account_code }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $entry->account_name }}</div>
-            </td>
-            <td class="py-1 px-2 text-center">
-                {{ $entry->account_id }}
+                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $entry->account_name }} / {{ $entry->account_id
+                    }}</div>
             </td>
             <td class="py-1 px-2">
                 {{ $entry->line_description ?? $entry->journal_description ?? '—' }}
@@ -218,12 +205,6 @@
                 <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
                     {{ ucfirst($status) }}
                 </span>
-            </td>
-            <td class="py-1 px-2 text-center uppercase">
-                {{ $entry->currency_code ?? '—' }}
-            </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ isset($entry->fx_rate_to_base) ? number_format((float) $entry->fx_rate_to_base, 6) : '—' }}
             </td>
         </tr>
         @endforeach

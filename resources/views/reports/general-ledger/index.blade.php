@@ -208,5 +208,17 @@
             </td>
         </tr>
         @endforeach
+        <tr class="border-t-2 border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-800 font-bold">
+            <td colspan="5" class="py-2 px-2 text-right">
+                Grand Total ({{ $entries->total() }} rows):
+            </td>
+            <td class="py-2 px-2 text-right font-mono">
+                {{ number_format($entries->sum('debit'), 2) }}
+            </td>
+            <td class="py-2 px-2 text-right font-mono">
+                {{ number_format($entries->sum('credit'), 2) }}
+            </td>
+            <td colspan="2"></td>
+        </tr>
     </x-data-table>
 </x-app-layout>

@@ -27,9 +27,11 @@
                 </tbody>
             </table>
         </div>
+        @if ($items->hasPages())
         <div class="px-2 py-2">
             {{ $items->links() }}
         </div>
+        @endif
         @else
         <p class="text-gray-700 dark:text-gray-300 text-center py-4">
             {{ $emptyMessage }}

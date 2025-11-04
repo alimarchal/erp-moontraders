@@ -21,6 +21,9 @@ class GeneralLedgerController extends Controller
             'void' => 'Void',
         ];
 
+        $perPage = $request->input('per_page', 25);
+        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 25;
+
         $ledgerEntries = QueryBuilder::for(GeneralLedgerEntry::query())
             ->allowedFilters([
                 // Text/partial matches
@@ -86,7 +89,7 @@ class GeneralLedgerController extends Controller
             ->orderByDesc('entry_date')
             ->orderBy('journal_entry_id')
             ->orderBy('line_no')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('reports.general-ledger.index', [

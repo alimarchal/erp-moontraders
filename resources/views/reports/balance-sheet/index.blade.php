@@ -24,6 +24,18 @@
                 <x-input id="filter_account_type" name="filter[account_type]" type="text" class="mt-1 block w-full"
                     :value="request('filter.account_type')" placeholder="e.g., Asset" />
             </div>
+
+            <div>
+                <x-label for="per_page" value="Show Per Page" />
+                <select id="per_page" name="per_page"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
+                </select>
+            </div>
         </div>
     </x-filter-section>
 

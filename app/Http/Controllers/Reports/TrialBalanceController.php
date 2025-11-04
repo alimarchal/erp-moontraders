@@ -19,6 +19,9 @@ class TrialBalanceController extends Controller
         // Get the summary from the view
         $trialBalance = DB::table('vw_trial_balance')->first();
 
+        $perPage = $request->input('per_page', 50);
+        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 50;
+
         // Get detailed account balances using QueryBuilder
         $accounts = QueryBuilder::for(AccountBalance::query())
             ->where(function ($q) {
@@ -32,12 +35,26 @@ class TrialBalanceController extends Controller
                 AllowedFilter::partial('account_type'),
             ])
             ->orderBy('account_code')
-            ->paginate(50)
+            ->paginate($perPage)
             ->withQueryString();
+
+        // Get distinct values for dropdowns
+        $accountTypes = AccountBalance::select('account_type')
+            ->distinct()
+            ->whereNotNull('account_type')
+            ->orderBy('account_type')
+            ->pluck('account_type');
+
+        $accountsList = AccountBalance::select('account_id', 'account_code', 'account_name')
+            ->whereNotNull('account_code')
+            ->orderBy('account_code')
+            ->get();
 
         return view('reports.trial-balance.index', [
             'trialBalance' => $trialBalance,
             'accounts' => $accounts,
+            'accountTypes' => $accountTypes,
+            'accountsList' => $accountsList,
         ]);
     }
 }

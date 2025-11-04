@@ -15,6 +15,9 @@ class AccountBalancesController extends Controller
      */
     public function index(Request $request)
     {
+        $perPage = $request->input('per_page', 25);
+        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 25;
+
         $balances = QueryBuilder::for(AccountBalance::query())
             ->allowedFilters([
                 // Text/partial matches
@@ -42,11 +45,25 @@ class AccountBalancesController extends Controller
                 }),
             ])
             ->orderBy('account_code')
-            ->paginate(25)
+            ->paginate($perPage)
             ->withQueryString();
+
+        // Get distinct values for dropdowns
+        $accountTypes = AccountBalance::select('account_type')
+            ->distinct()
+            ->whereNotNull('account_type')
+            ->orderBy('account_type')
+            ->pluck('account_type');
+
+        $accounts = AccountBalance::select('account_id', 'account_code', 'account_name')
+            ->whereNotNull('account_code')
+            ->orderBy('account_code')
+            ->get();
 
         return view('reports.account-balances.index', [
             'balances' => $balances,
+            'accountTypes' => $accountTypes,
+            'accounts' => $accounts,
         ]);
     }
 }

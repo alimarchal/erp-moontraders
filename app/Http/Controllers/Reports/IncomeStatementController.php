@@ -15,6 +15,9 @@ class IncomeStatementController extends Controller
      */
     public function index(Request $request)
     {
+        $perPage = $request->input('per_page', 50);
+        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 50;
+
         $accounts = QueryBuilder::for(IncomeStatementAccount::query())
             ->allowedFilters([
                 // Text/partial matches
@@ -23,7 +26,7 @@ class IncomeStatementController extends Controller
                 AllowedFilter::partial('account_type'),
             ])
             ->orderBy('account_code')
-            ->paginate(50)
+            ->paginate($perPage)
             ->withQueryString();
 
         // Group by account type for better presentation

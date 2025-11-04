@@ -8,21 +8,55 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
                 <x-label for="filter_account_code" value="Account Code" />
-                <x-input id="filter_account_code" name="filter[account_code]" type="text"
-                    class="mt-1 block w-full uppercase" :value="request('filter.account_code')"
-                    placeholder="e.g., 1000" />
+                <select id="filter_account_code" name="filter[account_code]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Accounts</option>
+                    @foreach($accountsList as $account)
+                    <option value="{{ $account->account_code }}" {{ request('filter.account_code')===$account->
+                        account_code ? 'selected' : '' }}>
+                        {{ $account->account_code }} - {{ $account->account_name }}
+                    </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
                 <x-label for="filter_account_name" value="Account Name" />
-                <x-input id="filter_account_name" name="filter[account_name]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.account_name')" placeholder="Search by account name" />
+                <select id="filter_account_name" name="filter[account_name]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Accounts</option>
+                    @foreach($accountsList as $account)
+                    <option value="{{ $account->account_name }}" {{ request('filter.account_name')===$account->
+                        account_name ? 'selected' : '' }}>
+                        {{ $account->account_name }} ({{ $account->account_code }})
+                    </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
                 <x-label for="filter_account_type" value="Account Type" />
-                <x-input id="filter_account_type" name="filter[account_type]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.account_type')" placeholder="e.g., Asset" />
+                <select id="filter_account_type" name="filter[account_type]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Types</option>
+                    @foreach($accountTypes as $type)
+                    <option value="{{ $type }}" {{ request('filter.account_type')===$type ? 'selected' : '' }}>
+                        {{ $type }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="per_page" value="Show Per Page" />
+                <select id="per_page" name="per_page"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
+                </select>
             </div>
         </div>
     </x-filter-section>

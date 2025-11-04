@@ -55,7 +55,7 @@ class EmployeeSeeder extends Seeder
                 'phone' => $phone,
                 'email' => null,
                 'address' => null,
-                'warehouse_id' => null,
+                'warehouse_id' => $row['warehouse_id'] ?? null,
                 'user_id' => null,
                 'hire_date' => null,
                 'is_active' => true,

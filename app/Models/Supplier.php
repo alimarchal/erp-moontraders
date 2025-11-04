@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Supplier extends Model
 {
@@ -53,5 +54,13 @@ class Supplier extends Model
     public function defaultBankAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'default_bank_account_id');
+    }
+
+    /**
+     * Get all employees associated with this supplier
+     */
+    public function employees(): HasMany
+    {
+        return $this->hasMany(Employee::class);
     }
 }

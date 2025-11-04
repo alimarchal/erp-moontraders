@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\CostCenterController;
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\JournalEntryController;
@@ -91,6 +92,7 @@ Route::middleware([
 
     // Reports Routes
     Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('/', [ReportsController::class, 'index'])->name('index');
         Route::get('general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger.index');
     });
 });

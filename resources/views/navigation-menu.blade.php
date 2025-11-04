@@ -19,8 +19,7 @@
                         :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*')">
                         {{ __('Settings') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('reports.general-ledger.index') }}"
-                        :active="request()->routeIs('reports.*')">
+                    <x-nav-link href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')">
                         {{ __('Reports') }}
                     </x-nav-link>
                 </div>

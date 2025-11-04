@@ -12,6 +12,7 @@ use App\Http\Controllers\AccountingPeriodController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseTypeController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\EmployeeController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -77,5 +78,8 @@ Route::middleware([
 
         // Suppliers CRUD
         Route::resource('suppliers', SupplierController::class);
+
+        // Employees CRUD
+        Route::resource('employees', EmployeeController::class);
     });
 });

@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             CompanySeeder::class,               // Add company after currencies and cost centers
             WarehouseTypeSeeder::class,         // Add warehouse types after companies
             WarehouseSeeder::class,             // Add warehouses after warehouse types
+            EmployeeSeeder::class,              // Seed employees from master data
             SupplierSeeder::class,              // Add suppliers after currencies
             UomSeeder::class,                   // Add units of measurement before products
             JournalEntrySeeder::class,

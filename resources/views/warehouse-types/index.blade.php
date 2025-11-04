@@ -4,6 +4,26 @@
             :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
+    <x-filter-section :action="route('warehouse-types.index')">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div>
+                <x-label for="filter_name" value="Name" />
+                <x-input id="filter_name" name="filter[name]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.name')" placeholder="Distribution Hub" />
+            </div>
+
+            <div>
+                <x-label for="filter_is_active" value="Status" />
+                <select id="filter_is_active" name="filter[is_active]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All</option>
+                    <option value="1" {{ request('filter.is_active') === '1' ? 'selected' : '' }}>Active</option>
+                    <option value="0" {{ request('filter.is_active') === '0' ? 'selected' : '' }}>Inactive</option>
+                </select>
+            </div>
+        </div>
+    </x-filter-section>
+
     <x-data-table :items="$warehouseTypes" :headers="[
         ['label' => '#', 'align' => 'text-center'],
         ['label' => 'Name'],

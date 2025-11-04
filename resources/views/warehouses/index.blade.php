@@ -4,6 +4,64 @@
             :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
+    <x-filter-section :action="route('warehouses.index')">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <x-label for="filter_warehouse_name" value="Warehouse Name" />
+                <x-input id="filter_warehouse_name" name="filter[warehouse_name]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.warehouse_name')" placeholder="Central Warehouse" />
+            </div>
+
+            <div>
+                <x-label for="filter_company_id" value="Company" />
+                <select id="filter_company_id" name="filter[company_id]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Companies</option>
+                    @foreach ($companyOptions as $company)
+                        <option value="{{ $company->id }}"
+                            {{ (string) request('filter.company_id') === (string) $company->id ? 'selected' : '' }}>
+                            {{ $company->company_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_warehouse_type_id" value="Warehouse Type" />
+                <select id="filter_warehouse_type_id" name="filter[warehouse_type_id]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Types</option>
+                    @foreach ($warehouseTypeOptions as $type)
+                        <option value="{{ $type->id }}"
+                            {{ (string) request('filter.warehouse_type_id') === (string) $type->id ? 'selected' : '' }}>
+                            {{ $type->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_is_group" value="Group Warehouse" />
+                <select id="filter_is_group" name="filter[is_group]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All</option>
+                    <option value="1" {{ request('filter.is_group') === '1' ? 'selected' : '' }}>Yes</option>
+                    <option value="0" {{ request('filter.is_group') === '0' ? 'selected' : '' }}>No</option>
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_disabled" value="Disabled Status" />
+                <select id="filter_disabled" name="filter[disabled]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All</option>
+                    <option value="0" {{ request('filter.disabled') === '0' ? 'selected' : '' }}>Active</option>
+                    <option value="1" {{ request('filter.disabled') === '1' ? 'selected' : '' }}>Disabled</option>
+                </select>
+            </div>
+        </div>
+    </x-filter-section>
+
     <x-data-table :items="$warehouses" :headers="[
         ['label' => '#', 'align' => 'text-center'],
         ['label' => 'Name'],

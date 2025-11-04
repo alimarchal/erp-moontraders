@@ -4,8 +4,6 @@
             :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
-    <x-status-message class="mb-4 mt-4 shadow-md" />
-
     <x-filter-section :action="route('suppliers.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>

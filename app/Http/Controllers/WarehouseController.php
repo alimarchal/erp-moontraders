@@ -35,7 +35,14 @@ class WarehouseController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('warehouses.index', compact('warehouses'));
+        $companyOptions = Company::orderBy('company_name')->get(['id', 'company_name']);
+        $warehouseTypeOptions = WarehouseType::orderBy('name')->get(['id', 'name']);
+
+        return view('warehouses.index', [
+            'warehouses' => $warehouses,
+            'companyOptions' => $companyOptions,
+            'warehouseTypeOptions' => $warehouseTypeOptions,
+        ]);
     }
 
     /**

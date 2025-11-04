@@ -101,9 +101,9 @@
         ['label' => 'Vehicle Number'],
         ['label' => 'Registration'],
         ['label' => 'Type'],
-        ['label' => 'Company'],
         ['label' => 'Supplier'],
         ['label' => 'Driver'],
+        ['label' => 'Assignment', 'align' => 'text-center'],
         ['label' => 'Status', 'align' => 'text-center'],
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No vehicles found." :emptyRoute="route('vehicles.create')" emptyLinkText="Add a vehicle">
@@ -122,9 +122,6 @@
                 {{ $vehicle->vehicle_type ?? '—' }}
             </td>
             <td class="py-1 px-2">
-                {{ $vehicle->company?->company_name ?? '—' }}
-            </td>
-            <td class="py-1 px-2">
                 {{ $vehicle->supplier?->supplier_name ?? '—' }}
             </td>
             <td class="py-1 px-2">
@@ -134,13 +131,21 @@
                 <span class="block text-xs text-gray-500">{{ $vehicle->employee->phone }}</span>
                 @endif
                 @elseif ($vehicle->driver_name)
-                {{ $vehicle->driver_name }}
+                {{ trim($vehicle->driver_name) }}
                 @if ($vehicle->driver_phone)
-                <span class="block text-xs text-gray-500">{{ $vehicle->driver_phone }}</span>
+                <span class="block text-xs text-gray-500">{{ trim($vehicle->driver_phone) }}</span>
                 @endif
                 @else
-                Unassigned
+                <span class="text-gray-500">Unassigned</span>
                 @endif
+            </td>
+            <td class="py-1 px-2 text-center">
+                @unless ($vehicle->employee)
+                <span
+                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700">
+                    Unassigned
+                </span>
+                @endunless
             </td>
             <td class="py-1 px-2 text-center">
                 <span

@@ -37,7 +37,7 @@ class VehicleController extends Controller
                 AllowedFilter::exact('is_active'),
             ])
             ->orderBy('id')
-            ->paginate(15)
+            ->paginate(40)
             ->withQueryString();
 
         $employeeOptions = Employee::orderBy('name')->get(['id', 'name']);

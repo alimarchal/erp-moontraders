@@ -25,7 +25,13 @@ class BalanceSheetController extends Controller
                 AllowedFilter::partial('account_name'),
                 AllowedFilter::partial('account_type'),
             ])
-            ->orderBy('account_code')
+            ->allowedSorts([
+                'account_code',
+                'account_name',
+                'account_type',
+                'balance',
+            ])
+            ->defaultSort('account_code')
             ->paginate($perPage)
             ->withQueryString();
 

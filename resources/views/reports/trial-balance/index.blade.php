@@ -48,6 +48,37 @@
             </div>
 
             <div>
+                <x-label for="sort" value="Sort By" />
+                <select id="sort" name="sort"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="account_code" {{ request('sort')=='account_code' || !request('sort') ? 'selected'
+                        : '' }}>Account Code (A-Z)</option>
+                    <option value="-account_code" {{ request('sort')=='-account_code' ? 'selected' : '' }}>Account Code
+                        (Z-A)</option>
+                    <option value="account_name" {{ request('sort')=='account_name' ? 'selected' : '' }}>Account Name
+                        (A-Z)</option>
+                    <option value="-account_name" {{ request('sort')=='-account_name' ? 'selected' : '' }}>Account Name
+                        (Z-A)</option>
+                    <option value="account_type" {{ request('sort')=='account_type' ? 'selected' : '' }}>Account Type
+                        (A-Z)</option>
+                    <option value="-account_type" {{ request('sort')=='-account_type' ? 'selected' : '' }}>Account Type
+                        (Z-A)</option>
+                    <option value="-total_debits" {{ request('sort')=='-total_debits' ? 'selected' : '' }}>Debits
+                        (High-Low)</option>
+                    <option value="total_debits" {{ request('sort')=='total_debits' ? 'selected' : '' }}>Debits
+                        (Low-High)</option>
+                    <option value="-total_credits" {{ request('sort')=='-total_credits' ? 'selected' : '' }}>Credits
+                        (High-Low)</option>
+                    <option value="total_credits" {{ request('sort')=='total_credits' ? 'selected' : '' }}>Credits
+                        (Low-High)</option>
+                    <option value="-balance" {{ request('sort')=='-balance' ? 'selected' : '' }}>Balance (High-Low)
+                    </option>
+                    <option value="balance" {{ request('sort')=='balance' ? 'selected' : '' }}>Balance (Low-High)
+                    </option>
+                </select>
+            </div>
+
+            <div>
                 <x-label for="per_page" value="Show Per Page" />
                 <select id="per_page" name="per_page"
                     class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">

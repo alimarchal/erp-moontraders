@@ -21,7 +21,7 @@ class GeneralLedgerController extends Controller
             'void' => 'Void',
         ];
 
-        $perPage = $request->input('per_page', 25);
+        $perPage = $request->input('per_page', 100);
         $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 25;
 
         $ledgerEntries = QueryBuilder::for(GeneralLedgerEntry::query())
@@ -86,15 +86,44 @@ class GeneralLedgerController extends Controller
                     }
                 }),
             ])
-            ->orderByDesc('entry_date')
-            ->orderBy('journal_entry_id')
-            ->orderBy('line_no')
+            ->allowedSorts([
+                'entry_date',
+                'journal_entry_id',
+                'line_no',
+                'account_code',
+                'account_name',
+                'reference',
+                'debit',
+                'credit',
+                'status',
+            ])
+            ->defaultSort('-entry_date', 'journal_entry_id', 'line_no')
             ->paginate($perPage)
             ->withQueryString();
+
+        // Get distinct values for dropdowns
+        $accounts = GeneralLedgerEntry::select('account_id', 'account_code', 'account_name')
+            ->distinct()
+            ->whereNotNull('account_code')
+            ->orderBy('account_code')
+            ->get()
+            ->unique('account_code');
+
+        $costCenters = GeneralLedgerEntry::select(
+            'cost_center_code as code',
+            'cost_center_name as name'
+        )
+            ->distinct()
+            ->whereNotNull('cost_center_code')
+            ->orderBy('cost_center_code')
+            ->get()
+            ->unique('code');
 
         return view('reports.general-ledger.index', [
             'entries' => $ledgerEntries,
             'statusOptions' => $statusOptions,
+            'accounts' => $accounts,
+            'costCenters' => $costCenters,
         ]);
     }
 }

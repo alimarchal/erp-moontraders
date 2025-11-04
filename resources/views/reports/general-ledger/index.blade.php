@@ -27,9 +27,16 @@
 
             <div>
                 <x-label for="filter_account_code" value="Account Code" />
-                <x-input id="filter_account_code" name="filter[account_code]" type="text"
-                    class="mt-1 block w-full uppercase" :value="request('filter.account_code')"
-                    placeholder="e.g., 4000" />
+                <select id="filter_account_code" name="filter[account_code]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Accounts</option>
+                    @foreach($accounts as $account)
+                    <option value="{{ $account->account_code }}" {{ request('filter.account_code')===$account->
+                        account_code ? 'selected' : '' }}>
+                        {{ $account->account_code }} - {{ $account->account_name }}
+                    </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
@@ -40,8 +47,16 @@
 
             <div>
                 <x-label for="filter_account_name" value="Account Name" />
-                <x-input id="filter_account_name" name="filter[account_name]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.account_name')" placeholder="Search by account name" />
+                <select id="filter_account_name" name="filter[account_name]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Accounts</option>
+                    @foreach($accounts as $account)
+                    <option value="{{ $account->account_name }}" {{ request('filter.account_name')===$account->
+                        account_name ? 'selected' : '' }}>
+                        {{ $account->account_name }} ({{ $account->account_code }})
+                    </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
@@ -71,17 +86,31 @@
             </div>
 
             <div>
-                <x-label for="filter_cost_center_code" value="Cost Center" />
-                <x-input id="filter_cost_center_code" name="filter[cost_center_code]" type="text"
-                    class="mt-1 block w-full uppercase" :value="request('filter.cost_center_code')"
-                    placeholder="e.g., CC-01" />
+                <x-label for="filter_cost_center_code" value="Cost Center Code" />
+                <select id="filter_cost_center_code" name="filter[cost_center_code]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Cost Centers</option>
+                    @foreach($costCenters as $cc)
+                    <option value="{{ $cc->code }}" {{ request('filter.cost_center_code')===$cc->code ? 'selected' : ''
+                        }}>
+                        {{ $cc->code }} - {{ $cc->name }}
+                    </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
                 <x-label for="filter_cost_center_name" value="Cost Center Name" />
-                <x-input id="filter_cost_center_name" name="filter[cost_center_name]" type="text"
-                    class="mt-1 block w-full" :value="request('filter.cost_center_name')"
-                    placeholder="Cost center name contains..." />
+                <select id="filter_cost_center_name" name="filter[cost_center_name]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Cost Centers</option>
+                    @foreach($costCenters as $cc)
+                    <option value="{{ $cc->name }}" {{ request('filter.cost_center_name')===$cc->name ? 'selected' : ''
+                        }}>
+                        {{ $cc->name }} ({{ $cc->code }})
+                    </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
@@ -137,6 +166,36 @@
                         {{ $label }}
                     </option>
                     @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="sort" value="Sort By" />
+                <select id="sort" name="sort"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="-entry_date" {{ request('sort')=='-entry_date' || !request('sort') ? 'selected' : ''
+                        }}>Entry Date (Newest)</option>
+                    <option value="entry_date" {{ request('sort')=='entry_date' ? 'selected' : '' }}>Entry Date (Oldest)
+                    </option>
+                    <option value="journal_entry_id" {{ request('sort')=='journal_entry_id' ? 'selected' : '' }}>Journal
+                        Entry ID (Asc)</option>
+                    <option value="-journal_entry_id" {{ request('sort')=='-journal_entry_id' ? 'selected' : '' }}>
+                        Journal Entry ID (Desc)</option>
+                    <option value="account_code" {{ request('sort')=='account_code' ? 'selected' : '' }}>Account Code
+                        (A-Z)</option>
+                    <option value="-account_code" {{ request('sort')=='-account_code' ? 'selected' : '' }}>Account Code
+                        (Z-A)</option>
+                    <option value="account_name" {{ request('sort')=='account_name' ? 'selected' : '' }}>Account Name
+                        (A-Z)</option>
+                    <option value="-account_name" {{ request('sort')=='-account_name' ? 'selected' : '' }}>Account Name
+                        (Z-A)</option>
+                    <option value="-debit" {{ request('sort')=='-debit' ? 'selected' : '' }}>Debit (High-Low)</option>
+                    <option value="debit" {{ request('sort')=='debit' ? 'selected' : '' }}>Debit (Low-High)</option>
+                    <option value="-credit" {{ request('sort')=='-credit' ? 'selected' : '' }}>Credit (High-Low)
+                    </option>
+                    <option value="credit" {{ request('sort')=='credit' ? 'selected' : '' }}>Credit (Low-High)</option>
+                    <option value="status" {{ request('sort')=='status' ? 'selected' : '' }}>Status (A-Z)</option>
+                    <option value="-status" {{ request('sort')=='-status' ? 'selected' : '' }}>Status (Z-A)</option>
                 </select>
             </div>
 

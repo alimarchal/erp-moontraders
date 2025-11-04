@@ -15,7 +15,7 @@ class AccountBalancesController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page', 25);
+        $perPage = $request->input('per_page', 100);
         $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 25;
 
         $balances = QueryBuilder::for(AccountBalance::query())
@@ -44,7 +44,15 @@ class AccountBalancesController extends Controller
                     }
                 }),
             ])
-            ->orderBy('account_code')
+            ->allowedSorts([
+                'account_code',
+                'account_name',
+                'account_type',
+                'total_debits',
+                'total_credits',
+                'balance',
+            ])
+            ->defaultSort('account_code')
             ->paginate($perPage)
             ->withQueryString();
 

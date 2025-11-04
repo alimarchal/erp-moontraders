@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
+use App\Models\ChartOfAccount;
 use App\Models\GeneralLedgerEntry;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -101,13 +102,12 @@ class GeneralLedgerController extends Controller
             ->paginate($perPage)
             ->withQueryString();
 
-        // Get distinct values for dropdowns
-        $accounts = GeneralLedgerEntry::select('account_id', 'account_code', 'account_name')
-            ->distinct()
+        // Get distinct values for dropdowns - show all accounts from ChartOfAccount
+        $accounts = ChartOfAccount::select('id as account_id', 'account_code', 'account_name')
             ->whereNotNull('account_code')
+            ->where('is_active', true)
             ->orderBy('account_code')
-            ->get()
-            ->unique('account_code');
+            ->get();
 
         $costCenters = GeneralLedgerEntry::select(
             'cost_center_code as code',

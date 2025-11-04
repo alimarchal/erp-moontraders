@@ -77,10 +77,15 @@
             return str_contains(strtolower($type), 'equity');
             });
 
-            $totalAssets = $accounts->where('normal_balance', 'debit')->sum('balance');
+            // Calculate totals correctly by account type, not normal balance
+            $totalAssets = $accounts->filter(function($item) {
+            return str_contains(strtolower($item->account_type), 'asset');
+            })->sum('balance');
+
             $totalLiabilities = $accounts->filter(function($item) {
             return str_contains(strtolower($item->account_type), 'liability');
             })->sum('balance');
+
             $totalEquity = $accounts->filter(function($item) {
             return str_contains(strtolower($item->account_type), 'equity');
             })->sum('balance');
@@ -169,28 +174,52 @@
                     </div>
                     @endforeach
 
+                    <!-- Current Period Net Income -->
+                    <div class="mb-4">
+                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Current Period</h4>
+                        <div class="flex justify-between py-1 px-2 text-sm">
+                            <span class="text-gray-600 dark:text-gray-400">
+                                <span class="font-mono">NET</span> - Net Income (Current Period)
+                            </span>
+                            <span
+                                class="font-mono font-semibold {{ $netIncome >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                {{ number_format((float) $netIncome, 2) }}
+                            </span>
+                        </div>
+                    </div>
+
                     <div
                         class="flex justify-between py-2 px-2 font-bold text-lg border-t-2 border-gray-400 dark:border-gray-500 mt-4 bg-blue-50 dark:bg-blue-900">
                         <span>TOTAL LIABILITIES & EQUITY</span>
-                        <span class="font-mono">{{ number_format($totalLiabilities + $totalEquity, 2) }}</span>
+                        <span class="font-mono">{{ number_format($totalLiabilities + $totalEquity + $netIncome, 2)
+                            }}</span>
                     </div>
                 </div>
             </div>
 
             <!-- Balance Check -->
             @php
-            $difference = abs($totalAssets - ($totalLiabilities + $totalEquity));
+            $difference = abs($totalAssets - ($totalLiabilities + $totalEquity + $netIncome));
             @endphp
             @if($difference > 0.01)
             <div class="mt-6 p-4 bg-red-100 dark:bg-red-900 border border-red-400 rounded">
                 <p class="text-red-700 dark:text-red-200 font-semibold">
                     ⚠️ Balance Sheet does not balance! Difference: {{ number_format($difference, 2) }}
                 </p>
+                <p class="text-red-600 dark:text-red-300 text-sm mt-2">
+                    Assets: {{ number_format($totalAssets, 2) }} |
+                    Liabilities + Equity + Net Income: {{ number_format($totalLiabilities + $totalEquity + $netIncome,
+                    2) }}
+                </p>
             </div>
             @else
             <div class="mt-6 p-4 bg-green-100 dark:bg-green-900 border border-green-400 rounded">
                 <p class="text-green-700 dark:text-green-200 font-semibold text-center">
                     ✓ Balance Sheet is balanced
+                </p>
+                <p class="text-green-600 dark:text-green-300 text-sm text-center mt-1">
+                    Assets: {{ number_format($totalAssets, 2) }} = Liabilities: {{ number_format($totalLiabilities, 2)
+                    }} + Equity: {{ number_format($totalEquity, 2) }} + Net Income: {{ number_format($netIncome, 2) }}
                 </p>
             </div>
             @endif

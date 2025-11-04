@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccountBalance;
 use App\Models\BalanceSheetAccount;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -38,9 +39,25 @@ class BalanceSheetController extends Controller
         // Group by account type for better presentation
         $groupedAccounts = $accounts->groupBy('account_type');
 
+        // Calculate net income from revenue and expense accounts
+        $revenueAccounts = AccountBalance::where(function ($query) {
+            $query->where('account_type', 'LIKE', '%Income%')
+                ->orWhere('account_type', 'LIKE', '%Revenue%')
+                ->orWhere('account_type', 'LIKE', '%Sales%');
+        })->get();
+
+        $expenseAccounts = AccountBalance::where(function ($query) {
+            $query->where('account_type', 'LIKE', '%Expense%')
+                ->orWhere('account_type', 'LIKE', '%Cost%');
+        })->get();
+
+        $totalRevenue = $revenueAccounts->sum('balance');
+        $totalExpenses = $expenseAccounts->sum('balance');
+        $netIncome = $totalRevenue - $totalExpenses;
         return view('reports.balance-sheet.index', [
             'accounts' => $accounts,
             'groupedAccounts' => $groupedAccounts,
+            'netIncome' => $netIncome,
         ]);
     }
 }

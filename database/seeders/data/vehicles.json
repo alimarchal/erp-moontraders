@@ -7,7 +7,8 @@
         "driver_phone": "0343-5300739",
         "company": "Nestle",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": null
     },
     {
         "vehicle_number": "RLF-4328",
@@ -37,7 +38,8 @@
         "driver_phone": "0347-5026125",
         "company": "Nestle",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": null
     },
     {
         "vehicle_number": "C-5100",
@@ -47,7 +49,8 @@
         "driver_phone": "0312-9816005",
         "company": "Nestle",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": null
     },
     {
         "vehicle_number": "RA-851",
@@ -57,7 +60,8 @@
         "driver_phone": "0310-9329433",
         "company": "Nestle",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": null
     },
     {
         "vehicle_number": "RIS-2196",
@@ -67,7 +71,8 @@
         "driver_phone": "0314-9387166",
         "company": "Nestle",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": null
     },
     {
         "vehicle_number": "HA-974",
@@ -87,7 +92,8 @@
         "driver_phone": "0343-5436834",
         "company": "Nestle",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": null
     },
     {
         "vehicle_number": "TAA444",
@@ -107,7 +113,8 @@
         "driver_phone": "0347-5769001",
         "company": "Nestle",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": null
     },
     {
         "vehicle_number": "TAB444",
@@ -167,7 +174,8 @@
         "driver_phone": "0312-9046346",
         "company": "Unilever",
         "company_id": 1,
-        "supplier_id": 5
+        "supplier_id": 5,
+        "employee_id": null
     },
     {
         "vehicle_number": "CAG-5634",
@@ -217,7 +225,8 @@
         "driver_phone": "0349-5004210",
         "company": "Engro",
         "company_id": 1,
-        "supplier_id": 4
+        "supplier_id": 4,
+        "employee_id": null
     },
     {
         "vehicle_number": "RIS-4468",
@@ -257,7 +266,8 @@
         "driver_phone": "0312-9592755",
         "company": "PTC",
         "company_id": 1,
-        "supplier_id": 10
+        "supplier_id": 10,
+        "employee_id": null
     },
     {
         "vehicle_number": "RIK 2812",
@@ -267,7 +277,8 @@
         "driver_phone": "0346-3040607",
         "company": "PTC",
         "company_id": 1,
-        "supplier_id": 10
+        "supplier_id": 10,
+        "employee_id": null
     },
     {
         "vehicle_number": "RIK 2815",
@@ -307,7 +318,8 @@
         "driver_phone": "0342-5535930",
         "company": "PTC",
         "company_id": 1,
-        "supplier_id": 10
+        "supplier_id": 10,
+        "employee_id": null
     },
     {
         "vehicle_number": "2482",

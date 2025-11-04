@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class VehicleController extends Controller
 {
@@ -233,6 +234,45 @@ class VehicleController extends Controller
             ]);
 
             return back()->with('error', 'Failed to delete vehicle. Please try again.');
+        }
+    }
+
+    /**
+     * Export vehicles list as PDF
+     */
+    public function exportPdf(Request $request)
+    {
+        try {
+            // Use the same filtering logic as index
+            $vehicles = QueryBuilder::for(Vehicle::query()->with(['employee', 'company', 'supplier']))
+                ->allowedFilters([
+                    AllowedFilter::partial('vehicle_number'),
+                    AllowedFilter::partial('registration_number'),
+                    AllowedFilter::partial('vehicle_type'),
+                    AllowedFilter::partial('driver_name'),
+                    AllowedFilter::exact('company_id'),
+                    AllowedFilter::exact('supplier_id'),
+                    AllowedFilter::exact('employee_id'),
+                    AllowedFilter::exact('is_active'),
+                ])
+                ->orderBy('id')
+                ->get();
+
+            $pdf = Pdf::loadView('vehicles.pdf', [
+                'vehicles' => $vehicles,
+                'generatedBy' => auth()->user()->name,
+                'generatedAt' => now(),
+                'filters' => $request->get('filter', []),
+            ]);
+
+            return $pdf->download('vehicles-list-' . now()->format('Y-m-d') . '.pdf');
+        } catch (\Throwable $e) {
+            Log::error('Error generating vehicles PDF', [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return back()->with('error', 'Failed to generate PDF. Please try again.');
         }
     }
 }

@@ -84,6 +84,7 @@ Route::middleware([
         Route::resource('employees', EmployeeController::class);
 
         // Vehicles CRUD
+        Route::get('vehicles/export/pdf', [VehicleController::class, 'exportPdf'])->name('vehicles.export.pdf');
         Route::resource('vehicles', VehicleController::class);
     });
 });

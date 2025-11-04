@@ -11,7 +11,7 @@ class UpdateVehicleRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -21,8 +21,31 @@ class UpdateVehicleRequest extends FormRequest
      */
     public function rules(): array
     {
+        $vehicle = $this->route('vehicle');
+        $vehicleId = is_object($vehicle) ? $vehicle->id : $vehicle;
+
         return [
-            //
+            'vehicle_number' => ['required', 'string', 'max:191', 'unique:vehicles,vehicle_number,' . $vehicleId],
+            'registration_number' => ['required', 'string', 'max:191', 'unique:vehicles,registration_number,' . $vehicleId],
+            'vehicle_type' => ['nullable', 'string', 'max:100'],
+            'make_model' => ['nullable', 'string', 'max:191'],
+            'year' => ['nullable', 'string', 'max:4'],
+            'assigned_employee_id' => ['nullable', 'exists:employees,id'],
+            'is_active' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'vehicle_number' => $this->filled('vehicle_number') ? strtoupper(trim((string) $this->input('vehicle_number'))) : null,
+            'registration_number' => $this->filled('registration_number') ? strtoupper(trim((string) $this->input('registration_number'))) : null,
+            'vehicle_type' => $this->filled('vehicle_type') ? trim((string) $this->input('vehicle_type')) : null,
+            'make_model' => $this->filled('make_model') ? trim((string) $this->input('make_model')) : null,
+            'year' => $this->filled('year') ? trim((string) $this->input('year')) : null,
+        ]);
     }
 }

@@ -1,0 +1,332 @@
+[
+    {
+        "vehicle_number": "CAG-7661",
+        "registration_number": "CAG-7661",
+        "vehicle_type": "Shahzore",
+        "company": "Nestle",
+        "driver_name": "Husnain Shah",
+        "driver_phone": "0343-5300739",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "RLF-4328",
+        "registration_number": "RLF-4328",
+        "vehicle_type": "Shahzore",
+        "company": "Nestle",
+        "driver_name": "Bnaras Choudry",
+        "driver_phone": "0344-5816596",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "RA-669",
+        "registration_number": "RA-669",
+        "vehicle_type": "Shahzore",
+        "company": "Nestle",
+        "driver_name": "Sheikh Naseer",
+        "driver_phone": "0345-9565843",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "RIS-403",
+        "registration_number": "RIS-403",
+        "vehicle_type": "Suzuki",
+        "company": "Nestle",
+        "driver_name": "Kaleem Ahmed",
+        "driver_phone": "0347-5026125",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "C-5100",
+        "registration_number": "C-5100",
+        "vehicle_type": "Shahzore",
+        "company": "Nestle",
+        "driver_name": "Mujahid Shah",
+        "driver_phone": "0312-9816005",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "RA-851",
+        "registration_number": "RA-851",
+        "vehicle_type": "Shahzore",
+        "company": "Nestle",
+        "driver_name": "Khalid khan",
+        "driver_phone": "0310-9329433",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "RIS-2196",
+        "registration_number": "RIS-2196",
+        "vehicle_type": "Suzuki",
+        "company": "Nestle",
+        "driver_name": "Ahtasham Shah",
+        "driver_phone": "0314-9387166",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "HA-974",
+        "registration_number": "HA-974",
+        "vehicle_type": "Suzuki",
+        "company": "Nestle",
+        "driver_name": "Tanveer Malik",
+        "driver_phone": "0344-5920529",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "RA-5358",
+        "registration_number": "RA-5358",
+        "vehicle_type": "Bike",
+        "company": "Nestle",
+        "driver_name": "Sadiq  Naseer",
+        "driver_phone": "0343-5436834",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "TAA444",
+        "registration_number": "TAA444",
+        "vehicle_type": "Shahzore",
+        "company": "Nestle",
+        "driver_name": "Faizan Shah",
+        "driver_phone": "0344-6173190",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "MD-771",
+        "registration_number": "MD-771",
+        "vehicle_type": "Shahzore",
+        "company": "Nestle",
+        "driver_name": "Waseem Choudry",
+        "driver_phone": "0347-5769001",
+        "company_id": 1,
+        "supplier_id": 3
+    },
+    {
+        "vehicle_number": "TAB444",
+        "registration_number": "TAB444",
+        "vehicle_type": "Shahzore",
+        "company": "Meezan",
+        "driver_name": "Wasaf Shah",
+        "driver_phone": "0312-9046346",
+        "company_id": 1,
+        "supplier_id": 2
+    },
+    {
+        "vehicle_number": "RIS-2193",
+        "registration_number": "RIS-2193",
+        "vehicle_type": "Suzuki",
+        "company": "Unilever",
+        "driver_name": "Mansoor",
+        "driver_phone": "0340-8166686",
+        "company_id": 1,
+        "supplier_id": 5
+    },
+    {
+        "vehicle_number": "RIS-2194",
+        "registration_number": "RIS-2194",
+        "vehicle_type": "Suzuki",
+        "company": "Unilever",
+        "driver_name": "Saeed Sab",
+        "driver_phone": "0347-4302921",
+        "company_id": 1,
+        "supplier_id": 5
+    },
+    {
+        "vehicle_number": "MZD-835",
+        "registration_number": "MZD-835",
+        "vehicle_type": "Suzuki",
+        "company": "Unilever",
+        "driver_name": "Atif",
+        "driver_phone": "0316-0573801",
+        "company_id": 1,
+        "supplier_id": 5
+    },
+    {
+        "vehicle_number": "RIS-4470",
+        "registration_number": "RIS-4470",
+        "vehicle_type": "Suzuki",
+        "company": "Unilever",
+        "driver_name": "Naseer",
+        "driver_phone": "0347-8228236",
+        "company_id": 1,
+        "supplier_id": 5
+    },
+    {
+        "vehicle_number": "RIS-2091",
+        "registration_number": "RIS-2091",
+        "vehicle_type": "Shahzore",
+        "company": "Unilever",
+        "driver_name": "Wasif Shah",
+        "driver_phone": "0312-9046346",
+        "company_id": 1,
+        "supplier_id": 5
+    },
+    {
+        "vehicle_number": "CAG-5634",
+        "registration_number": "CAG-5634",
+        "vehicle_type": "Suzuki",
+        "company": "Unilever",
+        "driver_name": "Zeeshan",
+        "driver_phone": "0347-7890064",
+        "company_id": 1,
+        "supplier_id": 5
+    },
+    {
+        "vehicle_number": "CAG-5629",
+        "registration_number": "CAG-5629",
+        "vehicle_type": "Suzuki",
+        "company": "Unilever",
+        "driver_name": "Naseem",
+        "driver_phone": "0312-5253741",
+        "company_id": 1,
+        "supplier_id": 5
+    },
+    {
+        "vehicle_number": "RIS-1569",
+        "registration_number": "RIS-1569",
+        "vehicle_type": "Shahzore",
+        "company": "Engro",
+        "driver_name": "Syed Izkar Shah",
+        "driver_phone": "0347-5064410",
+        "company_id": 1,
+        "supplier_id": 4
+    },
+    {
+        "vehicle_number": "RIS-2421",
+        "registration_number": "RIS-2421",
+        "vehicle_type": "Shahzore",
+        "company": "Engro",
+        "driver_name": "Zeeshan",
+        "driver_phone": "0311-7620776",
+        "company_id": 1,
+        "supplier_id": 4
+    },
+    {
+        "vehicle_number": "RIS-1755",
+        "registration_number": "RIS-1755",
+        "vehicle_type": "Shahzore",
+        "company": "Engro",
+        "driver_name": "Liaqat Ch",
+        "driver_phone": "0349-5004210",
+        "company_id": 1,
+        "supplier_id": 4
+    },
+    {
+        "vehicle_number": "RIS-4468",
+        "registration_number": "RIS-4468",
+        "vehicle_type": "Suzuki",
+        "company": "PTC",
+        "driver_name": "Chaudary Altaf",
+        "driver_phone": "0345-8861120",
+        "company_id": 1,
+        "supplier_id": 10
+    },
+    {
+        "vehicle_number": "TP-038",
+        "registration_number": "TP-038",
+        "vehicle_type": "Suzuki",
+        "company": "PTC",
+        "driver_name": "Chaudary Adeeb",
+        "driver_phone": "0340-1539728",
+        "company_id": 1,
+        "supplier_id": 10
+    },
+    {
+        "vehicle_number": "CAG-5633",
+        "registration_number": "CAG-5633",
+        "vehicle_type": "Suzuki",
+        "company": "PTC",
+        "driver_name": "Syed Musadaq Shah",
+        "driver_phone": "0345-1893714",
+        "company_id": 1,
+        "supplier_id": 10
+    },
+    {
+        "vehicle_number": "FSO BIKE -026",
+        "registration_number": "FSO BIKE -026",
+        "vehicle_type": "Bike",
+        "company": "PTC",
+        "driver_name": "Shafique Mastanvi",
+        "driver_phone": "0312-9592755",
+        "company_id": 1,
+        "supplier_id": 10
+    },
+    {
+        "vehicle_number": "RIK 2812",
+        "registration_number": "RIK 2812",
+        "vehicle_type": "Auto",
+        "company": "PTC",
+        "driver_name": "Zahid Shah",
+        "driver_phone": "0346-3040607",
+        "company_id": 1,
+        "supplier_id": 10
+    },
+    {
+        "vehicle_number": "RIK 2815",
+        "registration_number": "RIK 2815",
+        "vehicle_type": "Auto",
+        "company": "PTC",
+        "driver_name": "Chaudary Tasleem",
+        "driver_phone": "0345-5270128",
+        "company_id": 1,
+        "supplier_id": 10
+    },
+    {
+        "vehicle_number": "RIK 950",
+        "registration_number": "RIK 950",
+        "vehicle_type": "Auto",
+        "company": "PTC",
+        "driver_name": "yasir Mehmoon",
+        "driver_phone": "0314-9507165",
+        "company_id": 1,
+        "supplier_id": 10
+    },
+    {
+        "vehicle_number": "RIK 851",
+        "registration_number": "RIK 851",
+        "vehicle_type": "Auto",
+        "company": "PTC",
+        "driver_name": "Syed Jabran Shah",
+        "driver_phone": "0346-9633377",
+        "company_id": 1,
+        "supplier_id": 10
+    },
+    {
+        "vehicle_number": "MD-8281",
+        "registration_number": "MD-8281",
+        "vehicle_type": "Bike",
+        "company": "PTC",
+        "driver_name": "Adeel",
+        "driver_phone": "0342-5535930",
+        "company_id": 1,
+        "supplier_id": 10
+    },
+    {
+        "vehicle_number": "2482",
+        "registration_number": "2482",
+        "vehicle_type": "Shahzore",
+        "company": "Kousar",
+        "driver_name": "Mudassar Mughal",
+        "driver_phone": "0342-5058003",
+        "company_id": 1,
+        "supplier_id": 7
+    },
+    {
+        "vehicle_number": "CAG-5636",
+        "registration_number": "CAG-5636",
+        "vehicle_type": "Shahzore",
+        "company": "Kousar",
+        "driver_name": "Mubashar Choudry",
+        "driver_phone": "0345-1958973",
+        "company_id": 1,
+        "supplier_id": 7
+    }
+]

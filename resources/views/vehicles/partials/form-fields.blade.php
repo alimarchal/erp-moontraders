@@ -1,0 +1,64 @@
+@php
+    $vehicle = $vehicle ?? null;
+    $employeeOptions = $employeeOptions ?? collect();
+@endphp
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+        <x-label for="vehicle_number" value="Vehicle Number" :required="true" />
+        <x-input id="vehicle_number" type="text" name="vehicle_number"
+            class="mt-1 block w-full uppercase" required maxlength="191"
+            :value="old('vehicle_number', optional($vehicle)->vehicle_number)" placeholder="e.g., RLF-4328" />
+    </div>
+
+    <div>
+        <x-label for="registration_number" value="Registration Number" :required="true" />
+        <x-input id="registration_number" type="text" name="registration_number"
+            class="mt-1 block w-full uppercase" required maxlength="191"
+            :value="old('registration_number', optional($vehicle)->registration_number)" placeholder="e.g., RLF-4328" />
+    </div>
+
+    <div>
+        <x-label for="vehicle_type" value="Vehicle Type" />
+        <x-input id="vehicle_type" type="text" name="vehicle_type" class="mt-1 block w-full" maxlength="100"
+            :value="old('vehicle_type', optional($vehicle)->vehicle_type)" placeholder="Truck, Van, Pickup" />
+    </div>
+
+    <div>
+        <x-label for="make_model" value="Make / Model" />
+        <x-input id="make_model" type="text" name="make_model" class="mt-1 block w-full" maxlength="191"
+            :value="old('make_model', optional($vehicle)->make_model)" placeholder="e.g., Hino 300" />
+    </div>
+
+    <div>
+        <x-label for="year" value="Model Year" />
+        <x-input id="year" type="text" name="year" class="mt-1 block w-full" maxlength="4" inputmode="numeric"
+            :value="old('year', optional($vehicle)->year)" placeholder="2024" />
+    </div>
+
+    <div>
+        <x-label for="assigned_employee_id" value="Assigned Driver" />
+        <select id="assigned_employee_id" name="assigned_employee_id"
+            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            <option value="">Unassigned</option>
+            @foreach ($employeeOptions as $employee)
+                <option value="{{ $employee->id }}"
+                    {{ (int) old('assigned_employee_id', optional($vehicle)->assigned_employee_id) === $employee->id ? 'selected' : '' }}>
+                    {{ $employee->name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+    <div class="md:col-span-2">
+        <div class="flex items-center">
+            <input type="hidden" name="is_active" value="0">
+            <input id="is_active" type="checkbox" name="is_active" value="1"
+                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                {{ old('is_active', optional($vehicle)->is_active ?? true) ? 'checked' : '' }}>
+            <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                Vehicle is active
+            </label>
+        </div>
+    </div>
+</div>

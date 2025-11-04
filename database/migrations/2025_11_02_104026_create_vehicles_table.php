@@ -17,7 +17,11 @@ return new class extends Migration {
             $table->string('vehicle_type')->nullable(); // Truck, Van, Pickup, etc.
             $table->string('make_model')->nullable();
             $table->string('year')->nullable();
-            $table->foreignId('assigned_employee_id')->nullable()->constrained('employees')->nullOnDelete();
+            $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
+            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
+            $table->foreignId('employee_id')->nullable()->constrained('employees')->nullOnDelete();
+            $table->string('driver_name')->nullable();
+            $table->string('driver_phone')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();

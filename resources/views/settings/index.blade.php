@@ -139,6 +139,22 @@
                     </div>
                 </a>
 
+                <!-- Vehicles Module Card -->
+                <a href="{{ route('vehicles.index') }}"
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">
+                    <div class="p-5 flex justify-between">
+                        <div>
+                            <div class="text-3xl font-bold leading-8">{{ \App\Models\Vehicle::count() }}</div>
+                            <div class="mt-1 text-base font-extrabold text-black">Vehicles</div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="h-16 w-16 text-amber-600">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M6.857 18.401a3 3 0 114.286-4.201m-4.286 4.201L4 21m2.857-2.599c.02.023.04.046.061.068m-.061-.068C4.476 16.478 3 13.609 3 10.5 3 6.358 6.358 3 10.5 3s7.5 3.358 7.5 7.5c0 3.109-1.476 5.978-3.918 7.901m-2.439-1.201a3 3 0 104.286-4.201m-4.286 4.201L12 21m2.929-2.599c-.02.023-.04.046-.061.068" />
+                        </svg>
+                    </div>
+                </a>
+
                 <!-- Companies Module Card -->
                 <a href="{{ route('companies.index', 1) }}"
                     class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">

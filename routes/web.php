@@ -13,6 +13,7 @@ use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseTypeController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\VehicleController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -81,5 +82,8 @@ Route::middleware([
 
         // Employees CRUD
         Route::resource('employees', EmployeeController::class);
+
+        // Vehicles CRUD
+        Route::resource('vehicles', VehicleController::class);
     });
 });

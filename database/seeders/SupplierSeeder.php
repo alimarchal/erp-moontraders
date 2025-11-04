@@ -28,7 +28,7 @@ class SupplierSeeder extends Seeder
                 'default_currency_id' => $defaultCurrency?->id,
             ],
             [
-                'supplier_name' => 'Meezan Oil & Ghee',
+                'supplier_name' => 'Mezan Oil & Ghee',
                 'short_name' => 'Meezan',
                 'country' => 'Pakistan',
                 'supplier_group' => 'Local',
@@ -103,6 +103,18 @@ class SupplierSeeder extends Seeder
                 'country' => 'Pakistan',
                 'supplier_group' => 'Local',
                 'supplier_type' => 'Spices & Food Products',
+                'is_transporter' => false,
+                'is_internal_supplier' => false,
+                'default_currency_id' => $defaultCurrency?->id,
+            ],
+
+
+            [
+                'supplier_name' => 'Pakistan Tobbaco Company',
+                'short_name' => 'PTC',
+                'country' => 'Pakistan',
+                'supplier_group' => 'Local',
+                'supplier_type' => 'Tobacco manufacturing company',
                 'is_transporter' => false,
                 'is_internal_supplier' => false,
                 'default_currency_id' => $defaultCurrency?->id,

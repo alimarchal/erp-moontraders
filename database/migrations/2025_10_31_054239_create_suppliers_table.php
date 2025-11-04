@@ -15,6 +15,7 @@ return new class extends Migration {
 
             // Basic Information
             $table->string('supplier_name')->unique();
+            $table->string('short_name')->nullable();
             $table->string('country')->nullable();
             $table->string('supplier_group')->nullable();
             $table->string('supplier_type')->nullable();
@@ -47,7 +48,6 @@ return new class extends Migration {
 
             // Indexes
             $table->index('supplier_name');
-            $table->string('short_name')->nullable()->after('supplier_name');
             $table->index('country');
             $table->index('supplier_group');
         });

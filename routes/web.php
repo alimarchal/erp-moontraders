@@ -14,6 +14,7 @@ use App\Http\Controllers\WarehouseTypeController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\Reports\GeneralLedgerController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -86,5 +87,10 @@ Route::middleware([
         // Vehicles CRUD
         Route::get('vehicles/export/pdf', [VehicleController::class, 'exportPdf'])->name('vehicles.export.pdf');
         Route::resource('vehicles', VehicleController::class);
+    });
+
+    // Reports Routes
+    Route::prefix('reports')->name('reports.')->group(function () {
+        Route::get('general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger.index');
     });
 });

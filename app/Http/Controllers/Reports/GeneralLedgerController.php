@@ -23,14 +23,23 @@ class GeneralLedgerController extends Controller
 
         $ledgerEntries = QueryBuilder::for(GeneralLedgerEntry::query())
             ->allowedFilters([
+                // Text/partial matches
                 AllowedFilter::partial('account_code'),
                 AllowedFilter::partial('account_name'),
                 AllowedFilter::partial('reference'),
                 AllowedFilter::partial('journal_description'),
                 AllowedFilter::partial('line_description'),
                 AllowedFilter::partial('cost_center_code'),
+                AllowedFilter::partial('cost_center_name'),
                 AllowedFilter::partial('currency_code'),
+
+                // Exact matches
                 AllowedFilter::exact('status'),
+                AllowedFilter::exact('journal_entry_id'),
+                AllowedFilter::exact('line_no'),
+                AllowedFilter::exact('account_id'),
+
+                // Date range
                 AllowedFilter::callback('entry_date_from', function ($query, $value) {
                     if (filled($value)) {
                         $query->whereDate('entry_date', '>=', $value);
@@ -39,6 +48,38 @@ class GeneralLedgerController extends Controller
                 AllowedFilter::callback('entry_date_to', function ($query, $value) {
                     if (filled($value)) {
                         $query->whereDate('entry_date', '<=', $value);
+                    }
+                }),
+
+                // Numeric ranges
+                AllowedFilter::callback('debit_min', function ($query, $value) {
+                    if (filled($value)) {
+                        $query->where('debit', '>=', $value);
+                    }
+                }),
+                AllowedFilter::callback('debit_max', function ($query, $value) {
+                    if (filled($value)) {
+                        $query->where('debit', '<=', $value);
+                    }
+                }),
+                AllowedFilter::callback('credit_min', function ($query, $value) {
+                    if (filled($value)) {
+                        $query->where('credit', '>=', $value);
+                    }
+                }),
+                AllowedFilter::callback('credit_max', function ($query, $value) {
+                    if (filled($value)) {
+                        $query->where('credit', '<=', $value);
+                    }
+                }),
+                AllowedFilter::callback('fx_rate_min', function ($query, $value) {
+                    if (filled($value)) {
+                        $query->where('fx_rate_to_base', '>=', $value);
+                    }
+                }),
+                AllowedFilter::callback('fx_rate_max', function ($query, $value) {
+                    if (filled($value)) {
+                        $query->where('fx_rate_to_base', '<=', $value);
                     }
                 }),
             ])

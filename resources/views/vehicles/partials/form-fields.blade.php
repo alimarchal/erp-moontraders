@@ -1,6 +1,8 @@
 @php
     $vehicle = $vehicle ?? null;
     $employeeOptions = $employeeOptions ?? collect();
+    $companyOptions = $companyOptions ?? collect();
+    $supplierOptions = $supplierOptions ?? collect();
 @endphp
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -37,17 +39,57 @@
     </div>
 
     <div>
-        <x-label for="assigned_employee_id" value="Assigned Driver" />
-        <select id="assigned_employee_id" name="assigned_employee_id"
+        <x-label for="company_id" value="Company" />
+        <select id="company_id" name="company_id"
+            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            <option value="">Not linked</option>
+            @foreach ($companyOptions as $company)
+                <option value="{{ $company->id }}"
+                    {{ (int) old('company_id', optional($vehicle)->company_id) === $company->id ? 'selected' : '' }}>
+                    {{ $company->company_name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+    <div>
+        <x-label for="supplier_id" value="Transporter / Supplier" />
+        <select id="supplier_id" name="supplier_id"
+            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            <option value="">Not linked</option>
+            @foreach ($supplierOptions as $supplier)
+                <option value="{{ $supplier->id }}"
+                    {{ (int) old('supplier_id', optional($vehicle)->supplier_id) === $supplier->id ? 'selected' : '' }}>
+                    {{ $supplier->supplier_name }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+    <div>
+        <x-label for="employee_id" value="Assigned Driver" />
+        <select id="employee_id" name="employee_id"
             class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Unassigned</option>
             @foreach ($employeeOptions as $employee)
                 <option value="{{ $employee->id }}"
-                    {{ (int) old('assigned_employee_id', optional($vehicle)->assigned_employee_id) === $employee->id ? 'selected' : '' }}>
+                    {{ (int) old('employee_id', optional($vehicle)->employee_id) === $employee->id ? 'selected' : '' }}>
                     {{ $employee->name }}
                 </option>
             @endforeach
         </select>
+    </div>
+
+    <div>
+        <x-label for="driver_name" value="Driver Name (if not an employee)" />
+        <x-input id="driver_name" type="text" name="driver_name" class="mt-1 block w-full" maxlength="191"
+            :value="old('driver_name', optional($vehicle)->driver_name)" placeholder="External driver" />
+    </div>
+
+    <div>
+        <x-label for="driver_phone" value="Driver Phone" />
+        <x-input id="driver_phone" type="text" name="driver_phone" class="mt-1 block w-full" maxlength="50"
+            :value="old('driver_phone', optional($vehicle)->driver_phone)" placeholder="03XX-XXXXXXX" />
     </div>
 
     <div class="md:col-span-2">

@@ -30,7 +30,11 @@ class UpdateVehicleRequest extends FormRequest
             'vehicle_type' => ['nullable', 'string', 'max:100'],
             'make_model' => ['nullable', 'string', 'max:191'],
             'year' => ['nullable', 'string', 'max:4'],
-            'assigned_employee_id' => ['nullable', 'exists:employees,id'],
+            'company_id' => ['nullable', 'exists:companies,id'],
+            'supplier_id' => ['nullable', 'exists:suppliers,id'],
+            'employee_id' => ['nullable', 'exists:employees,id'],
+            'driver_name' => ['nullable', 'string', 'max:191'],
+            'driver_phone' => ['nullable', 'string', 'max:50'],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }
@@ -46,6 +50,11 @@ class UpdateVehicleRequest extends FormRequest
             'vehicle_type' => $this->filled('vehicle_type') ? trim((string) $this->input('vehicle_type')) : null,
             'make_model' => $this->filled('make_model') ? trim((string) $this->input('make_model')) : null,
             'year' => $this->filled('year') ? trim((string) $this->input('year')) : null,
+            'company_id' => $this->filled('company_id') ? (int) $this->input('company_id') : null,
+            'supplier_id' => $this->filled('supplier_id') ? (int) $this->input('supplier_id') : null,
+            'employee_id' => $this->filled('employee_id') ? (int) $this->input('employee_id') : null,
+            'driver_name' => $this->filled('driver_name') ? trim((string) $this->input('driver_name')) : null,
+            'driver_phone' => $this->filled('driver_phone') ? preg_replace('/\\s+/', ' ', trim((string) $this->input('driver_phone'))) : null,
         ]);
     }
 }

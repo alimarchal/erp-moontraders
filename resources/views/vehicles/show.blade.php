@@ -62,17 +62,40 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <div>
-                                <x-label for="assigned_employee" value="Assigned Driver" />
+                                <x-label for="vehicle_company" value="Company" />
+                                <x-input id="vehicle_company" type="text" name="vehicle_company"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    :value="$vehicle->company?->company_name ?? '—'" disabled readonly />
+                            </div>
+
+                            <div>
+                                <x-label for="vehicle_supplier" value="Transporter / Supplier" />
+                                <x-input id="vehicle_supplier" type="text" name="vehicle_supplier"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    :value="$vehicle->supplier?->supplier_name ?? '—'" disabled readonly />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div>
+                                <x-label for="assigned_employee" value="Assigned Employee Driver" />
                                 <x-input id="assigned_employee" type="text" name="assigned_employee"
                                     class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
-                                    :value="$vehicle->assignedEmployee?->name ?? 'Unassigned'" disabled readonly />
+                                    :value="$vehicle->employee?->name ?? 'Unassigned'" disabled readonly />
+                            </div>
+
+                            <div>
+                                <x-label for="driver_name" value="Driver Name (external)" />
+                                <x-input id="driver_name" type="text" name="driver_name"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    :value="$vehicle->driver_name ?? '—'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="driver_contact" value="Driver Contact" />
                                 <x-input id="driver_contact" type="text" name="driver_contact"
                                     class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
-                                    :value="$vehicle->assignedEmployee?->phone ?? '-'" disabled readonly />
+                                    :value="$vehicle->employee?->phone ?? $vehicle->driver_phone ?? '—'" disabled readonly />
                             </div>
                         </div>
 

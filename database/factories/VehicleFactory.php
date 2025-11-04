@@ -22,7 +22,11 @@ class VehicleFactory extends Factory
             'vehicle_type' => $this->faker->randomElement(['Truck', 'Van', 'Pickup']),
             'make_model' => $this->faker->company(),
             'year' => (string) $this->faker->numberBetween(2005, (int) date('Y')),
-            'assigned_employee_id' => null,
+            'company_id' => null,
+            'supplier_id' => null,
+            'employee_id' => null,
+            'driver_name' => $this->faker->optional()->name(),
+            'driver_phone' => $this->faker->optional()->phoneNumber(),
             'is_active' => true,
         ];
     }

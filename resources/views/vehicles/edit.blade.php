@@ -28,6 +28,8 @@
                         @include('vehicles.partials.form-fields', [
                             'vehicle' => $vehicle,
                             'employeeOptions' => $employeeOptions,
+                            'companyOptions' => $companyOptions,
+                            'supplierOptions' => $supplierOptions,
                         ])
 
                         <div class="flex items-center justify-end mt-6">

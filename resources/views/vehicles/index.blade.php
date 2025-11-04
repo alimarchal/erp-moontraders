@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Vehicles" :createRoute="route('vehicles.create')" createLabel="Add Vehicle"
-            :showSearch="false" :showRefresh="true" backRoute="settings.index" />
+            :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
     <x-filter-section :action="route('vehicles.index')">
@@ -26,13 +26,41 @@
             </div>
 
             <div>
-                <x-label for="filter_assigned_employee_id" value="Assigned Driver" />
-                <select id="filter_assigned_employee_id" name="filter[assigned_employee_id]"
+                <x-label for="filter_company_id" value="Company" />
+                <select id="filter_company_id" name="filter[company_id]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Companies</option>
+                    @foreach ($companyOptions as $company)
+                        <option value="{{ $company->id }}"
+                            {{ request('filter.company_id') === (string) $company->id ? 'selected' : '' }}>
+                            {{ $company->company_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_supplier_id" value="Transporter / Supplier" />
+                <select id="filter_supplier_id" name="filter[supplier_id]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Suppliers</option>
+                    @foreach ($supplierOptions as $supplier)
+                        <option value="{{ $supplier->id }}"
+                            {{ request('filter.supplier_id') === (string) $supplier->id ? 'selected' : '' }}>
+                            {{ $supplier->supplier_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_employee_id" value="Assigned Driver" />
+                <select id="filter_employee_id" name="filter[employee_id]"
                     class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Drivers</option>
                     @foreach ($employeeOptions as $employee)
                         <option value="{{ $employee->id }}"
-                            {{ request('filter.assigned_employee_id') === (string) $employee->id ? 'selected' : '' }}>
+                            {{ request('filter.employee_id') === (string) $employee->id ? 'selected' : '' }}>
                             {{ $employee->name }}
                         </option>
                     @endforeach
@@ -59,7 +87,9 @@
         ['label' => 'Vehicle Number'],
         ['label' => 'Registration'],
         ['label' => 'Type'],
-        ['label' => 'Assigned Driver'],
+        ['label' => 'Company'],
+        ['label' => 'Supplier'],
+        ['label' => 'Driver'],
         ['label' => 'Status', 'align' => 'text-center'],
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No vehicles found." :emptyRoute="route('vehicles.create')" emptyLinkText="Add a vehicle">
@@ -78,7 +108,25 @@
                     {{ $vehicle->vehicle_type ?? '—' }}
                 </td>
                 <td class="py-1 px-2">
-                    {{ $vehicle->assignedEmployee?->name ?? 'Unassigned' }}
+                    {{ $vehicle->company?->company_name ?? '—' }}
+                </td>
+                <td class="py-1 px-2">
+                    {{ $vehicle->supplier?->supplier_name ?? '—' }}
+                </td>
+                <td class="py-1 px-2">
+                    @if ($vehicle->employee)
+                        {{ $vehicle->employee->name }}
+                        @if ($vehicle->employee->phone)
+                            <span class="block text-xs text-gray-500">{{ $vehicle->employee->phone }}</span>
+                        @endif
+                    @elseif ($vehicle->driver_name)
+                        {{ $vehicle->driver_name }}
+                        @if ($vehicle->driver_phone)
+                            <span class="block text-xs text-gray-500">{{ $vehicle->driver_phone }}</span>
+                        @endif
+                    @else
+                        Unassigned
+                    @endif
                 </td>
                 <td class="py-1 px-2 text-center">
                     <span

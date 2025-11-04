@@ -24,7 +24,11 @@
                     <form method="POST" action="{{ route('vehicles.store') }}">
                         @csrf
 
-                        @include('vehicles.partials.form-fields', ['employeeOptions' => $employeeOptions])
+                        @include('vehicles.partials.form-fields', [
+                            'employeeOptions' => $employeeOptions,
+                            'companyOptions' => $companyOptions,
+                            'supplierOptions' => $supplierOptions,
+                        ])
 
                         <div class="flex items-center justify-end mt-6">
                             <x-button class="ml-4">

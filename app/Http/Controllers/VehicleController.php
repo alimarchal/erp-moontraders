@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreVehicleRequest;
 use App\Http\Requests\UpdateVehicleRequest;
+use App\Models\Company;
 use App\Models\Employee;
+use App\Models\Supplier;
 use App\Models\Vehicle;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -22,12 +24,14 @@ class VehicleController extends Controller
     {
         $statusOptions = ['1' => 'Active', '0' => 'Inactive'];
 
-        $vehicles = QueryBuilder::for(Vehicle::query()->with('assignedEmployee'))
+        $vehicles = QueryBuilder::for(Vehicle::query()->with(['employee', 'company', 'supplier']))
             ->allowedFilters([
                 AllowedFilter::partial('vehicle_number'),
                 AllowedFilter::partial('registration_number'),
                 AllowedFilter::partial('vehicle_type'),
-                AllowedFilter::exact('assigned_employee_id'),
+                AllowedFilter::exact('company_id'),
+                AllowedFilter::exact('supplier_id'),
+                AllowedFilter::exact('employee_id'),
                 AllowedFilter::exact('is_active'),
             ])
             ->orderBy('vehicle_number')
@@ -35,11 +39,15 @@ class VehicleController extends Controller
             ->withQueryString();
 
         $employeeOptions = Employee::orderBy('name')->get(['id', 'name']);
+        $companyOptions = Company::orderBy('company_name')->get(['id', 'company_name']);
+        $supplierOptions = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
 
         return view('vehicles.index', [
             'vehicles' => $vehicles,
             'statusOptions' => $statusOptions,
             'employeeOptions' => $employeeOptions,
+            'companyOptions' => $companyOptions,
+            'supplierOptions' => $supplierOptions,
         ]);
     }
 
@@ -49,8 +57,10 @@ class VehicleController extends Controller
     public function create()
     {
         $employeeOptions = Employee::orderBy('name')->get(['id', 'name']);
+        $companyOptions = Company::orderBy('company_name')->get(['id', 'company_name']);
+        $supplierOptions = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
 
-        return view('vehicles.create', compact('employeeOptions'));
+        return view('vehicles.create', compact('employeeOptions', 'companyOptions', 'supplierOptions'));
     }
 
     /**
@@ -117,7 +127,7 @@ class VehicleController extends Controller
      */
     public function show(Vehicle $vehicle)
     {
-        $vehicle->load(['assignedEmployee', 'expenses']);
+        $vehicle->load(['employee', 'company', 'supplier', 'expenses']);
 
         return view('vehicles.show', compact('vehicle'));
     }
@@ -128,8 +138,10 @@ class VehicleController extends Controller
     public function edit(Vehicle $vehicle)
     {
         $employeeOptions = Employee::orderBy('name')->get(['id', 'name']);
+        $companyOptions = Company::orderBy('company_name')->get(['id', 'company_name']);
+        $supplierOptions = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
 
-        return view('vehicles.edit', compact('vehicle', 'employeeOptions'));
+        return view('vehicles.edit', compact('vehicle', 'employeeOptions', 'companyOptions', 'supplierOptions'));
     }
 
     /**

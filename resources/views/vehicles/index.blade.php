@@ -26,6 +26,12 @@
             </div>
 
             <div>
+                <x-label for="filter_driver_name" value="Driver Name" />
+                <x-input id="filter_driver_name" name="filter[driver_name]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.driver_name')" placeholder="Search by driver" />
+            </div>
+
+            <div>
                 <x-label for="filter_company_id" value="Company" />
                 <select id="filter_company_id" name="filter[company_id]"
                     class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">

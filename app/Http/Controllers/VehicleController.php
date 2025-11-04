@@ -29,6 +29,7 @@ class VehicleController extends Controller
                 AllowedFilter::partial('vehicle_number'),
                 AllowedFilter::partial('registration_number'),
                 AllowedFilter::partial('vehicle_type'),
+                AllowedFilter::partial('driver_name'),
                 AllowedFilter::exact('company_id'),
                 AllowedFilter::exact('supplier_id'),
                 AllowedFilter::exact('employee_id'),

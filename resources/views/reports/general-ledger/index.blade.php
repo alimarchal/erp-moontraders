@@ -172,16 +172,15 @@
                 {{ $entry->reference ?? '—' }}
             </td>
             <td class="py-1 px-2">
-                <div class="font-semibold "> {{ $entry->journal_description ?? '—' }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">
-                    <abbr class="text-red-700" title="Line Description">LD:</abbr> {{ $entry->line_description
-                    ??
+                <div class="font-semibold">{{ $entry->journal_description ?? '—' }}</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">
+                    <abbr class="text-red-700" title="Line Description">LD:</abbr> {{ $entry->line_description ??
                     $entry->journal_description ?? '—' }}
                 </div>
             </td>
             <td class="py-1 px-2">
-                <div class="font-semibold uppercase">{{ $entry->account_code }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $entry->account_name }} </div>
+                <div class="font-semibold uppercase font-mono">{{ $entry->account_code }}</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $entry->account_name }}</div>
             </td>
             <td class="py-1 px-2 text-right font-mono">
                 {{ number_format((float) $entry->debit, 2) }}
@@ -191,8 +190,8 @@
             </td>
             <td class="py-1 px-2">
                 @if ($entry->cost_center_code)
-                <div class="font-semibold uppercase">{{ $entry->cost_center_code }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $entry->cost_center_name }}</div>
+                <div class="font-semibold uppercase font-mono">{{ $entry->cost_center_code }}</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $entry->cost_center_name }}</div>
                 @else
                 <span class="text-gray-400">—</span>
                 @endif
@@ -210,7 +209,7 @@
         @endforeach
         <tr class="border-t-2 border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-800 font-bold">
             <td colspan="5" class="py-2 px-2 text-right">
-                Grand Total ({{ $entries->total() }} rows):
+                Page Total ({{ $entries->count() }} rows):
             </td>
             <td class="py-2 px-2 text-right font-mono">
                 {{ number_format($entries->sum('debit'), 2) }}

@@ -16,6 +16,10 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\Reports\GeneralLedgerController;
+use App\Http\Controllers\Reports\AccountBalancesController;
+use App\Http\Controllers\Reports\BalanceSheetController;
+use App\Http\Controllers\Reports\IncomeStatementController;
+use App\Http\Controllers\Reports\TrialBalanceController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -94,5 +98,9 @@ Route::middleware([
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportsController::class, 'index'])->name('index');
         Route::get('general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger.index');
+        Route::get('trial-balance', [TrialBalanceController::class, 'index'])->name('trial-balance.index');
+        Route::get('account-balances', [AccountBalancesController::class, 'index'])->name('account-balances.index');
+        Route::get('balance-sheet', [BalanceSheetController::class, 'index'])->name('balance-sheet.index');
+        Route::get('income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
     });
 });

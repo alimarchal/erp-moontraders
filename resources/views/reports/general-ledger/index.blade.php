@@ -148,7 +148,6 @@
         ['label' => 'Reference'],
         ['label' => 'Journal Description'],
         ['label' => 'Account'],
-        ['label' => 'Line Description'],
         ['label' => 'Debit', 'align' => 'text-right'],
         ['label' => 'Credit', 'align' => 'text-right'],
         ['label' => 'Cost Center'],
@@ -173,15 +172,16 @@
                 {{ $entry->reference ?? '—' }}
             </td>
             <td class="py-1 px-2">
-                {{ $entry->journal_description ?? '—' }}
+                <div class="font-semibold "> {{ $entry->journal_description ?? '—' }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                    <abbr class="text-red-700" title="Line Description">LD:</abbr> {{ $entry->line_description
+                    ??
+                    $entry->journal_description ?? '—' }}
+                </div>
             </td>
             <td class="py-1 px-2">
                 <div class="font-semibold uppercase">{{ $entry->account_code }}</div>
-                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $entry->account_name }} / {{ $entry->account_id
-                    }}</div>
-            </td>
-            <td class="py-1 px-2">
-                {{ $entry->line_description ?? $entry->journal_description ?? '—' }}
+                <div class="text-xs text-gray-500 dark:text-gray-400">{{ $entry->account_name }} </div>
             </td>
             <td class="py-1 px-2 text-right font-mono">
                 {{ number_format((float) $entry->debit, 2) }}

@@ -139,6 +139,22 @@
                     </div>
                 </a>
 
+                <!-- UOMs Module Card -->
+                <a href="{{ route('uoms.index') }}"
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">
+                    <div class="p-5 flex justify-between">
+                        <div>
+                            <div class="text-3xl font-bold leading-8">{{ \App\Models\Uom::count() }}</div>
+                            <div class="mt-1 text-base font-extrabold text-black">Units of Measure</div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="h-16 w-16 text-purple-600">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9.75 9.75V5.25C9.75 4.00736 10.7574 3 12 3C13.2426 3 14.25 4.00736 14.25 5.25V9.75M5.25 9.75H18.75M6.75 9.75V18.75C6.75 19.9926 7.75736 21 9 21H15C16.2426 21 17.25 19.9926 17.25 18.75V9.75" />
+                        </svg>
+                    </div>
+                </a>
+
                 <!-- Vehicles Module Card -->
                 <a href="{{ route('vehicles.index') }}"
                     class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">

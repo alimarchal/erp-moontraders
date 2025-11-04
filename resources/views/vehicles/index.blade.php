@@ -1,15 +1,14 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <x-page-header title="Vehicles" :createRoute="route('vehicles.create')" createLabel="Add Vehicle"
-                :showSearch="true" :showRefresh="true" backRoute="settings.index" />
 
-            <div class="ml-4">
-                <!-- Client-side PDF Export -->
-                <x-pdf-download-button id="vehicle-pdf-btn" type="client" label="Export PDF" variant="indigo" size="sm"
-                    :icon="true" />
-            </div>
-        </div>
+        <x-page-header title="Vehicles" :createRoute="route('vehicles.create')" createLabel="Add Vehicle"
+            :showSearch="true" :showRefresh="true" backRoute="settings.index" />
+        {{--
+        <div class="ml-4">
+            <!-- Client-side PDF Export -->
+            <x-pdf-download-button id="vehicle-pdf-btn" type="client" label="Export PDF" variant="indigo" size="sm"
+                :icon="true" />
+        </div> --}}
     </x-slot>
 
     <x-filter-section :action="route('vehicles.index')">

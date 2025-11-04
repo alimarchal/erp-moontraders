@@ -7,6 +7,8 @@ use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\Employee;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Models\Supplier;
+use App\Models\Company;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +24,7 @@ class EmployeeController extends Controller
     public function index(Request $request)
     {
         $employees = QueryBuilder::for(
-            Employee::query()->with(['warehouse', 'user'])
+            Employee::query()->with(['warehouse', 'user', 'supplier', 'company'])
         )
             ->allowedFilters([
                 AllowedFilter::partial('employee_code'),
@@ -32,17 +34,23 @@ class EmployeeController extends Controller
                 AllowedFilter::partial('phone'),
                 AllowedFilter::partial('email'),
                 AllowedFilter::exact('warehouse_id'),
-                AllowedFilter::callback('is_active', fn ($query, $value) => $this->applyBooleanFilter($query, 'is_active', $value)),
+                AllowedFilter::exact('supplier_id'),
+                AllowedFilter::exact('company_id'),
+                AllowedFilter::callback('is_active', fn($query, $value) => $this->applyBooleanFilter($query, 'is_active', $value)),
             ])
             ->orderBy('employee_code')
             ->paginate(15)
             ->withQueryString();
 
         $warehouseOptions = Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']);
+        $supplierOptions = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+        $companyOptions = Company::orderBy('company_name')->get(['id', 'company_name']);
 
         return view('employees.index', [
             'employees' => $employees,
             'warehouseOptions' => $warehouseOptions,
+            'supplierOptions' => $supplierOptions,
+            'companyOptions' => $companyOptions,
         ]);
     }
 
@@ -54,6 +62,8 @@ class EmployeeController extends Controller
         return view('employees.create', [
             'warehouseOptions' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'userOptions' => User::orderBy('name')->get(['id', 'name']),
+            'supplierOptions' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'companyOptions' => Company::orderBy('company_name')->get(['id', 'company_name']),
         ]);
     }
 
@@ -116,7 +126,7 @@ class EmployeeController extends Controller
      */
     public function show(Employee $employee)
     {
-        $employee->load(['warehouse', 'user', 'salaries']);
+        $employee->load(['warehouse', 'user', 'salaries', 'supplier', 'company']);
 
         return view('employees.show', [
             'employee' => $employee,
@@ -128,12 +138,14 @@ class EmployeeController extends Controller
      */
     public function edit(Employee $employee)
     {
-        $employee->load(['warehouse', 'user']);
+        $employee->load(['warehouse', 'user', 'supplier', 'company']);
 
         return view('employees.edit', [
             'employee' => $employee,
             'warehouseOptions' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'userOptions' => User::orderBy('name')->get(['id', 'name']),
+            'supplierOptions' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'companyOptions' => Company::orderBy('company_name')->get(['id', 'company_name']),
         ]);
     }
 

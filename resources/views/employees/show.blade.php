@@ -44,6 +44,15 @@
                                     :value="$employee->company_name ?: '—'" disabled readonly />
                             </div>
                             <div>
+                                <x-label value="Supplier" />
+                                <x-input type="text"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    :value="$employee->supplier?->supplier_name ?: '—'" disabled readonly />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                            <div>
                                 <x-label value="Designation" />
                                 <x-input type="text"
                                     class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
@@ -73,6 +82,15 @@
                                     class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
                                     :value="$employee->warehouse?->warehouse_name ?: '—'" disabled readonly />
                             </div>
+                            <div>
+                                <x-label value="Company Entity" />
+                                <x-input type="text"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    :value="$employee->company?->company_name ?: '—'" disabled readonly />
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                             <div>
                                 <x-label value="Linked User" />
                                 <x-input type="text"
@@ -104,12 +122,13 @@
                         </div>
 
                         @if ($employee->salaries->isNotEmpty())
-                            <div class="mt-6">
-                                <x-label value="Salary Records" />
-                                <textarea rows="4"
-                                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
-                                    disabled readonly>{{ $employee->salaries->map(fn ($salary) => ($salary->month ?? 'N/A') . ' · ' . number_format((float) ($salary->net_salary ?? 0), 2))->implode(PHP_EOL) }}</textarea>
-                            </div>
+                        <div class="mt-6">
+                            <x-label value="Salary Records" />
+                            <textarea rows="4"
+                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
+                                disabled
+                                readonly>{{ $employee->salaries->map(fn ($salary) => ($salary->month ?? 'N/A') . ' · ' . number_format((float) ($salary->net_salary ?? 0), 2))->implode(PHP_EOL) }}</textarea>
+                        </div>
                         @endif
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">

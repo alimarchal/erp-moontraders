@@ -49,6 +49,11 @@ class Employee extends Model
         return $this->belongsTo(Supplier::class);
     }
 
+    public function company(): BelongsTo
+    {
+        return $this->belongsTo(Company::class);
+    }
+
     public function salaries(): HasMany
     {
         return $this->hasMany(EmployeeSalary::class);

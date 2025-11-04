@@ -107,6 +107,22 @@
                     </div>
                 </a>
 
+                <!-- Suppliers Module Card -->
+                <a href="{{ route('suppliers.index') }}"
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">
+                    <div class="p-5 flex justify-between">
+                        <div>
+                            <div class="text-3xl font-bold leading-8">{{ \App\Models\Supplier::count() }}</div>
+                            <div class="mt-1 text-base font-extrabold text-black">Suppliers</div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="h-16 w-16 text-emerald-600">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M5.121 17.804A9 9 0 0112 15a9 9 0 016.879 2.804M15 11a3 3 0 10-6 0 3 3 0 006 0zM21 12a9 9 0 10-18 0 9 9 0 0018 0z" />
+                        </svg>
+                    </div>
+                </a>
+
                 <!-- Companies Module Card -->
                 <a href="{{ route('companies.index', 1) }}"
                     class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">

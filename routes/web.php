@@ -11,6 +11,7 @@ use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\AccountingPeriodController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseTypeController;
+use App\Http\Controllers\SupplierController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -73,5 +74,8 @@ Route::middleware([
 
         // Warehouse Types CRUD
         Route::resource('warehouse-types', WarehouseTypeController::class);
+
+        // Suppliers CRUD
+        Route::resource('suppliers', SupplierController::class);
     });
 });

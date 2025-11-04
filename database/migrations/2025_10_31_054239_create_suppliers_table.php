@@ -47,6 +47,7 @@ return new class extends Migration {
 
             // Indexes
             $table->index('supplier_name');
+            $table->string('short_name')->nullable()->after('supplier_name');
             $table->index('country');
             $table->index('supplier_group');
         });

@@ -17,8 +17,7 @@
         "livewire/livewire": "^3.6.4",
         "spatie/laravel-activitylog": "^4.9",
         "spatie/laravel-permission": "^6.10",
-        "spatie/laravel-query-builder": "^6.3",
-        "phpoffice/phpspreadsheet": "^1.29"
+        "spatie/laravel-query-builder": "^6.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

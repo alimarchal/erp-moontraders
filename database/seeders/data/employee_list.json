@@ -1,13 +1,15 @@
 [
   {
     "serial": 1,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Syed Tanveer Shah",
     "designation": "Manager",
     "phone": "0345-9637156"
   },
-  { 
+  {
     "serial": 2,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Sheikh Sajjad Bashir",
     "designation": "Accountant/KPO",
@@ -15,6 +17,7 @@
   },
   {
     "serial": 3,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Sadiq Naseer",
     "designation": "Supervisor",
@@ -22,6 +25,7 @@
   },
   {
     "serial": 4,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Farrukh Shah",
     "designation": "Store Keeper",
@@ -29,6 +33,7 @@
   },
   {
     "serial": 5,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Zaheer Abbasi",
     "designation": "Store Keeper-II",
@@ -36,6 +41,7 @@
   },
   {
     "serial": 6,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Choudry Sajjad",
     "designation": "Order Booker",
@@ -43,6 +49,7 @@
   },
   {
     "serial": 7,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Ahmel Raja",
     "designation": "Order Booker",
@@ -50,6 +57,7 @@
   },
   {
     "serial": 8,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Moin Shah",
     "designation": "Order Booker",
@@ -57,6 +65,7 @@
   },
   {
     "serial": 9,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Danial Shah",
     "designation": "Order Booker",
@@ -64,6 +73,7 @@
   },
   {
     "serial": 10,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Rehan Ahmed",
     "designation": "Order Booker",
@@ -71,6 +81,7 @@
   },
   {
     "serial": 11,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Atif Naqvi",
     "designation": "Order Booker",
@@ -78,6 +89,7 @@
   },
   {
     "serial": 12,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Zahid Elahi",
     "designation": "Order Booker",
@@ -85,6 +97,7 @@
   },
   {
     "serial": 13,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Shahzaib Ahmed",
     "designation": "Order Booker",
@@ -92,6 +105,7 @@
   },
   {
     "serial": 14,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Nazarat Munawer",
     "designation": "Order Booker",
@@ -99,6 +113,7 @@
   },
   {
     "serial": 15,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Raja Naqash",
     "designation": "Order Booker",
@@ -106,6 +121,7 @@
   },
   {
     "serial": 16,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Tayyab Ali",
     "designation": "Order Booker",
@@ -113,6 +129,7 @@
   },
   {
     "serial": 17,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Taveer Malik",
     "designation": "Deliveryman",
@@ -120,6 +137,7 @@
   },
   {
     "serial": 18,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Ahtasham Shah",
     "designation": "Deliveryman",
@@ -127,6 +145,7 @@
   },
   {
     "serial": 19,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Abbas Shah",
     "designation": "Deliveryman",
@@ -134,6 +153,7 @@
   },
   {
     "serial": 20,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Khalid Khan",
     "designation": "Deliveryman",
@@ -141,6 +161,7 @@
   },
   {
     "serial": 21,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Choudry Lateef",
     "designation": "Deliveryman",
@@ -148,6 +169,7 @@
   },
   {
     "serial": 22,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Waseem Choudry",
     "designation": "Deliveryman",
@@ -155,6 +177,7 @@
   },
   {
     "serial": 23,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Raja Safeer",
     "designation": "Deliveryman",
@@ -162,6 +185,7 @@
   },
   {
     "serial": 24,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Shahid Mughal",
     "designation": "Deliveryman",
@@ -169,6 +193,7 @@
   },
   {
     "serial": 25,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Mujahid Shah",
     "designation": "Deliveryman",
@@ -176,6 +201,7 @@
   },
   {
     "serial": 26,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Husnain Shah",
     "designation": "Deliveryman",
@@ -183,6 +209,7 @@
   },
   {
     "serial": 27,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Rashid Choudry",
     "designation": "Helper",
@@ -190,6 +217,7 @@
   },
   {
     "serial": 28,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Ishtiaq Ahmed",
     "designation": "Helper",
@@ -197,6 +225,7 @@
   },
   {
     "serial": 29,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Shahid Shah",
     "designation": "Helper",
@@ -204,6 +233,7 @@
   },
   {
     "serial": 30,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Syed Anas Shah",
     "designation": "Helper",
@@ -211,6 +241,7 @@
   },
   {
     "serial": 31,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Raza Sheikh",
     "designation": "Helper",
@@ -218,6 +249,7 @@
   },
   {
     "serial": 32,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Asim Choudry",
     "designation": "Helper",
@@ -225,6 +257,7 @@
   },
   {
     "serial": 33,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Hassan Choudry",
     "designation": "Helper",
@@ -232,6 +265,7 @@
   },
   {
     "serial": 34,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Umair Ahmed",
     "designation": "Helper",
@@ -239,6 +273,7 @@
   },
   {
     "serial": 35,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Sheikh Naseer Ahmed",
     "designation": "Driver",
@@ -246,6 +281,7 @@
   },
   {
     "serial": 36,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Kaleem Ahmed",
     "designation": "Driver",
@@ -253,6 +289,7 @@
   },
   {
     "serial": 37,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Banaras Khan",
     "designation": "Driver",
@@ -260,6 +297,7 @@
   },
   {
     "serial": 38,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Mohammad Ishfaq",
     "designation": "Driver",
@@ -267,6 +305,7 @@
   },
   {
     "serial": 39,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Naveed Riaz",
     "designation": "Driver",
@@ -274,6 +313,7 @@
   },
   {
     "serial": 40,
+    "company_id": 1,
     "company": "Nestlé Pakistan",
     "name": "Umer Sadiq",
     "designation": "Driver",
@@ -281,6 +321,7 @@
   },
   {
     "serial": 41,
+    "company_id": 1,
     "company": "Mezan Oil & Ghee",
     "name": "Wasif Shah",
     "designation": "Deliveryman",
@@ -288,6 +329,7 @@
   },
   {
     "serial": 42,
+    "company_id": 1,
     "company": "Mezan Oil & Ghee",
     "name": "Mehran Shah",
     "designation": "Helper",
@@ -295,6 +337,7 @@
   },
   {
     "serial": 43,
+    "company_id": 1,
     "company": "Mezan Oil & Ghee",
     "name": "Saghar Shah",
     "designation": "Helper",
@@ -302,6 +345,7 @@
   },
   {
     "serial": 44,
+    "company_id": 1,
     "company": "Mezan Oil & Ghee",
     "name": "Basarat Shah",
     "designation": "Helper",
@@ -309,6 +353,7 @@
   },
   {
     "serial": 45,
+    "company_id": 1,
     "company": "Mezan Oil & Ghee",
     "name": "Shouket Shah",
     "designation": "Helper",
@@ -316,6 +361,7 @@
   },
   {
     "serial": 46,
+    "company_id": 1,
     "company": "Mezan Oil & Ghee",
     "name": "Iqbal Khan",
     "designation": "Driver",
@@ -323,6 +369,7 @@
   },
   {
     "serial": 47,
+    "company_id": 1,
     "company": "Mezan Oil & Ghee",
     "name": "Iftikhar",
     "designation": "Order Booker",
@@ -330,6 +377,7 @@
   },
   {
     "serial": 48,
+    "company_id": 1,
     "company": "Mezan Oil & Ghee",
     "name": "Umer",
     "designation": "Order Booker",
@@ -337,6 +385,7 @@
   },
   {
     "serial": 49,
+    "company_id": 1,
     "company": "Kausar Oil & Ghee",
     "name": "Abdullah Ashraf",
     "designation": "KPO",
@@ -344,6 +393,7 @@
   },
   {
     "serial": 50,
+    "company_id": 1,
     "company": "Kausar Oil & Ghee",
     "name": "Sheikh Abdul Rahmen",
     "designation": "Salesman",
@@ -351,6 +401,7 @@
   },
   {
     "serial": 51,
+    "company_id": 1,
     "company": "Kausar Oil & Ghee",
     "name": "Mubashir Hussain",
     "designation": "Salesman",
@@ -358,6 +409,7 @@
   },
   {
     "serial": 52,
+    "company_id": 1,
     "company": "Kausar Oil & Ghee",
     "name": "Raja Hussnain",
     "designation": "Loader",
@@ -365,6 +417,7 @@
   },
   {
     "serial": 53,
+    "company_id": 1,
     "company": "Kausar Oil & Ghee",
     "name": "Syed Aqeel Shah",
     "designation": "Loader",
@@ -372,6 +425,7 @@
   },
   {
     "serial": 54,
+    "company_id": 1,
     "company": "Kausar Oil & Ghee",
     "name": "Syed Sabahat Shah",
     "designation": "Loader",
@@ -379,6 +433,7 @@
   },
   {
     "serial": 55,
+    "company_id": 1,
     "company": "Kausar Oil & Ghee",
     "name": "Raja Sagheer",
     "designation": "Driver",
@@ -386,6 +441,7 @@
   },
   {
     "serial": 56,
+    "company_id": 1,
     "company": "Kausar Oil & Ghee",
     "name": "Mashab Hafeez",
     "designation": "Driver",
@@ -393,6 +449,7 @@
   },
   {
     "serial": 57,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "M.Akash Arif",
     "designation": "KPO",
@@ -400,6 +457,7 @@
   },
   {
     "serial": 58,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Arsalan Khalid",
     "designation": "OB",
@@ -407,6 +465,7 @@
   },
   {
     "serial": 59,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Inzamam Ahmed",
     "designation": "OB",
@@ -414,6 +473,7 @@
   },
   {
     "serial": 60,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Faizan Aftab",
     "designation": "OB",
@@ -421,6 +481,7 @@
   },
   {
     "serial": 61,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Raza Ali Feroz",
     "designation": "OB",
@@ -428,6 +489,7 @@
   },
   {
     "serial": 62,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Azkar Shah",
     "designation": "DM",
@@ -435,6 +497,7 @@
   },
   {
     "serial": 63,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Adnan Awan",
     "designation": "DM",
@@ -442,6 +505,7 @@
   },
   {
     "serial": 64,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Seerat Abbas",
     "designation": "DM",
@@ -449,6 +513,7 @@
   },
   {
     "serial": 65,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Faizan Raja",
     "designation": "Driver",
@@ -456,6 +521,7 @@
   },
   {
     "serial": 66,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Zeeshan Ismail",
     "designation": "Driver",
@@ -463,6 +529,7 @@
   },
   {
     "serial": 67,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Shahid Ayub",
     "designation": "Driver",
@@ -470,6 +537,7 @@
   },
   {
     "serial": 68,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Touseef Abbasi",
     "designation": "Loader",
@@ -477,6 +545,7 @@
   },
   {
     "serial": 69,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Iqbal Ahmed",
     "designation": "Loader",
@@ -484,6 +553,7 @@
   },
   {
     "serial": 70,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Abdur Rehman",
     "designation": "Loader",
@@ -491,6 +561,7 @@
   },
   {
     "serial": 71,
+    "company_id": 1,
     "company": "Engro Corporation",
     "name": "Junaid Ahmed",
     "designation": "Loader",
@@ -498,6 +569,7 @@
   },
   {
     "serial": 72,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "RABIA MUMTAZ KHAN",
     "designation": "KPO",
@@ -505,6 +577,7 @@
   },
   {
     "serial": 73,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "SHAFIQUE MASTANVI",
     "designation": "FSO",
@@ -512,6 +585,7 @@
   },
   {
     "serial": 74,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "JABRAN SHAH",
     "designation": "SALESMAN",
@@ -519,6 +593,7 @@
   },
   {
     "serial": 75,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "ZAHID SHAH",
     "designation": "SALESMAN",
@@ -526,6 +601,7 @@
   },
   {
     "serial": 76,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "YASIR MEHMOOD",
     "designation": "SALESMAN",
@@ -533,6 +609,7 @@
   },
   {
     "serial": 77,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "TASLEEM CHOUDARY",
     "designation": "SALESMAN",
@@ -540,6 +617,7 @@
   },
   {
     "serial": 78,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "ADEEB",
     "designation": "SALESMAN",
@@ -547,6 +625,7 @@
   },
   {
     "serial": 79,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "KAZIM",
     "designation": "SALESMAN",
@@ -554,6 +633,7 @@
   },
   {
     "serial": 80,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "KHALIQUE",
     "designation": "SALESMAN",
@@ -561,6 +641,7 @@
   },
   {
     "serial": 81,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "WASEEM",
     "designation": "SALESMAN",
@@ -568,6 +649,7 @@
   },
   {
     "serial": 82,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "SAFEER SHAH",
     "designation": "EXTRA SALEMAN",
@@ -575,6 +657,7 @@
   },
   {
     "serial": 83,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "MUSSADAQ",
     "designation": "DRIVER",
@@ -582,6 +665,7 @@
   },
   {
     "serial": 84,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "RAFAQAT SHAH",
     "designation": "DRIVER",
@@ -589,6 +673,7 @@
   },
   {
     "serial": 85,
+    "company_id": 1,
     "company": "Pakistan Tobacco Company",
     "name": "ALTAF HUSSAIN",
     "designation": "DRIVER",
@@ -596,6 +681,7 @@
   },
   {
     "serial": 86,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "SYED NASEEM ABBAS NAQVI",
     "designation": "KPO",
@@ -603,6 +689,7 @@
   },
   {
     "serial": 87,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "MUHAMMAD AMIR",
     "designation": "Saleman Dalda",
@@ -610,6 +697,7 @@
   },
   {
     "serial": 88,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "SYED WAQAR HUSSAIN  NAQVI",
     "designation": "Saleman Dalda",
@@ -617,6 +705,7 @@
   },
   {
     "serial": 89,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "SYED ZAMAN ABBAS",
     "designation": "Dalda Sale Man",
@@ -624,6 +713,7 @@
   },
   {
     "serial": 90,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "AFRAZ QADEER",
     "designation": "Saleman CupShup",
@@ -631,6 +721,7 @@
   },
   {
     "serial": 91,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "MUHAMMAD SHAHZAD ILYAS",
     "designation": "DSR",
@@ -638,6 +729,7 @@
   },
   {
     "serial": 92,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "UMER IQBAL",
     "designation": "DSR",
@@ -645,6 +737,7 @@
   },
   {
     "serial": 93,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "ASHIR RAFIQUE",
     "designation": "DSR",
@@ -652,6 +745,7 @@
   },
   {
     "serial": 94,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "Zakir Mir",
     "designation": "StoreKeeper",
@@ -659,6 +753,7 @@
   },
   {
     "serial": 95,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "TAHIR ZAMAN",
     "designation": "Driver",
@@ -666,6 +761,7 @@
   },
   {
     "serial": 96,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "WAQAR KAREEM",
     "designation": "Driver",
@@ -673,6 +769,7 @@
   },
   {
     "serial": 97,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "MUHAMMAD ARIF",
     "designation": "HELPER",
@@ -680,6 +777,7 @@
   },
   {
     "serial": 98,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "SYED AQIB HUSSAIN",
     "designation": "HELPER",
@@ -687,6 +785,7 @@
   },
   {
     "serial": 99,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "Choudry Adeel",
     "designation": "HELPER",
@@ -694,6 +793,7 @@
   },
   {
     "serial": 100,
+    "company_id": 1,
     "company": "Dalda Foods",
     "name": "ALI RAZA NAQVI",
     "designation": "HELPER",
@@ -701,6 +801,7 @@
   },
   {
     "serial": 101,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Usman Rafique",
     "designation": "KPO",
@@ -708,6 +809,7 @@
   },
   {
     "serial": 102,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Ashar",
     "designation": "Store keper",
@@ -715,6 +817,7 @@
   },
   {
     "serial": 103,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Ehtsham shah",
     "designation": "Saleman",
@@ -722,6 +825,7 @@
   },
   {
     "serial": 104,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Asif shah",
     "designation": "Saleman",
@@ -729,6 +833,7 @@
   },
   {
     "serial": 105,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Shamim",
     "designation": "Saleman",
@@ -736,6 +841,7 @@
   },
   {
     "serial": 106,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Bilal butt",
     "designation": "Saleman",
@@ -743,6 +849,7 @@
   },
   {
     "serial": 107,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Naeem shah",
     "designation": "Order Booker",
@@ -750,6 +857,7 @@
   },
   {
     "serial": 108,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Bilal",
     "designation": "Order Booker",
@@ -757,6 +865,7 @@
   },
   {
     "serial": 109,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "parvaiz",
     "designation": "Order Booker",
@@ -764,6 +873,7 @@
   },
   {
     "serial": 110,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Nabeel ch",
     "designation": "Order Booker",
@@ -771,6 +881,7 @@
   },
   {
     "serial": 111,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Raja Ahsan",
     "designation": "Order Booker",
@@ -778,6 +889,7 @@
   },
   {
     "serial": 112,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Mujasam shah",
     "designation": "HELPER",
@@ -785,6 +897,7 @@
   },
   {
     "serial": 113,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Shahraz ch",
     "designation": "Driver",
@@ -792,6 +905,7 @@
   },
   {
     "serial": 114,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Adeel",
     "designation": "Driver",
@@ -799,6 +913,7 @@
   },
   {
     "serial": 115,
+    "company_id": 1,
     "company": "English Biscuit Manufacturers",
     "name": "Shoaib shah",
     "designation": "Driver",
@@ -806,6 +921,7 @@
   },
   {
     "serial": 116,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Sardar Addul Salam",
     "designation": "KPO",
@@ -813,6 +929,7 @@
   },
   {
     "serial": 117,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Ch Ibrar",
     "designation": "Store Keeper",
@@ -820,6 +937,7 @@
   },
   {
     "serial": 118,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Fasil",
     "designation": "Salesman",
@@ -827,6 +945,7 @@
   },
   {
     "serial": 119,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Aqib",
     "designation": "Salesman",
@@ -834,6 +953,7 @@
   },
   {
     "serial": 120,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Hafeez",
     "designation": "Salesman",
@@ -841,6 +961,7 @@
   },
   {
     "serial": 121,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Shafqat",
     "designation": "OB",
@@ -848,6 +969,7 @@
   },
   {
     "serial": 122,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Danish",
     "designation": "OB",
@@ -855,6 +977,7 @@
   },
   {
     "serial": 123,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Ikram",
     "designation": "OB",
@@ -862,6 +985,7 @@
   },
   {
     "serial": 124,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Amjid",
     "designation": "OB",
@@ -869,6 +993,7 @@
   },
   {
     "serial": 125,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Ahmad",
     "designation": "OB",
@@ -876,6 +1001,7 @@
   },
   {
     "serial": 126,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Tariq",
     "designation": "Driver",
@@ -883,6 +1009,7 @@
   },
   {
     "serial": 127,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Aqeel",
     "designation": "Driver",
@@ -890,6 +1017,7 @@
   },
   {
     "serial": 128,
+    "company_id": 1,
     "company": "National Foods",
     "name": "Siraj",
     "designation": "Helper",
@@ -897,6 +1025,7 @@
   },
   {
     "serial": 129,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Noman Malik",
     "designation": "KPO",
@@ -904,6 +1033,7 @@
   },
   {
     "serial": 130,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Ahsan Qureshi",
     "designation": "KPO",
@@ -911,6 +1041,7 @@
   },
   {
     "serial": 131,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Sajid Mughal",
     "designation": "WH Incharge",
@@ -918,6 +1049,7 @@
   },
   {
     "serial": 132,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Faizan Khawaja",
     "designation": "WH Incharge",
@@ -925,6 +1057,7 @@
   },
   {
     "serial": 133,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Wasif Bukhari",
     "designation": "Driver",
@@ -932,6 +1065,7 @@
   },
   {
     "serial": 134,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Saeed Ahmed",
     "designation": "Driver",
@@ -939,6 +1073,7 @@
   },
   {
     "serial": 135,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Sheraz",
     "designation": "Driver",
@@ -946,6 +1081,7 @@
   },
   {
     "serial": 136,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Liaqat Ch",
     "designation": "Driver",
@@ -953,6 +1089,7 @@
   },
   {
     "serial": 137,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Muhammad Ilyas",
     "designation": "Driver",
@@ -960,6 +1097,7 @@
   },
   {
     "serial": 138,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Israr Butt",
     "designation": "Driver",
@@ -967,6 +1105,7 @@
   },
   {
     "serial": 139,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Tanveer Shah",
     "designation": "Helper",
@@ -974,6 +1113,7 @@
   },
   {
     "serial": 140,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Azhar Ishaq",
     "designation": "Helper",
@@ -981,6 +1121,7 @@
   },
   {
     "serial": 141,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Tariq",
     "designation": "Helper",
@@ -988,6 +1129,7 @@
   },
   {
     "serial": 142,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Syed Uzair",
     "designation": "Helper",
@@ -995,6 +1137,7 @@
   },
   {
     "serial": 143,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Ch Saqib",
     "designation": "Helper",
@@ -1002,6 +1145,7 @@
   },
   {
     "serial": 144,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Sadaqat",
     "designation": "Helper",
@@ -1009,6 +1153,7 @@
   },
   {
     "serial": 145,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Syed Nain Ali",
     "designation": "Helper",
@@ -1016,6 +1161,7 @@
   },
   {
     "serial": 146,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Anas",
     "designation": "Helper",
@@ -1023,6 +1169,7 @@
   },
   {
     "serial": 147,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Hassan Ali",
     "designation": "Supervisior",
@@ -1030,6 +1177,7 @@
   },
   {
     "serial": 148,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Hamza Iqbal",
     "designation": "OB",
@@ -1037,6 +1185,7 @@
   },
   {
     "serial": 149,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Ch Javed",
     "designation": "OB",
@@ -1044,6 +1193,7 @@
   },
   {
     "serial": 150,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Saad Sadheer",
     "designation": "OB",
@@ -1051,6 +1201,7 @@
   },
   {
     "serial": 151,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Umair Makhdoom",
     "designation": "OB",
@@ -1058,6 +1209,7 @@
   },
   {
     "serial": 152,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Riaz",
     "designation": "OB",
@@ -1065,6 +1217,7 @@
   },
   {
     "serial": 153,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Mansoor Awan",
     "designation": "Salesman",
@@ -1072,6 +1225,7 @@
   },
   {
     "serial": 154,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Ch . Atif",
     "designation": "Salesman",
@@ -1079,6 +1233,7 @@
   },
   {
     "serial": 155,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Khalid Hussain",
     "designation": "Salesman",
@@ -1086,6 +1241,7 @@
   },
   {
     "serial": 156,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Ch. Naseer",
     "designation": "Salesman",
@@ -1093,6 +1249,7 @@
   },
   {
     "serial": 157,
+    "company_id": 1,
     "company": "Unilever Pakistan",
     "name": "Kashif",
     "designation": "Salesman",
@@ -1100,6 +1257,7 @@
   },
   {
     "serial": 158,
+    "company_id": 1,
     "company": "Lipton Pakistan",
     "name": "Naveed Anjum",
     "designation": "Order booker",
@@ -1107,6 +1265,7 @@
   },
   {
     "serial": 159,
+    "company_id": 1,
     "company": "Lipton Pakistan",
     "name": "Zaheer Ahmed",
     "designation": "Order booker",
@@ -1114,6 +1273,7 @@
   },
   {
     "serial": 160,
+    "company_id": 1,
     "company": "Lipton Pakistan",
     "name": "Safeer Kiyani",
     "designation": "Order booker",
@@ -1121,6 +1281,7 @@
   },
   {
     "serial": 161,
+    "company_id": 1,
     "company": "Lipton Pakistan",
     "name": "M. Saleem",
     "designation": "Salesman",
@@ -1128,6 +1289,7 @@
   },
   {
     "serial": 162,
+    "company_id": 1,
     "company": "Lipton Pakistan",
     "name": "Zeeshan Shah",
     "designation": "Salesman",
@@ -1135,6 +1297,7 @@
   },
   {
     "serial": 163,
+    "company_id": 1,
     "company": "Warehouse -I",
     "name": "Riaz Bhai",
     "designation": "Sweaper",
@@ -1142,6 +1305,7 @@
   },
   {
     "serial": 164,
+    "company_id": 1,
     "company": "Warehouse -I",
     "name": "Munawer Uncle",
     "designation": "Cook",
@@ -1149,6 +1313,7 @@
   },
   {
     "serial": 165,
+    "company_id": 1,
     "company": "Warehouse -I",
     "name": "Amjed Choury",
     "designation": "Cook",
@@ -1156,6 +1321,7 @@
   },
   {
     "serial": 166,
+    "company_id": 1,
     "company": "Warehouse -II",
     "name": "Muhammad Khalil",
     "designation": "Sweaper",
@@ -1163,6 +1329,7 @@
   },
   {
     "serial": 167,
+    "company_id": 1,
     "company": "Warehouse -I",
     "name": "Muhammad Ansar",
     "designation": "Security Guard",
@@ -1170,6 +1337,7 @@
   },
   {
     "serial": 168,
+    "company_id": 1,
     "company": "Warehouse -I",
     "name": "Alyas",
     "designation": "Security Guard",
@@ -1177,6 +1345,7 @@
   },
   {
     "serial": 169,
+    "company_id": 1,
     "company": "Warehouse -I",
     "name": "Ghulam Mustafa Shah",
     "designation": "Cashier",
@@ -1184,6 +1353,7 @@
   },
   {
     "serial": 170,
+    "company_id": 1,
     "company": "Private Driver",
     "name": "Saleem Khan",
     "designation": "Private Driver",
@@ -1191,6 +1361,7 @@
   },
   {
     "serial": 171,
+    "company_id": 1,
     "company": "Private Driver",
     "name": "Azmat Ch",
     "designation": "Private Driver",
@@ -1198,6 +1369,7 @@
   },
   {
     "serial": 172,
+    "company_id": 1,
     "company": "Private Driver",
     "name": "Adeel",
     "designation": "Private Driver",

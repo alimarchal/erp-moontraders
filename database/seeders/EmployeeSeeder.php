@@ -46,6 +46,8 @@ class EmployeeSeeder extends Seeder
             $phone = $phone === '' ? null : preg_replace('/\\s+/', ' ', $phone);
 
             Employee::create([
+                'company_id' => $row['company_id'] ?? null,
+                'supplier_id' => $row['supplier_id'] ?? null,
                 'employee_code' => $code,
                 'name' => $name,
                 'company_name' => $row['company'] ?? null,

@@ -12,9 +12,8 @@ return new class extends Migration {
     {
         Schema::create('employees', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->foreignId('company_id')->nullable()->constrained('companies')->nullOnDelete();
-
+            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->string('employee_code')->unique();
             $table->string('name');
             $table->string('company_name')->nullable();

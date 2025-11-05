@@ -57,9 +57,9 @@ return new class extends Migration {
             $table->foreignId('created_by')->nullable()->constrained('users')->onDelete('set null');
             $table->timestamps();
 
-            $table->unique(['chart_of_account_id', 'accounting_period_id'], 'unique_account_period_snapshot');
-            $table->index(['snapshot_date']);
-            $table->index(['accounting_period_id', 'snapshot_date']);
+            $table->unique(['chart_of_account_id', 'accounting_period_id'], 'idx_uniq_acct_period');
+            $table->index(['snapshot_date'], 'idx_snapshot_date');
+            $table->index(['accounting_period_id', 'snapshot_date'], 'idx_period_snapshot_date');
         });
 
         // 4. REVERSING ENTRIES - Track reversal relationships

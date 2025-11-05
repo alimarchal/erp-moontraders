@@ -5,7 +5,40 @@
     </x-slot>
 
     <x-filter-section :action="route('reports.balance-sheet.index')">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Period/Date Selection -->
+            <div class="md:col-span-2">
+                <x-label for="accounting_period_id" value="Accounting Period" />
+                <select id="accounting_period_id" name="accounting_period_id"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+                    onchange="this.form.submit()">
+                    <option value="">Custom Date</option>
+                    @foreach($accountingPeriods as $period)
+                    <option value="{{ $period->id }}" {{ $periodId==$period->id ? 'selected' : '' }}>
+                        {{ $period->name }} (As of {{ \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- As Of Date -->
+            <div>
+                <x-label for="as_of_date" value="As of Date" />
+                <x-input id="as_of_date" name="as_of_date" type="date" class="mt-1 block w-full" :value="$asOfDate" />
+            </div>
+
+            <div>
+                <x-label for="per_page" value="Show Per Page" />
+                <select id="per_page" name="per_page"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
+                </select>
+            </div>
+
             <div>
                 <x-label for="filter_account_code" value="Account Code" />
                 <x-input id="filter_account_code" name="filter[account_code]" type="text"
@@ -65,6 +98,14 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 pb-16">
         <x-status-message />
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6">
+
+            <!-- Balance Sheet Header -->
+            <div class="mb-6 text-center">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Balance Sheet</h2>
+                <p class="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                    As of {{ \Carbon\Carbon::parse($asOfDate)->format('F d, Y') }}
+                </p>
+            </div>
 
             @php
             $assets = $groupedAccounts->filter(function($items, $type) {

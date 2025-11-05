@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Reports;
 use App\Http\Controllers\Controller;
 use App\Models\ChartOfAccount;
 use App\Models\GeneralLedgerEntry;
+use App\Models\AccountingPeriod;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -23,7 +24,28 @@ class GeneralLedgerController extends Controller
         ];
 
         $perPage = $request->input('per_page', 100);
-        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 25;
+        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 100;
+
+        // Handle accounting period selection
+        $periodId = $request->input('accounting_period_id');
+        $entryDateFrom = $request->input('filter.entry_date_from');
+        $entryDateTo = $request->input('filter.entry_date_to');
+
+        // If period is selected, use its date range
+        if ($periodId) {
+            $period = AccountingPeriod::find($periodId);
+            if ($period) {
+                $entryDateFrom = $period->start_date;
+                $entryDateTo = $period->end_date;
+                // Override the filter parameters
+                $request->merge([
+                    'filter' => array_merge($request->input('filter', []), [
+                        'entry_date_from' => $entryDateFrom,
+                        'entry_date_to' => $entryDateTo,
+                    ])
+                ]);
+            }
+        }
 
         $ledgerEntries = QueryBuilder::for(GeneralLedgerEntry::query())
             ->allowedFilters([
@@ -119,11 +141,18 @@ class GeneralLedgerController extends Controller
             ->get()
             ->unique('code');
 
+        // Get accounting periods for dropdown
+        $accountingPeriods = AccountingPeriod::orderBy('start_date', 'desc')->get();
+
         return view('reports.general-ledger.index', [
             'entries' => $ledgerEntries,
             'statusOptions' => $statusOptions,
             'accounts' => $accounts,
             'costCenters' => $costCenters,
+            'accountingPeriods' => $accountingPeriods,
+            'periodId' => $periodId,
+            'entryDateFrom' => $entryDateFrom,
+            'entryDateTo' => $entryDateTo,
         ]);
     }
 }

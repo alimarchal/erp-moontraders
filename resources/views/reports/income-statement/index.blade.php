@@ -5,7 +5,35 @@
     </x-slot>
 
     <x-filter-section :action="route('reports.income-statement.index')">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Period Selection -->
+            <div class="md:col-span-2">
+                <x-label for="accounting_period_id" value="Accounting Period" />
+                <select id="accounting_period_id" name="accounting_period_id"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+                    onchange="this.form.submit()">
+                    <option value="">Custom Date Range</option>
+                    @foreach($accountingPeriods as $period)
+                    <option value="{{ $period->id }}" {{ $periodId==$period->id ? 'selected' : '' }}>
+                        {{ $period->name }} ({{ \Carbon\Carbon::parse($period->start_date)->format('M d, Y') }} - {{
+                        \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- Start Date -->
+            <div>
+                <x-label for="start_date" value="From Date" />
+                <x-input id="start_date" name="start_date" type="date" class="mt-1 block w-full" :value="$startDate" />
+            </div>
+
+            <!-- End Date -->
+            <div>
+                <x-label for="end_date" value="To Date" />
+                <x-input id="end_date" name="end_date" type="date" class="mt-1 block w-full" :value="$endDate" />
+            </div>
+
             <div>
                 <x-label for="filter_account_code" value="Account Code" />
                 <x-input id="filter_account_code" name="filter[account_code]" type="text"
@@ -65,6 +93,15 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 pb-16">
         <x-status-message />
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6">
+
+            <!-- Period Header -->
+            <div class="mb-6 text-center">
+                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Income Statement</h2>
+                <p class="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                    For the Period: {{ \Carbon\Carbon::parse($startDate)->format('F d, Y') }} to {{
+                    \Carbon\Carbon::parse($endDate)->format('F d, Y') }}
+                </p>
+            </div>
 
             @php
             $revenue = $groupedAccounts->filter(function($items, $type) {

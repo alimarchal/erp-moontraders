@@ -5,7 +5,40 @@
     </x-slot>
 
     <x-filter-section :action="route('reports.trial-balance.index')">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Period/Date Selection -->
+            <div class="md:col-span-2">
+                <x-label for="accounting_period_id" value="Accounting Period" />
+                <select id="accounting_period_id" name="accounting_period_id"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+                    onchange="this.form.submit()">
+                    <option value="">Custom Date</option>
+                    @foreach($accountingPeriods as $period)
+                    <option value="{{ $period->id }}" {{ $periodId==$period->id ? 'selected' : '' }}>
+                        {{ $period->name }} (As of {{ \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
+                    </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <!-- As Of Date -->
+            <div>
+                <x-label for="as_of_date" value="As of Date" />
+                <x-input id="as_of_date" name="as_of_date" type="date" class="mt-1 block w-full" :value="$asOfDate" />
+            </div>
+
+            <div>
+                <x-label for="per_page" value="Show Per Page" />
+                <select id="per_page" name="per_page"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
+                </select>
+            </div>
+
             <div>
                 <x-label for="filter_account_code" value="Account Code" />
                 <select id="filter_account_code" name="filter[account_code]"
@@ -74,19 +107,6 @@
                     <option value="-balance" {{ request('sort')=='-balance' ? 'selected' : '' }}>Balance (High-Low)
                     </option>
                     <option value="balance" {{ request('sort')=='balance' ? 'selected' : '' }}>Balance (Low-High)
-                    </option>
-                </select>
-            </div>
-
-            <div>
-                <x-label for="per_page" value="Show Per Page" />
-                <select id="per_page" name="per_page"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
-                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
                 </select>
             </div>
         </div>
@@ -95,7 +115,12 @@
     <!-- Trial Balance Summary -->
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 mb-4">
         <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6">
-            <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">Trial Balance Summary</h3>
+            <div class="mb-4 text-center">
+                <h3 class="text-xl font-bold text-gray-800 dark:text-gray-200">Trial Balance</h3>
+                <p class="text-gray-600 dark:text-gray-400 mt-1">
+                    As of {{ \Carbon\Carbon::parse($asOfDate)->format('F d, Y') }}
+                </p>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
                     <div class="text-sm text-gray-600 dark:text-gray-400">Total Debits</div>
@@ -133,11 +158,21 @@
         ['label' => 'Account Code'],
         ['label' => 'Account Name'],
         ['label' => 'Account Type'],
-        ['label' => 'Debits', 'align' => 'text-right'],
-        ['label' => 'Credits', 'align' => 'text-right'],
-        ['label' => 'Balance', 'align' => 'text-right'],
+        ['label' => 'Debit Balance', 'align' => 'text-right'],
+        ['label' => 'Credit Balance', 'align' => 'text-right'],
     ]" emptyMessage="No account balances found.">
         @foreach ($accounts as $index => $account)
+        @php
+        $balance = (float) $account->balance;
+        // Balance is already calculated correctly in controller based on normal_balance
+        // Debit normal balance accounts show positive when they have debit balance
+        // Credit normal balance accounts show positive when they have credit balance
+        $isDebitBalance = $account->normal_balance === 'debit' && $balance > 0;
+        $isCreditBalance = $account->normal_balance === 'credit' && $balance > 0;
+
+        $debitBalance = $isDebitBalance ? $balance : 0;
+        $creditBalance = $isCreditBalance ? $balance : 0;
+        @endphp
         <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $accounts->firstItem() + $index }}
@@ -151,29 +186,32 @@
             <td class="py-1 px-2">
                 <div class="text-xs text-gray-600 dark:text-gray-400">{{ $account->account_type }}</div>
             </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format((float) $account->total_debits, 2) }}
+            <td class="py-1 px-2 text-right font-mono {{ $debitBalance > 0 ? 'font-semibold' : 'text-gray-400' }}">
+                {{ $debitBalance > 0 ? number_format($debitBalance, 2) : '-' }}
             </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format((float) $account->total_credits, 2) }}
-            </td>
-            <td class="py-1 px-2 text-right font-mono font-semibold">
-                {{ number_format((float) $account->balance, 2) }}
+            <td class="py-1 px-2 text-right font-mono {{ $creditBalance > 0 ? 'font-semibold' : 'text-gray-400' }}">
+                {{ $creditBalance > 0 ? number_format($creditBalance, 2) : '-' }}
             </td>
         </tr>
         @endforeach
-        <tr class="border-t-2 border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-800 font-bold">
+        @php
+        $totalDebitBalance = $accounts->sum(function($account) {
+        $balance = (float) $account->balance;
+        return ($account->normal_balance === 'debit' && $balance > 0) ? $balance : 0;
+        });
+        $totalCreditBalance = $accounts->sum(function($account) {
+        $balance = (float) $account->balance;
+        return ($account->normal_balance === 'credit' && $balance > 0) ? $balance : 0;
+        });
+        @endphp <tr class="border-t-2 border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-800 font-bold">
             <td colspan="4" class="py-2 px-2 text-right">
                 Page Total ({{ $accounts->count() }} accounts):
             </td>
             <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($accounts->sum('total_debits'), 2) }}
+                {{ number_format($totalDebitBalance, 2) }}
             </td>
             <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($accounts->sum('total_credits'), 2) }}
-            </td>
-            <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($accounts->sum('balance'), 2) }}
+                {{ number_format($totalCreditBalance, 2) }}
             </td>
         </tr>
     </x-data-table>

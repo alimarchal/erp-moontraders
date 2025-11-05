@@ -5,24 +5,39 @@
     </x-slot>
 
     <x-filter-section :action="route('reports.general-ledger.index')">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-                <x-label for="filter_journal_entry_id" value="Journal #" />
-                <x-input id="filter_journal_entry_id" name="filter[journal_entry_id]" type="text"
-                    class="mt-1 block w-full" :value="request('filter.journal_entry_id')"
-                    placeholder="Exact journal #" />
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="lg:col-span-2">
+                <x-label for="accounting_period_id" value="Accounting Period" />
+                <select id="accounting_period_id" name="accounting_period_id"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+                    onchange="this.form.submit()">
+                    <option value="">All Time (Custom Dates)</option>
+                    @foreach($accountingPeriods as $period)
+                    <option value="{{ $period->id }}" {{ $periodId==$period->id ? 'selected' : '' }}>
+                        {{ $period->name }} ({{ \Carbon\Carbon::parse($period->start_date)->format('M d, Y') }} - {{
+                        \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
+                    </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
                 <x-label for="filter_entry_date_from" value="Entry Date (From)" />
                 <x-input id="filter_entry_date_from" name="filter[entry_date_from]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.entry_date_from')" />
+                    class="mt-1 block w-full" :value="$entryDateFrom" />
             </div>
 
             <div>
                 <x-label for="filter_entry_date_to" value="Entry Date (To)" />
                 <x-input id="filter_entry_date_to" name="filter[entry_date_to]" type="date" class="mt-1 block w-full"
-                    :value="request('filter.entry_date_to')" />
+                    :value="$entryDateTo" />
+            </div>
+
+            <div>
+                <x-label for="filter_journal_entry_id" value="Journal #" />
+                <x-input id="filter_journal_entry_id" name="filter[journal_entry_id]" type="text"
+                    class="mt-1 block w-full" :value="request('filter.journal_entry_id')"
+                    placeholder="Exact journal #" />
             </div>
 
             <div>

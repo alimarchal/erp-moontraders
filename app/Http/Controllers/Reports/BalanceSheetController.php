@@ -22,16 +22,22 @@ class BalanceSheetController extends Controller
         $asOfDate = $request->input('as_of_date');
         $periodId = $request->input('accounting_period_id');
 
-        // If period selected, use its end date
-        if ($periodId) {
+        // Priority: Manual date > Period date > Default to today
+
+        // If manual date provided, use it (ignore period)
+        if ($asOfDate) {
+            // Use manual date, ignore period selection
+            $periodId = null; // Clear period selection when using manual date
+        }
+        // If period selected and manual date NOT provided, use period end date
+        elseif ($periodId) {
             $period = AccountingPeriod::find($periodId);
             if ($period) {
                 $asOfDate = $period->end_date;
             }
         }
-
-        // Default to today if no date specified
-        if (!$asOfDate) {
+        // Default to today if neither date nor period specified
+        else {
             $asOfDate = now()->format('Y-m-d');
         }
 

@@ -22,17 +22,23 @@ class IncomeStatementController extends Controller
         $endDate = $request->input('end_date');
         $periodId = $request->input('accounting_period_id');
 
-        // If period selected, use its dates
-        if ($periodId) {
+        // Priority: Manual dates > Period dates > Default to current period
+
+        // If BOTH start and end dates are manually provided, use them (ignore period)
+        if ($startDate && $endDate) {
+            // Use manual dates, ignore period selection
+            $periodId = null; // Clear period selection when using manual dates
+        }
+        // If period selected and manual dates NOT fully provided, use period dates
+        elseif ($periodId) {
             $period = AccountingPeriod::find($periodId);
             if ($period) {
                 $startDate = $period->start_date;
                 $endDate = $period->end_date;
             }
         }
-
-        // Default to current open period if no dates specified
-        if (!$startDate || !$endDate) {
+        // Default to current open period if no dates or period specified
+        else {
             $currentPeriod = AccountingPeriod::where('status', 'open')
                 ->orderBy('start_date', 'desc')
                 ->first();

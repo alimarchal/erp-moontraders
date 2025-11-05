@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="General Ledger" :createRoute="null" createLabel="" :showSearch="true" :showRefresh="true"
-            backRoute="dashboard" />
+            backRoute="reports.index" />
     </x-slot>
 
     <x-filter-section :action="route('reports.general-ledger.index')">

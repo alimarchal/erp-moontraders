@@ -61,9 +61,9 @@ class TrialBalanceController extends Controller
             'chart_of_accounts.account_name',
             'account_types.type_name as account_type',
             'chart_of_accounts.normal_balance',
-            DB::raw("COALESCE(SUM(CASE WHEN journal_entries.entry_date <= '{$asOfDate}' THEN journal_entry_details.debit ELSE 0 END), 0) as total_debits"),
-            DB::raw("COALESCE(SUM(CASE WHEN journal_entries.entry_date <= '{$asOfDate}' THEN journal_entry_details.credit ELSE 0 END), 0) as total_credits"),
-            DB::raw("COALESCE(SUM(CASE WHEN journal_entries.entry_date <= '{$asOfDate}' THEN journal_entry_details.debit - journal_entry_details.credit ELSE 0 END), 0) as balance")
+            DB::raw("COALESCE(SUM(journal_entry_details.debit), 0) as total_debits"),
+            DB::raw("COALESCE(SUM(journal_entry_details.credit), 0) as total_credits"),
+            DB::raw("COALESCE(SUM(journal_entry_details.debit - journal_entry_details.credit), 0) as balance")
         ])
             ->join('account_types', 'account_types.id', '=', 'chart_of_accounts.account_type_id')
             ->leftJoin('journal_entry_details', 'journal_entry_details.chart_of_account_id', '=', 'chart_of_accounts.id')
@@ -72,6 +72,10 @@ class TrialBalanceController extends Controller
                     ->where('journal_entries.status', '=', 'posted');
             })
             ->where('chart_of_accounts.is_active', true)
+            ->where(function ($query) use ($asOfDate) {
+                $query->whereNull('journal_entries.entry_date')
+                    ->orWhere('journal_entries.entry_date', '<=', $asOfDate);
+            })
             ->groupBy(
                 'chart_of_accounts.id',
                 'chart_of_accounts.account_code',
@@ -79,7 +83,7 @@ class TrialBalanceController extends Controller
                 'account_types.type_name',
                 'chart_of_accounts.normal_balance'
             )
-            ->havingRaw("COALESCE(SUM(CASE WHEN journal_entries.entry_date <= '{$asOfDate}' THEN journal_entry_details.debit ELSE 0 END), 0) != 0 OR COALESCE(SUM(CASE WHEN journal_entries.entry_date <= '{$asOfDate}' THEN journal_entry_details.credit ELSE 0 END), 0) != 0");
+            ->havingRaw("COALESCE(SUM(journal_entry_details.debit), 0) != 0 OR COALESCE(SUM(journal_entry_details.credit), 0) != 0");
 
         $accounts = QueryBuilder::for($query)
             ->allowedFilters([

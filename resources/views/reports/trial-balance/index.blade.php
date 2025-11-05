@@ -164,16 +164,11 @@
         @foreach ($accounts as $index => $account)
         @php
         $balance = (float) $account->balance;
-        // Balance is already calculated correctly in controller based on normal_balance
-        // Debit normal balance accounts show positive when they have debit balance
-        // Credit normal balance accounts show positive when they have credit balance
-        $isDebitBalance = $account->normal_balance === 'debit' && $balance > 0;
-        $isCreditBalance = $account->normal_balance === 'credit' && $balance > 0;
-
-        $debitBalance = $isDebitBalance ? $balance : 0;
-        $creditBalance = $isCreditBalance ? $balance : 0;
-        @endphp
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+        // For Trial Balance: show positive balance in Debit column, negative in Credit column
+        // This is CORRECT for trial balance - ignore normal_balance field for display
+        $debitBalance = $balance > 0 ? $balance : 0;
+        $creditBalance = $balance < 0 ? abs($balance) : 0; @endphp <tr
+            class="border-b border-gray-200 dark:border-gray-700 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $accounts->firstItem() + $index }}
             </td>
@@ -192,27 +187,26 @@
             <td class="py-1 px-2 text-right font-mono {{ $creditBalance > 0 ? 'font-semibold' : 'text-gray-400' }}">
                 {{ $creditBalance > 0 ? number_format($creditBalance, 2) : '-' }}
             </td>
-        </tr>
-        @endforeach
-        @php
-        $totalDebitBalance = $accounts->sum(function($account) {
-        $balance = (float) $account->balance;
-        return ($account->normal_balance === 'debit' && $balance > 0) ? $balance : 0;
-        });
-        $totalCreditBalance = $accounts->sum(function($account) {
-        $balance = (float) $account->balance;
-        return ($account->normal_balance === 'credit' && $balance > 0) ? $balance : 0;
-        });
-        @endphp <tr class="border-t-2 border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-800 font-bold">
-            <td colspan="4" class="py-2 px-2 text-right">
-                Page Total ({{ $accounts->count() }} accounts):
-            </td>
-            <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($totalDebitBalance, 2) }}
-            </td>
-            <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($totalCreditBalance, 2) }}
-            </td>
-        </tr>
+            </tr>
+            @endforeach
+            @php
+            $totalDebitBalance = $accounts->sum(function($account) {
+            $balance = (float) $account->balance;
+            return $balance > 0 ? $balance : 0;
+            });
+            $totalCreditBalance = $accounts->sum(function($account) {
+            $balance = (float) $account->balance;
+            return $balance < 0 ? abs($balance) : 0; }); @endphp <tr
+                class="border-t-2 border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-800 font-bold">
+                <td colspan="4" class="py-2 px-2 text-right">
+                    Page Total ({{ $accounts->count() }} accounts):
+                </td>
+                <td class="py-2 px-2 text-right font-mono">
+                    {{ number_format($totalDebitBalance, 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono">
+                    {{ number_format($totalCreditBalance, 2) }}
+                </td>
+                </tr>
     </x-data-table>
 </x-app-layout>

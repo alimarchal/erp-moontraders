@@ -41,7 +41,7 @@ class BalanceSheetController extends Controller
         if ($driver === 'pgsql') {
             $accounts = collect(DB::select("SELECT * FROM fn_balance_sheet(?::date)", [$asOfDate]));
         } else {
-            // MySQL compatible query
+            // MySQL compatible query with proper date filtering
             $accounts = DB::table('chart_of_accounts as a')
                 ->select([
                     'a.id as account_id',
@@ -61,12 +61,13 @@ class BalanceSheetController extends Controller
                     ")
                 ])
                 ->join('account_types as at', 'at.id', '=', 'a.account_type_id')
-                ->leftJoin('journal_entry_details as d', 'd.chart_of_account_id', '=', 'a.id')
-                ->leftJoin('journal_entries as je', function ($join) use ($asOfDate) {
-                    $join->on('je.id', '=', 'd.journal_entry_id')
-                        ->where('je.status', '=', 'posted')
-                        ->whereDate('je.entry_date', '<=', $asOfDate);
-                })
+                ->leftJoin(DB::raw("(
+                    SELECT jed.chart_of_account_id, jed.debit, jed.credit
+                    FROM journal_entry_details jed
+                    JOIN journal_entries je ON je.id = jed.journal_entry_id
+                    WHERE je.status = 'posted'
+                    AND je.entry_date <= '{$asOfDate}'
+                ) as d"), 'd.chart_of_account_id', '=', 'a.id')
                 ->where('at.report_group', '=', 'BalanceSheet')
                 ->where('a.is_active', '=', true)
                 ->groupBy('a.id', 'a.account_code', 'a.account_name', 'at.type_name', 'at.report_group', 'a.normal_balance')
@@ -115,12 +116,13 @@ class BalanceSheetController extends Controller
                     ")
                 ])
                 ->join('account_types as at', 'at.id', '=', 'a.account_type_id')
-                ->leftJoin('journal_entry_details as d', 'd.chart_of_account_id', '=', 'a.id')
-                ->leftJoin('journal_entries as je', function ($join) use ($asOfDate) {
-                    $join->on('je.id', '=', 'd.journal_entry_id')
-                        ->where('je.status', '=', 'posted')
-                        ->whereDate('je.entry_date', '<=', $asOfDate);
-                })
+                ->leftJoin(DB::raw("(
+                    SELECT jed.chart_of_account_id, jed.debit, jed.credit
+                    FROM journal_entry_details jed
+                    JOIN journal_entries je ON je.id = jed.journal_entry_id
+                    WHERE je.status = 'posted'
+                    AND je.entry_date <= '{$asOfDate}'
+                ) as d"), 'd.chart_of_account_id', '=', 'a.id')
                 ->where('at.report_group', '=', 'IncomeStatement')
                 ->where('a.is_active', '=', true)
                 ->groupBy('a.id', 'at.type_name', 'a.normal_balance')

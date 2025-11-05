@@ -69,10 +69,13 @@ return new class extends Migration {
                     COALESCE(SUM(d.debit - d.credit), 0) AS balance
                 FROM chart_of_accounts a
                 JOIN account_types at ON at.id = a.account_type_id
-                LEFT JOIN journal_entry_details d ON d.chart_of_account_id = a.id
-                LEFT JOIN journal_entries je ON je.id = d.journal_entry_id 
-                    AND je.status = 'posted'
+                LEFT JOIN (
+                    SELECT jed.chart_of_account_id, jed.debit, jed.credit
+                    FROM journal_entry_details jed
+                    JOIN journal_entries je ON je.id = jed.journal_entry_id
+                    WHERE je.status = 'posted'
                     AND je.entry_date <= p_as_of_date
+                ) d ON d.chart_of_account_id = a.id
                 WHERE a.is_active = true
                 GROUP BY a.id, a.account_code, a.account_name, at.type_name, a.normal_balance
                 HAVING COALESCE(SUM(d.debit), 0) <> 0 OR COALESCE(SUM(d.credit), 0) <> 0
@@ -136,11 +139,14 @@ return new class extends Migration {
                     a.is_active
                 FROM chart_of_accounts a
                 JOIN account_types at ON at.id = a.account_type_id
-                LEFT JOIN journal_entry_details d ON d.chart_of_account_id = a.id
-                LEFT JOIN journal_entries je ON je.id = d.journal_entry_id 
-                    AND je.status = 'posted'
+                LEFT JOIN (
+                    SELECT jed.chart_of_account_id, jed.debit, jed.credit
+                    FROM journal_entry_details jed
+                    JOIN journal_entries je ON je.id = jed.journal_entry_id
+                    WHERE je.status = 'posted'
                     AND (p_start_date IS NULL OR je.entry_date >= p_start_date)
                     AND je.entry_date <= p_end_date
+                ) d ON d.chart_of_account_id = a.id
                 GROUP BY a.id, a.account_code, a.account_name, at.type_name, a.normal_balance, a.is_group, a.is_active
                 ORDER BY a.account_code;
             END;
@@ -235,10 +241,13 @@ return new class extends Migration {
                     END AS balance
                 FROM chart_of_accounts a
                 JOIN account_types at ON at.id = a.account_type_id
-                LEFT JOIN journal_entry_details d ON d.chart_of_account_id = a.id
-                LEFT JOIN journal_entries je ON je.id = d.journal_entry_id 
-                    AND je.status = 'posted'
+                LEFT JOIN (
+                    SELECT jed.chart_of_account_id, jed.debit, jed.credit
+                    FROM journal_entry_details jed
+                    JOIN journal_entries je ON je.id = jed.journal_entry_id
+                    WHERE je.status = 'posted'
                     AND je.entry_date <= p_as_of_date
+                ) d ON d.chart_of_account_id = a.id
                 WHERE at.report_group = 'BalanceSheet'
                 AND a.is_active = true
                 GROUP BY a.id, a.account_code, a.account_name, at.type_name, at.report_group, a.normal_balance
@@ -281,11 +290,14 @@ return new class extends Migration {
                     END AS balance
                 FROM chart_of_accounts a
                 JOIN account_types at ON at.id = a.account_type_id
-                LEFT JOIN journal_entry_details d ON d.chart_of_account_id = a.id
-                LEFT JOIN journal_entries je ON je.id = d.journal_entry_id 
-                    AND je.status = 'posted'
+                LEFT JOIN (
+                    SELECT jed.chart_of_account_id, jed.debit, jed.credit
+                    FROM journal_entry_details jed
+                    JOIN journal_entries je ON je.id = jed.journal_entry_id
+                    WHERE je.status = 'posted'
                     AND (p_start_date IS NULL OR je.entry_date >= p_start_date)
                     AND je.entry_date <= p_end_date
+                ) d ON d.chart_of_account_id = a.id
                 WHERE at.report_group = 'IncomeStatement'
                 AND a.is_active = true
                 GROUP BY a.id, a.account_code, a.account_name, at.type_name, at.report_group, a.normal_balance

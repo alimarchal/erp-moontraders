@@ -5,9 +5,9 @@
     </x-slot>
 
     <x-filter-section :action="route('reports.balance-sheet.index')">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <!-- Period/Date Selection -->
-            <div class="md:col-span-2">
+            <div>
                 <x-label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
                     class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
@@ -27,70 +27,24 @@
                 <x-input id="as_of_date" name="as_of_date" type="date" class="mt-1 block w-full" :value="$asOfDate" />
             </div>
 
+            <!-- Optional Filters (can be hidden by default) -->
             <div>
-                <x-label for="per_page" value="Show Per Page" />
-                <select id="per_page" name="per_page"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
-                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_account_code" value="Account Code" />
+                <x-label for="filter_account_code" value="Filter by Account Code (Optional)" />
                 <x-input id="filter_account_code" name="filter[account_code]" type="text"
                     class="mt-1 block w-full uppercase" :value="request('filter.account_code')"
                     placeholder="e.g., 1000" />
             </div>
 
             <div>
-                <x-label for="filter_account_name" value="Account Name" />
+                <x-label for="filter_account_name" value="Filter by Account Name (Optional)" />
                 <x-input id="filter_account_name" name="filter[account_name]" type="text" class="mt-1 block w-full"
                     :value="request('filter.account_name')" placeholder="Search by account name" />
             </div>
 
             <div>
-                <x-label for="filter_account_type" value="Account Type" />
+                <x-label for="filter_account_type" value="Filter by Account Type (Optional)" />
                 <x-input id="filter_account_type" name="filter[account_type]" type="text" class="mt-1 block w-full"
                     :value="request('filter.account_type')" placeholder="e.g., Asset" />
-            </div>
-
-            <div>
-                <x-label for="sort" value="Sort By" />
-                <select id="sort" name="sort"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="account_code" {{ request('sort')=='account_code' || !request('sort') ? 'selected'
-                        : '' }}>Account Code (A-Z)</option>
-                    <option value="-account_code" {{ request('sort')=='-account_code' ? 'selected' : '' }}>Account Code
-                        (Z-A)</option>
-                    <option value="account_name" {{ request('sort')=='account_name' ? 'selected' : '' }}>Account Name
-                        (A-Z)</option>
-                    <option value="-account_name" {{ request('sort')=='-account_name' ? 'selected' : '' }}>Account Name
-                        (Z-A)</option>
-                    <option value="account_type" {{ request('sort')=='account_type' ? 'selected' : '' }}>Account Type
-                        (A-Z)</option>
-                    <option value="-account_type" {{ request('sort')=='-account_type' ? 'selected' : '' }}>Account Type
-                        (Z-A)</option>
-                    <option value="-balance" {{ request('sort')=='-balance' ? 'selected' : '' }}>Balance (High-Low)
-                    </option>
-                    <option value="balance" {{ request('sort')=='balance' ? 'selected' : '' }}>Balance (Low-High)
-                    </option>
-                </select>
-            </div>
-
-            <div>
-                <x-label for="per_page" value="Show Per Page" />
-                <select id="per_page" name="per_page"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
-                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
-                </select>
             </div>
         </div>
     </x-filter-section>

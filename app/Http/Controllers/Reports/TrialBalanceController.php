@@ -35,19 +35,10 @@ class TrialBalanceController extends Controller
         }
 
         $driver = DB::connection()->getDriverName();
-        $perPage = $request->input('per_page', 50);
-        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 50;
 
         // Get data based on database driver
         if ($driver === 'pgsql') {
             // PostgreSQL: Use functions
-            $summaryResult = DB::selectOne('SELECT * FROM fn_trial_balance_summary(?)', [$asOfDate]);
-            $trialBalance = (object) [
-                'total_debits' => $summaryResult->total_debits ?? 0,
-                'total_credits' => $summaryResult->total_credits ?? 0,
-                'difference' => $summaryResult->difference ?? 0,
-            ];
-
             $accountsData = DB::select('SELECT * FROM fn_trial_balance(?)', [$asOfDate]);
             $accountsCollection = collect($accountsData)->map(function ($row) {
                 return (object) [
@@ -63,23 +54,6 @@ class TrialBalanceController extends Controller
             });
         } else {
             // MySQL: Use direct queries with proper date filtering in subquery
-            $summaryResult = DB::selectOne("
-                SELECT 
-                    COALESCE(SUM(jed.debit), 0) AS total_debits,
-                    COALESCE(SUM(jed.credit), 0) AS total_credits,
-                    COALESCE(SUM(jed.debit) - SUM(jed.credit), 0) AS difference
-                FROM journal_entry_details jed
-                JOIN journal_entries je ON je.id = jed.journal_entry_id
-                WHERE je.status = 'posted' AND je.entry_date <= ?
-            ", [$asOfDate]);
-
-            $trialBalance = (object) [
-                'total_debits' => $summaryResult->total_debits ?? 0,
-                'total_credits' => $summaryResult->total_credits ?? 0,
-                'difference' => $summaryResult->difference ?? 0,
-            ];
-
-            // Use subquery to properly filter journal entries by date
             $accountsData = DB::select("
                 SELECT
                     a.id AS account_id,
@@ -121,6 +95,16 @@ class TrialBalanceController extends Controller
             });
         }
 
+        // Calculate trial balance summary from account balances (not raw journal entries)
+        $totalDebitBalance = $accountsCollection->filter(fn($a) => $a->balance > 0)->sum('balance');
+        $totalCreditBalance = abs($accountsCollection->filter(fn($a) => $a->balance < 0)->sum('balance'));
+
+        $trialBalance = (object) [
+            'total_debits' => $totalDebitBalance,
+            'total_credits' => $totalCreditBalance,
+            'difference' => $totalDebitBalance - $totalCreditBalance,
+        ];
+
         // Apply filters
         if ($request->filled('filter.account_code')) {
             $accountsCollection = $accountsCollection->filter(function ($item) use ($request) {
@@ -147,16 +131,8 @@ class TrialBalanceController extends Controller
             ? $accountsCollection->sortBy($sortField)->values()
             : $accountsCollection->sortByDesc($sortField)->values();
 
-        // Paginate manually
-        $page = $request->input('page', 1);
-        $total = $accountsCollection->count();
-        $accounts = new \Illuminate\Pagination\LengthAwarePaginator(
-            $accountsCollection->forPage($page, $perPage),
-            $total,
-            $perPage,
-            $page,
-            ['path' => $request->url(), 'query' => $request->query()]
-        );
+        // Return all accounts (no pagination for trial balance)
+        $accounts = $accountsCollection;
 
         // Get distinct values for dropdowns
         $accountTypes = ChartOfAccount::join('account_types', 'account_types.id', '=', 'chart_of_accounts.account_type_id')

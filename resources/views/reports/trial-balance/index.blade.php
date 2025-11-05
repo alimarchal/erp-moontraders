@@ -5,9 +5,9 @@
     </x-slot>
 
     <x-filter-section :action="route('reports.trial-balance.index')">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <!-- Period/Date Selection -->
-            <div class="md:col-span-2">
+            <div>
                 <x-label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
                     class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
@@ -27,20 +27,9 @@
                 <x-input id="as_of_date" name="as_of_date" type="date" class="mt-1 block w-full" :value="$asOfDate" />
             </div>
 
+            <!-- Optional Filters -->
             <div>
-                <x-label for="per_page" value="Show Per Page" />
-                <select id="per_page" name="per_page"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
-                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_account_code" value="Account Code" />
+                <x-label for="filter_account_code" value="Filter by Account (Optional)" />
                 <select id="filter_account_code" name="filter[account_code]"
                     class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
@@ -54,21 +43,7 @@
             </div>
 
             <div>
-                <x-label for="filter_account_name" value="Account Name" />
-                <select id="filter_account_name" name="filter[account_name]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Accounts</option>
-                    @foreach($accountsList as $account)
-                    <option value="{{ $account->account_name }}" {{ request('filter.account_name')===$account->
-                        account_name ? 'selected' : '' }}>
-                        {{ $account->account_name }} ({{ $account->account_code }})
-                    </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_account_type" value="Account Type" />
+                <x-label for="filter_account_type" value="Filter by Type (Optional)" />
                 <select id="filter_account_type" name="filter[account_type]"
                     class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Types</option>
@@ -77,36 +52,6 @@
                         {{ $type }}
                     </option>
                     @endforeach
-                </select>
-            </div>
-
-            <div>
-                <x-label for="sort" value="Sort By" />
-                <select id="sort" name="sort"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="account_code" {{ request('sort')=='account_code' || !request('sort') ? 'selected'
-                        : '' }}>Account Code (A-Z)</option>
-                    <option value="-account_code" {{ request('sort')=='-account_code' ? 'selected' : '' }}>Account Code
-                        (Z-A)</option>
-                    <option value="account_name" {{ request('sort')=='account_name' ? 'selected' : '' }}>Account Name
-                        (A-Z)</option>
-                    <option value="-account_name" {{ request('sort')=='-account_name' ? 'selected' : '' }}>Account Name
-                        (Z-A)</option>
-                    <option value="account_type" {{ request('sort')=='account_type' ? 'selected' : '' }}>Account Type
-                        (A-Z)</option>
-                    <option value="-account_type" {{ request('sort')=='-account_type' ? 'selected' : '' }}>Account Type
-                        (Z-A)</option>
-                    <option value="-total_debits" {{ request('sort')=='-total_debits' ? 'selected' : '' }}>Debits
-                        (High-Low)</option>
-                    <option value="total_debits" {{ request('sort')=='total_debits' ? 'selected' : '' }}>Debits
-                        (Low-High)</option>
-                    <option value="-total_credits" {{ request('sort')=='-total_credits' ? 'selected' : '' }}>Credits
-                        (High-Low)</option>
-                    <option value="total_credits" {{ request('sort')=='total_credits' ? 'selected' : '' }}>Credits
-                        (Low-High)</option>
-                    <option value="-balance" {{ request('sort')=='-balance' ? 'selected' : '' }}>Balance (High-Low)
-                    </option>
-                    <option value="balance" {{ request('sort')=='balance' ? 'selected' : '' }}>Balance (Low-High)
                 </select>
             </div>
         </div>
@@ -165,12 +110,11 @@
         @php
         $balance = (float) $account->balance;
         // For Trial Balance: show positive balance in Debit column, negative in Credit column
-        // This is CORRECT for trial balance - ignore normal_balance field for display
         $debitBalance = $balance > 0 ? $balance : 0;
         $creditBalance = $balance < 0 ? abs($balance) : 0; @endphp <tr
             class="border-b border-gray-200 dark:border-gray-700 text-sm">
             <td class="py-1 px-2 text-center">
-                {{ $accounts->firstItem() + $index }}
+                {{ $index + 1 }}
             </td>
             <td class="py-1 px-2">
                 <div class="font-semibold uppercase font-mono">{{ $account->account_code }}</div>
@@ -190,16 +134,16 @@
             </tr>
             @endforeach
             @php
-            $totalDebitBalance = $accounts->sum(function($account) {
+            $totalDebitBalance = collect($accounts)->sum(function($account) {
             $balance = (float) $account->balance;
             return $balance > 0 ? $balance : 0;
             });
-            $totalCreditBalance = $accounts->sum(function($account) {
+            $totalCreditBalance = collect($accounts)->sum(function($account) {
             $balance = (float) $account->balance;
             return $balance < 0 ? abs($balance) : 0; }); @endphp <tr
                 class="border-t-2 border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-800 font-bold">
                 <td colspan="4" class="py-2 px-2 text-right">
-                    Page Total ({{ $accounts->count() }} accounts):
+                    TOTAL ({{ count($accounts) }} accounts):
                 </td>
                 <td class="py-2 px-2 text-right font-mono">
                     {{ number_format($totalDebitBalance, 2) }}

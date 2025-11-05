@@ -35,94 +35,104 @@ class BalanceSheetController extends Controller
             $asOfDate = now()->format('Y-m-d');
         }
 
-        $perPage = $request->input('per_page', 50);
-        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 50;
+        $driver = DB::connection()->getDriverName();
 
-        // Build balance sheet query with date filtering
-        $query = ChartOfAccount::select([
-            'chart_of_accounts.id as account_id',
-            'chart_of_accounts.account_code',
-            'chart_of_accounts.account_name',
-            'account_types.type_name as account_type',
-            'chart_of_accounts.normal_balance',
-            DB::raw("
-                CASE
-                    WHEN chart_of_accounts.normal_balance = 'debit' 
-                    THEN COALESCE(SUM(journal_entry_details.debit - journal_entry_details.credit), 0)
-                    WHEN chart_of_accounts.normal_balance = 'credit' 
-                    THEN COALESCE(SUM(journal_entry_details.credit - journal_entry_details.debit), 0)
-                    ELSE 0
-                END AS balance
-            ")
-        ])
-            ->join('account_types', 'account_types.id', '=', 'chart_of_accounts.account_type_id')
-            ->leftJoin('journal_entry_details', 'journal_entry_details.chart_of_account_id', '=', 'chart_of_accounts.id')
-            ->leftJoin('journal_entries', function ($join) use ($asOfDate) {
-                $join->on('journal_entries.id', '=', 'journal_entry_details.journal_entry_id')
-                    ->where('journal_entries.status', '=', 'posted')
-                    ->whereDate('journal_entries.entry_date', '<=', $asOfDate);
-            })
-            ->where('account_types.report_group', 'BalanceSheet')
-            ->where('chart_of_accounts.is_active', true)
-            ->groupBy(
-                'chart_of_accounts.id',
-                'chart_of_accounts.account_code',
-                'chart_of_accounts.account_name',
-                'account_types.type_name',
-                'chart_of_accounts.normal_balance'
-            )
-            ->havingRaw('COALESCE(SUM(journal_entry_details.debit), 0) != 0 OR COALESCE(SUM(journal_entry_details.credit), 0) != 0');
+        // Use database function for PostgreSQL, direct query for MySQL
+        if ($driver === 'pgsql') {
+            $accounts = collect(DB::select("SELECT * FROM fn_balance_sheet(?::date)", [$asOfDate]));
+        } else {
+            // MySQL compatible query
+            $accounts = DB::table('chart_of_accounts as a')
+                ->select([
+                    'a.id as account_id',
+                    'a.account_code',
+                    'a.account_name',
+                    'at.type_name as account_type',
+                    'at.report_group',
+                    'a.normal_balance',
+                    DB::raw("
+                        CASE
+                            WHEN a.normal_balance = 'debit' 
+                            THEN COALESCE(SUM(d.debit - d.credit), 0)
+                            WHEN a.normal_balance = 'credit' 
+                            THEN COALESCE(SUM(d.credit - d.debit), 0)
+                            ELSE 0
+                        END AS balance
+                    ")
+                ])
+                ->join('account_types as at', 'at.id', '=', 'a.account_type_id')
+                ->leftJoin('journal_entry_details as d', 'd.chart_of_account_id', '=', 'a.id')
+                ->leftJoin('journal_entries as je', function ($join) use ($asOfDate) {
+                    $join->on('je.id', '=', 'd.journal_entry_id')
+                        ->where('je.status', '=', 'posted')
+                        ->whereDate('je.entry_date', '<=', $asOfDate);
+                })
+                ->where('at.report_group', '=', 'BalanceSheet')
+                ->where('a.is_active', '=', true)
+                ->groupBy('a.id', 'a.account_code', 'a.account_name', 'at.type_name', 'at.report_group', 'a.normal_balance')
+                ->havingRaw('COALESCE(SUM(d.debit), 0) <> 0 OR COALESCE(SUM(d.credit), 0) <> 0')
+                ->orderBy('a.account_code')
+                ->get();
+        }
 
-        $accounts = QueryBuilder::for($query)
-            ->allowedFilters([
-                AllowedFilter::partial('account_code'),
-                AllowedFilter::partial('account_name'),
-                AllowedFilter::partial('account_type'),
-            ])
-            ->allowedSorts([
-                'account_code',
-                'account_name',
-                'account_type',
-                'balance',
-            ])
-            ->defaultSort('account_code')
-            ->paginate($perPage)
-            ->withQueryString();
+        // Apply filters if provided
+        if ($request->has('filter.account_code')) {
+            $accounts = $accounts->filter(function ($account) use ($request) {
+                return str_contains(strtolower($account->account_code), strtolower($request->input('filter.account_code')));
+            });
+        }
+
+        if ($request->has('filter.account_name')) {
+            $accounts = $accounts->filter(function ($account) use ($request) {
+                return str_contains(strtolower($account->account_name), strtolower($request->input('filter.account_name')));
+            });
+        }
+
+        if ($request->has('filter.account_type')) {
+            $accounts = $accounts->filter(function ($account) use ($request) {
+                return str_contains(strtolower($account->account_type), strtolower($request->input('filter.account_type')));
+            });
+        }
 
         // Group by account type for better presentation
         $groupedAccounts = $accounts->groupBy('account_type');
 
         // Calculate net income from revenue and expense accounts up to the as_of_date
-        $netIncomeQuery = ChartOfAccount::select([
-            'account_types.type_name as account_type',
-            DB::raw("
-                CASE
-                    WHEN chart_of_accounts.normal_balance = 'debit' 
-                    THEN COALESCE(SUM(journal_entry_details.debit - journal_entry_details.credit), 0)
-                    WHEN chart_of_accounts.normal_balance = 'credit' 
-                    THEN COALESCE(SUM(journal_entry_details.credit - journal_entry_details.debit), 0)
-                    ELSE 0
-                END AS balance
-            ")
-        ])
-            ->join('account_types', 'account_types.id', '=', 'chart_of_accounts.account_type_id')
-            ->leftJoin('journal_entry_details', 'journal_entry_details.chart_of_account_id', '=', 'chart_of_accounts.id')
-            ->leftJoin('journal_entries', function ($join) use ($asOfDate) {
-                $join->on('journal_entries.id', '=', 'journal_entry_details.journal_entry_id')
-                    ->where('journal_entries.status', '=', 'posted')
-                    ->whereDate('journal_entries.entry_date', '<=', $asOfDate);
-            })
-            ->where('account_types.report_group', 'IncomeStatement')
-            ->where('chart_of_accounts.is_active', true)
-            ->groupBy('chart_of_accounts.id', 'account_types.type_name', 'chart_of_accounts.normal_balance')
-            ->get();
+        if ($driver === 'pgsql') {
+            $netIncomeData = collect(DB::select("SELECT * FROM fn_income_statement(NULL, ?::date)", [$asOfDate]));
+        } else {
+            $netIncomeData = DB::table('chart_of_accounts as a')
+                ->select([
+                    'at.type_name as account_type',
+                    DB::raw("
+                        CASE
+                            WHEN a.normal_balance = 'debit' 
+                            THEN COALESCE(SUM(d.debit - d.credit), 0)
+                            WHEN a.normal_balance = 'credit' 
+                            THEN COALESCE(SUM(d.credit - d.debit), 0)
+                            ELSE 0
+                        END AS balance
+                    ")
+                ])
+                ->join('account_types as at', 'at.id', '=', 'a.account_type_id')
+                ->leftJoin('journal_entry_details as d', 'd.chart_of_account_id', '=', 'a.id')
+                ->leftJoin('journal_entries as je', function ($join) use ($asOfDate) {
+                    $join->on('je.id', '=', 'd.journal_entry_id')
+                        ->where('je.status', '=', 'posted')
+                        ->whereDate('je.entry_date', '<=', $asOfDate);
+                })
+                ->where('at.report_group', '=', 'IncomeStatement')
+                ->where('a.is_active', '=', true)
+                ->groupBy('a.id', 'at.type_name', 'a.normal_balance')
+                ->get();
+        }
 
-        $totalRevenue = $netIncomeQuery->filter(function ($item) {
+        $totalRevenue = $netIncomeData->filter(function ($item) {
             return str_contains(strtolower($item->account_type), 'income') ||
                 str_contains(strtolower($item->account_type), 'revenue');
         })->sum('balance');
 
-        $totalExpenses = $netIncomeQuery->filter(function ($item) {
+        $totalExpenses = $netIncomeData->filter(function ($item) {
             return str_contains(strtolower($item->account_type), 'expense') ||
                 str_contains(strtolower($item->account_type), 'cost');
         })->sum('balance');

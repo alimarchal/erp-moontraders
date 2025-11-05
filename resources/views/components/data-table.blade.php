@@ -27,7 +27,7 @@
                 </tbody>
             </table>
         </div>
-        @if ($items->hasPages())
+        @if (method_exists($items, 'hasPages') && $items->hasPages())
         <div class="px-2 py-2">
             {{ $items->links() }}
         </div>

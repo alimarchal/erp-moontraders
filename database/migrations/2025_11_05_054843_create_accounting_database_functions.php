@@ -226,7 +226,13 @@ return new class extends Migration {
                     at.type_name AS account_type,
                     at.report_group,
                     a.normal_balance,
-                    COALESCE(SUM(d.debit - d.credit), 0) AS balance
+                    CASE
+                        WHEN a.normal_balance = 'debit' 
+                        THEN COALESCE(SUM(d.debit - d.credit), 0)
+                        WHEN a.normal_balance = 'credit' 
+                        THEN COALESCE(SUM(d.credit - d.debit), 0)
+                        ELSE 0
+                    END AS balance
                 FROM chart_of_accounts a
                 JOIN account_types at ON at.id = a.account_type_id
                 LEFT JOIN journal_entry_details d ON d.chart_of_account_id = a.id
@@ -266,7 +272,13 @@ return new class extends Migration {
                     at.type_name AS account_type,
                     at.report_group,
                     a.normal_balance,
-                    COALESCE(SUM(d.debit - d.credit), 0) AS balance
+                    CASE
+                        WHEN a.normal_balance = 'debit' 
+                        THEN COALESCE(SUM(d.debit - d.credit), 0)
+                        WHEN a.normal_balance = 'credit' 
+                        THEN COALESCE(SUM(d.credit - d.debit), 0)
+                        ELSE 0
+                    END AS balance
                 FROM chart_of_accounts a
                 JOIN account_types at ON at.id = a.account_type_id
                 LEFT JOIN journal_entry_details d ON d.chart_of_account_id = a.id

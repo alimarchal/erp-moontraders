@@ -469,6 +469,7 @@ return new class extends Migration {
 
     /**
      * Create MySQL/MariaDB triggers and procedures
+     * Note: MySQL doesn't support DEFERRABLE constraints, so balance checks happen immediately
      */
     private function createMySQLTriggers(): void
     {
@@ -488,17 +489,26 @@ return new class extends Migration {
                 BEGIN
                     DECLARE v_debits DECIMAL(15,2);
                     DECLARE v_credits DECIMAL(15,2);
+                    DECLARE v_status VARCHAR(20);
                     DECLARE v_error_msg VARCHAR(500);
 
-                    SELECT COALESCE(SUM(debit), 0), COALESCE(SUM(credit), 0)
-                    INTO v_debits, v_credits
-                    FROM journal_entry_details
-                    WHERE journal_entry_id = p_journal_id;
+                    -- Get journal status
+                    SELECT status INTO v_status
+                    FROM journal_entries
+                    WHERE id = p_journal_id;
 
-                    IF v_debits <> v_credits THEN
-                        SET v_error_msg = CONCAT('Journal entry ', p_journal_id, ' is unbalanced: Debits=', v_debits, ', Credits=', v_credits);
-                        SIGNAL SQLSTATE '45000'
-                        SET MESSAGE_TEXT = v_error_msg;
+                    -- Only check balance for posted journals (MySQL doesn't support deferred constraints)
+                    IF v_status = 'posted' THEN
+                        SELECT COALESCE(SUM(debit), 0), COALESCE(SUM(credit), 0)
+                        INTO v_debits, v_credits
+                        FROM journal_entry_details
+                        WHERE journal_entry_id = p_journal_id;
+
+                        IF v_debits <> v_credits THEN
+                            SET v_error_msg = CONCAT('Journal entry ', p_journal_id, ' is unbalanced: Debits=', v_debits, ', Credits=', v_credits);
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = v_error_msg;
+                        END IF;
                     END IF;
                 END
             ");
@@ -509,7 +519,7 @@ return new class extends Migration {
         }
 
         // OPTIMIZED: Only check balance when transitioning to 'posted' status
-        // Draft entries can be temporarily unbalanced
+        // MySQL limitation: No deferrable constraints, so we only check on posting
         try {
             DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_before_post");
         } catch (\Exception $e) {

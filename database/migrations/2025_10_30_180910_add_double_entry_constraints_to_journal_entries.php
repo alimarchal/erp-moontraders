@@ -28,8 +28,9 @@ return new class extends Migration {
                 ->constrained('users')->onDelete('restrict')
                 ->comment('User who posted the entry.');
 
-            // Add indexes
-            $table->index(['status', 'entry_date']);
+            // Add indexes (entry_date already exists from table creation)
+            $table->index('status'); // Standalone index for status filtering
+            $table->index(['status', 'entry_date']); // Composite index for combined queries
             $table->index('accounting_period_id');
         });
 
@@ -56,6 +57,7 @@ return new class extends Migration {
         Schema::table('journal_entries', function (Blueprint $table) {
             $table->dropForeign(['posted_by']);
             $table->dropForeign(['accounting_period_id']);
+            $table->dropIndex(['status']);
             $table->dropIndex(['status', 'entry_date']);
             $table->dropIndex(['accounting_period_id']);
             $table->dropColumn(['accounting_period_id', 'fx_rate_to_base', 'posted_at', 'posted_by']);

@@ -47,12 +47,26 @@ return new class extends Migration {
                 v_debits DECIMAL(15,2);
                 v_credits DECIMAL(15,2);
                 v_journal_id BIGINT;
+                v_status VARCHAR(20);
             BEGIN
                 -- Get the journal_entry_id from the operation
                 IF TG_OP = 'DELETE' THEN
                     v_journal_id := OLD.journal_entry_id;
                 ELSE
                     v_journal_id := NEW.journal_entry_id;
+                END IF;
+
+                -- Only check balance for posted journals or when posting
+                SELECT status INTO v_status
+                FROM journal_entries
+                WHERE id = v_journal_id;
+
+                -- Skip balance check for draft entries (allow temporary unbalance)
+                IF v_status != 'posted' THEN
+                    IF TG_OP = 'DELETE' THEN
+                        RETURN OLD;
+                    END IF;
+                    RETURN NEW;
                 END IF;
 
                 -- Calculate total debits and credits
@@ -78,7 +92,8 @@ return new class extends Migration {
             \$\$ LANGUAGE plpgsql;
         ");
 
-        // Constraint trigger to enforce balance (deferrable to end of transaction)
+        // OPTIMIZED: Single constraint trigger instead of 3 separate triggers
+        // Deferrable to end of transaction so temporary unbalance is allowed
         DB::unprepared("
             DROP TRIGGER IF EXISTS trg_journal_balance_insert ON journal_entry_details;
             DROP TRIGGER IF EXISTS trg_journal_balance_update ON journal_entry_details;
@@ -493,73 +508,8 @@ return new class extends Migration {
             return; // Skip all MySQL triggers if procedure creation fails
         }
 
-        // Triggers for balance check
-        try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_insert");
-        } catch (\Exception $e) {
-            // Ignore errors on drop
-        }
-        DB::unprepared("
-            CREATE TRIGGER trg_journal_balance_insert
-            AFTER INSERT ON journal_entry_details
-            FOR EACH ROW
-            BEGIN
-                DECLARE v_status VARCHAR(20);
-
-                SELECT status INTO v_status
-                FROM journal_entries
-                WHERE id = NEW.journal_entry_id;
-
-                IF v_status = 'posted' THEN
-                    CALL sp_check_journal_balance(NEW.journal_entry_id);
-                END IF;
-            END
-        ");
-
-        try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_update");
-        } catch (\Exception $e) {
-            // Ignore errors on drop
-        }
-        DB::unprepared("
-            CREATE TRIGGER trg_journal_balance_update
-            AFTER UPDATE ON journal_entry_details
-            FOR EACH ROW
-            BEGIN
-                DECLARE v_status VARCHAR(20);
-
-                SELECT status INTO v_status
-                FROM journal_entries
-                WHERE id = NEW.journal_entry_id;
-
-                IF v_status = 'posted' THEN
-                    CALL sp_check_journal_balance(NEW.journal_entry_id);
-                END IF;
-            END
-        ");
-
-        try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_delete");
-        } catch (\Exception $e) {
-            // Ignore errors on drop
-        }
-        DB::unprepared("
-            CREATE TRIGGER trg_journal_balance_delete
-            AFTER DELETE ON journal_entry_details
-            FOR EACH ROW
-            BEGIN
-                DECLARE v_status VARCHAR(20);
-
-                SELECT status INTO v_status
-                FROM journal_entries
-                WHERE id = OLD.journal_entry_id;
-
-                IF v_status = 'posted' THEN
-                    CALL sp_check_journal_balance(OLD.journal_entry_id);
-                END IF;
-            END
-        ");
-
+        // OPTIMIZED: Only check balance when transitioning to 'posted' status
+        // Draft entries can be temporarily unbalanced
         try {
             DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_before_post");
         } catch (\Exception $e) {
@@ -578,13 +528,38 @@ return new class extends Migration {
 
         // Trigger for leaf account check
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_leaf_account_only");
+            DB::unprepared("DROP TRIGGER IF EXISTS trg_leaf_account_only_insert");
         } catch (\Exception $e) {
             // Ignore errors on drop
         }
         DB::unprepared("
-            CREATE TRIGGER trg_leaf_account_only
+            CREATE TRIGGER trg_leaf_account_only_insert
             BEFORE INSERT ON journal_entry_details
+            FOR EACH ROW
+            BEGIN
+                DECLARE v_is_group BOOLEAN;
+                DECLARE v_error_msg VARCHAR(500);
+                
+                SELECT is_group INTO v_is_group
+                FROM chart_of_accounts
+                WHERE id = NEW.chart_of_account_id;
+
+                IF v_is_group THEN
+                    SET v_error_msg = CONCAT('Cannot post to group account ', NEW.chart_of_account_id);
+                    SIGNAL SQLSTATE '45000'
+                    SET MESSAGE_TEXT = v_error_msg;
+                END IF;
+            END
+        ");
+
+        try {
+            DB::unprepared("DROP TRIGGER IF EXISTS trg_leaf_account_only_update");
+        } catch (\Exception $e) {
+            // Ignore errors on drop
+        }
+        DB::unprepared("
+            CREATE TRIGGER trg_leaf_account_only_update
+            BEFORE UPDATE ON journal_entry_details
             FOR EACH ROW
             BEGIN
                 DECLARE v_is_group BOOLEAN;
@@ -604,13 +579,47 @@ return new class extends Migration {
 
         // Trigger for accounting period check
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period");
+            DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_insert");
         } catch (\Exception $e) {
             // Ignore errors on drop
         }
         DB::unprepared("
-            CREATE TRIGGER trg_check_accounting_period
+            CREATE TRIGGER trg_check_accounting_period_insert
             BEFORE INSERT ON journal_entries
+            FOR EACH ROW
+            BEGIN
+                DECLARE v_period_status VARCHAR(20);
+                DECLARE v_error_msg VARCHAR(500);
+                
+                IF NEW.status = 'posted' THEN
+                    SELECT ap.status INTO v_period_status
+                    FROM accounting_periods ap
+                    WHERE NEW.entry_date BETWEEN ap.start_date AND ap.end_date
+                    LIMIT 1;
+
+                    IF v_period_status IS NULL THEN
+                        SET v_error_msg = CONCAT('No accounting period found for date ', NEW.entry_date);
+                        SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = v_error_msg;
+                    END IF;
+
+                    IF v_period_status <> 'open' THEN
+                        SET v_error_msg = CONCAT('Cannot post to ', v_period_status, ' accounting period');
+                        SIGNAL SQLSTATE '45000'
+                        SET MESSAGE_TEXT = v_error_msg;
+                    END IF;
+                END IF;
+            END
+        ");
+
+        try {
+            DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_update");
+        } catch (\Exception $e) {
+            // Ignore errors on drop
+        }
+        DB::unprepared("
+            CREATE TRIGGER trg_check_accounting_period_update
+            BEFORE UPDATE ON journal_entries
             FOR EACH ROW
             BEGIN
                 DECLARE v_period_status VARCHAR(20);
@@ -694,30 +703,31 @@ return new class extends Migration {
      */
     private function dropPostgreSQLTriggers(): void
     {
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_insert ON journal_entry_details");
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_update ON journal_entry_details");
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_delete ON journal_entry_details");
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance ON journal_entry_details");
-        DB::unprepared("DROP FUNCTION IF EXISTS check_journal_balance()");
+        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_insert ON journal_entry_details CASCADE");
+        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_update ON journal_entry_details CASCADE");
+        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_delete ON journal_entry_details CASCADE");
+        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance ON journal_entry_details CASCADE");
+        DB::unprepared("DROP FUNCTION IF EXISTS check_journal_balance() CASCADE");
 
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_leaf_account_only ON journal_entry_details");
-        DB::unprepared("DROP FUNCTION IF EXISTS check_leaf_account_only()");
+        DB::unprepared("DROP TRIGGER IF EXISTS trg_leaf_account_only ON journal_entry_details CASCADE");
+        DB::unprepared("DROP FUNCTION IF EXISTS check_leaf_account_only() CASCADE");
 
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period ON journal_entries");
-        DB::unprepared("DROP FUNCTION IF EXISTS check_accounting_period()");
+        DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period ON journal_entries CASCADE");
+        DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_update ON journal_entries CASCADE");
+        DB::unprepared("DROP FUNCTION IF EXISTS check_accounting_period() CASCADE");
 
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_single_base_currency ON currencies");
-        DB::unprepared("DROP FUNCTION IF EXISTS check_single_base_currency()");
+        DB::unprepared("DROP TRIGGER IF EXISTS trg_single_base_currency ON currencies CASCADE");
+        DB::unprepared("DROP FUNCTION IF EXISTS check_single_base_currency() CASCADE");
     }
 
     private function dropPostgreSQLAccountingFunctions(): void
     {
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_income_statement(DATE, DATE)");
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_balance_sheet(DATE)");
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_general_ledger(DATE, DATE, BIGINT)");
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_account_balances(DATE, DATE)");
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_trial_balance_summary(DATE)");
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_trial_balance(DATE)");
+        DB::unprepared("DROP FUNCTION IF EXISTS fn_income_statement(DATE, DATE) CASCADE");
+        DB::unprepared("DROP FUNCTION IF EXISTS fn_balance_sheet(DATE) CASCADE");
+        DB::unprepared("DROP FUNCTION IF EXISTS fn_general_ledger(DATE, DATE, BIGINT) CASCADE");
+        DB::unprepared("DROP FUNCTION IF EXISTS fn_account_balances(DATE, DATE) CASCADE");
+        DB::unprepared("DROP FUNCTION IF EXISTS fn_trial_balance_summary(DATE) CASCADE");
+        DB::unprepared("DROP FUNCTION IF EXISTS fn_trial_balance(DATE) CASCADE");
     }
 
     /**

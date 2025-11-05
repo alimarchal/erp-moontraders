@@ -129,12 +129,23 @@ return new class extends Migration {
     private function addPostgreSQLTriggers(): void
     {
         // Function to block updates to posted journal entries
+        // FIXED: Allow accounting_period_id to be updated by auto_set_accounting_period trigger
         DB::unprepared("
             CREATE OR REPLACE FUNCTION block_posted_journal_changes()
             RETURNS TRIGGER AS $$
             BEGIN
                 IF OLD.status = 'posted' THEN
-                    RAISE EXCEPTION 'Posted journal entries are immutable. Create a reversing entry instead.';
+                    -- Allow ONLY accounting_period_id changes (by auto-set trigger)
+                    IF NOT (
+                        NEW.entry_date = OLD.entry_date 
+                        AND (NEW.description IS NOT DISTINCT FROM OLD.description)
+                        AND (NEW.reference IS NOT DISTINCT FROM OLD.reference)
+                        AND NEW.currency_id = OLD.currency_id
+                        AND NEW.fx_rate_to_base = OLD.fx_rate_to_base
+                        AND NEW.status = OLD.status
+                    ) THEN
+                        RAISE EXCEPTION 'Posted journal entries are immutable. Create a reversing entry instead.';
+                    END IF;
                 END IF;
                 RETURN NEW;
             END;
@@ -332,14 +343,16 @@ return new class extends Migration {
                     FOR EACH ROW
                     BEGIN
                         DECLARE v_status VARCHAR(20);
+                        DECLARE v_error_msg VARCHAR(500);
                         
                         SELECT status INTO v_status
                         FROM journal_entries
                         WHERE id = OLD.journal_entry_id;
                         
                         IF v_status = 'posted' THEN
+                            SET v_error_msg = 'Lines of a posted journal are immutable. Create a reversing entry instead.';
                             SIGNAL SQLSTATE '45000'
-                            SET MESSAGE_TEXT = 'Lines of a posted journal are immutable. Create a reversing entry instead.';
+                            SET MESSAGE_TEXT = v_error_msg;
                         END IF;
                     END
                 ");
@@ -361,14 +374,16 @@ return new class extends Migration {
                     FOR EACH ROW
                     BEGIN
                         DECLARE v_status VARCHAR(20);
+                        DECLARE v_error_msg VARCHAR(500);
                         
                         SELECT status INTO v_status
                         FROM journal_entries
                         WHERE id = OLD.journal_entry_id;
                         
                         IF v_status = 'posted' THEN
+                            SET v_error_msg = 'Cannot delete lines of a posted journal. Create a reversing entry instead.';
                             SIGNAL SQLSTATE '45000'
-                            SET MESSAGE_TEXT = 'Cannot delete lines of a posted journal. Create a reversing entry instead.';
+                            SET MESSAGE_TEXT = v_error_msg;
                         END IF;
                     END
                 ");

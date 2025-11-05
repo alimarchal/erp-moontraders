@@ -12,19 +12,19 @@ return new class extends Migration {
         $driver = DB::connection()->getDriverName();
         $createOrReplace = $driver === 'sqlite' ? 'CREATE VIEW IF NOT EXISTS' : 'CREATE OR REPLACE VIEW';
 
-        // View for Trial Balance
+        // View for Trial Balance - with NULL safety
         DB::statement("
             {$createOrReplace} vw_trial_balance AS
             SELECT
-                SUM(debit) AS total_debits,
-                SUM(credit) AS total_credits,
-                SUM(debit) - SUM(credit) AS difference
+                COALESCE(SUM(jed.debit), 0) AS total_debits,
+                COALESCE(SUM(jed.credit), 0) AS total_credits,
+                COALESCE(SUM(jed.debit), 0) - COALESCE(SUM(jed.credit), 0) AS difference
             FROM journal_entry_details jed
             JOIN journal_entries je ON je.id = jed.journal_entry_id
             WHERE je.status = 'posted'
         ");
 
-        // View for Account Balances
+        // View for Account Balances - improved NULL handling
         DB::statement("
             {$createOrReplace} vw_account_balances AS
             SELECT
@@ -37,8 +37,9 @@ return new class extends Migration {
                 COALESCE(SUM(d.debit), 0) AS total_debits,
                 COALESCE(SUM(d.credit), 0) AS total_credits,
                 CASE
-                    WHEN a.normal_balance = 'debit' THEN COALESCE(SUM(d.debit - d.credit), 0)
-                    WHEN a.normal_balance = 'credit' THEN COALESCE(SUM(d.credit - d.debit), 0)
+                    WHEN a.normal_balance = 'debit' THEN COALESCE(SUM(d.debit), 0) - COALESCE(SUM(d.credit), 0)
+                    WHEN a.normal_balance = 'credit' THEN COALESCE(SUM(d.credit), 0) - COALESCE(SUM(d.debit), 0)
+                    ELSE 0
                 END AS balance,
                 a.is_group,
                 a.is_active
@@ -46,6 +47,7 @@ return new class extends Migration {
             JOIN account_types at ON at.id = a.account_type_id
             LEFT JOIN journal_entry_details d ON d.chart_of_account_id = a.id
             LEFT JOIN journal_entries je ON je.id = d.journal_entry_id AND je.status = 'posted'
+            WHERE a.is_active = true
             GROUP BY a.id, a.account_code, a.account_name, at.type_name, at.report_group, a.normal_balance, a.is_group, a.is_active
         ");
 
@@ -77,7 +79,7 @@ return new class extends Migration {
             ORDER BY je.entry_date, je.id, jed.line_no
         ");
 
-        // View for Balance Sheet accounts
+        // View for Balance Sheet accounts - improved NULL handling
         DB::statement("
             {$createOrReplace} vw_balance_sheet AS
             SELECT
@@ -88,8 +90,9 @@ return new class extends Migration {
                 at.report_group,
                 a.normal_balance,
                 CASE
-                    WHEN a.normal_balance = 'debit' THEN COALESCE(SUM(d.debit - d.credit), 0)
-                    WHEN a.normal_balance = 'credit' THEN COALESCE(SUM(d.credit - d.debit), 0)
+                    WHEN a.normal_balance = 'debit' THEN COALESCE(SUM(d.debit), 0) - COALESCE(SUM(d.credit), 0)
+                    WHEN a.normal_balance = 'credit' THEN COALESCE(SUM(d.credit), 0) - COALESCE(SUM(d.debit), 0)
+                    ELSE 0
                 END AS balance
             FROM chart_of_accounts a
             JOIN account_types at ON at.id = a.account_type_id
@@ -101,7 +104,7 @@ return new class extends Migration {
             HAVING COALESCE(SUM(d.debit), 0) <> 0 OR COALESCE(SUM(d.credit), 0) <> 0
         ");
 
-        // View for Income Statement accounts
+        // View for Income Statement accounts - improved NULL handling
         DB::statement("
             {$createOrReplace} vw_income_statement AS
             SELECT
@@ -112,8 +115,9 @@ return new class extends Migration {
                 at.report_group,
                 a.normal_balance,
                 CASE
-                    WHEN a.normal_balance = 'debit' THEN COALESCE(SUM(d.debit - d.credit), 0)
-                    WHEN a.normal_balance = 'credit' THEN COALESCE(SUM(d.credit - d.debit), 0)
+                    WHEN a.normal_balance = 'debit' THEN COALESCE(SUM(d.debit), 0) - COALESCE(SUM(d.credit), 0)
+                    WHEN a.normal_balance = 'credit' THEN COALESCE(SUM(d.credit), 0) - COALESCE(SUM(d.debit), 0)
+                    ELSE 0
                 END AS balance
             FROM chart_of_accounts a
             JOIN account_types at ON at.id = a.account_type_id

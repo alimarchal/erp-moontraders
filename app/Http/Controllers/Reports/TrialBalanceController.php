@@ -34,74 +34,129 @@ class TrialBalanceController extends Controller
             $asOfDate = now()->format('Y-m-d');
         }
 
-        // Get the summary from database with date filter
-        $trialBalance = DB::select("
-            SELECT 
-                SUM(jed.debit) AS total_debits,
-                SUM(jed.credit) AS total_credits,
-                SUM(jed.debit) - SUM(jed.credit) AS difference
-            FROM journal_entry_details jed
-            JOIN journal_entries je ON je.id = jed.journal_entry_id
-            WHERE je.status = 'posted' AND je.entry_date <= ?
-        ", [$asOfDate]);
-
-        $trialBalance = (object) [
-            'total_debits' => $trialBalance[0]->total_debits ?? 0,
-            'total_credits' => $trialBalance[0]->total_credits ?? 0,
-            'difference' => $trialBalance[0]->difference ?? 0,
-        ];
-
+        $driver = DB::connection()->getDriverName();
         $perPage = $request->input('per_page', 50);
         $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 50;
 
-        // Get detailed account balances using QueryBuilder with date filter
-        $query = ChartOfAccount::select([
-            'chart_of_accounts.id as account_id',
-            'chart_of_accounts.account_code',
-            'chart_of_accounts.account_name',
-            'account_types.type_name as account_type',
-            'chart_of_accounts.normal_balance',
-            DB::raw("COALESCE(SUM(journal_entry_details.debit), 0) as total_debits"),
-            DB::raw("COALESCE(SUM(journal_entry_details.credit), 0) as total_credits"),
-            DB::raw("COALESCE(SUM(journal_entry_details.debit - journal_entry_details.credit), 0) as balance")
-        ])
-            ->join('account_types', 'account_types.id', '=', 'chart_of_accounts.account_type_id')
-            ->leftJoin('journal_entry_details', 'journal_entry_details.chart_of_account_id', '=', 'chart_of_accounts.id')
-            ->leftJoin('journal_entries', function ($join) {
-                $join->on('journal_entries.id', '=', 'journal_entry_details.journal_entry_id')
-                    ->where('journal_entries.status', '=', 'posted');
-            })
-            ->where('chart_of_accounts.is_active', true)
-            ->where(function ($query) use ($asOfDate) {
-                $query->whereNull('journal_entries.entry_date')
-                    ->orWhere('journal_entries.entry_date', '<=', $asOfDate);
-            })
-            ->groupBy(
-                'chart_of_accounts.id',
-                'chart_of_accounts.account_code',
-                'chart_of_accounts.account_name',
-                'account_types.type_name',
-                'chart_of_accounts.normal_balance'
-            )
-            ->havingRaw("COALESCE(SUM(journal_entry_details.debit), 0) != 0 OR COALESCE(SUM(journal_entry_details.credit), 0) != 0");
+        // Get data based on database driver
+        if ($driver === 'pgsql') {
+            // PostgreSQL: Use functions
+            $summaryResult = DB::selectOne('SELECT * FROM fn_trial_balance_summary(?)', [$asOfDate]);
+            $trialBalance = (object) [
+                'total_debits' => $summaryResult->total_debits ?? 0,
+                'total_credits' => $summaryResult->total_credits ?? 0,
+                'difference' => $summaryResult->difference ?? 0,
+            ];
 
-        $accounts = QueryBuilder::for($query)
-            ->allowedFilters([
-                AllowedFilter::partial('account_code'),
-                AllowedFilter::partial('account_name'),
-                AllowedFilter::partial('account_type'),
-            ])
-            ->allowedSorts([
-                'account_code',
-                'account_name',
-                'account_type',
-                'total_debits',
-                'total_credits',
-                'balance',
-            ])
-            ->defaultSort('account_code')
-            ->paginate($perPage)
-            ->withQueryString();
+            $accountsData = DB::select('SELECT * FROM fn_trial_balance(?)', [$asOfDate]);
+            $accountsCollection = collect($accountsData)->map(function ($row) {
+                return (object) [
+                    'account_id' => $row->account_id,
+                    'account_code' => $row->account_code,
+                    'account_name' => $row->account_name,
+                    'account_type' => $row->account_type,
+                    'normal_balance' => $row->normal_balance,
+                    'total_debits' => $row->total_debits,
+                    'total_credits' => $row->total_credits,
+                    'balance' => $row->balance,
+                ];
+            });
+        } else {
+            // MySQL: Use direct queries with proper date filtering in subquery
+            $summaryResult = DB::selectOne("
+                SELECT 
+                    COALESCE(SUM(jed.debit), 0) AS total_debits,
+                    COALESCE(SUM(jed.credit), 0) AS total_credits,
+                    COALESCE(SUM(jed.debit) - SUM(jed.credit), 0) AS difference
+                FROM journal_entry_details jed
+                JOIN journal_entries je ON je.id = jed.journal_entry_id
+                WHERE je.status = 'posted' AND je.entry_date <= ?
+            ", [$asOfDate]);
+
+            $trialBalance = (object) [
+                'total_debits' => $summaryResult->total_debits ?? 0,
+                'total_credits' => $summaryResult->total_credits ?? 0,
+                'difference' => $summaryResult->difference ?? 0,
+            ];
+
+            // Use subquery to properly filter journal entries by date
+            $accountsData = DB::select("
+                SELECT
+                    a.id AS account_id,
+                    a.account_code,
+                    a.account_name,
+                    at.type_name AS account_type,
+                    a.normal_balance,
+                    COALESCE(SUM(filtered.debit), 0) AS total_debits,
+                    COALESCE(SUM(filtered.credit), 0) AS total_credits,
+                    COALESCE(SUM(filtered.debit - filtered.credit), 0) AS balance
+                FROM chart_of_accounts a
+                JOIN account_types at ON at.id = a.account_type_id
+                LEFT JOIN (
+                    SELECT 
+                        jed.chart_of_account_id,
+                        jed.debit,
+                        jed.credit
+                    FROM journal_entry_details jed
+                    JOIN journal_entries je ON je.id = jed.journal_entry_id
+                    WHERE je.status = 'posted' AND je.entry_date <= ?
+                ) filtered ON filtered.chart_of_account_id = a.id
+                WHERE a.is_active = 1
+                GROUP BY a.id, a.account_code, a.account_name, at.type_name, a.normal_balance
+                HAVING COALESCE(SUM(filtered.debit), 0) <> 0 OR COALESCE(SUM(filtered.credit), 0) <> 0
+                ORDER BY a.account_code
+            ", [$asOfDate]);
+
+            $accountsCollection = collect($accountsData)->map(function ($row) {
+                return (object) [
+                    'account_id' => $row->account_id,
+                    'account_code' => $row->account_code,
+                    'account_name' => $row->account_name,
+                    'account_type' => $row->account_type,
+                    'normal_balance' => $row->normal_balance,
+                    'total_debits' => $row->total_debits,
+                    'total_credits' => $row->total_credits,
+                    'balance' => $row->balance,
+                ];
+            });
+        }
+
+        // Apply filters
+        if ($request->filled('filter.account_code')) {
+            $accountsCollection = $accountsCollection->filter(function ($item) use ($request) {
+                return stripos($item->account_code, $request->input('filter.account_code')) !== false;
+            });
+        }
+        if ($request->filled('filter.account_name')) {
+            $accountsCollection = $accountsCollection->filter(function ($item) use ($request) {
+                return stripos($item->account_name, $request->input('filter.account_name')) !== false;
+            });
+        }
+        if ($request->filled('filter.account_type')) {
+            $accountsCollection = $accountsCollection->filter(function ($item) use ($request) {
+                return stripos($item->account_type, $request->input('filter.account_type')) !== false;
+            });
+        }
+
+        // Apply sorting
+        $sortField = $request->input('sort', 'account_code');
+        $sortDirection = str_starts_with($sortField, '-') ? 'desc' : 'asc';
+        $sortField = ltrim($sortField, '-');
+
+        $accountsCollection = $sortDirection === 'asc'
+            ? $accountsCollection->sortBy($sortField)->values()
+            : $accountsCollection->sortByDesc($sortField)->values();
+
+        // Paginate manually
+        $page = $request->input('page', 1);
+        $total = $accountsCollection->count();
+        $accounts = new \Illuminate\Pagination\LengthAwarePaginator(
+            $accountsCollection->forPage($page, $perPage),
+            $total,
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         // Get distinct values for dropdowns
         $accountTypes = ChartOfAccount::join('account_types', 'account_types.id', '=', 'chart_of_accounts.account_type_id')

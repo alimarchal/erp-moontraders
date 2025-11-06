@@ -5,10 +5,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Husnain Shah",
         "driver_phone": "0343-5300739",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
         "supplier_id": 3,
-        "employee_id": null
+        "employee_id": 26
     },
     {
         "vehicle_number": "RLF-4328",
@@ -16,9 +16,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Bnaras Choudry",
         "driver_phone": "0344-5816596",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": null
     },
     {
         "vehicle_number": "RA-669",
@@ -26,9 +27,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Sheikh Naseer",
         "driver_phone": "0345-9565843",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": 35
     },
     {
         "vehicle_number": "RIS-403",
@@ -36,10 +38,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Kaleem Ahmed",
         "driver_phone": "0347-5026125",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
         "supplier_id": 3,
-        "employee_id": null
+        "employee_id": 36
     },
     {
         "vehicle_number": "C-5100",
@@ -47,10 +49,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Mujahid Shah",
         "driver_phone": "0312-9816005",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
         "supplier_id": 3,
-        "employee_id": null
+        "employee_id": 25
     },
     {
         "vehicle_number": "RA-851",
@@ -58,10 +60,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Khalid khan",
         "driver_phone": "0310-9329433",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
         "supplier_id": 3,
-        "employee_id": null
+        "employee_id": 20
     },
     {
         "vehicle_number": "RIS-2196",
@@ -69,10 +71,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Ahtasham Shah",
         "driver_phone": "0314-9387166",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
         "supplier_id": 3,
-        "employee_id": null
+        "employee_id": 18
     },
     {
         "vehicle_number": "HA-974",
@@ -80,9 +82,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Tanveer Malik",
         "driver_phone": "0344-5920529",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": null
     },
     {
         "vehicle_number": "RA-5358",
@@ -90,7 +93,7 @@
         "vehicle_type": "Bike",
         "driver_name": "Sadiq  Naseer",
         "driver_phone": "0343-5436834",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
         "supplier_id": 3,
         "employee_id": null
@@ -101,9 +104,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Faizan Shah",
         "driver_phone": "0344-6173190",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
-        "supplier_id": 3
+        "supplier_id": 3,
+        "employee_id": null
     },
     {
         "vehicle_number": "MD-771",
@@ -111,10 +115,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Waseem Choudry",
         "driver_phone": "0347-5769001",
-        "company": "Nestle",
+        "company": "Nestlé Pakistan",
         "company_id": 1,
         "supplier_id": 3,
-        "employee_id": null
+        "employee_id": 22
     },
     {
         "vehicle_number": "TAB444",
@@ -122,9 +126,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Wasaf Shah",
         "driver_phone": "0312-9046346",
-        "company": "Meezan",
+        "company": "Mezan Oil & Ghee",
         "company_id": 1,
-        "supplier_id": 2
+        "supplier_id": 2,
+        "employee_id": null
     },
     {
         "vehicle_number": "RIS-2193",
@@ -132,9 +137,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Mansoor",
         "driver_phone": "0340-8166686",
-        "company": "Unilever",
+        "company": "Unilever Pakistan",
         "company_id": 1,
-        "supplier_id": 5
+        "supplier_id": 5,
+        "employee_id": 153
     },
     {
         "vehicle_number": "RIS-2194",
@@ -142,9 +148,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Saeed Sab",
         "driver_phone": "0347-4302921",
-        "company": "Unilever",
+        "company": "Unilever Pakistan",
         "company_id": 1,
-        "supplier_id": 5
+        "supplier_id": 5,
+        "employee_id": null
     },
     {
         "vehicle_number": "MZD-835",
@@ -152,9 +159,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Atif",
         "driver_phone": "0316-0573801",
-        "company": "Unilever",
+        "company": "Unilever Pakistan",
         "company_id": 1,
-        "supplier_id": 5
+        "supplier_id": 5,
+        "employee_id": 11
     },
     {
         "vehicle_number": "RIS-4470",
@@ -162,9 +170,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Naseer",
         "driver_phone": "0347-8228236",
-        "company": "Unilever",
+        "company": "Unilever Pakistan",
         "company_id": 1,
-        "supplier_id": 5
+        "supplier_id": 5,
+        "employee_id": 3
     },
     {
         "vehicle_number": "RIS-2091",
@@ -172,10 +181,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Wasif Shah",
         "driver_phone": "0312-9046346",
-        "company": "Unilever",
+        "company": "Unilever Pakistan",
         "company_id": 1,
         "supplier_id": 5,
-        "employee_id": null
+        "employee_id": 41
     },
     {
         "vehicle_number": "CAG-5634",
@@ -183,9 +192,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Zeeshan",
         "driver_phone": "0347-7890064",
-        "company": "Unilever",
+        "company": "Unilever Pakistan",
         "company_id": 1,
-        "supplier_id": 5
+        "supplier_id": 5,
+        "employee_id": 66
     },
     {
         "vehicle_number": "CAG-5629",
@@ -193,9 +203,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Naseem",
         "driver_phone": "0312-5253741",
-        "company": "Unilever",
+        "company": "Unilever Pakistan",
         "company_id": 1,
-        "supplier_id": 5
+        "supplier_id": 5,
+        "employee_id": 86
     },
     {
         "vehicle_number": "RIS-1569",
@@ -203,9 +214,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Syed Izkar Shah",
         "driver_phone": "0347-5064410",
-        "company": "Engro",
+        "company": "Engro Corporation",
         "company_id": 1,
-        "supplier_id": 4
+        "supplier_id": 4,
+        "employee_id": null
     },
     {
         "vehicle_number": "RIS-2421",
@@ -213,9 +225,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Zeeshan",
         "driver_phone": "0311-7620776",
-        "company": "Engro",
+        "company": "Engro Corporation",
         "company_id": 1,
-        "supplier_id": 4
+        "supplier_id": 4,
+        "employee_id": 66
     },
     {
         "vehicle_number": "RIS-1755",
@@ -223,10 +236,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Liaqat Ch",
         "driver_phone": "0349-5004210",
-        "company": "Engro",
+        "company": "Engro Corporation",
         "company_id": 1,
         "supplier_id": 4,
-        "employee_id": null
+        "employee_id": 136
     },
     {
         "vehicle_number": "RIS-4468",
@@ -234,9 +247,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Chaudary Altaf",
         "driver_phone": "0345-8861120",
-        "company": "PTC",
+        "company": "Pakistan Tobacco Company",
         "company_id": 1,
-        "supplier_id": 10
+        "supplier_id": 10,
+        "employee_id": null
     },
     {
         "vehicle_number": "TP-038",
@@ -244,9 +258,10 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Chaudary Adeeb",
         "driver_phone": "0340-1539728",
-        "company": "PTC",
+        "company": "Pakistan Tobacco Company",
         "company_id": 1,
-        "supplier_id": 10
+        "supplier_id": 10,
+        "employee_id": 78
     },
     {
         "vehicle_number": "CAG-5633",
@@ -254,61 +269,65 @@
         "vehicle_type": "Suzuki",
         "driver_name": "Syed Musadaq Shah",
         "driver_phone": "0345-1893714",
-        "company": "PTC",
+        "company": "Pakistan Tobacco Company",
         "company_id": 1,
-        "supplier_id": 10
+        "supplier_id": 10,
+        "employee_id": null
     },
     {
-        "vehicle_number": "FSO BIKE -026",
-        "registration_number": "FSO BIKE -026",
+        "vehicle_number": "FSO Bike -026",
+        "registration_number": "FSO Bike -026",
         "vehicle_type": "Bike",
         "driver_name": "Shafique Mastanvi",
         "driver_phone": "0312-9592755",
-        "company": "PTC",
+        "company": "Pakistan Tobacco Company",
         "company_id": 1,
         "supplier_id": 10,
-        "employee_id": null
+        "employee_id": 73
     },
     {
-        "vehicle_number": "RIK 2812",
-        "registration_number": "RIK 2812",
+        "vehicle_number": "Rik 2812",
+        "registration_number": "Rik 2812",
         "vehicle_type": "Auto",
         "driver_name": "Zahid Shah",
         "driver_phone": "0346-3040607",
-        "company": "PTC",
+        "company": "Pakistan Tobacco Company",
+        "company_id": 1,
+        "supplier_id": 10,
+        "employee_id": 75
+    },
+    {
+        "vehicle_number": "Rik 2815",
+        "registration_number": "Rik 2815",
+        "vehicle_type": "Auto",
+        "driver_name": "Chaudary Tasleem",
+        "driver_phone": "0345-5270128",
+        "company": "Pakistan Tobacco Company",
         "company_id": 1,
         "supplier_id": 10,
         "employee_id": null
     },
     {
-        "vehicle_number": "RIK 2815",
-        "registration_number": "RIK 2815",
-        "vehicle_type": "Auto",
-        "driver_name": "Chaudary Tasleem",
-        "driver_phone": "0345-5270128",
-        "company": "PTC",
-        "company_id": 1,
-        "supplier_id": 10
-    },
-    {
-        "vehicle_number": "RIK 950",
-        "registration_number": "RIK 950",
+        "vehicle_number": "Rik 950",
+        "registration_number": "Rik 950",
         "vehicle_type": "Auto",
         "driver_name": "yasir Mehmoon",
         "driver_phone": "0314-9507165",
-        "company": "PTC",
+        "company": "Pakistan Tobacco Company",
         "company_id": 1,
-        "supplier_id": 10
+        "supplier_id": 10,
+        "employee_id": null
     },
     {
-        "vehicle_number": "RIK 851",
-        "registration_number": "RIK 851",
+        "vehicle_number": "Rik 851",
+        "registration_number": "Rik 851",
         "vehicle_type": "Auto",
         "driver_name": "Syed Jabran Shah",
         "driver_phone": "0346-9633377",
-        "company": "PTC",
+        "company": "Pakistan Tobacco Company",
         "company_id": 1,
-        "supplier_id": 10
+        "supplier_id": 10,
+        "employee_id": 74
     },
     {
         "vehicle_number": "MD-8281",
@@ -316,10 +335,10 @@
         "vehicle_type": "Bike",
         "driver_name": "Adeel",
         "driver_phone": "0342-5535930",
-        "company": "PTC",
+        "company": "Pakistan Tobacco Company",
         "company_id": 1,
         "supplier_id": 10,
-        "employee_id": null
+        "employee_id": 172
     },
     {
         "vehicle_number": "2482",
@@ -327,9 +346,10 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Mudassar Mughal",
         "driver_phone": "0342-5058003",
-        "company": "Kousar",
+        "company": "Kausar Oil & Ghee",
         "company_id": 1,
-        "supplier_id": 7
+        "supplier_id": 7,
+        "employee_id": null
     },
     {
         "vehicle_number": "CAG-5636",
@@ -337,8 +357,119 @@
         "vehicle_type": "Shahzore",
         "driver_name": "Mubashar Choudry",
         "driver_phone": "0345-1958973",
-        "company": "Kousar",
+        "company": "Kausar Oil & Ghee",
         "company_id": 1,
-        "supplier_id": 7
+        "supplier_id": 7,
+        "employee_id": null
+    },
+    {
+        "vehicle_number": "RA-751",
+        "registration_number": "RA-751",
+        "vehicle_type": "Shahzor",
+        "driver_name": "Waqar kareem",
+        "driver_phone": "0317-9469378",
+        "company": "Dalda Foods",
+        "company_id": 1,
+        "supplier_id": 1,
+        "employee_id": 96
+    },
+    {
+        "vehicle_number": "RIS-2723",
+        "registration_number": "RIS-2723",
+        "vehicle_type": "Shahzor",
+        "driver_name": "Waqar Shah",
+        "driver_phone": "0344-9547159",
+        "company": "Dalda Foods",
+        "company_id": 1,
+        "supplier_id": 1,
+        "employee_id": null
+    },
+    {
+        "vehicle_number": "RIS-1724",
+        "registration_number": "RIS-1724",
+        "vehicle_type": "Shahzor",
+        "driver_name": "Tahir Zaman",
+        "driver_phone": "0344-8804883",
+        "company": "Dalda Foods",
+        "company_id": 1,
+        "supplier_id": 1,
+        "employee_id": 95
+    },
+    {
+        "vehicle_number": "RIS-2352",
+        "registration_number": "RIS-2352",
+        "vehicle_type": "Suzuki",
+        "driver_name": "Ch Sheraz",
+        "driver_phone": "0341-5572602",
+        "company": "English Biscuit Manufacturers",
+        "company_id": 1,
+        "supplier_id": 8,
+        "employee_id": 135
+    },
+    {
+        "vehicle_number": "TR.-771",
+        "registration_number": "TR.-771",
+        "vehicle_type": "Suzuki",
+        "driver_name": "Shoaib Shah",
+        "driver_phone": "0343-6271851",
+        "company": "English Biscuit Manufacturers",
+        "company_id": 1,
+        "supplier_id": 8,
+        "employee_id": 115
+    },
+    {
+        "vehicle_number": "RIS-851",
+        "registration_number": "RIS-851",
+        "vehicle_type": "Suzuki",
+        "driver_name": "Adeel Awan",
+        "driver_phone": "0341-5782921",
+        "company": "English Biscuit Manufacturers",
+        "company_id": 1,
+        "supplier_id": 8,
+        "employee_id": 172
+    },
+    {
+        "vehicle_number": "VC-988",
+        "registration_number": "VC-988",
+        "vehicle_type": "Rikshaw",
+        "driver_name": "Balal Butt",
+        "driver_phone": "0342-5353859",
+        "company": "English Biscuit Manufacturers",
+        "company_id": 1,
+        "supplier_id": 8,
+        "employee_id": null
+    },
+    {
+        "vehicle_number": "RIS-2278",
+        "registration_number": "RIS-2278",
+        "vehicle_type": "Suzuki",
+        "driver_name": "Faisal Tasveer",
+        "driver_phone": "0346-9648409",
+        "company": "National Foods",
+        "company_id": 1,
+        "supplier_id": 9,
+        "employee_id": null
+    },
+    {
+        "vehicle_number": "TU-669",
+        "registration_number": "TU-669",
+        "vehicle_type": "Suzuki",
+        "driver_name": "Tariq",
+        "driver_phone": "0344-5123101",
+        "company": "National Foods",
+        "company_id": 1,
+        "supplier_id": 9,
+        "employee_id": 141
+    },
+    {
+        "vehicle_number": "TR-751",
+        "registration_number": "TR-751",
+        "vehicle_type": "Suzuki",
+        "driver_name": "Hafeez",
+        "driver_phone": "0311-8650727",
+        "company": "National Foods",
+        "company_id": 1,
+        "supplier_id": 9,
+        "employee_id": 120
     }
 ]

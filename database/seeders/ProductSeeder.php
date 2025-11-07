@@ -19,9 +19,6 @@ class ProductSeeder extends Seeder
         $products = json_decode($json, true);
 
         foreach ($products as $productData) {
-            // Get the supplier ID by short name
-            $supplier = Supplier::where('short_name', $productData['supplier_short_name'])->first();
-
             // Get the category ID by category code
             $category = DB::table('product_categories')
                 ->where('category_code', $productData['category_code'])
@@ -38,7 +35,7 @@ class ProductSeeder extends Seeder
                 'product_name' => $productData['product_name'],
                 'description' => $productData['description'],
                 'category_id' => $category?->id,
-                'supplier_id' => $supplier?->id,
+                'supplier_id' => $productData['supplier_id'], // Use supplier_id directly from JSON
                 'uom_id' => $uom?->id,
                 'pack_size' => $productData['pack_size'],
                 'brand' => $productData['brand'],
@@ -46,8 +43,8 @@ class ProductSeeder extends Seeder
                 'is_active' => true,
                 'valuation_method' => 'FIFO',
                 'reorder_level' => 10,
-                'unit_price' => 0,
-                'cost_price' => 0,
+                'unit_price' => $productData['unit_price'] ?? 0,
+                'cost_price' => $productData['cost_price'] ?? 0,
             ]);
         }
     }

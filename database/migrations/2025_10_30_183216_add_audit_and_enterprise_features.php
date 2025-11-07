@@ -87,6 +87,7 @@ return new class extends Migration {
         } elseif (in_array($driver, ['mysql', 'mariadb'])) {
             $this->createMySQLAuditTriggers();
             $this->createMySQLSoftDeleteProtection();
+            $this->createMySQLSnapshotHelpers();
         }
     }
 
@@ -104,9 +105,19 @@ return new class extends Migration {
                 v_new_values JSON;
                 v_changed_fields JSON;
                 v_user_id BIGINT;
+                v_ip_address INET;
+                v_user_agent TEXT;
             BEGIN
-                -- Get current user ID from application context
-                v_user_id := current_setting('app.current_user_id', TRUE)::BIGINT;
+                -- Get current user context from application
+                BEGIN
+                    v_user_id := current_setting('app.current_user_id', TRUE)::BIGINT;
+                    v_ip_address := current_setting('app.ip_address', TRUE)::INET;
+                    v_user_agent := current_setting('app.user_agent', TRUE);
+                EXCEPTION WHEN OTHERS THEN
+                    v_user_id := NULL;
+                    v_ip_address := NULL;
+                    v_user_agent := NULL;
+                END;
                 
                 IF TG_OP = 'DELETE' THEN
                     v_old_values := row_to_json(OLD);
@@ -115,10 +126,10 @@ return new class extends Migration {
                     
                     INSERT INTO accounting_audit_log (
                         table_name, record_id, action, 
-                        old_values, new_values, changed_fields, user_id
+                        old_values, new_values, changed_fields, user_id, ip_address, user_agent
                     ) VALUES (
                         TG_TABLE_NAME, OLD.id, 'DELETE',
-                        v_old_values, v_new_values, v_changed_fields, v_user_id
+                        v_old_values, v_new_values, v_changed_fields, v_user_id, v_ip_address, v_user_agent
                     );
                     
                     RETURN OLD;
@@ -139,10 +150,10 @@ return new class extends Migration {
                     IF v_changed_fields IS NOT NULL THEN
                         INSERT INTO accounting_audit_log (
                             table_name, record_id, action,
-                            old_values, new_values, changed_fields, user_id
+                            old_values, new_values, changed_fields, user_id, ip_address, user_agent
                         ) VALUES (
                             TG_TABLE_NAME, NEW.id, 'UPDATE',
-                            v_old_values, v_new_values, v_changed_fields, v_user_id
+                            v_old_values, v_new_values, v_changed_fields, v_user_id, v_ip_address, v_user_agent
                         );
                     END IF;
                     
@@ -155,10 +166,10 @@ return new class extends Migration {
                     
                     INSERT INTO accounting_audit_log (
                         table_name, record_id, action,
-                        old_values, new_values, changed_fields, user_id
+                        old_values, new_values, changed_fields, user_id, ip_address, user_agent
                     ) VALUES (
                         TG_TABLE_NAME, NEW.id, 'INSERT',
-                        v_old_values, v_new_values, v_changed_fields, v_user_id
+                        v_old_values, v_new_values, v_changed_fields, v_user_id, v_ip_address, v_user_agent
                     );
                     
                     RETURN NEW;
@@ -328,42 +339,131 @@ return new class extends Migration {
     }
 
     /**
-     * Create MySQL audit triggers (simplified)
+     * Create MySQL/MariaDB audit triggers
      */
     private function createMySQLAuditTriggers(): void
     {
-        // MySQL audit is simpler - just log changes
-        $auditTables = ['chart_of_accounts', 'journal_entries'];
+        // MySQL/MariaDB: Create triggers for INSERT, UPDATE, DELETE
+        $auditTables = [
+            'chart_of_accounts',
+            'journal_entries',
+            'journal_entry_details',
+            'accounting_periods',
+            'account_types',
+            'cost_centers'
+        ];
 
         foreach ($auditTables as $table) {
             try {
+                // INSERT trigger
+                DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_insert");
+                DB::unprepared("
+                    CREATE TRIGGER trg_audit_{$table}_insert
+                    AFTER INSERT ON {$table}
+                    FOR EACH ROW
+                    BEGIN
+                        DECLARE v_user_id BIGINT;
+                        DECLARE v_ip_address VARCHAR(45);
+                        DECLARE v_user_agent TEXT;
+                        
+                        SET v_user_id = @current_user_id;
+                        SET v_ip_address = @ip_address;
+                        SET v_user_agent = @user_agent;
+                        
+                        INSERT INTO accounting_audit_log (
+                            table_name, record_id, action, 
+                            old_values, new_values, changed_fields,
+                            user_id, ip_address, user_agent, created_at
+                        ) VALUES (
+                            '{$table}', 
+                            NEW.id, 
+                            'INSERT',
+                            NULL,
+                            JSON_OBJECT('id', NEW.id),
+                            NULL,
+                            v_user_id,
+                            v_ip_address,
+                            v_user_agent,
+                            CURRENT_TIMESTAMP
+                        );
+                    END
+                ");
+
+                // UPDATE trigger
                 DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_update");
                 DB::unprepared("
                     CREATE TRIGGER trg_audit_{$table}_update
                     AFTER UPDATE ON {$table}
                     FOR EACH ROW
                     BEGIN
+                        DECLARE v_user_id BIGINT;
+                        DECLARE v_ip_address VARCHAR(45);
+                        DECLARE v_user_agent TEXT;
+                        
+                        SET v_user_id = @current_user_id;
+                        SET v_ip_address = @ip_address;
+                        SET v_user_agent = @user_agent;
+                        
                         INSERT INTO accounting_audit_log (
                             table_name, record_id, action, 
-                            old_values, new_values, created_at
+                            old_values, new_values, changed_fields,
+                            user_id, ip_address, user_agent, created_at
                         ) VALUES (
                             '{$table}', 
                             NEW.id, 
                             'UPDATE',
-                            JSON_OBJECT('data', 'see table'),
-                            JSON_OBJECT('data', 'see table'),
+                            JSON_OBJECT('id', OLD.id),
+                            JSON_OBJECT('id', NEW.id),
+                            JSON_ARRAY('updated'),
+                            v_user_id,
+                            v_ip_address,
+                            v_user_agent,
+                            CURRENT_TIMESTAMP
+                        );
+                    END
+                ");
+
+                // DELETE trigger
+                DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_delete");
+                DB::unprepared("
+                    CREATE TRIGGER trg_audit_{$table}_delete
+                    AFTER DELETE ON {$table}
+                    FOR EACH ROW
+                    BEGIN
+                        DECLARE v_user_id BIGINT;
+                        DECLARE v_ip_address VARCHAR(45);
+                        DECLARE v_user_agent TEXT;
+                        
+                        SET v_user_id = @current_user_id;
+                        SET v_ip_address = @ip_address;
+                        SET v_user_agent = @user_agent;
+                        
+                        INSERT INTO accounting_audit_log (
+                            table_name, record_id, action, 
+                            old_values, new_values, changed_fields,
+                            user_id, ip_address, user_agent, created_at
+                        ) VALUES (
+                            '{$table}', 
+                            OLD.id, 
+                            'DELETE',
+                            JSON_OBJECT('id', OLD.id),
+                            NULL,
+                            NULL,
+                            v_user_id,
+                            v_ip_address,
+                            v_user_agent,
                             CURRENT_TIMESTAMP
                         );
                     END
                 ");
             } catch (\Exception $e) {
-                \Log::warning("Skipped audit trigger for {$table}: " . $e->getMessage());
+                \Log::warning("Skipped audit triggers for {$table}: " . $e->getMessage());
             }
         }
     }
 
     /**
-     * MySQL soft delete protection
+     * MySQL/MariaDB soft delete protection
      */
     private function createMySQLSoftDeleteProtection(): void
     {
@@ -374,14 +474,125 @@ return new class extends Migration {
                 BEFORE DELETE ON journal_entries
                 FOR EACH ROW
                 BEGIN
-                    IF OLD.status = 'posted' AND OLD.deleted_at IS NULL THEN
+                    IF OLD.status = 'posted' AND (OLD.deleted_at IS NULL OR OLD.deleted_at = '0000-00-00 00:00:00') THEN
                         SIGNAL SQLSTATE '45000'
                         SET MESSAGE_TEXT = 'Cannot delete posted journal entries. Use reversing entry instead.';
                     END IF;
                 END
             ");
         } catch (\Exception $e) {
-            \Log::warning('MySQL soft delete protection not created: ' . $e->getMessage());
+            \Log::warning('MySQL/MariaDB soft delete protection not created: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create MySQL/MariaDB snapshot helper stored procedures
+     */
+    private function createMySQLSnapshotHelpers(): void
+    {
+        try {
+            // Stored procedure to create period snapshots
+            DB::unprepared("DROP PROCEDURE IF EXISTS sp_create_period_snapshots");
+            DB::unprepared("
+                CREATE PROCEDURE sp_create_period_snapshots(IN p_period_id BIGINT)
+                BEGIN
+                    DECLARE v_period_start DATE;
+                    DECLARE v_period_end DATE;
+                    
+                    -- Get period dates
+                    SELECT start_date, end_date INTO v_period_start, v_period_end
+                    FROM accounting_periods
+                    WHERE id = p_period_id;
+                    
+                    -- Create or update snapshots for all active accounts
+                    INSERT INTO account_balance_snapshots (
+                        chart_of_account_id,
+                        accounting_period_id,
+                        snapshot_date,
+                        opening_balance,
+                        period_debits,
+                        period_credits,
+                        closing_balance,
+                        created_by,
+                        created_at,
+                        updated_at
+                    )
+                    SELECT 
+                        a.id,
+                        p_period_id,
+                        v_period_end,
+                        COALESCE(prev.closing_balance, 0) as opening_balance,
+                        COALESCE(SUM(jed.debit), 0) as period_debits,
+                        COALESCE(SUM(jed.credit), 0) as period_credits,
+                        COALESCE(prev.closing_balance, 0) + 
+                        COALESCE(SUM(jed.debit), 0) - 
+                        COALESCE(SUM(jed.credit), 0) as closing_balance,
+                        @current_user_id,
+                        CURRENT_TIMESTAMP,
+                        CURRENT_TIMESTAMP
+                    FROM chart_of_accounts a
+                    LEFT JOIN (
+                        SELECT chart_of_account_id, closing_balance
+                        FROM account_balance_snapshots
+                        WHERE snapshot_date < v_period_start
+                        ORDER BY snapshot_date DESC
+                        LIMIT 1
+                    ) prev ON prev.chart_of_account_id = a.id
+                    LEFT JOIN journal_entry_details jed ON jed.chart_of_account_id = a.id
+                    LEFT JOIN journal_entries je ON (
+                        je.id = jed.journal_entry_id 
+                        AND je.status = 'posted'
+                        AND je.entry_date BETWEEN v_period_start AND v_period_end
+                    )
+                    WHERE a.is_active = true
+                    GROUP BY a.id, prev.closing_balance
+                    ON DUPLICATE KEY UPDATE
+                        period_debits = VALUES(period_debits),
+                        period_credits = VALUES(period_credits),
+                        closing_balance = VALUES(closing_balance),
+                        updated_at = CURRENT_TIMESTAMP;
+                        
+                    SELECT ROW_COUNT() as accounts_processed, v_period_end as snapshot_date;
+                END
+            ");
+
+            // Function to get account balance using snapshots
+            DB::unprepared("DROP FUNCTION IF EXISTS fn_account_balance_fast");
+            DB::unprepared("
+                CREATE FUNCTION fn_account_balance_fast(
+                    p_account_id BIGINT,
+                    p_as_of_date DATE
+                )
+                RETURNS DECIMAL(15,2)
+                READS SQL DATA
+                BEGIN
+                    DECLARE v_balance DECIMAL(15,2) DEFAULT 0;
+                    DECLARE v_snapshot_date DATE DEFAULT '1900-01-01';
+                    
+                    -- Get most recent snapshot before the date
+                    SELECT COALESCE(closing_balance, 0), COALESCE(snapshot_date, '1900-01-01')
+                    INTO v_balance, v_snapshot_date
+                    FROM account_balance_snapshots
+                    WHERE chart_of_account_id = p_account_id
+                    AND snapshot_date <= p_as_of_date
+                    ORDER BY snapshot_date DESC
+                    LIMIT 1;
+                    
+                    -- Add transactions since snapshot
+                    SELECT v_balance + COALESCE(SUM(jed.debit - jed.credit), 0)
+                    INTO v_balance
+                    FROM journal_entry_details jed
+                    JOIN journal_entries je ON je.id = jed.journal_entry_id
+                    WHERE jed.chart_of_account_id = p_account_id
+                    AND je.status = 'posted'
+                    AND je.entry_date > v_snapshot_date
+                    AND je.entry_date <= p_as_of_date;
+                    
+                    RETURN v_balance;
+                END
+            ");
+        } catch (\Exception $e) {
+            \Log::warning('MySQL/MariaDB snapshot helpers not created: ' . $e->getMessage());
         }
     }
 
@@ -392,8 +603,9 @@ return new class extends Migration {
     {
         $driver = DB::connection()->getDriverName();
 
-        // Drop triggers
+        // Drop triggers and functions based on database driver
         if ($driver === 'pgsql') {
+            // PostgreSQL cleanup
             $tables = [
                 'chart_of_accounts',
                 'journal_entries',
@@ -410,21 +622,58 @@ return new class extends Migration {
             DB::unprepared("DROP FUNCTION IF EXISTS prevent_hard_delete_posted() CASCADE");
             DB::unprepared("DROP FUNCTION IF EXISTS sp_create_period_snapshots(BIGINT) CASCADE");
             DB::unprepared("DROP FUNCTION IF EXISTS fn_account_balance_fast(BIGINT, DATE) CASCADE");
-        } else {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_mysql_prevent_hard_delete");
-            $tables = ['chart_of_accounts', 'journal_entries'];
+        } elseif (in_array($driver, ['mysql', 'mariadb'])) {
+            // MySQL/MariaDB cleanup
+            $tables = [
+                'chart_of_accounts',
+                'journal_entries',
+                'journal_entry_details',
+                'accounting_periods',
+                'account_types',
+                'cost_centers'
+            ];
+
             foreach ($tables as $table) {
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_update");
+                try {
+                    DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_insert");
+                    DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_update");
+                    DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_delete");
+                } catch (\Exception $e) {
+                    \Log::warning("Could not drop triggers for {$table}: " . $e->getMessage());
+                }
+            }
+
+            try {
+                DB::unprepared("DROP TRIGGER IF EXISTS trg_mysql_prevent_hard_delete");
+                DB::unprepared("DROP PROCEDURE IF EXISTS sp_create_period_snapshots");
+                DB::unprepared("DROP FUNCTION IF EXISTS fn_account_balance_fast");
+            } catch (\Exception $e) {
+                \Log::warning("Could not drop MySQL objects: " . $e->getMessage());
             }
         }
 
-        // Drop columns
+        // Drop columns from journal_entries
         Schema::table('journal_entries', function (Blueprint $table) {
             $table->dropSoftDeletes();
-            $table->dropForeign(['deleted_by']);
-            $table->dropForeign(['reverses_entry_id']);
-            $table->dropForeign(['reversed_by_entry_id']);
-            $table->dropColumn(['deleted_by', 'reverses_entry_id', 'reversed_by_entry_id', 'reversed_at']);
+
+            if (Schema::hasColumn('journal_entries', 'deleted_by')) {
+                $table->dropForeign(['deleted_by']);
+                $table->dropColumn('deleted_by');
+            }
+
+            if (Schema::hasColumn('journal_entries', 'reverses_entry_id')) {
+                $table->dropForeign(['reverses_entry_id']);
+                $table->dropColumn('reverses_entry_id');
+            }
+
+            if (Schema::hasColumn('journal_entries', 'reversed_by_entry_id')) {
+                $table->dropForeign(['reversed_by_entry_id']);
+                $table->dropColumn('reversed_by_entry_id');
+            }
+
+            if (Schema::hasColumn('journal_entries', 'reversed_at')) {
+                $table->dropColumn('reversed_at');
+            }
         });
 
         // Drop tables

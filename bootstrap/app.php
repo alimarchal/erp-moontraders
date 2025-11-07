@@ -12,6 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Add audit context middleware to web group (applies to all web requests)
+        $middleware->web(append: [
+            \App\Http\Middleware\SetDatabaseAuditContext::class,
+        ]);
+
+        // Add role/permission middleware aliases
         $middleware->alias([
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,

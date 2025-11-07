@@ -14,6 +14,7 @@ use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseTypeController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\UomController;
 use App\Http\Controllers\Reports\GeneralLedgerController;
@@ -89,6 +90,9 @@ Route::middleware([
 
         // Employees CRUD
         Route::resource('employees', EmployeeController::class);
+
+        // Customers CRUD
+        Route::resource('customers', CustomerController::class);
 
         // Vehicles CRUD
         Route::get('vehicles/export/pdf', [VehicleController::class, 'exportPdf'])->name('vehicles.export.pdf');

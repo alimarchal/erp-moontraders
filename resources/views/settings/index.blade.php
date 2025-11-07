@@ -139,6 +139,22 @@
                     </div>
                 </a>
 
+                <!-- Customers Module Card -->
+                <a href="{{ route('customers.index') }}"
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">
+                    <div class="p-5 flex justify-between">
+                        <div>
+                            <div class="text-3xl font-bold leading-8">{{ \App\Models\Customer::count() }}</div>
+                            <div class="mt-1 text-base font-extrabold text-black">Customers</div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="h-16 w-16 text-pink-600">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M9.813 15.904C7.995 16.748 7.086 17.17 6.543 17.93C6 18.69 6 19.644 6 21M17.25 12.75A2.25 2.25 0 1121.75 12.75A2.25 2.25 0 0117.25 12.75ZM14.25 21V19.875C14.25 18.839 14.25 18.321 14.405 17.891C14.654 17.195 15.195 16.654 15.891 16.405C16.321 16.25 16.839 16.25 17.875 16.25H18.625C19.661 16.25 20.179 16.25 20.609 16.405C21.305 16.654 21.846 17.195 22.095 17.891C22.25 18.321 22.25 18.839 22.25 19.875V21M7.5 6.75A3.75 3.75 0 1115 6.75A3.75 3.75 0 017.5 6.75ZM3 21V18.75C3 17.093 4.343 15.75 6 15.75H9C10.657 15.75 12 17.093 12 18.75V21" />
+                        </svg>
+                    </div>
+                </a>
+
                 <!-- UOMs Module Card -->
                 <a href="{{ route('uoms.index') }}"
                     class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">

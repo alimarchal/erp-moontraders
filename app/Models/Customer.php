@@ -12,6 +12,30 @@ class Customer extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * Supported customer classifications.
+     *
+     * @var string[]
+     */
+    public const CHANNEL_TYPES = [
+        'General Store',
+        'Wholesale',
+        'Pharmacy',
+        'Bakery',
+        'Minimart',
+        'Hotel & Accommodation',
+        'Petromart',
+        '3rd Party',
+        'Other',
+    ];
+
+    /**
+     * Supported priority tiers.
+     *
+     * @var string[]
+     */
+    public const CUSTOMER_CATEGORIES = ['A', 'B', 'C', 'D'];
+
     protected $fillable = [
         'customer_code',
         'customer_name',

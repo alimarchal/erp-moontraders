@@ -95,6 +95,11 @@ class Customer extends Model
         return $this->hasMany(Sale::class);
     }
 
+    public function employees()
+    {
+        return $this->belongsToMany(Employee::class, 'customer_employee');
+    }
+
     // Scopes
     public function scopeActive($query)
     {

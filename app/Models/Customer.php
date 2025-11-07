@@ -4,9 +4,114 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Customer extends Model
 {
-    /** @use HasFactory<\Database\Factories\CustomerFactory> */
-    use HasFactory;
+    use HasFactory, SoftDeletes;
+
+    protected $fillable = [
+        'customer_code',
+        'customer_name',
+        'business_name',
+        'phone',
+        'email',
+        'address',
+        'sub_locality',
+        'city',
+        'state',
+        'country',
+        'channel_type',
+        'customer_category',
+        'credit_limit',
+        'payment_terms',
+        'credit_used',
+        'receivable_balance',
+        'payable_balance',
+        'lifetime_value',
+        'receivable_account_id',
+        'payable_account_id',
+        'notes',
+        'last_sale_date',
+        'sales_rep_id',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'credit_limit' => 'decimal:2',
+        'credit_used' => 'decimal:2',
+        'receivable_balance' => 'decimal:2',
+        'payable_balance' => 'decimal:2',
+        'lifetime_value' => 'decimal:2',
+        'last_sale_date' => 'date',
+        'is_active' => 'boolean',
+        'payment_terms' => 'integer',
+    ];
+
+    // Relationships
+    public function receivableAccount(): BelongsTo
+    {
+        return $this->belongsTo(ChartOfAccount::class, 'receivable_account_id');
+    }
+
+    public function payableAccount(): BelongsTo
+    {
+        return $this->belongsTo(ChartOfAccount::class, 'payable_account_id');
+    }
+
+    public function salesRep(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'sales_rep_id');
+    }
+
+    public function sales(): HasMany
+    {
+        return $this->hasMany(Sale::class);
+    }
+
+    // Scopes
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeByChannelType($query, string $channelType)
+    {
+        return $query->where('channel_type', $channelType);
+    }
+
+    public function scopeByCity($query, string $city)
+    {
+        return $query->where('city', $city);
+    }
+
+    public function scopeByCategory($query, string $category)
+    {
+        return $query->where('customer_category', $category);
+    }
+
+    // Helper methods
+    public function getAvailableCredit(): float
+    {
+        return max(0, $this->credit_limit - $this->credit_used);
+    }
+
+    public function hasAvailableCredit(float $amount): bool
+    {
+        return $this->getAvailableCredit() >= $amount;
+    }
+
+    public function getNetBalance(): float
+    {
+        return $this->receivable_balance - $this->payable_balance;
+    }
+
+    public function updateCreditUsed(): void
+    {
+        $this->update([
+            'credit_used' => $this->receivable_balance
+        ]);
+    }
 }

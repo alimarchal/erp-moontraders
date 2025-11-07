@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             WarehouseTypeSeeder::class,         // Add warehouse types after companies
             WarehouseSeeder::class,             // Add warehouses after warehouse types
             SupplierSeeder::class,              // Add suppliers before employees (FK reference)
+            CustomerSeeder::class,              // Add customers from Shop List data
             EmployeeSeeder::class,              // Seed employees from master data
             VehicleSeeder::class,               // Seed vehicle master data
             UomSeeder::class,                   // Add units of measurement before products

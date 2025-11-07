@@ -4,8 +4,62 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "f85afa59e6100d3b083607956a6fafa4",
+    "content-hash": "12c8b8686898e4ffb1b222948aa4adf2",
     "packages": [
+        {
+            "name": "alimarchal/id-generator",
+            "version": "v1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/alimarchal/id-generator.git",
+                "reference": "72132e7f318fd253727b67fcf50db95f79622ee7"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/alimarchal/id-generator/zipball/72132e7f318fd253727b67fcf50db95f79622ee7",
+                "reference": "72132e7f318fd253727b67fcf50db95f79622ee7",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/database": "^11.0 || ^12.0",
+                "illuminate/support": "^11.0 || ^12.0",
+                "php": "^8.2"
+            },
+            "require-dev": {
+                "orchestra/pest-plugin-testbench": "^2.0",
+                "orchestra/testbench": "^9.0",
+                "pestphp/pest": "^2.0"
+            },
+            "type": "laravel-package",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Alimarchal\\IdGenerator\\IdGeneratorServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Alimarchal\\IdGenerator\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ali Marchal",
+                    "email": "kh.marchal@gmail.com"
+                }
+            ],
+            "description": "A Laravel package to generate unique, prefixed IDs with database transaction safety",
+            "support": {
+                "issues": "https://github.com/alimarchal/id-generator/issues",
+                "source": "https://github.com/alimarchal/id-generator/tree/v1.1.0"
+            },
+            "time": "2025-08-14T10:31:27+00:00"
+        },
         {
             "name": "bacon/bacon-qr-code",
             "version": "v3.0.1",

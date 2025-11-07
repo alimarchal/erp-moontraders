@@ -7,7 +7,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "900g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.9,
         "unit_price": 2372.69,
         "cost_price": 2221.44
@@ -20,7 +20,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x800g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.8,
         "unit_price": 2397.94,
         "cost_price": 2245.08
@@ -33,7 +33,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x650g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.65,
         "unit_price": 1516.81,
         "cost_price": 1448.38
@@ -46,7 +46,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "390g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.39,
         "unit_price": 1110.42,
         "cost_price": 1039.63
@@ -59,7 +59,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x375g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.375,
         "unit_price": 949,
         "cost_price": 888.57
@@ -72,7 +72,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "576x25g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.025,
         "unit_price": 27.78,
         "cost_price": 26.7
@@ -85,7 +85,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "36x200g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.2,
         "unit_price": 549.51,
         "cost_price": 533.14
@@ -98,7 +98,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x990g",
-        "brand": null,
+        "brand": "Nestle",
         "weight": 0.99,
         "unit_price": 1762.23,
         "cost_price": 1656.89
@@ -111,7 +111,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "600g",
-        "brand": null,
+        "brand": "Nestle",
         "weight": 0.6,
         "unit_price": 1186.45,
         "cost_price": 1110.71
@@ -124,7 +124,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "260g",
-        "brand": null,
+        "brand": "Nestle",
         "weight": 0.26,
         "unit_price": 511.62,
         "cost_price": 479.83
@@ -137,7 +137,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "130g",
-        "brand": null,
+        "brand": "Nestle",
         "weight": 0.13,
         "unit_price": 255.81,
         "cost_price": 239.92
@@ -150,7 +150,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "26g",
-        "brand": null,
+        "brand": "Nestle",
         "weight": 0.026,
         "unit_price": 47.37,
         "cost_price": 44.43
@@ -163,7 +163,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "288x32g",
-        "brand": null,
+        "brand": "Nestle",
         "weight": 0.032,
         "unit_price": 37.01,
         "cost_price": 35.54
@@ -176,7 +176,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "900g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.9,
         "unit_price": 2562.5,
         "cost_price": 2376.3
@@ -189,7 +189,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "800g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.8,
         "unit_price": 2277.78,
         "cost_price": 2112.26
@@ -202,7 +202,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "375g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.375,
         "unit_price": 1072.45,
         "cost_price": 994.52
@@ -215,7 +215,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "375g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.375,
         "unit_price": 1072.45,
         "cost_price": 994.52
@@ -228,7 +228,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "150g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.15,
         "unit_price": 427.08,
         "cost_price": 396.05
@@ -241,7 +241,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "150g",
-        "brand": null,
+        "brand": "Nido",
         "weight": 0.15,
         "unit_price": 427.08,
         "cost_price": 396.05
@@ -254,7 +254,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x850g",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.85,
         "unit_price": 1676.95,
         "cost_price": 1572.78
@@ -267,7 +267,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "560g",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.56,
         "unit_price": 1117.97,
         "cost_price": 1048.51
@@ -280,7 +280,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x350g",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.35,
         "unit_price": 705.84,
         "cost_price": 661.99
@@ -293,7 +293,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "90x100g",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.1,
         "unit_price": 208.07,
         "cost_price": 207.24
@@ -306,7 +306,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "230g",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.23,
         "unit_price": 468.97,
         "cost_price": 439.84
@@ -319,7 +319,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "10x18g",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.018,
         "unit_price": 74.35,
         "cost_price": 69.79
@@ -332,7 +332,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "9x1.8kg",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 1.8,
         "unit_price": 3483.1,
         "cost_price": 3261.07
@@ -345,7 +345,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "25x18g",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.018,
         "unit_price": 1644.75,
         "cost_price": 1578.96
@@ -358,7 +358,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "396x13g",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.013,
         "unit_price": 28.4,
         "cost_price": 26.66
@@ -371,7 +371,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "396X9G",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0,
         "unit_price": 18.52,
         "cost_price": 17.81
@@ -384,7 +384,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x180g",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.18,
         "unit_price": 604.64,
         "cost_price": 567.07
@@ -397,7 +397,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "576x26g",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.026,
         "unit_price": 47.45,
         "cost_price": 44.43
@@ -410,7 +410,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "800g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.8,
         "unit_price": 2676.39,
         "cost_price": 2481.9
@@ -423,7 +423,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "800g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.8,
         "unit_price": 2676.39,
         "cost_price": 2481.9
@@ -436,7 +436,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "800g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.8,
         "unit_price": 2676.39,
         "cost_price": 2481.9
@@ -449,7 +449,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "400g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.4,
         "unit_price": 1357.18,
         "cost_price": 1258.56
@@ -462,7 +462,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "400g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.4,
         "unit_price": 1357.18,
         "cost_price": 1258.56
@@ -475,7 +475,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "400g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.4,
         "unit_price": 1357.18,
         "cost_price": 1258.56
@@ -488,7 +488,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "200g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.2,
         "unit_price": 692.82,
         "cost_price": 642.48
@@ -501,7 +501,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "200g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.2,
         "unit_price": 692.82,
         "cost_price": 642.48
@@ -514,7 +514,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "200g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.2,
         "unit_price": 692.82,
         "cost_price": 642.48
@@ -527,7 +527,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "36x120g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.12,
         "unit_price": 397.23,
         "cost_price": 370.59
@@ -540,7 +540,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "36x120g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.12,
         "unit_price": 397.23,
         "cost_price": 370.59
@@ -553,7 +553,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "36x120g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.12,
         "unit_price": 397.23,
         "cost_price": 370.59
@@ -566,7 +566,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "36x200g",
-        "brand": null,
+        "brand": "LactoGrow",
         "weight": 0.2,
         "unit_price": 730.79,
         "cost_price": 679.73
@@ -579,7 +579,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "200g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.2,
         "unit_price": 730.79,
         "cost_price": 679.73
@@ -592,7 +592,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "36x110g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.11,
         "unit_price": 406.69,
         "cost_price": 379.41
@@ -605,7 +605,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "48x120g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.12,
         "unit_price": 275.23,
         "cost_price": 261.47
@@ -618,7 +618,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "48x110g",
-        "brand": null,
+        "brand": "LactoGrow",
         "weight": 0.11,
         "unit_price": 268.52,
         "cost_price": 255.73
@@ -631,7 +631,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "288x22g",
-        "brand": null,
+        "brand": "LactoGrow",
         "weight": 0.022,
         "unit_price": 27.78,
         "cost_price": 26.46
@@ -644,7 +644,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x375g",
-        "brand": null,
+        "brand": "Lactogen",
         "weight": 0.375,
         "unit_price": 1338.19,
         "cost_price": 1241.04
@@ -657,7 +657,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x750g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.75,
         "unit_price": 1702.42,
         "cost_price": 1588.24
@@ -670,7 +670,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x750g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.75,
         "unit_price": 1702.42,
         "cost_price": 1588.24
@@ -683,7 +683,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "350g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.35,
         "unit_price": 825.69,
         "cost_price": 765.7
@@ -696,7 +696,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "175g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.175,
         "unit_price": 427.08,
         "cost_price": 396.05
@@ -709,7 +709,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "350g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.35,
         "unit_price": 825.69,
         "cost_price": 765.7
@@ -722,7 +722,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "175g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.175,
         "unit_price": 427.08,
         "cost_price": 396.05
@@ -735,7 +735,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "175g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.175,
         "unit_price": 427.08,
         "cost_price": 396.05
@@ -748,7 +748,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "25g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.025,
         "unit_price": 42.71,
         "cost_price": 39.6
@@ -761,7 +761,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "25g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.025,
         "unit_price": 42.71,
         "cost_price": 39.6
@@ -774,7 +774,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "25g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.025,
         "unit_price": 42.71,
         "cost_price": 39.6
@@ -787,7 +787,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "175g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.175,
         "unit_price": 512.5,
         "cost_price": 475.26
@@ -800,7 +800,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "175g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.175,
         "unit_price": 512.5,
         "cost_price": 475.26
@@ -813,7 +813,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "175g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.175,
         "unit_price": 512.5,
         "cost_price": 475.26
@@ -826,7 +826,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x350g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.35,
         "unit_price": 1157.87,
         "cost_price": 550.47
@@ -839,7 +839,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x350g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.35,
         "unit_price": 1157.87,
         "cost_price": 1073.73
@@ -852,7 +852,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x350g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.35,
         "unit_price": 1157.87,
         "cost_price": 1073.73
@@ -865,7 +865,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x175g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.175,
         "unit_price": 588.43,
         "cost_price": 545.67
@@ -878,7 +878,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x175g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.175,
         "unit_price": 588.43,
         "cost_price": 545.67
@@ -891,7 +891,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x175g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.175,
         "unit_price": 588.43,
         "cost_price": 545.67
@@ -904,7 +904,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x175g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.175,
         "unit_price": 588.43,
         "cost_price": 545.67
@@ -917,7 +917,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "100g",
-        "brand": null,
+        "brand": "Cerelac",
         "weight": 0.1,
         "unit_price": 237.27,
         "cost_price": 219.92
@@ -930,7 +930,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x14.5g",
-        "brand": null,
+        "brand": "Koko",
         "weight": 0.0145,
         "unit_price": 50.33,
         "cost_price": 46.81
@@ -943,7 +943,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "450g",
-        "brand": null,
+        "brand": "Milo",
         "weight": 0.45,
         "unit_price": 1738.04,
         "cost_price": 1616.46
@@ -956,7 +956,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "330g",
-        "brand": null,
+        "brand": "Koko",
         "weight": 0.33,
         "unit_price": 1648.91,
         "cost_price": 1533.56
@@ -969,7 +969,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "300g",
-        "brand": null,
+        "brand": "Koko",
         "weight": 0.3,
         "unit_price": 1301.22,
         "cost_price": 1260.01
@@ -982,7 +982,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "150g",
-        "brand": null,
+        "brand": "Milo",
         "weight": 0.15,
         "unit_price": 713.04,
         "cost_price": 663.16
@@ -995,7 +995,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "70g",
-        "brand": null,
+        "brand": "Koko",
         "weight": 0.07,
         "unit_price": 329.78,
         "cost_price": 306.71
@@ -1008,7 +1008,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x15g",
-        "brand": null,
+        "brand": "Koko",
         "weight": 0.015,
         "unit_price": 59.49,
         "cost_price": 55.33
@@ -1021,7 +1021,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x500g",
-        "brand": null,
+        "brand": "Milo",
         "weight": 0.5,
         "unit_price": 1499.54,
         "cost_price": 1403.95
@@ -1034,7 +1034,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x300g",
-        "brand": null,
+        "brand": "Milo",
         "weight": 0.3,
         "unit_price": 987.04,
         "cost_price": 924.12
@@ -1047,7 +1047,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "324x15g",
-        "brand": null,
+        "brand": "Milo",
         "weight": 0.015,
         "unit_price": 56.94,
         "cost_price": 53.31
@@ -1060,7 +1060,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x150g",
-        "brand": null,
+        "brand": "Milo",
         "weight": 0.15,
         "unit_price": 436.57,
         "cost_price": 408.74
@@ -1073,7 +1073,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x900g",
-        "brand": null,
+        "brand": "NAN",
         "weight": 0.9,
         "unit_price": 5451.14,
         "cost_price": 5055.03
@@ -1086,7 +1086,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x600g",
-        "brand": null,
+        "brand": "NAN",
         "weight": 0.6,
         "unit_price": 2258.8,
         "cost_price": 2094.88
@@ -1099,7 +1099,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x300g",
-        "brand": null,
+        "brand": "NAN",
         "weight": 0.3,
         "unit_price": 1138.89,
         "cost_price": 1056.21
@@ -1112,7 +1112,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x900g",
-        "brand": null,
+        "brand": "NAN",
         "weight": 0.9,
         "unit_price": 5730.68,
         "cost_price": 5314.26
@@ -1125,7 +1125,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x400g",
-        "brand": null,
+        "brand": "NAN",
         "weight": 0.4,
         "unit_price": 2749,
         "cost_price": 2549.12
@@ -1138,7 +1138,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x400g",
-        "brand": null,
+        "brand": "NAN",
         "weight": 0.4,
         "unit_price": 2515.91,
         "cost_price": 2333.09
@@ -1151,7 +1151,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x400g",
-        "brand": null,
+        "brand": "NAN",
         "weight": 0.4,
         "unit_price": 2143.18,
         "cost_price": 1730.82
@@ -1164,7 +1164,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x400g",
-        "brand": null,
+        "brand": "NAN",
         "weight": 0.4,
         "unit_price": 1879,
         "cost_price": 1728.22
@@ -1177,7 +1177,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x200g",
-        "brand": null,
+        "brand": "NAN",
         "weight": 0.2,
         "unit_price": 759.26,
         "cost_price": 704.14
@@ -1190,7 +1190,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x400g",
-        "brand": null,
+        "brand": "NAN",
         "weight": 0.4,
         "unit_price": 2982,
         "cost_price": 2769.31
@@ -1203,7 +1203,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x400g",
-        "brand": null,
+        "brand": "Prenan",
         "weight": 0.4,
         "unit_price": 1863.64,
         "cost_price": 1728.22
@@ -1216,7 +1216,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "36x200g",
-        "brand": null,
+        "brand": "Prenan",
         "weight": 0.2,
         "unit_price": 759.26,
         "cost_price": 704.14
@@ -1229,7 +1229,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "200g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.2,
         "unit_price": 3698.53,
         "cost_price": 3469.49
@@ -1242,7 +1242,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "100g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.1,
         "unit_price": 2007.77,
         "cost_price": 1883.44
@@ -1255,7 +1255,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "50g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.05,
         "unit_price": 1056.72,
         "cost_price": 991.28
@@ -1268,7 +1268,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "50g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.05,
         "unit_price": 1056.72,
         "cost_price": 991.3
@@ -1281,7 +1281,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "25g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.025,
         "unit_price": 2016.6,
         "cost_price": 1892.45
@@ -1294,7 +1294,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "432x25g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.025,
         "unit_price": 67.22,
         "cost_price": 63.08
@@ -1307,7 +1307,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "50x1.5g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.0015,
         "unit_price": 27.96,
         "cost_price": 26.23
@@ -1320,7 +1320,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "50g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.05,
         "unit_price": 1493.4,
         "cost_price": 1379.13
@@ -1333,7 +1333,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "6x100g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.1,
         "unit_price": 2088.83,
         "cost_price": 1946.79
@@ -1346,7 +1346,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "10x15.5g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.0155,
         "unit_price": 949.67,
         "cost_price": 884.1
@@ -1359,7 +1359,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "25x33g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.033,
         "unit_price": 85.42,
         "cost_price": 79.45
@@ -1372,7 +1372,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "25g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.025,
         "unit_price": 432.3,
         "cost_price": 405.52
@@ -1385,7 +1385,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "6x50g",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.05,
         "unit_price": 550.51,
         "cost_price": 511.98
@@ -1398,7 +1398,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "18x330g",
-        "brand": null,
+        "brand": "Trix",
         "weight": 0.33,
         "unit_price": 1354.78,
         "cost_price": 1260.01
@@ -1411,7 +1411,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Milkpak",
         "weight": 1,
         "unit_price": 353.52,
         "cost_price": 334.91
@@ -1424,7 +1424,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "27x250ml",
-        "brand": null,
+        "brand": "Milkpak",
         "weight": 0.25,
         "unit_price": 90.53,
         "cost_price": 85.99
@@ -1437,7 +1437,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Cream",
         "weight": 0.2,
         "unit_price": 216.31,
         "cost_price": 195.27
@@ -1450,7 +1450,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x180ml",
-        "brand": null,
+        "brand": "Cream",
         "weight": 0.18,
         "unit_price": 179.07,
         "cost_price": 168.9
@@ -1463,7 +1463,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Cream",
         "weight": 0.2,
         "unit_price": 235.12,
         "cost_price": 213.03
@@ -1476,7 +1476,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "3x200ml",
-        "brand": null,
+        "brand": "Cream",
         "weight": 0.2,
         "unit_price": 206.9,
         "cost_price": 199.9
@@ -1489,7 +1489,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Milkpak",
         "weight": 1,
         "unit_price": 317.51,
         "cost_price": 307
@@ -1502,7 +1502,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "27x250ml",
-        "brand": null,
+        "brand": "Milkpak",
         "weight": 0.25,
         "unit_price": 83.8,
         "cost_price": 81.66
@@ -1515,7 +1515,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x180ml",
-        "brand": null,
+        "brand": "Everyday",
         "weight": 0.18,
         "unit_price": 42.45,
         "cost_price": 41.18
@@ -1528,7 +1528,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Nesvita",
         "weight": 1,
         "unit_price": 383.18,
         "cost_price": 362.04
@@ -1541,7 +1541,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Nesvita",
         "weight": 0.2,
         "unit_price": 91,
         "cost_price": 85.99
@@ -1554,7 +1554,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 1,
         "unit_price": 366.36,
         "cost_price": 343.43
@@ -1567,7 +1567,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 1,
         "unit_price": 366.36,
         "cost_price": 343.43
@@ -1580,7 +1580,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 1,
         "unit_price": 366.36,
         "cost_price": 343.43
@@ -1593,7 +1593,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 1,
         "unit_price": 366.36,
         "cost_price": 343.43
@@ -1606,7 +1606,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 1,
         "unit_price": 366.36,
         "cost_price": 343.43
@@ -1619,7 +1619,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 1,
         "unit_price": 366.36,
         "cost_price": 343.43
@@ -1632,7 +1632,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 0.2,
         "unit_price": 69.96,
         "cost_price": 65.57
@@ -1645,7 +1645,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 0.2,
         "unit_price": 69.96,
         "cost_price": 65.57
@@ -1658,7 +1658,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 0.2,
         "unit_price": 69.96,
         "cost_price": 65.57
@@ -1671,7 +1671,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 0.2,
         "unit_price": 69.96,
         "cost_price": 65.57
@@ -1684,7 +1684,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 0.2,
         "unit_price": 69.96,
         "cost_price": 65.57
@@ -1697,7 +1697,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 0.2,
         "unit_price": 69.96,
         "cost_price": 65.57
@@ -1710,7 +1710,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 1,
         "unit_price": 457.94,
         "cost_price": 429.28
@@ -1723,7 +1723,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 1,
         "unit_price": 457.94,
         "cost_price": 429.28
@@ -1736,7 +1736,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 1,
         "unit_price": 457.94,
         "cost_price": 429.28
@@ -1749,7 +1749,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 1,
         "unit_price": 457.94,
         "cost_price": 429.28
@@ -1762,7 +1762,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x230ml",
-        "brand": null,
+        "brand": "Fruita",
         "weight": 0.23,
         "unit_price": 137.35,
         "cost_price": 128.76
@@ -1775,7 +1775,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Nesfruita",
         "weight": 1,
         "unit_price": 233.05,
         "cost_price": 218.43
@@ -1788,7 +1788,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x1000ml",
-        "brand": null,
+        "brand": "Nesfruita",
         "weight": 1,
         "unit_price": 233.05,
         "cost_price": 218.43
@@ -1801,7 +1801,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Nesfruita",
         "weight": 0.2,
         "unit_price": 47.43,
         "cost_price": 44.44
@@ -1814,7 +1814,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x200ml",
-        "brand": null,
+        "brand": "Nesfruita",
         "weight": 0.2,
         "unit_price": 47.43,
         "cost_price": 44.44
@@ -1827,7 +1827,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x240ml",
-        "brand": null,
+        "brand": "Nfv",
         "weight": 0.24,
         "unit_price": 137.35,
         "cost_price": 108.61
@@ -1840,7 +1840,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x250ml",
-        "brand": null,
+        "brand": "Nfv",
         "weight": 0.25,
         "unit_price": 137.35,
         "cost_price": 128.75
@@ -1853,7 +1853,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x250ml",
-        "brand": null,
+        "brand": "Nfv",
         "weight": 0.25,
         "unit_price": 137.35,
         "cost_price": 128.75
@@ -1866,7 +1866,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "180ml",
-        "brand": null,
+        "brand": "Milo",
         "weight": 0.18,
         "unit_price": 78.05,
         "cost_price": 73.77
@@ -1879,7 +1879,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x220ml",
-        "brand": null,
+        "brand": "Milo",
         "weight": 0.22,
         "unit_price": 151.37,
         "cost_price": 142.78
@@ -1892,7 +1892,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "24x180ml",
-        "brand": null,
+        "brand": "Milo",
         "weight": 0.18,
         "unit_price": 94.6,
         "cost_price": 89.24
@@ -1905,7 +1905,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x180ml",
-        "brand": null,
+        "brand": "Milo",
         "weight": 0.18,
         "unit_price": 94.6,
         "cost_price": 89.24
@@ -1918,7 +1918,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x220ml",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.22,
         "unit_price": 161.34,
         "cost_price": 151.16
@@ -1931,7 +1931,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x220ml",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.22,
         "unit_price": 161.34,
         "cost_price": 151.16
@@ -1944,7 +1944,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x220ml",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.22,
         "unit_price": 151.85,
         "cost_price": 142.27
@@ -1957,7 +1957,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x220ml",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.22,
         "unit_price": 151.85,
         "cost_price": 142.27
@@ -1970,7 +1970,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x220ml",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.22,
         "unit_price": 180.35,
         "cost_price": 168.96
@@ -1983,7 +1983,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x220ml",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.22,
         "unit_price": 180.35,
         "cost_price": 168.96
@@ -1996,7 +1996,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "6x220ml",
-        "brand": null,
+        "brand": "Nescafe",
         "weight": 0.22,
         "unit_price": 123.46,
         "cost_price": 118.81
@@ -2009,7 +2009,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "2x5L",
-        "brand": null,
+        "brand": "Pure",
         "weight": 5,
         "unit_price": 278.53,
         "cost_price": 250
@@ -2022,7 +2022,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "6x1.5L",
-        "brand": null,
+        "brand": "Pure",
         "weight": 1.5,
         "unit_price": 88.2,
         "cost_price": 79.1
@@ -2035,7 +2035,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x0.5L",
-        "brand": null,
+        "brand": "Pure",
         "weight": 0.5,
         "unit_price": 55.71,
         "cost_price": 49.45
@@ -2048,7 +2048,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "1.5L",
-        "brand": null,
+        "brand": "Pure",
         "weight": 1.5,
         "unit_price": 73.5,
         "cost_price": 65.91
@@ -2061,7 +2061,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x0.5L",
-        "brand": null,
+        "brand": "Pure",
         "weight": 0.5,
         "unit_price": 45.66,
         "cost_price": 42.02
@@ -2074,7 +2074,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x330ml",
-        "brand": null,
+        "brand": "Pure",
         "weight": 0.33,
         "unit_price": 38.29,
         "cost_price": 34.42
@@ -2087,7 +2087,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x330ml",
-        "brand": null,
+        "brand": "Pure",
         "weight": 0.33,
         "unit_price": 46.42,
         "cost_price": 41.63
@@ -2100,7 +2100,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "0.5L",
-        "brand": null,
+        "brand": "Pure",
         "weight": 0.5,
         "unit_price": 42.55,
         "cost_price": 38.24
@@ -2113,7 +2113,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "330ml",
-        "brand": null,
+        "brand": "Pure",
         "weight": 0.33,
         "unit_price": 34.82,
         "cost_price": 31.29
@@ -2126,7 +2126,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x250ml",
-        "brand": null,
+        "brand": "Sparkeing",
         "weight": 0.25,
         "unit_price": 127.8,
         "cost_price": 120.17
@@ -2139,7 +2139,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "12x500ml",
-        "brand": null,
+        "brand": "Pure",
         "weight": 0.5,
         "unit_price": 51.06,
         "cost_price": 45.79
@@ -2152,7 +2152,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "18.9L",
-        "brand": null,
+        "brand": "Pure",
         "weight": 18.9,
         "unit_price": 415,
         "cost_price": 358.85
@@ -2165,7 +2165,7 @@
         "supplier_id": 8,
         "uom_symbol": "Pc",
         "pack_size": "18.9L",
-        "brand": null,
+        "brand": "Pure",
         "weight": 18.9,
         "unit_price": 420,
         "cost_price": 358.85
@@ -2178,7 +2178,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "250ml",
-        "brand": null,
+        "brand": "Olper",
         "weight": 0.25,
         "unit_price": 88.54,
         "cost_price": 85.75
@@ -2191,7 +2191,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "125ml",
-        "brand": null,
+        "brand": "Olper",
         "weight": 0.125,
         "unit_price": 54.05,
         "cost_price": 52.36
@@ -2204,7 +2204,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "250ml",
-        "brand": null,
+        "brand": "Olper",
         "weight": 0.25,
         "unit_price": 88.54,
         "cost_price": 85.75
@@ -2217,7 +2217,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "1000ml",
-        "brand": null,
+        "brand": "Olper",
         "weight": 1,
         "unit_price": 316.09,
         "cost_price": 306.14
@@ -2230,7 +2230,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "1000ml",
-        "brand": null,
+        "brand": "Olper",
         "weight": 1,
         "unit_price": 344.83,
         "cost_price": 334.02
@@ -2243,7 +2243,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "1500ml",
-        "brand": null,
+        "brand": "Olper",
         "weight": 1.5,
         "unit_price": 503.26,
         "cost_price": 487.47
@@ -2256,7 +2256,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "375ml",
-        "brand": null,
+        "brand": "Olper",
         "weight": 0.375,
         "unit_price": 121.16,
         "cost_price": 117.34
@@ -2269,7 +2269,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "180ml",
-        "brand": null,
+        "brand": "Falvour",
         "weight": 0.18,
         "unit_price": 87.61,
         "cost_price": 84.86
@@ -2282,7 +2282,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "110ml",
-        "brand": null,
+        "brand": "Falvour",
         "weight": 0.11,
         "unit_price": 55.34,
         "cost_price": 53.59
@@ -2295,7 +2295,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "200ml",
-        "brand": null,
+        "brand": "Cream",
         "weight": 0.2,
         "unit_price": 220.59,
         "cost_price": 213.65
@@ -2308,7 +2308,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "220ml",
-        "brand": null,
+        "brand": "Tarang",
         "weight": 0.22,
         "unit_price": 55.92,
         "cost_price": 54.14
@@ -2321,7 +2321,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "175ml",
-        "brand": null,
+        "brand": "Tarang",
         "weight": 0.175,
         "unit_price": 46.6,
         "cost_price": 45.12
@@ -2334,7 +2334,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "200ml",
-        "brand": null,
+        "brand": "Procal",
         "weight": 0.2,
         "unit_price": 83.88,
         "cost_price": 81.22
@@ -2347,7 +2347,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "1000ml",
-        "brand": null,
+        "brand": "Procal",
         "weight": 1,
         "unit_price": 344.83,
         "cost_price": 333.89
@@ -2360,7 +2360,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Fcmp",
         "weight": 0,
         "unit_price": 322.58,
         "cost_price": 306.74
@@ -2373,7 +2373,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Fcmp",
         "weight": 0,
         "unit_price": 1013.82,
         "cost_price": 964.08
@@ -2386,7 +2386,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Fcmp",
         "weight": 0,
         "unit_price": 1935.48,
         "cost_price": 1840.44
@@ -2399,7 +2399,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "1500ml",
-        "brand": null,
+        "brand": "Dairy",
         "weight": 1.5,
         "unit_price": 372.79,
         "cost_price": 360.9
@@ -2412,7 +2412,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "1000ml",
-        "brand": null,
+        "brand": "Dairy",
         "weight": 1,
         "unit_price": 279.59,
         "cost_price": 270.8
@@ -2425,7 +2425,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "225ml",
-        "brand": null,
+        "brand": "Dairy",
         "weight": 0.225,
         "unit_price": 65.24,
         "cost_price": 63.17
@@ -2438,7 +2438,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "1kg",
-        "brand": null,
+        "brand": "Tarka",
         "weight": 1,
         "unit_price": 2483.9,
         "cost_price": 2406.66
@@ -2451,7 +2451,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "0.5kg",
-        "brand": null,
+        "brand": "Tarka",
         "weight": 0.5,
         "unit_price": 1287.95,
         "cost_price": 1247.95
@@ -2464,7 +2464,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Falvour",
         "weight": 0,
         "unit_price": 87.61,
         "cost_price": 84.84
@@ -2477,7 +2477,7 @@
         "supplier_id": 3,
         "uom_symbol": "Pc",
         "pack_size": "200ml",
-        "brand": null,
+        "brand": "Omung",
         "weight": 0.2,
         "unit_price": 145.71,
         "cost_price": 141.12
@@ -2490,7 +2490,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "5kg",
-        "brand": null,
+        "brand": "Kausar",
         "weight": 5,
         "unit_price": 530,
         "cost_price": 510.92
@@ -2503,7 +2503,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "5kg",
-        "brand": null,
+        "brand": "Kausar",
         "weight": 5,
         "unit_price": 2695,
         "cost_price": 2597.98
@@ -2516,7 +2516,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "2.5kg",
-        "brand": null,
+        "brand": "Kausar",
         "weight": 2.5,
         "unit_price": 1360,
         "cost_price": 1311.04
@@ -2529,7 +2529,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "5kg",
-        "brand": null,
+        "brand": "Kausar",
         "weight": 5,
         "unit_price": 2695,
         "cost_price": 2597.98
@@ -2542,7 +2542,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "2.5kg",
-        "brand": null,
+        "brand": "Kausar",
         "weight": 2.5,
         "unit_price": 1360,
         "cost_price": 1311.04
@@ -2555,7 +2555,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "10kg",
-        "brand": null,
+        "brand": "Kausar",
         "weight": 10,
         "unit_price": 5370,
         "cost_price": 5176.68
@@ -2568,7 +2568,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Kausar",
         "weight": 0,
         "unit_price": 2695,
         "cost_price": 2549.78
@@ -2581,7 +2581,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Kausar",
         "weight": 0,
         "unit_price": 1625,
         "cost_price": 1537.58
@@ -2594,7 +2594,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Kausar",
         "weight": 0,
         "unit_price": 5360,
         "cost_price": 5070.64
@@ -2607,7 +2607,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Kausar",
         "weight": 0,
         "unit_price": 8560,
         "cost_price": 8251.83
@@ -2620,7 +2620,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Kausar",
         "weight": 0,
         "unit_price": 530,
         "cost_price": 501.28
@@ -2633,7 +2633,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "1kg",
-        "brand": null,
+        "brand": "Steam",
         "weight": 1,
         "unit_price": 360,
         "cost_price": 342
@@ -2646,7 +2646,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "5kg",
-        "brand": null,
+        "brand": "Steam",
         "weight": 5,
         "unit_price": 1863,
         "cost_price": 1769.05
@@ -2659,7 +2659,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "1kg",
-        "brand": null,
+        "brand": "Sella",
         "weight": 1,
         "unit_price": 340,
         "cost_price": 333.45
@@ -2672,7 +2672,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "5kg",
-        "brand": null,
+        "brand": "Sella",
         "weight": 5,
         "unit_price": 1840.5,
         "cost_price": 1748.48
@@ -2685,7 +2685,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "1kg",
-        "brand": null,
+        "brand": "Deghi",
         "weight": 1,
         "unit_price": 301.5,
         "cost_price": 286.43
@@ -2698,7 +2698,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "5kg",
-        "brand": null,
+        "brand": "Deghi",
         "weight": 5,
         "unit_price": 1480.5,
         "cost_price": 1406.48
@@ -2711,7 +2711,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "1kg",
-        "brand": null,
+        "brand": "Broken",
         "weight": 1,
         "unit_price": 202.5,
         "cost_price": 192.38
@@ -2724,7 +2724,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "5kg",
-        "brand": null,
+        "brand": "Broken",
         "weight": 5,
         "unit_price": 985.5,
         "cost_price": 936.23
@@ -2737,7 +2737,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": "5kg",
-        "brand": null,
+        "brand": "Dagee",
         "weight": 5,
         "unit_price": 1683,
         "cost_price": 1598.85
@@ -2750,7 +2750,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Pink",
         "weight": 0,
         "unit_price": 81,
         "cost_price": 74.52
@@ -2763,7 +2763,7 @@
         "supplier_id": 4,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "White",
         "weight": 0,
         "unit_price": 54,
         "cost_price": 49.68
@@ -2776,7 +2776,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "20G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 0.02,
         "unit_price": 9.48,
         "cost_price": 9.18
@@ -2789,7 +2789,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "35G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 0.035,
         "unit_price": 19.1,
         "cost_price": 18.51
@@ -2802,7 +2802,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "95G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 0.095,
         "unit_price": 47.76,
         "cost_price": 46.26
@@ -2815,7 +2815,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "180G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 0.18,
         "unit_price": 94.55,
         "cost_price": 91.57
@@ -2828,7 +2828,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "3kg",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 3,
         "unit_price": 1557.36,
         "cost_price": 1508.17
@@ -2841,7 +2841,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "2kG",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 2,
         "unit_price": 1098.37,
         "cost_price": 1064.04
@@ -2854,7 +2854,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "1000g",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 1,
         "unit_price": 667.61,
         "cost_price": 646.75
@@ -2867,7 +2867,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "1000G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 1,
         "unit_price": 726.35,
         "cost_price": 703.88
@@ -2880,7 +2880,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "1000G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 1,
         "unit_price": 635.46,
         "cost_price": 615.78
@@ -2893,7 +2893,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "4.5kg",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 4.5,
         "unit_price": 2340,
         "cost_price": 2266.87
@@ -2906,7 +2906,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "500G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 0.5,
         "unit_price": 382.86,
         "cost_price": 370
@@ -2919,7 +2919,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "1KG",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 1,
         "unit_price": 553.96,
         "cost_price": 536.65
@@ -2932,7 +2932,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "500G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 0.5,
         "unit_price": 276.98,
         "cost_price": 268.32
@@ -2945,7 +2945,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "25G",
-        "brand": null,
+        "brand": "Rin",
         "weight": 0.025,
         "unit_price": 9.44,
         "cost_price": 9.12
@@ -2958,7 +2958,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "125G",
-        "brand": null,
+        "brand": "Rin",
         "weight": 0.125,
         "unit_price": 47.17,
         "cost_price": 45.6
@@ -2971,7 +2971,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "500G",
-        "brand": null,
+        "brand": "Rin",
         "weight": 0.5,
         "unit_price": 187.74,
         "cost_price": 181.5
@@ -2984,7 +2984,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "1000G",
-        "brand": null,
+        "brand": "Rin",
         "weight": 1,
         "unit_price": 376.42,
         "cost_price": 363.92
@@ -2997,7 +2997,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "240G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 0.24,
         "unit_price": 181.4,
         "cost_price": 175.31
@@ -3010,7 +3010,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "450G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 0.45,
         "unit_price": 296.26,
         "cost_price": 286.31
@@ -3023,7 +3023,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "500G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 0.5,
         "unit_price": 286.54,
         "cost_price": 277.23
@@ -3036,7 +3036,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "1KG",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 1,
         "unit_price": 573.07,
         "cost_price": 555.15
@@ -3049,7 +3049,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "9000G",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 9,
         "unit_price": 546.14,
         "cost_price": 527.69
@@ -3062,7 +3062,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "1KG",
-        "brand": null,
+        "brand": "Surf Excel",
         "weight": 1,
         "unit_price": 506.21,
         "cost_price": 490.38
@@ -3075,7 +3075,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "40g",
-        "brand": null,
+        "brand": "Sunlight",
         "weight": 0.04,
         "unit_price": 9.53,
         "cost_price": 9.23
@@ -3088,7 +3088,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "190G",
-        "brand": null,
+        "brand": "Sunlight",
         "weight": 0.19,
         "unit_price": 47.76,
         "cost_price": 46.26
@@ -3101,7 +3101,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "380G",
-        "brand": null,
+        "brand": "Sunlight",
         "weight": 0.38,
         "unit_price": 94.28,
         "cost_price": 91.31
@@ -3114,7 +3114,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "750G",
-        "brand": null,
+        "brand": "Sunlight",
         "weight": 0.75,
         "unit_price": 189.52,
         "cost_price": 183.6
@@ -3127,7 +3127,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "4kG",
-        "brand": null,
+        "brand": "Sunlight",
         "weight": 4,
         "unit_price": 954.16,
         "cost_price": 924.3
@@ -3140,7 +3140,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "2kG",
-        "brand": null,
+        "brand": "Sunlight",
         "weight": 2,
         "unit_price": 476.32,
         "cost_price": 461.31
@@ -3153,7 +3153,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "1000G",
-        "brand": null,
+        "brand": "Sunlight",
         "weight": 1,
         "unit_price": 257.13,
         "cost_price": 249.11
@@ -3166,7 +3166,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "200ml",
-        "brand": null,
+        "brand": "Comfort",
         "weight": 0.2,
         "unit_price": 227.28,
         "cost_price": 216.91
@@ -3179,7 +3179,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400ml",
-        "brand": null,
+        "brand": "Comfort",
         "weight": 0.4,
         "unit_price": 390.91,
         "cost_price": 373.08
@@ -3192,7 +3192,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400ml",
-        "brand": null,
+        "brand": "Comfort",
         "weight": 0.4,
         "unit_price": 362.7,
         "cost_price": 346.19
@@ -3205,7 +3205,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "800ml",
-        "brand": null,
+        "brand": "Comfort",
         "weight": 0.8,
         "unit_price": 681.82,
         "cost_price": 650.72
@@ -3218,7 +3218,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "250ML",
-        "brand": null,
+        "brand": "Domex",
         "weight": 0.25,
         "unit_price": 163.64,
         "cost_price": 158.33
@@ -3231,7 +3231,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "500ML",
-        "brand": null,
+        "brand": "Domex",
         "weight": 0.5,
         "unit_price": 362.73,
         "cost_price": 350.95
@@ -3244,7 +3244,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "500ML",
-        "brand": null,
+        "brand": "Domex",
         "weight": 0.5,
         "unit_price": 362.73,
         "cost_price": 350.95
@@ -3257,7 +3257,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "750ml",
-        "brand": null,
+        "brand": "Domex",
         "weight": 0.75,
         "unit_price": 453.63,
         "cost_price": 438.91
@@ -3270,7 +3270,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "730ml",
-        "brand": null,
+        "brand": "Domex",
         "weight": 0.73,
         "unit_price": 453.63,
         "cost_price": 438.91
@@ -3283,7 +3283,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "75G",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.075,
         "unit_price": 23.47,
         "cost_price": 22.7
@@ -3296,7 +3296,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "230G",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.23,
         "unit_price": 70.45,
         "cost_price": 68.09
@@ -3309,7 +3309,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "460G",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.46,
         "unit_price": 140.85,
         "cost_price": 136.18
@@ -3322,7 +3322,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "520G",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.52,
         "unit_price": 131.46,
         "cost_price": 127.1
@@ -3335,7 +3335,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "260G",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.26,
         "unit_price": 65.73,
         "cost_price": 63.55
@@ -3348,7 +3348,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "165G",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.165,
         "unit_price": 46.97,
         "cost_price": 45.39
@@ -3361,7 +3361,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "290G",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.29,
         "unit_price": 79.85,
         "cost_price": 77.17
@@ -3374,7 +3374,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400g",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.4,
         "unit_price": 75.19,
         "cost_price": 72.69
@@ -3387,7 +3387,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "750G",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.75,
         "unit_price": 140.98,
         "cost_price": 136.3
@@ -3400,7 +3400,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "250ML",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.25,
         "unit_price": 226.85,
         "cost_price": 219.46
@@ -3413,7 +3413,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "500ML",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.5,
         "unit_price": 370.87,
         "cost_price": 358.41
@@ -3426,7 +3426,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "450ML",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.45,
         "unit_price": 231.73,
         "cost_price": 223.94
@@ -3439,7 +3439,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "750ML",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.75,
         "unit_price": 486.11,
         "cost_price": 470.27
@@ -3452,7 +3452,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "250ML",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.25,
         "unit_price": 139.04,
         "cost_price": 134.36
@@ -3465,7 +3465,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "750ML",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.75,
         "unit_price": 361.49,
         "cost_price": 349.35
@@ -3478,7 +3478,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "450ML",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.45,
         "unit_price": 194.65,
         "cost_price": 188.11
@@ -3491,7 +3491,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "170ML",
-        "brand": null,
+        "brand": "Vim",
         "weight": 0.17,
         "unit_price": 91.76,
         "cost_price": 88.68
@@ -3504,7 +3504,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0,
         "unit_price": 66.28,
         "cost_price": 64.05
@@ -3517,7 +3517,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100G",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.1,
         "unit_price": 93.13,
         "cost_price": 89.91
@@ -3530,7 +3530,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "165G",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.165,
         "unit_price": 142.24,
         "cost_price": 137.46
@@ -3543,7 +3543,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100G",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.1,
         "unit_price": 258.7,
         "cost_price": 250.12
@@ -3556,7 +3556,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "130G",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.13,
         "unit_price": 341.23,
         "cost_price": 329.89
@@ -3569,7 +3569,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "130G",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.13,
         "unit_price": 117.59,
         "cost_price": 113.69
@@ -3582,7 +3582,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "130G",
-        "brand": null,
+        "brand": "Lifebouy",
         "weight": 0.13,
         "unit_price": 199.05,
         "cost_price": 192.44
@@ -3595,7 +3595,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "130ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.13,
         "unit_price": 154.54,
         "cost_price": 145.97
@@ -3608,7 +3608,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "170ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.17,
         "unit_price": 146.17,
         "cost_price": 137.38
@@ -3621,7 +3621,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "200ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.2,
         "unit_price": 227.28,
         "cost_price": 214.66
@@ -3634,7 +3634,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "450ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.45,
         "unit_price": 410.5,
         "cost_price": 386.38
@@ -3647,7 +3647,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "1000ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 1,
         "unit_price": 755.21,
         "cost_price": 729.83
@@ -3660,7 +3660,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.05,
         "unit_price": 66.87,
         "cost_price": 64.14
@@ -3673,7 +3673,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100G",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.1,
         "unit_price": 113.75,
         "cost_price": 109.96
@@ -3686,7 +3686,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100G",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.1,
         "unit_price": 322.27,
         "cost_price": 311.54
@@ -3699,7 +3699,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "130G",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.13,
         "unit_price": 407.58,
         "cost_price": 394.01
@@ -3712,7 +3712,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100G",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.1,
         "unit_price": 426.54,
         "cost_price": 412.33
@@ -3725,7 +3725,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "130G",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.13,
         "unit_price": 142.18,
         "cost_price": 137.44
@@ -3738,7 +3738,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "175G",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.175,
         "unit_price": 170.62,
         "cost_price": 164.93
@@ -3751,7 +3751,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "70G",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.07,
         "unit_price": 93.87,
         "cost_price": 90.71
@@ -3764,7 +3764,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "450G",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.45,
         "unit_price": 453.13,
         "cost_price": 437.9
@@ -3777,7 +3777,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "220G",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.22,
         "unit_price": 266.54,
         "cost_price": 257.59
@@ -3790,7 +3790,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "520ml",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.52,
         "unit_price": 721.74,
         "cost_price": 682.04
@@ -3803,7 +3803,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "250ml",
-        "brand": null,
+        "brand": "Lux",
         "weight": 0.25,
         "unit_price": 391.31,
         "cost_price": 369.78
@@ -3816,7 +3816,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "4ML",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.004,
         "unit_price": 8.93,
         "cost_price": 8.51
@@ -3829,7 +3829,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "14ML",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.014,
         "unit_price": 45.25,
         "cost_price": 43.11
@@ -3842,7 +3842,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "25G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.025,
         "unit_price": 180.09,
         "cost_price": 171.68
@@ -3855,7 +3855,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.05,
         "unit_price": 289.59,
         "cost_price": 276.06
@@ -3868,7 +3868,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "65ML",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.065,
         "unit_price": 361.08,
         "cost_price": 344.21
@@ -3881,7 +3881,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "25G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.025,
         "unit_price": 135.75,
         "cost_price": 129.44
@@ -3894,7 +3894,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "60G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.06,
         "unit_price": 497.74,
         "cost_price": 474.48
@@ -3907,7 +3907,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.1,
         "unit_price": 430.42,
         "cost_price": 405.46
@@ -3920,7 +3920,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.05,
         "unit_price": 441.05,
         "cost_price": 414.49
@@ -3933,7 +3933,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "25G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.025,
         "unit_price": 225.83,
         "cost_price": 212.74
@@ -3946,7 +3946,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.05,
         "unit_price": 199.1,
         "cost_price": 189.79
@@ -3959,7 +3959,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "80G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.08,
         "unit_price": 343.9,
         "cost_price": 327.82
@@ -3972,7 +3972,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.05,
         "unit_price": 226.17,
         "cost_price": 215.67
@@ -3985,7 +3985,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.1,
         "unit_price": 244.34,
         "cost_price": 232.93
@@ -3998,7 +3998,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "200G",
-        "brand": null,
+        "brand": "Fair & Lovely",
         "weight": 0.2,
         "unit_price": 439.58,
         "cost_price": 414.09
@@ -4011,7 +4011,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "65ML",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.065,
         "unit_price": 223.02,
         "cost_price": 210.09
@@ -4024,7 +4024,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100ML",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.1,
         "unit_price": 321.4,
         "cost_price": 306.39
@@ -4037,7 +4037,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "200ML",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.2,
         "unit_price": 550.96,
         "cost_price": 525.24
@@ -4050,7 +4050,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400ML",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.4,
         "unit_price": 1068.67,
         "cost_price": 1006.7
@@ -4063,7 +4063,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "50g",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.05,
         "unit_price": 391.3,
         "cost_price": 373.04
@@ -4076,7 +4076,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "25G",
-        "brand": null,
+        "brand": "Pond",
         "weight": 0.025,
         "unit_price": 220,
         "cost_price": 207.25
@@ -4089,7 +4089,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "75g",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.075,
         "unit_price": 413.22,
         "cost_price": 393.93
@@ -4102,7 +4102,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.05,
         "unit_price": 832.5,
         "cost_price": 794.01
@@ -4115,7 +4115,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "50g",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.05,
         "unit_price": 260.87,
         "cost_price": 248.7
@@ -4128,7 +4128,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "24X100G",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.1,
         "unit_price": 457.61,
         "cost_price": 431.07
@@ -4141,7 +4141,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "30 ML",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.03,
         "unit_price": 1173.91,
         "cost_price": 1119.13
@@ -4154,7 +4154,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "15 ML",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.015,
         "unit_price": 837.01,
         "cost_price": 787.53
@@ -4167,7 +4167,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "30 ML",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.03,
         "unit_price": 1478.26,
         "cost_price": 1409.27
@@ -4180,7 +4180,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "15 ML",
-        "brand": null,
+        "brand": "Ponds",
         "weight": 0.015,
         "unit_price": 956.5,
         "cost_price": 911.88
@@ -4193,7 +4193,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "180ml",
-        "brand": null,
+        "brand": "Dove",
         "weight": 0.18,
         "unit_price": 491.18,
         "cost_price": 467.99
@@ -4206,7 +4206,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "360ML",
-        "brand": null,
+        "brand": "Dove",
         "weight": 0.36,
         "unit_price": 791.35,
         "cost_price": 753.98
@@ -4219,7 +4219,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "250ML",
-        "brand": null,
+        "brand": "Dove",
         "weight": 0.25,
         "unit_price": 1827.92,
         "cost_price": 1741.62
@@ -4232,7 +4232,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "5ML",
-        "brand": null,
+        "brand": "Dove",
         "weight": 0.005,
         "unit_price": 9.1,
         "cost_price": 8.83
@@ -4245,7 +4245,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100ML",
-        "brand": null,
+        "brand": "Dove",
         "weight": 0.1,
         "unit_price": 1610.31,
         "cost_price": 1534.28
@@ -4258,7 +4258,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "12ML",
-        "brand": null,
+        "brand": "Dove",
         "weight": 0.012,
         "unit_price": 18.53,
         "cost_price": 17.65
@@ -4271,7 +4271,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "650ml",
-        "brand": null,
+        "brand": "Dove",
         "weight": 0.65,
         "unit_price": 1318.93,
         "cost_price": 1256.66
@@ -4284,7 +4284,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "175ml",
-        "brand": null,
+        "brand": "Dove",
         "weight": 0.175,
         "unit_price": 827.73,
         "cost_price": 788.65
@@ -4297,7 +4297,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "175ml",
-        "brand": null,
+        "brand": "Dove",
         "weight": 0.175,
         "unit_price": 472.73,
         "cost_price": 450.66
@@ -4310,7 +4310,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "5ML",
-        "brand": null,
+        "brand": "Clear",
         "weight": 0.005,
         "unit_price": 4.62,
         "cost_price": 4.41
@@ -4323,7 +4323,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "12ML",
-        "brand": null,
+        "brand": "Clear",
         "weight": 0.012,
         "unit_price": 9.49,
         "cost_price": 8.83
@@ -4336,7 +4336,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "90ML",
-        "brand": null,
+        "brand": "Clear",
         "weight": 0.09,
         "unit_price": 181.36,
         "cost_price": 172.88
@@ -4349,7 +4349,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "360ML",
-        "brand": null,
+        "brand": "Clear",
         "weight": 0.36,
         "unit_price": 729.06,
         "cost_price": 695.01
@@ -4362,7 +4362,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "175ML",
-        "brand": null,
+        "brand": "Clear",
         "weight": 0.175,
         "unit_price": 428.32,
         "cost_price": 408.32
@@ -4375,7 +4375,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "6ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.006,
         "unit_price": 4.55,
         "cost_price": 4.33
@@ -4388,7 +4388,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "9ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.009,
         "unit_price": 9.26,
         "cost_price": 8.83
@@ -4401,7 +4401,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "90ml",
-        "brand": null,
+        "brand": "Lifebouy",
         "weight": 0.09,
         "unit_price": 178.7,
         "cost_price": 170.27
@@ -4414,7 +4414,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "375ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.375,
         "unit_price": 609.85,
         "cost_price": 580.65
@@ -4427,7 +4427,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "375ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.375,
         "unit_price": 453.64,
         "cost_price": 432.46
@@ -4440,7 +4440,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "375ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.375,
         "unit_price": 563.61,
         "cost_price": 537.32
@@ -4453,7 +4453,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "175ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.175,
         "unit_price": 336.35,
         "cost_price": 320.66
@@ -4466,7 +4466,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "650ML",
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0.65,
         "unit_price": 908.18,
         "cost_price": 865.78
@@ -4479,7 +4479,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "700ML",
-        "brand": null,
+        "brand": "Sunsilk",
         "weight": 0.7,
         "unit_price": 1184.73,
         "cost_price": 1129.39
@@ -4492,7 +4492,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Lifebuoy",
         "weight": 0,
         "unit_price": 0,
         "cost_price": 0
@@ -4505,7 +4505,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "5ML",
-        "brand": null,
+        "brand": "Sunsilk",
         "weight": 0.005,
         "unit_price": 4.63,
         "cost_price": 4.41
@@ -4518,7 +4518,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "8ML",
-        "brand": null,
+        "brand": "Sunsilk",
         "weight": 0.008,
         "unit_price": 9.26,
         "cost_price": 8.82
@@ -4531,7 +4531,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "90ML",
-        "brand": null,
+        "brand": "Sunsilk",
         "weight": 0.09,
         "unit_price": 173.15,
         "cost_price": 165.06
@@ -4544,7 +4544,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400ML",
-        "brand": null,
+        "brand": "Sunsilk",
         "weight": 0.4,
         "unit_price": 729.06,
         "cost_price": 695.01
@@ -4557,7 +4557,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "200ML",
-        "brand": null,
+        "brand": "Sunsilk",
         "weight": 0.2,
         "unit_price": 692.97,
         "cost_price": 660.25
@@ -4570,7 +4570,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "200ML",
-        "brand": null,
+        "brand": "Sunsilk",
         "weight": 0.2,
         "unit_price": 410.31,
         "cost_price": 390.94
@@ -4583,7 +4583,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400ML",
-        "brand": null,
+        "brand": "Sunsilk",
         "weight": 0.4,
         "unit_price": 563.64,
         "cost_price": 537.32
@@ -4596,7 +4596,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "92ML",
-        "brand": null,
+        "brand": "Sunsilk",
         "weight": 0.092,
         "unit_price": 1044.53,
         "cost_price": 995.21
@@ -4609,7 +4609,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100ml",
-        "brand": null,
+        "brand": "TRESemme",
         "weight": 0.1,
         "unit_price": 1523.27,
         "cost_price": 1451.35
@@ -4622,7 +4622,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "650ml",
-        "brand": null,
+        "brand": "TRESemme",
         "weight": 0.65,
         "unit_price": 1392.7,
         "cost_price": 1326.94
@@ -4635,7 +4635,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "180ML",
-        "brand": null,
+        "brand": "Sunsilk",
         "weight": 0.18,
         "unit_price": 437.67,
         "cost_price": 417.01
@@ -4648,7 +4648,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "360ml",
-        "brand": null,
+        "brand": "TRESemme",
         "weight": 0.36,
         "unit_price": 826.92,
         "cost_price": 787.87
@@ -4661,7 +4661,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "170ml",
-        "brand": null,
+        "brand": "TRESemme",
         "weight": 0.17,
         "unit_price": 478.74,
         "cost_price": 456.14
@@ -4674,7 +4674,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "160ml",
-        "brand": null,
+        "brand": "TRESemme",
         "weight": 0.16,
         "unit_price": 487.45,
         "cost_price": 464.43
@@ -4687,7 +4687,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "370ml",
-        "brand": null,
+        "brand": "TRESemme",
         "weight": 0.37,
         "unit_price": 782.58,
         "cost_price": 746.41
@@ -4700,7 +4700,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "370ml",
-        "brand": null,
+        "brand": "TRESemme",
         "weight": 0.37,
         "unit_price": 782.58,
         "cost_price": 746.41
@@ -4713,7 +4713,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "250ml",
-        "brand": null,
+        "brand": "TRESemme",
         "weight": 0.25,
         "unit_price": 1044.53,
         "cost_price": 995.21
@@ -4726,7 +4726,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "20G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.02,
         "unit_price": 47.44,
         "cost_price": 43.56
@@ -4739,7 +4739,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "65G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.065,
         "unit_price": 142.68,
         "cost_price": 130.67
@@ -4752,7 +4752,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "15G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.015,
         "unit_price": 22.89,
         "cost_price": 21.1
@@ -4765,7 +4765,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "90G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.09,
         "unit_price": 119.47,
         "cost_price": 109.71
@@ -4778,7 +4778,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "65G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.065,
         "unit_price": 160.41,
         "cost_price": 148.1
@@ -4791,7 +4791,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.4,
         "unit_price": 377.13,
         "cost_price": 347.59
@@ -4804,7 +4804,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "15G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.015,
         "unit_price": 27.87,
         "cost_price": 25.32
@@ -4817,7 +4817,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "20G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.02,
         "unit_price": 70.1,
         "cost_price": 65.34
@@ -4830,7 +4830,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "300G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.3,
         "unit_price": 261.91,
         "cost_price": 241.39
@@ -4843,7 +4843,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "31G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.031,
         "unit_price": 28.33,
         "cost_price": 26.33
@@ -4856,7 +4856,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.05,
         "unit_price": 47.22,
         "cost_price": 43.89
@@ -4869,7 +4869,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "122G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.122,
         "unit_price": 132.33,
         "cost_price": 121.96
@@ -4882,7 +4882,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "133G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.133,
         "unit_price": 330.82,
         "cost_price": 304.9
@@ -4895,7 +4895,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "110G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.11,
         "unit_price": 142.68,
         "cost_price": 130.67
@@ -4908,7 +4908,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "800G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.8,
         "unit_price": 411.16,
         "cost_price": 378.95
@@ -4921,7 +4921,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.4,
         "unit_price": 228.08,
         "cost_price": 209.08
@@ -4934,7 +4934,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "190G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.19,
         "unit_price": 114.13,
         "cost_price": 105.49
@@ -4947,7 +4947,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.4,
         "unit_price": 228.69,
         "cost_price": 209.08
@@ -4960,7 +4960,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "800G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.8,
         "unit_price": 408.64,
         "cost_price": 374.6
@@ -4973,7 +4973,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "200G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.2,
         "unit_price": 174.87,
         "cost_price": 162.39
@@ -4986,7 +4986,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "102G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.102,
         "unit_price": 142.04,
         "cost_price": 130.67
@@ -4999,7 +4999,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.4,
         "unit_price": 209.48,
         "cost_price": 183.19
@@ -5012,7 +5012,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400G",
-        "brand": null,
+        "brand": "Knorr",
         "weight": 0.4,
         "unit_price": 231.57,
         "cost_price": 213.43
@@ -5025,7 +5025,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "80G",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 0.08,
         "unit_price": 165.41,
         "cost_price": 152.45
@@ -5038,7 +5038,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 0.05,
         "unit_price": 37.81,
         "cost_price": 34.85
@@ -5051,7 +5051,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "300G",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 0.3,
         "unit_price": 165.41,
         "cost_price": 152.45
@@ -5064,7 +5064,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "300G",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 0.3,
         "unit_price": 197.12,
         "cost_price": 182.94
@@ -5077,7 +5077,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "300G",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 0.3,
         "unit_price": 197.12,
         "cost_price": 182.94
@@ -5090,7 +5090,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "78G",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 0.078,
         "unit_price": 165.41,
         "cost_price": 152.45
@@ -5103,7 +5103,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400g",
-        "brand": null,
+        "brand": "Glaxose",
         "weight": 0.4,
         "unit_price": 258.06,
         "cost_price": 246
@@ -5116,7 +5116,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100g",
-        "brand": null,
+        "brand": "Glaxose",
         "weight": 0.1,
         "unit_price": 82.95,
         "cost_price": 79.07
@@ -5129,7 +5129,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400G",
-        "brand": null,
+        "brand": "Energile",
         "weight": 0.4,
         "unit_price": 258.06,
         "cost_price": 246
@@ -5142,7 +5142,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "100G",
-        "brand": null,
+        "brand": "Energile",
         "weight": 0.1,
         "unit_price": 82.95,
         "cost_price": 79.07
@@ -5155,7 +5155,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "1L",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 1,
         "unit_price": 1117.18,
         "cost_price": 1099.22
@@ -5168,7 +5168,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "3L",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 3,
         "unit_price": 2916.09,
         "cost_price": 2839.66
@@ -5181,7 +5181,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "3L",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 3,
         "unit_price": 2843.58,
         "cost_price": 2748.06
@@ -5194,7 +5194,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "5L",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 5,
         "unit_price": 4719.84,
         "cost_price": 4671.7
@@ -5207,7 +5207,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "9.5L",
-        "brand": null,
+        "brand": "Rafhan",
         "weight": 9.5,
         "unit_price": 8044.59,
         "cost_price": 7786.17
@@ -5220,7 +5220,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "900ml",
-        "brand": null,
+        "brand": "Hellmanns",
         "weight": 0.9,
         "unit_price": 935.75,
         "cost_price": 862.44
@@ -5233,7 +5233,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "475ml",
-        "brand": null,
+        "brand": "Hellmanns",
         "weight": 0.475,
         "unit_price": 379.69,
         "cost_price": 347.6
@@ -5246,7 +5246,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "400ml",
-        "brand": null,
+        "brand": "Hellmanns",
         "weight": 0.4,
         "unit_price": 538.76,
         "cost_price": 496.56
@@ -5259,7 +5259,7 @@
         "supplier_id": 10,
         "uom_symbol": "Pc",
         "pack_size": "180ml",
-        "brand": null,
+        "brand": "Hellmanns",
         "weight": 0.18,
         "unit_price": 160.68,
         "cost_price": 148.1
@@ -5272,7 +5272,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "10G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.01,
         "unit_price": 28.5,
         "cost_price": 27.7
@@ -5285,7 +5285,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "26G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.026,
         "unit_price": 47.6,
         "cost_price": 46.2
@@ -5298,7 +5298,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "49G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.049,
         "unit_price": 95.2,
         "cost_price": 92.4
@@ -5311,7 +5311,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "85G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.085,
         "unit_price": 209.3,
         "cost_price": 202.3
@@ -5324,7 +5324,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "140G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.14,
         "unit_price": 380.5,
         "cost_price": 367.8
@@ -5337,7 +5337,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "430G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.43,
         "unit_price": 1093.9,
         "cost_price": 1058.6
@@ -5350,7 +5350,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "950G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.95,
         "unit_price": 2091.7,
         "cost_price": 2024.1
@@ -5363,7 +5363,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "2KG",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 2,
         "unit_price": 3500,
         "cost_price": 3385.9
@@ -5376,7 +5376,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "800G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.8,
         "unit_price": 1569.5,
         "cost_price": 1518.8
@@ -5389,7 +5389,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "400G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.4,
         "unit_price": 808.5,
         "cost_price": 782.4
@@ -5402,7 +5402,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "13G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.013,
         "unit_price": 28.5,
         "cost_price": 27.7
@@ -5415,7 +5415,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0,
         "unit_price": 272.3,
         "cost_price": 261.2
@@ -5428,7 +5428,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "2G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.002,
         "unit_price": 272.3,
         "cost_price": 261.5
@@ -5441,7 +5441,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0,
         "unit_price": 538.7,
         "cost_price": 523
@@ -5454,7 +5454,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0,
         "unit_price": 1089.1,
         "cost_price": 1046
@@ -5467,7 +5467,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0,
         "unit_price": 89.9,
         "cost_price": 86
@@ -5480,7 +5480,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "475G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.475,
         "unit_price": 1426.8,
         "cost_price": 1380.7
@@ -5493,7 +5493,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "12G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.012,
         "unit_price": 18.4,
         "cost_price": 17.5
@@ -5506,7 +5506,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "27G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.027,
         "unit_price": 47.6,
         "cost_price": 46.2
@@ -5519,7 +5519,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "13G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.013,
         "unit_price": 28.5,
         "cost_price": 27.7
@@ -5532,7 +5532,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "80G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.08,
         "unit_price": 170.8,
         "cost_price": 165.8
@@ -5545,7 +5545,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "170G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.17,
         "unit_price": 342.4,
         "cost_price": 331.5
@@ -5558,7 +5558,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "430G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.43,
         "unit_price": 856.1,
         "cost_price": 830.2
@@ -5571,7 +5571,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "950G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.95,
         "unit_price": 1711.2,
         "cost_price": 1659.4
@@ -5584,7 +5584,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "2 KG",
-        "brand": null,
+        "brand": "BB",
         "weight": 2,
         "unit_price": 3000,
         "cost_price": 2908.3
@@ -5597,7 +5597,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.05,
         "unit_price": 95.2,
         "cost_price": 92.4
@@ -5610,7 +5610,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "160G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.16,
         "unit_price": 335.7,
         "cost_price": 324.9
@@ -5623,7 +5623,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "85G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.085,
         "unit_price": 190.2,
         "cost_price": 183.9
@@ -5636,7 +5636,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "170G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.17,
         "unit_price": 380.5,
         "cost_price": 367.8
@@ -5649,7 +5649,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "400G",
-        "brand": null,
+        "brand": "Lipton",
         "weight": 0.4,
         "unit_price": 761,
         "cost_price": 736.4
@@ -5662,7 +5662,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "80G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.08,
         "unit_price": 180.7,
         "cost_price": 175
@@ -5675,7 +5675,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "170G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.17,
         "unit_price": 361.5,
         "cost_price": 350
@@ -5688,7 +5688,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "430G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.43,
         "unit_price": 808.5,
         "cost_price": 784.1
@@ -5701,7 +5701,7 @@
         "supplier_id": 5,
         "uom_symbol": "Pc",
         "pack_size": "950G",
-        "brand": null,
+        "brand": "BB",
         "weight": 0.95,
         "unit_price": 1617,
         "cost_price": 1568.1
@@ -5714,7 +5714,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Dunhill",
         "weight": 0,
         "unit_price": 5786.1,
         "cost_price": 5542
@@ -5727,7 +5727,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Dunhill",
         "weight": 0,
         "unit_price": 5798.5,
         "cost_price": 5566
@@ -5740,7 +5740,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "B&h",
         "weight": 0,
         "unit_price": 2749.9,
         "cost_price": 2610
@@ -5753,7 +5753,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Dunhill",
         "weight": 0,
         "unit_price": 6212.11,
         "cost_price": 5968.7
@@ -5766,7 +5766,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Gold Leaf",
         "weight": 0,
         "unit_price": 4898.15,
         "cost_price": 4721.44
@@ -5779,7 +5779,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Capstan",
         "weight": 0,
         "unit_price": 1850.02,
         "cost_price": 1788.6
@@ -5792,7 +5792,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Capstan",
         "weight": 0,
         "unit_price": 2407.96,
         "cost_price": 2306
@@ -5805,7 +5805,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Capstan",
         "weight": 0,
         "unit_price": 2313.42,
         "cost_price": 2216.85
@@ -5818,7 +5818,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Capstan",
         "weight": 0,
         "unit_price": 2410.62,
         "cost_price": 2305.63
@@ -5831,7 +5831,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "G.",
         "weight": 0,
         "unit_price": 2313.42,
         "cost_price": 2216.85
@@ -5844,7 +5844,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "John",
         "weight": 0,
         "unit_price": 2404.97,
         "cost_price": 2304.48
@@ -5857,7 +5857,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 1157,
         "cost_price": 1057
@@ -5870,7 +5870,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 1157,
         "cost_price": 1057
@@ -5883,7 +5883,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Water",
         "weight": 0,
         "unit_price": 1157,
         "cost_price": 1057
@@ -5896,7 +5896,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 1301,
         "cost_price": 1190
@@ -5909,7 +5909,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 1301,
         "cost_price": 1190
@@ -5922,7 +5922,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 1157,
         "cost_price": 1057
@@ -5935,7 +5935,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 918,
         "cost_price": 846
@@ -5948,7 +5948,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 918,
         "cost_price": 846
@@ -5961,7 +5961,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 1157,
         "cost_price": 1057
@@ -5974,7 +5974,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 1301,
         "cost_price": 1190
@@ -5987,7 +5987,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 918,
         "cost_price": 846
@@ -6000,7 +6000,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Velo",
         "weight": 0,
         "unit_price": 1157,
         "cost_price": 1057
@@ -6013,7 +6013,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Stawberry",
         "weight": 0,
         "unit_price": 1157,
         "cost_price": 1057
@@ -6026,7 +6026,7 @@
         "supplier_id": 9,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Tropical",
         "weight": 0,
         "unit_price": 1157,
         "cost_price": 1057
@@ -6039,7 +6039,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "5x1 Ltr",
-        "brand": null,
+        "brand": "Royal",
         "weight": 1,
         "unit_price": 527,
         "cost_price": 512
@@ -6052,7 +6052,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "16",
         "weight": 0,
         "unit_price": 8840,
         "cost_price": 8500
@@ -6065,7 +6065,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "10 Ltr",
-        "brand": null,
+        "brand": "10",
         "weight": 10,
         "unit_price": 5346,
         "cost_price": 5195
@@ -6078,7 +6078,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "4.5 Ltr",
-        "brand": null,
+        "brand": "4.5",
         "weight": 4.5,
         "unit_price": 2460,
         "cost_price": 2335
@@ -6091,7 +6091,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "3 Ltr",
-        "brand": null,
+        "brand": "3",
         "weight": 3,
         "unit_price": 1638,
         "cost_price": 1555
@@ -6104,7 +6104,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "1Ltr",
-        "brand": null,
+        "brand": "Cp",
         "weight": 1,
         "unit_price": 535,
         "cost_price": 515
@@ -6117,7 +6117,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "1",
         "weight": 0,
         "unit_price": 540,
         "cost_price": 517
@@ -6130,7 +6130,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "345ml",
-        "brand": null,
+        "brand": "Cp",
         "weight": 0.345,
         "unit_price": 535,
         "cost_price": 515
@@ -6143,7 +6143,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "16 Kg",
-        "brand": null,
+        "brand": "16",
         "weight": 16,
         "unit_price": 8840,
         "cost_price": 8500
@@ -6156,7 +6156,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "5 Kg",
-        "brand": null,
+        "brand": "5",
         "weight": 5,
         "unit_price": 2700,
         "cost_price": 2595
@@ -6169,7 +6169,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "2.5 Kg",
-        "brand": null,
+        "brand": "2.5",
         "weight": 2.5,
         "unit_price": 1362.4,
         "cost_price": 1295
@@ -6182,7 +6182,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "345ml",
-        "brand": null,
+        "brand": "Cp",
         "weight": 0.345,
         "unit_price": 535,
         "cost_price": 515
@@ -6195,7 +6195,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "10 Kg",
-        "brand": null,
+        "brand": "10",
         "weight": 10,
         "unit_price": 5280,
         "cost_price": 5075
@@ -6208,7 +6208,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "16 Kg",
-        "brand": null,
+        "brand": "16",
         "weight": 16,
         "unit_price": 8600,
         "cost_price": 8150
@@ -6221,7 +6221,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "5 Kg",
-        "brand": null,
+        "brand": "5",
         "weight": 5,
         "unit_price": 2720,
         "cost_price": 2605
@@ -6234,7 +6234,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "2.5 Kg",
-        "brand": null,
+        "brand": "2.5",
         "weight": 2.5,
         "unit_price": 1368,
         "cost_price": 1310
@@ -6247,7 +6247,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "10 Ltr",
-        "brand": null,
+        "brand": "10",
         "weight": 10,
         "unit_price": 5775,
         "cost_price": 5510
@@ -6260,7 +6260,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "4.5 Ltr",
-        "brand": null,
+        "brand": "4.5",
         "weight": 4.5,
         "unit_price": 2640.75,
         "cost_price": 2490
@@ -6273,7 +6273,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": "3 Ltr",
-        "brand": null,
+        "brand": "3",
         "weight": 3,
         "unit_price": 1758.75,
         "cost_price": 1660
@@ -6286,7 +6286,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "(1ltrx5)",
         "weight": 0,
         "unit_price": 577.5,
         "cost_price": 550
@@ -6299,7 +6299,7 @@
         "supplier_id": 6,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "750mlx6",
         "weight": 0,
         "unit_price": 440,
         "cost_price": 415
@@ -6312,7 +6312,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "2.5 KG",
-        "brand": null,
+        "brand": "Dbp",
         "weight": 2.5,
         "unit_price": 1450.7,
         "cost_price": 1411.2
@@ -6325,7 +6325,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "5 KG",
-        "brand": null,
+        "brand": "Dbp",
         "weight": 5,
         "unit_price": 2848.2,
         "cost_price": 2770.66
@@ -6338,7 +6338,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "1KG",
-        "brand": null,
+        "brand": "Dbp",
         "weight": 1,
         "unit_price": 2828.82,
         "cost_price": 2751.84
@@ -6351,7 +6351,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "2.5 LTR",
-        "brand": null,
+        "brand": "DCO",
         "weight": 2.5,
         "unit_price": 1450.68,
         "cost_price": 1411.2
@@ -6364,7 +6364,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "5.0 LTR",
-        "brand": null,
+        "brand": "DCO",
         "weight": 5,
         "unit_price": 2848.16,
         "cost_price": 2770.66
@@ -6377,7 +6377,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "6X3.0 LTR",
-        "brand": null,
+        "brand": "DCO",
         "weight": 3,
         "unit_price": 10618.96,
         "cost_price": 10330.01
@@ -6390,7 +6390,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "4x4.5 LTR",
-        "brand": null,
+        "brand": "DCO",
         "weight": 4.5,
         "unit_price": 10580.27,
         "cost_price": 10292.38
@@ -6403,7 +6403,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "2X10Ltr",
-        "brand": null,
+        "brand": "DCO",
         "weight": 10,
         "unit_price": 11257.26,
         "cost_price": 10950.8
@@ -6416,7 +6416,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "DCO",
         "weight": 0,
         "unit_price": 9008.7,
         "cost_price": 8763.56
@@ -6429,7 +6429,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "1Ltr",
-        "brand": null,
+        "brand": "DCO",
         "weight": 1,
         "unit_price": 2828.82,
         "cost_price": 2751.84
@@ -6442,7 +6442,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "4X5Ltr",
-        "brand": null,
+        "brand": "DCO",
         "weight": 5,
         "unit_price": 11257.25308,
         "cost_price": 10950.92
@@ -6455,7 +6455,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "1Ltr",
-        "brand": null,
+        "brand": "DCO",
         "weight": 1,
         "unit_price": 2877.18,
         "cost_price": 2798.89
@@ -6468,7 +6468,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Tco",
         "weight": 0,
         "unit_price": 10744.52,
         "cost_price": 10467.18
@@ -6481,7 +6481,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Tco",
         "weight": 0,
         "unit_price": 2686.131667,
         "cost_price": 2616.86
@@ -6494,7 +6494,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "2.5kg",
-        "brand": null,
+        "brand": "Mpb",
         "weight": 2.5,
         "unit_price": 1242.75,
         "cost_price": 1208.93
@@ -6507,7 +6507,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "4.5 KG",
-        "brand": null,
+        "brand": "Mpb",
         "weight": 4.5,
         "unit_price": 2432.3,
         "cost_price": 2366.12
@@ -6520,7 +6520,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "2.5 Kg",
-        "brand": null,
+        "brand": "Tullo",
         "weight": 2.5,
         "unit_price": 1365.45,
         "cost_price": 1330.23
@@ -6533,7 +6533,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "5 kg",
-        "brand": null,
+        "brand": "Tullo",
         "weight": 5,
         "unit_price": 2671.53,
         "cost_price": 2602.64
@@ -6546,7 +6546,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Tbp",
         "weight": 0,
         "unit_price": 2593,
         "cost_price": 2526.78
@@ -6559,7 +6559,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "16Kg",
-        "brand": null,
+        "brand": "Mpb",
         "weight": 16,
         "unit_price": 7634.5,
         "cost_price": 7426.86
@@ -6572,7 +6572,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "5kg",
-        "brand": null,
+        "brand": "Mpb",
         "weight": 5,
         "unit_price": 2220,
         "cost_price": 2160.18
@@ -6585,7 +6585,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "5 LTR",
-        "brand": null,
+        "brand": "Tullo",
         "weight": 5,
         "unit_price": 10939,
         "cost_price": 10657.04
@@ -6598,7 +6598,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "16 LTR",
-        "brand": null,
+        "brand": "Tullo",
         "weight": 16,
         "unit_price": 8626.76,
         "cost_price": 8404.27
@@ -6611,7 +6611,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "3.0 LTR",
-        "brand": null,
+        "brand": "Tullo",
         "weight": 3,
         "unit_price": 9722.22,
         "cost_price": 9471.87
@@ -6624,7 +6624,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "1 LTR",
-        "brand": null,
+        "brand": "Tco",
         "weight": 1,
         "unit_price": 2802.9,
         "cost_price": 2730.63
@@ -6637,7 +6637,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "10 LTR",
-        "brand": null,
+        "brand": "Tco",
         "weight": 10,
         "unit_price": 10997.78,
         "cost_price": 10713.93
@@ -6650,7 +6650,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Kalonji",
         "weight": 0,
         "unit_price": 15766,
         "cost_price": 15359.36
@@ -6663,7 +6663,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Corn",
         "weight": 0,
         "unit_price": 13961.52,
         "cost_price": 13502.9
@@ -6676,7 +6676,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Cor",
         "weight": 0,
         "unit_price": 12576.91,
         "cost_price": 12163.77
@@ -6689,7 +6689,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Corn",
         "weight": 0,
         "unit_price": 3485,
         "cost_price": 3371.08
@@ -6702,7 +6702,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "1 Ltr",
-        "brand": null,
+        "brand": "Pomace",
         "weight": 1,
         "unit_price": 15060,
         "cost_price": 14564.81
@@ -6715,7 +6715,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Corn",
         "weight": 0,
         "unit_price": 13980.76,
         "cost_price": 13521.5
@@ -6728,7 +6728,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "500ml",
-        "brand": null,
+        "brand": "Pomace",
         "weight": 0.5,
         "unit_price": 17777.78,
         "cost_price": 16948.15
@@ -6741,7 +6741,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "250ml",
-        "brand": null,
+        "brand": "Pomace",
         "weight": 0.25,
         "unit_price": 10555.56,
         "cost_price": 10062.92
@@ -6754,7 +6754,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "500ml",
-        "brand": null,
+        "brand": "Extra",
         "weight": 0.5,
         "unit_price": 24444.44,
         "cost_price": 23303.7
@@ -6767,7 +6767,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "250ml",
-        "brand": null,
+        "brand": "Extra",
         "weight": 0.25,
         "unit_price": 14033.33,
         "cost_price": 13378.45
@@ -6780,7 +6780,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "3 Ltr",
-        "brand": null,
+        "brand": "Pomace",
         "weight": 3,
         "unit_price": 27777.78,
         "cost_price": 26481.39
@@ -6793,7 +6793,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "3 ltr",
-        "brand": null,
+        "brand": "Extra",
         "weight": 3,
         "unit_price": 35185.19,
         "cost_price": 33543.21
@@ -6806,7 +6806,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "175ml",
-        "brand": null,
+        "brand": "Cup",
         "weight": 0.175,
         "unit_price": 1170,
         "cost_price": 1094.07
@@ -6819,7 +6819,7 @@
         "supplier_id": 1,
         "uom_symbol": "Pc",
         "pack_size": "220Ml",
-        "brand": null,
+        "brand": "Cup",
         "weight": 0.22,
         "unit_price": 1580,
         "cost_price": 1477.37
@@ -6832,7 +6832,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Click",
         "weight": 0,
         "unit_price": 85.1,
         "cost_price": 78.94
@@ -6845,7 +6845,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Sooper",
         "weight": 0,
         "unit_price": 85.1,
         "cost_price": 78.94
@@ -6858,7 +6858,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Whole",
         "weight": 0,
         "unit_price": 85.05,
         "cost_price": 78.94
@@ -6871,7 +6871,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Peanut",
         "weight": 0,
         "unit_price": 85.05,
         "cost_price": 78.94
@@ -6884,7 +6884,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Butter",
         "weight": 0,
         "unit_price": 85.05,
         "cost_price": 78.94
@@ -6897,7 +6897,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Party",
         "weight": 0,
         "unit_price": 85.05,
         "cost_price": 78.94
@@ -6910,7 +6910,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Marie",
         "weight": 0,
         "unit_price": 85.05,
         "cost_price": 78.94
@@ -6923,7 +6923,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Rio",
         "weight": 0,
         "unit_price": 85.05,
         "cost_price": 78.94
@@ -6936,7 +6936,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Whole",
         "weight": 0,
         "unit_price": 85.05,
         "cost_price": 78.94
@@ -6949,7 +6949,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Gluco",
         "weight": 0,
         "unit_price": 85.05,
         "cost_price": 78.94
@@ -6962,7 +6962,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Sooper",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -6975,7 +6975,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Rio",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -6988,7 +6988,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Butter",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7001,7 +7001,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Party",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7014,7 +7014,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Peanut",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7027,7 +7027,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Marie",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7040,7 +7040,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Lemon",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7053,7 +7053,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Chocolate",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7066,7 +7066,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Click",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7079,7 +7079,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Gluco",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7092,7 +7092,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Heart",
         "weight": 0,
         "unit_price": 328.82,
         "cost_price": 274.01
@@ -7105,7 +7105,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Peanut",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7118,7 +7118,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Choco",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7131,7 +7131,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Cake",
         "weight": 0,
         "unit_price": 214.11,
         "cost_price": 200
@@ -7144,7 +7144,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Smile",
         "weight": 0,
         "unit_price": 268.33,
         "cost_price": 242
@@ -7157,7 +7157,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Cakeup",
         "weight": 0,
         "unit_price": 267.64,
         "cost_price": 250
@@ -7170,7 +7170,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Sooper",
         "weight": 0,
         "unit_price": 328.82,
         "cost_price": 308
@@ -7183,7 +7183,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Fhc",
         "weight": 0,
         "unit_price": 127.88,
         "cost_price": 115
@@ -7196,7 +7196,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Butter",
         "weight": 0,
         "unit_price": 328.82,
         "cost_price": 308
@@ -7209,7 +7209,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Saltish",
         "weight": 0,
         "unit_price": 274.02,
         "cost_price": 308
@@ -7222,7 +7222,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Rio",
         "weight": 0,
         "unit_price": 328.82,
         "cost_price": 308
@@ -7235,7 +7235,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Party\/lemon",
         "weight": 0,
         "unit_price": 328.82,
         "cost_price": 308
@@ -7248,7 +7248,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Saltish",
         "weight": 0,
         "unit_price": 219.21,
         "cost_price": 205
@@ -7261,7 +7261,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Chocolicious",
         "weight": 0,
         "unit_price": 219.21,
         "cost_price": 205
@@ -7274,7 +7274,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Gluco",
         "weight": 0,
         "unit_price": 328.82,
         "cost_price": 308
@@ -7287,7 +7287,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Marie",
         "weight": 0,
         "unit_price": 328.83,
         "cost_price": 308
@@ -7300,7 +7300,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Rio",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.01
@@ -7313,7 +7313,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Sooper",
         "weight": 0,
         "unit_price": 220.65,
         "cost_price": 210.18
@@ -7326,7 +7326,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Sooper",
         "weight": 0,
         "unit_price": 295.34,
         "cost_price": 274.29
@@ -7339,7 +7339,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Rio",
         "weight": 0,
         "unit_price": 220.65,
         "cost_price": 205
@@ -7352,7 +7352,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Rio",
         "weight": 0,
         "unit_price": 295.34,
         "cost_price": 274.29
@@ -7365,7 +7365,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Gluco",
         "weight": 0,
         "unit_price": 295.34,
         "cost_price": 274.29
@@ -7378,7 +7378,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Gluco",
         "weight": 0,
         "unit_price": 328,
         "cost_price": 315.28
@@ -7391,7 +7391,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Party",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.29
@@ -7404,7 +7404,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Click",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.29
@@ -7417,7 +7417,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Peanut",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.29
@@ -7430,7 +7430,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Chocolate",
         "weight": 0,
         "unit_price": 295.3,
         "cost_price": 274.29
@@ -7443,7 +7443,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Heart",
         "weight": 0,
         "unit_price": 365.36,
         "cost_price": 341
@@ -7456,7 +7456,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Lemon",
         "weight": 0,
         "unit_price": 295.3,
         "cost_price": 274.29
@@ -7469,7 +7469,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Butter",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.29
@@ -7482,7 +7482,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Butter",
         "weight": 0,
         "unit_price": 220.65,
         "cost_price": 205
@@ -7495,7 +7495,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Whole",
         "weight": 0,
         "unit_price": 328.82,
         "cost_price": 308
@@ -7508,7 +7508,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Whole",
         "weight": 0,
         "unit_price": 274.02,
         "cost_price": 250
@@ -7521,7 +7521,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Chocolicious",
         "weight": 0,
         "unit_price": 220.65,
         "cost_price": 205
@@ -7534,7 +7534,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Lemon",
         "weight": 0,
         "unit_price": 220.65,
         "cost_price": 205
@@ -7547,7 +7547,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Chocolate",
         "weight": 0,
         "unit_price": 220.65,
         "cost_price": 205
@@ -7560,7 +7560,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Sooper",
         "weight": 0,
         "unit_price": 322,
         "cost_price": 291.57
@@ -7573,7 +7573,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": "11.8G",
-        "brand": null,
+        "brand": "Click",
         "weight": 0.0118,
         "unit_price": 220.65,
         "cost_price": 205
@@ -7586,7 +7586,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Gluco",
         "weight": 0,
         "unit_price": 286.53,
         "cost_price": 259.02
@@ -7599,7 +7599,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Peanut",
         "weight": 0,
         "unit_price": 220.67,
         "cost_price": 205
@@ -7612,7 +7612,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Choco",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.29
@@ -7625,7 +7625,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Marie",
         "weight": 0,
         "unit_price": 220.65,
         "cost_price": 205
@@ -7638,7 +7638,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Rio",
         "weight": 0,
         "unit_price": 292.29,
         "cost_price": 274.29
@@ -7651,7 +7651,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Sooper",
         "weight": 0,
         "unit_price": 328,
         "cost_price": 315.28
@@ -7664,7 +7664,7 @@
         "supplier_id": 2,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Choco",
         "weight": 0,
         "unit_price": 292,
         "cost_price": 274.29
@@ -7677,7 +7677,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "25G",
-        "brand": null,
+        "brand": "Black",
         "weight": 0.025,
         "unit_price": 132.6,
         "cost_price": 131.9
@@ -7690,7 +7690,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Black",
         "weight": 0.05,
         "unit_price": 241.6,
         "cost_price": 211.85
@@ -7703,7 +7703,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Black",
         "weight": 0,
         "unit_price": 152.82,
         "cost_price": 30.87
@@ -7716,7 +7716,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Chilli",
         "weight": 0,
         "unit_price": 154.55,
         "cost_price": 135.59
@@ -7729,7 +7729,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Chilli",
         "weight": 0,
         "unit_price": 290.91,
         "cost_price": 255.23
@@ -7742,7 +7742,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Chilli",
         "weight": 0,
         "unit_price": 81.82,
         "cost_price": 61.57
@@ -7755,7 +7755,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "100g",
-        "brand": null,
+        "brand": "Coriander",
         "weight": 0.1,
         "unit_price": 156.9,
         "cost_price": 133.776
@@ -7768,7 +7768,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "200g",
-        "brand": null,
+        "brand": "Coriander",
         "weight": 0.2,
         "unit_price": 309.69,
         "cost_price": 264.042
@@ -7781,7 +7781,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Cp",
         "weight": 0,
         "unit_price": 50,
         "cost_price": 42.63
@@ -7794,7 +7794,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Cp",
         "weight": 0,
         "unit_price": 50,
         "cost_price": 42.63
@@ -7807,7 +7807,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Cumin",
         "weight": 0,
         "unit_price": 315.63,
         "cost_price": 274.531
@@ -7820,7 +7820,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Cumin",
         "weight": 0,
         "unit_price": 315.63,
         "cost_price": 274.531
@@ -7833,7 +7833,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Curry",
         "weight": 0,
         "unit_price": 358.83,
         "cost_price": 314.709
@@ -7846,7 +7846,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "25G",
-        "brand": null,
+        "brand": "Garam",
         "weight": 0.025,
         "unit_price": 150,
         "cost_price": 131.599
@@ -7859,7 +7859,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Garam",
         "weight": 0.05,
         "unit_price": 290,
         "cost_price": 254.452
@@ -7872,7 +7872,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "50G",
-        "brand": null,
+        "brand": "Garlic",
         "weight": 0.05,
         "unit_price": 128.43,
         "cost_price": 128.431
@@ -7885,7 +7885,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "800x24 L",
-        "brand": null,
+        "brand": "Iodized",
         "weight": 0,
         "unit_price": 63.57,
         "cost_price": 42.63
@@ -7898,7 +7898,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Kasuri",
         "weight": 0,
         "unit_price": 71.52,
         "cost_price": 60.977
@@ -7911,7 +7911,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Ms",
         "weight": 0,
         "unit_price": 108.52,
         "cost_price": 95.217
@@ -7924,7 +7924,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Ms",
         "weight": 0,
         "unit_price": 171.38,
         "cost_price": 150.393
@@ -7937,7 +7937,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Ms",
         "weight": 0,
         "unit_price": 36.08,
         "cost_price": 31.662
@@ -7950,7 +7950,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Ms",
         "weight": 0,
         "unit_price": 22.9,
         "cost_price": 19.527
@@ -7963,7 +7963,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Ps",
         "weight": 0,
         "unit_price": 229.69,
         "cost_price": 201.458
@@ -7976,7 +7976,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Ps",
         "weight": 0,
         "unit_price": 246.97,
         "cost_price": 193.769
@@ -7989,7 +7989,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Ps",
         "weight": 0,
         "unit_price": 126.76,
         "cost_price": 111.219
@@ -8002,7 +8002,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Quick",
         "weight": 0,
         "unit_price": 316.74,
         "cost_price": 277.922
@@ -8015,7 +8015,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "800x24 L",
-        "brand": null,
+        "brand": "Refined",
         "weight": 0,
         "unit_price": 63.57,
         "cost_price": 42.63
@@ -8028,7 +8028,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 269.12,
         "cost_price": 238.78
@@ -8041,7 +8041,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 60.51
@@ -8054,7 +8054,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 74.09,
         "cost_price": 70.5105
@@ -8067,7 +8067,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.874
@@ -8080,7 +8080,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 49.4
@@ -8093,7 +8093,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.874
@@ -8106,7 +8106,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 269.12,
         "cost_price": 238.78
@@ -8119,7 +8119,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 57.522
@@ -8132,7 +8132,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.874
@@ -8145,7 +8145,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.875
@@ -8158,7 +8158,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.875
@@ -8171,7 +8171,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 57.522
@@ -8184,7 +8184,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.875
@@ -8197,7 +8197,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 269.12,
         "cost_price": 238.78
@@ -8210,7 +8210,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 56.217
@@ -8223,7 +8223,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 128.16,
         "cost_price": 113.74
@@ -8236,7 +8236,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 74.09,
         "cost_price": 74.09
@@ -8249,7 +8249,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.874
@@ -8262,7 +8262,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 250.56,
         "cost_price": 219.694
@@ -8275,7 +8275,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.875
@@ -8288,7 +8288,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 128.15,
         "cost_price": 121.875
@@ -8301,7 +8301,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 128.16,
         "cost_price": 111.17
@@ -8314,7 +8314,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 56.217
@@ -8327,7 +8327,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 74.09,
         "cost_price": 70.51
@@ -8340,7 +8340,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.874
@@ -8353,7 +8353,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 269.12,
         "cost_price": 238.78
@@ -8366,7 +8366,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 116.41
@@ -8379,7 +8379,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 44.109
@@ -8392,7 +8392,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.874
@@ -8405,7 +8405,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 269.12,
         "cost_price": 238.78
@@ -8418,7 +8418,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 250.56,
         "cost_price": 238.78
@@ -8431,7 +8431,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 55.57,
         "cost_price": 49
@@ -8444,7 +8444,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.88
@@ -8457,7 +8457,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.875
@@ -8470,7 +8470,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 128.15,
         "cost_price": 121.875
@@ -8483,7 +8483,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 269.12,
         "cost_price": 238.78
@@ -8496,7 +8496,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 74.09,
         "cost_price": 74.09
@@ -8509,7 +8509,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.875
@@ -8522,7 +8522,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 57.522
@@ -8535,7 +8535,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.874
@@ -8548,7 +8548,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 128.15,
         "cost_price": 111.17
@@ -8561,7 +8561,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 57.52
@@ -8574,7 +8574,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 269.12,
         "cost_price": 238.78
@@ -8587,7 +8587,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 57.52
@@ -8600,7 +8600,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.874
@@ -8613,7 +8613,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 128.15,
         "cost_price": 112.88
@@ -8626,7 +8626,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 64.83,
         "cost_price": 53.19
@@ -8639,7 +8639,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 137.31,
         "cost_price": 121.874
@@ -8652,7 +8652,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "RM",
         "weight": 0,
         "unit_price": 269.12,
         "cost_price": 238.78
@@ -8665,7 +8665,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Salt",
         "weight": 0,
         "unit_price": 100.1,
         "cost_price": 65.625
@@ -8678,7 +8678,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Apple",
         "weight": 0,
         "unit_price": 200,
         "cost_price": 172.91
@@ -8691,7 +8691,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "800g",
-        "brand": null,
+        "brand": "Cg",
         "weight": 0.8,
         "unit_price": 388.5,
         "cost_price": 335.9
@@ -8704,7 +8704,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Chilli",
         "weight": 0,
         "unit_price": 112.72,
         "cost_price": 97.462
@@ -8717,7 +8717,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "30g",
-        "brand": null,
+        "brand": "Chilli",
         "weight": 0.03,
         "unit_price": 18.2,
         "cost_price": 14.62
@@ -8730,7 +8730,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Chilli",
         "weight": 0,
         "unit_price": 388.5,
         "cost_price": 335.899
@@ -8743,7 +8743,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "300ML",
-        "brand": null,
+        "brand": "Chilli",
         "weight": 0.3,
         "unit_price": 165.51,
         "cost_price": 142.3
@@ -8756,7 +8756,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "900ml",
-        "brand": null,
+        "brand": "Chinese",
         "weight": 0.9,
         "unit_price": 400,
         "cost_price": 345.83
@@ -8769,7 +8769,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Classic",
         "weight": 0,
         "unit_price": 312.91,
         "cost_price": 270.544
@@ -8782,7 +8782,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Classic",
         "weight": 0,
         "unit_price": 563.75,
         "cost_price": 487.413
@@ -8795,7 +8795,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "390g",
-        "brand": null,
+        "brand": "Crushed",
         "weight": 0.39,
         "unit_price": 382.64,
         "cost_price": 330.829
@@ -8808,7 +8808,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "750g",
-        "brand": null,
+        "brand": "Crushed",
         "weight": 0.75,
         "unit_price": 637.73,
         "cost_price": 551.382
@@ -8821,7 +8821,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Crystal",
         "weight": 0,
         "unit_price": 160,
         "cost_price": 138.332
@@ -8834,7 +8834,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Crystal",
         "weight": 0,
         "unit_price": 160,
         "cost_price": 138.332
@@ -8847,7 +8847,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Crystal",
         "weight": 0,
         "unit_price": 160,
         "cost_price": 138.332
@@ -8860,7 +8860,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Crystal",
         "weight": 0,
         "unit_price": 160,
         "cost_price": 138.332
@@ -8873,7 +8873,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Custard",
         "weight": 0,
         "unit_price": 114,
         "cost_price": 98.564
@@ -8886,7 +8886,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Custard",
         "weight": 0,
         "unit_price": 114,
         "cost_price": 98.564
@@ -8899,7 +8899,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Custard",
         "weight": 0,
         "unit_price": 114,
         "cost_price": 98.564
@@ -8912,7 +8912,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Custard",
         "weight": 0,
         "unit_price": 181,
         "cost_price": 156.492
@@ -8925,7 +8925,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Custard",
         "weight": 0,
         "unit_price": 114,
         "cost_price": 98.564
@@ -8938,7 +8938,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Custard",
         "weight": 0,
         "unit_price": 181,
         "cost_price": 156.492
@@ -8951,7 +8951,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Custard",
         "weight": 0,
         "unit_price": 36.08,
         "cost_price": 33.02
@@ -8964,7 +8964,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Hyd",
         "weight": 0,
         "unit_price": 279.52,
         "cost_price": 224.593
@@ -8977,7 +8977,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "900g",
-        "brand": null,
+        "brand": "Hyd",
         "weight": 0.9,
         "unit_price": 645.44,
         "cost_price": 558.04
@@ -8990,7 +8990,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Hyd.",
         "weight": 0,
         "unit_price": 345.85,
         "cost_price": 299.01
@@ -9003,7 +9003,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Jam",
         "weight": 0,
         "unit_price": 304.99,
         "cost_price": 263.699
@@ -9016,7 +9016,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Jam",
         "weight": 0,
         "unit_price": 304.99,
         "cost_price": 263.699
@@ -9029,7 +9029,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Jam",
         "weight": 0,
         "unit_price": 304.99,
         "cost_price": 263.699
@@ -9042,7 +9042,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Jam",
         "weight": 0,
         "unit_price": 400,
         "cost_price": 345.836
@@ -9055,7 +9055,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Jam",
         "weight": 0,
         "unit_price": 480,
         "cost_price": 415.0083
@@ -9068,7 +9068,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Kheer",
         "weight": 0,
         "unit_price": 160,
         "cost_price": 129.28
@@ -9081,7 +9081,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Mango",
         "weight": 0,
         "unit_price": 200,
         "cost_price": 107.6
@@ -9094,7 +9094,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Mango",
         "weight": 0,
         "unit_price": 259.31,
         "cost_price": 224.19
@@ -9107,7 +9107,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "370g",
-        "brand": null,
+        "brand": "Mango",
         "weight": 0.37,
         "unit_price": 291.99,
         "cost_price": 252.455
@@ -9120,7 +9120,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "900g",
-        "brand": null,
+        "brand": "Mango",
         "weight": 0.9,
         "unit_price": 593.37,
         "cost_price": 513.03
@@ -9133,7 +9133,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Mixed",
         "weight": 0,
         "unit_price": 200,
         "cost_price": 144.798
@@ -9146,7 +9146,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Mixed",
         "weight": 0,
         "unit_price": 259.14,
         "cost_price": 224.05
@@ -9159,7 +9159,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Mixed",
         "weight": 0,
         "unit_price": 18.2,
         "cost_price": 15.731
@@ -9172,7 +9172,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "370g",
-        "brand": null,
+        "brand": "Mixed",
         "weight": 0.37,
         "unit_price": 291.99,
         "cost_price": 252.455
@@ -9185,7 +9185,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "900g",
-        "brand": null,
+        "brand": "Mixed",
         "weight": 0.9,
         "unit_price": 593.37,
         "cost_price": 513.031
@@ -9198,7 +9198,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "National",
         "weight": 0,
         "unit_price": 36.42,
         "cost_price": 31.484
@@ -9211,7 +9211,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Pickle",
         "weight": 0,
         "unit_price": 90.91,
         "cost_price": 78.598
@@ -9224,7 +9224,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Sauce",
         "weight": 0,
         "unit_price": 333.6,
         "cost_price": 268.04
@@ -9237,7 +9237,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Sauce",
         "weight": 0,
         "unit_price": 365.6,
         "cost_price": 293.75
@@ -9250,7 +9250,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "300ML",
-        "brand": null,
+        "brand": "Soya",
         "weight": 0.3,
         "unit_price": 158.15,
         "cost_price": 136.741
@@ -9263,7 +9263,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "800ml",
-        "brand": null,
+        "brand": "Synthetic",
         "weight": 0.8,
         "unit_price": 200.53,
         "cost_price": 172.415
@@ -9276,7 +9276,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "210G",
-        "brand": null,
+        "brand": "Tomato",
         "weight": 0.21,
         "unit_price": 112.72,
         "cost_price": 97.4623
@@ -9289,7 +9289,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "30g",
-        "brand": null,
+        "brand": "Tomato",
         "weight": 0.03,
         "unit_price": 18.2,
         "cost_price": 15.731
@@ -9302,7 +9302,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Tomato",
         "weight": 0,
         "unit_price": 201.45,
         "cost_price": 158.248
@@ -9315,7 +9315,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Tomato",
         "weight": 0,
         "unit_price": 388.5,
         "cost_price": 335.899
@@ -9328,7 +9328,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": null,
-        "brand": null,
+        "brand": "Vermicelli",
         "weight": 0,
         "unit_price": 74.8,
         "cost_price": 64.89
@@ -9341,7 +9341,7 @@
         "supplier_id": 7,
         "uom_symbol": "Pc",
         "pack_size": "300ML",
-        "brand": null,
+        "brand": "White",
         "weight": 0.3,
         "unit_price": 104.89,
         "cost_price": 90.688

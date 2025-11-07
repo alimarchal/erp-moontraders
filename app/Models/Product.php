@@ -11,6 +11,13 @@ class Product extends Model
 {
     use HasFactory, SoftDeletes;
 
+    /**
+     * Supported valuation methods for costing.
+     *
+     * @var string[]
+     */
+    public const VALUATION_METHODS = ['FIFO', 'LIFO', 'Average', 'Standard'];
+
     protected $fillable = [
         'product_code',
         'product_name',

@@ -16,7 +16,7 @@
                         {{ __('Dashboard') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('settings.index') }}"
-                        :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('customers.*')">
+                        :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('customers.*')">
                         {{ __('Settings') }}
                     </x-nav-link>
                     <x-nav-link href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')">
@@ -161,7 +161,7 @@
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('settings.index') }}"
-                :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('customers.*')">
+                :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('customers.*')">
                 {{ __('Settings') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('reports.general-ledger.index') }}"

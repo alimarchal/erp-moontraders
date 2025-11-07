@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Product;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreProductRequest extends FormRequest
 {
@@ -11,7 +13,24 @@ class StoreProductRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return auth()->check();
+    }
+
+    /**
+     * Prepare request payload for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'product_code' => $this->product_code ? strtoupper(trim((string) $this->product_code)) : null,
+            'product_name' => $this->product_name ? trim((string) $this->product_name) : null,
+            'barcode' => $this->barcode ? trim((string) $this->barcode) : null,
+            'brand' => $this->brand ? trim((string) $this->brand) : null,
+            'pack_size' => $this->pack_size ? trim((string) $this->pack_size) : null,
+            'valuation_method' => $this->valuation_method ? strtoupper(trim((string) $this->valuation_method)) : null,
+            'description' => $this->description ? trim((string) $this->description) : null,
+            'is_active' => $this->boolean('is_active'),
+        ]);
     }
 
     /**
@@ -22,7 +41,24 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'product_code' => ['required', 'string', 'max:191', Rule::unique('products', 'product_code')],
+            'product_name' => ['required', 'string', 'max:191'],
+            'description' => ['nullable', 'string'],
+            'category_id' => ['nullable', 'exists:product_categories,id'],
+            'supplier_id' => ['nullable', 'exists:suppliers,id'],
+            'uom_id' => ['nullable', 'exists:uoms,id'],
+            'weight' => ['nullable', 'numeric', 'min:0'],
+            'pack_size' => ['nullable', 'string', 'max:120'],
+            'barcode' => ['nullable', 'string', 'max:191', Rule::unique('products', 'barcode')],
+            'brand' => ['nullable', 'string', 'max:120'],
+            'valuation_method' => ['required', Rule::in(Product::VALUATION_METHODS)],
+            'reorder_level' => ['nullable', 'numeric', 'min:0'],
+            'unit_price' => ['nullable', 'numeric', 'min:0'],
+            'cost_price' => ['nullable', 'numeric', 'min:0'],
+            'inventory_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
+            'cogs_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
+            'sales_revenue_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
+            'is_active' => ['nullable', 'boolean'],
         ];
     }
 }

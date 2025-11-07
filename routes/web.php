@@ -17,6 +17,8 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\UomController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\AccountBalancesController;
 use App\Http\Controllers\Reports\BalanceSheetController;
@@ -90,6 +92,12 @@ Route::middleware([
 
         // Employees CRUD
         Route::resource('employees', EmployeeController::class);
+
+        // Product Categories CRUD
+        Route::resource('product-categories', ProductCategoryController::class);
+
+        // Products CRUD
+        Route::resource('products', ProductController::class);
 
         // Customers CRUD
         Route::resource('customers', CustomerController::class);

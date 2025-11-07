@@ -4,16 +4,52 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Models\ChartOfAccount;
 use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\Supplier;
+use App\Models\Uom;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class ProductController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $products = QueryBuilder::for(
+            Product::query()->with(['category', 'supplier', 'uom'])
+        )
+            ->allowedFilters([
+                AllowedFilter::partial('product_name'),
+                AllowedFilter::partial('product_code'),
+                AllowedFilter::partial('brand'),
+                AllowedFilter::partial('barcode'),
+                AllowedFilter::partial('pack_size'),
+                AllowedFilter::exact('category_id'),
+                AllowedFilter::exact('supplier_id'),
+                AllowedFilter::exact('uom_id'),
+                AllowedFilter::exact('valuation_method'),
+                AllowedFilter::exact('is_active'),
+            ])
+            ->orderBy('product_name')
+            ->paginate(40)
+            ->withQueryString();
+
+        return view('products.index', [
+            'products' => $products,
+            'categoryOptions' => $this->categoryOptions(),
+            'supplierOptions' => $this->supplierOptions(),
+            'uomOptions' => $this->uomOptions(),
+            'valuationMethods' => Product::VALUATION_METHODS,
+            'statusOptions' => ['1' => 'Active', '0' => 'Inactive'],
+        ]);
     }
 
     /**
@@ -21,7 +57,13 @@ class ProductController extends Controller
      */
     public function create()
     {
-        //
+        return view('products.create', [
+            'categoryOptions' => $this->categoryOptions(),
+            'supplierOptions' => $this->supplierOptions(),
+            'uomOptions' => $this->uomOptions(),
+            'accountOptions' => $this->accountOptions(),
+            'valuationMethods' => Product::VALUATION_METHODS,
+        ]);
     }
 
     /**
@@ -29,7 +71,59 @@ class ProductController extends Controller
      */
     public function store(StoreProductRequest $request)
     {
-        //
+        DB::beginTransaction();
+
+        try {
+            $payload = $request->validated();
+            $payload['valuation_method'] = $payload['valuation_method'] ?? Product::VALUATION_METHODS[0];
+            $payload['is_active'] = array_key_exists('is_active', $payload)
+                ? (bool) $payload['is_active']
+                : true;
+
+            $product = Product::create($payload);
+
+            DB::commit();
+
+            return redirect()
+                ->route('products.index')
+                ->with('success', "Product '{$product->product_name}' created successfully.");
+        } catch (QueryException $e) {
+            DB::rollBack();
+
+            Log::error('Database error creating product', [
+                'payload' => $request->all(),
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            $message = 'Unable to create product. Please review the input and try again.';
+            if ($e->getCode() === '23000') {
+                if (str_contains($e->getMessage(), 'products_product_code_unique')) {
+                    $message = 'The product code must be unique.';
+                } elseif (str_contains($e->getMessage(), 'products_barcode_unique')) {
+                    $message = 'The barcode must be unique.';
+                }
+            }
+
+            return back()
+                ->withInput()
+                ->with('error', [
+                    'message' => $message,
+                    'db' => $e->getMessage(),
+                ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Unexpected error creating product', [
+                'payload' => $request->all(),
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to create product. Please try again.');
+        }
     }
 
     /**
@@ -37,7 +131,11 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        //
+        $product->load(['category', 'supplier', 'uom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
+
+        return view('products.show', [
+            'product' => $product,
+        ]);
     }
 
     /**
@@ -45,7 +143,16 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        //
+        $product->load(['category', 'supplier', 'uom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
+
+        return view('products.edit', [
+            'product' => $product,
+            'categoryOptions' => $this->categoryOptions(),
+            'supplierOptions' => $this->supplierOptions(),
+            'uomOptions' => $this->uomOptions(),
+            'accountOptions' => $this->accountOptions(),
+            'valuationMethods' => Product::VALUATION_METHODS,
+        ]);
     }
 
     /**
@@ -53,7 +160,69 @@ class ProductController extends Controller
      */
     public function update(UpdateProductRequest $request, Product $product)
     {
-        //
+        DB::beginTransaction();
+
+        try {
+            $payload = $request->validated();
+            $payload['valuation_method'] = $payload['valuation_method'] ?? $product->valuation_method;
+            $payload['is_active'] = array_key_exists('is_active', $payload)
+                ? (bool) $payload['is_active']
+                : $product->is_active;
+
+            $updated = $product->update($payload);
+
+            if (! $updated) {
+                DB::rollBack();
+
+                return back()
+                    ->withInput()
+                    ->with('info', 'No changes were made to the product.');
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('products.index')
+                ->with('success', "Product '{$product->product_name}' updated successfully.");
+        } catch (QueryException $e) {
+            DB::rollBack();
+
+            Log::error('Database error updating product', [
+                'product_id' => $product->id,
+                'payload' => $request->all(),
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            $message = 'Unable to update product. Please review the input and try again.';
+            if ($e->getCode() === '23000') {
+                if (str_contains($e->getMessage(), 'products_product_code_unique')) {
+                    $message = 'The product code must be unique.';
+                } elseif (str_contains($e->getMessage(), 'products_barcode_unique')) {
+                    $message = 'The barcode must be unique.';
+                }
+            }
+
+            return back()
+                ->withInput()
+                ->with('error', [
+                    'message' => $message,
+                    'db' => $e->getMessage(),
+                ]);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+
+            Log::error('Unexpected error updating product', [
+                'product_id' => $product->id,
+                'payload' => $request->all(),
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Failed to update product. Please try again.');
+        }
     }
 
     /**
@@ -61,6 +230,41 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        //
+        try {
+            $name = $product->product_name;
+            $product->delete();
+
+            return redirect()
+                ->route('products.index')
+                ->with('success', "Product '{$name}' deleted successfully.");
+        } catch (\Throwable $e) {
+            Log::error('Error deleting product', [
+                'product_id' => $product->id,
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return back()->with('error', 'Failed to delete product. Please try again.');
+        }
+    }
+
+    protected function categoryOptions()
+    {
+        return ProductCategory::orderBy('category_name')->get(['id', 'category_name']);
+    }
+
+    protected function supplierOptions()
+    {
+        return Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+    }
+
+    protected function uomOptions()
+    {
+        return Uom::orderBy('uom_name')->get(['id', 'uom_name', 'symbol']);
+    }
+
+    protected function accountOptions()
+    {
+        return ChartOfAccount::orderBy('account_code')->get(['id', 'account_code', 'account_name']);
     }
 }

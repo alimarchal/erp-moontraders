@@ -13,10 +13,21 @@ return new class extends Migration {
         Schema::create('products', function (Blueprint $table) {
 
             $table->id();
-            $table->string('product_code')->unique();
-            $table->string('product_name')->nullable();
+            $table->string('product_code')->unique()->comment('SKU code');
+            $table->string('product_name');
             $table->text('description')->nullable();
-            $table->foreignId('uom_id')->nullable()->constrained('uoms')->nullOnDelete();  // PCS, KG, LTR, BOX, etc.
+
+            // Foreign Keys
+            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();
+            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete()->comment('Primary supplier');
+            $table->foreignId('uom_id')->nullable()->constrained('uoms')->nullOnDelete()->comment('Base unit of measurement: PCS, KG, LTR, BOX, etc.');
+
+            // Product specifications
+            $table->decimal('weight', 10, 3)->nullable()->comment('Product weight in kg');
+            $table->string('pack_size')->nullable()->comment('e.g., 1kg, 500g, 1L');
+            $table->string('barcode')->nullable()->unique();
+            $table->string('brand')->nullable();
+
             // Inventory tracking
             $table->enum('valuation_method', ['FIFO', 'LIFO', 'Average', 'Standard'])->default('FIFO')->comment('Inventory costing method for COGS');
 

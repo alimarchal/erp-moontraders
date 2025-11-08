@@ -93,6 +93,7 @@ class ChartOfAccountSeeder extends Seeder
             ['name' => 'Travel Expenses', 'parent' => 'Indirect Expenses', 'type' => '', 'is_group' => 0, 'root_type' => 'Expense', 'disabled' => 0],
             ['name' => 'Utility Expenses', 'parent' => 'Indirect Expenses', 'type' => '', 'is_group' => 0, 'root_type' => 'Expense', 'disabled' => 0],
             ['name' => 'Write Off', 'parent' => 'Indirect Expenses', 'type' => '', 'is_group' => 0, 'root_type' => 'Expense', 'disabled' => 0],
+            ['name' => 'AMR Expense', 'parent' => 'Indirect Expenses', 'type' => '', 'is_group' => 0, 'root_type' => 'Expense', 'disabled' => 0],
             ['name' => 'Income', 'parent' => 'Income', 'type' => '', 'is_group' => 1, 'root_type' => 'Income', 'disabled' => 0],
             ['name' => 'Direct Income', 'parent' => 'Income', 'type' => '', 'is_group' => 1, 'root_type' => 'Income', 'disabled' => 0],
             ['name' => 'Sales', 'parent' => 'Direct Income', 'type' => '', 'is_group' => 0, 'root_type' => 'Income', 'disabled' => 0],

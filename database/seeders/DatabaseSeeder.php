@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
             UomSeeder::class,                   // Add units of measurement before products
             ProductCategorySeeder::class,       // Add product categories before products
             ProductSeeder::class,               // Add products from SKU data
+            BankAccountSeeder::class,           // Add bank accounts after chart of accounts
             JournalEntrySeeder::class,
             JournalEntryDetailSeeder::class,
             AttachmentSeeder::class,            // Add attachments last

@@ -19,6 +19,7 @@ use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\UomController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\AccountBalancesController;
 use App\Http\Controllers\Reports\BalanceSheetController;
@@ -26,14 +27,11 @@ use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return to_route('login');
+    // view('welcome');
 });
 
-Route::middleware([
-    'auth:sanctum',
-    config('jetstream.auth_session'),
-    'verified',
-])->group(function () {
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',])->group(function () {
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');
@@ -101,6 +99,9 @@ Route::middleware([
 
         // Customers CRUD
         Route::resource('customers', CustomerController::class);
+
+        // Bank Accounts CRUD
+        Route::resource('bank-accounts', BankAccountController::class);
 
         // Vehicles CRUD
         Route::get('vehicles/export/pdf', [VehicleController::class, 'exportPdf'])->name('vehicles.export.pdf');

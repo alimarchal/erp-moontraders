@@ -225,6 +225,22 @@
                     </div>
                 </a>
 
+                <!-- Bank Accounts Module Card -->
+                <a href="{{ route('bank-accounts.index') }}"
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">
+                    <div class="p-5 flex justify-between">
+                        <div>
+                            <div class="text-3xl font-bold leading-8">{{ \App\Models\BankAccount::count() }}</div>
+                            <div class="mt-1 text-base font-extrabold text-black">Bank Accounts</div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="h-16 w-16 text-teal-600">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M2.25 8.25H21.75M2.25 9H21.75M9.75 15.75H14.25M7.5 12H16.5M6.75 18.75H17.25C18.4926 18.75 19.5 17.7426 19.5 16.5V7.5C19.5 6.25736 18.4926 5.25 17.25 5.25H6.75C5.50736 5.25 4.5 6.25736 4.5 7.5V16.5C4.5 17.7426 5.50736 18.75 6.75 18.75Z" />
+                        </svg>
+                    </div>
+                </a>
+
                 <!-- Companies Module Card -->
                 <a href="{{ route('companies.index', 1) }}"
                     class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">

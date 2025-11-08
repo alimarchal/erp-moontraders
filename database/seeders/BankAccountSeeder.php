@@ -3,12 +3,26 @@
 namespace Database\Seeders;
 
 use App\Models\BankAccount;
+use App\Models\ChartOfAccount;
 use Illuminate\Database\Seeder;
+use Carbon\Carbon;
 
 class BankAccountSeeder extends Seeder
 {
     public function run(): void
     {
+        $now = Carbon::now();
+
+        // Find the "Bank Accounts" parent group in Chart of Accounts
+        $bankAccountsGroup = ChartOfAccount::where('account_name', 'Bank Accounts')->first();
+
+        if (!$bankAccountsGroup) {
+            throw new \Exception('Bank Accounts group not found in Chart of Accounts. Please run ChartOfAccountSeeder first.');
+        }
+
+        // Get base currency
+        $baseCurrency = \DB::table('currencies')->where('is_base_currency', true)->first();
+
         $bankAccounts = [
             [
                 'account_name' => 'HBL Main Account',
@@ -73,8 +87,39 @@ class BankAccountSeeder extends Seeder
             ],
         ];
 
-        foreach ($bankAccounts as $account) {
-            BankAccount::create($account);
+        $counter = 1;
+        foreach ($bankAccounts as $accountData) {
+            // Generate proper account code: 1120 -> 11201, 11202, ..., 11209, then 11210
+            // Pattern: accounts 1-9 use format 1120X, account 10 uses 11210
+            $baseCode = substr($bankAccountsGroup->account_code, 0, 3);  // "112"
+
+            if ($counter <= 9) {
+                $accountCode = $baseCode . '0' . $counter;  // "11201" to "11209"
+            } else {
+                $accountCode = $baseCode . $counter;  // "11210"
+            }
+
+            // Create a Chart of Account entry for this bank account
+            $chartOfAccount = ChartOfAccount::create([
+                'parent_id' => $bankAccountsGroup->id,
+                'account_type_id' => $bankAccountsGroup->account_type_id,
+                'currency_id' => $baseCurrency->id,
+                'account_code' => $accountCode,
+                'account_name' => $accountData['account_name'] . ' - ' . $accountData['account_number'],
+                'normal_balance' => 'debit',
+                'description' => 'Bank',
+                'is_group' => false,
+                'is_active' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+
+            // Create the bank account and link it to the Chart of Account
+            BankAccount::create(array_merge($accountData, [
+                'chart_of_account_id' => $chartOfAccount->id,
+            ]));
+
+            $counter++;
         }
     }
 }

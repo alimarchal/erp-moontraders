@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Product Category: {{ $category->category_name }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -17,18 +17,18 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6 space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-label value="Category Code" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$category->category_code" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Category Name" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$category->category_name" disabled readonly />
                         </div>
                     </div>
@@ -36,19 +36,19 @@
                     <div>
                         <x-label value="Description" />
                         <textarea rows="3"
-                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md shadow-sm"
+                            class="mt-1 block w-full cursor-not-allowed border-gray-300 bg-gray-100 text-gray-700 rounded-md shadow-sm"
                             disabled readonly>{{ $category->description ?? '—' }}</textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-label value="Parent Category" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$category->parent?->category_name ?? 'Top level'" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Status" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$category->is_active ? 'Active' : 'Inactive'" disabled readonly />
                         </div>
                     </div>
@@ -56,19 +56,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
                             <x-label value="Default Inventory Account" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$category->defaultInventoryAccount ? $category->defaultInventoryAccount->account_code . ' — ' . $category->defaultInventoryAccount->account_name : 'Not linked'"
                                 disabled readonly />
                         </div>
                         <div>
                             <x-label value="Default COGS Account" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$category->defaultCogsAccount ? $category->defaultCogsAccount->account_code . ' — ' . $category->defaultCogsAccount->account_name : 'Not linked'"
                                 disabled readonly />
                         </div>
                         <div>
                             <x-label value="Default Revenue Account" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$category->defaultSalesRevenueAccount ? $category->defaultSalesRevenueAccount->account_code . ' — ' . $category->defaultSalesRevenueAccount->account_name : 'Not linked'"
                                 disabled readonly />
                         </div>
@@ -77,4 +77,11 @@
             </div>
         </div>
     </div>
+
+    <style>
+        input:disabled,
+        textarea:disabled {
+            cursor: not-allowed !important;
+        }
+    </style>
 </x-app-layout>

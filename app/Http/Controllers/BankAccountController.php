@@ -27,7 +27,7 @@ class BankAccountController extends Controller
                 AllowedFilter::partial('iban'),
                 AllowedFilter::exact('is_active'),
             ])
-            ->orderBy('account_name')
+            ->orderBy('id')
             ->paginate(40)
             ->withQueryString();
 

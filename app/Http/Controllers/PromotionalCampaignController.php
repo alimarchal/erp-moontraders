@@ -49,7 +49,10 @@ class PromotionalCampaignController extends Controller
             'description' => 'nullable|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'discount_percent' => 'nullable|numeric|min:0|max:100',
+            'discount_type' => 'required|in:percentage,fixed_amount,special_price,buy_x_get_y',
+            'discount_value' => 'nullable|numeric|min:0',
+            'buy_quantity' => 'required_if:discount_type,buy_x_get_y|nullable|numeric|min:1',
+            'get_quantity' => 'required_if:discount_type,buy_x_get_y|nullable|numeric|min:1',
             'is_active' => 'boolean',
         ]);
 
@@ -89,7 +92,10 @@ class PromotionalCampaignController extends Controller
             'description' => 'nullable|string',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
-            'discount_percent' => 'nullable|numeric|min:0|max:100',
+            'discount_type' => 'required|in:percentage,fixed_amount,special_price,buy_x_get_y',
+            'discount_value' => 'nullable|numeric|min:0',
+            'buy_quantity' => 'required_if:discount_type,buy_x_get_y|nullable|numeric|min:1',
+            'get_quantity' => 'required_if:discount_type,buy_x_get_y|nullable|numeric|min:1',
             'is_active' => 'boolean',
         ]);
 

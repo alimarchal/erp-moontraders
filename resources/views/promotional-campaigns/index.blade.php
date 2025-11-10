@@ -34,9 +34,9 @@
             ['label' => '#', 'align' => 'text-center'],
             ['label' => 'Code'],
             ['label' => 'Campaign Name'],
+            ['label' => 'Type'],
             ['label' => 'Start Date', 'align' => 'text-center'],
             ['label' => 'End Date', 'align' => 'text-center'],
-            ['label' => 'Discount %', 'align' => 'text-center'],
             ['label' => 'Status', 'align' => 'text-center'],
             ['label' => 'Actions', 'align' => 'text-center'],
         ]" emptyMessage="No promotional campaigns found." :emptyRoute="route('promotional-campaigns.create')"
@@ -56,14 +56,26 @@
                 <div class="text-xs text-gray-500 truncate max-w-xs">{{ $campaign->description }}</div>
                 @endif
             </td>
+            <td class="py-1 px-2">
+                @if ($campaign->discount_type === 'buy_x_get_y')
+                <span
+                    class="px-2 py-1 text-xs font-semibold rounded bg-orange-100 text-orange-800 dark:bg-orange-800 dark:text-orange-100">
+                    {{ $campaign->buy_quantity }}+{{ $campaign->get_quantity }}
+                </span>
+                @elseif ($campaign->discount_type === 'percentage')
+                <span class="text-xs text-gray-600 dark:text-gray-400">{{ $campaign->discount_value }}% Off</span>
+                @elseif ($campaign->discount_type === 'fixed_amount')
+                <span class="text-xs text-gray-600 dark:text-gray-400">Rs. {{ number_format($campaign->discount_value,
+                    2) }} Off</span>
+                @else
+                <span class="text-xs text-gray-600 dark:text-gray-400">Special Price</span>
+                @endif
+            </td>
             <td class="py-1 px-2 text-center">
                 {{ $campaign->start_date->format('d M Y') }}
             </td>
             <td class="py-1 px-2 text-center">
                 {{ $campaign->end_date->format('d M Y') }}
-            </td>
-            <td class="py-1 px-2 text-center">
-                {{ $campaign->discount_percent ? number_format($campaign->discount_percent, 1) . '%' : '-' }}
             </td>
             <td class="py-1 px-2 text-center">
                 @if ($campaign->is_active)

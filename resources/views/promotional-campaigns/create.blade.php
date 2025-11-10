@@ -21,7 +21,7 @@
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
                     <x-validation-errors class="mb-4" />
-                    <form method="POST" action="{{ route('promotional-campaigns.store') }}">
+                    <form method="POST" action="{{ route('promotional-campaigns.store') }}" x-data="campaignForm()">
                         @csrf
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -49,11 +49,63 @@
                                     :value="old('end_date')" required />
                             </div>
 
-                            <div>
-                                <x-label for="discount_percent" value="Default Discount %" />
-                                <x-input id="discount_percent" name="discount_percent" type="number" step="0.01" min="0"
-                                    max="100" class="mt-1 block w-full" :value="old('discount_percent')"
-                                    placeholder="10.00" />
+                            <div class="md:col-span-2">
+                                <x-label for="discount_type" value="Promotion Type *" />
+                                <select id="discount_type" name="discount_type" x-model="discountType" required
+                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                                    <option value="percentage">Percentage Discount</option>
+                                    <option value="fixed_amount">Fixed Amount Off</option>
+                                    <option value="special_price">Special Price</option>
+                                    <option value="buy_x_get_y">Buy X Get Y Free (e.g., 11+1)</option>
+                                </select>
+                            </div>
+
+                            <!-- Show for percentage, fixed_amount, special_price -->
+                            <div x-show="discountType !== 'buy_x_get_y'">
+                                <x-label for="discount_value" value="Discount Value" />
+                                <x-input id="discount_value" name="discount_value" type="number" step="0.01" min="0"
+                                    class="mt-1 block w-full" :value="old('discount_value')" placeholder="10.00" />
+                                <p class="text-xs text-gray-500 mt-1" x-show="discountType === 'percentage'">Enter
+                                    percentage (e.g., 10 for 10% off)</p>
+                                <p class="text-xs text-gray-500 mt-1" x-show="discountType === 'fixed_amount'">Enter
+                                    amount (e.g., 500 for Rs. 500 off)</p>
+                                <p class="text-xs text-gray-500 mt-1" x-show="discountType === 'special_price'">Enter
+                                    special price</p>
+                            </div>
+
+                            <!-- Show for buy_x_get_y -->
+                            <div x-show="discountType === 'buy_x_get_y'" class="md:col-span-2">
+                                <div
+                                    class="grid grid-cols-2 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                    <div>
+                                        <x-label for="buy_quantity" value="Buy Quantity *" />
+                                        <x-input id="buy_quantity" name="buy_quantity" type="number" step="1" min="1"
+                                            class="mt-1 block w-full" :value="old('buy_quantity')" placeholder="11" />
+                                        <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Number of units
+                                            customer must buy</p>
+                                    </div>
+                                    <div>
+                                        <x-label for="get_quantity" value="Get Free Quantity *" />
+                                        <x-input id="get_quantity" name="get_quantity" type="number" step="1" min="1"
+                                            class="mt-1 block w-full" :value="old('get_quantity')" placeholder="1" />
+                                        <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Number of units
+                                            customer gets free</p>
+                                    </div>
+                                    <div class="col-span-2">
+                                        <div
+                                            class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
+                                            <svg class="w-5 h-5 text-green-600 dark:text-green-400 mr-2" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <span class="text-sm text-gray-700 dark:text-gray-300">
+                                                Example: Buy <strong>11</strong> packs, get <strong>1</strong> pack free
+                                                = "11+1" promotion
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="flex items-center mt-6">
@@ -78,6 +130,14 @@
                             </x-button>
                         </div>
                     </form>
+
+                    <script>
+                        function campaignForm() {
+                            return {
+                                discountType: '{{ old('discount_type', 'percentage') }}'
+                            }
+                        }
+                    </script>
                 </div>
             </div>
         </div>

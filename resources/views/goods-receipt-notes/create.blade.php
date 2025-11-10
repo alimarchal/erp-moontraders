@@ -295,6 +295,9 @@
                                                     @foreach ($campaigns as $campaign)
                                                     <option value="{{ $campaign->id }}">
                                                         {{ $campaign->campaign_code }} - {{ $campaign->campaign_name }}
+                                                        @if ($campaign->discount_type === 'buy_x_get_y')
+                                                        ({{ $campaign->buy_quantity }}+{{ $campaign->get_quantity }})
+                                                        @endif
                                                     </option>
                                                     @endforeach
                                                 </select>

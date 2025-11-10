@@ -23,8 +23,10 @@ return new class extends Migration {
             $table->date('end_date');
 
             // Discount Configuration
-            $table->enum('discount_type', ['percentage', 'fixed_amount', 'special_price'])->default('percentage');
+            $table->enum('discount_type', ['percentage', 'fixed_amount', 'special_price', 'buy_x_get_y'])->default('percentage');
             $table->decimal('discount_value', 15, 2)->default(0)->comment('Percentage or amount based on discount_type');
+            $table->decimal('buy_quantity', 10, 2)->nullable()->comment('Buy this quantity (e.g., 11 for "11+1")');
+            $table->decimal('get_quantity', 10, 2)->nullable()->comment('Get this quantity free (e.g., 1 for "11+1")');
 
             // Conditions
             $table->decimal('minimum_quantity', 10, 2)->default(0)->comment('Minimum qty to qualify for promotion');

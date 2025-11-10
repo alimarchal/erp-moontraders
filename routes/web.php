@@ -25,6 +25,7 @@ use App\Http\Controllers\Reports\AccountBalancesController;
 use App\Http\Controllers\Reports\BalanceSheetController;
 use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\TrialBalanceController;
+use App\Http\Controllers\GoodsReceiptNoteController;
 
 Route::get('/', function () {
     return to_route('login');
@@ -52,6 +53,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         ->name('transactions.cash-payment');
     Route::post('transactions/opening-balance', [JournalEntryController::class, 'recordOpeningBalance'])
         ->name('transactions.opening-balance');
+
+    // Inventory Routes
+    Route::resource('goods-receipt-notes', GoodsReceiptNoteController::class);
 
     // Settings Routes
     Route::prefix('settings')->group(function () {

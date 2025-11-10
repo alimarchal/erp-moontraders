@@ -85,4 +85,14 @@ class GoodsReceiptNote extends Model
     {
         return $this->status === 'posted';
     }
+
+    public function scopeReceiptDateFrom($query, $date)
+    {
+        return $query->whereDate('receipt_date', '>=', $date);
+    }
+
+    public function scopeReceiptDateTo($query, $date)
+    {
+        return $query->whereDate('receipt_date', '<=', $date);
+    }
 }

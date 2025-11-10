@@ -28,6 +28,7 @@ return new class extends Migration {
 
             // Pricing
             $table->decimal('unit_cost', 15, 2)->comment('Purchase price per unit');
+            $table->decimal('selling_price', 15, 2)->nullable()->comment('Selling price per unit');
             $table->decimal('total_cost', 15, 2)->comment('quantity_accepted × unit_cost');
 
             // Batch/Lot Tracking

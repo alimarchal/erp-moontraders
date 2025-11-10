@@ -23,6 +23,22 @@
                 Edit
             </a>
             @endif
+            @if ($grn->status === 'posted')
+            <form action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
+                onsubmit="return confirm('Are you sure you want to REVERSE this GRN? All stock entries will be reversed. This action cannot be undone.');"
+                class="inline-block">
+                @csrf
+                <button type="submit"
+                    class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    </svg>
+                    Reverse Entry
+                </button>
+            </form>
+            @endif
             <a href="{{ route('goods-receipt-notes.index') }}"
                 class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"

@@ -27,6 +27,7 @@ use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\GoodsReceiptNoteController;
 use App\Http\Controllers\CurrentStockController;
+use App\Http\Controllers\PromotionalCampaignController;
 
 Route::get('/', function () {
     return to_route('login');
@@ -59,6 +60,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::resource('goods-receipt-notes', GoodsReceiptNoteController::class);
     Route::post('goods-receipt-notes/{goodsReceiptNote}/post', [GoodsReceiptNoteController::class, 'post'])
         ->name('goods-receipt-notes.post');
+    Route::post('goods-receipt-notes/{goodsReceiptNote}/reverse', [GoodsReceiptNoteController::class, 'reverse'])
+        ->name('goods-receipt-notes.reverse');
+
+    Route::resource('promotional-campaigns', PromotionalCampaignController::class);
 
     // Inventory Stock Routes
     Route::prefix('inventory')->name('inventory.')->group(function () {

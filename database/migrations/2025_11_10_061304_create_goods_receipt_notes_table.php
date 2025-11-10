@@ -36,6 +36,8 @@ return new class extends Migration {
 
             // Status & Workflow
             $table->enum('status', ['draft', 'received', 'posted', 'cancelled'])->default('draft')->index();
+            $table->timestamp('reversed_at')->nullable();
+            $table->foreignId('reversed_by')->nullable()->constrained('users');
             $table->foreignId('received_by')->constrained('users')->comment('User who created GRN');
             $table->foreignId('verified_by')->nullable()->constrained('users')->nullOnDelete()->comment('User who verified quality');
             $table->timestamp('posted_at')->nullable();

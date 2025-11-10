@@ -410,4 +410,23 @@ class GoodsReceiptNoteController extends Controller
             ->back()
             ->with('error', $result['message']);
     }
+
+    /**
+     * Reverse a posted GRN
+     */
+    public function reverse(GoodsReceiptNote $goodsReceiptNote)
+    {
+        $inventoryService = app(InventoryService::class);
+        $result = $inventoryService->reverseGrnInventory($goodsReceiptNote);
+
+        if ($result['success']) {
+            return redirect()
+                ->route('goods-receipt-notes.show', $goodsReceiptNote->id)
+                ->with('status', $result['message']);
+        }
+
+        return redirect()
+            ->back()
+            ->with('error', $result['message']);
+    }
 }

@@ -222,4 +222,181 @@ class InventoryService
         $currentStock->priority_batches = $priorityBatches;
         $currentStock->save();
     }
+
+    /**
+     * Reverse a posted GRN - creates reversing entries
+     */
+    public function reverseGrnInventory(GoodsReceiptNote $grn): array
+    {
+        try {
+            DB::beginTransaction();
+
+            if ($grn->status !== 'posted') {
+                throw new \Exception('Only posted GRNs can be reversed');
+            }
+
+            // Find all stock movements related to this GRN
+            $movements = StockMovement::where('reference_type', 'App\\Models\\GoodsReceiptNote')
+                ->where('reference_id', $grn->id)
+                ->where('movement_type', 'grn')
+                ->get();
+
+            if ($movements->isEmpty()) {
+                throw new \Exception('No stock movements found for this GRN');
+            }
+
+            foreach ($movements as $movement) {
+                // Create reversing movement
+                $reversingMovement = StockMovement::create([
+                    'movement_type' => 'adjustment',
+                    'reference_type' => 'GRN Reversal',
+                    'reference_id' => $grn->id,
+                    'movement_date' => now()->toDateString(),
+                    'product_id' => $movement->product_id,
+                    'stock_batch_id' => $movement->stock_batch_id,
+                    'warehouse_id' => $movement->warehouse_id,
+                    'quantity' => -$movement->quantity,
+                    'uom_id' => $movement->uom_id,
+                    'unit_cost' => $movement->unit_cost,
+                    'total_value' => abs((float) $movement->quantity) * (float) $movement->unit_cost,
+                    'created_by' => auth()->id(),
+                ]);
+
+                // Create reversing ledger entry
+                $previousBalance = StockLedgerEntry::where('product_id', $movement->product_id)
+                    ->where('warehouse_id', $movement->warehouse_id)
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                $quantityBalance = ($previousBalance->quantity_balance ?? 0) - $movement->quantity;
+
+                StockLedgerEntry::create([
+                    'product_id' => $movement->product_id,
+                    'warehouse_id' => $movement->warehouse_id,
+                    'stock_batch_id' => $movement->stock_batch_id,
+                    'entry_date' => now()->toDateString(),
+                    'stock_movement_id' => $reversingMovement->id,
+                    'quantity_in' => 0,
+                    'quantity_out' => $movement->quantity,
+                    'quantity_balance' => $quantityBalance,
+                    'valuation_rate' => 0,
+                    'stock_value' => 0,
+                    'reference_type' => 'reversal',
+                    'reference_id' => $grn->id,
+                    'created_at' => now(),
+                ]);
+
+                // Update or create reversing valuation layer
+                $this->createReversingValuationLayer(
+                    $movement->product_id,
+                    $movement->warehouse_id,
+                    $movement->quantity,
+                    $movement->stock_batch_id
+                );
+
+                // Update batch quantity
+                $batch = StockBatch::find($movement->stock_batch_id);
+                if ($batch) {
+                    $batch->quantity_on_hand -= $movement->quantity;
+                    if ($batch->quantity_on_hand <= 0) {
+                        $batch->status = 'depleted';
+                        $batch->quantity_on_hand = 0;
+                    }
+                    $batch->save();
+                }
+
+                // Update current stock by batch
+                $stockByBatch = CurrentStockByBatch::where('product_id', $movement->product_id)
+                    ->where('warehouse_id', $movement->warehouse_id)
+                    ->where('stock_batch_id', $movement->stock_batch_id)
+                    ->first();
+
+                if ($stockByBatch) {
+                    $stockByBatch->quantity_on_hand -= $movement->quantity;
+                    if ($stockByBatch->quantity_on_hand <= 0) {
+                        $stockByBatch->quantity_on_hand = 0;
+                        $stockByBatch->status = 'depleted';
+                    }
+                    $stockByBatch->total_value = $stockByBatch->quantity_on_hand * $stockByBatch->unit_cost;
+                    $stockByBatch->last_updated = now();
+                    $stockByBatch->save();
+                }
+
+                // Update current stock summary
+                $currentStock = CurrentStock::where('product_id', $movement->product_id)
+                    ->where('warehouse_id', $movement->warehouse_id)
+                    ->first();
+
+                if ($currentStock) {
+                    $currentStock->quantity_on_hand -= $movement->quantity;
+                    $currentStock->quantity_available -= $movement->quantity;
+                    if ($currentStock->quantity_on_hand < 0) {
+                        $currentStock->quantity_on_hand = 0;
+                    }
+                    if ($currentStock->quantity_available < 0) {
+                        $currentStock->quantity_available = 0;
+                    }
+
+                    // Recalculate totals
+                    $allBatches = CurrentStockByBatch::where('product_id', $movement->product_id)
+                        ->where('warehouse_id', $movement->warehouse_id)
+                        ->get();
+
+                    $totalValue = $allBatches->sum('total_value');
+                    $totalQty = $allBatches->sum('quantity_on_hand');
+
+                    $currentStock->total_value = $totalValue;
+                    $currentStock->average_cost = $totalQty > 0 ? $totalValue / $totalQty : 0;
+                    $currentStock->last_updated = now();
+                    $currentStock->save();
+                }
+            }
+
+            // Update GRN status
+            $grn->status = 'reversed';
+            $grn->reversed_at = now();
+            $grn->reversed_by = auth()->id();
+            $grn->save();
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => "GRN '{$grn->grn_number}' reversed successfully",
+                'data' => $grn,
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return [
+                'success' => false,
+                'message' => 'Failed to reverse GRN: ' . $e->getMessage(),
+                'data' => null,
+            ];
+        }
+    }
+
+    /**
+     * Create reversing valuation layer
+     */
+    protected function createReversingValuationLayer($productId, $warehouseId, $quantity, $batchId)
+    {
+        // Find the most recent valuation layer for this batch
+        $layer = StockValuationLayer::where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->where('stock_batch_id', $batchId)
+            ->where('quantity_remaining', '>', 0)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($layer) {
+            $layer->quantity_remaining -= $quantity;
+            if ($layer->quantity_remaining < 0) {
+                $layer->quantity_remaining = 0;
+            }
+            $layer->total_value = $layer->quantity_remaining * $layer->unit_cost;
+            $layer->save();
+        }
+    }
 }

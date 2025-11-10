@@ -30,6 +30,8 @@ class GoodsReceiptNote extends Model
         'received_by',
         'verified_by',
         'posted_at',
+        'reversed_at',
+        'reversed_by',
         'journal_entry_id',
         'notes',
     ];
@@ -44,6 +46,7 @@ class GoodsReceiptNote extends Model
         'other_charges' => 'decimal:2',
         'grand_total' => 'decimal:2',
         'posted_at' => 'datetime',
+        'reversed_at' => 'datetime',
     ];
 
     public function supplier(): BelongsTo
@@ -64,6 +67,11 @@ class GoodsReceiptNote extends Model
     public function verifiedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'verified_by');
+    }
+
+    public function reversedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reversed_by');
     }
 
     public function journalEntry(): BelongsTo

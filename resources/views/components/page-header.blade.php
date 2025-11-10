@@ -56,7 +56,8 @@
         </a>
 
 
+        {{--
         <x-pdf-download-button id="vehicle-pdf-btn" type="client" label="Export PDF" variant="indigo" size="sm"
-            :icon="true" />
+            :icon="true" /> --}}
     </div>
 </div>

@@ -88,6 +88,12 @@
                                         <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                                             style="min-width: 150px;">UOM
                                         </th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Batch #</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mfg
+                                            Date</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Expiry Date</th>
                                         <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty
                                             Received</th>
                                         <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty
@@ -96,6 +102,14 @@
                                             Cost</th>
                                         <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                             Selling Price</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 200px;">Campaign</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Promo Price</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                            Priority</th>
+                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Must
+                                            Sell Before</th>
                                         <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                                             Total</th>
                                         <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
@@ -123,6 +137,22 @@
                                                 </select>
                                             </td>
                                             <td class="px-2 py-2">
+                                                <input type="text" :name="`items[${index}][batch_number]`"
+                                                    x-model="item.batch_number"
+                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                    placeholder="Optional">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="date" :name="`items[${index}][manufacturing_date]`"
+                                                    x-model="item.manufacturing_date"
+                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="date" :name="`items[${index}][expiry_date]`"
+                                                    x-model="item.expiry_date"
+                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                            </td>
+                                            <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][quantity_received]`"
                                                     x-model="item.quantity_received" @input="updateTotal(index)"
                                                     step="0.01" min="0" required
@@ -145,6 +175,36 @@
                                                     x-model="item.selling_price" step="0.01" min="0"
                                                     class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                             </td>
+                                            <td class="px-2 py-2">
+                                                <select :name="`items[${index}][promotional_campaign_id]`"
+                                                    x-model="item.promotional_campaign_id"
+                                                    @change="togglePromotional(index)"
+                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    <option value="">None</option>
+                                                    @foreach ($campaigns as $campaign)
+                                                    <option value="{{ $campaign->id }}">{{ $campaign->campaign_code }} -
+                                                        {{ $campaign->campaign_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="number" :name="`items[${index}][promotional_price]`"
+                                                    x-model="item.promotional_price" step="0.01" min="0"
+                                                    :disabled="!item.promotional_campaign_id"
+                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="number" :name="`items[${index}][priority_order]`"
+                                                    x-model="item.priority_order" step="1" min="1" max="10"
+                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                    placeholder="1-10">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="date" :name="`items[${index}][must_sell_before]`"
+                                                    x-model="item.must_sell_before"
+                                                    :disabled="!item.promotional_campaign_id"
+                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                            </td>
                                             <td class="px-2 py-2 text-right text-sm font-semibold"
                                                 x-text="formatCurrency(item.total)"></td>
                                             <td class="px-2 py-2 text-center">
@@ -163,7 +223,7 @@
                                 </tbody>
                                 <tfoot class="bg-gray-50 dark:bg-gray-900">
                                     <tr>
-                                        <td colspan="8" class="px-2 py-2">
+                                        <td colspan="15" class="px-2 py-2">
                                             <button type="button" @click="addItem()"
                                                 class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
@@ -176,7 +236,7 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td colspan="6" class="px-2 py-2 text-right font-semibold">Grand Total:</td>
+                                        <td colspan="13" class="px-2 py-2 text-right font-semibold">Grand Total:</td>
                                         <td class="px-2 py-2 text-right font-bold text-lg"
                                             x-text="formatCurrency(grandTotal)"></td>
                                         <td></td>
@@ -233,18 +293,32 @@
                 items: oldItems.length > 0 ? oldItems.map(item => ({
                     product_id: item.product_id || '',
                     uom_id: item.uom_id || defaultUomId || '',
+                    batch_number: item.batch_number || '',
+                    manufacturing_date: item.manufacturing_date || '',
+                    expiry_date: item.expiry_date || '',
                     quantity_received: parseFloat(item.quantity_received) || 0,
                     quantity_accepted: parseFloat(item.quantity_accepted) || 0,
                     unit_cost: parseFloat(item.unit_cost) || 0,
                     selling_price: parseFloat(item.selling_price) || 0,
+                    promotional_campaign_id: item.promotional_campaign_id || '',
+                    promotional_price: parseFloat(item.promotional_price) || 0,
+                    priority_order: parseInt(item.priority_order) || null,
+                    must_sell_before: item.must_sell_before || '',
                     total: parseFloat(item.quantity_accepted || 0) * parseFloat(item.unit_cost || 0)
                 })) : [{
                     product_id: '',
                     uom_id: defaultUomId || '',
+                    batch_number: '',
+                    manufacturing_date: '',
+                    expiry_date: '',
                     quantity_received: 0,
                     quantity_accepted: 0,
                     unit_cost: 0,
                     selling_price: 0,
+                    promotional_campaign_id: '',
+                    promotional_price: 0,
+                    priority_order: null,
+                    must_sell_before: '',
                     total: 0
                 }],
 
@@ -253,10 +327,17 @@
                     this.items.push({
                         product_id: '',
                         uom_id: defaultUomId || '',
+                        batch_number: '',
+                        manufacturing_date: '',
+                        expiry_date: '',
                         quantity_received: 0,
                         quantity_accepted: 0,
                         unit_cost: 0,
                         selling_price: 0,
+                        promotional_campaign_id: '',
+                        promotional_price: 0,
+                        priority_order: null,
+                        must_sell_before: '',
                         total: 0
                     });
 
@@ -286,6 +367,14 @@
                         this.items[index].unit_cost = product.unit_price || 0;
                         this.items[index].selling_price = product.unit_price || 0;
                         this.updateTotal(index);
+                    }
+                },
+
+                togglePromotional(index) {
+                    const item = this.items[index];
+                    if (!item.promotional_campaign_id) {
+                        item.promotional_price = 0;
+                        item.must_sell_before = '';
                     }
                 },
 

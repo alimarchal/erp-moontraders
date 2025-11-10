@@ -54,32 +54,33 @@
             ['label' => 'Total Value', 'align' => 'text-right'],
             ['label' => 'Batches', 'align' => 'text-center'],
             ['label' => 'Actions', 'align' => 'text-center'],
-        ]">
-        @forelse($stocks as $stock)
-        <x-table-row>
-            <x-table-cell>
+        ]" emptyMessage="No stock found." emptyLinkText="">
+
+        @foreach($stocks as $stock)
+        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+            <td class="py-1 px-2">
                 <div class="text-sm font-medium text-gray-900 dark:text-gray-100">{{ $stock->product->product_code }}
                 </div>
                 <div class="text-xs text-gray-500 dark:text-gray-400">{{ $stock->product->product_name }}</div>
-            </x-table-cell>
-            <x-table-cell>
+            </td>
+            <td class="py-1 px-2">
                 {{ $stock->warehouse->warehouse_name }}
-            </x-table-cell>
-            <x-table-cell class="text-right">
+            </td>
+            <td class="py-1 px-2 text-right">
                 <span class="font-semibold text-gray-900 dark:text-gray-100">{{ number_format($stock->quantity_on_hand,
                     2) }}</span>
-            </x-table-cell>
-            <x-table-cell class="text-right">
+            </td>
+            <td class="py-1 px-2 text-right">
                 {{ number_format($stock->quantity_available, 2) }}
-            </x-table-cell>
-            <x-table-cell class="text-right">
+            </td>
+            <td class="py-1 px-2 text-right">
                 ₨ {{ number_format($stock->average_cost, 2) }}
-            </x-table-cell>
-            <x-table-cell class="text-right">
+            </td>
+            <td class="py-1 px-2 text-right">
                 <span class="font-semibold text-gray-900 dark:text-gray-100">₨ {{ number_format($stock->total_value, 2)
                     }}</span>
-            </x-table-cell>
-            <x-table-cell class="text-center">
+            </td>
+            <td class="py-1 px-2 text-center">
                 <span
                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
                     {{ $stock->total_batches }}
@@ -96,20 +97,14 @@
                     !:{{ $stock->priority_batches }}
                 </span>
                 @endif
-            </x-table-cell>
-            <x-table-cell class="text-center">
+            </td>
+            <td class="py-1 px-2 text-center">
                 <a href="{{ route('inventory.current-stock.by-batch', ['product_id' => $stock->product_id, 'warehouse_id' => $stock->warehouse_id]) }}"
                     class="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">
                     View Batches
                 </a>
-            </x-table-cell>
-        </x-table-row>
-        @empty
-        <x-table-row>
-            <x-table-cell colspan="8" class="text-center">
-                <div class="text-gray-500 dark:text-gray-400">No stock found</div>
-            </x-table-cell>
-        </x-table-row>
-        @endforelse
+            </td>
+        </tr>
+        @endforeach
     </x-data-table>
 </x-app-layout>

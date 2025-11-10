@@ -21,6 +21,7 @@ class GoodsReceiptNoteItem extends Model
         'quantity_rejected',
         'unit_cost',
         'total_cost',
+        'selling_price',
         'batch_number',
         'lot_number',
         'manufacturing_date',
@@ -43,6 +44,7 @@ class GoodsReceiptNoteItem extends Model
         'quantity_rejected' => 'decimal:2',
         'unit_cost' => 'decimal:2',
         'total_cost' => 'decimal:2',
+        'selling_price' => 'decimal:2',
         'manufacturing_date' => 'date',
         'expiry_date' => 'date',
         'is_promotional' => 'boolean',
@@ -79,5 +81,29 @@ class GoodsReceiptNoteItem extends Model
     public function isPriority(): bool
     {
         return $this->priority_order < 50;
+    }
+
+    public function getEffectiveSellingPrice(): ?float
+    {
+        // Priority: promotional_price > selling_price > product.unit_price
+        if ($this->is_promotional && $this->promotional_price) {
+            return $this->promotional_price;
+        }
+
+        if ($this->selling_price) {
+            return $this->selling_price;
+        }
+
+        return $this->product->unit_price ?? null;
+    }
+
+    public function getMargin(): float
+    {
+        $sellingPrice = $this->getEffectiveSellingPrice();
+        if (!$sellingPrice) {
+            return 0;
+        }
+
+        return $sellingPrice - $this->unit_cost;
     }
 }

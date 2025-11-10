@@ -28,7 +28,7 @@ return new class extends Migration {
 
             // Costing
             $table->decimal('unit_cost', 15, 2);
-            $table->decimal('total_value', 15, 2)->storedAs('quantity_remaining * unit_cost');
+            $table->decimal('total_value', 15, 2)->default(0);
 
             // Priority Info (for priority-based issuing)
             $table->integer('priority_order')->default(99)->index();
@@ -43,7 +43,7 @@ return new class extends Migration {
             // Indexes
             $table->index(['product_id', 'warehouse_id']);
             $table->index('stock_batch_id');
-            $table->index(['product_id', 'warehouse_id', 'quantity_remaining']);
+            $table->index(['product_id', 'warehouse_id', 'quantity_remaining'], 'idx_svl_prod_wh_qty_rem');
         });
     }
 

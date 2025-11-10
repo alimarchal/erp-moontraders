@@ -11,9 +11,6 @@ class StockLedgerEntry extends Model
 {
     use HasFactory;
 
-    public $timestamps = false;
-
-    const CREATED_AT = 'created_at';
     const UPDATED_AT = null;
 
     protected $fillable = [
@@ -29,6 +26,7 @@ class StockLedgerEntry extends Model
         'stock_value',
         'reference_type',
         'reference_id',
+        'created_at',
     ];
 
     protected $casts = [

@@ -15,6 +15,14 @@
                     <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('goods-receipt-notes.index') }}"
+                        :active="request()->routeIs('goods-receipt-notes.*')">
+                        {{ __('GRN') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('inventory.current-stock.index') }}"
+                        :active="request()->routeIs('inventory.*')">
+                        {{ __('Inventory') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('settings.index') }}"
                         :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*')">
                         {{ __('Settings') }}
@@ -159,6 +167,14 @@
         <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('goods-receipt-notes.index') }}"
+                :active="request()->routeIs('goods-receipt-notes.*')">
+                {{ __('GRN') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('inventory.current-stock.index') }}"
+                :active="request()->routeIs('inventory.*')">
+                {{ __('Inventory') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('settings.index') }}"
                 :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*')">

@@ -19,7 +19,7 @@ return new class extends Migration {
             // Quantities
             $table->decimal('quantity_on_hand', 15, 2)->default(0);
             $table->decimal('quantity_reserved', 15, 2)->default(0)->comment('For pending orders');
-            $table->decimal('quantity_available', 15, 2)->storedAs('quantity_on_hand - quantity_reserved');
+            $table->decimal('quantity_available', 15, 2)->default(0);
 
             // Valuation
             $table->decimal('average_cost', 15, 2)->default(0);

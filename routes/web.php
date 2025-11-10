@@ -26,6 +26,7 @@ use App\Http\Controllers\Reports\BalanceSheetController;
 use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\GoodsReceiptNoteController;
+use App\Http\Controllers\CurrentStockController;
 
 Route::get('/', function () {
     return to_route('login');
@@ -56,6 +57,14 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
     // Inventory Routes
     Route::resource('goods-receipt-notes', GoodsReceiptNoteController::class);
+    Route::post('goods-receipt-notes/{goodsReceiptNote}/post', [GoodsReceiptNoteController::class, 'post'])
+        ->name('goods-receipt-notes.post');
+
+    // Inventory Stock Routes
+    Route::prefix('inventory')->name('inventory.')->group(function () {
+        Route::get('current-stock', [CurrentStockController::class, 'index'])->name('current-stock.index');
+        Route::get('current-stock/by-batch', [CurrentStockController::class, 'showByBatch'])->name('current-stock.by-batch');
+    });
 
     // Settings Routes
     Route::prefix('settings')->group(function () {

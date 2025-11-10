@@ -5,13 +5,26 @@
         </h2>
         <div class="flex justify-center items-center float-right space-x-2">
             @if ($grn->status === 'draft')
+            <form action="{{ route('goods-receipt-notes.post', $grn->id) }}" method="POST"
+                onsubmit="return confirm('Are you sure you want to post this GRN to inventory? This action cannot be undone.');"
+                class="inline-block">
+                @csrf
+                <button type="submit"
+                    class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
+                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Post to Inventory
+                </button>
+            </form>
             <a href="{{ route('goods-receipt-notes.edit', $grn->id) }}"
-                class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 transition">
+                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
                 Edit
             </a>
             @endif
             <a href="{{ route('goods-receipt-notes.index') }}"
-                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 transition">
+                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

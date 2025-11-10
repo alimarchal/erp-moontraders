@@ -8,6 +8,7 @@ use App\Models\Warehouse;
 use App\Models\Product;
 use App\Models\Uom;
 use App\Models\PromotionalCampaign;
+use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -385,5 +386,24 @@ class GoodsReceiptNoteController extends Controller
         $sequence = $lastGRN ? ((int) substr($lastGRN->grn_number, -4)) + 1 : 1;
 
         return sprintf('GRN-%d-%04d', $year, $sequence);
+    }
+
+    /**
+     * Post GRN to inventory
+     */
+    public function post(GoodsReceiptNote $goodsReceiptNote)
+    {
+        $inventoryService = app(InventoryService::class);
+        $result = $inventoryService->postGrnToInventory($goodsReceiptNote);
+
+        if ($result['success']) {
+            return redirect()
+                ->route('goods-receipt-notes.show', $goodsReceiptNote->id)
+                ->with('status', $result['message']);
+        }
+
+        return redirect()
+            ->back()
+            ->with('error', $result['message']);
     }
 }

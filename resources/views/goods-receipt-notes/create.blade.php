@@ -181,6 +181,8 @@
                                                 x-model="item.promotional_price">
                                             <input type="hidden" :name="`items[${index}][promotional_discount_percent]`"
                                                 x-model="item.promotional_discount_percent">
+                                            <input type="hidden" :name="`items[${index}][selling_strategy]`"
+                                                x-model="item.selling_strategy">
                                             <input type="hidden" :name="`items[${index}][priority_order]`"
                                                 x-model="item.priority_order">
                                             <input type="hidden" :name="`items[${index}][must_sell_before]`"
@@ -328,12 +330,37 @@
                                             <div>
                                                 <label
                                                     class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Selling Strategy
+                                                </label>
+                                                <select x-model="items[currentEditIndex].selling_strategy"
+                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    <option value="fifo">FIFO (First In, First Out)</option>
+                                                    <option value="lifo">LIFO (Last In, First Out)</option>
+                                                    <option value="priority">Priority Based (Use priority number below)
+                                                    </option>
+                                                    <option value="expiry_first">Expiry Date First</option>
+                                                </select>
+                                            </div>
+
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                                     Priority (1-10)
                                                 </label>
-                                                <input type="number" x-model="items[currentEditIndex].priority_order"
-                                                    step="1" min="1" max="10"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
-                                                    placeholder="Lower = Higher Priority">
+                                                <select x-model="items[currentEditIndex].priority_order"
+                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    <option value="">None (Normal FIFO)</option>
+                                                    <option value="1">1 - Highest Priority (Sell First)</option>
+                                                    <option value="2">2</option>
+                                                    <option value="3">3</option>
+                                                    <option value="4">4</option>
+                                                    <option value="5">5</option>
+                                                    <option value="6">6</option>
+                                                    <option value="7">7</option>
+                                                    <option value="8">8</option>
+                                                    <option value="9">9</option>
+                                                    <option value="10">10 - Lowest Priority</option>
+                                                </select>
                                             </div>
 
                                             <div>
@@ -411,6 +438,7 @@
                     promotional_campaign_id: item.promotional_campaign_id || '',
                     promotional_price: parseFloat(item.promotional_price) || 0,
                     promotional_discount_percent: parseFloat(item.promotional_discount_percent) || 0,
+                    selling_strategy: item.selling_strategy || 'fifo',
                     priority_order: parseInt(item.priority_order) || null,
                     must_sell_before: item.must_sell_before || '',
                     total: parseFloat(item.quantity_accepted || 0) * parseFloat(item.unit_cost || 0)
@@ -426,6 +454,7 @@
                     promotional_campaign_id: '',
                     promotional_price: 0,
                     promotional_discount_percent: 0,
+                    selling_strategy: 'fifo',
                     priority_order: null,
                     must_sell_before: '',
                     total: 0
@@ -445,6 +474,7 @@
                         promotional_campaign_id: '',
                         promotional_price: 0,
                         promotional_discount_percent: 0,
+                        selling_strategy: 'fifo',
                         priority_order: null,
                         must_sell_before: '',
                         total: 0
@@ -465,6 +495,7 @@
                     this.items[index].promotional_campaign_id = '';
                     this.items[index].promotional_price = 0;
                     this.items[index].promotional_discount_percent = 0;
+                    this.items[index].selling_strategy = 'fifo';
                     this.items[index].priority_order = null;
                     this.items[index].must_sell_before = '';
                     this.items[index].manufacturing_date = '';

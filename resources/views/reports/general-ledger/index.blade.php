@@ -255,7 +255,7 @@
                 {{ optional($entry->entry_date)->format('d-m-Y') }}
             </td>
             <td class="py-1 px-2">
-                {{ $entry->reference ?? '—' }}
+                <div class="break-words max-w-[8rem]">{{ $entry->reference ?? '—' }}</div>
             </td>
             <td class="py-1 px-2">
                 <div class="font-semibold break-words max-w-xs">{{ $entry->journal_description ?? '—' }}</div>

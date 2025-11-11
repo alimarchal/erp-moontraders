@@ -342,23 +342,30 @@
         </div>
     </div>
 
+    <!-- Password Modal -->
+    <x-password-confirm-modal id="reverseGrnModal" title="Confirm GRN Reversal"
+        message="⚠️ WARNING: This will reverse all stock entries and draft payments. This action cannot be undone."
+        warningClass="text-red-600 dark:text-red-400" confirmButtonText="Confirm Reverse"
+        confirmButtonClass="bg-red-600 hover:bg-red-700" />
+
     <script>
         function confirmReverseGrn() {
             if (!confirm('Are you sure you want to REVERSE this GRN? All stock entries and draft payments will be reversed. This action cannot be undone.')) {
                 return false;
             }
 
-            // Use a simple password prompt (note: browser prompt doesn't support masking)
-            // For better security, user should ensure no one is watching their screen
-            const password = prompt('🔒 Enter your password to confirm GRN reversal:\n\n(Note: Ensure no one is watching your screen)');
-            
-            if (!password || password.trim() === '') {
-                alert('Password is required to reverse GRN.');
-                return false;
-            }
-
-            document.getElementById('password').value = password;
-            return true;
+            window.showPasswordModal('reverseGrnModal');
+            return false;
         }
+
+        // Listen for password confirmation event
+        document.addEventListener('passwordConfirmed', function(event) {
+            const { modalId, password } = event.detail;
+            
+            if (modalId === 'reverseGrnModal') {
+                document.getElementById('password').value = password;
+                document.getElementById('reverseGrnForm').submit();
+            }
+        });
     </script>
 </x-app-layout>

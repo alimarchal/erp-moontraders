@@ -351,36 +351,42 @@
         </div>
     </div>
 
+    <!-- Password Modals -->
+    <x-password-confirm-modal id="postPasswordModal" title="Confirm Payment Posting"
+        message="⚠️ This will create accounting journal entries and cannot be undone." confirmButtonText="Confirm Post"
+        confirmButtonClass="bg-emerald-600 hover:bg-emerald-700" />
+
+    <x-password-confirm-modal id="reversePasswordModal" title="Confirm Payment Reversal"
+        message="⚠️ WARNING: This will reverse the payment and create a reversing journal entry."
+        warningClass="text-red-600 dark:text-red-400" confirmButtonText="Confirm Reverse"
+        confirmButtonClass="bg-orange-600 hover:bg-orange-700" />
+
     <script>
         function confirmPostPayment() {
             if (!confirm('Are you sure you want to POST this payment? This will create accounting journal entries and cannot be undone.')) {
                 return false;
             }
-
-            // Use a simple password prompt (note: browser prompt doesn't support masking)
-            // For better security, user should ensure no one is watching their screen
-            const password = prompt('🔒 Enter your password to confirm payment posting:\n\n(Note: Ensure no one is watching your screen)');
             
-            if (!password || password.trim() === '') {
-                alert('Password is required to post payment.');
-                return false;
-            }
-
-            document.getElementById('post_password').value = password;
-            return true;
+            window.showPasswordModal('postPasswordModal');
+            return false;
         }
 
         function confirmReverse() {
-            // Use a simple password prompt (note: browser prompt doesn't support masking)
-            // For better security, user should ensure no one is watching their screen
-            const password = prompt('⚠️ WARNING: This will reverse the payment and create a reversing journal entry.\n\n🔒 Enter your password to confirm:\n\n(Note: Ensure no one is watching your screen)');
-            
-            if (password === null || password.trim() === '') {
-                return false;
-            }
-            
-            document.getElementById('reversePassword').value = password;
-            return true;
+            window.showPasswordModal('reversePasswordModal');
+            return false;
         }
+
+        // Listen for password confirmation events
+        document.addEventListener('passwordConfirmed', function(event) {
+            const { modalId, password } = event.detail;
+            
+            if (modalId === 'postPasswordModal') {
+                document.getElementById('post_password').value = password;
+                document.getElementById('postPaymentForm').submit();
+            } else if (modalId === 'reversePasswordModal') {
+                document.getElementById('reversePassword').value = password;
+                document.querySelector('form[action*="reverse"]').submit();
+            }
+        });
     </script>
 </x-app-layout>

@@ -26,12 +26,11 @@
                         @method('PUT')
 
                         @include('products.partials.form-fields', [
-                            'product' => $product,
-                            'categoryOptions' => $categoryOptions,
-                            'supplierOptions' => $supplierOptions,
-                            'uomOptions' => $uomOptions,
-                            'accountOptions' => $accountOptions,
-                            'valuationMethods' => $valuationMethods,
+                        'product' => $product,
+                        'supplierOptions' => $supplierOptions,
+                        'uomOptions' => $uomOptions,
+                        'accountOptions' => $accountOptions,
+                        'valuationMethods' => $valuationMethods,
                         ])
 
                         <div class="flex items-center justify-end mt-6">

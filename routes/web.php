@@ -28,6 +28,7 @@ use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\GoodsReceiptNoteController;
 use App\Http\Controllers\CurrentStockController;
 use App\Http\Controllers\PromotionalCampaignController;
+use App\Http\Controllers\SupplierPaymentController;
 
 Route::get('/', function () {
     return to_route('login');
@@ -64,6 +65,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         ->name('goods-receipt-notes.reverse');
 
     Route::resource('promotional-campaigns', PromotionalCampaignController::class);
+
+    // Supplier Payment Routes
+    Route::resource('supplier-payments', SupplierPaymentController::class);
+    Route::post('supplier-payments/{supplierPayment}/post', [SupplierPaymentController::class, 'post'])
+        ->name('supplier-payments.post');
+    Route::get('supplier-payments/create/{supplier}', [SupplierPaymentController::class, 'createForSupplier'])
+        ->name('supplier-payments.create-for-supplier');
+    Route::get('api/suppliers/{supplier}/unpaid-grns', [SupplierPaymentController::class, 'getUnpaidGrns'])
+        ->name('api.suppliers.unpaid-grns');
 
     // Inventory Stock Routes
     Route::prefix('inventory')->name('inventory.')->group(function () {

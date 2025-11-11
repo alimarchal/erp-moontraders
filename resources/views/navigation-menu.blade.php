@@ -19,6 +19,10 @@
                         :active="request()->routeIs('goods-receipt-notes.*')">
                         {{ __('GRN') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('supplier-payments.index') }}"
+                        :active="request()->routeIs('supplier-payments.*')">
+                        {{ __('Payments') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('inventory.current-stock.index') }}"
                         :active="request()->routeIs('inventory.*')">
                         {{ __('Inventory') }}
@@ -175,6 +179,10 @@
             <x-responsive-nav-link href="{{ route('goods-receipt-notes.index') }}"
                 :active="request()->routeIs('goods-receipt-notes.*')">
                 {{ __('GRN') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('supplier-payments.index') }}"
+                :active="request()->routeIs('supplier-payments.*')">
+                {{ __('Payments') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('inventory.current-stock.index') }}"
                 :active="request()->routeIs('inventory.*')">

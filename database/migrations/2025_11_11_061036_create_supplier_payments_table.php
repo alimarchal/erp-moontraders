@@ -23,11 +23,14 @@ return new class extends Migration {
             $table->decimal('amount', 15, 2);
             $table->text('description')->nullable();
 
-            $table->enum('status', ['draft', 'posted', 'cancelled', 'bounced'])->default('draft');
+            $table->enum('status', ['draft', 'posted', 'cancelled', 'bounced', 'reversed'])->default('draft');
             $table->foreignId('journal_entry_id')->nullable()->constrained('journal_entries')->nullOnDelete();
 
             $table->timestamp('posted_at')->nullable();
             $table->foreignId('posted_by')->nullable()->constrained('users')->nullOnDelete();
+
+            $table->timestamp('reversed_at')->nullable();
+            $table->foreignId('reversed_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();

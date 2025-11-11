@@ -374,15 +374,17 @@ class InventoryService
                     $movement->stock_batch_id
                 );
 
-                // Update batch quantity
+                // Update batch status if needed (no quantity_on_hand in stock_batches)
                 $batch = StockBatch::find($movement->stock_batch_id);
                 if ($batch) {
-                    $batch->quantity_on_hand -= $movement->quantity;
-                    if ($batch->quantity_on_hand <= 0) {
+                    // Check if batch is depleted by looking at current_stock_by_batch
+                    $remainingQty = CurrentStockByBatch::where('stock_batch_id', $batch->id)
+                        ->sum('quantity_on_hand');
+
+                    if ($remainingQty <= 0) {
                         $batch->status = 'depleted';
-                        $batch->quantity_on_hand = 0;
+                        $batch->save();
                     }
-                    $batch->save();
                 }
 
                 // Update current stock by batch

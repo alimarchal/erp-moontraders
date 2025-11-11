@@ -126,7 +126,8 @@
                         {{ $payment->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
                         {{ $payment->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}
                         {{ $payment->status === 'cancelled' ? 'bg-red-100 text-red-700' : '' }}
-                        {{ $payment->status === 'bounced' ? 'bg-orange-100 text-orange-700' : '' }}">
+                        {{ $payment->status === 'bounced' ? 'bg-orange-100 text-orange-700' : '' }}
+                        {{ $payment->status === 'reversed' ? 'bg-purple-100 text-purple-700' : '' }}">
                     {{ ucfirst($payment->status) }}
                 </span>
             </td>

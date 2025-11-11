@@ -23,6 +23,8 @@ class SupplierPayment extends Model
         'journal_entry_id',
         'posted_at',
         'posted_by',
+        'reversed_at',
+        'reversed_by',
         'created_by',
     ];
 
@@ -30,6 +32,7 @@ class SupplierPayment extends Model
         'payment_date' => 'date',
         'amount' => 'decimal:2',
         'posted_at' => 'datetime',
+        'reversed_at' => 'datetime',
     ];
 
     // Relationships
@@ -56,6 +59,11 @@ class SupplierPayment extends Model
     public function postedBy()
     {
         return $this->belongsTo(User::class, 'posted_by');
+    }
+
+    public function reversedBy()
+    {
+        return $this->belongsTo(User::class, 'reversed_by');
     }
 
     public function grnAllocations()

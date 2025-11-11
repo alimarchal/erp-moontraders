@@ -434,11 +434,16 @@ class GoodsReceiptNoteController extends Controller
                 $sequence = $lastPayment ? ((int) substr($lastPayment->payment_number, -6)) + 1 : 1;
                 $paymentNumber = sprintf('PAY-%d-%06d', $year, $sequence);
 
+                // Get default bank account for auto-generated payment
+                $defaultBankAccount = \App\Models\BankAccount::where('is_active', true)
+                    ->orderBy('id')
+                    ->first();
+
                 // Create draft payment
                 $payment = \App\Models\SupplierPayment::create([
                     'payment_number' => $paymentNumber,
                     'supplier_id' => $grn->supplier_id,
-                    'bank_account_id' => null,
+                    'bank_account_id' => $defaultBankAccount?->id,
                     'payment_date' => now()->toDateString(),
                     'payment_method' => 'bank_transfer',
                     'reference_number' => 'Auto-generated for GRN: ' . $grn->grn_number,
@@ -467,6 +472,17 @@ class GoodsReceiptNoteController extends Controller
      */
     public function reverse(GoodsReceiptNote $goodsReceiptNote)
     {
+        // Check if GRN has any posted payments
+        $hasPostedPayments = $goodsReceiptNote->payments()
+            ->where('status', 'posted')
+            ->exists();
+
+        if ($hasPostedPayments) {
+            return redirect()
+                ->back()
+                ->with('error', 'Cannot reverse GRN that has posted payments. Please reverse the payments first.');
+        }
+
         $inventoryService = app(InventoryService::class);
         $result = $inventoryService->reverseGrnInventory($goodsReceiptNote);
 

@@ -30,6 +30,11 @@ class PaymentService
                 throw new \Exception('Cannot post cancelled payment');
             }
 
+            // Validate bank account is selected for non-cash payment methods
+            if (in_array($payment->payment_method, ['bank_transfer', 'cheque', 'online']) && !$payment->bank_account_id) {
+                throw new \Exception('Bank account is required for ' . str_replace('_', ' ', $payment->payment_method) . ' payment method');
+            }
+
             // Create accounting journal entry
             $journalEntry = $this->createPaymentJournalEntry($payment);
 
@@ -216,5 +221,157 @@ class PaymentService
             ->toArray();
 
         return $grns;
+    }
+
+    /**
+     * Reverse a posted supplier payment
+     * Creates a reversing journal entry and marks payment as reversed
+     */
+    public function reverseSupplierPayment(SupplierPayment $payment): array
+    {
+        try {
+            DB::beginTransaction();
+
+            if ($payment->status !== 'posted') {
+                throw new \Exception('Only posted payments can be reversed');
+            }
+
+            if ($payment->status === 'reversed') {
+                throw new \Exception('Payment is already reversed');
+            }
+
+            // Create reversing journal entry
+            $reversingEntry = $this->createReversingJournalEntry($payment);
+
+            // Update payment status
+            $payment->update([
+                'status' => 'reversed',
+                'reversed_at' => now(),
+                'reversed_by' => auth()->id(),
+            ]);
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => "Payment {$payment->payment_number} reversed successfully" . ($reversingEntry ? " with reversing journal entry" : ""),
+                'data' => $payment->fresh(),
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error("Failed to reverse payment {$payment->id}: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Failed to reverse payment: ' . $e->getMessage(),
+                'data' => null,
+            ];
+        }
+    }
+
+    /**
+     * Create reversing journal entry for supplier payment
+     * Opposite of original entry: Dr. Bank/Cash, Cr. Creditors
+     */
+    protected function createReversingJournalEntry(SupplierPayment $payment)
+    {
+        try {
+            // Find Creditors account
+            $creditorsAccount = ChartOfAccount::where('account_code', '2111')->first();
+
+            if (!$creditorsAccount) {
+                Log::warning('Creditors account (2111) not found. Skipping reversing journal entry for payment: ' . $payment->id);
+                return null;
+            }
+
+            // Determine payment account based on payment method
+            $paymentAccountCode = match ($payment->payment_method) {
+                'cash' => '1131', // Cash
+                'bank_transfer', 'cheque', 'online' => '1120', // Bank Accounts (parent)
+                default => '1131',
+            };
+
+            // If bank payment and specific bank account selected, use that account
+            if ($payment->bank_account_id && $payment->payment_method !== 'cash') {
+                $bankAccount = $payment->bankAccount;
+                if ($bankAccount && $bankAccount->chart_of_account_id) {
+                    $paymentAccount = ChartOfAccount::find($bankAccount->chart_of_account_id);
+                } else {
+                    $paymentAccount = ChartOfAccount::where('account_code', $paymentAccountCode)->first();
+                }
+            } else {
+                $paymentAccount = ChartOfAccount::where('account_code', $paymentAccountCode)->first();
+            }
+
+            if (!$paymentAccount) {
+                Log::warning("Payment account ({$paymentAccountCode}) not found. Skipping reversing journal entry for payment: " . $payment->id);
+                return null;
+            }
+
+            // Check if payment account is a leaf account
+            $hasChildren = ChartOfAccount::where('parent_id', $paymentAccount->id)->exists();
+            if ($hasChildren) {
+                // If it's a parent, try to find first child (leaf)
+                $paymentAccount = ChartOfAccount::where('parent_id', $paymentAccount->id)->first();
+                if (!$paymentAccount) {
+                    Log::warning("No leaf account found under {$paymentAccountCode}. Skipping reversing journal entry for payment: " . $payment->id);
+                    return null;
+                }
+            }
+
+            $amount = $payment->amount;
+
+            if ($amount <= 0) {
+                Log::warning('Payment amount is zero or negative. Skipping reversing journal entry for payment: ' . $payment->id);
+                return null;
+            }
+
+            // Build description
+            $description = "REVERSAL: Payment to {$payment->supplier->supplier_name} ({$payment->payment_number})";
+            if ($payment->reference_number) {
+                $description .= " - Ref: {$payment->reference_number}";
+            }
+
+            // Prepare reversing journal entry data (opposite of original)
+            $journalEntryData = [
+                'entry_date' => now()->toDateString(),
+                'description' => $description,
+                'reference_type' => 'App\Models\SupplierPayment',
+                'reference_id' => $payment->id,
+                'lines' => [
+                    [
+                        'account_id' => $paymentAccount->id,
+                        'debit' => $amount,
+                        'credit' => 0,
+                        'description' => "Reversal of payment via {$payment->payment_method}",
+                        'cost_center_id' => 1,
+                    ],
+                    [
+                        'account_id' => $creditorsAccount->id,
+                        'debit' => 0,
+                        'credit' => $amount,
+                        'description' => "Reversal - Payment to supplier returned",
+                        'cost_center_id' => 1,
+                    ],
+                ],
+                'auto_post' => true,
+            ];
+
+            // Create reversing journal entry using AccountingService
+            $accountingService = app(AccountingService::class);
+            $result = $accountingService->createJournalEntry($journalEntryData);
+
+            if ($result['success']) {
+                Log::info("Reversing journal entry created for payment {$payment->payment_number}: JE #{$result['data']->entry_number}");
+                return $result['data'];
+            } else {
+                Log::error("Failed to create reversing journal entry for payment {$payment->payment_number}: " . $result['message']);
+                return null;
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Exception creating reversing journal entry for payment {$payment->id}: " . $e->getMessage());
+            return null;
+        }
     }
 }

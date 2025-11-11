@@ -70,6 +70,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::resource('supplier-payments', SupplierPaymentController::class);
     Route::post('supplier-payments/{supplierPayment}/post', [SupplierPaymentController::class, 'post'])
         ->name('supplier-payments.post');
+    Route::post('supplier-payments/{supplierPayment}/reverse', [SupplierPaymentController::class, 'reverse'])
+        ->name('supplier-payments.reverse');
     Route::get('supplier-payments/create/{supplier}', [SupplierPaymentController::class, 'createForSupplier'])
         ->name('supplier-payments.create-for-supplier');
     Route::get('api/suppliers/{supplier}/unpaid-grns', [SupplierPaymentController::class, 'getUnpaidGrns'])

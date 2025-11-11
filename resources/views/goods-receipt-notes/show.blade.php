@@ -24,6 +24,10 @@
             </a>
             @endif
             @if ($grn->status === 'posted')
+            @php
+            $hasPostedPayments = $grn->payments()->where('status', 'posted')->exists();
+            @endphp
+            @if (!$hasPostedPayments)
             <form action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
                 onsubmit="return confirm('Are you sure you want to REVERSE this GRN? All stock entries will be reversed. This action cannot be undone.');"
                 class="inline-block">
@@ -38,6 +42,7 @@
                     Reverse Entry
                 </button>
             </form>
+            @endif
             @endif
             <a href="{{ route('goods-receipt-notes.index') }}"
                 class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">

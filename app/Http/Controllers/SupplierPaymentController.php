@@ -260,6 +260,11 @@ class SupplierPaymentController extends Controller
             return back()->with('error', 'Only draft payments can be posted');
         }
 
+        // Validate bank account is selected for non-cash payments
+        if (in_array($supplierPayment->payment_method, ['bank_transfer', 'cheque', 'online']) && !$supplierPayment->bank_account_id) {
+            return back()->with('error', 'Bank account is required for ' . str_replace('_', ' ', $supplierPayment->payment_method) . ' payments. Please edit the payment and select a bank account.');
+        }
+
         $result = $this->paymentService->postSupplierPayment($supplierPayment);
 
         if ($result['success']) {
@@ -286,12 +291,42 @@ class SupplierPaymentController extends Controller
     }
 
     /**
+     * Reverse a posted payment (with password confirmation)
+     */
+    public function reverse(Request $request, SupplierPayment $supplierPayment)
+    {
+        if ($supplierPayment->status !== 'posted') {
+            return back()->with('error', 'Only posted payments can be reversed');
+        }
+
+        // Validate password
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        // Verify user password
+        if (!\Hash::check($request->password, auth()->user()->password)) {
+            return back()->with('error', 'Invalid password. Payment reversal cancelled.');
+        }
+
+        $result = $this->paymentService->reverseSupplierPayment($supplierPayment);
+
+        if ($result['success']) {
+            return redirect()
+                ->route('supplier-payments.index')
+                ->with('success', $result['message']);
+        }
+
+        return back()->with('error', $result['message']);
+    }
+
+    /**
      * Remove the specified payment (soft delete)
      */
     public function destroy(SupplierPayment $supplierPayment)
     {
         if ($supplierPayment->status === 'posted') {
-            return back()->with('error', 'Posted payments cannot be deleted');
+            return back()->with('error', 'Posted payments cannot be deleted. Use reverse instead.');
         }
 
         $supplierPayment->delete();

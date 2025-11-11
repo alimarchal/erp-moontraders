@@ -122,7 +122,8 @@ class PaymentService
             }
 
             // Build description
-            $description = "Payment to {$payment->supplier->supplier_name}";
+            $userName = auth()->user()->name ?? 'System';
+            $description = "Payment to {$payment->supplier->supplier_name} ({$payment->payment_number}) - Password confirmed by: {$userName}";
             if ($payment->reference_number) {
                 $description .= " - Ref: {$payment->reference_number}";
             }

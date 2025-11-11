@@ -14,10 +14,10 @@
                 </svg>
                 Edit
             </a>
-            <form action="{{ route('supplier-payments.post', $supplierPayment->id) }}" method="POST"
-                onsubmit="return confirm('Are you sure you want to post this payment? This will create accounting journal entries.');"
-                class="inline-block">
+            <form id="postPaymentForm" action="{{ route('supplier-payments.post', $supplierPayment->id) }}"
+                method="POST" onsubmit="return confirmPostPayment();" class="inline-block">
                 @csrf
+                <input type="hidden" id="post_password" name="password" value="">
                 <button type="submit"
                     class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                     <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -352,6 +352,24 @@
     </div>
 
     <script>
+        function confirmPostPayment() {
+            const confirmed = confirm('Are you sure you want to POST this payment? This will create accounting journal entries and cannot be undone.');
+            
+            if (!confirmed) {
+                return false;
+            }
+
+            const password = prompt('Enter your password to confirm payment posting:');
+            
+            if (!password) {
+                alert('Password is required to post payment.');
+                return false;
+            }
+
+            document.getElementById('post_password').value = password;
+            return true;
+        }
+
         function confirmReverse() {
             const password = prompt('⚠️ WARNING: This will reverse the payment and create a reversing journal entry.\n\nEnter your password to confirm:');
             

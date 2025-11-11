@@ -254,11 +254,25 @@ class SupplierPaymentController extends Controller
     /**
      * Post the payment
      */
-    public function post(SupplierPayment $supplierPayment)
+    public function post(Request $request, SupplierPayment $supplierPayment)
     {
         if ($supplierPayment->status !== 'draft') {
             return back()->with('error', 'Only draft payments can be posted');
         }
+
+        // Validate password
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        // Verify user's password
+        if (!\Hash::check($request->password, auth()->user()->password)) {
+            \Log::warning("Failed payment posting attempt for {$supplierPayment->payment_number} - Invalid password by user: " . auth()->user()->name);
+            return back()->with('error', 'Invalid password. Payment posting requires your password confirmation.');
+        }
+
+        // Log password confirmation
+        \Log::info("Payment posting password confirmed for {$supplierPayment->payment_number} by user: " . auth()->user()->name . " (ID: " . auth()->id() . ")");
 
         // Validate bank account is selected for non-cash payments
         if (in_array($supplierPayment->payment_method, ['bank_transfer', 'cheque', 'online']) && !$supplierPayment->bank_account_id) {

@@ -25,11 +25,10 @@
                         @csrf
 
                         @include('products.partials.form-fields', [
-                            'categoryOptions' => $categoryOptions,
-                            'supplierOptions' => $supplierOptions,
-                            'uomOptions' => $uomOptions,
-                            'accountOptions' => $accountOptions,
-                            'valuationMethods' => $valuationMethods,
+                        'supplierOptions' => $supplierOptions,
+                        'uomOptions' => $uomOptions,
+                        'accountOptions' => $accountOptions,
+                        'valuationMethods' => $valuationMethods,
                         ])
 
                         <div class="flex items-center justify-end mt-6">

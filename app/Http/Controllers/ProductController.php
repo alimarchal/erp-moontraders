@@ -6,7 +6,6 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\ChartOfAccount;
 use App\Models\Product;
-use App\Models\ProductCategory;
 use App\Models\Supplier;
 use App\Models\Uom;
 use Illuminate\Database\QueryException;
@@ -24,7 +23,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $products = QueryBuilder::for(
-            Product::query()->with(['category', 'supplier', 'uom', 'salesUom'])
+            Product::query()->with(['supplier', 'uom', 'salesUom'])
         )
             ->allowedFilters([
                 AllowedFilter::partial('product_name'),
@@ -32,7 +31,6 @@ class ProductController extends Controller
                 AllowedFilter::partial('brand'),
                 AllowedFilter::partial('barcode'),
                 AllowedFilter::partial('pack_size'),
-                AllowedFilter::exact('category_id'),
                 AllowedFilter::exact('supplier_id'),
                 AllowedFilter::exact('uom_id'),
                 AllowedFilter::exact('valuation_method'),
@@ -44,7 +42,6 @@ class ProductController extends Controller
 
         return view('products.index', [
             'products' => $products,
-            'categoryOptions' => $this->categoryOptions(),
             'supplierOptions' => $this->supplierOptions(),
             'uomOptions' => $this->uomOptions(),
             'valuationMethods' => Product::VALUATION_METHODS,
@@ -58,7 +55,6 @@ class ProductController extends Controller
     public function create()
     {
         return view('products.create', [
-            'categoryOptions' => $this->categoryOptions(),
             'supplierOptions' => $this->supplierOptions(),
             'uomOptions' => $this->uomOptions(),
             'accountOptions' => $this->accountOptions(),
@@ -131,7 +127,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        $product->load(['category', 'supplier', 'uom', 'salesUom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
+        $product->load(['supplier', 'uom', 'salesUom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
 
         return view('products.show', [
             'product' => $product,
@@ -143,11 +139,10 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        $product->load(['category', 'supplier', 'uom', 'salesUom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
+        $product->load(['supplier', 'uom', 'salesUom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
 
         return view('products.edit', [
             'product' => $product,
-            'categoryOptions' => $this->categoryOptions(),
             'supplierOptions' => $this->supplierOptions(),
             'uomOptions' => $this->uomOptions(),
             'accountOptions' => $this->accountOptions(),
@@ -246,11 +241,6 @@ class ProductController extends Controller
 
             return back()->with('error', 'Failed to delete product. Please try again.');
         }
-    }
-
-    protected function categoryOptions()
-    {
-        return ProductCategory::orderBy('category_name')->get(['id', 'category_name']);
     }
 
     protected function supplierOptions()

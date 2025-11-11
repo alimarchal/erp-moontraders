@@ -1,7 +1,6 @@
 @php
 /** @var \App\Models\Product|null $product */
 $product = $product ?? null;
-$categoryOptions = $categoryOptions ?? collect();
 $supplierOptions = $supplierOptions ?? collect();
 $uomOptions = $uomOptions ?? collect();
 $accountOptions = $accountOptions ?? collect();
@@ -29,21 +28,7 @@ $valuationMethods = $valuationMethods ?? [];
         placeholder="Key product notes for sales, warehouse and finance">{{ old('description', optional($product)->description) }}</textarea>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
-    <div>
-        <x-label for="category_id" value="Category" />
-        <select id="category_id" name="category_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-            <option value="">Uncategorized</option>
-            @foreach ($categoryOptions as $category)
-            <option value="{{ $category->id }}" {{ (int) old('category_id', optional($product)->category_id) ===
-                $category->id ? 'selected' : '' }}>
-                {{ $category->category_name }}
-            </option>
-            @endforeach
-        </select>
-    </div>
-
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
     <div>
         <x-label for="supplier_id" value="Preferred Supplier" />
         <select id="supplier_id" name="supplier_id"

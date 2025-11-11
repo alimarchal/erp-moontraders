@@ -40,12 +40,7 @@
                             disabled readonly>{{ $product->description ?? '—' }}</textarea>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div>
-                            <x-label value="Category" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->category?->category_name ?? '—'" disabled readonly />
-                        </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-label value="Supplier" />
                             <x-input type="text" class="mt-1 block w-full bg-gray-100"

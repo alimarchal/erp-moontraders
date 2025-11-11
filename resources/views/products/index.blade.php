@@ -8,8 +8,8 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
                 <x-label for="filter_product_name" value="Product Name" />
-                <x-input id="filter_product_name" name="filter[product_name]" type="text"
-                    class="mt-1 block w-full" :value="request('filter.product_name')" placeholder="Search name" />
+                <x-input id="filter_product_name" name="filter[product_name]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.product_name')" placeholder="Search name" />
             </div>
 
             <div>
@@ -20,27 +20,14 @@
 
             <div>
                 <x-label for="filter_brand" value="Brand" />
-                <x-input id="filter_brand" name="filter[brand]" type="text"
-                    class="mt-1 block w-full" :value="request('filter.brand')" placeholder="Brand" />
+                <x-input id="filter_brand" name="filter[brand]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.brand')" placeholder="Brand" />
             </div>
 
             <div>
                 <x-label for="filter_barcode" value="Barcode" />
-                <x-input id="filter_barcode" name="filter[barcode]" type="text"
-                    class="mt-1 block w-full" :value="request('filter.barcode')" placeholder="Barcode" />
-            </div>
-
-            <div>
-                <x-label for="filter_category_id" value="Category" />
-                <select id="filter_category_id" name="filter[category_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Categories</option>
-                    @foreach ($categoryOptions as $category)
-                    <option value="{{ $category->id }}" {{ request('filter.category_id') === (string) $category->id ? 'selected' : '' }}>
-                        {{ $category->category_name }}
-                    </option>
-                    @endforeach
-                </select>
+                <x-input id="filter_barcode" name="filter[barcode]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.barcode')" placeholder="Barcode" />
             </div>
 
             <div>
@@ -49,7 +36,8 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
                     @foreach ($supplierOptions as $supplier)
-                    <option value="{{ $supplier->id }}" {{ request('filter.supplier_id') === (string) $supplier->id ? 'selected' : '' }}>
+                    <option value="{{ $supplier->id }}" {{ request('filter.supplier_id')===(string) $supplier->id ?
+                        'selected' : '' }}>
                         {{ $supplier->supplier_name }}
                     </option>
                     @endforeach
@@ -62,7 +50,7 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Units</option>
                     @foreach ($uomOptions as $uom)
-                    <option value="{{ $uom->id }}" {{ request('filter.uom_id') === (string) $uom->id ? 'selected' : '' }}>
+                    <option value="{{ $uom->id }}" {{ request('filter.uom_id')===(string) $uom->id ? 'selected' : '' }}>
                         {{ $uom->uom_name }} {{ $uom->symbol ? '(' . $uom->symbol . ')' : '' }}
                     </option>
                     @endforeach
@@ -75,7 +63,7 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Methods</option>
                     @foreach ($valuationMethods as $method)
-                    <option value="{{ $method }}" {{ request('filter.valuation_method') === $method ? 'selected' : '' }}>
+                    <option value="{{ $method }}" {{ request('filter.valuation_method')===$method ? 'selected' : '' }}>
                         {{ $method }}
                     </option>
                     @endforeach
@@ -88,7 +76,7 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Both</option>
                     @foreach ($statusOptions as $value => $label)
-                    <option value="{{ $value }}" {{ request('filter.is_active') === $value ? 'selected' : '' }}>
+                    <option value="{{ $value }}" {{ request('filter.is_active')===$value ? 'selected' : '' }}>
                         {{ $label }}
                     </option>
                     @endforeach
@@ -101,7 +89,6 @@
         ['label' => '#', 'align' => 'text-center'],
         ['label' => 'Code', 'align' => 'text-left'],
         ['label' => 'Product', 'align' => 'text-left'],
-        ['label' => 'Category', 'align' => 'text-left'],
         ['label' => 'Supplier & UOM', 'align' => 'text-left'],
         ['label' => 'Pricing', 'align' => 'text-left'],
         ['label' => 'Status', 'align' => 'text-center'],
@@ -114,14 +101,13 @@
             </td>
             <td class="py-2 px-2 font-semibold">
                 <div>{{ $product->product_code }}</div>
-                <div class="text-xs text-gray-500">Barcode: {{ $product->barcode ?? '—' }}</div>
+                {{-- <div class="text-xs text-gray-500">Barcode: {{ $product->barcode ?? '—' }}</div> --}}
             </td>
             <td class="py-2 px-2">
                 <div class="font-semibold">{{ $product->product_name }}</div>
-                <div class="text-xs text-gray-500 line-clamp-2">{{ $product->brand ?? '—' }} | {{ $product->pack_size ?? '—' }}</div>
-            </td>
-            <td class="py-2 px-2 text-sm">
-                {{ $product->category?->category_name ?? '—' }}
+                {{-- <div class="text-xs text-gray-500 line-clamp-2">{{ $product->brand ?? '—' }} | {{
+                    $product->pack_size ??
+                    '—' }}</div> --}}
                 <div class="text-xs text-gray-500">Valuation: {{ $product->valuation_method }}</div>
             </td>
             <td class="py-2 px-2 text-sm">
@@ -129,12 +115,15 @@
                 <div class="text-xs text-gray-500">UOM: {{ $product->uom?->uom_name ?? '—' }}</div>
             </td>
             <td class="py-2 px-2 text-sm">
-                <div class="font-semibold text-emerald-700">Sell: {{ number_format((float) $product->unit_price, 2) }}</div>
+                <div class="font-semibold text-emerald-700">Sell: {{ number_format((float) $product->unit_price, 2) }}
+                </div>
                 <div class="text-xs text-gray-500">Cost: {{ number_format((float) $product->cost_price, 2) }}</div>
-                <div class="text-xs text-gray-500">Reorder: {{ number_format((float) $product->reorder_level, 2) }}</div>
+                <div class="text-xs text-gray-500">Reorder: {{ number_format((float) $product->reorder_level, 2) }}
+                </div>
             </td>
             <td class="py-2 px-2 text-center">
-                <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $product->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                <span
+                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $product->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
                     {{ $product->is_active ? 'Active' : 'Inactive' }}
                 </span>
             </td>

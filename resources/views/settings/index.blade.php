@@ -155,23 +155,6 @@
                     </div>
                 </a>
 
-                <!-- Product Categories Module Card -->
-                <a href="{{ route('product-categories.index') }}"
-                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 intro-y bg-white block">
-                    <div class="p-5 flex justify-between">
-                        <div>
-                            <div class="text-3xl font-bold leading-8">{{ \App\Models\ProductCategory::count() }}</div>
-                            <div class="mt-1 text-base font-extrabold text-black">Product Categories</div>
-                        </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                            stroke="currentColor" class="h-16 w-16 text-rose-600">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M3 6.75C3 5.36929 4.11929 4.25 5.5 4.25H9.5C10.8807 4.25 12 5.36929 12 6.75V18.75C12 20.1307 10.8807 21.25 9.5 21.25H5.5C4.11929 21.25 3 20.1307 3 18.75V6.75Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M12 6.75C12 5.36929 13.1193 4.25 14.5 4.25H18.5C19.8807 4.25 21 5.36929 21 6.75V12.75C21 14.1307 19.8807 15.25 18.5 15.25H14.5C13.1193 15.25 12 14.1307 12 12.75V6.75Z" />
-                        </svg>
-                    </div>
-                </a>
 
                 <!-- Products Module Card -->
                 <a href="{{ route('products.index') }}"

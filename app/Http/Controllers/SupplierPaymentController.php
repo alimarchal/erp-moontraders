@@ -105,14 +105,17 @@ class SupplierPaymentController extends Controller
         try {
             DB::beginTransaction();
 
-            // Generate payment number
-            $lastPayment = SupplierPayment::whereYear('created_at', now()->year)
-                ->orderBy('id', 'desc')
+            // Generate payment number with lock to prevent duplicates
+            $year = now()->year;
+            $lastPayment = SupplierPayment::withTrashed()
+                ->whereYear('created_at', $year)
+                ->where('payment_number', 'LIKE', "PAY-{$year}-%")
+                ->lockForUpdate()
+                ->orderByRaw("CAST(SUBSTRING(payment_number FROM '[0-9]+$') AS INTEGER) DESC")
                 ->first();
-            $nextNumber = $lastPayment ? ((int) substr($lastPayment->payment_number, -6)) + 1 : 1;
-            $paymentNumber = sprintf('PAY-%d-%06d', now()->year, $nextNumber);
 
-            // Create payment
+            $sequence = $lastPayment ? ((int) substr($lastPayment->payment_number, -6)) + 1 : 1;
+            $paymentNumber = sprintf('PAY-%d-%06d', $year, $sequence);            // Create payment
             $payment = SupplierPayment::create([
                 'payment_number' => $paymentNumber,
                 'supplier_id' => $validated['supplier_id'],
@@ -158,6 +161,94 @@ class SupplierPaymentController extends Controller
         $supplierPayment->load(['supplier', 'bankAccount', 'journalEntry.details.account', 'grnAllocations.grn', 'createdBy', 'postedBy']);
 
         return view('supplier-payments.show', compact('supplierPayment'));
+    }
+
+    /**
+     * Show the form for editing the payment
+     */
+    public function edit(SupplierPayment $supplierPayment)
+    {
+        if ($supplierPayment->status !== 'draft') {
+            return redirect()
+                ->route('supplier-payments.show', $supplierPayment)
+                ->with('error', 'Only draft payments can be edited');
+        }
+
+        $supplierPayment->load(['supplier', 'grnAllocations.grn']);
+
+        // Get unpaid GRNs for this supplier
+        $unpaidGrns = $this->paymentService->getUnpaidGrns($supplierPayment->supplier_id);
+
+        return view('supplier-payments.edit', [
+            'payment' => $supplierPayment,
+            'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'bankAccounts' => BankAccount::where('is_active', true)->orderBy('account_name')->get(),
+            'unpaidGrns' => $unpaidGrns,
+        ]);
+    }
+
+    /**
+     * Update the payment
+     */
+    public function update(Request $request, SupplierPayment $supplierPayment)
+    {
+        if ($supplierPayment->status !== 'draft') {
+            return back()->with('error', 'Only draft payments can be updated');
+        }
+
+        // Filter out empty allocations
+        $allocations = array_filter($request->grn_allocations ?? [], function ($allocation) {
+            return !empty($allocation['grn_id']) && isset($allocation['amount']) && $allocation['amount'] > 0;
+        });
+
+        $validated = $request->validate([
+            'payment_date' => 'required|date',
+            'supplier_id' => 'required|exists:suppliers,id',
+            'payment_method' => 'required|in:cash,cheque,bank_transfer,online',
+            'bank_account_id' => 'nullable|exists:bank_accounts,id',
+            'reference_number' => 'nullable|string|max:100',
+            'description' => 'nullable|string',
+            'grn_allocations' => 'required|array|min:1',
+            'grn_allocations.*.grn_id' => 'required|exists:goods_receipt_notes,id',
+            'grn_allocations.*.amount' => 'required|numeric|min:0.01',
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Calculate total amount
+            $totalAmount = collect($allocations)->sum('amount');
+
+            // Update payment
+            $supplierPayment->update([
+                'payment_date' => $validated['payment_date'],
+                'supplier_id' => $validated['supplier_id'],
+                'payment_method' => $validated['payment_method'],
+                'bank_account_id' => $validated['bank_account_id'],
+                'reference_number' => $validated['reference_number'],
+                'description' => $validated['description'],
+                'amount' => $totalAmount,
+            ]);
+
+            // Delete existing allocations and create new ones
+            $supplierPayment->grnAllocations()->delete();
+
+            foreach ($allocations as $allocation) {
+                $supplierPayment->grnAllocations()->create([
+                    'grn_id' => $allocation['grn_id'],
+                    'allocated_amount' => $allocation['amount'],
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()
+                ->route('supplier-payments.show', $supplierPayment)
+                ->with('success', "Payment {$supplierPayment->payment_number} updated successfully");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->withInput()->with('error', 'Failed to update payment: ' . $e->getMessage());
+        }
     }
 
     /**

@@ -424,9 +424,11 @@ class GoodsReceiptNoteController extends Controller
             return \DB::transaction(function () use ($grn) {
                 // Generate payment number with lock to prevent duplicates
                 $year = now()->year;
-                $lastPayment = \App\Models\SupplierPayment::whereYear('created_at', $year)
+                $lastPayment = \App\Models\SupplierPayment::withTrashed()
+                    ->whereYear('created_at', $year)
+                    ->where('payment_number', 'LIKE', "PAY-{$year}-%")
                     ->lockForUpdate()
-                    ->orderBy('id', 'desc')
+                    ->orderByRaw("CAST(SUBSTRING(payment_number FROM '[0-9]+\$') AS INTEGER) DESC")
                     ->first();
 
                 $sequence = $lastPayment ? ((int) substr($lastPayment->payment_number, -6)) + 1 : 1;

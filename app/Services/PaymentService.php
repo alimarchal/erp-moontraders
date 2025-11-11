@@ -188,39 +188,29 @@ class PaymentService
 
     /**
      * Get unpaid GRNs for a supplier with payment status
+     * Compatible with MySQL/MariaDB and PostgreSQL
      */
     public function getUnpaidGrns(int $supplierId): array
     {
         $grns = DB::table('goods_receipt_notes as grn')
+            ->leftJoin(DB::raw('(
+                SELECT allocations.grn_id, SUM(allocations.allocated_amount) as total_paid
+                FROM payment_grn_allocations allocations
+                INNER JOIN supplier_payments sp ON allocations.supplier_payment_id = sp.id
+                WHERE sp.status = ' . DB::connection()->getPdo()->quote('posted') . '
+                GROUP BY allocations.grn_id
+            ) as payments'), 'grn.id', '=', 'payments.grn_id')
             ->select([
                 'grn.id',
                 'grn.grn_number',
                 'grn.receipt_date',
                 'grn.grand_total',
-                DB::raw('COALESCE((
-                    SELECT SUM(allocations.allocated_amount) 
-                    FROM payment_grn_allocations allocations
-                    INNER JOIN supplier_payments sp ON allocations.supplier_payment_id = sp.id
-                    WHERE allocations.grn_id = grn.id 
-                    AND sp.status = \'posted\'
-                ), 0) as paid_amount'),
-                DB::raw('grn.grand_total - COALESCE((
-                    SELECT SUM(allocations.allocated_amount) 
-                    FROM payment_grn_allocations allocations
-                    INNER JOIN supplier_payments sp ON allocations.supplier_payment_id = sp.id
-                    WHERE allocations.grn_id = grn.id 
-                    AND sp.status = \'posted\'
-                ), 0) as balance'),
+                DB::raw('COALESCE(payments.total_paid, 0) as paid_amount'),
+                DB::raw('grn.grand_total - COALESCE(payments.total_paid, 0) as balance'),
             ])
             ->where('grn.supplier_id', $supplierId)
             ->where('grn.status', 'posted')
-            ->havingRaw('grn.grand_total - COALESCE((
-                SELECT SUM(allocations.allocated_amount) 
-                FROM payment_grn_allocations allocations
-                INNER JOIN supplier_payments sp ON allocations.supplier_payment_id = sp.id
-                WHERE allocations.grn_id = grn.id 
-                AND sp.status = \'posted\'
-            ), 0) > 0')
+            ->whereRaw('grn.grand_total - COALESCE(payments.total_paid, 0) > 0')
             ->orderBy('grn.receipt_date')
             ->get()
             ->toArray();

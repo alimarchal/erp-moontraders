@@ -111,6 +111,9 @@ class InventoryService
     protected function createGrnJournalEntry(GoodsReceiptNote $grn)
     {
         try {
+            // Load supplier relationship if not already loaded
+            $grn->loadMissing('supplier');
+
             // Find the Inventory and Accounts Payable accounts from Chart of Accounts
             $inventoryAccount = ChartOfAccount::where('account_code', '1161')->first();
             $apAccount = ChartOfAccount::where('account_code', '2111')->first();
@@ -137,7 +140,7 @@ class InventoryService
             $journalEntryData = [
                 'entry_date' => Carbon::parse($grn->receipt_date)->toDateString(),
                 'reference' => $grn->supplier_invoice_number ?? $grn->grn_number,
-                'description' => "GRN #{$grn->grn_number} - Goods received from {$grn->supplier->name}",
+                'description' => "GRN #{$grn->grn_number} - Goods received from {$grn->supplier->supplier_name}",
                 'reference_type' => 'App\Models\GoodsReceiptNote',
                 'reference_id' => $grn->id,
                 'lines' => [
@@ -152,7 +155,7 @@ class InventoryService
                         'account_id' => $apAccount->id,
                         'debit' => 0,
                         'credit' => $totalAmount,
-                        'description' => "Amount payable to {$grn->supplier->name}",
+                        'description' => "Amount payable to {$grn->supplier->supplier_name}",
                         'cost_center_id' => 1,
                     ],
                 ],
@@ -185,6 +188,9 @@ class InventoryService
     protected function createGrnReversingJournalEntry(GoodsReceiptNote $grn)
     {
         try {
+            // Load supplier relationship if not already loaded
+            $grn->loadMissing('supplier');
+
             // Find the Inventory and Accounts Payable accounts from Chart of Accounts
             $inventoryAccount = ChartOfAccount::where('account_code', '1161')->first();
             $apAccount = ChartOfAccount::where('account_code', '2111')->first();
@@ -204,7 +210,7 @@ class InventoryService
 
             // Build detailed description
             $userName = auth()->user()->name ?? 'System';
-            $description = "REVERSAL: GRN {$grn->grn_number} - Goods returned to {$grn->supplier->name} (Password confirmed by: {$userName})";
+            $description = "REVERSAL: GRN {$grn->grn_number} - Goods returned to {$grn->supplier->supplier_name} (Password confirmed by: {$userName})";
             $itemCount = $grn->items->count();
             $itemsText = $itemCount === 1 ? '1 item' : "{$itemCount} items";
 
@@ -220,7 +226,7 @@ class InventoryService
                         'account_id' => $apAccount->id,
                         'debit' => $totalAmount,
                         'credit' => 0,
-                        'description' => "Reversal - Liability to {$grn->supplier->name} reduced ({$itemsText})",
+                        'description' => "Reversal - Liability to {$grn->supplier->supplier_name} reduced ({$itemsText})",
                         'cost_center_id' => 1,
                     ],
                     [

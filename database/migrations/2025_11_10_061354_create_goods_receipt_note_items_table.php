@@ -44,6 +44,7 @@ return new class extends Migration {
             $table->decimal('promotional_discount_percent', 5, 2)->nullable();
             $table->date('must_sell_before')->nullable()->comment('Supplier condition');
             $table->integer('priority_order')->default(99)->comment('1=Urgent, 99=Normal FIFO');
+            $table->enum('selling_strategy', ['fifo', 'lifo', 'priority', 'expiry_first'])->default('fifo');
 
             // Quality Control
             $table->enum('quality_status', ['pending', 'approved', 'rejected'])->default('approved');

@@ -9,7 +9,9 @@ use App\Models\StockLedgerEntry;
 use App\Models\StockValuationLayer;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
+use App\Models\ChartOfAccount;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class InventoryService
@@ -46,7 +48,8 @@ class InventoryService
                     'promotional_selling_price' => $item->promotional_price,
                     'promotional_discount_percent' => $item->promotional_discount_percent,
                     'must_sell_before' => $item->must_sell_before,
-                    'priority_order' => $item->priority_order,
+                    'priority_order' => $item->priority_order ?? 99,
+                    'selling_strategy' => $item->selling_strategy ?? 'fifo',
                     'unit_cost' => $item->unit_cost,
                     'status' => 'active',
                 ]);
@@ -63,7 +66,7 @@ class InventoryService
                     'uom_id' => $item->uom_id,
                     'unit_cost' => $item->unit_cost,
                     'total_value' => $item->total_cost,
-                    'created_by' => auth()->id(),
+                    'created_by' => auth()->id() ?? 1,
                 ]);
 
                 $this->createStockLedgerEntry($stockMovement, $item);
@@ -73,16 +76,20 @@ class InventoryService
                 $this->updateCurrentStock($item->product_id, $grn->warehouse_id, $stockBatch->id, $item);
             }
 
+            // Create Accounting Journal Entry
+            $journalEntry = $this->createGrnJournalEntry($grn);
+
             $grn->update([
                 'status' => 'posted',
                 'posted_at' => now(),
+                'journal_entry_id' => $journalEntry ? $journalEntry->id : null,
             ]);
 
             DB::commit();
 
             return [
                 'success' => true,
-                'message' => "GRN {$grn->grn_number} posted successfully to inventory",
+                'message' => "GRN {$grn->grn_number} posted successfully to inventory" . ($journalEntry ? " and accounting" : ""),
                 'data' => $grn->fresh(),
             ];
 
@@ -93,6 +100,79 @@ class InventoryService
                 'message' => 'Failed to post GRN: ' . $e->getMessage(),
                 'data' => null,
             ];
+        }
+    }
+
+    /**
+     * Create Journal Entry for GRN posting
+     * Dr. Inventory (Asset) - Account 1161 Stock In Hand
+     * Cr. Accounts Payable (Liability) - Account 2111 Creditors
+     */
+    protected function createGrnJournalEntry(GoodsReceiptNote $grn)
+    {
+        try {
+            // Find the Inventory and Accounts Payable accounts from Chart of Accounts
+            $inventoryAccount = ChartOfAccount::where('account_code', '1161')->first();
+            $apAccount = ChartOfAccount::where('account_code', '2111')->first();
+
+            if (!$inventoryAccount) {
+                Log::warning('Inventory account (1161 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: ' . $grn->id);
+                return null;
+            }
+
+            if (!$apAccount) {
+                Log::warning('Accounts Payable account (2111 - Creditors) not found in Chart of Accounts. Skipping journal entry for GRN: ' . $grn->id);
+                return null;
+            }
+
+            // Calculate total amount from GRN items
+            $totalAmount = $grn->items->sum('total_cost');
+
+            if ($totalAmount <= 0) {
+                Log::warning('GRN total amount is zero or negative. Skipping journal entry for GRN: ' . $grn->id);
+                return null;
+            }
+
+            // Prepare journal entry data
+            $journalEntryData = [
+                'entry_date' => Carbon::parse($grn->receipt_date)->toDateString(),
+                'description' => "GRN #{$grn->grn_number} - Goods received from {$grn->supplier->name}",
+                'reference_type' => 'App\Models\GoodsReceiptNote',
+                'reference_id' => $grn->id,
+                'lines' => [
+                    [
+                        'account_id' => $inventoryAccount->id,
+                        'debit' => $totalAmount,
+                        'credit' => 0,
+                        'description' => "Inventory received - {$grn->items->count()} item(s)",
+                        'cost_center_id' => 1,
+                    ],
+                    [
+                        'account_id' => $apAccount->id,
+                        'debit' => 0,
+                        'credit' => $totalAmount,
+                        'description' => "Amount payable to {$grn->supplier->name}",
+                        'cost_center_id' => 1,
+                    ],
+                ],
+                'auto_post' => true, // Automatically post the entry
+            ];
+
+            // Create journal entry using AccountingService
+            $accountingService = app(AccountingService::class);
+            $result = $accountingService->createJournalEntry($journalEntryData);
+
+            if ($result['success']) {
+                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number}");
+                return $result['data'];
+            } else {
+                Log::error("Failed to create journal entry for GRN {$grn->grn_number}: " . $result['message']);
+                return null;
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Exception creating journal entry for GRN {$grn->id}: " . $e->getMessage());
+            return null;
         }
     }
 

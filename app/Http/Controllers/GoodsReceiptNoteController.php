@@ -11,6 +11,7 @@ use App\Models\PromotionalCampaign;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -55,13 +56,26 @@ class GoodsReceiptNoteController extends Controller
         return view('goods-receipt-notes.create', [
             'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
-            'products' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name', 'unit_price', 'supplier_id']),
+            // Don't load all products - will be loaded via AJAX when supplier is selected
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
             'campaigns' => PromotionalCampaign::where('is_active', true)
                 ->whereDate('end_date', '>=', now())
                 ->orderBy('campaign_name')
                 ->get(['id', 'campaign_code', 'campaign_name']),
         ]);
+    }
+
+    /**
+     * Get products for a specific supplier (AJAX endpoint)
+     */
+    public function getProductsBySupplier(Request $request, $supplierId)
+    {
+        $products = Product::where('is_active', true)
+            ->where('supplier_id', $supplierId)
+            ->orderBy('product_name')
+            ->get(['id', 'product_code', 'product_name', 'unit_price', 'supplier_id']);
+
+        return response()->json($products);
     }
 
     /**
@@ -470,8 +484,24 @@ class GoodsReceiptNoteController extends Controller
     /**
      * Reverse a posted GRN
      */
-    public function reverse(GoodsReceiptNote $goodsReceiptNote)
+    public function reverse(Request $request, GoodsReceiptNote $goodsReceiptNote)
     {
+        // Validate password
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        // Verify user's password
+        if (!Hash::check($request->password, auth()->user()->password)) {
+            Log::warning("Failed GRN reversal attempt for {$goodsReceiptNote->grn_number} - Invalid password by user: " . auth()->user()->name);
+            return redirect()
+                ->back()
+                ->with('error', 'Invalid password. GRN reversal requires your password confirmation.');
+        }
+
+        // Log password confirmation
+        Log::info("GRN reversal password confirmed for {$goodsReceiptNote->grn_number} by user: " . auth()->user()->name . " (ID: " . auth()->id() . ")");
+
         // Check if GRN has any posted payments
         $hasPostedPayments = $goodsReceiptNote->payments()
             ->where('status', 'posted')

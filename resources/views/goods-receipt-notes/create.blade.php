@@ -480,7 +480,7 @@
 
     @push('scripts')
     <script>
-        const allProducts = @json($products);
+        let allProducts = []; // Will be loaded via AJAX when supplier is selected
         const oldItems = @json(old('items', []));
         const defaultUomId = 24; // Piece UOM
 
@@ -624,9 +624,14 @@
             }
         }
 
-        function initializeProductSelect2(index) {
+        async function initializeProductSelect2(index) {
             const supplierId = $('#supplier_id').val();
             const $select = $(`#product_${index}`);
+
+            // If supplier selected and products not loaded, load them first
+            if (supplierId && allProducts.length === 0) {
+                await loadProductsBySupplier(supplierId);
+            }
 
             $select.select2({
                 placeholder: 'Select Product',
@@ -650,7 +655,7 @@
 
             $select.select2({
                 placeholder: 'Select UOM',
-                allowClear: true,
+                allowClear: false,
                 width: '100%'
             });
 
@@ -662,20 +667,41 @@
         }
 
         function getFilteredProducts(supplierId) {
-            let filteredProducts = allProducts;
-
-            if (supplierId) {
-                filteredProducts = allProducts.filter(p => p.supplier_id == supplierId);
-            }
-
-            return filteredProducts.map(p => ({
+            // Products are already filtered by supplier from AJAX call
+            return allProducts.map(p => ({
                 id: p.id,
                 text: `${p.product_code} - ${p.product_name}`
             }));
         }
 
-        function refreshAllProductSelects() {
+        async function loadProductsBySupplier(supplierId) {
+            if (!supplierId) {
+                allProducts = [];
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/suppliers/${supplierId}/products`);
+                if (!response.ok) {
+                    throw new Error('Failed to load products');
+                }
+                allProducts = await response.json();
+            } catch (error) {
+                console.error('Error loading products:', error);
+                alert('Failed to load products. Please try again.');
+                allProducts = [];
+            }
+        }
+
+        async function refreshAllProductSelects() {
             const supplierId = $('#supplier_id').val();
+            
+            // Show loading indicator
+            $('.product-select').prop('disabled', true);
+            
+            // Load products from server
+            await loadProductsBySupplier(supplierId);
+            
             const productData = getFilteredProducts(supplierId);
 
             $('.product-select').each(function(index) {
@@ -714,6 +740,9 @@
                     this.dispatchEvent(event);
                 });
             });
+            
+            // Re-enable product selects after loading
+            $('.product-select').prop('disabled', false);
         }
 
         // Wait for Select2 to be fully loaded

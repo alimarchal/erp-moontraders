@@ -177,6 +177,130 @@ class InventoryService
     }
 
     /**
+     * Create Reversing Journal Entry for GRN reversal
+     * Dr. Accounts Payable (Liability) - Account 2111 Creditors
+     * Cr. Inventory (Asset) - Account 1161 Stock In Hand
+     */
+    protected function createGrnReversingJournalEntry(GoodsReceiptNote $grn)
+    {
+        try {
+            // Find the Inventory and Accounts Payable accounts from Chart of Accounts
+            $inventoryAccount = ChartOfAccount::where('account_code', '1161')->first();
+            $apAccount = ChartOfAccount::where('account_code', '2111')->first();
+
+            if (!$inventoryAccount || !$apAccount) {
+                Log::warning('Required accounts not found in Chart of Accounts. Skipping reversing journal entry for GRN: ' . $grn->id);
+                return null;
+            }
+
+            // Calculate total amount from GRN items
+            $totalAmount = $grn->items->sum('total_cost');
+
+            if ($totalAmount <= 0) {
+                Log::warning('GRN total amount is zero or negative. Skipping reversing journal entry for GRN: ' . $grn->id);
+                return null;
+            }
+
+            // Build detailed description
+            $userName = auth()->user()->name ?? 'System';
+            $description = "REVERSAL: GRN {$grn->grn_number} - Goods returned to {$grn->supplier->name} (Password confirmed by: {$userName})";
+            $itemCount = $grn->items->count();
+            $itemsText = $itemCount === 1 ? '1 item' : "{$itemCount} items";
+
+            // Prepare reversing journal entry data (opposite of original entry)
+            $journalEntryData = [
+                'entry_date' => now()->toDateString(),
+                'description' => $description,
+                'reference_type' => 'App\Models\GoodsReceiptNote',
+                'reference_id' => $grn->id,
+                'lines' => [
+                    [
+                        'account_id' => $apAccount->id,
+                        'debit' => $totalAmount,
+                        'credit' => 0,
+                        'description' => "Reversal - Liability to {$grn->supplier->name} reduced ({$itemsText})",
+                        'cost_center_id' => 1,
+                    ],
+                    [
+                        'account_id' => $inventoryAccount->id,
+                        'debit' => 0,
+                        'credit' => $totalAmount,
+                        'description' => "Reversal - Inventory returned to supplier ({$itemsText})",
+                        'cost_center_id' => 1,
+                    ],
+                ],
+                'auto_post' => true, // Automatically post the entry
+            ];
+
+            // Create journal entry using AccountingService
+            $accountingService = app(AccountingService::class);
+            $result = $accountingService->createJournalEntry($journalEntryData);
+
+            if ($result['success']) {
+                Log::info("Reversing journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number}");
+                return $result['data'];
+            } else {
+                Log::error("Failed to create reversing journal entry for GRN {$grn->grn_number}: " . $result['message']);
+                return null;
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Exception creating reversing journal entry for GRN {$grn->id}: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Cancel or delete draft payments associated with a GRN
+     */
+    protected function cancelDraftPaymentsForGrn(GoodsReceiptNote $grn)
+    {
+        try {
+            // Find all draft payments associated with this GRN
+            $draftPayments = $grn->payments()
+                ->where('status', 'draft')
+                ->get();
+
+            if ($draftPayments->isEmpty()) {
+                Log::info("No draft payments found for GRN {$grn->grn_number}");
+                return;
+            }
+
+            foreach ($draftPayments as $payment) {
+                // Check if this payment is ONLY for this GRN or has other GRNs
+                $otherGrnsCount = $payment->grns()
+                    ->where('goods_receipt_notes.id', '!=', $grn->id)
+                    ->where('goods_receipt_notes.status', '!=', 'reversed')
+                    ->count();
+
+                if ($otherGrnsCount > 0) {
+                    // Payment has other non-reversed GRNs, just remove this GRN's allocation
+                    $payment->grnAllocations()
+                        ->where('grn_id', $grn->id)
+                        ->delete();
+
+                    // Recalculate payment amount
+                    $remainingAmount = $payment->grnAllocations()->sum('amount_allocated');
+                    $payment->amount = $remainingAmount;
+                    $payment->save();
+
+                    Log::info("Removed GRN {$grn->grn_number} allocation from payment {$payment->payment_number}");
+                } else {
+                    // Payment is only for this GRN, delete the entire payment
+                    $payment->grnAllocations()->delete();
+                    $payment->delete();
+
+                    Log::info("Deleted draft payment {$payment->payment_number} for reversed GRN {$grn->grn_number}");
+                }
+            }
+
+        } catch (\Exception $e) {
+            Log::error("Error cancelling draft payments for GRN {$grn->id}: " . $e->getMessage());
+            // Don't throw exception, just log it - reversal should still succeed
+        }
+    }
+
+    /**
      * Generate unique batch code
      */
     private function generateBatchCode(): string
@@ -439,6 +563,12 @@ class InventoryService
             $grn->reversed_at = now();
             $grn->reversed_by = auth()->id();
             $grn->save();
+
+            // Cancel or delete any associated draft payments
+            $this->cancelDraftPaymentsForGrn($grn);
+
+            // Create reversing journal entry for GL
+            $this->createGrnReversingJournalEntry($grn);
 
             DB::commit();
 

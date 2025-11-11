@@ -28,10 +28,10 @@
             $hasPostedPayments = $grn->payments()->where('status', 'posted')->exists();
             @endphp
             @if (!$hasPostedPayments)
-            <form action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
-                onsubmit="return confirm('Are you sure you want to REVERSE this GRN? All stock entries will be reversed. This action cannot be undone.');"
-                class="inline-block">
+            <form id="reverseGrnForm" action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
+                onsubmit="return confirmReverseGrn();" class="inline-block">
                 @csrf
+                <input type="hidden" id="password" name="password" value="">
                 <button type="submit"
                     class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
                     <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -341,4 +341,24 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function confirmReverseGrn() {
+            const confirmed = confirm('Are you sure you want to REVERSE this GRN? All stock entries and draft payments will be reversed. This action cannot be undone.');
+            
+            if (!confirmed) {
+                return false;
+            }
+
+            const password = prompt('Enter your password to confirm GRN reversal:');
+            
+            if (!password) {
+                alert('Password is required to reverse GRN.');
+                return false;
+            }
+
+            document.getElementById('password').value = password;
+            return true;
+        }
+    </script>
 </x-app-layout>

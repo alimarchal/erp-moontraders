@@ -258,8 +258,8 @@
                 {{ $entry->reference ?? '—' }}
             </td>
             <td class="py-1 px-2">
-                <div class="font-semibold">{{ $entry->journal_description ?? '—' }}</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">
+                <div class="font-semibold break-words max-w-xs">{{ $entry->journal_description ?? '—' }}</div>
+                <div class="text-xs text-gray-600 dark:text-gray-400 break-words max-w-xs">
                     <abbr class="text-red-700" title="Line Description">LD:</abbr> {{ $entry->line_description ??
                     $entry->journal_description ?? '—' }}
                 </div>

@@ -63,6 +63,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         ->name('goods-receipt-notes.post');
     Route::post('goods-receipt-notes/{goodsReceiptNote}/reverse', [GoodsReceiptNoteController::class, 'reverse'])
         ->name('goods-receipt-notes.reverse');
+    Route::get('api/suppliers/{supplier}/products', [GoodsReceiptNoteController::class, 'getProductsBySupplier'])
+        ->name('api.suppliers.products');
 
     Route::resource('promotional-campaigns', PromotionalCampaignController::class);
 

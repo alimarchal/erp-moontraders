@@ -35,7 +35,7 @@ return new class extends Migration {
             $table->decimal('grand_total', 15, 2)->default(0)->comment('total_amount + tax + freight + other');
 
             // Status & Workflow
-            $table->enum('status', ['draft', 'received', 'posted', 'cancelled'])->default('draft')->index();
+            $table->enum('status', ['draft', 'received', 'posted', 'cancelled', 'reversed'])->default('draft')->index();
             $table->timestamp('reversed_at')->nullable();
             $table->foreignId('reversed_by')->nullable()->constrained('users');
             $table->foreignId('received_by')->constrained('users')->comment('User who created GRN');

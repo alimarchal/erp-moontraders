@@ -81,6 +81,14 @@ class SupplierPaymentController extends Controller
      */
     public function store(Request $request)
     {
+        // Filter out empty allocations before validation
+        if ($request->has('grn_allocations')) {
+            $allocations = array_filter($request->grn_allocations, function ($allocation) {
+                return !empty($allocation['grn_id']) && isset($allocation['amount']) && $allocation['amount'] > 0;
+            });
+            $request->merge(['grn_allocations' => array_values($allocations)]);
+        }
+
         $validated = $request->validate([
             'supplier_id' => 'required|exists:suppliers,id',
             'payment_date' => 'required|date',
@@ -91,7 +99,7 @@ class SupplierPaymentController extends Controller
             'description' => 'nullable|string',
             'grn_allocations' => 'nullable|array',
             'grn_allocations.*.grn_id' => 'required|exists:goods_receipt_notes,id',
-            'grn_allocations.*.amount' => 'required|numeric|min:0',
+            'grn_allocations.*.amount' => 'required|numeric|min:0.01',
         ]);
 
         try {

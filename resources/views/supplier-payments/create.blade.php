@@ -164,8 +164,11 @@
                                                 <td class="px-3 py-2 text-right text-sm font-semibold text-red-600"
                                                     x-text="'₨ ' + parseFloat(grn.balance).toFixed(2)"></td>
                                                 <td class="px-3 py-2">
+                                                    <input type="hidden"
+                                                        :name="'grn_allocations[' + index + '][grn_id]'"
+                                                        x-model="grn.id">
                                                     <input type="number" step="0.01" x-model="grn.allocate_amount"
-                                                        :name="'grn_allocations[' + grn.id + ']'"
+                                                        :name="'grn_allocations[' + index + '][amount]'"
                                                         @input="calculateRemaining()" :max="grn.balance"
                                                         :disabled="!grn.selected"
                                                         class="w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-right text-sm">
@@ -234,17 +237,55 @@
                 remainingAmount: 0,
 
                 init() {
+                    // Restore old GRN allocations if validation failed
+                    @if(old('grn_allocations'))
+                    const oldAllocations = @json(old('grn_allocations'));
+                    this.unpaidGrns.forEach((grn, index) => {
+                        const oldAllocation = oldAllocations.find(a => a.grn_id == grn.id);
+                        if (oldAllocation && parseFloat(oldAllocation.amount) > 0) {
+                            grn.selected = true;
+                            grn.allocate_amount = parseFloat(oldAllocation.amount);
+                        } else {
+                            grn.selected = false;
+                            grn.allocate_amount = 0;
+                        }
+                    });
+                    @else
+                    // Initialize GRN allocations
+                    this.unpaidGrns.forEach(grn => {
+                        grn.selected = false;
+                        grn.allocate_amount = 0;
+                    });
+                    @endif
+
                     this.calculateRemaining();
+                    
                     // Initialize Select2
                     $('.select2').select2({
                         theme: 'classic',
                         width: '100%'
                     });
+
+                    // Set initial values for Select2 after initialization
+                    if (this.formData.supplier_id) {
+                        $('#supplier_id').val(this.formData.supplier_id).trigger('change.select2');
+                    }
+                    if (this.formData.payment_method) {
+                        $('#payment_method').val(this.formData.payment_method).trigger('change');
+                    }
+                    @if(old('bank_account_id'))
+                    $('#bank_account_id').val('{{ old('bank_account_id') }}').trigger('change.select2');
+                    @endif
                     
                     // Sync Alpine with Select2 changes
                     $('#supplier_id').on('change', (e) => {
                         this.formData.supplier_id = e.target.value;
                         this.loadUnpaidGrns();
+                    });
+
+                    // Sync payment method
+                    $('#payment_method').on('change', (e) => {
+                        this.formData.payment_method = e.target.value;
                     });
                 },
 

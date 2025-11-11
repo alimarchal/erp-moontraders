@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\SupplierPayment;
 use App\Models\ChartOfAccount;
 use App\Models\PaymentGrnAllocation;
+use App\Models\GoodsReceiptNote;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -167,16 +168,17 @@ class PaymentService
     /**
      * Get supplier outstanding balance (total unpaid amount)
      */
+    /**
+     * Get supplier outstanding balance (total unpaid amount)
+     */
     public function getSupplierBalance(int $supplierId): float
     {
         // Get total from all posted GRNs
-        $totalPurchases = DB::table('goods_receipt_notes as grn')
-            ->join('goods_receipt_note_items as items', 'grn.id', '=', 'items.grn_id')
-            ->where('grn.supplier_id', $supplierId)
-            ->where('grn.status', 'posted')
-            ->sum('items.total_cost');
+        $totalPurchases = GoodsReceiptNote::where('supplier_id', $supplierId)
+            ->where('status', 'posted')
+            ->sum('grand_total');
 
-        // Get total payments
+        // Get total posted payments
         $totalPayments = SupplierPayment::where('supplier_id', $supplierId)
             ->where('status', 'posted')
             ->sum('amount');
@@ -185,7 +187,7 @@ class PaymentService
     }
 
     /**
-     * Get unpaid GRNs for a supplier
+     * Get unpaid GRNs for a supplier with payment status
      */
     public function getUnpaidGrns(int $supplierId): array
     {
@@ -194,16 +196,31 @@ class PaymentService
                 'grn.id',
                 'grn.grn_number',
                 'grn.receipt_date',
-                DB::raw('SUM(items.total_cost) as total_amount'),
-                DB::raw('COALESCE(SUM(allocations.allocated_amount), 0) as paid_amount'),
-                DB::raw('SUM(items.total_cost) - COALESCE(SUM(allocations.allocated_amount), 0) as balance'),
+                'grn.grand_total',
+                DB::raw('COALESCE((
+                    SELECT SUM(allocations.allocated_amount) 
+                    FROM payment_grn_allocations allocations
+                    INNER JOIN supplier_payments sp ON allocations.supplier_payment_id = sp.id
+                    WHERE allocations.grn_id = grn.id 
+                    AND sp.status = \'posted\'
+                ), 0) as paid_amount'),
+                DB::raw('grn.grand_total - COALESCE((
+                    SELECT SUM(allocations.allocated_amount) 
+                    FROM payment_grn_allocations allocations
+                    INNER JOIN supplier_payments sp ON allocations.supplier_payment_id = sp.id
+                    WHERE allocations.grn_id = grn.id 
+                    AND sp.status = \'posted\'
+                ), 0) as balance'),
             ])
-            ->join('goods_receipt_note_items as items', 'grn.id', '=', 'items.grn_id')
-            ->leftJoin('payment_grn_allocations as allocations', 'grn.id', '=', 'allocations.grn_id')
             ->where('grn.supplier_id', $supplierId)
             ->where('grn.status', 'posted')
-            ->groupBy('grn.id', 'grn.grn_number', 'grn.receipt_date')
-            ->havingRaw('SUM(items.total_cost) - COALESCE(SUM(allocations.allocated_amount), 0) > 0')
+            ->havingRaw('grn.grand_total - COALESCE((
+                SELECT SUM(allocations.allocated_amount) 
+                FROM payment_grn_allocations allocations
+                INNER JOIN supplier_payments sp ON allocations.supplier_payment_id = sp.id
+                WHERE allocations.grn_id = grn.id 
+                AND sp.status = \'posted\'
+            ), 0) > 0')
             ->orderBy('grn.receipt_date')
             ->get()
             ->toArray();

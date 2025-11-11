@@ -54,7 +54,8 @@
                         <div>
                             <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">Payment Number
                             </h3>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $supplierPayment->payment_number }}
+                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{
+                                $supplierPayment->payment_number }}
                             </p>
                         </div>
                         <div>
@@ -104,19 +105,22 @@
                         <div>
                             <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Reference
                                 Number</h3>
-                            <p class="text-base text-gray-900 dark:text-gray-100">{{ $supplierPayment->reference_number }}</p>
+                            <p class="text-base text-gray-900 dark:text-gray-100">{{ $supplierPayment->reference_number
+                                }}</p>
                         </div>
                         @endif
                         <div>
                             <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Amount
                             </h3>
-                            <p class="text-2xl font-bold text-emerald-600">₨ {{ number_format($supplierPayment->amount, 2) }}
+                            <p class="text-2xl font-bold text-emerald-600">₨ {{ number_format($supplierPayment->amount,
+                                2) }}
                             </p>
                         </div>
                         <div>
                             <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Created By
                             </h3>
-                            <p class="text-base text-gray-900 dark:text-gray-100">{{ $supplierPayment->createdBy->name ?? 'N/A'
+                            <p class="text-base text-gray-900 dark:text-gray-100">{{ $supplierPayment->createdBy->name
+                                ?? 'N/A'
                                 }}
                             </p>
                             <p class="text-xs text-gray-500">{{ $supplierPayment->created_at->format('d M Y H:i') }}</p>
@@ -125,7 +129,8 @@
                         <div>
                             <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Posted By
                             </h3>
-                            <p class="text-base text-gray-900 dark:text-gray-100">{{ $supplierPayment->postedBy->name ?? 'N/A'
+                            <p class="text-base text-gray-900 dark:text-gray-100">{{ $supplierPayment->postedBy->name ??
+                                'N/A'
                                 }}
                             </p>
                             <p class="text-xs text-gray-500">{{ $supplierPayment->posted_at->format('d M Y H:i') }}</p>
@@ -148,47 +153,50 @@
 
                     @if ($supplierPayment->grnAllocations->count() > 0)
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <table class="w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-900">
-                                <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">GRN
-                                        Number</th>
-                                    <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">GRN
-                                        Date
-                                    </th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">GRN
-                                        Amount
-                                    </th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                                    <th
+                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        GRN Number</th>
+                                    <th
+                                        class="py-1 px-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        GRN Date</th>
+                                    <th
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        GRN Amount</th>
+                                    <th
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                         Allocated Amount</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody>
                                 @foreach ($supplierPayment->grnAllocations as $allocation)
-                                <tr>
-                                    <td class="px-3 py-2 text-sm">
+                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                                    <td class="py-1 px-2">
                                         <a href="{{ route('goods-receipt-notes.show', $allocation->grn_id) }}"
-                                            class="text-blue-600 hover:text-blue-800 font-semibold">
+                                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-semibold">
                                             {{ $allocation->grn->grn_number }}
                                         </a>
                                     </td>
-                                    <td class="px-3 py-2 text-center text-sm">
+                                    <td class="py-1 px-2 text-center">
                                         {{ \Carbon\Carbon::parse($allocation->grn->receipt_date)->format('d M Y') }}
                                     </td>
-                                    <td class="px-3 py-2 text-right text-sm">
+                                    <td class="py-1 px-2 text-right">
                                         ₨ {{ number_format($allocation->grn->grand_total, 2) }}
                                     </td>
-                                    <td class="px-3 py-2 text-right text-sm font-semibold">
+                                    <td class="py-1 px-2 text-right font-semibold">
                                         ₨ {{ number_format($allocation->allocated_amount, 2) }}
                                     </td>
                                 </tr>
                                 @endforeach
                             </tbody>
                             <tfoot class="bg-gray-50 dark:bg-gray-900">
-                                <tr>
-                                    <td colspan="3" class="px-3 py-2 text-right font-bold text-lg">Total Allocated:</td>
-                                    <td class="px-3 py-2 text-right font-bold text-lg">
-                                        ₨ {{ number_format($supplierPayment->grnAllocations->sum('allocated_amount'), 2) }}
+                                <tr class="border-t-2 border-gray-300 dark:border-gray-600">
+                                    <td colspan="3" class="py-1 px-2 text-right font-bold">Total Allocated:</td>
+                                    <td class="py-1 px-2 text-right font-bold">
+                                        ₨ {{ number_format($supplierPayment->grnAllocations->sum('allocated_amount'), 2)
+                                        }}
                                     </td>
                                 </tr>
                             </tfoot>
@@ -218,38 +226,43 @@
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                        <table class="w-full text-sm">
                             <thead class="bg-gray-50 dark:bg-gray-900">
-                                <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Account
-                                    </th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
+                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                                    <th
+                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        Account</th>
+                                    <th
+                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                                         Description</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Debit
-                                    </th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Credit
-                                    </th>
+                                    <th
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        Debit</th>
+                                    <th
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        Credit</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody>
                                 @foreach ($supplierPayment->journalEntry->details->sortBy('line_no') as $detail)
-                                <tr>
-                                    <td class="px-3 py-2 text-sm">
+                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                                    <td class="py-1 px-2">
                                         <div class="font-semibold text-gray-900 dark:text-gray-100">
                                             {{ $detail->account->account_code }}</div>
-                                        <div class="text-xs text-gray-500">{{ $detail->account->account_name }}</div>
+                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{
+                                            $detail->account->account_name }}</div>
                                     </td>
-                                    <td class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <td class="py-1 px-2 text-gray-700 dark:text-gray-300">
                                         {{ $detail->description }}
                                     </td>
-                                    <td class="px-3 py-2 text-right text-sm font-semibold">
+                                    <td class="py-1 px-2 text-right font-semibold">
                                         @if ($detail->debit > 0)
                                         ₨ {{ number_format($detail->debit, 2) }}
                                         @else
                                         —
                                         @endif
                                     </td>
-                                    <td class="px-3 py-2 text-right text-sm font-semibold">
+                                    <td class="py-1 px-2 text-right font-semibold">
                                         @if ($detail->credit > 0)
                                         ₨ {{ number_format($detail->credit, 2) }}
                                         @else
@@ -260,12 +273,12 @@
                                 @endforeach
                             </tbody>
                             <tfoot class="bg-gray-50 dark:bg-gray-900">
-                                <tr>
-                                    <td colspan="2" class="px-3 py-2 text-right font-semibold">Totals:</td>
-                                    <td class="px-3 py-2 text-right font-bold">
+                                <tr class="border-t-2 border-gray-300 dark:border-gray-600">
+                                    <td colspan="2" class="py-1 px-2 text-right font-semibold">Totals:</td>
+                                    <td class="py-1 px-2 text-right font-bold">
                                         ₨ {{ number_format($supplierPayment->journalEntry->details->sum('debit'), 2) }}
                                     </td>
-                                    <td class="px-3 py-2 text-right font-bold">
+                                    <td class="py-1 px-2 text-right font-bold">
                                         ₨ {{ number_format($supplierPayment->journalEntry->details->sum('credit'), 2) }}
                                     </td>
                                 </tr>

@@ -34,6 +34,7 @@ class GoodsReceiptNoteController extends Controller
                 AllowedFilter::exact('status'),
                 AllowedFilter::scope('receipt_date_from'),
                 AllowedFilter::scope('receipt_date_to'),
+                AllowedFilter::scope('payment_status'),
             ])
             ->defaultSort('-receipt_date')
             ->paginate(20)
@@ -401,14 +402,62 @@ class GoodsReceiptNoteController extends Controller
         $result = $inventoryService->postGrnToInventory($goodsReceiptNote);
 
         if ($result['success']) {
+            // Auto-create draft supplier payment
+            $this->createDraftPayment($goodsReceiptNote);
+
             return redirect()
                 ->route('goods-receipt-notes.show', $goodsReceiptNote->id)
-                ->with('status', $result['message']);
+                ->with('status', $result['message'] . ' A draft payment has been created for this GRN.');
         }
 
         return redirect()
             ->back()
             ->with('error', $result['message']);
+    }
+
+    /**
+     * Create draft payment for GRN
+     */
+    private function createDraftPayment(GoodsReceiptNote $grn)
+    {
+        try {
+            return \DB::transaction(function () use ($grn) {
+                // Generate payment number with lock to prevent duplicates
+                $year = now()->year;
+                $lastPayment = \App\Models\SupplierPayment::whereYear('created_at', $year)
+                    ->lockForUpdate()
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                $sequence = $lastPayment ? ((int) substr($lastPayment->payment_number, -6)) + 1 : 1;
+                $paymentNumber = sprintf('PAY-%d-%06d', $year, $sequence);
+
+                // Create draft payment
+                $payment = \App\Models\SupplierPayment::create([
+                    'payment_number' => $paymentNumber,
+                    'supplier_id' => $grn->supplier_id,
+                    'bank_account_id' => null,
+                    'payment_date' => now()->toDateString(),
+                    'payment_method' => 'bank_transfer',
+                    'reference_number' => 'Auto-generated for GRN: ' . $grn->grn_number,
+                    'amount' => $grn->grand_total,
+                    'description' => 'Auto-generated payment for GRN: ' . $grn->grn_number,
+                    'status' => 'draft',
+                    'created_by' => auth()->id(),
+                ]);
+
+                // Allocate to this GRN
+                $payment->grnAllocations()->create([
+                    'grn_id' => $grn->id,
+                    'allocated_amount' => $grn->grand_total,
+                ]);
+
+                return $payment;
+            });
+        } catch (\Exception $e) {
+            \Log::error('Failed to create auto payment: ' . $e->getMessage());
+            return null;
+        }
     }
 
     /**

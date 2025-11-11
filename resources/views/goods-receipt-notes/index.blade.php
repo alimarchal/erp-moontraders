@@ -60,6 +60,19 @@
             </div>
 
             <div>
+                <x-label for="filter_payment_status" value="Payment Status" />
+                <select id="filter_payment_status" name="filter[payment_status]"
+                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Payment Statuses</option>
+                    <option value="unpaid" {{ request('filter.payment_status')==='unpaid' ? 'selected' : '' }}>Unpaid
+                    </option>
+                    <option value="partial" {{ request('filter.payment_status')==='partial' ? 'selected' : '' }}>Partial
+                    </option>
+                    <option value="paid" {{ request('filter.payment_status')==='paid' ? 'selected' : '' }}>Paid</option>
+                </select>
+            </div>
+
+            <div>
                 <x-label for="filter_receipt_date_from" value="Receipt Date From" />
                 <x-input id="filter_receipt_date_from" name="filter[receipt_date_from]" type="date"
                     class="mt-1 block w-full" :value="request('filter.receipt_date_from')" />
@@ -81,6 +94,7 @@
             ['label' => 'Warehouse'],
             ['label' => 'Qty / Amount', 'align' => 'text-right'],
             ['label' => 'Status', 'align' => 'text-center'],
+            ['label' => 'Payment', 'align' => 'text-center'],
             ['label' => 'Actions', 'align' => 'text-center'],
         ]" emptyMessage="No goods receipt notes found." :emptyRoute="route('goods-receipt-notes.create')"
         emptyLinkText="Create a GRN">
@@ -124,6 +138,28 @@
                         {{ $grn->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                     {{ ucfirst($grn->status) }}
                 </span>
+            </td>
+            <td class="py-1 px-2 text-center">
+                @if ($grn->status === 'posted')
+                <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full 
+                        {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
+                        {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                        {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                    {{ ucfirst($grn->payment_status) }}
+                </span>
+                @if ($grn->payment_status !== 'unpaid')
+                <div class="text-xs text-gray-500 mt-0.5">
+                    ₨ {{ number_format($grn->total_paid, 2) }}
+                </div>
+                @endif
+                @if ($grn->payment_status !== 'paid')
+                <div class="text-xs text-red-600 font-semibold mt-0.5">
+                    Due: ₨ {{ number_format($grn->balance, 2) }}
+                </div>
+                @endif
+                @else
+                <span class="text-xs text-gray-400">N/A</span>
+                @endif
             </td>
             <td class="py-1 px-2 text-center">
                 <div class="flex justify-center space-x-2">

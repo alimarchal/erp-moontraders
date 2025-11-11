@@ -344,15 +344,15 @@
 
     <script>
         function confirmReverseGrn() {
-            const confirmed = confirm('Are you sure you want to REVERSE this GRN? All stock entries and draft payments will be reversed. This action cannot be undone.');
-            
-            if (!confirmed) {
+            if (!confirm('Are you sure you want to REVERSE this GRN? All stock entries and draft payments will be reversed. This action cannot be undone.')) {
                 return false;
             }
 
-            const password = prompt('Enter your password to confirm GRN reversal:');
+            // Use a simple password prompt (note: browser prompt doesn't support masking)
+            // For better security, user should ensure no one is watching their screen
+            const password = prompt('🔒 Enter your password to confirm GRN reversal:\n\n(Note: Ensure no one is watching your screen)');
             
-            if (!password) {
+            if (!password || password.trim() === '') {
                 alert('Password is required to reverse GRN.');
                 return false;
             }

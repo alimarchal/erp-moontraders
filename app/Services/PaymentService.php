@@ -131,6 +131,7 @@ class PaymentService
             // Prepare journal entry data
             $journalEntryData = [
                 'entry_date' => Carbon::parse($payment->payment_date)->toDateString(),
+                'reference' => $payment->reference_number ?? $payment->payment_number,
                 'description' => $description,
                 'reference_type' => 'App\Models\SupplierPayment',
                 'reference_id' => $payment->id,
@@ -336,6 +337,7 @@ class PaymentService
             // Prepare reversing journal entry data (opposite of original)
             $journalEntryData = [
                 'entry_date' => now()->toDateString(),
+                'reference' => $payment->reference_number ?? $payment->payment_number,
                 'description' => $description,
                 'reference_type' => 'App\Models\SupplierPayment',
                 'reference_id' => $payment->id,

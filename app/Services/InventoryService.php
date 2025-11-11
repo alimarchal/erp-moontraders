@@ -136,6 +136,7 @@ class InventoryService
             // Prepare journal entry data
             $journalEntryData = [
                 'entry_date' => Carbon::parse($grn->receipt_date)->toDateString(),
+                'reference' => $grn->supplier_invoice_number ?? $grn->grn_number,
                 'description' => "GRN #{$grn->grn_number} - Goods received from {$grn->supplier->name}",
                 'reference_type' => 'App\Models\GoodsReceiptNote',
                 'reference_id' => $grn->id,
@@ -210,6 +211,7 @@ class InventoryService
             // Prepare reversing journal entry data (opposite of original entry)
             $journalEntryData = [
                 'entry_date' => now()->toDateString(),
+                'reference' => $grn->supplier_invoice_number ?? $grn->grn_number,
                 'description' => $description,
                 'reference_type' => 'App\Models\GoodsReceiptNote',
                 'reference_id' => $grn->id,

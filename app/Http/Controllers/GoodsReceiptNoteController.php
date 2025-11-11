@@ -442,7 +442,7 @@ class GoodsReceiptNoteController extends Controller
                     ->whereYear('created_at', $year)
                     ->where('payment_number', 'LIKE', "PAY-{$year}-%")
                     ->lockForUpdate()
-                    ->orderByRaw("CAST(SUBSTRING(payment_number FROM '[0-9]+\$') AS INTEGER) DESC")
+                    ->orderBy('id', 'desc')
                     ->first();
 
                 $sequence = $lastPayment ? ((int) substr($lastPayment->payment_number, -6)) + 1 : 1;

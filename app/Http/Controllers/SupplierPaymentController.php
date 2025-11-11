@@ -111,11 +111,13 @@ class SupplierPaymentController extends Controller
                 ->whereYear('created_at', $year)
                 ->where('payment_number', 'LIKE', "PAY-{$year}-%")
                 ->lockForUpdate()
-                ->orderByRaw("CAST(SUBSTRING(payment_number FROM '[0-9]+$') AS INTEGER) DESC")
+                ->orderBy('id', 'desc')
                 ->first();
 
             $sequence = $lastPayment ? ((int) substr($lastPayment->payment_number, -6)) + 1 : 1;
-            $paymentNumber = sprintf('PAY-%d-%06d', $year, $sequence);            // Create payment
+            $paymentNumber = sprintf('PAY-%d-%06d', $year, $sequence);
+
+            // Create payment
             $payment = SupplierPayment::create([
                 'payment_number' => $paymentNumber,
                 'supplier_id' => $validated['supplier_id'],

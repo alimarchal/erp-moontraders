@@ -353,15 +353,15 @@
 
     <script>
         function confirmPostPayment() {
-            const confirmed = confirm('Are you sure you want to POST this payment? This will create accounting journal entries and cannot be undone.');
-            
-            if (!confirmed) {
+            if (!confirm('Are you sure you want to POST this payment? This will create accounting journal entries and cannot be undone.')) {
                 return false;
             }
 
-            const password = prompt('Enter your password to confirm payment posting:');
+            // Use a simple password prompt (note: browser prompt doesn't support masking)
+            // For better security, user should ensure no one is watching their screen
+            const password = prompt('🔒 Enter your password to confirm payment posting:\n\n(Note: Ensure no one is watching your screen)');
             
-            if (!password) {
+            if (!password || password.trim() === '') {
                 alert('Password is required to post payment.');
                 return false;
             }
@@ -371,7 +371,9 @@
         }
 
         function confirmReverse() {
-            const password = prompt('⚠️ WARNING: This will reverse the payment and create a reversing journal entry.\n\nEnter your password to confirm:');
+            // Use a simple password prompt (note: browser prompt doesn't support masking)
+            // For better security, user should ensure no one is watching their screen
+            const password = prompt('⚠️ WARNING: This will reverse the payment and create a reversing journal entry.\n\n🔒 Enter your password to confirm:\n\n(Note: Ensure no one is watching your screen)');
             
             if (password === null || password.trim() === '') {
                 return false;

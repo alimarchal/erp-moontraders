@@ -191,6 +191,14 @@
                                                 x-model="item.manufacturing_date">
                                             <input type="hidden" :name="`items[${index}][expiry_date]`"
                                                 x-model="item.expiry_date">
+                                            <input type="hidden" :name="`items[${index}][batch_number]`"
+                                                x-model="item.batch_number">
+                                            <input type="hidden" :name="`items[${index}][lot_number]`"
+                                                x-model="item.lot_number">
+                                            <input type="hidden" :name="`items[${index}][storage_location]`"
+                                                x-model="item.storage_location">
+                                            <input type="hidden" :name="`items[${index}][quality_status]`"
+                                                x-model="item.quality_status">
                                         </tr>
                                     </template>
                                 </tbody>
@@ -390,6 +398,61 @@
                                                 <input type="date" x-model="items[currentEditIndex].expiry_date"
                                                     class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                             </div>
+
+                                            <!-- Batch Tracking Fields (Optional - Auto-generated if not entered) -->
+                                            <div
+                                                class="md:col-span-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                                                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                                                    Batch Tracking (Optional - Auto-generated if empty)
+                                                </h4>
+                                            </div>
+
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Batch Number
+                                                </label>
+                                                <input type="text" x-model="items[currentEditIndex].batch_number"
+                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                                                    placeholder="Leave empty for auto-generation">
+                                                <p class="text-xs text-gray-500 mt-1">Supplier's batch code (optional)
+                                                </p>
+                                            </div>
+
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Lot Number
+                                                </label>
+                                                <input type="text" x-model="items[currentEditIndex].lot_number"
+                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                                                    placeholder="Leave empty for auto-generation">
+                                                <p class="text-xs text-gray-500 mt-1">Internal lot code (optional)</p>
+                                            </div>
+
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Storage Location
+                                                </label>
+                                                <input type="text" x-model="items[currentEditIndex].storage_location"
+                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                                                    placeholder="e.g., Rack A-1, Bin 5">
+                                                <p class="text-xs text-gray-500 mt-1">Warehouse location (optional)</p>
+                                            </div>
+
+                                            <div>
+                                                <label
+                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    Quality Status
+                                                </label>
+                                                <select x-model="items[currentEditIndex].quality_status"
+                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    <option value="approved">Approved (Ready to sell)</option>
+                                                    <option value="pending">Pending QC</option>
+                                                    <option value="rejected">Rejected</option>
+                                                </select>
+                                            </div>
                                         </div>
                                     </template>
                                 </div>
@@ -441,6 +504,10 @@
                     selling_strategy: item.selling_strategy || 'fifo',
                     priority_order: parseInt(item.priority_order) || null,
                     must_sell_before: item.must_sell_before || '',
+                    batch_number: item.batch_number || '',
+                    lot_number: item.lot_number || '',
+                    storage_location: item.storage_location || '',
+                    quality_status: item.quality_status || 'approved',
                     total: parseFloat(item.quantity_accepted || 0) * parseFloat(item.unit_cost || 0)
                 })) : [{
                     product_id: '',
@@ -457,6 +524,10 @@
                     selling_strategy: 'fifo',
                     priority_order: null,
                     must_sell_before: '',
+                    batch_number: '',
+                    lot_number: '',
+                    storage_location: '',
+                    quality_status: 'approved',
                     total: 0
                 }],
 
@@ -477,6 +548,10 @@
                         selling_strategy: 'fifo',
                         priority_order: null,
                         must_sell_before: '',
+                        batch_number: '',
+                        lot_number: '',
+                        storage_location: '',
+                        quality_status: 'approved',
                         total: 0
                     });
 
@@ -500,6 +575,10 @@
                     this.items[index].must_sell_before = '';
                     this.items[index].manufacturing_date = '';
                     this.items[index].expiry_date = '';
+                    this.items[index].batch_number = '';
+                    this.items[index].lot_number = '';
+                    this.items[index].storage_location = '';
+                    this.items[index].quality_status = 'approved';
                 },
 
                 removeItem(index) {

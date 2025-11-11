@@ -15,57 +15,59 @@ class CostCenterSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create cost centers (departments)
+        // ======================
+        // OPERATIONAL COST CENTERS
+        // ======================
+
         CostCenter::create([
             'code' => 'CC001',
-            'name' => 'Sales Department',
-            'description' => 'Sales and marketing operations',
+            'name' => 'Accounting Department',
+            'description' => 'General accounting, bookkeeping, and financial management',
             'type' => 'cost_center',
             'is_active' => true,
         ]);
 
         CostCenter::create([
             'code' => 'CC002',
-            'name' => 'IT Department',
-            'description' => 'Information technology and systems',
+            'name' => 'Sales & Field Operations',
+            'description' => 'Sales team, DSR, FSO, Order Bookers, and field sales staff',
             'type' => 'cost_center',
             'is_active' => true,
         ]);
 
         CostCenter::create([
             'code' => 'CC003',
-            'name' => 'HR Department',
-            'description' => 'Human resources and administration',
+            'name' => 'Warehouse & Inventory',
+            'description' => 'Store keepers, loaders, warehouse incharge, and inventory management',
             'type' => 'cost_center',
             'is_active' => true,
         ]);
 
         CostCenter::create([
             'code' => 'CC004',
-            'name' => 'Finance Department',
-            'description' => 'Finance and accounting operations',
+            'name' => 'Transport & Delivery',
+            'description' => 'Drivers, delivery staff, helpers, and vehicle operations',
             'type' => 'cost_center',
             'is_active' => true,
         ]);
 
-        // Create projects
         CostCenter::create([
-            'code' => 'PROJ001',
-            'name' => 'Website Redesign 2025',
-            'description' => 'Company website redesign project',
-            'type' => 'project',
-            'start_date' => '2025-01-01',
-            'end_date' => '2025-12-31',
+            'code' => 'CC005',
+            'name' => 'Support Services',
+            'description' => 'Security guards, cooks, sweepers, and general support staff',
+            'type' => 'cost_center',
             'is_active' => true,
         ]);
 
+        // ======================
+        // LOCATION
+        // ======================
+
         CostCenter::create([
-            'code' => 'PROJ002',
-            'name' => 'ERP Implementation',
-            'description' => 'Enterprise resource planning system implementation',
-            'type' => 'project',
-            'start_date' => '2025-01-01',
-            'end_date' => '2025-12-31',
+            'code' => 'LOC001',
+            'name' => 'MOON TRADERS - Gojra',
+            'description' => 'Main office - Gojra, Muzaffarabad, Azad Jammu and Kashmir',
+            'type' => 'cost_center',
             'is_active' => true,
         ]);
     }

@@ -10,7 +10,7 @@
             <div>
                 <x-label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
                     onchange="this.form.submit()">
                     <option value="">Custom Date</option>
                     @foreach($accountingPeriods as $period)
@@ -51,12 +51,12 @@
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 pb-16">
         <x-status-message />
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6">
+        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
 
             <!-- Balance Sheet Header -->
             <div class="mb-6 text-center">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Balance Sheet</h2>
-                <p class="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                <h2 class="text-2xl font-bold text-gray-800">Balance Sheet</h2>
+                <p class="text-lg text-gray-600 mt-2">
                     As of {{ \Carbon\Carbon::parse($asOfDate)->format('F d, Y') }}
                 </p>
             </div>
@@ -89,15 +89,15 @@
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <!-- Assets Section -->
                 <div>
-                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200 border-b-2 border-gray-300 pb-2">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 border-b-2 border-gray-300 pb-2">
                         ASSETS
                     </h3>
                     @foreach($assets as $accountType => $items)
                     <div class="mb-4">
-                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ $accountType }}</h4>
+                        <h4 class="font-semibold text-gray-700 mb-2">{{ $accountType }}</h4>
                         @foreach($items as $account)
                         <div class="flex justify-between py-1 px-2 text-sm">
-                            <span class="text-gray-600 dark:text-gray-400">
+                            <span class="text-gray-600">
                                 <span class="font-mono">{{ $account->account_code }}</span> - {{ $account->account_name
                                 }}
                             </span>
@@ -106,14 +106,14 @@
                         </div>
                         @endforeach
                         <div
-                            class="flex justify-between py-1 px-2 font-semibold border-t border-gray-200 dark:border-gray-600 mt-1">
+                            class="flex justify-between py-1 px-2 font-semibold border-t border-gray-200 mt-1">
                             <span>Total {{ $accountType }}</span>
                             <span class="font-mono">{{ number_format((float) $items->sum('balance'), 2) }}</span>
                         </div>
                     </div>
                     @endforeach
                     <div
-                        class="flex justify-between py-2 px-2 font-bold text-lg border-t-2 border-gray-400 dark:border-gray-500 mt-4 bg-blue-50 dark:bg-blue-900">
+                        class="flex justify-between py-2 px-2 font-bold text-lg border-t-2 border-gray-400 mt-4 bg-blue-50">
                         <span>TOTAL ASSETS</span>
                         <span class="font-mono">{{ number_format($totalAssets, 2) }}</span>
                     </div>
@@ -121,17 +121,17 @@
 
                 <!-- Liabilities & Equity Section -->
                 <div>
-                    <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200 border-b-2 border-gray-300 pb-2">
+                    <h3 class="text-xl font-bold mb-4 text-gray-800 border-b-2 border-gray-300 pb-2">
                         LIABILITIES & EQUITY
                     </h3>
 
                     <!-- Liabilities -->
                     @foreach($liabilities as $accountType => $items)
                     <div class="mb-4">
-                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ $accountType }}</h4>
+                        <h4 class="font-semibold text-gray-700 mb-2">{{ $accountType }}</h4>
                         @foreach($items as $account)
                         <div class="flex justify-between py-1 px-2 text-sm">
-                            <span class="text-gray-600 dark:text-gray-400">
+                            <span class="text-gray-600">
                                 <span class="font-mono">{{ $account->account_code }}</span> - {{ $account->account_name
                                 }}
                             </span>
@@ -140,7 +140,7 @@
                         </div>
                         @endforeach
                         <div
-                            class="flex justify-between py-1 px-2 font-semibold border-t border-gray-200 dark:border-gray-600 mt-1">
+                            class="flex justify-between py-1 px-2 font-semibold border-t border-gray-200 mt-1">
                             <span>Total {{ $accountType }}</span>
                             <span class="font-mono">{{ number_format((float) $items->sum('balance'), 2) }}</span>
                         </div>
@@ -150,10 +150,10 @@
                     <!-- Equity -->
                     @foreach($equity as $accountType => $items)
                     <div class="mb-4">
-                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ $accountType }}</h4>
+                        <h4 class="font-semibold text-gray-700 mb-2">{{ $accountType }}</h4>
                         @foreach($items as $account)
                         <div class="flex justify-between py-1 px-2 text-sm">
-                            <span class="text-gray-600 dark:text-gray-400">
+                            <span class="text-gray-600">
                                 <span class="font-mono">{{ $account->account_code }}</span> - {{ $account->account_name
                                 }}
                             </span>
@@ -162,7 +162,7 @@
                         </div>
                         @endforeach
                         <div
-                            class="flex justify-between py-1 px-2 font-semibold border-t border-gray-200 dark:border-gray-600 mt-1">
+                            class="flex justify-between py-1 px-2 font-semibold border-t border-gray-200 mt-1">
                             <span>Total {{ $accountType }}</span>
                             <span class="font-mono">{{ number_format((float) $items->sum('balance'), 2) }}</span>
                         </div>
@@ -171,20 +171,20 @@
 
                     <!-- Current Period Net Income -->
                     <div class="mb-4">
-                        <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">Current Period</h4>
+                        <h4 class="font-semibold text-gray-700 mb-2">Current Period</h4>
                         <div class="flex justify-between py-1 px-2 text-sm">
-                            <span class="text-gray-600 dark:text-gray-400">
+                            <span class="text-gray-600">
                                 <span class="font-mono">NET</span> - Net Income (Current Period)
                             </span>
                             <span
-                                class="font-mono font-semibold {{ $netIncome >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
+                                class="font-mono font-semibold {{ $netIncome >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                 {{ number_format((float) $netIncome, 2) }}
                             </span>
                         </div>
                     </div>
 
                     <div
-                        class="flex justify-between py-2 px-2 font-bold text-lg border-t-2 border-gray-400 dark:border-gray-500 mt-4 bg-blue-50 dark:bg-blue-900">
+                        class="flex justify-between py-2 px-2 font-bold text-lg border-t-2 border-gray-400 mt-4 bg-blue-50">
                         <span>TOTAL LIABILITIES & EQUITY</span>
                         <span class="font-mono">{{ number_format($totalLiabilities + $totalEquity + $netIncome, 2)
                             }}</span>
@@ -197,22 +197,22 @@
             $difference = abs($totalAssets - ($totalLiabilities + $totalEquity + $netIncome));
             @endphp
             @if($difference > 0.01)
-            <div class="mt-6 p-4 bg-red-100 dark:bg-red-900 border border-red-400 rounded">
-                <p class="text-red-700 dark:text-red-200 font-semibold">
+            <div class="mt-6 p-4 bg-red-100 border border-red-400 rounded">
+                <p class="text-red-700 font-semibold">
                     ⚠️ Balance Sheet does not balance! Difference: {{ number_format($difference, 2) }}
                 </p>
-                <p class="text-red-600 dark:text-red-300 text-sm mt-2">
+                <p class="text-red-600 text-sm mt-2">
                     Assets: {{ number_format($totalAssets, 2) }} |
                     Liabilities + Equity + Net Income: {{ number_format($totalLiabilities + $totalEquity + $netIncome,
                     2) }}
                 </p>
             </div>
             @else
-            <div class="mt-6 p-4 bg-green-100 dark:bg-green-900 border border-green-400 rounded">
-                <p class="text-green-700 dark:text-green-200 font-semibold text-center">
+            <div class="mt-6 p-4 bg-green-100 border border-green-400 rounded">
+                <p class="text-green-700 font-semibold text-center">
                     ✓ Balance Sheet is balanced
                 </p>
-                <p class="text-green-600 dark:text-green-300 text-sm text-center mt-1">
+                <p class="text-green-600 text-sm text-center mt-1">
                     Assets: {{ number_format($totalAssets, 2) }} = Liabilities: {{ number_format($totalLiabilities, 2)
                     }} + Equity: {{ number_format($totalEquity, 2) }} + Net Income: {{ number_format($netIncome, 2) }}
                 </p>

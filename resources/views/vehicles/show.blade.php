@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Vehicle: {{ $vehicle->vehicle_number }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -17,7 +17,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6">
                     <form>
@@ -25,14 +25,14 @@
                             <div>
                                 <x-label for="vehicle_number" value="Vehicle Number" />
                                 <x-input id="vehicle_number" type="text" name="vehicle_number"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700 uppercase"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 uppercase"
                                     :value="$vehicle->vehicle_number" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="registration_number" value="Registration Number" />
                                 <x-input id="registration_number" type="text" name="registration_number"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700 uppercase"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 uppercase"
                                     :value="$vehicle->registration_number" disabled readonly />
                             </div>
                         </div>
@@ -41,21 +41,21 @@
                             <div>
                                 <x-label for="vehicle_type" value="Vehicle Type" />
                                 <x-input id="vehicle_type" type="text" name="vehicle_type"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->vehicle_type ?? '-'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="make_model" value="Make / Model" />
                                 <x-input id="make_model" type="text" name="make_model"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->make_model ?? '-'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="year" value="Model Year" />
                                 <x-input id="year" type="text" name="year"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->year ?? '-'" disabled readonly />
                             </div>
                         </div>
@@ -64,14 +64,14 @@
                             <div>
                                 <x-label for="vehicle_company" value="Company" />
                                 <x-input id="vehicle_company" type="text" name="vehicle_company"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->company?->company_name ?? '—'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="vehicle_supplier" value="Transporter / Supplier" />
                                 <x-input id="vehicle_supplier" type="text" name="vehicle_supplier"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->supplier?->supplier_name ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -80,21 +80,21 @@
                             <div>
                                 <x-label for="assigned_employee" value="Assigned Employee Driver" />
                                 <x-input id="assigned_employee" type="text" name="assigned_employee"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->employee?->name ?? 'Unassigned'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="driver_name" value="Driver Name (external)" />
                                 <x-input id="driver_name" type="text" name="driver_name"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->driver_name ?? '—'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="driver_contact" value="Driver Contact" />
                                 <x-input id="driver_contact" type="text" name="driver_contact"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->employee?->phone ?? $vehicle->driver_phone ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -103,7 +103,7 @@
                             <div>
                                 <x-label for="status_label" value="Status" />
                                 <x-input id="status_label" type="text" name="status_label"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->is_active ? 'Active' : 'Inactive'" disabled readonly />
                             </div>
 
@@ -111,7 +111,7 @@
                                 <input id="is_active" type="checkbox"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                     {{ $vehicle->is_active ? 'checked' : '' }} disabled>
-                                <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                <label for="is_active" class="ml-2 text-sm text-gray-700">
                                     Vehicle is active
                                 </label>
                             </div>
@@ -121,14 +121,14 @@
                             <div>
                                 <x-label for="created_at" value="Created At" />
                                 <x-input id="created_at" type="text" name="created_at"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->created_at?->format('d-m-Y H:i:s') ?? '-'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="updated_at" value="Last Updated" />
                                 <x-input id="updated_at" type="text" name="updated_at"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$vehicle->updated_at?->format('d-m-Y H:i:s') ?? '-'" disabled readonly />
                             </div>
                         </div>

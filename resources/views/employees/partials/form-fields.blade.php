@@ -37,7 +37,7 @@ $companyOptions = $companyOptions ?? collect();
     <div>
         <x-label for="supplier_id" value="Supplier" />
         <select id="supplier_id" name="supplier_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">No supplier</option>
             @foreach ($supplierOptions as $supplier)
             <option value="{{ $supplier->id }}" {{ (int) old('supplier_id', optional($employee)->supplier_id) ===
@@ -51,7 +51,7 @@ $companyOptions = $companyOptions ?? collect();
     <div>
         <x-label for="company_id" value="Company Entity" />
         <select id="company_id" name="company_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not assigned</option>
             @foreach ($companyOptions as $company)
             <option value="{{ $company->id }}" {{ (int) old('company_id', optional($employee)->company_id) ===
@@ -77,7 +77,7 @@ $companyOptions = $companyOptions ?? collect();
     <div>
         <x-label for="warehouse_id" value="Primary Warehouse" />
         <select id="warehouse_id" name="warehouse_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not assigned</option>
             @foreach ($warehouseOptions as $warehouse)
             <option value="{{ $warehouse->id }}" {{ (int) old('warehouse_id', optional($employee)->warehouse_id) ===
@@ -91,7 +91,7 @@ $companyOptions = $companyOptions ?? collect();
     <div>
         <x-label for="user_id" value="Linked User" />
         <select id="user_id" name="user_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">No linked user</option>
             @foreach ($userOptions as $user)
             <option value="{{ $user->id }}" {{ (int) old('user_id', optional($employee)->user_id) === $user->id ?
@@ -112,7 +112,7 @@ $companyOptions = $companyOptions ?? collect();
 <div class="mt-4">
     <x-label for="address" value="Address / Notes" />
     <textarea id="address" name="address"
-        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
         rows="3"
         placeholder="Office address, remarks, etc.">{{ old('address', optional($employee)->address) }}</textarea>
 </div>
@@ -122,7 +122,7 @@ $companyOptions = $companyOptions ?? collect();
     <input id="is_active" type="checkbox" name="is_active" value="1"
         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" {{
         old('is_active', optional($employee)->is_active ?? true) ? 'checked' : '' }}>
-    <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+    <label for="is_active" class="ml-2 text-sm text-gray-700">
         Employee is active
     </label>
 </div>

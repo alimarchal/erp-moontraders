@@ -2,7 +2,7 @@
 <div>
     <x-label :for="$name" :value="$label" />
     <select name="filter[{{ $name }}]" id="{{ $name }}"
-        class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         <option value="">-- Select User --</option>
         @if($includeUnassigned)
         <option value="unassigned" {{ request('filter.'.$name)==='unassigned' ? 'selected' : '' }}>Unassigned</option>

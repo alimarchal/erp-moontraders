@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             Create Account Type
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -18,7 +18,7 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 mt-4 shadow-md" />
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
 
                 <div class="p-6">
                     <x-validation-errors class="mb-4 mt-4" />
@@ -42,7 +42,7 @@
                             <div class="col-span-2">
                                 <x-label for="description" value="Description" />
                                 <textarea id="description" name="description"
-                                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                     rows="3">{{ old('description') }}</textarea>
                             </div>
                         </div>

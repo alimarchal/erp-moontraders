@@ -41,7 +41,7 @@
     <div>
         <x-label for="company_id" value="Company" />
         <select id="company_id" name="company_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($companyOptions as $company)
                 <option value="{{ $company->id }}"
@@ -55,7 +55,7 @@
     <div>
         <x-label for="supplier_id" value="Transporter / Supplier" />
         <select id="supplier_id" name="supplier_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($supplierOptions as $supplier)
                 <option value="{{ $supplier->id }}"
@@ -69,7 +69,7 @@
     <div>
         <x-label for="employee_id" value="Assigned Driver" />
         <select id="employee_id" name="employee_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Unassigned</option>
             @foreach ($employeeOptions as $employee)
                 <option value="{{ $employee->id }}"
@@ -98,7 +98,7 @@
             <input id="is_active" type="checkbox" name="is_active" value="1"
                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 {{ old('is_active', optional($vehicle)->is_active ?? true) ? 'checked' : '' }}>
-            <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+            <label for="is_active" class="ml-2 text-sm text-gray-700">
                 Vehicle is active
             </label>
         </div>

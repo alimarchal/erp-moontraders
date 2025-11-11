@@ -36,7 +36,7 @@
             <input id="is_base_currency" type="checkbox" name="is_base_currency" value="1"
                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 {{ old('is_base_currency', optional($currency)->is_base_currency ?? false) ? 'checked' : '' }}>
-            <label for="is_base_currency" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+            <label for="is_base_currency" class="ml-2 text-sm text-gray-700">
                 Set as base currency
             </label>
         </div>
@@ -46,7 +46,7 @@
             <input id="is_active" type="checkbox" name="is_active" value="1"
                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 {{ old('is_active', optional($currency)->is_active ?? true) ? 'checked' : '' }}>
-            <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+            <label for="is_active" class="ml-2 text-sm text-gray-700">
                 Currency is active
             </label>
         </div>

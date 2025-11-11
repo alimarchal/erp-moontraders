@@ -4,7 +4,7 @@
 
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Cost Center: {{ $costCenter->code }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -21,7 +21,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6">
                     <form>
@@ -29,13 +29,13 @@
                             <div>
                                 <x-label value="Code" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$costCenter->code" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Name" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$costCenter->name" disabled readonly />
                             </div>
                         </div>
@@ -44,13 +44,13 @@
                             <div>
                                 <x-label value="Type" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$typeLabel" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Parent Cost Center" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$costCenter->parent ? $costCenter->parent->code . ' · ' . $costCenter->parent->name : '—'"
                                     disabled readonly />
                             </div>
@@ -60,14 +60,14 @@
                             <div>
                                 <x-label value="Start Date" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="optional($costCenter->start_date)->format('d-m-Y') ?? '—'"
                                     disabled readonly />
                             </div>
                             <div>
                                 <x-label value="End Date" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="optional($costCenter->end_date)->format('d-m-Y') ?? '—'"
                                     disabled readonly />
                             </div>
@@ -77,7 +77,7 @@
                             <div>
                                 <x-label value="Active Status" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$costCenter->is_active ? 'Active' : 'Inactive'"
                                     disabled readonly />
                             </div>
@@ -86,7 +86,7 @@
                                     <input type="checkbox"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                         {{ $costCenter->is_active ? 'checked' : '' }} disabled>
-                                    <label class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <label class="ml-2 text-sm text-gray-700">
                                         Cost center is active
                                     </label>
                                 </div>
@@ -97,14 +97,14 @@
                             <div>
                                 <x-label value="Created At" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$costCenter->created_at?->format('d-m-Y H:i:s') ?? '—'"
                                     disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Last Updated" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$costCenter->updated_at?->format('d-m-Y H:i:s') ?? '—'"
                                     disabled readonly />
                             </div>
@@ -113,7 +113,7 @@
                         <div class="mt-4">
                             <x-label value="Description" />
                             <textarea rows="3"
-                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
+                                class="mt-1 block w-full border-gray-300 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
                                 disabled readonly>{{ $costCenter->description ?? '—' }}</textarea>
                         </div>
 
@@ -121,7 +121,7 @@
                             <div class="mt-6">
                                 <x-label value="Child Cost Centers" />
                                 <textarea rows="3"
-                                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
+                                    class="mt-1 block w-full border-gray-300 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
                                     disabled readonly>{{ $costCenter->children->map(fn ($child) => $child->code . ' · ' . $child->name)->implode(PHP_EOL) }}</textarea>
                             </div>
                         @endif

@@ -30,7 +30,7 @@ $salesRepOptions = $salesRepOptions ?? collect();
     <div>
         <x-label for="sales_rep_id" value="Assigned Sales Rep" />
         <select id="sales_rep_id" name="sales_rep_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Unassigned</option>
             @foreach ($salesRepOptions as $salesRep)
             <option value="{{ $salesRep->id }}" {{ (int) old('sales_rep_id', optional($customer)->sales_rep_id) ===
@@ -59,7 +59,7 @@ $salesRepOptions = $salesRepOptions ?? collect();
 <div class="mt-4">
     <x-label for="address" value="Billing Address" />
     <textarea id="address" name="address" rows="3"
-        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
         placeholder="Street, area, city">{{ old('address', optional($customer)->address) }}</textarea>
 </div>
 
@@ -93,7 +93,7 @@ $salesRepOptions = $salesRepOptions ?? collect();
     <div>
         <x-label for="channel_type" value="Channel Type" :required="true" />
         <select id="channel_type" name="channel_type"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
             required>
             @foreach ($channelTypes as $type)
             <option value="{{ $type }}" {{ old('channel_type', optional($customer)->channel_type) === $type ? 'selected'
@@ -107,7 +107,7 @@ $salesRepOptions = $salesRepOptions ?? collect();
     <div>
         <x-label for="customer_category" value="Customer Category" :required="true" />
         <select id="customer_category" name="customer_category"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
             required>
             @foreach ($customerCategories as $category)
             <option value="{{ $category }}" {{ old('customer_category', optional($customer)->customer_category) ===
@@ -169,7 +169,7 @@ $salesRepOptions = $salesRepOptions ?? collect();
     <div>
         <x-label for="receivable_account_id" value="Receivable Account (AR)" />
         <select id="receivable_account_id" name="receivable_account_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" {{ (int) old('receivable_account_id', optional($customer)->receivable_account_id ?? 0) === $account->id ? 'selected' : '' }}>
@@ -182,7 +182,7 @@ $salesRepOptions = $salesRepOptions ?? collect();
     <div>
         <x-label for="payable_account_id" value="Payable Account (AP)" />
         <select id="payable_account_id" name="payable_account_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" {{ (int) old('payable_account_id', optional($customer)->payable_account_id ?? 0) === $account->id ? 'selected' : '' }}>
@@ -196,7 +196,7 @@ $salesRepOptions = $salesRepOptions ?? collect();
 <div class="mt-4">
     <x-label for="notes" value="Internal Notes" />
     <textarea id="notes" name="notes" rows="4"
-        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
         placeholder="Credit preference, delivery window, etc.">{{ old('notes', optional($customer)->notes) }}</textarea>
 </div>
 
@@ -206,7 +206,7 @@ $salesRepOptions = $salesRepOptions ?? collect();
         <input id="is_active" type="checkbox" name="is_active" value="1"
             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             {{ old('is_active', optional($customer)->is_active ?? true) ? 'checked' : '' }}>
-        <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+        <label for="is_active" class="ml-2 text-sm text-gray-700">
             Customer is active
         </label>
     </div>

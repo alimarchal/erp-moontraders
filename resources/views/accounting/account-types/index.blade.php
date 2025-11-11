@@ -11,7 +11,7 @@
             <div>
                 <x-label for="filter_type_name" value="Type Name" />
                 <select name="filter[type_name]" id="filter_type_name"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Type Names</option>
                     @foreach($typeNames as $typeName)
                     <option value="{{ $typeName }}" {{ request('filter.type_name')==$typeName ? 'selected' : '' }}>
@@ -25,7 +25,7 @@
             <div>
                 <x-label for="filter_report_group" value="Report Group" />
                 <select name="filter[report_group]" id="filter_report_group"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Report Groups</option>
                     @foreach($reportGroups as $group)
                     <option value="{{ $group }}" {{ request('filter.report_group')==$group ? 'selected' : '' }}>

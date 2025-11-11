@@ -27,7 +27,7 @@ $valuationMethods = $valuationMethods ?? [];
 <div class="mt-4">
     <x-label for="description" value="Description" />
     <textarea id="description" name="description" rows="3"
-        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
         placeholder="Key product notes for sales, warehouse and finance">{{ old('description', optional($product)->description) }}</textarea>
 </div>
 
@@ -35,7 +35,7 @@ $valuationMethods = $valuationMethods ?? [];
     <div>
         <x-label for="category_id" value="Category" />
         <select id="category_id" name="category_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Uncategorized</option>
             @foreach ($categoryOptions as $category)
             <option value="{{ $category->id }}" {{ (int) old('category_id', optional($product)->category_id) === $category->id ? 'selected' : '' }}>
@@ -48,7 +48,7 @@ $valuationMethods = $valuationMethods ?? [];
     <div>
         <x-label for="supplier_id" value="Preferred Supplier" />
         <select id="supplier_id" name="supplier_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($supplierOptions as $supplier)
             <option value="{{ $supplier->id }}" {{ (int) old('supplier_id', optional($product)->supplier_id) === $supplier->id ? 'selected' : '' }}>
@@ -61,7 +61,7 @@ $valuationMethods = $valuationMethods ?? [];
     <div>
         <x-label for="uom_id" value="Base UOM" />
         <select id="uom_id" name="uom_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Select UOM</option>
             @foreach ($uomOptions as $uom)
             <option value="{{ $uom->id }}" {{ (int) old('uom_id', optional($product)->uom_id) === $uom->id ? 'selected' : '' }}>
@@ -74,7 +74,7 @@ $valuationMethods = $valuationMethods ?? [];
     <div>
         <x-label for="valuation_method" value="Valuation Method" :required="true" />
         <select id="valuation_method" name="valuation_method" required
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             @foreach ($valuationMethods as $method)
             <option value="{{ $method }}" {{ old('valuation_method', optional($product)->valuation_method ?? 'FIFO') === $method ? 'selected' : '' }}>
                 {{ $method }}
@@ -134,7 +134,7 @@ $valuationMethods = $valuationMethods ?? [];
     <div>
         <x-label for="inventory_account_id" value="Inventory Account" />
         <select id="inventory_account_id" name="inventory_account_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Default</option>
             @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" {{ (int) old('inventory_account_id', optional($product)->inventory_account_id) === $account->id ? 'selected' : '' }}>
@@ -147,7 +147,7 @@ $valuationMethods = $valuationMethods ?? [];
     <div>
         <x-label for="cogs_account_id" value="COGS Account" />
         <select id="cogs_account_id" name="cogs_account_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Default</option>
             @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" {{ (int) old('cogs_account_id', optional($product)->cogs_account_id) === $account->id ? 'selected' : '' }}>
@@ -160,7 +160,7 @@ $valuationMethods = $valuationMethods ?? [];
     <div>
         <x-label for="sales_revenue_account_id" value="Sales Revenue Account" />
         <select id="sales_revenue_account_id" name="sales_revenue_account_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Default</option>
             @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" {{ (int) old('sales_revenue_account_id', optional($product)->sales_revenue_account_id) === $account->id ? 'selected' : '' }}>
@@ -177,7 +177,7 @@ $valuationMethods = $valuationMethods ?? [];
         <input id="is_active" type="checkbox" name="is_active" value="1"
             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             {{ old('is_active', optional($product)->is_active ?? true) ? 'checked' : '' }}>
-        <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+        <label for="is_active" class="ml-2 text-sm text-gray-700">
             Product is active
         </label>
     </div>

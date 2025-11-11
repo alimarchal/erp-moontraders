@@ -9,7 +9,7 @@
             <div class="lg:col-span-2">
                 <x-label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
                     onchange="this.form.submit()">
                     <option value="">All Time (Custom Dates)</option>
                     @foreach($accountingPeriods as $period)
@@ -43,7 +43,7 @@
             <div>
                 <x-label for="filter_account_code" value="Account Code" />
                 <select id="filter_account_code" name="filter[account_code]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
                     <option value="{{ $account->account_code }}" {{ request('filter.account_code')===$account->
@@ -63,7 +63,7 @@
             <div>
                 <x-label for="filter_account_name" value="Account Name" />
                 <select id="filter_account_name" name="filter[account_name]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
                     <option value="{{ $account->account_name }}" {{ request('filter.account_name')===$account->
@@ -103,7 +103,7 @@
             <div>
                 <x-label for="filter_cost_center_code" value="Cost Center Code" />
                 <select id="filter_cost_center_code" name="filter[cost_center_code]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
                     <option value="{{ $cc->code }}" {{ request('filter.cost_center_code')===$cc->code ? 'selected' : ''
@@ -117,7 +117,7 @@
             <div>
                 <x-label for="filter_cost_center_name" value="Cost Center Name" />
                 <select id="filter_cost_center_name" name="filter[cost_center_name]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
                     <option value="{{ $cc->name }}" {{ request('filter.cost_center_name')===$cc->name ? 'selected' : ''
@@ -174,7 +174,7 @@
             <div>
                 <x-label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($statusOptions as $value => $label)
                     <option value="{{ $value }}" {{ request('filter.status')===$value ? 'selected' : '' }}>
@@ -187,7 +187,7 @@
             <div>
                 <x-label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="-entry_date" {{ request('sort')=='-entry_date' || !request('sort') ? 'selected' : ''
                         }}>Entry Date (Newest)</option>
                     <option value="entry_date" {{ request('sort')=='entry_date' ? 'selected' : '' }}>Entry Date (Oldest)
@@ -217,7 +217,7 @@
             <div>
                 <x-label for="per_page" value="Show Per Page" />
                 <select id="per_page" name="per_page"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
                     <option value="25" {{ request('per_page', 25)==25 ? 'selected' : '' }}>25</option>
                     <option value="50" {{ request('per_page')==50 ? 'selected' : '' }}>50</option>
@@ -247,7 +247,7 @@
         ];
         @endphp
         @foreach ($entries as $index => $entry)
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+        <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $entries->firstItem() + $index }}
             </td>
@@ -259,14 +259,14 @@
             </td>
             <td class="py-1 px-2">
                 <div class="font-semibold break-words max-w-xs">{{ $entry->journal_description ?? '—' }}</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400 break-words max-w-xs">
+                <div class="text-xs text-gray-600 break-words max-w-xs">
                     <abbr class="text-red-700" title="Line Description">LD:</abbr> {{ $entry->line_description ??
                     $entry->journal_description ?? '—' }}
                 </div>
             </td>
             <td class="py-1 px-2">
                 <div class="font-semibold uppercase font-mono">{{ $entry->account_code }}</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $entry->account_name }}</div>
+                <div class="text-xs text-gray-600">{{ $entry->account_name }}</div>
             </td>
             <td class="py-1 px-2 text-right font-mono">
                 {{ number_format((float) $entry->debit, 2) }}
@@ -277,7 +277,7 @@
             <td class="py-1 px-2">
                 @if ($entry->cost_center_code)
                 <div class="font-semibold uppercase font-mono">{{ $entry->cost_center_code }}</div>
-                <div class="text-xs text-gray-600 dark:text-gray-400">{{ $entry->cost_center_name }}</div>
+                <div class="text-xs text-gray-600">{{ $entry->cost_center_name }}</div>
                 @else
                 <span class="text-gray-400">—</span>
                 @endif
@@ -293,7 +293,7 @@
             </td>
         </tr>
         @endforeach
-        <tr class="border-t-2 border-gray-400 dark:border-gray-500 bg-gray-100 dark:bg-gray-800 font-bold">
+        <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
             <td colspan="5" class="py-2 px-2 text-right">
                 Page Total ({{ $entries->count() }} rows):
             </td>

@@ -45,7 +45,7 @@
             <div>
                 <x-label for="filter_supplier_id" value="Supplier" />
                 <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
                     @foreach ($supplierOptions as $supplier)
                     <option value="{{ $supplier->id }}" {{ (string) request('filter.supplier_id')===(string) $supplier->
@@ -59,7 +59,7 @@
             <div>
                 <x-label for="filter_warehouse_id" value="Assigned Warehouse" />
                 <select id="filter_warehouse_id" name="filter[warehouse_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Warehouses</option>
                     @foreach ($warehouseOptions as $warehouse)
                     <option value="{{ $warehouse->id }}" {{ (string) request('filter.warehouse_id')===(string)
@@ -73,7 +73,7 @@
             <div>
                 <x-label for="filter_is_active" value="Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="1" {{ request('filter.is_active')==='1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ request('filter.is_active')==='0' ? 'selected' : '' }}>Inactive</option>
@@ -96,7 +96,7 @@
         emptyLinkText="Create an employee">
 
         @foreach ($employees as $index => $employee)
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+        <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $employees->firstItem() + $index }}
             </td>
@@ -104,7 +104,7 @@
                 {{ $employee->employee_code }}
             </td>
             <td class="py-1 px-2">
-                <div class="font-semibold text-gray-900 dark:text-gray-100">
+                <div class="font-semibold text-gray-900">
                     {{ $employee->name }}
                 </div>
                 <div class="text-xs text-gray-500">

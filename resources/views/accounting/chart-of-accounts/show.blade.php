@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Account: {{ $chartOfAccount->account_code }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -17,7 +17,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6">
                     <form>
@@ -25,14 +25,14 @@
                             <div>
                                 <x-label for="account_code" value="Account Code" :required="true" />
                                 <x-input id="account_code" type="text" name="account_code"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$chartOfAccount->account_code" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="account_name" value="Account Name" :required="true" />
                                 <x-input id="account_name" type="text" name="account_name"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$chartOfAccount->account_name" disabled readonly />
                             </div>
                         </div>
@@ -41,21 +41,21 @@
                             <div>
                                 <x-label for="account_type" value="Account Type" />
                                 <x-input id="account_type" type="text" name="account_type"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$chartOfAccount->accountType->type_name ?? '-'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="currency" value="Currency" />
                                 <x-input id="currency" type="text" name="currency"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$chartOfAccount->currency->currency_code ?? '-'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="normal_balance" value="Normal Balance" />
                                 <x-input id="normal_balance" type="text" name="normal_balance"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700 capitalize"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 capitalize"
                                     :value="$chartOfAccount->normal_balance" disabled readonly />
                             </div>
                         </div>
@@ -64,7 +64,7 @@
                             <div>
                                 <x-label for="parent_account" value="Parent Account" />
                                 <x-input id="parent_account" type="text" name="parent_account"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$chartOfAccount->parent ? $chartOfAccount->parent->account_code . ' - ' . $chartOfAccount->parent->account_name : '-'"
                                     disabled readonly />
                             </div>
@@ -74,7 +74,7 @@
                                     <input id="is_group" type="checkbox"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                         {{ $chartOfAccount->is_group ? 'checked' : '' }} disabled>
-                                    <label for="is_group" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <label for="is_group" class="ml-2 text-sm text-gray-700">
                                         Group (non-posting) account
                                     </label>
                                 </div>
@@ -83,7 +83,7 @@
                                     <input id="is_active" type="checkbox"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                         {{ $chartOfAccount->is_active ? 'checked' : '' }} disabled>
-                                    <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <label for="is_active" class="ml-2 text-sm text-gray-700">
                                         Account is active
                                     </label>
                                 </div>
@@ -93,7 +93,7 @@
                         <div class="mt-4">
                             <x-label for="description" value="Description" />
                             <textarea id="description" name="description"
-                                class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 dark:text-gray-300 rounded-md shadow-sm"
+                                class="mt-1 block w-full cursor-not-allowed bg-gray-100 border-gray-300 rounded-md shadow-sm"
                                 rows="3" disabled readonly>{{ $chartOfAccount->description ?? '-' }}</textarea>
                         </div>
 
@@ -101,14 +101,14 @@
                             <div>
                                 <x-label for="created_at" value="Created At" />
                                 <x-input id="created_at" type="text" name="created_at"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$chartOfAccount->created_at?->format('d-m-Y H:i:s') ?? '-'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="updated_at" value="Last Updated" />
                                 <x-input id="updated_at" type="text" name="updated_at"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$chartOfAccount->updated_at?->format('d-m-Y H:i:s') ?? '-'" disabled readonly />
                             </div>
                         </div>

@@ -18,7 +18,7 @@
     <div class="md:col-span-2">
         <x-label for="description" value="Description" />
         <textarea id="description" name="description" rows="3"
-            class="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600">{{ old('description', optional($uom)->description) }}</textarea>
+            class="mt-1 block w-full rounded-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500">{{ old('description', optional($uom)->description) }}</textarea>
     </div>
 
     <div class="flex items-center space-x-6 md:col-span-2">
@@ -27,7 +27,7 @@
             <input id="must_be_whole_number" type="checkbox" name="must_be_whole_number" value="1"
                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 {{ old('must_be_whole_number', optional($uom)->must_be_whole_number ?? false) ? 'checked' : '' }}>
-            <label for="must_be_whole_number" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+            <label for="must_be_whole_number" class="ml-2 text-sm text-gray-700">
                 Quantity must be an integer
             </label>
         </div>
@@ -37,7 +37,7 @@
             <input id="enabled" type="checkbox" name="enabled" value="1"
                 class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
                 {{ old('enabled', optional($uom)->enabled ?? true) ? 'checked' : '' }}>
-            <label for="enabled" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+            <label for="enabled" class="ml-2 text-sm text-gray-700">
                 Unit is enabled
             </label>
         </div>

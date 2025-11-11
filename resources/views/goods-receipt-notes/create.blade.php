@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             Create Goods Receipt Note
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -18,7 +18,7 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 mt-4 shadow-md" />
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
                     <x-validation-errors class="mb-4 mt-4" />
 
@@ -36,7 +36,7 @@
                             <div>
                                 <x-label for="supplier_id" value="Supplier *" />
                                 <select id="supplier_id" name="supplier_id" required
-                                    class="select2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Supplier</option>
                                     @foreach ($suppliers as $supplier)
                                     <option value="{{ $supplier->id }}" {{ old('supplier_id')==$supplier->id ?
@@ -50,7 +50,7 @@
                             <div>
                                 <x-label for="warehouse_id" value="Warehouse *" />
                                 <select id="warehouse_id" name="warehouse_id" required
-                                    class="select2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Warehouse</option>
                                     @foreach ($warehouses as $warehouse)
                                     <option value="{{ $warehouse->id }}" {{ old('warehouse_id')==$warehouse->id ?
@@ -74,13 +74,13 @@
                             </div>
                         </div>
 
-                        <hr class="my-6 border-gray-200 dark:border-gray-700">
+                        <hr class="my-6 border-gray-200">
 
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Line Items</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Line Items</h3>
 
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-900">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
                                     <tr>
                                         <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                                             style="min-width: 350px;">
@@ -104,19 +104,19 @@
                                             Action</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="(item, index) in items" :key="index">
                                         <tr>
                                             <td class="px-2 py-2">
                                                 <select :id="`product_${index}`" :name="`items[${index}][product_id]`"
                                                     required
-                                                    class="product-select select2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="product-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                     <option value="">Select Product</option>
                                                 </select>
                                             </td>
                                             <td class="px-2 py-2">
                                                 <select :id="`uom_${index}`" :name="`items[${index}][uom_id]`" required
-                                                    class="uom-select select2 border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="uom-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                     <option value="">Select UOM</option>
                                                     @foreach ($uoms as $uom)
                                                     <option value="{{ $uom->id }}" {{ $uom->id == 24 ? 'selected' : ''
@@ -128,30 +128,30 @@
                                                 <input type="number" :name="`items[${index}][quantity_received]`"
                                                     x-model="item.quantity_received" @input="updateTotal(index)"
                                                     step="0.01" min="0" required
-                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                             </td>
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][quantity_accepted]`"
                                                     x-model="item.quantity_accepted" @input="updateTotal(index)"
                                                     step="0.01" min="0" required
-                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                             </td>
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][unit_cost]`"
                                                     x-model="item.unit_cost" @input="updateTotal(index)" step="0.01"
                                                     min="0" required
-                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                             </td>
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][selling_price]`"
                                                     x-model="item.selling_price" step="0.01" min="0"
-                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                             </td>
                                             <td class="px-2 py-2 text-right text-sm font-semibold"
                                                 x-text="formatCurrency(item.total)"></td>
                                             <td class="px-2 py-2 text-center">
                                                 <button type="button" @click="openPromoModal(index)"
-                                                    class="text-blue-600 hover:text-blue-800 dark:text-blue-400"
+                                                    class="text-blue-600 hover:text-blue-800"
                                                     title="Promotional & Batch Details">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
                                                         viewBox="0 0 24 24" stroke="currentColor"
@@ -202,7 +202,7 @@
                                         </tr>
                                     </template>
                                 </tbody>
-                                <tfoot class="bg-gray-50 dark:bg-gray-900">
+                                <tfoot class="bg-gray-50">
                                     <tr>
                                         <td colspan="9" class="px-2 py-2">
                                             <button type="button" @click="addItem()"
@@ -226,7 +226,7 @@
                             </table>
                         </div>
 
-                        <hr class="my-6 border-gray-200 dark:border-gray-700">
+                        <hr class="my-6 border-gray-200">
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
@@ -249,7 +249,7 @@
                         <div class="mt-4">
                             <x-label for="notes" value="Notes" />
                             <textarea id="notes" name="notes" rows="3"
-                                class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">{{ old('notes') }}</textarea>
+                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">{{ old('notes') }}</textarea>
                         </div>
 
                         <div class="flex items-center justify-end mt-6">
@@ -269,18 +269,18 @@
                             </div>
 
                             <!-- Modal Content -->
-                            <div class="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+                            <div class="relative bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
                                 @click.stop>
 
                                 <!-- Header with Close Button -->
                                 <div
-                                    class="bg-white dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                                    class="bg-white px-6 py-4 border-b border-gray-200">
                                     <div class="flex items-center justify-between">
-                                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                                        <h3 class="text-lg font-semibold text-gray-900">
                                             Promotional & Batch Details
                                         </h3>
                                         <button type="button" @click="showPromoModal = false"
-                                            class="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none">
+                                            class="text-gray-400 hover:text-gray-500 focus:outline-none">
                                             <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none"
                                                 viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -296,11 +296,11 @@
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Campaign
                                                 </label>
                                                 <select x-model="items[currentEditIndex].promotional_campaign_id"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                                     <option value="">None</option>
                                                     @foreach ($campaigns as $campaign)
                                                     <option value="{{ $campaign->id }}">
@@ -315,33 +315,33 @@
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Promotional Price
                                                 </label>
                                                 <input type="number" x-model="items[currentEditIndex].promotional_price"
                                                     step="0.01" min="0"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
                                                     :disabled="!items[currentEditIndex].promotional_campaign_id">
                                             </div>
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Discount %
                                                 </label>
                                                 <input type="number"
                                                     x-model="items[currentEditIndex].promotional_discount_percent"
                                                     step="0.01" min="0" max="100"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                             </div>
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Selling Strategy
                                                 </label>
                                                 <select x-model="items[currentEditIndex].selling_strategy"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                                     <option value="fifo">FIFO (First In, First Out)</option>
                                                     <option value="lifo">LIFO (Last In, First Out)</option>
                                                     <option value="priority">Priority Based (Use priority number below)
@@ -352,11 +352,11 @@
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Priority (1-10)
                                                 </label>
                                                 <select x-model="items[currentEditIndex].priority_order"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                                     <option value="">None (Normal FIFO)</option>
                                                     <option value="1">1 - Highest Priority (Sell First)</option>
                                                     <option value="2">2</option>
@@ -373,47 +373,47 @@
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Must Sell Before
                                                 </label>
                                                 <input type="date" x-model="items[currentEditIndex].must_sell_before"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
                                                     :disabled="!items[currentEditIndex].promotional_campaign_id">
                                             </div>
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Manufacturing Date
                                                 </label>
                                                 <input type="date" x-model="items[currentEditIndex].manufacturing_date"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                             </div>
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Expiry Date
                                                 </label>
                                                 <input type="date" x-model="items[currentEditIndex].expiry_date"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                             </div>
 
                                             <!-- Batch Tracking Fields (Optional - Auto-generated if not entered) -->
                                             <div
-                                                class="md:col-span-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                                                <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
+                                                class="md:col-span-2 mt-4 pt-4 border-t border-gray-200">
+                                                <h4 class="text-sm font-semibold text-gray-700 mb-3">
                                                     Batch Tracking (Optional - Auto-generated if empty)
                                                 </h4>
                                             </div>
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Batch Number
                                                 </label>
                                                 <input type="text" x-model="items[currentEditIndex].batch_number"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
                                                     placeholder="Leave empty for auto-generation">
                                                 <p class="text-xs text-gray-500 mt-1">Supplier's batch code (optional)
                                                 </p>
@@ -421,33 +421,33 @@
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Lot Number
                                                 </label>
                                                 <input type="text" x-model="items[currentEditIndex].lot_number"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
                                                     placeholder="Leave empty for auto-generation">
                                                 <p class="text-xs text-gray-500 mt-1">Internal lot code (optional)</p>
                                             </div>
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Storage Location
                                                 </label>
                                                 <input type="text" x-model="items[currentEditIndex].storage_location"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
                                                     placeholder="e.g., Rack A-1, Bin 5">
                                                 <p class="text-xs text-gray-500 mt-1">Warehouse location (optional)</p>
                                             </div>
 
                                             <div>
                                                 <label
-                                                    class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                                    class="block text-sm font-medium text-gray-700 mb-1">
                                                     Quality Status
                                                 </label>
                                                 <select x-model="items[currentEditIndex].quality_status"
-                                                    class="block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                                     <option value="approved">Approved (Ready to sell)</option>
                                                     <option value="pending">Pending QC</option>
                                                     <option value="rejected">Rejected</option>
@@ -459,10 +459,10 @@
 
                                 <!-- Footer -->
                                 <div
-                                    class="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end space-x-3">
+                                    class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
                                     <button type="button"
                                         @click="clearPromoFields(currentEditIndex); showPromoModal = false"
-                                        class="inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 shadow-sm px-4 py-2 bg-white dark:bg-gray-700 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                        class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                         Clear All
                                     </button>
                                     <button type="button" @click="showPromoModal = false"

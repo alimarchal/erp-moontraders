@@ -49,7 +49,7 @@ $accountOptions = $accountOptions ?? collect();
 <div class="mt-4">
     <x-label for="chart_of_account_id" value="Chart of Account" />
     <select id="chart_of_account_id" name="chart_of_account_id"
-        class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
         <option value="">Not linked</option>
         @foreach ($accountOptions as $chartAccount)
         <option value="{{ $chartAccount->id }}" {{ (int) old('chart_of_account_id', optional($account)->
@@ -63,7 +63,7 @@ $accountOptions = $accountOptions ?? collect();
 <div class="mt-4">
     <x-label for="description" value="Description" />
     <textarea id="description" name="description" rows="3"
-        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
         placeholder="Additional notes about this bank account">{{ old('description', optional($account)->description) }}</textarea>
 </div>
 
@@ -73,7 +73,7 @@ $accountOptions = $accountOptions ?? collect();
         <input id="is_active" type="checkbox" name="is_active" value="1"
             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" {{
             old('is_active', optional($account)->is_active ?? true) ? 'checked' : '' }}>
-        <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+        <label for="is_active" class="ml-2 text-sm text-gray-700">
             Account is active
         </label>
     </div>

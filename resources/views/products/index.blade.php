@@ -33,7 +33,7 @@
             <div>
                 <x-label for="filter_category_id" value="Category" />
                 <select id="filter_category_id" name="filter[category_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Categories</option>
                     @foreach ($categoryOptions as $category)
                     <option value="{{ $category->id }}" {{ request('filter.category_id') === (string) $category->id ? 'selected' : '' }}>
@@ -46,7 +46,7 @@
             <div>
                 <x-label for="filter_supplier_id" value="Supplier" />
                 <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
                     @foreach ($supplierOptions as $supplier)
                     <option value="{{ $supplier->id }}" {{ request('filter.supplier_id') === (string) $supplier->id ? 'selected' : '' }}>
@@ -59,7 +59,7 @@
             <div>
                 <x-label for="filter_uom_id" value="UOM" />
                 <select id="filter_uom_id" name="filter[uom_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Units</option>
                     @foreach ($uomOptions as $uom)
                     <option value="{{ $uom->id }}" {{ request('filter.uom_id') === (string) $uom->id ? 'selected' : '' }}>
@@ -72,7 +72,7 @@
             <div>
                 <x-label for="filter_valuation_method" value="Valuation Method" />
                 <select id="filter_valuation_method" name="filter[valuation_method]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Methods</option>
                     @foreach ($valuationMethods as $method)
                     <option value="{{ $method }}" {{ request('filter.valuation_method') === $method ? 'selected' : '' }}>
@@ -85,7 +85,7 @@
             <div>
                 <x-label for="filter_is_active" value="Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Both</option>
                     @foreach ($statusOptions as $value => $label)
                     <option value="{{ $value }}" {{ request('filter.is_active') === $value ? 'selected' : '' }}>

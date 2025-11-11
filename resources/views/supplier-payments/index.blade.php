@@ -21,7 +21,7 @@
             <div>
                 <x-label for="filter_supplier_id" value="Supplier" />
                 <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
                     @foreach ($suppliers as $supplier)
                     <option value="{{ $supplier->id }}" {{ request('filter.supplier_id')==$supplier->id ? 'selected' :
@@ -35,7 +35,7 @@
             <div>
                 <x-label for="filter_payment_method" value="Payment Method" />
                 <select id="filter_payment_method" name="filter[payment_method]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Methods</option>
                     <option value="bank_transfer" {{ request('filter.payment_method')==='bank_transfer' ? 'selected'
                         : '' }}>Bank Transfer</option>
@@ -50,7 +50,7 @@
             <div>
                 <x-label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Statuses</option>
                     <option value="draft" {{ request('filter.status')==='draft' ? 'selected' : '' }}>Draft</option>
                     <option value="posted" {{ request('filter.status')==='posted' ? 'selected' : '' }}>Posted</option>
@@ -86,12 +86,12 @@
         emptyLinkText="Create a Payment">
 
         @foreach ($payments as $index => $payment)
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+        <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $payments->firstItem() + $index }}
             </td>
             <td class="py-1 px-2">
-                <div class="font-semibold text-gray-900 dark:text-gray-100">
+                <div class="font-semibold text-gray-900">
                     {{ $payment->payment_number }}
                 </div>
                 @if ($payment->journalEntry)
@@ -107,7 +107,7 @@
                 {{ $payment->supplier->supplier_name }}
             </td>
             <td class="py-1 px-2">
-                <div class="font-medium text-gray-900 dark:text-gray-100">
+                <div class="font-medium text-gray-900">
                     {{ ucfirst(str_replace('_', ' ', $payment->payment_method)) }}
                 </div>
                 @if ($payment->reference_number)
@@ -117,7 +117,7 @@
                 @endif
             </td>
             <td class="py-1 px-2 text-right">
-                <div class="font-semibold text-gray-900 dark:text-gray-100">
+                <div class="font-semibold text-gray-900">
                     ₨ {{ number_format($payment->amount, 2) }}
                 </div>
             </td>

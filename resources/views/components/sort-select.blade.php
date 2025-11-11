@@ -15,7 +15,7 @@
     (Latest)'
     ])
     <select name="sort" id="sort"
-        class="block mt-1 w-full border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+        class="block mt-1 w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
         @foreach($options as $val => $label)
         <option value="{{ $val }}" {{ request('sort')===$val ? 'selected' : '' }}>{{ $label }}</option>
         @endforeach

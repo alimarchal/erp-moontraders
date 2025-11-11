@@ -24,7 +24,7 @@ $accountOptions = $accountOptions ?? collect();
 <div class="mt-4">
     <x-label for="description" value="Description" />
     <textarea id="description" name="description" rows="3"
-        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
         placeholder="Short summary for planners and sales teams">{{ old('description', optional($category)->description) }}</textarea>
 </div>
 
@@ -32,7 +32,7 @@ $accountOptions = $accountOptions ?? collect();
     <div>
         <x-label for="parent_id" value="Parent Category" />
         <select id="parent_id" name="parent_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Top level</option>
             @foreach ($parentOptions as $parent)
             <option value="{{ $parent->id }}" {{ (int) old('parent_id', optional($category)->parent_id) === $parent->id ? 'selected' : '' }}>
@@ -47,7 +47,7 @@ $accountOptions = $accountOptions ?? collect();
     <div>
         <x-label for="default_inventory_account_id" value="Default Inventory Account" />
         <select id="default_inventory_account_id" name="default_inventory_account_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" {{ (int) old('default_inventory_account_id', optional($category)->default_inventory_account_id) === $account->id ? 'selected' : '' }}>
@@ -60,7 +60,7 @@ $accountOptions = $accountOptions ?? collect();
     <div>
         <x-label for="default_cogs_account_id" value="Default COGS Account" />
         <select id="default_cogs_account_id" name="default_cogs_account_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" {{ (int) old('default_cogs_account_id', optional($category)->default_cogs_account_id) === $account->id ? 'selected' : '' }}>
@@ -73,7 +73,7 @@ $accountOptions = $accountOptions ?? collect();
     <div>
         <x-label for="default_sales_revenue_account_id" value="Default Sales Revenue Account" />
         <select id="default_sales_revenue_account_id" name="default_sales_revenue_account_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($accountOptions as $account)
             <option value="{{ $account->id }}" {{ (int) old('default_sales_revenue_account_id', optional($category)->default_sales_revenue_account_id) === $account->id ? 'selected' : '' }}>
@@ -90,7 +90,7 @@ $accountOptions = $accountOptions ?? collect();
         <input id="is_active" type="checkbox" name="is_active" value="1"
             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             {{ old('is_active', optional($category)->is_active ?? true) ? 'checked' : '' }}>
-        <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+        <label for="is_active" class="ml-2 text-sm text-gray-700">
             Category is active
         </label>
     </div>

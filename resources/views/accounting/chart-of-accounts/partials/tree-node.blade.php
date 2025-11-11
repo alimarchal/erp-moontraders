@@ -12,10 +12,10 @@ $hasChildren = $node->childrenRecursive->isNotEmpty();
             window.addEventListener('coa-collapse-all', () => this.collapse());
         }
     }" class="relative">
-    <div class="flex items-center gap-3 py-2 px-3 rounded-md transition hover:bg-gray-300 dark:hover:bg-gray-700/50">
+    <div class="flex items-center gap-3 py-2 px-3 rounded-md transition hover:bg-gray-300/50">
         @if ($hasChildren)
         <button type="button" @click.stop="toggle"
-            class="size-6 flex items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-200 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-400">
+            class="size-6 flex items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-400">
             <svg x-show="open" x-cloak xmlns="http://www.w3.org/2000/svg" class="size-4" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round"
@@ -38,28 +38,28 @@ $hasChildren = $node->childrenRecursive->isNotEmpty();
         @endif
 
         <div class="flex flex-wrap items-center gap-2 text-sm cursor-pointer" @click="toggle">
-            <span class="font-mono font-semibold text-gray-700 dark:text-gray-200">{{ $node->account_code }}</span>
-            <span class="font-medium text-gray-900 dark:text-gray-100">{{ $node->account_name }}</span>
+            <span class="font-mono font-semibold text-gray-700">{{ $node->account_code }}</span>
+            <span class="font-medium text-gray-900">{{ $node->account_name }}</span>
 
             @if ($node->accountType)
             <span
-                class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700/20">
                 {{ $node->accountType->type_name }}
             </span>
             @endif
 
             <span
-                class="text-xs px-2 py-0.5 rounded-full {{ $node->normal_balance === 'debit' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200' : 'bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200' }}">
+                class="text-xs px-2 py-0.5 rounded-full {{ $node->normal_balance === 'debit' ? 'bg-emerald-100 text-emerald-700/20' : 'bg-purple-100 text-purple-700/20' }}">
                 {{ ucfirst($node->normal_balance) }}
             </span>
 
             <span
-                class="text-xs px-2 py-0.5 rounded-full {{ $node->is_group ? 'bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200' : 'bg-slate-100 text-slate-700 dark:bg-slate-500/20 dark:text-slate-200' }}">
+                class="text-xs px-2 py-0.5 rounded-full {{ $node->is_group ? 'bg-amber-100 text-amber-700/20' : 'bg-slate-100 text-slate-700/20' }}">
                 {{ $node->is_group ? 'Group' : 'Posting' }}
             </span>
 
             <span
-                class="text-xs px-2 py-0.5 rounded-full {{ $node->is_active ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-200' }}">
+                class="text-xs px-2 py-0.5 rounded-full {{ $node->is_active ? 'bg-green-100 text-green-700/20' : 'bg-red-100 text-red-700/20' }}">
                 {{ $node->is_active ? 'Active' : 'Inactive' }}
             </span>
         </div>
@@ -67,7 +67,7 @@ $hasChildren = $node->childrenRecursive->isNotEmpty();
 
     @if ($hasChildren)
     <ul x-show="open" x-transition x-cloak
-        class="space-y-1 ms-5 ps-5 border-s border-dashed border-gray-300 dark:border-gray-600">
+        class="space-y-1 ms-5 ps-5 border-s border-dashed border-gray-300">
         @foreach ($node->childrenRecursive as $child)
         @include('accounting.chart-of-accounts.partials.tree-node', ['node' => $child])
         @endforeach

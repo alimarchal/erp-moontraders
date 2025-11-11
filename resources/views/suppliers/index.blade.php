@@ -39,7 +39,7 @@
             <div>
                 <x-label for="filter_is_transporter" value="Provides Transport" />
                 <select id="filter_is_transporter" name="filter[is_transporter]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="1" {{ request('filter.is_transporter') === '1' ? 'selected' : '' }}>Yes</option>
                     <option value="0" {{ request('filter.is_transporter') === '0' ? 'selected' : '' }}>No</option>
@@ -49,7 +49,7 @@
             <div>
                 <x-label for="filter_is_internal_supplier" value="Internal Supplier" />
                 <select id="filter_is_internal_supplier" name="filter[is_internal_supplier]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="1" {{ request('filter.is_internal_supplier') === '1' ? 'selected' : '' }}>Yes</option>
                     <option value="0" {{ request('filter.is_internal_supplier') === '0' ? 'selected' : '' }}>No</option>
@@ -59,7 +59,7 @@
             <div>
                 <x-label for="filter_disabled" value="Status" />
                 <select id="filter_disabled" name="filter[disabled]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="0" {{ request('filter.disabled') === '0' ? 'selected' : '' }}>Active</option>
                     <option value="1" {{ request('filter.disabled') === '1' ? 'selected' : '' }}>Disabled</option>
@@ -79,12 +79,12 @@
         ]" emptyMessage="No suppliers found." :emptyRoute="route('suppliers.create')" emptyLinkText="Create a supplier">
 
         @foreach ($suppliers as $index => $supplier)
-            <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+            <tr class="border-b border-gray-200 text-sm">
                 <td class="py-1 px-2 text-center">
                     {{ $suppliers->firstItem() + $index }}
                 </td>
                 <td class="py-1 px-2">
-                    <div class="font-semibold text-gray-900 dark:text-gray-100">
+                    <div class="font-semibold text-gray-900">
                         {{ $supplier->supplier_name }}
                     </div>
                     <div class="text-xs text-gray-500 uppercase">
@@ -92,7 +92,7 @@
                     </div>
                 </td>
                 <td class="py-1 px-2">
-                    <div class="text-sm text-gray-800 dark:text-gray-200">
+                    <div class="text-sm text-gray-800">
                         {{ $supplier->supplier_group ?: '—' }}
                     </div>
                     <div class="text-xs text-gray-500">

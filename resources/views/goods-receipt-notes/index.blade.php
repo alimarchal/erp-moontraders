@@ -22,7 +22,7 @@
             <div>
                 <x-label for="filter_supplier_id" value="Supplier" />
                 <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
                     @foreach ($suppliers as $supplier)
                     <option value="{{ $supplier->id }}" {{ request('filter.supplier_id')==$supplier->id ? 'selected' :
@@ -36,7 +36,7 @@
             <div>
                 <x-label for="filter_warehouse_id" value="Warehouse" />
                 <select id="filter_warehouse_id" name="filter[warehouse_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Warehouses</option>
                     @foreach ($warehouses as $warehouse)
                     <option value="{{ $warehouse->id }}" {{ request('filter.warehouse_id')==$warehouse->id ? 'selected'
@@ -50,7 +50,7 @@
             <div>
                 <x-label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Statuses</option>
                     <option value="draft" {{ request('filter.status')==='draft' ? 'selected' : '' }}>Draft</option>
                     <option value="received" {{ request('filter.status')==='received' ? 'selected' : '' }}>Received
@@ -62,7 +62,7 @@
             <div>
                 <x-label for="filter_payment_status" value="Payment Status" />
                 <select id="filter_payment_status" name="filter[payment_status]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Payment Statuses</option>
                     <option value="unpaid" {{ request('filter.payment_status')==='unpaid' ? 'selected' : '' }}>Unpaid
                     </option>
@@ -100,12 +100,12 @@
         emptyLinkText="Create a GRN">
 
         @foreach ($grns as $index => $grn)
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+        <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $grns->firstItem() + $index }}
             </td>
             <td class="py-1 px-2">
-                <div class="font-semibold text-gray-900 dark:text-gray-100">
+                <div class="font-semibold text-gray-900">
                     {{ $grn->grn_number }}
                 </div>
                 @if ($grn->supplier_invoice_number)
@@ -124,7 +124,7 @@
                 {{ $grn->warehouse->warehouse_name }}
             </td>
             <td class="py-1 px-2 text-right">
-                <div class="font-semibold text-gray-900 dark:text-gray-100">
+                <div class="font-semibold text-gray-900">
                     {{ number_format($grn->total_quantity, 2) }}
                 </div>
                 <div class="text-xs text-gray-500">

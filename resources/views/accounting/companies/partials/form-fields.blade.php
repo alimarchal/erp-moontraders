@@ -57,7 +57,7 @@
     <div>
         <x-label for="parent_company_id" value="Parent Company" />
         <select id="parent_company_id" name="parent_company_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">No Parent (top level)</option>
             @foreach ($parentOptions as $parent)
                 <option value="{{ $parent->id }}" {{ (int) old('parent_company_id', optional($company)->parent_company_id) === $parent->id ? 'selected' : '' }}>
@@ -113,7 +113,7 @@
     <div>
         <x-label for="default_currency_id" value="Default Currency" />
         <select id="default_currency_id" name="default_currency_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Select Currency</option>
             @foreach ($currencyOptions as $currency)
                 <option value="{{ $currency->id }}" {{ (int) old('default_currency_id', optional($company)->default_currency_id) === $currency->id ? 'selected' : '' }}>
@@ -125,7 +125,7 @@
     <div>
         <x-label for="cost_center_id" value="Default Cost Center" />
         <select id="cost_center_id" name="cost_center_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Select Cost Center</option>
             @foreach ($costCenterOptions as $costCenter)
                 <option value="{{ $costCenter->id }}" {{ (int) old('cost_center_id', optional($company)->cost_center_id) === $costCenter->id ? 'selected' : '' }}>
@@ -139,14 +139,14 @@
 <div class="mt-4">
     <x-label for="company_description" value="Company Description" />
     <textarea id="company_description" name="company_description" rows="3"
-        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
         placeholder="Brief description">{{ old('company_description', optional($company)->company_description) }}</textarea>
 </div>
 
 <div class="mt-4">
     <x-label for="registration_details" value="Registration Details" />
     <textarea id="registration_details" name="registration_details" rows="3"
-        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm">{{ old('registration_details', optional($company)->registration_details) }}</textarea>
+        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">{{ old('registration_details', optional($company)->registration_details) }}</textarea>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -167,7 +167,7 @@
         <div>
             <x-label :for="$field" :value="$label" />
             <select id="{{ $field }}" name="{{ $field }}"
-                class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                 <option value="">Select Account</option>
                 @foreach ($accountOptions as $account)
                     <option value="{{ $account->id }}" {{ (int) old($field, optional($company)->{$field}) === $account->id ? 'selected' : '' }}>
@@ -185,7 +185,7 @@
         <input id="is_group" type="checkbox" name="is_group" value="1"
             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             {{ old('is_group', optional($company)->is_group) ? 'checked' : '' }}>
-        <label for="is_group" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+        <label for="is_group" class="ml-2 text-sm text-gray-700">
             This is a group company
         </label>
     </div>
@@ -195,7 +195,7 @@
         <input id="enable_perpetual_inventory" type="checkbox" name="enable_perpetual_inventory" value="1"
             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             {{ old('enable_perpetual_inventory', optional($company)->enable_perpetual_inventory ?? true) ? 'checked' : '' }}>
-        <label for="enable_perpetual_inventory" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+        <label for="enable_perpetual_inventory" class="ml-2 text-sm text-gray-700">
             Enable perpetual inventory
         </label>
     </div>
@@ -205,7 +205,7 @@
         <input id="allow_account_creation_against_child_company" type="checkbox" name="allow_account_creation_against_child_company" value="1"
             class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
             {{ old('allow_account_creation_against_child_company', optional($company)->allow_account_creation_against_child_company) ? 'checked' : '' }}>
-        <label for="allow_account_creation_against_child_company" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+        <label for="allow_account_creation_against_child_company" class="ml-2 text-sm text-gray-700">
             Allow account creation against child companies
         </label>
     </div>

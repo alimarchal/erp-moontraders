@@ -15,7 +15,7 @@
             <div>
                 <x-label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Statuses</option>
                     @foreach ($statusOptions as $value => $label)
                     <option value="{{ $value }}" {{ request('filter.status')===$value ? 'selected' : '' }}>
@@ -69,7 +69,7 @@
         $deleteDisabled = $period->isCurrent();
         @endphp
         <tr
-            class="border-b border-gray-200 dark:border-gray-700 text-sm {{ $period->isCurrent() ? 'bg-emerald-50 dark:bg-emerald-900/40' : '' }}">
+            class="border-b border-gray-200 text-sm {{ $period->isCurrent() ? 'bg-emerald-50/40' : '' }}">
             <td class="py-1 px-2 text-center">
                 {{ $periods->firstItem() + $index }}
             </td>

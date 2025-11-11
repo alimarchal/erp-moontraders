@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             Edit Goods Receipt Note: {{ $grn->grn_number }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -18,7 +18,7 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 mt-4 shadow-md" />
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
                     <x-validation-errors class="mb-4 mt-4" />
 
@@ -37,7 +37,7 @@
                             <div>
                                 <x-label for="supplier_id" value="Supplier *" />
                                 <select id="supplier_id" name="supplier_id" required
-                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Supplier</option>
                                     @foreach ($suppliers as $supplier)
                                     <option value="{{ $supplier->id }}" {{ old('supplier_id', $grn->supplier_id) ==
@@ -51,7 +51,7 @@
                             <div>
                                 <x-label for="warehouse_id" value="Warehouse *" />
                                 <select id="warehouse_id" name="warehouse_id" required
-                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Warehouse</option>
                                     @foreach ($warehouses as $warehouse)
                                     <option value="{{ $warehouse->id }}" {{ old('warehouse_id', $grn->warehouse_id) ==
@@ -77,13 +77,13 @@
                             </div>
                         </div>
 
-                        <hr class="my-6 border-gray-200 dark:border-gray-700">
+                        <hr class="my-6 border-gray-200">
 
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Line Items</h3>
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Line Items</h3>
 
                         <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                                <thead class="bg-gray-50 dark:bg-gray-900">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
                                     <tr>
                                         <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                                             Product</th>
@@ -103,13 +103,13 @@
                                             Action</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                                <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="(item, index) in items" :key="index">
                                         <tr>
                                             <td class="px-2 py-2">
                                                 <select :name="`items[${index}][product_id]`" required
                                                     x-model="item.product_id" @change="updateProduct(index)"
-                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                     <option value="">Select</option>
                                                     @foreach ($products as $product)
                                                     <option value="{{ $product->id }}">
@@ -120,7 +120,7 @@
                                             </td>
                                             <td class="px-2 py-2">
                                                 <select :name="`items[${index}][uom_id]`" required x-model="item.uom_id"
-                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                     <option value="">Select</option>
                                                     @foreach ($uoms as $uom)
                                                     <option value="{{ $uom->id }}">{{ $uom->uom_name }}</option>
@@ -131,24 +131,24 @@
                                                 <input type="number" :name="`items[${index}][quantity_received]`"
                                                     x-model="item.quantity_received" @input="updateTotal(index)"
                                                     step="0.01" min="0" required
-                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                             </td>
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][quantity_accepted]`"
                                                     x-model="item.quantity_accepted" @input="updateTotal(index)"
                                                     step="0.01" min="0" required
-                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                             </td>
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][unit_cost]`"
                                                     x-model="item.unit_cost" @input="updateTotal(index)" step="0.01"
                                                     min="0" required
-                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                             </td>
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][selling_price]`"
                                                     x-model="item.selling_price" step="0.01" min="0"
-                                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                             </td>
                                             <td class="px-2 py-2 text-right text-sm font-semibold"
                                                 x-text="formatCurrency(item.total)"></td>
@@ -166,7 +166,7 @@
                                         </tr>
                                     </template>
                                 </tbody>
-                                <tfoot class="bg-gray-50 dark:bg-gray-900">
+                                <tfoot class="bg-gray-50">
                                     <tr>
                                         <td colspan="8" class="px-2 py-2">
                                             <button type="button" @click="addItem()"
@@ -190,7 +190,7 @@
                             </table>
                         </div>
 
-                        <hr class="my-6 border-gray-200 dark:border-gray-700">
+                        <hr class="my-6 border-gray-200">
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
@@ -213,7 +213,7 @@
                         <div class="mt-4">
                             <x-label for="notes" value="Notes" />
                             <textarea id="notes" name="notes" rows="3"
-                                class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">{{ old('notes', $grn->notes) }}</textarea>
+                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">{{ old('notes', $grn->notes) }}</textarea>
                         </div>
 
                         <div class="flex items-center justify-end mt-6">

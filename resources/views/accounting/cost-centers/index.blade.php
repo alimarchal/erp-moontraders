@@ -21,7 +21,7 @@
             <div>
                 <x-label for="filter_type" value="Type" />
                 <select id="filter_type" name="filter[type]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All types</option>
                     @foreach ($typeOptions as $value => $label)
                         <option value="{{ $value }}" {{ request('filter.type') === $value ? 'selected' : '' }}>
@@ -34,7 +34,7 @@
             <div>
                 <x-label for="filter_is_active" value="Active Only" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="1" {{ request('filter.is_active') === '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ request('filter.is_active') === '0' ? 'selected' : '' }}>Inactive</option>
@@ -80,7 +80,7 @@
         emptyLinkText="Create a cost center">
 
         @foreach ($costCenters as $index => $costCenter)
-            <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+            <tr class="border-b border-gray-200 text-sm">
                 <td class="py-1 px-2 text-center">
                     {{ $costCenters->firstItem() + $index }}
                 </td>
@@ -88,7 +88,7 @@
                     {{ $costCenter->code }}
                 </td>
                 <td class="py-1 px-2">
-                    <div class="font-semibold text-gray-900 dark:text-gray-100">
+                    <div class="font-semibold text-gray-900">
                         {{ $costCenter->name }}
                     </div>
                     @if ($costCenter->description)

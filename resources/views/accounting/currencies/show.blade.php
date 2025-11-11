@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Currency: {{ $currency->currency_code }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -17,7 +17,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6">
                     <form>
@@ -25,14 +25,14 @@
                             <div>
                                 <x-label for="currency_code" value="Currency Code" :required="true" />
                                 <x-input id="currency_code" type="text" name="currency_code"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700 uppercase"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 uppercase"
                                     :value="$currency->currency_code" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="currency_name" value="Currency Name" :required="true" />
                                 <x-input id="currency_name" type="text" name="currency_name"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$currency->currency_name" disabled readonly />
                             </div>
                         </div>
@@ -41,21 +41,21 @@
                             <div>
                                 <x-label for="currency_symbol" value="Currency Symbol" />
                                 <x-input id="currency_symbol" type="text" name="currency_symbol"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$currency->currency_symbol" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="exchange_rate" value="Exchange Rate" />
                                 <x-input id="exchange_rate" type="text" name="exchange_rate"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="number_format($currency->exchange_rate, 6)" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="status_label" value="Status" />
                                 <x-input id="status_label" type="text" name="status_label"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$currency->is_active ? 'Active' : 'Inactive'" disabled readonly />
                             </div>
                         </div>
@@ -64,7 +64,7 @@
                             <div>
                                 <x-label for="base_currency_label" value="Currency Type" />
                                 <x-input id="base_currency_label" type="text" name="base_currency_label"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$currency->is_base_currency ? 'Base Currency' : 'Secondary Currency'" disabled readonly />
                             </div>
 
@@ -73,7 +73,7 @@
                                     <input id="is_base_currency" type="checkbox"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                         {{ $currency->is_base_currency ? 'checked' : '' }} disabled>
-                                    <label for="is_base_currency" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <label for="is_base_currency" class="ml-2 text-sm text-gray-700">
                                         Base currency
                                     </label>
                                 </div>
@@ -82,7 +82,7 @@
                                     <input id="is_active" type="checkbox"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                         {{ $currency->is_active ? 'checked' : '' }} disabled>
-                                    <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <label for="is_active" class="ml-2 text-sm text-gray-700">
                                         Currency is active
                                     </label>
                                 </div>
@@ -92,7 +92,7 @@
                         <div class="mt-4">
                             <x-label for="notes" value="Notes" />
                             <textarea id="notes" name="notes"
-                                class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 dark:text-gray-300 rounded-md shadow-sm"
+                                class="mt-1 block w-full cursor-not-allowed bg-gray-100 border-gray-300 rounded-md shadow-sm"
                                 rows="3" disabled readonly>{{ $currency->is_base_currency ? 'Primary operating currency for the organization.' : 'Secondary currency.' }}</textarea>
                         </div>
 
@@ -100,14 +100,14 @@
                             <div>
                                 <x-label for="created_at" value="Created At" />
                                 <x-input id="created_at" type="text" name="created_at"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$currency->created_at?->format('d-m-Y H:i:s') ?? '-'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="updated_at" value="Last Updated" />
                                 <x-input id="updated_at" type="text" name="updated_at"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$currency->updated_at?->format('d-m-Y H:i:s') ?? '-'" disabled readonly />
                             </div>
                         </div>

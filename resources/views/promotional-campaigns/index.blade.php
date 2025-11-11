@@ -21,7 +21,7 @@
             <div>
                 <x-label for="filter_is_active" value="Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="1" {{ request('filter.is_active')==='1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ request('filter.is_active')==='0' ? 'selected' : '' }}>Inactive</option>
@@ -43,15 +43,15 @@
         emptyLinkText="Create a Campaign">
 
         @foreach ($campaigns as $index => $campaign)
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+        <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $campaigns->firstItem() + $index }}
             </td>
             <td class="py-1 px-2">
-                <span class="font-semibold text-gray-900 dark:text-gray-100">{{ $campaign->campaign_code }}</span>
+                <span class="font-semibold text-gray-900">{{ $campaign->campaign_code }}</span>
             </td>
             <td class="py-1 px-2">
-                <div class="font-medium text-gray-900 dark:text-gray-100">{{ $campaign->campaign_name }}</div>
+                <div class="font-medium text-gray-900">{{ $campaign->campaign_name }}</div>
                 @if ($campaign->description)
                 <div class="text-xs text-gray-500 truncate max-w-xs">{{ $campaign->description }}</div>
                 @endif
@@ -59,16 +59,16 @@
             <td class="py-1 px-2">
                 @if ($campaign->discount_type === 'buy_x_get_y')
                 <span
-                    class="px-2 py-1 text-xs font-semibold rounded bg-orange-100 text-orange-800 dark:bg-orange-800 dark:text-orange-100">
+                    class="px-2 py-1 text-xs font-semibold rounded bg-orange-100 text-orange-800">
                     {{ $campaign->buy_quantity }}+{{ $campaign->get_quantity }}
                 </span>
                 @elseif ($campaign->discount_type === 'percentage')
-                <span class="text-xs text-gray-600 dark:text-gray-400">{{ $campaign->discount_value }}% Off</span>
+                <span class="text-xs text-gray-600">{{ $campaign->discount_value }}% Off</span>
                 @elseif ($campaign->discount_type === 'fixed_amount')
-                <span class="text-xs text-gray-600 dark:text-gray-400">Rs. {{ number_format($campaign->discount_value,
+                <span class="text-xs text-gray-600">Rs. {{ number_format($campaign->discount_value,
                     2) }} Off</span>
                 @else
-                <span class="text-xs text-gray-600 dark:text-gray-400">Special Price</span>
+                <span class="text-xs text-gray-600">Special Price</span>
                 @endif
             </td>
             <td class="py-1 px-2 text-center">
@@ -80,12 +80,12 @@
             <td class="py-1 px-2 text-center">
                 @if ($campaign->is_active)
                 <span
-                    class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100">
+                    class="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">
                     Active
                 </span>
                 @else
                 <span
-                    class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
+                    class="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
                     Inactive
                 </span>
                 @endif
@@ -93,7 +93,7 @@
             <td class="py-1 px-2 text-center">
                 <div class="flex justify-center space-x-2">
                     <a href="{{ route('promotional-campaigns.edit', $campaign->id) }}"
-                        class="text-blue-600 hover:text-blue-800 dark:text-blue-400" title="Edit">
+                        class="text-blue-600 hover:text-blue-800" title="Edit">
                         <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -105,7 +105,7 @@
                         class="inline-block">
                         @csrf
                         @method('DELETE')
-                        <button type="submit" class="text-red-600 hover:text-red-800 dark:text-red-400" title="Delete">
+                        <button type="submit" class="text-red-600 hover:text-red-800" title="Delete">
                             <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"

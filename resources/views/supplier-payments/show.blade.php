@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             Payment: {{ $supplierPayment->payment_number }}
         </h2>
         <div class="flex justify-center items-center float-right space-x-2">
@@ -72,26 +72,26 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md" />
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">Payment
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Payment
                                 Number
                             </h3>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{
+                            <p class="text-lg font-bold text-gray-900">{{
                                 $supplierPayment->payment_number }}
                             </p>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">Payment
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Payment
                                 Date
                             </h3>
-                            <p class="text-lg text-gray-900 dark:text-gray-100">
+                            <p class="text-lg text-gray-900">
                                 {{ \Carbon\Carbon::parse($supplierPayment->payment_date)->format('d M Y') }}</p>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</h3>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Status</h3>
                             <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
                                 {{ $supplierPayment->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
                                 {{ $supplierPayment->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}
@@ -103,45 +103,45 @@
                         </div>
                     </div>
 
-                    <hr class="my-6 border-gray-200 dark:border-gray-700">
+                    <hr class="my-6 border-gray-200">
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">
                                 Supplier
                             </h3>
-                            <p class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            <p class="text-base font-semibold text-gray-900">
                                 {{ $supplierPayment->supplier->supplier_name }}</p>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">
                                 Payment
                                 Method</h3>
-                            <p class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            <p class="text-base font-semibold text-gray-900">
                                 {{ ucfirst(str_replace('_', ' ', $supplierPayment->payment_method)) }}</p>
                         </div>
                         @if ($supplierPayment->bankAccount)
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Bank
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Bank
                                 Account</h3>
-                            <p class="text-base text-gray-900 dark:text-gray-100">
+                            <p class="text-base text-gray-900">
                                 {{ $supplierPayment->bankAccount->account_name }}</p>
-                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                            <p class="text-sm text-gray-600">
                                 {{ $supplierPayment->bankAccount->account_number }}</p>
                         </div>
                         @endif
                         @if ($supplierPayment->reference_number)
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">
                                 Reference
                                 Number</h3>
-                            <p class="text-base text-gray-900 dark:text-gray-100">{{
+                            <p class="text-base text-gray-900">{{
                                 $supplierPayment->reference_number
                                 }}</p>
                         </div>
                         @endif
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Amount
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Amount
                             </h3>
                             <p class="text-2xl font-bold text-emerald-600">₨ {{
                                 number_format($supplierPayment->amount,
@@ -149,10 +149,10 @@
                             </p>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">
                                 Created By
                             </h3>
-                            <p class="text-base text-gray-900 dark:text-gray-100">{{
+                            <p class="text-base text-gray-900">{{
                                 $supplierPayment->createdBy->name
                                 ?? 'N/A'
                                 }}
@@ -162,10 +162,10 @@
                         </div>
                         @if ($supplierPayment->posted_at)
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Posted
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Posted
                                 By
                             </h3>
-                            <p class="text-base text-gray-900 dark:text-gray-100">{{
+                            <p class="text-base text-gray-900">{{
                                 $supplierPayment->postedBy->name ??
                                 'N/A'
                                 }}
@@ -176,11 +176,11 @@
                         @endif
                         @if ($supplierPayment->reversed_at)
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">
                                 Reversed
                                 By
                             </h3>
-                            <p class="text-base text-gray-900 dark:text-gray-100">{{
+                            <p class="text-base text-gray-900">{{
                                 $supplierPayment->reversedBy->name
                                 ??
                                 'N/A'
@@ -195,43 +195,43 @@
 
                     @if ($supplierPayment->description)
                     <div class="mb-6">
-                        <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                        <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">
                             Description
                         </h3>
-                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
+                        <p class="text-sm text-gray-700 whitespace-pre-line">
                             {{ $supplierPayment->description }}</p>
                     </div>
                     @endif
 
-                    <hr class="my-6 border-gray-200 dark:border-gray-700">
+                    <hr class="my-6 border-gray-200">
 
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">GRN Allocations</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">GRN Allocations</h3>
 
                     @if ($supplierPayment->grnAllocations->count() > 0)
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
-                            <thead class="bg-gray-50 dark:bg-gray-900">
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                            <thead class="bg-gray-50">
+                                <tr class="border-b border-gray-200">
                                     <th
-                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         GRN Number</th>
                                     <th
-                                        class="py-1 px-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         GRN Date</th>
                                     <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         GRN Amount</th>
                                     <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Allocated Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($supplierPayment->grnAllocations as $allocation)
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                                <tr class="border-b border-gray-200">
                                     <td class="py-1 px-2">
                                         <a href="{{ route('goods-receipt-notes.show', $allocation->grn_id) }}"
-                                            class="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 font-semibold">
+                                            class="text-blue-600 hover:text-blue-800 font-semibold">
                                             {{ $allocation->grn->grn_number }}
                                         </a>
                                     </td>
@@ -247,8 +247,8 @@
                                 </tr>
                                 @endforeach
                             </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-900">
-                                <tr class="border-t-2 border-gray-300 dark:border-gray-600">
+                            <tfoot class="bg-gray-50">
+                                <tr class="border-t-2 border-gray-300">
                                     <td colspan="3" class="py-1 px-2 text-right font-bold">Total Allocated:</td>
                                     <td class="py-1 px-2 text-right font-bold">
                                         ₨ {{
@@ -261,56 +261,56 @@
                     </div>
                     @else
                     <div class="text-center py-8">
-                        <p class="text-gray-500 dark:text-gray-400">No GRN allocations found for this payment.</p>
+                        <p class="text-gray-500">No GRN allocations found for this payment.</p>
                     </div>
                     @endif
 
                     @if ($supplierPayment->journalEntry)
-                    <hr class="my-6 border-gray-200 dark:border-gray-700">
+                    <hr class="my-6 border-gray-200">
 
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Journal Entry Details
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Journal Entry Details
                     </h3>
 
                     <div class="mb-4">
-                        <span class="text-sm text-gray-500 dark:text-gray-400">Journal Entry Number:</span>
+                        <span class="text-sm text-gray-500">Journal Entry Number:</span>
                         <a href="{{ route('journal-entries.show', $supplierPayment->journalEntry->id) }}"
                             class="text-blue-600 hover:text-blue-800 font-semibold ml-2">
                             {{ $supplierPayment->journalEntry->entry_number }}
                         </a>
-                        <span class="text-sm text-gray-500 dark:text-gray-400 ml-4">Date:</span>
-                        <span class="text-sm text-gray-900 dark:text-gray-100 ml-2">
+                        <span class="text-sm text-gray-500 ml-4">Date:</span>
+                        <span class="text-sm text-gray-900 ml-2">
                             {{ \Carbon\Carbon::parse($supplierPayment->journalEntry->entry_date)->format('d M Y') }}
                         </span>
                     </div>
 
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
-                            <thead class="bg-gray-50 dark:bg-gray-900">
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                            <thead class="bg-gray-50">
+                                <tr class="border-b border-gray-200">
                                     <th
-                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Account</th>
                                     <th
-                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Description</th>
                                     <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Debit</th>
                                     <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Credit</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($supplierPayment->journalEntry->details->sortBy('line_no') as $detail)
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                                <tr class="border-b border-gray-200">
                                     <td class="py-1 px-2">
-                                        <div class="font-semibold text-gray-900 dark:text-gray-100">
+                                        <div class="font-semibold text-gray-900">
                                             {{ $detail->account->account_code }}</div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{
+                                        <div class="text-xs text-gray-500">{{
                                             $detail->account->account_name }}</div>
                                     </td>
-                                    <td class="py-1 px-2 text-gray-700 dark:text-gray-300">
+                                    <td class="py-1 px-2 text-gray-700">
                                         {{ $detail->description }}
                                     </td>
                                     <td class="py-1 px-2 text-right font-semibold">
@@ -330,8 +330,8 @@
                                 </tr>
                                 @endforeach
                             </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-900">
-                                <tr class="border-t-2 border-gray-300 dark:border-gray-600">
+                            <tfoot class="bg-gray-50">
+                                <tr class="border-t-2 border-gray-300">
                                     <td colspan="2" class="py-1 px-2 text-right font-semibold">Totals:</td>
                                     <td class="py-1 px-2 text-right font-bold">
                                         ₨ {{ number_format($supplierPayment->journalEntry->details->sum('debit'), 2)
@@ -358,7 +358,7 @@
 
     <x-password-confirm-modal id="reversePasswordModal" title="Confirm Payment Reversal"
         message="⚠️ WARNING: This will reverse the payment and create a reversing journal entry."
-        warningClass="text-red-600 dark:text-red-400" confirmButtonText="Confirm Reverse"
+        warningClass="text-red-600" confirmButtonText="Confirm Reverse"
         confirmButtonClass="bg-orange-600 hover:bg-orange-700" />
 
     <script>

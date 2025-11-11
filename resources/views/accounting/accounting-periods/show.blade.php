@@ -6,7 +6,7 @@
 
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Accounting Period: {{ $accountingPeriod->name }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -23,7 +23,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6">
                     <form>
@@ -31,14 +31,14 @@
                             <div>
                                 <x-label for="name" value="Period Name" />
                                 <x-input id="name" type="text" name="name"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountingPeriod->name" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="status" value="Status" />
                                 <x-input id="status" type="text" name="status"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$statusLabel" disabled readonly />
                             </div>
                         </div>
@@ -47,21 +47,21 @@
                             <div>
                                 <x-label for="start_date" value="Start Date" />
                                 <x-input id="start_date" type="text" name="start_date"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountingPeriod->start_date?->format('d-m-Y')" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="end_date" value="End Date" />
                                 <x-input id="end_date" type="text" name="end_date"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountingPeriod->end_date?->format('d-m-Y')" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="duration" value="Duration (days)" />
                                 <x-input id="duration" type="text" name="duration"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$durationDays" disabled readonly />
                             </div>
                         </div>
@@ -70,7 +70,7 @@
                             <div>
                                 <x-label for="current_flag" value="Current Operational Period" />
                                 <x-input id="current_flag" type="text" name="current_flag"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountingPeriod->isCurrent() ? 'Yes' : 'No'" disabled readonly />
                             </div>
 
@@ -79,7 +79,7 @@
                                     <input id="status_checkbox" type="checkbox"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                         {{ $accountingPeriod->status === \App\Models\AccountingPeriod::STATUS_OPEN ? 'checked' : '' }} disabled>
-                                    <label for="status_checkbox" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                    <label for="status_checkbox" class="ml-2 text-sm text-gray-700">
                                         Period is open
                                     </label>
                                 </div>
@@ -90,14 +90,14 @@
                             <div>
                                 <x-label for="created_at" value="Created At" />
                                 <x-input id="created_at" type="text" name="created_at"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountingPeriod->created_at?->format('d-m-Y H:i:s') ?? '-'" disabled readonly />
                             </div>
 
                             <div>
                                 <x-label for="updated_at" value="Last Updated" />
                                 <x-input id="updated_at" type="text" name="updated_at"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountingPeriod->updated_at?->format('d-m-Y H:i:s') ?? '-'" disabled readonly />
                             </div>
                         </div>

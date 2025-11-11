@@ -2,7 +2,7 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <div>
-                <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+                <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
                     Journal Entry #{{ $journalEntry->id }}
                 </h2>
                 <p class="text-sm text-gray-500">
@@ -58,9 +58,9 @@
             $totalCredit = $journalEntry->details->sum('credit');
             @endphp
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow sm:rounded-lg">
                 <div
-                    class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-700 dark:text-gray-200">
+                    class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-700">
                     <div>
                         <span class="font-semibold block text-gray-500 uppercase text-xs">Entry Date</span>
                         <span>{{ optional($journalEntry->entry_date)->format('F d, Y') }}</span>
@@ -104,18 +104,18 @@
                 @if ($journalEntry->description)
                 <div class="px-6 pb-6">
                     <span class="font-semibold block text-gray-500 uppercase text-xs mb-1">Description</span>
-                    <p class="text-sm text-gray-700 dark:text-gray-300">{{ $journalEntry->description }}</p>
+                    <p class="text-sm text-gray-700">{{ $journalEntry->description }}</p>
                 </div>
                 @endif
             </div>
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow sm:rounded-lg">
                 <div class="pb-6">
                     <div class="overflow-x-auto">
                         <table class="min-w-full table-auto text-sm">
                             <thead>
                                 <tr class="bg-green-800 text-white uppercase text-xs">
-                                    <th class="text-lg font-semibold text-white dark:text-gray-200 py-2" colspan="6">
+                                    <th class="text-lg font-semibold text-white py-2" colspan="6">
                                         Detail Lines</th>
                                 </tr>
                             </thead>
@@ -148,7 +148,7 @@
                                     <td class="py-2 px-2 text-right">
                                         {{ number_format((float) $detail->credit, 2) }}
                                     </td>
-                                    <td class="py-2 px-2 text-left text-sm text-gray-600 dark:text-gray-300">
+                                    <td class="py-2 px-2 text-left text-sm text-gray-600">
                                         {{ $detail->description ?? '—' }}
                                     </td>
                                 </tr>
@@ -172,13 +172,13 @@
             </div>
 
             @if ($journalEntry->attachments->isNotEmpty())
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow sm:rounded-lg">
                 <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Attachments</h3>
-                    <ul class="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Attachments</h3>
+                    <ul class="space-y-2 text-sm text-gray-700">
                         @foreach ($journalEntry->attachments as $attachment)
                         <li
-                            class="flex items-center justify-between border border-gray-200 dark:border-gray-700 rounded-md px-3 py-2">
+                            class="flex items-center justify-between border border-gray-200 rounded-md px-3 py-2">
                             <div>
                                 <p class="font-semibold">{{ $attachment->file_name }}</p>
                                 <p class="text-xs text-gray-500">

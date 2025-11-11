@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Warehouse: {{ $warehouse->warehouse_name }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -17,7 +17,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6">
                     <form>
@@ -25,13 +25,13 @@
                             <div>
                                 <x-label value="Warehouse Name" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->warehouse_name" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Company" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->company?->company_name ?? '-'" disabled readonly />
                             </div>
                         </div>
@@ -40,14 +40,14 @@
                             <div>
                                 <x-label value="Type" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->warehouseType?->name ?? '-'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Account" />
                                 @php($account = $warehouse->account)
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$account ? ($account->account_code . ' - ' . $account->account_name) : '-'"
                                     disabled readonly />
                             </div>
@@ -57,13 +57,13 @@
                             <div>
                                 <x-label value="Parent Warehouse" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->parentWarehouse?->warehouse_name ?? '-'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Default In-Transit Warehouse" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->defaultInTransitWarehouse?->warehouse_name ?? '-'" disabled
                                     readonly />
                             </div>
@@ -73,19 +73,19 @@
                             <div>
                                 <x-label value="Group" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->is_group ? 'Yes' : 'No'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Disabled" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->disabled ? 'Yes' : 'No'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Rejected Warehouse" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->is_rejected_warehouse ? 'Yes' : 'No'" disabled readonly />
                             </div>
                         </div>
@@ -94,19 +94,19 @@
                             <div>
                                 <x-label value="Email" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->email_id ?? '-'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Phone" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->phone_no ?? '-'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Mobile" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->mobile_no ?? '-'" disabled readonly />
                             </div>
                         </div>
@@ -115,13 +115,13 @@
                             <div>
                                 <x-label value="Address Line 1" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->address_line_1 ?? '-'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Address Line 2" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->address_line_2 ?? '-'" disabled readonly />
                             </div>
                         </div>
@@ -130,19 +130,19 @@
                             <div>
                                 <x-label value="City" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->city ?? '-'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="State" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->state ?? '-'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="PIN/Postal Code" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouse->pin ?? '-'" disabled readonly />
                             </div>
                         </div>

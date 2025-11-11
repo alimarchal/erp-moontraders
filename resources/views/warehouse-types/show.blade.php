@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Warehouse Type: {{ $warehouseType->name }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -17,7 +17,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6">
                     <form>
@@ -25,7 +25,7 @@
                             <div>
                                 <x-label value="Type Name" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouseType->name" disabled readonly />
                             </div>
                         </div>
@@ -34,7 +34,7 @@
                             <div>
                                 <x-label value="Description" />
                                 <textarea rows="4"
-                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-700 bg-gray-100 dark:text-gray-300 rounded-md shadow-sm block mt-1 w-full cursor-not-allowed"
+                                    class="border-gray-300 bg-gray-100 rounded-md shadow-sm block mt-1 w-full cursor-not-allowed"
                                     disabled readonly>{{ $warehouseType->description ?? '-' }}</textarea>
                             </div>
                         </div>
@@ -43,13 +43,13 @@
                             <div>
                                 <x-label value="Active" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouseType->is_active ? 'Yes' : 'No'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Warehouses Count" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouseType->warehouses()->count()" disabled readonly />
                             </div>
                         </div>
@@ -58,14 +58,14 @@
                             <div>
                                 <x-label value="Created At" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouseType->created_at?->format('d-m-Y H:i:s') ?? '-'" disabled
                                     readonly />
                             </div>
                             <div>
                                 <x-label value="Last Updated" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$warehouseType->updated_at?->format('d-m-Y H:i:s') ?? '-'" disabled
                                     readonly />
                             </div>

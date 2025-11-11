@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             Circulars
         </h2>
 
@@ -44,7 +44,7 @@
 
     <!-- FILTER SECTION -->
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg" id="filters"
+        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg" id="filters"
             style="display: none">
             <div class="p-6">
                 <form method="GET" action="{{ route('circulars.index') }}">
@@ -85,7 +85,7 @@
     <!-- TABLE SECTION -->
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 pb-16">
         <x-status-message />
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
 
             @if ($circulars->count() > 0)
             <div class="relative overflow-x-auto rounded-lg">
@@ -179,7 +179,7 @@
                 {{ $circulars->links() }}
             </div>
             @else
-            <p class="text-gray-700 dark:text-gray-300 text-center py-4">
+            <p class="text-gray-700 text-center py-4">
                 No circulars found.
                 <a href="{{ route('circulars.create') }}" class="text-blue-600 hover:underline">
                     Add a new circular

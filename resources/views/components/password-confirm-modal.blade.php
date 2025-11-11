@@ -2,7 +2,7 @@
 'id' => 'passwordModal',
 'title' => 'Confirm Action',
 'message' => 'Enter your password to confirm this action.',
-'warningClass' => 'text-gray-600 dark:text-gray-400',
+'warningClass' => 'text-gray-600',
 'confirmButtonText' => 'Confirm',
 'confirmButtonClass' => 'bg-emerald-600 hover:bg-emerald-700',
 ])
@@ -10,18 +10,18 @@
 <!-- Password Confirmation Modal -->
 <div id="{{ $id }}" style="display: none;"
     class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
-    <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white dark:bg-gray-800">
+    <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
-            <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">{{ $title }}</h3>
+            <h3 class="text-lg font-medium text-gray-900 mb-4">{{ $title }}</h3>
             <p class="text-sm {{ $warningClass }} mb-4">
                 {{ $message }}
             </p>
             <div class="mb-4">
-                <label for="{{ $id }}_input" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label for="{{ $id }}_input" class="block text-sm font-medium text-gray-700 mb-2">
                     🔒 Enter your password to confirm:
                 </label>
                 <input type="password" id="{{ $id }}_input" autocomplete="off"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 dark:bg-gray-700 dark:text-gray-100"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                     placeholder="Password">
             </div>
             <div class="flex justify-end space-x-3">

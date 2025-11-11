@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Company: {{ $company->company_name }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -17,7 +17,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6">
                     <form>
@@ -25,13 +25,13 @@
                             <div>
                                 <x-label value="Company Name" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->company_name" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Abbreviation" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->abbr ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -40,13 +40,13 @@
                             <div>
                                 <x-label value="Country" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->country ?? '—'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Tax ID" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->tax_id ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -55,13 +55,13 @@
                             <div>
                                 <x-label value="Domain" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->domain ?? '—'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Parent Company" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->parentCompany ? $company->parentCompany->company_name : '—'"
                                     disabled readonly />
                             </div>
@@ -71,13 +71,13 @@
                             <div>
                                 <x-label value="Phone Number" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->phone_no ?? '—'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Email" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->email ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -86,13 +86,13 @@
                             <div>
                                 <x-label value="Fax" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->fax ?? '—'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Website" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->website ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -101,21 +101,21 @@
                             <div>
                                 <x-label value="Date of Establishment" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="optional($company->date_of_establishment)?->format('d-m-Y') ?? '—'" disabled
                                     readonly />
                             </div>
                             <div>
                                 <x-label value="Date of Incorporation" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="optional($company->date_of_incorporation)?->format('d-m-Y') ?? '—'" disabled
                                     readonly />
                             </div>
                             <div>
                                 <x-label value="Date of Commencement" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="optional($company->date_of_commencement)?->format('d-m-Y') ?? '—'" disabled
                                     readonly />
                             </div>
@@ -125,14 +125,14 @@
                             <div>
                                 <x-label value="Default Currency" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->defaultCurrency ? ($company->defaultCurrency->currency_code . ' · ' . $company->defaultCurrency->currency_name) : '—'"
                                     disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Default Cost Center" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->costCenter ? ($company->costCenter->code . ' · ' . $company->costCenter->name) : '—'"
                                     disabled readonly />
                             </div>
@@ -141,14 +141,14 @@
                         <div class="mt-4">
                             <x-label value="Company Description" />
                             <textarea rows="3"
-                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
+                                class="mt-1 block w-full border-gray-300 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
                                 disabled readonly>{{ $company->company_description ?? '—' }}</textarea>
                         </div>
 
                         <div class="mt-4">
                             <x-label value="Registration Details" />
                             <textarea rows="3"
-                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
+                                class="mt-1 block w-full border-gray-300 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
                                 disabled readonly>{{ $company->registration_details ?? '—' }}</textarea>
                         </div>
 
@@ -156,14 +156,14 @@
                             <div>
                                 <x-label value="Credit Limit" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="!is_null($company->credit_limit) ? number_format((float) $company->credit_limit, 2) : '—'"
                                     disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Monthly Sales Target" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="!is_null($company->monthly_sales_target) ? number_format((float) $company->monthly_sales_target, 2) : '—'"
                                     disabled readonly />
                             </div>
@@ -179,61 +179,61 @@
                             <div>
                                 <x-label value="Default Bank Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountDisplay($company->defaultBankAccount)" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Default Cash Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountDisplay($company->defaultCashAccount)" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Default Receivable Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountDisplay($company->defaultReceivableAccount)" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Default Payable Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountDisplay($company->defaultPayableAccount)" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Default Expense Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountDisplay($company->defaultExpenseAccount)" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Default Income Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountDisplay($company->defaultIncomeAccount)" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Write-off Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountDisplay($company->writeOffAccount)" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Round-off Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountDisplay($company->roundOffAccount)" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Default Inventory Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountDisplay($company->defaultInventoryAccount)" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Stock Adjustment Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$accountDisplay($company->stockAdjustmentAccount)" disabled readonly />
                             </div>
                         </div>
@@ -243,7 +243,7 @@
                                 <input type="checkbox"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                     {{ $company->is_group ? 'checked' : '' }} disabled>
-                                <label class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                <label class="ml-2 text-sm text-gray-700">
                                     This is a group company
                                 </label>
                             </div>
@@ -251,7 +251,7 @@
                                 <input type="checkbox"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                     {{ $company->enable_perpetual_inventory ? 'checked' : '' }} disabled>
-                                <label class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                <label class="ml-2 text-sm text-gray-700">
                                     Enable perpetual inventory
                                 </label>
                             </div>
@@ -260,7 +260,7 @@
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                     {{ $company->allow_account_creation_against_child_company ? 'checked' : '' }}
                                 disabled>
-                                <label class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                <label class="ml-2 text-sm text-gray-700">
                                     Allow account creation against child companies
                                 </label>
                             </div>
@@ -270,13 +270,13 @@
                             <div>
                                 <x-label value="Created At" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->created_at?->format('d-m-Y H:i:s') ?? '—'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Last Updated" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$company->updated_at?->format('d-m-Y H:i:s') ?? '—'" disabled readonly />
                             </div>
                         </div>

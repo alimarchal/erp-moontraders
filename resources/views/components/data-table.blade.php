@@ -8,7 +8,7 @@
 
 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 pb-16">
     <x-status-message />
-    <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+    <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
 
         @if ($items->count() > 0)
         <div class="relative overflow-x-auto rounded-lg">
@@ -33,7 +33,7 @@
         </div>
         @endif
         @else
-        <p class="text-gray-700 dark:text-gray-300 text-center py-4">
+        <p class="text-gray-700 text-center py-4">
             {{ $emptyMessage }}
             @if($emptyRoute)
             <a href="{{ $emptyRoute }}" class="text-blue-600 hover:underline">

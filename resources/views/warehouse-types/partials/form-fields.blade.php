@@ -15,7 +15,7 @@ $warehouseType = $warehouseType ?? null;
     <div>
         <x-label for="description" value="Description" />
         <textarea id="description" name="description" rows="4"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
             placeholder="Describe the warehouse type...">{{ old('description', optional($warehouseType)->description) }}</textarea>
     </div>
 </div>

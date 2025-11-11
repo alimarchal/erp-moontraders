@@ -27,7 +27,7 @@
             <div>
                 <x-label for="filter_must_be_whole_number" value="Quantity Type" />
                 <select id="filter_must_be_whole_number" name="filter[must_be_whole_number]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Both</option>
                     @foreach ($quantityOptions as $value => $label)
                         <option value="{{ $value }}" {{ request('filter.must_be_whole_number') === (string) $value ? 'selected' : '' }}>
@@ -40,7 +40,7 @@
             <div>
                 <x-label for="filter_enabled" value="Status" />
                 <select id="filter_enabled" name="filter[enabled]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Both</option>
                     @foreach ($statusOptions as $value => $label)
                         <option value="{{ $value }}" {{ request('filter.enabled') === (string) $value ? 'selected' : '' }}>
@@ -62,7 +62,7 @@
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No units found." :emptyRoute="route('uoms.create')" emptyLinkText="Add a unit">
         @foreach ($uoms as $index => $uom)
-            <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+            <tr class="border-b border-gray-200 text-sm">
                 <td class="py-1 px-2 text-center">
                     {{ $uoms->firstItem() + $index }}
                 </td>

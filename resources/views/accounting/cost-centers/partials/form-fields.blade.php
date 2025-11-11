@@ -23,7 +23,7 @@
     <div>
         <x-label for="type" value="Type" :required="true" />
         <select id="type" name="type"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
             required>
             <option value="">Select Type</option>
             @foreach ($typeOptions as $value => $label)
@@ -37,7 +37,7 @@
     <div>
         <x-label for="parent_id" value="Parent Cost Center" />
         <select id="parent_id" name="parent_id"
-            class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">No Parent (top level)</option>
             @foreach ($parentOptions as $parent)
                 <option value="{{ $parent->id }}" {{ (int) old('parent_id', optional($costCenter)->parent_id) === $parent->id ? 'selected' : '' }}>
@@ -65,7 +65,7 @@
 <div class="mt-4">
     <x-label for="description" value="Description" />
     <textarea id="description" name="description"
-        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
         rows="3" placeholder="Optional notes for this cost center">{{ old('description', optional($costCenter)->description) }}</textarea>
 </div>
 
@@ -74,7 +74,7 @@
     <input id="is_active" type="checkbox" name="is_active" value="1"
         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
         {{ old('is_active', optional($costCenter)->is_active ?? true) ? 'checked' : '' }}>
-    <label for="is_active" class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+    <label for="is_active" class="ml-2 text-sm text-gray-700">
         Cost center is active
     </label>
 </div>

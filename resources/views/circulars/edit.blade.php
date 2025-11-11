@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             Edit Circular: {{ $circular->circular_no }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -17,7 +17,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6">
                     <x-validation-errors class="mb-4 mt-4" />
@@ -43,7 +43,7 @@
                                 <div class="flex-1">
                                     <x-label for="division_id" value="Division" :required="true" />
                                     <select id="division_id" name="division_id"
-                                        class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm select2"
+                                        class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm select2"
                                         required>
                                         <option value="">Select Division</option>
                                         @foreach ($divisions as $division)
@@ -60,7 +60,7 @@
                         <div class="col-span-2">
                             <x-label for="description" value="Description" />
                             <textarea id="description" name="description"
-                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                 rows="3">{{ old('description', $circular->description) }}</textarea>
                         </div>
 
@@ -68,9 +68,9 @@
                             <x-label for="attachment" value="Attachment" />
                             @if ($circular->attachment)
                                 <div class="mb-2">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Current file: </span>
+                                    <span class="text-sm text-gray-600">Current file: </span>
                                     <a href="{{ Storage::url($circular->attachment) }}"
-                                        class="text-sm text-blue-600 dark:text-blue-400 hover:underline"
+                                        class="text-sm text-blue-600 hover:underline"
                                         target="_blank">
                                         View Current Attachment
                                     </a>
@@ -83,7 +83,7 @@
                                 file:text-sm file:font-semibold
                                 file:bg-blue-950 file:text-white
                                 hover:file:bg-green-800" />
-                            <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                            <p class="mt-1 text-sm text-gray-500">
                                 Leave empty to keep the current file
                             </p>
                         </div>

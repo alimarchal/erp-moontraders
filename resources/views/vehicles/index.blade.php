@@ -42,7 +42,7 @@
             <div>
                 <x-label for="filter_company_id" value="Company" />
                 <select id="filter_company_id" name="filter[company_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Companies</option>
                     @foreach ($companyOptions as $company)
                     <option value="{{ $company->id }}" {{ request('filter.company_id')===(string) $company->id ?
@@ -56,7 +56,7 @@
             <div>
                 <x-label for="filter_supplier_id" value="Transporter / Supplier" />
                 <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
                     @foreach ($supplierOptions as $supplier)
                     <option value="{{ $supplier->id }}" {{ request('filter.supplier_id')===(string) $supplier->id ?
@@ -70,7 +70,7 @@
             <div>
                 <x-label for="filter_employee_id" value="Assigned Driver" />
                 <select id="filter_employee_id" name="filter[employee_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Drivers</option>
                     @foreach ($employeeOptions as $employee)
                     <option value="{{ $employee->id }}" {{ request('filter.employee_id')===(string) $employee->id ?
@@ -84,7 +84,7 @@
             <div>
                 <x-label for="filter_is_active" value="Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Both</option>
                     @foreach ($statusOptions as $value => $label)
                     <option value="{{ $value }}" {{ request('filter.is_active')===(string) $value ? 'selected' : '' }}>
@@ -108,7 +108,7 @@
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No vehicles found." :emptyRoute="route('vehicles.create')" emptyLinkText="Add a vehicle">
         @foreach ($vehicles as $index => $vehicle)
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+        <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $vehicles->firstItem() + $index }}
             </td>

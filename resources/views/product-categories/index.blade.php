@@ -21,7 +21,7 @@
             <div>
                 <x-label for="filter_parent_id" value="Parent Category" />
                 <select id="filter_parent_id" name="filter[parent_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($parentOptions as $parent)
                     <option value="{{ $parent->id }}" {{ request('filter.parent_id') === (string) $parent->id ? 'selected' : '' }}>
@@ -40,7 +40,7 @@
             <div>
                 <x-label for="filter_is_active" value="Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Both</option>
                     @foreach ($statusOptions as $value => $label)
                     <option value="{{ $value }}" {{ request('filter.is_active') === $value ? 'selected' : '' }}>

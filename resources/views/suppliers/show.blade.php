@@ -5,7 +5,7 @@
 
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Supplier: {{ $supplier->supplier_name }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -22,7 +22,7 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6">
                     <form>
@@ -30,13 +30,13 @@
                             <div>
                                 <x-label value="Supplier Name" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->supplier_name" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Short Name" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700 uppercase"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 uppercase"
                                     :value="$supplier->short_name ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -45,13 +45,13 @@
                             <div>
                                 <x-label value="Supplier Group" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->supplier_group ?? '—'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Supplier Type" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->supplier_type ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -60,13 +60,13 @@
                             <div>
                                 <x-label value="Country" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->country ?? '—'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Default Price List" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->default_price_list ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -75,14 +75,14 @@
                             <div>
                                 <x-label value="Default Currency" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$currency ? $currency->currency_code . ' · ' . $currency->currency_name : '—'"
                                     disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Default Bank Account" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$bankAccount ? $bankAccount->account_code . ' · ' . $bankAccount->account_name : '—'"
                                     disabled readonly />
                             </div>
@@ -92,13 +92,13 @@
                             <div>
                                 <x-label value="Website" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->website ?? '—'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Print Language" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->print_language ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -107,13 +107,13 @@
                             <div>
                                 <x-label value="Tax ID" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->tax_id ?? '—'" disabled readonly />
                             </div>
                             <div>
                                 <x-label value="PAN Number" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->pan_number ?? '—'" disabled readonly />
                             </div>
                         </div>
@@ -123,7 +123,7 @@
                                 <input type="checkbox"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                     {{ $supplier->disabled ? 'checked' : '' }} disabled>
-                                <label class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                <label class="ml-2 text-sm text-gray-700">
                                     Supplier is disabled
                                 </label>
                             </div>
@@ -131,7 +131,7 @@
                                 <input type="checkbox"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                     {{ $supplier->is_transporter ? 'checked' : '' }} disabled>
-                                <label class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                <label class="ml-2 text-sm text-gray-700">
                                     Provides transportation
                                 </label>
                             </div>
@@ -139,7 +139,7 @@
                                 <input type="checkbox"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
                                     {{ $supplier->is_internal_supplier ? 'checked' : '' }} disabled>
-                                <label class="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                                <label class="ml-2 text-sm text-gray-700">
                                     Internal supplier
                                 </label>
                             </div>
@@ -148,21 +148,21 @@
                         <div class="mt-4">
                             <x-label value="Primary Address" />
                             <textarea rows="3"
-                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
+                                class="mt-1 block w-full border-gray-300 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
                                 disabled readonly>{{ $supplier->supplier_primary_address ?? '—' }}</textarea>
                         </div>
 
                         <div class="mt-4">
                             <x-label value="Primary Contact" />
                             <textarea rows="3"
-                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
+                                class="mt-1 block w-full border-gray-300 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
                                 disabled readonly>{{ $supplier->supplier_primary_contact ?? '—' }}</textarea>
                         </div>
 
                         <div class="mt-4">
                             <x-label value="Additional Details" />
                             <textarea rows="4"
-                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-700 dark:text-gray-200 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
+                                class="mt-1 block w-full border-gray-300 cursor-not-allowed bg-gray-100 rounded-md shadow-sm"
                                 disabled readonly>{{ $supplier->supplier_details ?? '—' }}</textarea>
                         </div>
 
@@ -170,14 +170,14 @@
                             <div>
                                 <x-label value="Created At" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->created_at?->format('d-m-Y H:i:s') ?? '—'"
                                     disabled readonly />
                             </div>
                             <div>
                                 <x-label value="Last Updated" />
                                 <x-input type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$supplier->updated_at?->format('d-m-Y H:i:s') ?? '—'"
                                     disabled readonly />
                             </div>

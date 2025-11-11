@@ -27,7 +27,7 @@
             <div>
                 <x-label for="filter_is_group" value="Company Type" />
                 <select id="filter_is_group" name="filter[is_group]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="1" {{ request('filter.is_group')==='1' ? 'selected' : '' }}>Group</option>
                     <option value="0" {{ request('filter.is_group')==='0' ? 'selected' : '' }}>Standalone</option>
@@ -37,7 +37,7 @@
             <div>
                 <x-label for="filter_default_currency_id" value="Default Currency" />
                 <select id="filter_default_currency_id" name="filter[default_currency_id]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All currencies</option>
                     @foreach ($currencyOptions as $currency)
                     <option value="{{ $currency->id }}" {{ (string) request('filter.default_currency_id')===(string)
@@ -74,12 +74,12 @@
         ]" emptyMessage="No companies found." :emptyRoute="route('companies.create')" emptyLinkText="Add a company">
 
         @foreach ($companies as $index => $company)
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+        <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $companies->firstItem() + $index }}
             </td>
             <td class="py-1 px-2">
-                <div class="font-semibold text-gray-900 dark:text-gray-100">
+                <div class="font-semibold text-gray-900">
                     {{ $company->company_name }}
                 </div>
                 <div class="text-xs text-gray-500">

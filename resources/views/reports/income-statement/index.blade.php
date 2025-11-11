@@ -10,7 +10,7 @@
             <div>
                 <x-label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
                     onchange="this.form.submit()">
                     <option value="">Custom Date Range</option>
                     @foreach($accountingPeriods as $period)
@@ -58,12 +58,12 @@
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 pb-16">
         <x-status-message />
-        <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6">
+        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
 
             <!-- Period Header -->
             <div class="mb-6 text-center">
-                <h2 class="text-2xl font-bold text-gray-800 dark:text-gray-200">Income Statement</h2>
-                <p class="text-lg text-gray-600 dark:text-gray-400 mt-2">
+                <h2 class="text-2xl font-bold text-gray-800">Income Statement</h2>
+                <p class="text-lg text-gray-600 mt-2">
                     For the Period: {{ \Carbon\Carbon::parse($startDate)->format('F d, Y') }} to {{
                     \Carbon\Carbon::parse($endDate)->format('F d, Y') }}
                 </p>
@@ -92,29 +92,29 @@
 
             <!-- Revenue Section -->
             <div class="mb-8">
-                <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200 border-b-2 border-gray-300 pb-2">
+                <h3 class="text-xl font-bold mb-4 text-gray-800 border-b-2 border-gray-300 pb-2">
                     REVENUE
                 </h3>
                 @foreach($revenue as $accountType => $items)
                 <div class="mb-4">
-                    <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ $accountType }}</h4>
+                    <h4 class="font-semibold text-gray-700 mb-2">{{ $accountType }}</h4>
                     @foreach($items as $account)
                     <div class="flex justify-between py-1 px-2 text-sm">
-                        <span class="text-gray-600 dark:text-gray-400">
+                        <span class="text-gray-600">
                             <span class="font-mono">{{ $account->account_code }}</span> - {{ $account->account_name }}
                         </span>
                         <span class="font-mono font-semibold">{{ number_format((float) $account->balance, 2) }}</span>
                     </div>
                     @endforeach
                     <div
-                        class="flex justify-between py-1 px-2 font-semibold border-t border-gray-200 dark:border-gray-600 mt-1">
+                        class="flex justify-between py-1 px-2 font-semibold border-t border-gray-200 mt-1">
                         <span>Total {{ $accountType }}</span>
                         <span class="font-mono">{{ number_format((float) $items->sum('balance'), 2) }}</span>
                     </div>
                 </div>
                 @endforeach
                 <div
-                    class="flex justify-between py-2 px-2 font-bold text-lg border-t-2 border-gray-400 dark:border-gray-500 mt-4 bg-green-50 dark:bg-green-900">
+                    class="flex justify-between py-2 px-2 font-bold text-lg border-t-2 border-gray-400 mt-4 bg-green-50">
                     <span>TOTAL REVENUE</span>
                     <span class="font-mono">{{ number_format($totalRevenue, 2) }}</span>
                 </div>
@@ -122,29 +122,29 @@
 
             <!-- Expenses Section -->
             <div class="mb-8">
-                <h3 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200 border-b-2 border-gray-300 pb-2">
+                <h3 class="text-xl font-bold mb-4 text-gray-800 border-b-2 border-gray-300 pb-2">
                     EXPENSES
                 </h3>
                 @foreach($expenses as $accountType => $items)
                 <div class="mb-4">
-                    <h4 class="font-semibold text-gray-700 dark:text-gray-300 mb-2">{{ $accountType }}</h4>
+                    <h4 class="font-semibold text-gray-700 mb-2">{{ $accountType }}</h4>
                     @foreach($items as $account)
                     <div class="flex justify-between py-1 px-2 text-sm">
-                        <span class="text-gray-600 dark:text-gray-400">
+                        <span class="text-gray-600">
                             <span class="font-mono">{{ $account->account_code }}</span> - {{ $account->account_name }}
                         </span>
                         <span class="font-mono font-semibold">{{ number_format((float) $account->balance, 2) }}</span>
                     </div>
                     @endforeach
                     <div
-                        class="flex justify-between py-1 px-2 font-semibold border-t border-gray-200 dark:border-gray-600 mt-1">
+                        class="flex justify-between py-1 px-2 font-semibold border-t border-gray-200 mt-1">
                         <span>Total {{ $accountType }}</span>
                         <span class="font-mono">{{ number_format((float) $items->sum('balance'), 2) }}</span>
                     </div>
                 </div>
                 @endforeach
                 <div
-                    class="flex justify-between py-2 px-2 font-bold text-lg border-t-2 border-gray-400 dark:border-gray-500 mt-4 bg-red-50 dark:bg-red-900">
+                    class="flex justify-between py-2 px-2 font-bold text-lg border-t-2 border-gray-400 mt-4 bg-red-50">
                     <span>TOTAL EXPENSES</span>
                     <span class="font-mono">{{ number_format($totalExpenses, 2) }}</span>
                 </div>
@@ -152,7 +152,7 @@
 
             <!-- Net Income -->
             <div
-                class="flex justify-between py-3 px-2 font-bold text-2xl border-t-4 border-gray-600 dark:border-gray-400 mt-8 {{ $netIncome >= 0 ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200' : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200' }}">
+                class="flex justify-between py-3 px-2 font-bold text-2xl border-t-4 border-gray-600 mt-8 {{ $netIncome >= 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                 <span>NET {{ $netIncome >= 0 ? 'INCOME' : 'LOSS' }}</span>
                 <span class="font-mono">{{ number_format($netIncome, 2) }}</span>
             </div>

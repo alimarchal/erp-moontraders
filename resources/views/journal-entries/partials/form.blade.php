@@ -28,7 +28,7 @@
     }
 @endphp
 
-<div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+<div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
     <div class="p-6 space-y-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -40,7 +40,7 @@
             <div>
                 <x-label for="currency_id" value="Currency" :required="true" />
                 <select id="currency_id" name="currency_id"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
                     required>
                     <option value="">Select currency</option>
                     @foreach ($currencies as $currency)
@@ -67,7 +67,7 @@
             <div class="md:col-span-2">
                 <x-label for="description" value="Description" />
                 <textarea id="description" name="description"
-                    class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                     rows="3" placeholder="Brief description of the journal entry">{{ $description }}</textarea>
             </div>
 
@@ -80,9 +80,9 @@
             </div>
         </div>
 
-        <div class="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <div class="border border-gray-200 rounded-lg p-4">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Journal Lines</h3>
+                <h3 class="text-lg font-semibold text-gray-700">Journal Lines</h3>
                 <button type="button" id="add-journal-line"
                     class="inline-flex items-center px-3 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                     <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -98,7 +98,7 @@
                         <div class="md:col-span-4">
                             <x-label :for="'line-account-' . $index" value="Account" :required="true" />
                             <select id="line-account-{{ $index }}" name="lines[{{ $index }}][account_id]"
-                                class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
                                 required>
                                 <option value="">Select account</option>
                                 @foreach ($accounts as $account)
@@ -123,7 +123,7 @@
                         <div class="md:col-span-3">
                             <x-label :for="'line-cost-center-' . $index" value="Cost Center" />
                             <select id="line-cost-center-{{ $index }}" name="lines[{{ $index }}][cost_center_id]"
-                                class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                 <option value="">Optional</option>
                                 @foreach ($costCenters as $costCenter)
                                     <option value="{{ $costCenter->id }}" {{ (int) ($line['cost_center_id'] ?? 0) === $costCenter->id ? 'selected' : '' }}>
@@ -145,7 +145,7 @@
                         <div class="md:col-span-12">
                             <x-label :for="'line-description-' . $index" value="Line Description" />
                             <textarea id="line-description-{{ $index }}" name="lines[{{ $index }}][description]" rows="2"
-                                class="mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                 placeholder="Optional detail for this line item">{{ $line['description'] }}</textarea>
                         </div>
                     </div>
@@ -157,7 +157,7 @@
                     <div class="md:col-span-4">
                         <x-label value="Account" :required="true" />
                         <select name="lines[__INDEX__][account_id]"
-                            class="line-account border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full"
+                            class="line-account border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
                             required>
                             <option value="">Select account</option>
                             @foreach ($accounts as $account)
@@ -168,19 +168,19 @@
                     <div class="md:col-span-2">
                         <x-label value="Debit" />
                         <input type="number" name="lines[__INDEX__][debit]" step="0.01" min="0"
-                            class="line-debit mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                            class="line-debit mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                             data-role="amount" data-type="debit" value="0.00">
                     </div>
                     <div class="md:col-span-2">
                         <x-label value="Credit" />
                         <input type="number" name="lines[__INDEX__][credit]" step="0.01" min="0"
-                            class="line-credit mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                            class="line-credit mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                             data-role="amount" data-type="credit" value="0.00">
                     </div>
                     <div class="md:col-span-3">
                         <x-label value="Cost Center" />
                         <select name="lines[__INDEX__][cost_center_id]"
-                            class="line-cost-center border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                            class="line-cost-center border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                             <option value="">Optional</option>
                             @foreach ($costCenters as $costCenter)
                                 <option value="{{ $costCenter->id }}">{{ $costCenter->code }} · {{ $costCenter->name }}</option>
@@ -200,13 +200,13 @@
                     <div class="md:col-span-12">
                         <x-label value="Line Description" />
                         <textarea name="lines[__INDEX__][description]" rows="2"
-                            class="line-description mt-1 block w-full border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm"
+                            class="line-description mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                             placeholder="Optional detail for this line item"></textarea>
                     </div>
                 </div>
             </template>
 
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm font-semibold text-gray-700 dark:text-gray-200">
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm font-semibold text-gray-700">
                 <div>Total Debit: <span id="journal-total-debit">0.00</span></div>
                 <div>Total Credit: <span id="journal-total-credit">0.00</span></div>
                 <div>Difference: <span id="journal-total-difference" class="text-green-600">0.00</span></div>

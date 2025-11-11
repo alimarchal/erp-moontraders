@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             GRN: {{ $grn->grn_number }}
         </h2>
         <div class="flex justify-center items-center float-right space-x-2">
@@ -59,21 +59,21 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md" />
 
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">GRN Number</h3>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">{{ $grn->grn_number }}</p>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">GRN Number</h3>
+                            <p class="text-lg font-bold text-gray-900">{{ $grn->grn_number }}</p>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">Receipt Date
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Receipt Date
                             </h3>
-                            <p class="text-lg text-gray-900 dark:text-gray-100">
+                            <p class="text-lg text-gray-900">
                                 {{ \Carbon\Carbon::parse($grn->receipt_date)->format('d M Y') }}</p>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase">Status</h3>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Status</h3>
                             <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
                                 {{ $grn->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
                                 {{ $grn->status === 'received' ? 'bg-blue-100 text-blue-700' : '' }}
@@ -83,16 +83,16 @@
                         </div>
                     </div>
 
-                    <hr class="my-6 border-gray-200 dark:border-gray-700">
+                    <hr class="my-6 border-gray-200">
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Supplier
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Supplier
                             </h3>
-                            <p class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            <p class="text-base font-semibold text-gray-900">
                                 {{ $grn->supplier->supplier_name }}</p>
                             @if ($grn->supplier_invoice_number)
-                            <p class="text-sm text-gray-600 dark:text-gray-400">
+                            <p class="text-sm text-gray-600">
                                 Invoice: {{ $grn->supplier_invoice_number }}
                                 @if ($grn->supplier_invoice_date)
                                 ({{ \Carbon\Carbon::parse($grn->supplier_invoice_date)->format('d M Y') }})
@@ -101,34 +101,34 @@
                             @endif
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Warehouse
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Warehouse
                             </h3>
-                            <p class="text-base font-semibold text-gray-900 dark:text-gray-100">
+                            <p class="text-base font-semibold text-gray-900">
                                 {{ $grn->warehouse->warehouse_name }}</p>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Received
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Received
                                 By
                             </h3>
-                            <p class="text-base text-gray-900 dark:text-gray-100">{{ $grn->receivedBy->name ?? 'N/A' }}
+                            <p class="text-base text-gray-900">{{ $grn->receivedBy->name ?? 'N/A' }}
                             </p>
                         </div>
                         @if ($grn->verified_by)
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Verified
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Verified
                                 By</h3>
-                            <p class="text-base text-gray-900 dark:text-gray-100">{{ $grn->verifiedBy->name ?? 'N/A' }}
+                            <p class="text-base text-gray-900">{{ $grn->verifiedBy->name ?? 'N/A' }}
                             </p>
                         </div>
                         @endif
                     </div>
 
-                    <hr class="my-6 border-gray-200 dark:border-gray-700">
+                    <hr class="my-6 border-gray-200">
 
                     @if ($grn->status === 'posted')
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Payment
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Payment
                                 Status</h3>
                             <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
                                 {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
@@ -138,22 +138,22 @@
                             </span>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Total
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total
                                 Amount</h3>
-                            <p class="text-lg font-bold text-gray-900 dark:text-gray-100">₨ {{
+                            <p class="text-lg font-bold text-gray-900">₨ {{
                                 number_format($grn->grand_total, 2) }}</p>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Total Paid
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total Paid
                             </h3>
-                            <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">₨ {{
+                            <p class="text-lg font-bold text-emerald-600">₨ {{
                                 number_format($grn->total_paid, 2) }}</p>
                         </div>
                         <div>
-                            <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Balance
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Balance
                                 Due</h3>
                             <p
-                                class="text-lg font-bold {{ $grn->balance > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-gray-100' }}">
+                                class="text-lg font-bold {{ $grn->balance > 0 ? 'text-red-600' : 'text-gray-900' }}">
                                 ₨ {{ number_format($grn->balance, 2) }}
                             </p>
                         </div>
@@ -161,35 +161,35 @@
 
                     @if ($grn->payments()->count() > 0)
                     <div class="mb-6">
-                        <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-3">Payment
+                        <h3 class="text-sm font-semibold text-gray-500 uppercase mb-3">Payment
                             History</h3>
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm">
-                                <thead class="bg-gray-50 dark:bg-gray-900">
-                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                <thead class="bg-gray-50">
+                                    <tr class="border-b border-gray-200">
                                         <th
-                                            class="py-1 px-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                                            class="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase">
                                             Payment #</th>
                                         <th
-                                            class="py-1 px-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                                            class="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase">
                                             Date</th>
                                         <th
-                                            class="py-1 px-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                                            class="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase">
                                             Method</th>
                                         <th
-                                            class="py-1 px-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                                            class="py-1 px-2 text-center text-xs font-semibold text-gray-600 uppercase">
                                             Status</th>
                                         <th
-                                            class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                                            class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase">
                                             Allocated</th>
                                         <th
-                                            class="py-1 px-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase">
+                                            class="py-1 px-2 text-center text-xs font-semibold text-gray-600 uppercase">
                                             Action</th>
                                     </tr>
                                 </thead>
-                                <tbody class="bg-white dark:bg-gray-800">
+                                <tbody class="bg-white">
                                     @foreach ($grn->payments()->orderBy('payment_date')->get() as $payment)
-                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                    <tr class="border-b border-gray-200">
                                         <td class="py-1 px-2">{{ $payment->payment_number }}</td>
                                         <td class="py-1 px-2">{{
                                             \Carbon\Carbon::parse($payment->payment_date)->format('d M Y') }}</td>
@@ -220,48 +220,48 @@
                     @endif
                     @endif
 
-                    <hr class="my-6 border-gray-200 dark:border-gray-700">
+                    <hr class="my-6 border-gray-200">
 
-                    <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Line Items</h3>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Line Items</h3>
 
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
-                            <thead class="bg-gray-50 dark:bg-gray-900">
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                            <thead class="bg-gray-50">
+                                <tr class="border-b border-gray-200">
                                     <th
-                                        class="py-1 px-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         #</th>
                                     <th
-                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Product</th>
                                     <th
-                                        class="py-1 px-2 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         UOM</th>
                                     <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Qty Received</th>
                                     <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Qty Accepted</th>
                                     <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Unit Cost</th>
                                     <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Selling Price</th>
                                     <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($grn->items as $item)
-                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                                <tr class="border-b border-gray-200">
                                     <td class="py-1 px-2 text-center">{{ $item->line_no }}</td>
                                     <td class="py-1 px-2">
-                                        <div class="font-semibold text-gray-900 dark:text-gray-100">
+                                        <div class="font-semibold text-gray-900">
                                             {{ $item->product->product_code }}</div>
-                                        <div class="text-xs text-gray-500 dark:text-gray-400">{{
+                                        <div class="text-xs text-gray-500">{{
                                             $item->product->product_name }}</div>
                                         @if ($item->is_promotional)
                                         <span
@@ -288,7 +288,7 @@
                                         @if ($item->selling_price)
                                         ₨ {{ number_format($item->selling_price, 2) }}
                                         @else
-                                        <span class="text-gray-400 dark:text-gray-500">—</span>
+                                        <span class="text-gray-400">—</span>
                                         @endif
                                     </td>
                                     <td class="py-1 px-2 text-right font-semibold">
@@ -296,8 +296,8 @@
                                 </tr>
                                 @endforeach
                             </tbody>
-                            <tfoot class="bg-gray-50 dark:bg-gray-900">
-                                <tr class="border-t border-gray-200 dark:border-gray-700">
+                            <tfoot class="bg-gray-50">
+                                <tr class="border-t border-gray-200">
                                     <td colspan="7" class="py-1 px-2 text-right font-semibold">Subtotal:</td>
                                     <td class="py-1 px-2 text-right font-semibold">
                                         ₨ {{ number_format($grn->total_amount, 2) }}</td>
@@ -322,7 +322,7 @@
                                     </td>
                                 </tr>
                                 @endif
-                                <tr class="border-t-2 border-gray-300 dark:border-gray-600">
+                                <tr class="border-t-2 border-gray-300">
                                     <td colspan="7" class="py-1 px-2 text-right font-bold">Grand Total:</td>
                                     <td class="py-1 px-2 text-right font-bold">
                                         ₨ {{ number_format($grn->grand_total, 2) }}</td>
@@ -333,8 +333,8 @@
 
                     @if ($grn->notes)
                     <div class="mt-6">
-                        <h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">Notes</h3>
-                        <p class="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">{{ $grn->notes }}</p>
+                        <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Notes</h3>
+                        <p class="text-sm text-gray-700 whitespace-pre-line">{{ $grn->notes }}</p>
                     </div>
                     @endif
                 </div>
@@ -345,7 +345,7 @@
     <!-- Password Modal -->
     <x-password-confirm-modal id="reverseGrnModal" title="Confirm GRN Reversal"
         message="⚠️ WARNING: This will reverse all stock entries and draft payments. This action cannot be undone."
-        warningClass="text-red-600 dark:text-red-400" confirmButtonText="Confirm Reverse"
+        warningClass="text-red-600" confirmButtonText="Confirm Reverse"
         confirmButtonClass="bg-red-600 hover:bg-red-700" />
 
     <script>

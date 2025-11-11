@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Product: {{ $product->product_name }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -17,18 +17,18 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6 space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-label value="Product Code" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->product_code" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Product Name" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->product_name" disabled readonly />
                         </div>
                     </div>
@@ -36,24 +36,24 @@
                     <div>
                         <x-label value="Description" />
                         <textarea rows="3"
-                            class="mt-1 block w-full border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md shadow-sm"
+                            class="mt-1 block w-full border-gray-300 bg-gray-100 text-gray-700 rounded-md shadow-sm"
                             disabled readonly>{{ $product->description ?? '—' }}</textarea>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
                             <x-label value="Category" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->category?->category_name ?? '—'" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Supplier" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->supplier?->supplier_name ?? '—'" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Base UOM" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->uom?->uom_name ?? '—'" disabled readonly />
                         </div>
                     </div>
@@ -61,22 +61,22 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <x-label value="Brand" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->brand ?? '—'" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Barcode" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->barcode ?? '—'" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Pack Size" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->pack_size ?? '—'" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Weight (kg)" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->weight ?? '—'" disabled readonly />
                         </div>
                     </div>
@@ -84,12 +84,12 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-label value="Valuation Method" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->valuation_method" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Status" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->is_active ? 'Active' : 'Inactive'" disabled readonly />
                         </div>
                     </div>
@@ -97,17 +97,17 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
                             <x-label value="Selling Price" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="number_format((float) $product->unit_price, 2)" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Cost Price" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="number_format((float) $product->cost_price, 2)" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Reorder Level" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="number_format((float) $product->reorder_level, 2)" disabled readonly />
                         </div>
                     </div>
@@ -115,19 +115,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
                             <x-label value="Inventory Account" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->inventoryAccount ? $product->inventoryAccount->account_code . ' — ' . $product->inventoryAccount->account_name : 'Not linked'"
                                 disabled readonly />
                         </div>
                         <div>
                             <x-label value="COGS Account" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->cogsAccount ? $product->cogsAccount->account_code . ' — ' . $product->cogsAccount->account_name : 'Not linked'"
                                 disabled readonly />
                         </div>
                         <div>
                             <x-label value="Revenue Account" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100 dark:bg-gray-700"
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->salesRevenueAccount ? $product->salesRevenueAccount->account_code . ' — ' . $product->salesRevenueAccount->account_name : 'Not linked'"
                                 disabled readonly />
                         </div>

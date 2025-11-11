@@ -15,7 +15,7 @@
             <div>
                 <x-label for="filter_is_active" value="Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="1" {{ request('filter.is_active') === '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ request('filter.is_active') === '0' ? 'selected' : '' }}>Inactive</option>
@@ -33,7 +33,7 @@
     ]" emptyMessage="No warehouse types found." :emptyRoute="route('warehouse-types.create')"
         emptyLinkText="Add a type">
         @foreach ($warehouseTypes as $index => $type)
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+        <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $warehouseTypes->firstItem() + $index }}
             </td>

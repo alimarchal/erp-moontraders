@@ -22,7 +22,7 @@
             <div>
                 <x-label for="filter_is_base_currency" value="Currency Type" />
                 <select id="filter_is_base_currency" name="filter[is_base_currency]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Both</option>
                     @foreach ($baseOptions as $value => $label)
                     <option value="{{ $value }}" {{ request('filter.is_base_currency')===(string) $value ? 'selected'
@@ -36,7 +36,7 @@
             <div>
                 <x-label for="filter_is_active" value="Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">Both</option>
                     @foreach ($statusOptions as $value => $label)
                     <option value="{{ $value }}" {{ request('filter.is_active')===(string) $value ? 'selected' : '' }}>
@@ -59,7 +59,7 @@
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No currencies found." :emptyRoute="route('currencies.create')" emptyLinkText="Add a currency">
         @foreach ($currencies as $index => $currency)
-        <tr class="border-b border-gray-200 dark:border-gray-700 text-sm">
+        <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
                 {{ $currencies->firstItem() + $index }}
             </td>

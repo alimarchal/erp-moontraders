@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             Create Promotional Campaign
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -18,7 +18,7 @@
     <div class="py-6">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4" />
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
                     <x-validation-errors class="mb-4" />
                     <form method="POST" action="{{ route('promotional-campaigns.store') }}" x-data="campaignForm()">
@@ -52,7 +52,7 @@
                             <div class="md:col-span-2">
                                 <x-label for="discount_type" value="Promotion Type *" />
                                 <select id="discount_type" name="discount_type" x-model="discountType" required
-                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="percentage">Percentage Discount</option>
                                     <option value="fixed_amount">Fixed Amount Off</option>
                                     <option value="special_price">Special Price</option>
@@ -76,30 +76,30 @@
                             <!-- Show for buy_x_get_y -->
                             <div x-show="discountType === 'buy_x_get_y'" class="md:col-span-2">
                                 <div
-                                    class="grid grid-cols-2 gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                                    class="grid grid-cols-2 gap-4 p-4 bg-blue-50/20 rounded-lg border border-blue-200">
                                     <div>
                                         <x-label for="buy_quantity" value="Buy Quantity *" />
                                         <x-input id="buy_quantity" name="buy_quantity" type="number" step="1" min="1"
                                             class="mt-1 block w-full" :value="old('buy_quantity')" placeholder="11" />
-                                        <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Number of units
+                                        <p class="text-xs text-gray-600 mt-1">Number of units
                                             customer must buy</p>
                                     </div>
                                     <div>
                                         <x-label for="get_quantity" value="Get Free Quantity *" />
                                         <x-input id="get_quantity" name="get_quantity" type="number" step="1" min="1"
                                             class="mt-1 block w-full" :value="old('get_quantity')" placeholder="1" />
-                                        <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">Number of units
+                                        <p class="text-xs text-gray-600 mt-1">Number of units
                                             customer gets free</p>
                                     </div>
                                     <div class="col-span-2">
                                         <div
-                                            class="flex items-center p-3 bg-green-50 dark:bg-green-900/20 rounded border border-green-200 dark:border-green-800">
-                                            <svg class="w-5 h-5 text-green-600 dark:text-green-400 mr-2" fill="none"
+                                            class="flex items-center p-3 bg-green-50/20 rounded border border-green-200">
+                                            <svg class="w-5 h-5 text-green-600 mr-2" fill="none"
                                                 viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
-                                            <span class="text-sm text-gray-700 dark:text-gray-300">
+                                            <span class="text-sm text-gray-700">
                                                 Example: Buy <strong>11</strong> packs, get <strong>1</strong> pack free
                                                 = "11+1" promotion
                                             </span>
@@ -113,14 +113,14 @@
                                     <input type="checkbox" id="is_active" name="is_active" value="1"
                                         class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
                                         {{ old('is_active', true) ? 'checked' : '' }}>
-                                    <span class="ml-2 text-sm text-gray-600 dark:text-gray-400">Active</span>
+                                    <span class="ml-2 text-sm text-gray-600">Active</span>
                                 </label>
                             </div>
 
                             <div class="md:col-span-2">
                                 <x-label for="description" value="Description" />
                                 <textarea id="description" name="description" rows="3"
-                                    class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full">{{ old('description') }}</textarea>
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">{{ old('description') }}</textarea>
                             </div>
                         </div>
 

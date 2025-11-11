@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight inline-block">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             View Unit: {{ $uom->uom_name }}
         </h2>
         <div class="flex justify-center items-center float-right">
@@ -17,21 +17,21 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg">
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <x-status-message class="mb-4 mt-4" />
                 <div class="p-6 space-y-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-label for="uom_name" value="Unit Name" />
                             <x-input id="uom_name" type="text" name="uom_name"
-                                class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$uom->uom_name" disabled readonly />
                         </div>
 
                         <div>
                             <x-label for="symbol" value="Symbol" />
                             <x-input id="symbol" type="text" name="symbol"
-                                class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$uom->symbol ?? '—'" disabled readonly />
                         </div>
                     </div>
@@ -39,7 +39,7 @@
                     <div>
                         <x-label for="description" value="Description" />
                         <textarea id="description" name="description" rows="4"
-                            class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700 border-gray-300 dark:border-gray-700 dark:text-gray-300 rounded-md shadow-sm"
+                            class="mt-1 block w-full cursor-not-allowed bg-gray-100 border-gray-300 rounded-md shadow-sm"
                             disabled readonly>{{ $uom->description ?? '—' }}</textarea>
                     </div>
 
@@ -65,13 +65,13 @@
                         <div>
                             <x-label for="created_at" value="Created At" />
                             <x-input id="created_at" type="text"
-                                class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$uom->created_at?->format('d-m-Y H:i:s') ?? '-'" disabled readonly />
                         </div>
                         <div>
                             <x-label for="updated_at" value="Last Updated" />
                             <x-input id="updated_at" type="text"
-                                class="mt-1 block w-full cursor-not-allowed bg-gray-100 dark:bg-gray-700"
+                                class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                 :value="$uom->updated_at?->format('d-m-Y H:i:s') ?? '-'" disabled readonly />
                         </div>
                     </div>

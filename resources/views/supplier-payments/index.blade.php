@@ -154,20 +154,6 @@
                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                     </a>
-                    <form action="{{ route('supplier-payments.post', $payment->id) }}" method="POST"
-                        class="inline-block"
-                        onsubmit="return confirm('Are you sure you want to post this payment? This will create accounting journal entries.');">
-                        @csrf
-                        <button type="submit"
-                            class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                            title="Post Payment">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                        </button>
-                    </form>
                     <form action="{{ route('supplier-payments.destroy', $payment->id) }}" method="POST"
                         class="inline-block"
                         onsubmit="return confirm('Are you sure you want to delete this payment?');">

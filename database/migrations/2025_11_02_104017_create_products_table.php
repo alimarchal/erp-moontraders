@@ -20,7 +20,9 @@ return new class extends Migration {
             // Foreign Keys
             $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete()->comment('Primary supplier');
-            $table->foreignId('uom_id')->nullable()->constrained('uoms')->nullOnDelete()->comment('Base unit of measurement: PCS, KG, LTR, BOX, etc.');
+            $table->foreignId('uom_id')->nullable()->constrained('uoms')->nullOnDelete()->comment('Base unit for inventory tracking: PCS, KG, LTR');
+            $table->foreignId('sales_uom_id')->nullable()->constrained('uoms')->nullOnDelete()->comment('Sales unit: Cases, Boxes, Cartons, Pallets');
+            $table->decimal('uom_conversion_factor', 10, 3)->default(1)->comment('Base units per sales unit (e.g., 24 PCS = 1 Case)');
 
             // Product specifications
             $table->decimal('weight', 10, 3)->nullable()->comment('Product weight in kg');

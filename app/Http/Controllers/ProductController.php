@@ -24,7 +24,7 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $products = QueryBuilder::for(
-            Product::query()->with(['category', 'supplier', 'uom'])
+            Product::query()->with(['category', 'supplier', 'uom', 'salesUom'])
         )
             ->allowedFilters([
                 AllowedFilter::partial('product_name'),
@@ -131,7 +131,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        $product->load(['category', 'supplier', 'uom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
+        $product->load(['category', 'supplier', 'uom', 'salesUom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
 
         return view('products.show', [
             'product' => $product,
@@ -143,7 +143,7 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        $product->load(['category', 'supplier', 'uom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
+        $product->load(['category', 'supplier', 'uom', 'salesUom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
 
         return view('products.edit', [
             'product' => $product,
@@ -171,7 +171,7 @@ class ProductController extends Controller
 
             $updated = $product->update($payload);
 
-            if (! $updated) {
+            if (!$updated) {
                 DB::rollBack();
 
                 return back()

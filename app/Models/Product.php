@@ -25,6 +25,8 @@ class Product extends Model
         'category_id',
         'supplier_id',
         'uom_id',
+        'sales_uom_id',
+        'uom_conversion_factor',
         'weight',
         'pack_size',
         'barcode',
@@ -41,6 +43,7 @@ class Product extends Model
 
     protected $casts = [
         'weight' => 'decimal:3',
+        'uom_conversion_factor' => 'decimal:3',
         'reorder_level' => 'decimal:2',
         'unit_price' => 'decimal:2',
         'cost_price' => 'decimal:2',
@@ -64,11 +67,19 @@ class Product extends Model
     }
 
     /**
-     * Get the unit of measurement for the product.
+     * Get the base unit of measurement (inventory tracking).
      */
     public function uom(): BelongsTo
     {
         return $this->belongsTo(Uom::class, 'uom_id');
+    }
+
+    /**
+     * Get the sales unit of measurement.
+     */
+    public function salesUom(): BelongsTo
+    {
+        return $this->belongsTo(Uom::class, 'sales_uom_id');
     }
 
     /**

@@ -11,15 +11,13 @@ $valuationMethods = $valuationMethods ?? [];
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
         <x-label for="product_code" value="Product Code" :required="true" />
-        <x-input id="product_code" type="text" name="product_code" maxlength="191"
-            class="mt-1 block w-full uppercase" required
-            :value="old('product_code', optional($product)->product_code)" placeholder="SKU-001" />
+        <x-input id="product_code" type="text" name="product_code" maxlength="191" class="mt-1 block w-full uppercase"
+            required :value="old('product_code', optional($product)->product_code)" placeholder="SKU-001" />
     </div>
 
     <div>
         <x-label for="product_name" value="Product Name" :required="true" />
-        <x-input id="product_name" type="text" name="product_name" maxlength="191"
-            class="mt-1 block w-full" required
+        <x-input id="product_name" type="text" name="product_name" maxlength="191" class="mt-1 block w-full" required
             :value="old('product_name', optional($product)->product_name)" placeholder="Chocolate Chip Cookies" />
     </div>
 </div>
@@ -38,7 +36,8 @@ $valuationMethods = $valuationMethods ?? [];
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Uncategorized</option>
             @foreach ($categoryOptions as $category)
-            <option value="{{ $category->id }}" {{ (int) old('category_id', optional($product)->category_id) === $category->id ? 'selected' : '' }}>
+            <option value="{{ $category->id }}" {{ (int) old('category_id', optional($product)->category_id) ===
+                $category->id ? 'selected' : '' }}>
                 {{ $category->category_name }}
             </option>
             @endforeach
@@ -51,7 +50,8 @@ $valuationMethods = $valuationMethods ?? [];
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($supplierOptions as $supplier)
-            <option value="{{ $supplier->id }}" {{ (int) old('supplier_id', optional($product)->supplier_id) === $supplier->id ? 'selected' : '' }}>
+            <option value="{{ $supplier->id }}" {{ (int) old('supplier_id', optional($product)->supplier_id) ===
+                $supplier->id ? 'selected' : '' }}>
                 {{ $supplier->supplier_name }}
             </option>
             @endforeach
@@ -59,16 +59,18 @@ $valuationMethods = $valuationMethods ?? [];
     </div>
 
     <div>
-        <x-label for="uom_id" value="Base UOM" />
-        <select id="uom_id" name="uom_id"
+        <x-label for="uom_id" value="Base UOM (Inventory)" :required="true" />
+        <select id="uom_id" name="uom_id" required
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-            <option value="">Select UOM</option>
+            <option value="">Select Base UOM</option>
             @foreach ($uomOptions as $uom)
-            <option value="{{ $uom->id }}" {{ (int) old('uom_id', optional($product)->uom_id) === $uom->id ? 'selected' : '' }}>
+            <option value="{{ $uom->id }}" {{ (int) old('uom_id', optional($product)->uom_id) === $uom->id ? 'selected'
+                : '' }}>
                 {{ $uom->uom_name }} {{ $uom->symbol ? '(' . $uom->symbol . ')' : '' }}
             </option>
             @endforeach
         </select>
+        <p class="text-xs text-gray-500 mt-1">Unit for inventory tracking (e.g., PCS, KG)</p>
     </div>
 
     <div>
@@ -76,11 +78,37 @@ $valuationMethods = $valuationMethods ?? [];
         <select id="valuation_method" name="valuation_method" required
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             @foreach ($valuationMethods as $method)
-            <option value="{{ $method }}" {{ old('valuation_method', optional($product)->valuation_method ?? 'FIFO') === $method ? 'selected' : '' }}>
+            <option value="{{ $method }}" {{ old('valuation_method', optional($product)->valuation_method ?? 'FIFO') ===
+                $method ? 'selected' : '' }}>
                 {{ $method }}
             </option>
             @endforeach
         </select>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+    <div>
+        <x-label for="sales_uom_id" value="Sales UOM (Optional)" />
+        <select id="sales_uom_id" name="sales_uom_id"
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            <option value="">Same as Base UOM</option>
+            @foreach ($uomOptions as $uom)
+            <option value="{{ $uom->id }}" {{ (int) old('sales_uom_id', optional($product)->sales_uom_id) === $uom->id ?
+                'selected' : '' }}>
+                {{ $uom->uom_name }} {{ $uom->symbol ? '(' . $uom->symbol . ')' : '' }}
+            </option>
+            @endforeach
+        </select>
+        <p class="text-xs text-gray-500 mt-1">Unit for sales/invoicing (e.g., Cases, Boxes, Cartons)</p>
+    </div>
+
+    <div>
+        <x-label for="uom_conversion_factor" value="Conversion Factor" />
+        <x-input id="uom_conversion_factor" type="number" name="uom_conversion_factor" step="0.001" min="1"
+            class="mt-1 block w-full"
+            :value="old('uom_conversion_factor', optional($product)->uom_conversion_factor ?? 1)" placeholder="1" />
+        <p class="text-xs text-gray-500 mt-1">How many base units in 1 sales unit (e.g., 24 PCS = 1 Case → enter 24)</p>
     </div>
 </div>
 
@@ -137,7 +165,8 @@ $valuationMethods = $valuationMethods ?? [];
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Default</option>
             @foreach ($accountOptions as $account)
-            <option value="{{ $account->id }}" {{ (int) old('inventory_account_id', optional($product)->inventory_account_id) === $account->id ? 'selected' : '' }}>
+            <option value="{{ $account->id }}" {{ (int) old('inventory_account_id', optional($product)->
+                inventory_account_id) === $account->id ? 'selected' : '' }}>
                 {{ $account->account_code }} — {{ $account->account_name }}
             </option>
             @endforeach
@@ -150,7 +179,8 @@ $valuationMethods = $valuationMethods ?? [];
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Default</option>
             @foreach ($accountOptions as $account)
-            <option value="{{ $account->id }}" {{ (int) old('cogs_account_id', optional($product)->cogs_account_id) === $account->id ? 'selected' : '' }}>
+            <option value="{{ $account->id }}" {{ (int) old('cogs_account_id', optional($product)->cogs_account_id) ===
+                $account->id ? 'selected' : '' }}>
                 {{ $account->account_code }} — {{ $account->account_name }}
             </option>
             @endforeach
@@ -163,7 +193,8 @@ $valuationMethods = $valuationMethods ?? [];
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Default</option>
             @foreach ($accountOptions as $account)
-            <option value="{{ $account->id }}" {{ (int) old('sales_revenue_account_id', optional($product)->sales_revenue_account_id) === $account->id ? 'selected' : '' }}>
+            <option value="{{ $account->id }}" {{ (int) old('sales_revenue_account_id', optional($product)->
+                sales_revenue_account_id) === $account->id ? 'selected' : '' }}>
                 {{ $account->account_code }} — {{ $account->account_name }}
             </option>
             @endforeach
@@ -175,8 +206,8 @@ $valuationMethods = $valuationMethods ?? [];
     <div class="flex items-center">
         <input type="hidden" name="is_active" value="0">
         <input id="is_active" type="checkbox" name="is_active" value="1"
-            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-            {{ old('is_active', optional($product)->is_active ?? true) ? 'checked' : '' }}>
+            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" {{
+            old('is_active', optional($product)->is_active ?? true) ? 'checked' : '' }}>
         <label for="is_active" class="ml-2 text-sm text-gray-700">
             Product is active
         </label>

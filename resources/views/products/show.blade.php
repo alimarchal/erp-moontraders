@@ -23,13 +23,13 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <x-label value="Product Code" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->product_code" disabled readonly />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100" :value="$product->product_code"
+                                disabled readonly />
                         </div>
                         <div>
                             <x-label value="Product Name" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->product_name" disabled readonly />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100" :value="$product->product_name"
+                                disabled readonly />
                         </div>
                     </div>
 
@@ -52,22 +52,45 @@
                                 :value="$product->supplier?->supplier_name ?? '—'" disabled readonly />
                         </div>
                         <div>
-                            <x-label value="Base UOM" />
+                            <x-label value="Valuation Method" />
                             <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->uom?->uom_name ?? '—'" disabled readonly />
+                                :value="$product->valuation_method" disabled readonly />
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <x-label value="Base UOM (Inventory)" />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
+                                :value="$product->uom ? $product->uom->uom_name . ($product->uom->symbol ? ' (' . $product->uom->symbol . ')' : '') : '—'"
+                                disabled readonly />
+                            <p class="text-xs text-gray-500 mt-1">Unit for inventory tracking</p>
+                        </div>
+                        <div>
+                            <x-label value="Sales UOM" />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
+                                :value="$product->salesUom ? $product->salesUom->uom_name . ($product->salesUom->symbol ? ' (' . $product->salesUom->symbol . ')' : '') : 'Same as Base'"
+                                disabled readonly />
+                            <p class="text-xs text-gray-500 mt-1">Unit for sales/invoicing</p>
+                        </div>
+                        <div>
+                            <x-label value="Conversion Factor" />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
+                                :value="$product->uom_conversion_factor ?? '1'" disabled readonly />
+                            <p class="text-xs text-gray-500 mt-1">Base units per sales unit</p>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
                             <x-label value="Brand" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->brand ?? '—'" disabled readonly />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100" :value="$product->brand ?? '—'"
+                                disabled readonly />
                         </div>
                         <div>
                             <x-label value="Barcode" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->barcode ?? '—'" disabled readonly />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100" :value="$product->barcode ?? '—'"
+                                disabled readonly />
                         </div>
                         <div>
                             <x-label value="Pack Size" />
@@ -76,22 +99,15 @@
                         </div>
                         <div>
                             <x-label value="Weight (kg)" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->weight ?? '—'" disabled readonly />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100" :value="$product->weight ?? '—'"
+                                disabled readonly />
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <x-label value="Valuation Method" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->valuation_method" disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="Status" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->is_active ? 'Active' : 'Inactive'" disabled readonly />
-                        </div>
+                    <div>
+                        <x-label value="Status" />
+                        <x-input type="text" class="mt-1 block w-full bg-gray-100"
+                            :value="$product->is_active ? 'Active' : 'Inactive'" disabled readonly />
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

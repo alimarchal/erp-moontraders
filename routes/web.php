@@ -18,7 +18,6 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\UomController;
 use App\Http\Controllers\ProductController;
-use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\AccountBalancesController;
@@ -122,9 +121,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
         // Employees CRUD
         Route::resource('employees', EmployeeController::class);
-
-        // Product Categories CRUD
-        Route::resource('product-categories', ProductCategoryController::class);
 
         // Products CRUD
         Route::resource('products', ProductController::class);

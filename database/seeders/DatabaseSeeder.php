@@ -38,7 +38,6 @@ class DatabaseSeeder extends Seeder
             EmployeeSeeder::class,              // Seed employees from master data
             VehicleSeeder::class,               // Seed vehicle master data
             UomSeeder::class,                   // Add units of measurement before products
-            ProductCategorySeeder::class,       // Add product categories before products
             ProductSeeder::class,               // Add products from SKU data
             BankAccountSeeder::class,           // Add bank accounts after chart of accounts
             JournalEntrySeeder::class,

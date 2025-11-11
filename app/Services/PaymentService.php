@@ -141,14 +141,14 @@ class PaymentService
                         'debit' => $amount,
                         'credit' => 0,
                         'description' => "Payment to supplier - {$payment->payment_method}",
-                        'cost_center_id' => 1,
+                        'cost_center_id' => 10, // CC010: Procurement & Purchasing
                     ],
                     [
                         'account_id' => $paymentAccount->id,
                         'debit' => 0,
                         'credit' => $amount,
                         'description' => "Paid via {$payment->payment_method}" . ($payment->reference_number ? " ({$payment->reference_number})" : ""),
-                        'cost_center_id' => 1,
+                        'cost_center_id' => 1, // CC001: Finance & Accounting
                     ],
                 ],
                 'auto_post' => true,
@@ -347,14 +347,14 @@ class PaymentService
                         'debit' => $amount,
                         'credit' => 0,
                         'description' => "Reversal of payment via {$payment->payment_method}",
-                        'cost_center_id' => 1,
+                        'cost_center_id' => 1, // CC001: Finance & Accounting
                     ],
                     [
                         'account_id' => $creditorsAccount->id,
                         'debit' => 0,
                         'credit' => $amount,
                         'description' => "Reversal - Payment to supplier returned",
-                        'cost_center_id' => 1,
+                        'cost_center_id' => 10, // CC010: Procurement & Purchasing
                     ],
                 ],
                 'auto_post' => true,

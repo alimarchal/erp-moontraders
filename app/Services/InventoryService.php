@@ -149,14 +149,14 @@ class InventoryService
                         'debit' => $totalAmount,
                         'credit' => 0,
                         'description' => "Inventory received - {$grn->items->count()} item(s)",
-                        'cost_center_id' => 2, // Procurement & Warehouse
+                        'cost_center_id' => 6, // CC006: Warehouse & Inventory
                     ],
                     [
                         'account_id' => $apAccount->id,
                         'debit' => 0,
                         'credit' => $totalAmount,
                         'description' => "Amount payable to {$grn->supplier->supplier_name}",
-                        'cost_center_id' => 2, // Procurement & Warehouse
+                        'cost_center_id' => 10, // CC010: Procurement & Purchasing
                     ],
                 ],
                 'auto_post' => true, // Automatically post the entry
@@ -227,14 +227,14 @@ class InventoryService
                         'debit' => $totalAmount,
                         'credit' => 0,
                         'description' => "Reversal - Liability to {$grn->supplier->supplier_name} reduced ({$itemsText})",
-                        'cost_center_id' => 2, // Procurement & Warehouse
+                        'cost_center_id' => 10, // CC010: Procurement & Purchasing
                     ],
                     [
                         'account_id' => $inventoryAccount->id,
                         'debit' => 0,
                         'credit' => $totalAmount,
                         'description' => "Reversal - Inventory returned to supplier ({$itemsText})",
-                        'cost_center_id' => 2, // Procurement & Warehouse
+                        'cost_center_id' => 6, // CC006: Warehouse & Inventory
                     ],
                 ],
                 'auto_post' => true, // Automatically post the entry

@@ -25,6 +25,7 @@ class Employee extends Model
         'email',
         'address',
         'warehouse_id',
+        'cost_center_id',
         'user_id',
         'hire_date',
         'is_active',
@@ -38,6 +39,11 @@ class Employee extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    public function costCenter(): BelongsTo
+    {
+        return $this->belongsTo(CostCenter::class);
     }
 
     public function user(): BelongsTo

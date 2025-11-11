@@ -22,6 +22,7 @@ return new class extends Migration {
             $table->string('email')->nullable()->unique();
             $table->text('address')->nullable();
             $table->foreignId('warehouse_id')->nullable()->constrained('warehouses')->nullOnDelete();
+            $table->foreignId('cost_center_id')->nullable()->constrained('cost_centers')->nullOnDelete();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->date('hire_date')->nullable();
             $table->boolean('is_active')->default(true);

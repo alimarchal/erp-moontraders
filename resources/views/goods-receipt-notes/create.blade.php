@@ -714,11 +714,22 @@
 
                 removeItem(index) {
                     if (this.items.length > 1) {
-                        // Destroy Select2 before removing
-                        if ($(`#product_${index}`).data('select2')) {
-                            $(`#product_${index}`).select2('destroy');
-                        }
                         this.items.splice(index, 1);
+                        
+                        // Reinitialize all Select2 after item removal to fix indices
+                        this.$nextTick(() => {
+                            // Destroy all existing Select2 instances
+                            $('.product-select').each(function() {
+                                if ($(this).data('select2')) {
+                                    $(this).select2('destroy');
+                                }
+                            });
+                            
+                            // Reinitialize each product select with correct index
+                            $('.product-select').each(function(idx) {
+                                initializeProductSelect2(idx);
+                            });
+                        });
                     }
                 },
 

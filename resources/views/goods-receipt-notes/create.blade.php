@@ -94,19 +94,34 @@
                                         <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
                                             style="min-width: 130px;">Extended<br>Value
                                         </th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 120px;">Discount<br>Value
+                                        </th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 120px;">FMR<br>Allowance
+                                        </th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 140px;">Discounted Value<br>Before Sales Tax
+                                        </th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 120px;">Excise<br>Duty
+                                        </th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 120px;">Sales Tax<br>Value
+                                        </th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 130px;">Advance<br>Income Tax
+                                        </th>
                                         <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                                             Qty
                                             Received</th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                                            Qty
-                                            Accepted</th>
                                         <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                                             Unit
                                             Cost</th>
                                         <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                                             Selling Price</th>
-                                        <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase">
-                                            Total</th>
+                                        <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 140px;">Total Value<br>with Taxes</th>
                                         <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                                             Promo</th>
                                         <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
@@ -142,35 +157,71 @@
                                                     class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right font-semibold"
                                                     placeholder="0.00">
                                             </td>
+                                            <td class="px-2 py-2">
+                                                <input type="number" :name="`items[${index}][discount_value]`"
+                                                    x-model="item.discount_value" @input="calculateTaxes(index)"
+                                                    step="0.01" min="0"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                    placeholder="0.00">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="number" :name="`items[${index}][fmr_allowance]`"
+                                                    x-model="item.fmr_allowance" @input="calculateTaxes(index)"
+                                                    step="0.01" min="0"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                    placeholder="0.00">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="text"
+                                                    :value="formatNumber(item.discounted_value_before_tax)" readonly
+                                                    class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right font-semibold"
+                                                    placeholder="0.00">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="number" :name="`items[${index}][excise_duty]`"
+                                                    x-model="item.excise_duty" @input="calculateTaxes(index)"
+                                                    step="0.01" min="0"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                    placeholder="0.00">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="number" :name="`items[${index}][sales_tax_value]`"
+                                                    x-model="item.sales_tax_value" @input="onSalesTaxManualEdit(index)"
+                                                    step="0.01" min="0"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm w-full"
+                                                    placeholder="Auto-calculated">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="number" :name="`items[${index}][advance_income_tax]`"
+                                                    x-model="item.advance_income_tax" @input="calculateTaxes(index)"
+                                                    step="0.01" min="0"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                    placeholder="0.00">
+                                            </td>
                                             <!-- Hidden UOM field - defaults to Piece (ID: 24) -->
                                             <input type="hidden" :name="`items[${index}][uom_id]`"
                                                 x-model="item.uom_id">
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][quantity_received]`"
-                                                    x-model="item.quantity_received" @input="updateTotal(index)"
-                                                    step="0.01" min="0" required
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full bg-gray-50"
-                                                    readonly>
+                                                    x-model="item.quantity_received" step="0.01" min="0" required
+                                                    readonly
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full bg-gray-50">
+                                                <!-- Hidden quantity_accepted field that mirrors quantity_received -->
+                                                <input type="hidden" :name="`items[${index}][quantity_accepted]`"
+                                                    x-model="item.quantity_received">
                                             </td>
                                             <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][quantity_accepted]`"
-                                                    x-model="item.quantity_accepted" @input="updateTotal(index)"
-                                                    step="0.01" min="0" required
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][unit_cost]`"
-                                                    x-model="item.unit_cost" @input="updateTotal(index)" step="0.01"
-                                                    min="0" required
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                <input type="text" :value="formatNumber(item.unit_cost)" readonly
+                                                    class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right">
                                             </td>
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][selling_price]`"
                                                     x-model="item.selling_price" step="0.01" min="0"
+                                                    @input="validateSellingPrice(index)"
                                                     class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                             </td>
                                             <td class="px-2 py-2 text-right text-sm font-semibold"
-                                                x-text="formatCurrency(item.total)"></td>
+                                                x-text="formatCurrency(item.total_value_with_taxes)"></td>
                                             <td class="px-2 py-2 text-center">
                                                 <button type="button" @click="openPromoModal(index)"
                                                     class="text-blue-600 hover:text-blue-800"
@@ -226,7 +277,7 @@
                                 </tbody>
                                 <tfoot class="bg-gray-50">
                                     <tr>
-                                        <td colspan="11" class="px-2 py-2">
+                                        <td colspan="18" class="px-2 py-2">
                                             <button type="button" @click="addItem()"
                                                 class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
@@ -239,7 +290,7 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td colspan="8" class="px-2 py-2 text-right font-semibold">Grand Total:</td>
+                                        <td colspan="13" class="px-2 py-2 text-right font-semibold">Grand Total:</td>
                                         <td class="px-2 py-2 text-right font-bold text-lg"
                                             x-text="formatCurrency(grandTotal)"></td>
                                         <td colspan="2"></td>
@@ -488,6 +539,7 @@
     @push('scripts')
     <script>
         let allProducts = []; // Will be loaded via AJAX when supplier is selected
+        const allSuppliers = @json($suppliers); // All suppliers with sales_tax
         const oldItems = @json(old('items', []));
         const defaultUomId = 24; // Piece UOM
 
@@ -495,6 +547,7 @@
             return {
                 showPromoModal: false,
                 currentEditIndex: null,
+                supplierSalesTaxRate: 18.00, // Default sales tax rate
 
                 items: oldItems.length > 0 ? oldItems.map(item => ({
                     product_id: item.product_id || '',
@@ -502,6 +555,13 @@
                     qty_cases: parseFloat(item.qty_cases) || 0,
                     unit_price_per_case: parseFloat(item.unit_price_per_case) || 0,
                     extended_value: (parseFloat(item.qty_cases) || 0) * (parseFloat(item.unit_price_per_case) || 0),
+                    discount_value: parseFloat(item.discount_value) || 0,
+                    fmr_allowance: parseFloat(item.fmr_allowance) || 0,
+                    discounted_value_before_tax: 0,
+                    excise_duty: parseFloat(item.excise_duty) || 0,
+                    sales_tax_value: parseFloat(item.sales_tax_value) || 0,
+                    advance_income_tax: parseFloat(item.advance_income_tax) || 0,
+                    total_value_with_taxes: 0,
                     manufacturing_date: item.manufacturing_date || '',
                     expiry_date: item.expiry_date || '',
                     quantity_received: parseFloat(item.quantity_received) || 0,
@@ -525,12 +585,21 @@
                     qty_cases: 0,
                     unit_price_per_case: 0,
                     extended_value: 0,
+                    discount_value: 0,
+                    fmr_allowance: 0,
+                    discounted_value_before_tax: 0,
+                    excise_duty: 0,
+                    sales_tax_value: 0,
+                    sales_tax_manually_edited: false,
+                    advance_income_tax: 0,
+                    total_value_with_taxes: 0,
                     manufacturing_date: '',
                     expiry_date: '',
                     quantity_received: 0,
                     quantity_accepted: 0,
                     unit_cost: 0,
                     selling_price: 0,
+                    max_selling_price: 0,
                     promotional_campaign_id: '',
                     promotional_price: 0,
                     promotional_discount_percent: 0,
@@ -552,12 +621,21 @@
                         qty_cases: 0,
                         unit_price_per_case: 0,
                         extended_value: 0,
+                        discount_value: 0,
+                        fmr_allowance: 0,
+                        discounted_value_before_tax: 0,
+                        excise_duty: 0,
+                        sales_tax_value: 0,
+                        sales_tax_manually_edited: false,
+                        advance_income_tax: 0,
+                        total_value_with_taxes: 0,
                         manufacturing_date: '',
                         expiry_date: '',
                         quantity_received: 0,
                         quantity_accepted: 0,
                         unit_cost: 0,
                         selling_price: 0,
+                        max_selling_price: 0,
                         promotional_campaign_id: '',
                         promotional_price: 0,
                         promotional_discount_percent: 0,
@@ -606,6 +684,9 @@
                     // Calculate Extended Value (Qty Cases × Unit Price per Case)
                     item.extended_value = qtyCases * unitPrice;
                     
+                    // Trigger tax calculations
+                    this.calculateTaxes(index);
+                    
                     if (!productId || qtyCases <= 0) {
                         item.quantity_received = 0;
                         this.updateTotal(index);
@@ -618,13 +699,41 @@
                         const conversionFactor = parseFloat(product.uom_conversion_factor) || 1;
                         item.quantity_received = qtyCases * conversionFactor;
                         
-                        // Auto-fill quantity_accepted to match quantity_received
-                        if (item.quantity_accepted === 0 || item.quantity_accepted === '') {
-                            item.quantity_accepted = item.quantity_received;
-                        }
-                        
-                        this.updateTotal(index);
+                        // Qty Accepted always equals Qty Received
+                        item.quantity_accepted = item.quantity_received;
                     }
+                },
+
+                calculateTaxes(index) {
+                    const item = this.items[index];
+                    const extendedValue = parseFloat(item.extended_value) || 0;
+                    const discountValue = parseFloat(item.discount_value) || 0;
+                    const fmrAllowance = parseFloat(item.fmr_allowance) || 0;
+                    const exciseDuty = parseFloat(item.excise_duty) || 0;
+                    let salesTaxValue = parseFloat(item.sales_tax_value) || 0;
+                    const advanceIncomeTax = parseFloat(item.advance_income_tax) || 0;
+                    
+                    // Discounted Value Before Sales Tax = Extended Value - Discount Value - FMR Allowance
+                    item.discounted_value_before_tax = parseFloat((extendedValue - discountValue - fmrAllowance).toFixed(2));
+                    
+                    // Auto-calculate Sales Tax Value based on supplier's tax rate
+                    // Only auto-calculate if sales_tax_value is 0 or not manually edited
+                    if (item.discounted_value_before_tax > 0 && !item.sales_tax_manually_edited) {
+                        salesTaxValue = parseFloat(((item.discounted_value_before_tax * this.supplierSalesTaxRate) / 100).toFixed(2));
+                        item.sales_tax_value = salesTaxValue;
+                    }
+                    
+                    // Total Value with Taxes = Discounted Value Before Tax + Excise Duty + Sales Tax + Advance Income Tax
+                    item.total_value_with_taxes = parseFloat((item.discounted_value_before_tax + exciseDuty + salesTaxValue + advanceIncomeTax).toFixed(2));
+                    
+                    // Calculate Unit Cost: (Total Value with Taxes + FMR Allowance) / Qty Received
+                    const qtyReceived = parseFloat(item.quantity_received) || 0;
+                    if (qtyReceived > 0) {
+                        item.unit_cost = parseFloat(((item.total_value_with_taxes + fmrAllowance) / qtyReceived).toFixed(2));
+                    }
+                    
+                    // Qty Accepted always equals Qty Received
+                    item.quantity_accepted = item.quantity_received;
                 },
 
                 removeItem(index) {
@@ -641,27 +750,37 @@
                     const productId = this.items[index].product_id;
                     const product = allProducts.find(p => p.id == productId);
                     if (product) {
-                        this.items[index].unit_cost = product.unit_sell_price || 0;
                         this.items[index].selling_price = product.unit_sell_price || 0;
+                        this.items[index].max_selling_price = product.unit_sell_price || 0;
                         
                         // If qty_cases is already entered, recalculate quantity_received
                         if (this.items[index].qty_cases > 0) {
                             this.calculateFromCases(index);
                         }
-                        
-                        this.updateTotal(index);
                     }
                 },
 
-                updateTotal(index) {
+                onSalesTaxManualEdit(index) {
+                    // Mark that sales tax was manually edited
+                    this.items[index].sales_tax_manually_edited = true;
+                    // Recalculate total with taxes
+                    this.calculateTaxes(index);
+                },
+
+                validateSellingPrice(index) {
                     const item = this.items[index];
-                    const qty = parseFloat(item.quantity_accepted) || 0;
-                    const cost = parseFloat(item.unit_cost) || 0;
-                    item.total = qty * cost;
+                    const sellingPrice = parseFloat(item.selling_price) || 0;
+                    const maxPrice = parseFloat(item.max_selling_price) || 0;
+                    
+                    // If selling price exceeds maximum, show alert and cap it at maximum
+                    if (maxPrice > 0 && sellingPrice > maxPrice) {
+                        alert(`Selling price cannot exceed the maximum price of ${this.formatCurrency(maxPrice)}\n\nThe selling price has been set to the maximum allowed value.`);
+                        item.selling_price = maxPrice;
+                    }
                 },
 
                 get grandTotal() {
-                    return this.items.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
+                    return this.items.reduce((sum, item) => sum + (parseFloat(item.total_value_with_taxes) || 0), 0);
                 },
 
                 formatCurrency(value) {
@@ -808,6 +927,24 @@
 
                 // When supplier changes, refresh all product dropdowns
                 $('#supplier_id').on('change', function() {
+                    const supplierId = $(this).val();
+                    const supplier = allSuppliers.find(s => s.id == supplierId);
+                    
+                    // Update Alpine.js component's sales tax rate
+                    if (supplier && Alpine && Alpine.$data) {
+                        const grnFormData = Alpine.$data(document.querySelector('[x-data="grnForm()"]'));
+                        if (grnFormData) {
+                            grnFormData.supplierSalesTaxRate = parseFloat(supplier.sales_tax) || 18.00;
+                            
+                            // Recalculate sales tax for all items that weren't manually edited
+                            grnFormData.items.forEach((item, index) => {
+                                if (!item.sales_tax_manually_edited && item.discounted_value_before_tax > 0) {
+                                    grnFormData.calculateTaxes(index);
+                                }
+                            });
+                        }
+                    }
+                    
                     refreshAllProductSelects();
                 });
 

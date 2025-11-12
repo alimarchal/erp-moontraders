@@ -31,6 +31,7 @@ class Supplier extends Model
         'supplier_primary_address',
         'supplier_primary_contact',
         'tax_id',
+        'sales_tax',
         'pan_number',
     ];
 

@@ -41,6 +41,7 @@ return new class extends Migration {
 
             // Tax and Registration
             $table->string('tax_id')->nullable();
+            $table->decimal('sales_tax', 5, 2)->default(18.00)->comment('Sales tax percentage');
             $table->string('pan_number')->nullable();
 
             $table->timestamps();

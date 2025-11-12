@@ -24,6 +24,13 @@ return new class extends Migration {
             $table->decimal('qty_cases', 15, 2)->nullable()->comment('Number of cases purchased');
             $table->decimal('unit_price_per_case', 15, 2)->nullable()->comment('Invoice price per case');
 
+            // Tax and Discount Fields
+            $table->decimal('discount_value', 15, 2)->nullable()->default(0)->comment('Discount amount');
+            $table->decimal('fmr_allowance', 15, 2)->nullable()->default(0)->comment('Free Market Rate allowance');
+            $table->decimal('excise_duty', 15, 2)->nullable()->default(0)->comment('Excise duty amount');
+            $table->decimal('sales_tax_value', 15, 2)->nullable()->default(0)->comment('Sales tax amount');
+            $table->decimal('advance_income_tax', 15, 2)->nullable()->default(0)->comment('Advance income tax amount');
+
             // Quantities
             $table->decimal('quantity_ordered', 15, 2)->nullable()->comment('From PO if exists');
             $table->decimal('quantity_received', 15, 2)->comment('Physical qty received (auto-calculated from cases)');

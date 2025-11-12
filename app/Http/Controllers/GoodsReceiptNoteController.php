@@ -54,7 +54,7 @@ class GoodsReceiptNoteController extends Controller
     public function create()
     {
         return view('goods-receipt-notes.create', [
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax']),
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             // Don't load all products - will be loaded via AJAX when supplier is selected
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
@@ -100,6 +100,11 @@ class GoodsReceiptNoteController extends Controller
             'items.*.uom_id' => 'required|exists:uoms,id',
             'items.*.qty_cases' => 'nullable|numeric|min:0',
             'items.*.unit_price_per_case' => 'nullable|numeric|min:0',
+            'items.*.discount_value' => 'nullable|numeric|min:0',
+            'items.*.fmr_allowance' => 'nullable|numeric|min:0',
+            'items.*.excise_duty' => 'nullable|numeric|min:0',
+            'items.*.sales_tax_value' => 'nullable|numeric|min:0',
+            'items.*.advance_income_tax' => 'nullable|numeric|min:0',
             'items.*.quantity_received' => 'required|numeric|min:0.01',
             'items.*.quantity_accepted' => 'required|numeric|min:0',
             'items.*.quantity_rejected' => 'nullable|numeric|min:0',
@@ -166,6 +171,11 @@ class GoodsReceiptNoteController extends Controller
                     'uom_id' => $item['uom_id'],
                     'qty_cases' => $item['qty_cases'] ?? null,
                     'unit_price_per_case' => $item['unit_price_per_case'] ?? null,
+                    'discount_value' => $item['discount_value'] ?? 0,
+                    'fmr_allowance' => $item['fmr_allowance'] ?? 0,
+                    'excise_duty' => $item['excise_duty'] ?? 0,
+                    'sales_tax_value' => $item['sales_tax_value'] ?? 0,
+                    'advance_income_tax' => $item['advance_income_tax'] ?? 0,
                     'quantity_received' => $item['quantity_received'],
                     'quantity_accepted' => $qty_accepted,
                     'quantity_rejected' => $qty_rejected,

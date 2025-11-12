@@ -16,6 +16,7 @@ class StockBatch extends Model
         'supplier_id',
         'receipt_date',
         'supplier_batch_number',
+        'lot_number',
         'manufacturing_date',
         'expiry_date',
         'promotional_campaign_id',
@@ -26,9 +27,11 @@ class StockBatch extends Model
         'priority_order',
         'selling_strategy',
         'unit_cost',
+        'selling_price',
         'status',
         'is_active',
         'notes',
+        'storage_location',
     ];
 
     protected $casts = [
@@ -40,6 +43,7 @@ class StockBatch extends Model
         'promotional_selling_price' => 'decimal:2',
         'promotional_discount_percent' => 'decimal:2',
         'unit_cost' => 'decimal:2',
+        'selling_price' => 'decimal:2',
         'is_active' => 'boolean',
     ];
 

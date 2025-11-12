@@ -96,6 +96,9 @@
                                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Unit
                                         Cost
                                     </th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Selling
+                                        Price
+                                    </th>
                                     <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total
                                         Value
                                     </th>
@@ -125,15 +128,20 @@
                                     <td class="px-3 py-2 text-center text-sm text-gray-700">
                                         {{ \Carbon\Carbon::parse($batch->stockBatch->receipt_date)->format('d M Y') }}
                                     </td>
-                                    <td
-                                        class="px-3 py-2 text-right text-sm font-semibold text-gray-900">
+                                    <td class="px-3 py-2 text-right text-sm font-semibold text-gray-900">
                                         {{ number_format($batch->quantity_on_hand, 2) }}
                                     </td>
                                     <td class="px-3 py-2 text-right text-sm text-gray-700">
                                         ₨ {{ number_format($batch->unit_cost, 2) }}
                                     </td>
-                                    <td
-                                        class="px-3 py-2 text-right text-sm font-semibold text-gray-900">
+                                    <td class="px-3 py-2 text-right text-sm text-gray-700">
+                                        @if($batch->stockBatch->selling_price)
+                                        ₨ {{ number_format($batch->stockBatch->selling_price, 2) }}
+                                        @else
+                                        <span class="text-gray-400">—</span>
+                                        @endif
+                                    </td>
+                                    <td class="px-3 py-2 text-right text-sm font-semibold text-gray-900">
                                         ₨ {{ number_format($batch->total_value, 2) }}
                                     </td>
                                     <td class="px-3 py-2 text-center text-sm">
@@ -168,7 +176,7 @@
                                 </tr>
                                 @if($batch->is_promotional && $batch->promotional_price)
                                 <tr class="bg-orange-50/10">
-                                    <td colspan="8" class="px-3 py-2 text-sm">
+                                    <td colspan="9" class="px-3 py-2 text-sm">
                                         <div class="flex items-center justify-between">
                                             <span class="text-orange-700 font-medium">
                                                 Promotional Price: ₨ {{ number_format($batch->promotional_price, 2) }}
@@ -186,7 +194,7 @@
                                 @endif
                                 @empty
                                 <tr>
-                                    <td colspan="8" class="px-3 py-8 text-center text-gray-500">
+                                    <td colspan="9" class="px-3 py-8 text-center text-gray-500">
                                         No stock batches found
                                     </td>
                                 </tr>

@@ -41,6 +41,7 @@ class InventoryService
                     'supplier_id' => $grn->supplier_id,
                     'receipt_date' => $grn->receipt_date,
                     'supplier_batch_number' => $item->batch_number,
+                    'lot_number' => $item->lot_number,
                     'manufacturing_date' => $item->manufacturing_date,
                     'expiry_date' => $item->expiry_date,
                     'promotional_campaign_id' => $item->promotional_campaign_id,
@@ -51,6 +52,8 @@ class InventoryService
                     'priority_order' => $item->priority_order ?? 99,
                     'selling_strategy' => $item->selling_strategy ?? 'fifo',
                     'unit_cost' => $item->unit_cost,
+                    'selling_price' => $item->selling_price,
+                    'storage_location' => $item->storage_location,
                     'status' => 'active',
                 ]);
 

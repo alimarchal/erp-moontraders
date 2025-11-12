@@ -21,6 +21,7 @@ return new class extends Migration {
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete();
             $table->date('receipt_date');
             $table->string('supplier_batch_number', 100)->nullable()->comment('Supplier\'s batch/lot number');
+            $table->string('lot_number', 100)->nullable()->comment('Internal lot code from GRN');
 
             // Dates
             $table->date('manufacturing_date')->nullable();
@@ -39,12 +40,14 @@ return new class extends Migration {
 
             // Costing
             $table->decimal('unit_cost', 15, 2)->comment('Purchase cost per unit');
+            $table->decimal('selling_price', 15, 2)->nullable()->comment('Selling price from GRN');
 
             // Status
             $table->enum('status', ['active', 'depleted', 'expired', 'recalled'])->default('active');
             $table->boolean('is_active')->default(true);
 
             $table->text('notes')->nullable();
+            $table->string('storage_location', 100)->nullable()->comment('Warehouse rack/bin location');
             $table->timestamps();
 
             // Indexes

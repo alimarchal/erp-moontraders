@@ -76,239 +76,201 @@
 
                         <hr class="my-6 border-gray-200">
 
-                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Line Items</h3>
-
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50">
+                        <x-form-table title="Line Items" :headers="[
+                            ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
+                            ['label' => 'Qty<br>Cases', 'align' => 'text-center', 'width' => '100px'],
+                            ['label' => 'Unit<br>Price', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'Extended<br>Value', 'align' => 'text-center', 'width' => '130px'],
+                            ['label' => 'Discount<br>Value', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'FMR<br>Allowance', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'Discounted Value<br>Before Sales Tax', 'align' => 'text-center', 'width' => '140px'],
+                            ['label' => 'Excise<br>Duty', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'Sales Tax<br>Value', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'Advance<br>Income Tax', 'align' => 'text-center', 'width' => '130px'],
+                            ['label' => 'Qty<br>Received', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'Unit<br>Cost', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'Selling<br>Price', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'Total Value<br>with Taxes', 'align' => 'text-right', 'width' => '140px'],
+                            ['label' => 'Promo', 'align' => 'text-center'],
+                            ['label' => 'Action', 'align' => 'text-center'],
+                        ]">
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="(item, index) in items" :key="index">
                                     <tr>
-                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 350px;">
-                                            Product</th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 100px;">Qty<br>Cases
-                                        </th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 120px;">Unit<br>Price
-                                        </th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 130px;">Extended<br>Value
-                                        </th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 120px;">Discount<br>Value
-                                        </th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 120px;">FMR<br>Allowance
-                                        </th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 140px;">Discounted Value<br>Before Sales Tax
-                                        </th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 120px;">Excise<br>Duty
-                                        </th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 120px;">Sales Tax<br>Value
-                                        </th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 130px;">Advance<br>Income Tax
-                                        </th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                                            Qty
-                                            Received</th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                                            Unit
-                                            Cost</th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                                            Selling Price</th>
-                                        <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 140px;">Total Value<br>with Taxes</th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                                            Promo</th>
-                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                                            Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <template x-for="(item, index) in items" :key="index">
-                                        <tr>
-                                            <td class="px-2 py-2">
-                                                <select :id="`product_${index}`" :name="`items[${index}][product_id]`"
-                                                    required
-                                                    class="product-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
-                                                    <option value="">Select Product</option>
-                                                </select>
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][qty_cases]`"
-                                                    x-model="item.qty_cases" @input="calculateFromCases(index)"
-                                                    step="0.01" min="0"
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
-                                                    placeholder="Cases">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][unit_price_per_case]`"
-                                                    x-model="item.unit_price_per_case"
-                                                    @input="calculateFromCases(index)" step="0.01" min="0"
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
-                                                    placeholder="Price/Case">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="text" :value="formatNumber(item.extended_value)" readonly
-                                                    class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right font-semibold"
-                                                    placeholder="0.00">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][discount_value]`"
-                                                    x-model="item.discount_value" @input="calculateTaxes(index)"
-                                                    step="0.01" min="0"
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
-                                                    placeholder="0.00">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][fmr_allowance]`"
-                                                    x-model="item.fmr_allowance" @input="calculateTaxes(index)"
-                                                    step="0.01" min="0"
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
-                                                    placeholder="0.00">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="text"
-                                                    :value="formatNumber(item.discounted_value_before_tax)" readonly
-                                                    class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right font-semibold"
-                                                    placeholder="0.00">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][excise_duty]`"
-                                                    x-model="item.excise_duty" @input="calculateTaxes(index)"
-                                                    step="0.01" min="0"
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
-                                                    placeholder="0.00">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][sales_tax_value]`"
-                                                    x-model="item.sales_tax_value" @input="onSalesTaxManualEdit(index)"
-                                                    step="0.01" min="0"
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm w-full"
-                                                    placeholder="Auto-calculated">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][advance_income_tax]`"
-                                                    x-model="item.advance_income_tax" @input="calculateTaxes(index)"
-                                                    step="0.01" min="0"
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
-                                                    placeholder="0.00">
-                                            </td>
-                                            <!-- Hidden UOM field - defaults to Piece (ID: 24) -->
-                                            <input type="hidden" :name="`items[${index}][uom_id]`"
-                                                x-model="item.uom_id">
-                                            <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][quantity_received]`"
-                                                    x-model="item.quantity_received" step="0.01" min="0" required
-                                                    readonly
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full bg-gray-50">
-                                                <!-- Hidden quantity_accepted field that mirrors quantity_received -->
-                                                <input type="hidden" :name="`items[${index}][quantity_accepted]`"
-                                                    x-model="item.quantity_received">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="text" :value="formatNumber(item.unit_cost)" readonly
-                                                    class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right">
-                                                <!-- Hidden input to submit unit_cost value -->
-                                                <input type="hidden" :name="`items[${index}][unit_cost]`"
-                                                    x-model="item.unit_cost">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="number" :name="`items[${index}][selling_price]`"
-                                                    x-model="item.selling_price" step="0.01" min="0"
-                                                    @input="validateSellingPrice(index)"
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
-                                            </td>
-                                            <td class="px-2 py-2 text-right text-sm font-semibold"
-                                                x-text="formatCurrency(item.total_value_with_taxes)"></td>
-                                            <td class="px-2 py-2 text-center">
-                                                <button type="button" @click="openPromoModal(index)"
-                                                    class="text-blue-600 hover:text-blue-800"
-                                                    title="Promotional & Batch Details">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                                        viewBox="0 0 24 24" stroke="currentColor"
-                                                        :class="{'text-orange-600': item.promotional_campaign_id}">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                                    </svg>
-                                                </button>
-                                            </td>
-                                            <td class="px-2 py-2 text-center">
-                                                <button type="button" @click="removeItem(index)"
-                                                    class="text-red-600 hover:text-red-800"
-                                                    :disabled="items.length === 1">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                                        viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-                                            </td>
-
-                                            <!-- Hidden inputs for promotional fields -->
-                                            <input type="hidden" :name="`items[${index}][promotional_campaign_id]`"
-                                                x-model="item.promotional_campaign_id">
-                                            <input type="hidden" :name="`items[${index}][promotional_price]`"
-                                                x-model="item.promotional_price">
-                                            <input type="hidden" :name="`items[${index}][promotional_discount_percent]`"
-                                                x-model="item.promotional_discount_percent">
-                                            <input type="hidden" :name="`items[${index}][selling_strategy]`"
-                                                x-model="item.selling_strategy">
-                                            <input type="hidden" :name="`items[${index}][priority_order]`"
-                                                x-model="item.priority_order">
-                                            <input type="hidden" :name="`items[${index}][must_sell_before]`"
-                                                x-model="item.must_sell_before">
-                                            <input type="hidden" :name="`items[${index}][manufacturing_date]`"
-                                                x-model="item.manufacturing_date">
-                                            <input type="hidden" :name="`items[${index}][expiry_date]`"
-                                                x-model="item.expiry_date">
-                                            <input type="hidden" :name="`items[${index}][batch_number]`"
-                                                x-model="item.batch_number">
-                                            <input type="hidden" :name="`items[${index}][lot_number]`"
-                                                x-model="item.lot_number">
-                                            <input type="hidden" :name="`items[${index}][storage_location]`"
-                                                x-model="item.storage_location">
-                                            <input type="hidden" :name="`items[${index}][quality_status]`"
-                                                x-model="item.quality_status">
-
-                                            <!-- Hidden calculated fields -->
-                                            <input type="hidden" :name="`items[${index}][extended_value]`"
-                                                x-model="item.extended_value">
-                                            <input type="hidden" :name="`items[${index}][discounted_value_before_tax]`"
-                                                x-model="item.discounted_value_before_tax">
-                                            <input type="hidden" :name="`items[${index}][total_value_with_taxes]`"
-                                                x-model="item.total_value_with_taxes">
-                                        </tr>
-                                    </template>
-                                </tbody>
-                                <tfoot class="bg-gray-50">
-                                    <tr>
-                                        <td colspan="18" class="px-2 py-2">
-                                            <button type="button" @click="addItem()"
-                                                class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                        <td class="px-2 py-2">
+                                            <select :id="`product_${index}`" :name="`items[${index}][product_id]`"
+                                                required
+                                                class="product-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                <option value="">Select Product</option>
+                                            </select>
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][qty_cases]`"
+                                                x-model="item.qty_cases" @input="calculateFromCases(index)" step="0.01"
+                                                min="0"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                placeholder="Cases">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][unit_price_per_case]`"
+                                                x-model="item.unit_price_per_case" @input="calculateFromCases(index)"
+                                                step="0.01" min="0"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                placeholder="Price/Case">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="text" :value="formatNumber(item.extended_value)" readonly
+                                                class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right font-semibold"
+                                                placeholder="0.00">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][discount_value]`"
+                                                x-model="item.discount_value" @input="calculateTaxes(index)" step="0.01"
+                                                min="0"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                placeholder="0.00">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][fmr_allowance]`"
+                                                x-model="item.fmr_allowance" @input="calculateTaxes(index)" step="0.01"
+                                                min="0"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                placeholder="0.00">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="text" :value="formatNumber(item.discounted_value_before_tax)"
+                                                readonly
+                                                class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right font-semibold"
+                                                placeholder="0.00">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][excise_duty]`"
+                                                x-model="item.excise_duty" @input="calculateTaxes(index)" step="0.01"
+                                                min="0"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                placeholder="0.00">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][sales_tax_value]`"
+                                                x-model="item.sales_tax_value" @input="onSalesTaxManualEdit(index)"
+                                                step="0.01" min="0"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm w-full"
+                                                placeholder="Auto-calculated">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][advance_income_tax]`"
+                                                x-model="item.advance_income_tax" @input="calculateTaxes(index)"
+                                                step="0.01" min="0"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                placeholder="0.00">
+                                        </td>
+                                        <!-- Hidden UOM field - defaults to Piece (ID: 24) -->
+                                        <input type="hidden" :name="`items[${index}][uom_id]`" x-model="item.uom_id">
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][quantity_received]`"
+                                                x-model="item.quantity_received" step="0.01" min="0" required readonly
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full bg-gray-50">
+                                            <!-- Hidden quantity_accepted field that mirrors quantity_received -->
+                                            <input type="hidden" :name="`items[${index}][quantity_accepted]`"
+                                                x-model="item.quantity_received">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="text" :value="formatNumber(item.unit_cost)" readonly
+                                                class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right">
+                                            <!-- Hidden input to submit unit_cost value -->
+                                            <input type="hidden" :name="`items[${index}][unit_cost]`"
+                                                x-model="item.unit_cost">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][selling_price]`"
+                                                x-model="item.selling_price" step="0.01" min="0"
+                                                @input="validateSellingPrice(index)"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                        </td>
+                                        <td class="px-2 py-2 text-right text-sm font-semibold"
+                                            x-text="formatCurrency(item.total_value_with_taxes)"></td>
+                                        <td class="px-2 py-2 text-center">
+                                            <button type="button" @click="openPromoModal(index)"
+                                                class="text-blue-600 hover:text-blue-800"
+                                                title="Promotional & Batch Details">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor"
+                                                    :class="{'text-orange-600': item.promotional_campaign_id}">
                                                     <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M12 4v16m8-8H4" />
+                                                        stroke-width="2"
+                                                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                                                 </svg>
-                                                Add Line
                                             </button>
                                         </td>
+                                        <td class="px-2 py-2 text-center">
+                                            <button type="button" @click="removeItem(index)"
+                                                class="text-red-600 hover:text-red-800" :disabled="items.length === 1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </td>
+
+                                        <!-- Hidden inputs for promotional fields -->
+                                        <input type="hidden" :name="`items[${index}][promotional_campaign_id]`"
+                                            x-model="item.promotional_campaign_id">
+                                        <input type="hidden" :name="`items[${index}][promotional_price]`"
+                                            x-model="item.promotional_price">
+                                        <input type="hidden" :name="`items[${index}][promotional_discount_percent]`"
+                                            x-model="item.promotional_discount_percent">
+                                        <input type="hidden" :name="`items[${index}][selling_strategy]`"
+                                            x-model="item.selling_strategy">
+                                        <input type="hidden" :name="`items[${index}][priority_order]`"
+                                            x-model="item.priority_order">
+                                        <input type="hidden" :name="`items[${index}][must_sell_before]`"
+                                            x-model="item.must_sell_before">
+                                        <input type="hidden" :name="`items[${index}][manufacturing_date]`"
+                                            x-model="item.manufacturing_date">
+                                        <input type="hidden" :name="`items[${index}][expiry_date]`"
+                                            x-model="item.expiry_date">
+                                        <input type="hidden" :name="`items[${index}][batch_number]`"
+                                            x-model="item.batch_number">
+                                        <input type="hidden" :name="`items[${index}][lot_number]`"
+                                            x-model="item.lot_number">
+                                        <input type="hidden" :name="`items[${index}][storage_location]`"
+                                            x-model="item.storage_location">
+                                        <input type="hidden" :name="`items[${index}][quality_status]`"
+                                            x-model="item.quality_status">
+
+                                        <!-- Hidden calculated fields -->
+                                        <input type="hidden" :name="`items[${index}][extended_value]`"
+                                            x-model="item.extended_value">
+                                        <input type="hidden" :name="`items[${index}][discounted_value_before_tax]`"
+                                            x-model="item.discounted_value_before_tax">
+                                        <input type="hidden" :name="`items[${index}][total_value_with_taxes]`"
+                                            x-model="item.total_value_with_taxes">
                                     </tr>
-                                    <tr>
-                                        <td colspan="13" class="px-2 py-2 text-right font-semibold">Grand Total:</td>
-                                        <td class="px-2 py-2 text-right font-bold text-lg"
-                                            x-text="formatCurrency(grandTotal)"></td>
-                                        <td colspan="2"></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                                </template>
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr>
+                                    <td colspan="18" class="px-2 py-2">
+                                        <button type="button" @click="addItem()"
+                                            class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Add Line
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="13" class="px-2 py-2 text-right font-semibold">Grand Total:</td>
+                                    <td class="px-2 py-2 text-right font-bold text-lg"
+                                        x-text="formatCurrency(grandTotal)"></td>
+                                    <td colspan="2"></td>
+                                </tr>
+                            </tfoot>
+                        </x-form-table>
 
                         <hr class="my-6 border-gray-200">
 

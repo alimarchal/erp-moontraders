@@ -273,8 +273,7 @@
                                 @click.stop>
 
                                 <!-- Header with Close Button -->
-                                <div
-                                    class="bg-white px-6 py-4 border-b border-gray-200">
+                                <div class="bg-white px-6 py-4 border-b border-gray-200">
                                     <div class="flex items-center justify-between">
                                         <h3 class="text-lg font-semibold text-gray-900">
                                             Promotional & Batch Details
@@ -295,8 +294,7 @@
                                     <template x-if="currentEditIndex !== null">
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Campaign
                                                 </label>
                                                 <select x-model="items[currentEditIndex].promotional_campaign_id"
@@ -314,8 +312,7 @@
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Promotional Price
                                                 </label>
                                                 <input type="number" x-model="items[currentEditIndex].promotional_price"
@@ -325,8 +322,7 @@
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Discount %
                                                 </label>
                                                 <input type="number"
@@ -336,8 +332,7 @@
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Selling Strategy
                                                 </label>
                                                 <select x-model="items[currentEditIndex].selling_strategy"
@@ -351,8 +346,7 @@
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Priority (1-10)
                                                 </label>
                                                 <select x-model="items[currentEditIndex].priority_order"
@@ -372,8 +366,7 @@
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Must Sell Before
                                                 </label>
                                                 <input type="date" x-model="items[currentEditIndex].must_sell_before"
@@ -382,8 +375,7 @@
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Manufacturing Date
                                                 </label>
                                                 <input type="date" x-model="items[currentEditIndex].manufacturing_date"
@@ -391,8 +383,7 @@
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Expiry Date
                                                 </label>
                                                 <input type="date" x-model="items[currentEditIndex].expiry_date"
@@ -400,16 +391,14 @@
                                             </div>
 
                                             <!-- Batch Tracking Fields (Optional - Auto-generated if not entered) -->
-                                            <div
-                                                class="md:col-span-2 mt-4 pt-4 border-t border-gray-200">
+                                            <div class="md:col-span-2 mt-4 pt-4 border-t border-gray-200">
                                                 <h4 class="text-sm font-semibold text-gray-700 mb-3">
                                                     Batch Tracking (Optional - Auto-generated if empty)
                                                 </h4>
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Batch Number
                                                 </label>
                                                 <input type="text" x-model="items[currentEditIndex].batch_number"
@@ -420,8 +409,7 @@
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Lot Number
                                                 </label>
                                                 <input type="text" x-model="items[currentEditIndex].lot_number"
@@ -431,8 +419,7 @@
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Storage Location
                                                 </label>
                                                 <input type="text" x-model="items[currentEditIndex].storage_location"
@@ -442,8 +429,7 @@
                                             </div>
 
                                             <div>
-                                                <label
-                                                    class="block text-sm font-medium text-gray-700 mb-1">
+                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Quality Status
                                                 </label>
                                                 <select x-model="items[currentEditIndex].quality_status"
@@ -458,8 +444,7 @@
                                 </div>
 
                                 <!-- Footer -->
-                                <div
-                                    class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                                <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
                                     <button type="button"
                                         @click="clearPromoFields(currentEditIndex); showPromoModal = false"
                                         class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
@@ -598,8 +583,8 @@
                     const productId = this.items[index].product_id;
                     const product = allProducts.find(p => p.id == productId);
                     if (product) {
-                        this.items[index].unit_cost = product.unit_price || 0;
-                        this.items[index].selling_price = product.unit_price || 0;
+                        this.items[index].unit_cost = product.unit_sell_price || 0;
+                        this.items[index].selling_price = product.unit_sell_price || 0;
                         this.updateTotal(index);
                     }
                 },

@@ -98,9 +98,9 @@ def parse_csv_to_json(csv_path, json_path):
                 cost_price = 0.0
             
             try:
-                unit_price = float(retail_price.replace(',', ''))
+                unit_sell_price = float(retail_price.replace(',', ''))
             except:
-                unit_price = 0.0
+                unit_sell_price = 0.0
             
             product = {
                 'product_code': product_code,
@@ -113,7 +113,7 @@ def parse_csv_to_json(csv_path, json_path):
                 'sales_uom_id': 2,  # Default to Cases - will be overridden in seeder
                 'uom_conversion_factor': info['uom_conversion_factor'],
                 'cost_price': round(cost_price, 2),
-                'unit_price': round(unit_price, 2),
+                'unit_sell_price': round(unit_sell_price, 2),
                 'valuation_method': 'FIFO',
                 'is_active': True
             }

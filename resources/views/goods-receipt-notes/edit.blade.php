@@ -263,8 +263,8 @@
                 updateProduct(index) {
                     const product = this.products.find(p => p.id == this.items[index].product_id);
                     if (product) {
-                        this.items[index].unit_cost = product.unit_price || 0;
-                        this.items[index].selling_price = product.unit_price || 0;
+                        this.items[index].unit_cost = product.unit_sell_price || 0;
+                        this.items[index].selling_price = product.unit_sell_price || 0;
                         this.updateTotal(index);
                     }
                 },

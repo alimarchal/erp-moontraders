@@ -131,9 +131,9 @@ $valuationMethods = $valuationMethods ?? [];
     </div>
 
     <div>
-        <x-label for="unit_price" value="Selling Price" />
-        <x-input id="unit_price" type="number" name="unit_price" step="0.01" min="0" class="mt-1 block w-full"
-            :value="old('unit_price', optional($product)->unit_price)" placeholder="1200" />
+        <x-label for="unit_sell_price" value="Selling Price" />
+        <x-input id="unit_sell_price" type="number" name="unit_sell_price" step="0.01" min="0" class="mt-1 block w-full"
+            :value="old('unit_sell_price', optional($product)->unit_sell_price)" placeholder="1200" />
     </div>
 
     <div>

@@ -73,7 +73,7 @@ class GoodsReceiptNoteController extends Controller
         $products = Product::where('is_active', true)
             ->where('supplier_id', $supplierId)
             ->orderBy('product_name')
-            ->get(['id', 'product_code', 'product_name', 'unit_price', 'supplier_id']);
+            ->get(['id', 'product_code', 'product_name', 'unit_sell_price', 'supplier_id']);
 
         return response()->json($products);
     }
@@ -232,7 +232,7 @@ class GoodsReceiptNoteController extends Controller
             'grn' => $goodsReceiptNote,
             'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
-            'products' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name', 'unit_price', 'supplier_id']),
+            'products' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name', 'unit_sell_price', 'supplier_id']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
             'campaigns' => PromotionalCampaign::where('is_active', true)
                 ->whereDate('end_date', '>=', now())

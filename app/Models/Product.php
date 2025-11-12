@@ -33,7 +33,7 @@ class Product extends Model
         'brand',
         'valuation_method',
         'reorder_level',
-        'unit_price',
+        'unit_sell_price',
         'cost_price',
         'inventory_account_id',
         'cogs_account_id',
@@ -45,7 +45,7 @@ class Product extends Model
         'weight' => 'decimal:3',
         'uom_conversion_factor' => 'decimal:3',
         'reorder_level' => 'decimal:2',
-        'unit_price' => 'decimal:2',
+        'unit_sell_price' => 'decimal:2',
         'cost_price' => 'decimal:2',
         'is_active' => 'boolean',
     ];

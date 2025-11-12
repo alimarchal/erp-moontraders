@@ -85,7 +85,7 @@ class GoodsReceiptNoteItem extends Model
 
     public function getEffectiveSellingPrice(): ?float
     {
-        // Priority: promotional_price > selling_price > product.unit_price
+        // Priority: promotional_price > selling_price > product.unit_sell_price
         if ($this->is_promotional && $this->promotional_price) {
             return $this->promotional_price;
         }
@@ -94,7 +94,7 @@ class GoodsReceiptNoteItem extends Model
             return $this->selling_price;
         }
 
-        return $this->product->unit_price ?? null;
+        return $this->product->unit_sell_price ?? null;
     }
 
     public function getMargin(): float

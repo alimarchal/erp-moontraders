@@ -55,7 +55,7 @@ class StoreProductRequest extends FormRequest
             'brand' => ['nullable', 'string', 'max:120'],
             'valuation_method' => ['required', Rule::in(Product::VALUATION_METHODS)],
             'reorder_level' => ['nullable', 'numeric', 'min:0'],
-            'unit_price' => ['nullable', 'numeric', 'min:0'],
+            'unit_sell_price' => ['nullable', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
             'inventory_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
             'cogs_account_id' => ['nullable', 'exists:chart_of_accounts,id'],

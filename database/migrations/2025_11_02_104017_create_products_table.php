@@ -18,7 +18,6 @@ return new class extends Migration {
             $table->text('description')->nullable();
 
             // Foreign Keys
-            $table->foreignId('category_id')->nullable()->constrained('product_categories')->nullOnDelete();
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete()->comment('Primary supplier');
             $table->foreignId('uom_id')->nullable()->constrained('uoms')->nullOnDelete()->comment('Base unit for inventory tracking: PCS, KG, LTR');
             $table->foreignId('sales_uom_id')->nullable()->constrained('uoms')->nullOnDelete()->comment('Sales unit: Cases, Boxes, Cartons, Pallets');
@@ -34,7 +33,7 @@ return new class extends Migration {
             $table->enum('valuation_method', ['FIFO', 'LIFO', 'Average', 'Standard'])->default('FIFO')->comment('Inventory costing method for COGS');
 
             $table->decimal('reorder_level', 10, 2)->default(0);
-            $table->decimal('unit_price', 15, 2)->default(0)->comment('Selling price or trading price');
+            $table->decimal('unit_sell_price', 15, 2)->default(0)->comment('Selling price or trading price');
             $table->decimal('cost_price', 15, 2)->default(0)->comment('Average cost for COGS calculation');
 
             // Link to Chart of Accounts for automatic posting

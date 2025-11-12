@@ -60,7 +60,7 @@ def convert_csv_to_json(csv_path, json_output_path):
                 "pack_size": row.get('Units', '').strip(),
                 "brand": brand,
                 "weight": 0,
-                "unit_price": float(row.get('Retail Price', 0)) if row.get('Retail Price', '').strip() else 0,
+                "unit_sell_price": float(row.get('Retail Price', 0)) if row.get('Retail Price', '').strip() else 0,
                 "cost_price": float(row.get('Invoice Price', 0)) if row.get('Invoice Price', '').strip() else 0
             }
             

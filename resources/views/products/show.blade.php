@@ -109,7 +109,7 @@
                         <div>
                             <x-label value="Selling Price" />
                             <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="number_format((float) $product->unit_price, 2)" disabled readonly />
+                                :value="number_format((float) $product->unit_sell_price, 2)" disabled readonly />
                         </div>
                         <div>
                             <x-label value="Cost Price" />

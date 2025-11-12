@@ -115,7 +115,8 @@
                 <div class="text-xs text-gray-500">UOM: {{ $product->uom?->uom_name ?? '—' }}</div>
             </td>
             <td class="py-2 px-2 text-sm">
-                <div class="font-semibold text-emerald-700">Sell: {{ number_format((float) $product->unit_price, 2) }}
+                <div class="font-semibold text-emerald-700">Sell: {{ number_format((float) $product->unit_sell_price, 2)
+                    }}
                 </div>
                 <div class="text-xs text-gray-500">Cost: {{ number_format((float) $product->cost_price, 2) }}</div>
                 <div class="text-xs text-gray-500">Reorder: {{ number_format((float) $product->reorder_level, 2) }}

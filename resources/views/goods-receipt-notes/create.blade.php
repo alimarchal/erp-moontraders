@@ -16,7 +16,7 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 mt-4 shadow-md" />
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
@@ -85,16 +85,25 @@
                                         <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                                             style="min-width: 350px;">
                                             Product</th>
-                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase"
-                                            style="min-width: 150px;">UOM
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 100px;">Qty<br>Cases
                                         </th>
-                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 120px;">Unit<br>Price
+                                        </th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase"
+                                            style="min-width: 130px;">Extended<br>Value
+                                        </th>
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                                            Qty
                                             Received</th>
-                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Qty
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                                            Qty
                                             Accepted</th>
-                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                                            Unit
                                             Cost</th>
-                                        <th class="px-2 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                                        <th class="px-2 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                                             Selling Price</th>
                                         <th class="px-2 py-3 text-right text-xs font-medium text-gray-500 uppercase">
                                             Total</th>
@@ -115,20 +124,33 @@
                                                 </select>
                                             </td>
                                             <td class="px-2 py-2">
-                                                <select :id="`uom_${index}`" :name="`items[${index}][uom_id]`" required
-                                                    class="uom-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
-                                                    <option value="">Select UOM</option>
-                                                    @foreach ($uoms as $uom)
-                                                    <option value="{{ $uom->id }}" {{ $uom->id == 24 ? 'selected' : ''
-                                                        }}>{{ $uom->uom_name }}</option>
-                                                    @endforeach
-                                                </select>
+                                                <input type="number" :name="`items[${index}][qty_cases]`"
+                                                    x-model="item.qty_cases" @input="calculateFromCases(index)"
+                                                    step="0.01" min="0"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                    placeholder="Cases">
                                             </td>
+                                            <td class="px-2 py-2">
+                                                <input type="number" :name="`items[${index}][unit_price_per_case]`"
+                                                    x-model="item.unit_price_per_case"
+                                                    @input="calculateFromCases(index)" step="0.01" min="0"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                    placeholder="Price/Case">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="text" :value="formatNumber(item.extended_value)" readonly
+                                                    class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right font-semibold"
+                                                    placeholder="0.00">
+                                            </td>
+                                            <!-- Hidden UOM field - defaults to Piece (ID: 24) -->
+                                            <input type="hidden" :name="`items[${index}][uom_id]`"
+                                                x-model="item.uom_id">
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][quantity_received]`"
                                                     x-model="item.quantity_received" @input="updateTotal(index)"
                                                     step="0.01" min="0" required
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full bg-gray-50"
+                                                    readonly>
                                             </td>
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][quantity_accepted]`"
@@ -204,7 +226,7 @@
                                 </tbody>
                                 <tfoot class="bg-gray-50">
                                     <tr>
-                                        <td colspan="9" class="px-2 py-2">
+                                        <td colspan="11" class="px-2 py-2">
                                             <button type="button" @click="addItem()"
                                                 class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
@@ -217,7 +239,7 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td colspan="6" class="px-2 py-2 text-right font-semibold">Grand Total:</td>
+                                        <td colspan="8" class="px-2 py-2 text-right font-semibold">Grand Total:</td>
                                         <td class="px-2 py-2 text-right font-bold text-lg"
                                             x-text="formatCurrency(grandTotal)"></td>
                                         <td colspan="2"></td>
@@ -477,6 +499,9 @@
                 items: oldItems.length > 0 ? oldItems.map(item => ({
                     product_id: item.product_id || '',
                     uom_id: item.uom_id || defaultUomId || '',
+                    qty_cases: parseFloat(item.qty_cases) || 0,
+                    unit_price_per_case: parseFloat(item.unit_price_per_case) || 0,
+                    extended_value: (parseFloat(item.qty_cases) || 0) * (parseFloat(item.unit_price_per_case) || 0),
                     manufacturing_date: item.manufacturing_date || '',
                     expiry_date: item.expiry_date || '',
                     quantity_received: parseFloat(item.quantity_received) || 0,
@@ -497,6 +522,9 @@
                 })) : [{
                     product_id: '',
                     uom_id: defaultUomId || '',
+                    qty_cases: 0,
+                    unit_price_per_case: 0,
+                    extended_value: 0,
                     manufacturing_date: '',
                     expiry_date: '',
                     quantity_received: 0,
@@ -521,6 +549,9 @@
                     this.items.push({
                         product_id: '',
                         uom_id: defaultUomId || '',
+                        qty_cases: 0,
+                        unit_price_per_case: 0,
+                        extended_value: 0,
                         manufacturing_date: '',
                         expiry_date: '',
                         quantity_received: 0,
@@ -566,14 +597,41 @@
                     this.items[index].quality_status = 'approved';
                 },
 
+                calculateFromCases(index) {
+                    const item = this.items[index];
+                    const productId = item.product_id;
+                    const qtyCases = parseFloat(item.qty_cases) || 0;
+                    const unitPrice = parseFloat(item.unit_price_per_case) || 0;
+                    
+                    // Calculate Extended Value (Qty Cases × Unit Price per Case)
+                    item.extended_value = qtyCases * unitPrice;
+                    
+                    if (!productId || qtyCases <= 0) {
+                        item.quantity_received = 0;
+                        this.updateTotal(index);
+                        return;
+                    }
+
+                    // Find the product in allProducts array
+                    const product = allProducts.find(p => p.id == productId);
+                    if (product && product.uom_conversion_factor) {
+                        const conversionFactor = parseFloat(product.uom_conversion_factor) || 1;
+                        item.quantity_received = qtyCases * conversionFactor;
+                        
+                        // Auto-fill quantity_accepted to match quantity_received
+                        if (item.quantity_accepted === 0 || item.quantity_accepted === '') {
+                            item.quantity_accepted = item.quantity_received;
+                        }
+                        
+                        this.updateTotal(index);
+                    }
+                },
+
                 removeItem(index) {
                     if (this.items.length > 1) {
                         // Destroy Select2 before removing
                         if ($(`#product_${index}`).data('select2')) {
                             $(`#product_${index}`).select2('destroy');
-                        }
-                        if ($(`#uom_${index}`).data('select2')) {
-                            $(`#uom_${index}`).select2('destroy');
                         }
                         this.items.splice(index, 1);
                     }
@@ -585,6 +643,12 @@
                     if (product) {
                         this.items[index].unit_cost = product.unit_sell_price || 0;
                         this.items[index].selling_price = product.unit_sell_price || 0;
+                        
+                        // If qty_cases is already entered, recalculate quantity_received
+                        if (this.items[index].qty_cases > 0) {
+                            this.calculateFromCases(index);
+                        }
+                        
                         this.updateTotal(index);
                     }
                 },
@@ -602,6 +666,13 @@
 
                 formatCurrency(value) {
                     return '₨ ' + parseFloat(value || 0).toLocaleString('en-PK', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                },
+
+                formatNumber(value) {
+                    return parseFloat(value || 0).toLocaleString('en-PK', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });
@@ -625,29 +696,14 @@
                 data: getFilteredProducts(supplierId)
             });
 
-            // Sync with Alpine.js
+            // Sync with Alpine.js and trigger calculation when product changes
             $select.on('change', function() {
-                const event = new Event('change', { bubbles: true });
-                this.dispatchEvent(event);
-            });
-
-            // Initialize UOM Select2 for this row
-            initializeUomSelect2(index);
-        }
-
-        function initializeUomSelect2(index) {
-            const $select = $(`#uom_${index}`);
-
-            $select.select2({
-                placeholder: 'Select UOM',
-                allowClear: false,
-                width: '100%'
-            });
-
-            // Sync with Alpine.js
-            $select.on('change', function() {
-                const event = new Event('change', { bubbles: true });
-                this.dispatchEvent(event);
+                const productId = $(this).val();
+                const alpineComponent = Alpine.$data(this.closest('form'));
+                if (alpineComponent && alpineComponent.items && alpineComponent.items[index]) {
+                    alpineComponent.items[index].product_id = productId;
+                    alpineComponent.updateProduct(index);
+                }
             });
         }
 
@@ -721,8 +777,13 @@
 
                 // Re-bind change event with Alpine.js sync
                 $this.on('change', function() {
-                    const event = new Event('change', { bubbles: true });
-                    this.dispatchEvent(event);
+                    const productId = $(this).val();
+                    const alpineComponent = Alpine.$data(this.closest('form'));
+                    const itemIndex = parseInt($(this).attr('id').split('_')[1]);
+                    if (alpineComponent && alpineComponent.items && alpineComponent.items[itemIndex]) {
+                        alpineComponent.items[itemIndex].product_id = productId;
+                        alpineComponent.updateProduct(itemIndex);
+                    }
                 });
             });
             

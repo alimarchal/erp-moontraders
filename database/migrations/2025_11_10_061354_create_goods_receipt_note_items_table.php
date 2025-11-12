@@ -20,9 +20,13 @@ return new class extends Migration {
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignId('uom_id')->constrained('uoms');
 
+            // Case-based Purchasing
+            $table->decimal('qty_cases', 15, 2)->nullable()->comment('Number of cases purchased');
+            $table->decimal('unit_price_per_case', 15, 2)->nullable()->comment('Invoice price per case');
+
             // Quantities
             $table->decimal('quantity_ordered', 15, 2)->nullable()->comment('From PO if exists');
-            $table->decimal('quantity_received', 15, 2)->comment('Physical qty received');
+            $table->decimal('quantity_received', 15, 2)->comment('Physical qty received (auto-calculated from cases)');
             $table->decimal('quantity_accepted', 15, 2)->comment('Qty after QC check');
             $table->decimal('quantity_rejected', 15, 2)->default(0)->comment('Damaged/defective qty');
 

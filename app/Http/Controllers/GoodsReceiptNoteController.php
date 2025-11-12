@@ -73,7 +73,7 @@ class GoodsReceiptNoteController extends Controller
         $products = Product::where('is_active', true)
             ->where('supplier_id', $supplierId)
             ->orderBy('product_name')
-            ->get(['id', 'product_code', 'product_name', 'unit_sell_price', 'supplier_id']);
+            ->get(['id', 'product_code', 'product_name', 'unit_sell_price', 'supplier_id', 'uom_conversion_factor']);
 
         return response()->json($products);
     }
@@ -98,6 +98,8 @@ class GoodsReceiptNoteController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.uom_id' => 'required|exists:uoms,id',
+            'items.*.qty_cases' => 'nullable|numeric|min:0',
+            'items.*.unit_price_per_case' => 'nullable|numeric|min:0',
             'items.*.quantity_received' => 'required|numeric|min:0.01',
             'items.*.quantity_accepted' => 'required|numeric|min:0',
             'items.*.quantity_rejected' => 'nullable|numeric|min:0',
@@ -162,6 +164,8 @@ class GoodsReceiptNoteController extends Controller
                     'line_no' => $index + 1,
                     'product_id' => $item['product_id'],
                     'uom_id' => $item['uom_id'],
+                    'qty_cases' => $item['qty_cases'] ?? null,
+                    'unit_price_per_case' => $item['unit_price_per_case'] ?? null,
                     'quantity_received' => $item['quantity_received'],
                     'quantity_accepted' => $qty_accepted,
                     'quantity_rejected' => $qty_rejected,

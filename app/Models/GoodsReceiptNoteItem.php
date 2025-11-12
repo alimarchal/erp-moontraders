@@ -15,6 +15,8 @@ class GoodsReceiptNoteItem extends Model
         'line_no',
         'product_id',
         'uom_id',
+        'qty_cases',
+        'unit_price_per_case',
         'quantity_ordered',
         'quantity_received',
         'quantity_accepted',
@@ -38,6 +40,8 @@ class GoodsReceiptNoteItem extends Model
     ];
 
     protected $casts = [
+        'qty_cases' => 'decimal:2',
+        'unit_price_per_case' => 'decimal:2',
         'quantity_ordered' => 'decimal:2',
         'quantity_received' => 'decimal:2',
         'quantity_accepted' => 'decimal:2',

@@ -213,6 +213,9 @@
                                             <td class="px-2 py-2">
                                                 <input type="text" :value="formatNumber(item.unit_cost)" readonly
                                                     class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right">
+                                                <!-- Hidden input to submit unit_cost value -->
+                                                <input type="hidden" :name="`items[${index}][unit_cost]`"
+                                                    x-model="item.unit_cost">
                                             </td>
                                             <td class="px-2 py-2">
                                                 <input type="number" :name="`items[${index}][selling_price]`"
@@ -272,6 +275,14 @@
                                                 x-model="item.storage_location">
                                             <input type="hidden" :name="`items[${index}][quality_status]`"
                                                 x-model="item.quality_status">
+
+                                            <!-- Hidden calculated fields -->
+                                            <input type="hidden" :name="`items[${index}][extended_value]`"
+                                                x-model="item.extended_value">
+                                            <input type="hidden" :name="`items[${index}][discounted_value_before_tax]`"
+                                                x-model="item.discounted_value_before_tax">
+                                            <input type="hidden" :name="`items[${index}][total_value_with_taxes]`"
+                                                x-model="item.total_value_with_taxes">
                                         </tr>
                                     </template>
                                 </tbody>
@@ -554,20 +565,22 @@
                     uom_id: item.uom_id || defaultUomId || '',
                     qty_cases: parseFloat(item.qty_cases) || 0,
                     unit_price_per_case: parseFloat(item.unit_price_per_case) || 0,
-                    extended_value: (parseFloat(item.qty_cases) || 0) * (parseFloat(item.unit_price_per_case) || 0),
+                    extended_value: parseFloat(item.extended_value) || (parseFloat(item.qty_cases) || 0) * (parseFloat(item.unit_price_per_case) || 0),
                     discount_value: parseFloat(item.discount_value) || 0,
                     fmr_allowance: parseFloat(item.fmr_allowance) || 0,
-                    discounted_value_before_tax: 0,
+                    discounted_value_before_tax: parseFloat(item.discounted_value_before_tax) || 0,
                     excise_duty: parseFloat(item.excise_duty) || 0,
                     sales_tax_value: parseFloat(item.sales_tax_value) || 0,
+                    sales_tax_manually_edited: !!(item.sales_tax_value && parseFloat(item.sales_tax_value) > 0),
                     advance_income_tax: parseFloat(item.advance_income_tax) || 0,
-                    total_value_with_taxes: 0,
+                    total_value_with_taxes: parseFloat(item.total_value_with_taxes) || 0,
                     manufacturing_date: item.manufacturing_date || '',
                     expiry_date: item.expiry_date || '',
                     quantity_received: parseFloat(item.quantity_received) || 0,
                     quantity_accepted: parseFloat(item.quantity_accepted) || 0,
                     unit_cost: parseFloat(item.unit_cost) || 0,
                     selling_price: parseFloat(item.selling_price) || 0,
+                    max_selling_price: parseFloat(item.max_selling_price) || parseFloat(item.selling_price) || 0,
                     promotional_campaign_id: item.promotional_campaign_id || '',
                     promotional_price: parseFloat(item.promotional_price) || 0,
                     promotional_discount_percent: parseFloat(item.promotional_discount_percent) || 0,
@@ -814,6 +827,12 @@
                 width: '100%',
                 data: getFilteredProducts(supplierId)
             });
+            
+            // Set initial value from Alpine.js data if it exists
+            const alpineComponent = Alpine.$data($select.closest('form')[0]);
+            if (alpineComponent && alpineComponent.items && alpineComponent.items[index] && alpineComponent.items[index].product_id) {
+                $select.val(alpineComponent.items[index].product_id).trigger('change.select2');
+            }
 
             // Sync with Alpine.js and trigger calculation when product changes
             $select.on('change', function() {

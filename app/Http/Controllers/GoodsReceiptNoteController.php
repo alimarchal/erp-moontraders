@@ -250,14 +250,13 @@ class GoodsReceiptNoteController extends Controller
 
         return view('goods-receipt-notes.edit', [
             'grn' => $goodsReceiptNote,
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax']),
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
-            'products' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name', 'unit_sell_price', 'supplier_id']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
             'campaigns' => PromotionalCampaign::where('is_active', true)
                 ->whereDate('end_date', '>=', now())
                 ->orderBy('campaign_name')
-                ->get(['id', 'campaign_code', 'campaign_name']),
+                ->get(['id', 'campaign_code', 'campaign_name', 'discount_type', 'buy_quantity', 'get_quantity']),
         ]);
     }
 
@@ -286,6 +285,16 @@ class GoodsReceiptNoteController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.uom_id' => 'required|exists:uoms,id',
+            'items.*.qty_cases' => 'nullable|numeric|min:0',
+            'items.*.unit_price_per_case' => 'nullable|numeric|min:0',
+            'items.*.extended_value' => 'nullable|numeric|min:0',
+            'items.*.discount_value' => 'nullable|numeric|min:0',
+            'items.*.fmr_allowance' => 'nullable|numeric|min:0',
+            'items.*.discounted_value_before_tax' => 'nullable|numeric|min:0',
+            'items.*.excise_duty' => 'nullable|numeric|min:0',
+            'items.*.sales_tax_value' => 'nullable|numeric|min:0',
+            'items.*.advance_income_tax' => 'nullable|numeric|min:0',
+            'items.*.total_value_with_taxes' => 'nullable|numeric|min:0',
             'items.*.quantity_received' => 'required|numeric|min:0.01',
             'items.*.quantity_accepted' => 'required|numeric|min:0',
             'items.*.quantity_rejected' => 'nullable|numeric|min:0',
@@ -294,10 +303,16 @@ class GoodsReceiptNoteController extends Controller
             'items.*.promotional_campaign_id' => 'nullable|exists:promotional_campaigns,id',
             'items.*.is_promotional' => 'nullable|boolean',
             'items.*.promotional_price' => 'nullable|numeric|min:0',
+            'items.*.promotional_discount_percent' => 'nullable|numeric|min:0|max:100',
             'items.*.priority_order' => 'nullable|integer|min:1|max:99',
             'items.*.must_sell_before' => 'nullable|date',
+            'items.*.selling_strategy' => 'nullable|string',
             'items.*.batch_number' => 'nullable|string|max:100',
+            'items.*.lot_number' => 'nullable|string|max:100',
+            'items.*.manufacturing_date' => 'nullable|date',
             'items.*.expiry_date' => 'nullable|date',
+            'items.*.storage_location' => 'nullable|string|max:100',
+            'items.*.quality_status' => 'nullable|string',
             'items.*.notes' => 'nullable|string',
         ]);
 
@@ -344,6 +359,16 @@ class GoodsReceiptNoteController extends Controller
                     'line_no' => $index + 1,
                     'product_id' => $item['product_id'],
                     'uom_id' => $item['uom_id'],
+                    'qty_cases' => $item['qty_cases'] ?? null,
+                    'unit_price_per_case' => $item['unit_price_per_case'] ?? null,
+                    'extended_value' => $item['extended_value'] ?? 0,
+                    'discount_value' => $item['discount_value'] ?? 0,
+                    'fmr_allowance' => $item['fmr_allowance'] ?? 0,
+                    'discounted_value_before_tax' => $item['discounted_value_before_tax'] ?? 0,
+                    'excise_duty' => $item['excise_duty'] ?? 0,
+                    'sales_tax_value' => $item['sales_tax_value'] ?? 0,
+                    'advance_income_tax' => $item['advance_income_tax'] ?? 0,
+                    'total_value_with_taxes' => $item['total_value_with_taxes'] ?? 0,
                     'quantity_received' => $item['quantity_received'],
                     'quantity_accepted' => $qty_accepted,
                     'quantity_rejected' => $qty_rejected,
@@ -351,13 +376,18 @@ class GoodsReceiptNoteController extends Controller
                     'total_cost' => $qty_accepted * $item['unit_cost'],
                     'selling_price' => $item['selling_price'] ?? null,
                     'promotional_campaign_id' => $item['promotional_campaign_id'] ?? null,
-                    'is_promotional' => $item['is_promotional'] ?? false,
+                    'is_promotional' => !empty($item['promotional_campaign_id']),
                     'promotional_price' => $item['promotional_price'] ?? null,
+                    'promotional_discount_percent' => $item['promotional_discount_percent'] ?? null,
+                    'selling_strategy' => $item['selling_strategy'] ?? 'fifo',
                     'priority_order' => $item['priority_order'] ?? 99,
                     'must_sell_before' => $item['must_sell_before'] ?? null,
                     'batch_number' => $item['batch_number'] ?? null,
+                    'lot_number' => $item['lot_number'] ?? null,
+                    'manufacturing_date' => $item['manufacturing_date'] ?? null,
                     'expiry_date' => $item['expiry_date'] ?? null,
-                    'quality_status' => 'approved',
+                    'storage_location' => $item['storage_location'] ?? null,
+                    'quality_status' => $item['quality_status'] ?? 'approved',
                     'notes' => $item['notes'] ?? null,
                 ]);
             }

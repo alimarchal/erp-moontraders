@@ -104,6 +104,18 @@
                 placeholder: 'Select an option',
                 allowClear: true,
             });
+
+            // Handle label clicks for Select2 elements
+            $('label').on('click', function(e) {
+                var forId = $(this).attr('for');
+                if (forId) {
+                    var $element = $('#' + forId);
+                    if ($element.hasClass('select2') || $element.hasClass('select2-hidden-accessible')) {
+                        e.preventDefault();
+                        $element.select2('open');
+                    }
+                }
+            });
         });
 
             $('form').submit(function(){

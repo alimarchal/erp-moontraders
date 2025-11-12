@@ -738,19 +738,7 @@
             }
 
             $(document).ready(function() {
-                // Initialize Select2 for supplier
-                $('#supplier_id').select2({
-                    placeholder: 'Select Supplier',
-                    allowClear: true,
-                    width: '100%'
-                });
 
-                // Initialize Select2 for warehouse
-                $('#warehouse_id').select2({
-                    placeholder: 'Select Warehouse',
-                    allowClear: true,
-                    width: '100%'
-                });
 
                 // Initialize product selects for existing items (including old input)
                 $('.product-select').each(function(index) {

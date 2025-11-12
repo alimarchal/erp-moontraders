@@ -96,8 +96,7 @@
                             ['label' => 'Unit<br>Cost', 'align' => 'text-center', 'width' => '120px'],
                             ['label' => 'Selling<br>Price', 'align' => 'text-center', 'width' => '120px'],
                             ['label' => 'Total Value<br>with Taxes', 'align' => 'text-right', 'width' => '140px'],
-                            ['label' => 'Promo', 'align' => 'text-center'],
-                            ['label' => 'Action', 'align' => 'text-center'],
+                            ['label' => 'Action', 'align' => 'text-center', 'width' => '100px'],
                         ]">
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(item, index) in items" :key="index">
@@ -195,27 +194,29 @@
                                         <td class="px-2 py-2 text-right text-sm font-semibold"
                                             x-text="formatCurrency(item.total_value_with_taxes)"></td>
                                         <td class="px-2 py-2 text-center">
-                                            <button type="button" @click="openPromoModal(index)"
-                                                class="text-blue-600 hover:text-blue-800"
-                                                title="Promotional & Batch Details">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor"
-                                                    :class="{'text-orange-600': item.promotional_campaign_id}">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                                                </svg>
-                                            </button>
-                                        </td>
-                                        <td class="px-2 py-2 text-center">
-                                            <button type="button" @click="removeItem(index)"
-                                                class="text-red-600 hover:text-red-800" :disabled="items.length === 1">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                </svg>
-                                            </button>
+                                            <div class="flex justify-center space-x-1">
+                                                <button type="button" @click="openPromoModal(index)"
+                                                    class="inline-flex items-center justify-center w-8 h-8 hover:bg-purple-100 rounded-md transition-colors duration-150"
+                                                    :class="item.promotional_campaign_id ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-100' : 'text-purple-600 hover:text-purple-800'"
+                                                    title="Promotional & Batch Details">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                        viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12zm-7 4h14M5 12a2 2 0 110-4h14a2 2 0 110 4M5 12v7a2 2 0 002 2h10a2 2 0 002-2v-7" />
+                                                    </svg>
+                                                </button>
+                                                <button type="button" @click="removeItem(index)"
+                                                    class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                                    :class="items.length === 1 ? 'opacity-40 cursor-not-allowed hover:bg-transparent hover:text-red-600 pointer-events-none' : ''"
+                                                    :disabled="items.length === 1" title="Remove Line">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                        viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </td>
 
                                         <!-- Hidden inputs for promotional fields -->
@@ -272,7 +273,7 @@
                                     <td colspan="13" class="px-2 py-2 text-right font-semibold">Grand Total:</td>
                                     <td class="px-2 py-2 text-right font-bold text-lg"
                                         x-text="formatCurrency(grandTotal)"></td>
-                                    <td colspan="2"></td>
+                                    <td></td>
                                 </tr>
                             </tfoot>
                         </x-form-table>

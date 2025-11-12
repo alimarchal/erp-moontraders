@@ -37,9 +37,9 @@
     <div class="form-table-scroll relative overflow-x-auto rounded-lg">
         <table class="min-w-full table-auto text-sm">
             <thead>
-                <tr class="bg-green-800 text-white uppercase text-sm">
+                <tr class="bg-green-800 text-white uppercase text-xs">
                     @foreach($headers as $header)
-                    <th class="py-2 px-2 {{ $header['align'] ?? 'text-left' }}" @if(isset($header['width']))
+                    <th class="py-1 px-2 {{ $header['align'] ?? 'text-left' }}" @if(isset($header['width']))
                         style="min-width: {{ $header['width'] }};" @endif>
                         {!! $header['label'] !!}
                     </th>

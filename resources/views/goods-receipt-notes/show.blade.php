@@ -215,138 +215,93 @@
 
                     <hr class="my-6 border-gray-200">
 
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Line Items</h3>
+                    <x-detail-table title="Line Items" :headers="[
+                        ['label' => '#', 'align' => 'text-center'],
+                        ['label' => 'Product', 'align' => 'text-left'],
+                        ['label' => 'Qty Cases', 'align' => 'text-right'],
+                        ['label' => 'Unit Price/Case', 'align' => 'text-right'],
+                        ['label' => 'Extended Value', 'align' => 'text-right'],
+                        ['label' => 'Discount', 'align' => 'text-right'],
+                        ['label' => 'FMR Allowance', 'align' => 'text-right'],
+                        ['label' => 'Value Before Tax', 'align' => 'text-right'],
+                        ['label' => 'Excise Duty', 'align' => 'text-right'],
+                        ['label' => 'Sales Tax', 'align' => 'text-right'],
+                        ['label' => 'Adv. Income Tax', 'align' => 'text-right'],
+                        ['label' => 'Qty Received', 'align' => 'text-right'],
+                        ['label' => 'Unit Cost', 'align' => 'text-right'],
+                        ['label' => 'Selling Price', 'align' => 'text-right'],
+                        ['label' => 'Total Value w/Taxes', 'align' => 'text-right'],
+                    ]">
+                        @foreach ($grn->items as $item)
+                        <tr class="border-b border-gray-200 text-sm">
+                            <td class="py-1 px-2 text-center">{{ $item->line_no }}</td>
+                            <td class="py-1 px-2">
+                                <div class="font-semibold text-gray-900">{{ $item->product->product_code }}</div>
+                                <div class="text-xs text-gray-500">{{ $item->product->product_name }}</div>
+                                @if ($item->is_promotional)
+                                <span
+                                    class="px-2 py-1 mt-1 text-xs font-semibold rounded bg-orange-100 text-orange-800">
+                                    Promotional
+                                </span>
+                                @endif
+                                @if ($item->batch_number || $item->lot_number)
+                                <div class="text-xs text-gray-500 mt-1">
+                                    @if ($item->batch_number)
+                                    Batch: {{ $item->batch_number }}
+                                    @endif
+                                    @if ($item->lot_number)
+                                    | Lot: {{ $item->lot_number }}
+                                    @endif
+                                </div>
+                                @endif
+                                @if ($item->expiry_date)
+                                <div class="text-xs text-gray-500">
+                                    Exp: {{ \Carbon\Carbon::parse($item->expiry_date)->format('d M Y') }}
+                                </div>
+                                @endif
+                            </td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->qty_cases ?? 0, 2) }}</td>
+                            <td class="py-1 px-2 text-right">₨ {{ number_format($item->unit_price_per_case ?? 0, 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->extended_value ?? 0, 2) }}</td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->discount_value ?? 0, 2) }}</td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->fmr_allowance ?? 0, 2) }}</td>
+                            <td class="py-1 px-2 text-right font-semibold">{{
+                                number_format($item->discounted_value_before_tax ?? 0, 2) }}</td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->excise_duty ?? 0, 2) }}</td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->sales_tax_value ?? 0, 2) }}</td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->advance_income_tax ?? 0, 2) }}</td>
+                            <td class="py-1 px-2 text-right">
+                                {{ number_format($item->quantity_received, 2) }}
+                                @if ($item->quantity_rejected > 0)
+                                <div class="text-xs text-red-600">
+                                    (Rej: {{ number_format($item->quantity_rejected, 2) }})
+                                </div>
+                                @endif
+                            </td>
+                            <td class="py-1 px-2 text-right">₨ {{ number_format($item->unit_cost, 2) }}</td>
+                            <td class="py-1 px-2 text-right">
+                                @if ($item->selling_price)
+                                ₨ {{ number_format($item->selling_price, 2) }}
+                                @else
+                                <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+                            <td class="py-1 px-2 text-right font-bold text-emerald-600">₨ {{
+                                number_format($item->total_value_with_taxes ?? $item->total_cost, 2) }}</td>
+                        </tr>
+                        @endforeach
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-gray-50">
-                                <tr class="border-b border-gray-200">
-                                    <th
-                                        class="py-2 px-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        #</th>
-                                    <th
-                                        class="py-2 px-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Product</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Qty Cases</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Unit Price/Case</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Extended Value</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Discount</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        FMR Allowance</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Value Before Tax</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Excise Duty</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Sales Tax</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Adv. Income Tax</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Qty Received</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Unit Cost</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Selling Price</th>
-                                    <th
-                                        class="py-2 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Total Value w/Taxes</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($grn->items as $item)
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="py-2 px-2 text-center">{{ $item->line_no }}</td>
-                                    <td class="py-2 px-2">
-                                        <div class="font-semibold text-gray-900">{{ $item->product->product_code }}
-                                        </div>
-                                        <div class="text-xs text-gray-500">{{ $item->product->product_name }}</div>
-                                        @if ($item->is_promotional)
-                                        <span
-                                            class="inline-flex items-center px-2 py-0.5 mt-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
-                                            Promotional
-                                        </span>
-                                        @endif
-                                        @if ($item->batch_number || $item->lot_number)
-                                        <div class="text-xs text-gray-500 mt-1">
-                                            @if ($item->batch_number)
-                                            Batch: {{ $item->batch_number }}
-                                            @endif
-                                            @if ($item->lot_number)
-                                            | Lot: {{ $item->lot_number }}
-                                            @endif
-                                        </div>
-                                        @endif
-                                        @if ($item->expiry_date)
-                                        <div class="text-xs text-gray-500">
-                                            Exp: {{ \Carbon\Carbon::parse($item->expiry_date)->format('d M Y') }}
-                                        </div>
-                                        @endif
-                                    </td>
-                                    <td class="py-2 px-2 text-right">{{ number_format($item->qty_cases ?? 0, 2) }}</td>
-                                    <td class="py-2 px-2 text-right">₨ {{ number_format($item->unit_price_per_case ?? 0,
-                                        2) }}</td>
-                                    <td class="py-2 px-2 text-right">{{ number_format($item->extended_value ?? 0, 2) }}
-                                    </td>
-                                    <td class="py-2 px-2 text-right">{{ number_format($item->discount_value ?? 0, 2) }}
-                                    </td>
-                                    <td class="py-2 px-2 text-right">{{ number_format($item->fmr_allowance ?? 0, 2) }}
-                                    </td>
-                                    <td class="py-2 px-2 text-right font-semibold">{{
-                                        number_format($item->discounted_value_before_tax ?? 0, 2) }}</td>
-                                    <td class="py-2 px-2 text-right">{{ number_format($item->excise_duty ?? 0, 2) }}
-                                    </td>
-                                    <td class="py-2 px-2 text-right">{{ number_format($item->sales_tax_value ?? 0, 2) }}
-                                    </td>
-                                    <td class="py-2 px-2 text-right">{{ number_format($item->advance_income_tax ?? 0, 2)
-                                        }}</td>
-                                    <td class="py-2 px-2 text-right">
-                                        {{ number_format($item->quantity_received, 2) }}
-                                        @if ($item->quantity_rejected > 0)
-                                        <div class="text-xs text-red-600">
-                                            (Rej: {{ number_format($item->quantity_rejected, 2) }})
-                                        </div>
-                                        @endif
-                                    </td>
-                                    <td class="py-2 px-2 text-right">₨ {{ number_format($item->unit_cost, 2) }}</td>
-                                    <td class="py-2 px-2 text-right">
-                                        @if ($item->selling_price)
-                                        ₨ {{ number_format($item->selling_price, 2) }}
-                                        @else
-                                        <span class="text-gray-400">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="py-2 px-2 text-right font-bold text-emerald-600">₨ {{
-                                        number_format($item->total_value_with_taxes ?? $item->total_cost, 2) }}</td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50">
-                                <tr class="border-t-2 border-gray-300">
-                                    <td colspan="14" class="py-2 px-2 text-right font-bold text-lg">Grand Total:</td>
-                                    <td class="py-2 px-2 text-right font-bold text-lg text-emerald-600">
-                                        ₨ {{ number_format($grn->items->sum('total_value_with_taxes') ?:
-                                        $grn->grand_total, 2) }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                        <x-slot name="footer">
+                            <tr class="border-t-2 border-gray-300">
+                                <td colspan="14" class="py-1 px-2 text-right font-bold text-lg">Grand Total:</td>
+                                <td class="py-1 px-2 text-right font-bold text-lg text-emerald-600">
+                                    ₨ {{ number_format($grn->items->sum('total_value_with_taxes') ?: $grn->grand_total,
+                                    2) }}
+                                </td>
+                            </tr>
+                        </x-slot>
+                    </x-detail-table>
 
                     @if ($grn->notes)
                     <div class="mt-6">

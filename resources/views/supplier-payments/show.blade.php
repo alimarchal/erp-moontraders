@@ -92,7 +92,7 @@
                         </div>
                         <div>
                             <h3 class="text-sm font-semibold text-gray-500 uppercase">Status</h3>
-                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
+                            <span class="px-2 py-1 text-xs font-semibold rounded 
                                 {{ $supplierPayment->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
                                 {{ $supplierPayment->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}
                                 {{ $supplierPayment->status === 'cancelled' ? 'bg-red-100 text-red-700' : '' }}
@@ -205,61 +205,44 @@
 
                     <hr class="my-6 border-gray-200">
 
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">GRN Allocations</h3>
-
                     @if ($supplierPayment->grnAllocations->count() > 0)
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-gray-50">
-                                <tr class="border-b border-gray-200">
-                                    <th
-                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        GRN Number</th>
-                                    <th
-                                        class="py-1 px-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        GRN Date</th>
-                                    <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        GRN Amount</th>
-                                    <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Allocated Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($supplierPayment->grnAllocations as $allocation)
-                                <tr class="border-b border-gray-200">
-                                    <td class="py-1 px-2">
-                                        <a href="{{ route('goods-receipt-notes.show', $allocation->grn_id) }}"
-                                            class="text-blue-600 hover:text-blue-800 font-semibold">
-                                            {{ $allocation->grn->grn_number }}
-                                        </a>
-                                    </td>
-                                    <td class="py-1 px-2 text-center">
-                                        {{ \Carbon\Carbon::parse($allocation->grn->receipt_date)->format('d M Y') }}
-                                    </td>
-                                    <td class="py-1 px-2 text-right">
-                                        ₨ {{ number_format($allocation->grn->grand_total, 2) }}
-                                    </td>
-                                    <td class="py-1 px-2 text-right font-semibold">
-                                        ₨ {{ number_format($allocation->allocated_amount, 2) }}
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50">
-                                <tr class="border-t-2 border-gray-300">
-                                    <td colspan="3" class="py-1 px-2 text-right font-bold">Total Allocated:</td>
-                                    <td class="py-1 px-2 text-right font-bold">
-                                        ₨ {{
-                                        number_format($supplierPayment->grnAllocations->sum('allocated_amount'), 2)
-                                        }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                    <x-detail-table title="GRN Allocations" :headers="[
+                        ['label' => 'GRN Number', 'align' => 'text-left'],
+                        ['label' => 'GRN Date', 'align' => 'text-center'],
+                        ['label' => 'GRN Amount', 'align' => 'text-right'],
+                        ['label' => 'Allocated Amount', 'align' => 'text-right'],
+                    ]">
+                        @foreach ($supplierPayment->grnAllocations as $allocation)
+                        <tr class="border-b border-gray-200 text-sm">
+                            <td class="py-1 px-2">
+                                <a href="{{ route('goods-receipt-notes.show', $allocation->grn_id) }}"
+                                    class="text-blue-600 hover:text-blue-800 font-semibold">
+                                    {{ $allocation->grn->grn_number }}
+                                </a>
+                            </td>
+                            <td class="py-1 px-2 text-center">
+                                {{ \Carbon\Carbon::parse($allocation->grn->receipt_date)->format('d M Y') }}
+                            </td>
+                            <td class="py-1 px-2 text-right">
+                                {{ number_format($allocation->grn->grand_total, 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right font-semibold">
+                                {{ number_format($allocation->allocated_amount, 2) }}
+                            </td>
+                        </tr>
+                        @endforeach
+
+                        <x-slot name="footer">
+                            <tr class="border-t-2 border-gray-300">
+                                <td colspan="3" class="py-1 px-2 text-right font-bold">Total Allocated:</td>
+                                <td class="py-1 px-2 text-right font-bold">
+                                    ₨ {{ number_format($supplierPayment->grnAllocations->sum('allocated_amount'), 2) }}
+                                </td>
+                            </tr>
+                        </x-slot>
+                    </x-detail-table>
                     @else
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">GRN Allocations</h3>
                     <div class="text-center py-8">
                         <p class="text-gray-500">No GRN allocations found for this payment.</p>
                     </div>
@@ -268,11 +251,9 @@
                     @if ($supplierPayment->journalEntry)
                     <hr class="my-6 border-gray-200">
 
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Journal Entry Details
-                    </h3>
-
                     <div class="mb-4">
-                        <span class="text-sm text-gray-500">Journal Entry Number:</span>
+                        <h3 class="text-lg font-semibold text-gray-900 inline-block">Journal Entry Details</h3>
+                        <span class="text-sm text-gray-500 ml-4">Entry:</span>
                         <a href="{{ route('journal-entries.show', $supplierPayment->journalEntry->id) }}"
                             class="text-blue-600 hover:text-blue-800 font-semibold ml-2">
                             {{ $supplierPayment->journalEntry->entry_number }}
@@ -283,68 +264,50 @@
                         </span>
                     </div>
 
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-sm">
-                            <thead class="bg-gray-50">
-                                <tr class="border-b border-gray-200">
-                                    <th
-                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Account</th>
-                                    <th
-                                        class="py-1 px-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Description</th>
-                                    <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Debit</th>
-                                    <th
-                                        class="py-1 px-2 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Credit</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach ($supplierPayment->journalEntry->details->sortBy('line_no') as $detail)
-                                <tr class="border-b border-gray-200">
-                                    <td class="py-1 px-2">
-                                        <div class="font-semibold text-gray-900">
-                                            {{ $detail->account->account_code }}</div>
-                                        <div class="text-xs text-gray-500">{{
-                                            $detail->account->account_name }}</div>
-                                    </td>
-                                    <td class="py-1 px-2 text-gray-700">
-                                        {{ $detail->description }}
-                                    </td>
-                                    <td class="py-1 px-2 text-right font-semibold">
-                                        @if ($detail->debit > 0)
-                                        ₨ {{ number_format($detail->debit, 2) }}
-                                        @else
-                                        —
-                                        @endif
-                                    </td>
-                                    <td class="py-1 px-2 text-right font-semibold">
-                                        @if ($detail->credit > 0)
-                                        ₨ {{ number_format($detail->credit, 2) }}
-                                        @else
-                                        —
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50">
-                                <tr class="border-t-2 border-gray-300">
-                                    <td colspan="2" class="py-1 px-2 text-right font-semibold">Totals:</td>
-                                    <td class="py-1 px-2 text-right font-bold">
-                                        ₨ {{ number_format($supplierPayment->journalEntry->details->sum('debit'), 2)
-                                        }}
-                                    </td>
-                                    <td class="py-1 px-2 text-right font-bold">
-                                        ₨ {{ number_format($supplierPayment->journalEntry->details->sum('credit'),
-                                        2) }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                    <x-detail-table :headers="[
+                        ['label' => 'Account', 'align' => 'text-left'],
+                        ['label' => 'Description', 'align' => 'text-left'],
+                        ['label' => 'Debit', 'align' => 'text-right'],
+                        ['label' => 'Credit', 'align' => 'text-right'],
+                    ]">
+                        @foreach ($supplierPayment->journalEntry->details->sortBy('line_no') as $detail)
+                        <tr class="border-b border-gray-200 text-sm">
+                            <td class="py-1 px-2">
+                                <div class="font-semibold text-gray-900">{{ $detail->account->account_code }}</div>
+                                <div class="text-xs text-gray-500">{{ $detail->account->account_name }}</div>
+                            </td>
+                            <td class="py-1 px-2 text-gray-700">
+                                {{ $detail->description }}
+                            </td>
+                            <td class="py-1 px-2 text-right font-semibold">
+                                @if ($detail->debit > 0)
+                                {{ number_format($detail->debit, 2) }}
+                                @else
+                                —
+                                @endif
+                            </td>
+                            <td class="py-1 px-2 text-right font-semibold">
+                                @if ($detail->credit > 0)
+                                {{ number_format($detail->credit, 2) }}
+                                @else
+                                —
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+
+                        <x-slot name="footer">
+                            <tr class="border-t-2 border-gray-300">
+                                <td colspan="2" class="py-1 px-2 text-right font-semibold">Totals:</td>
+                                <td class="py-1 px-2 text-right font-bold">
+                                    ₨ {{ number_format($supplierPayment->journalEntry->details->sum('debit'), 2) }}
+                                </td>
+                                <td class="py-1 px-2 text-right font-bold">
+                                    ₨ {{ number_format($supplierPayment->journalEntry->details->sum('credit'), 2) }}
+                                </td>
+                            </tr>
+                        </x-slot>
+                    </x-detail-table>
                     @endif
                 </div>
             </div>

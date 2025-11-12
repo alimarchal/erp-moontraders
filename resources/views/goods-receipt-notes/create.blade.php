@@ -620,7 +620,7 @@
 
             $select.select2({
                 placeholder: 'Select Product',
-                allowClear: true,
+                allowClear: false,
                 width: '100%',
                 data: getFilteredProducts(supplierId)
             });
@@ -710,7 +710,7 @@
 
                 $this.select2({
                     placeholder: 'Select Product',
-                    allowClear: true,
+                    allowClear: false,
                     width: '100%'
                 });
 

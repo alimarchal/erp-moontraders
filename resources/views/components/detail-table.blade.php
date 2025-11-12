@@ -4,12 +4,38 @@
 'footerSlot' => null,
 ])
 
+<style>
+    .detail-table-scroll::-webkit-scrollbar {
+        height: 10px;
+    }
+
+    .detail-table-scroll::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+
+    .detail-table-scroll::-webkit-scrollbar-thumb {
+        background: linear-gradient(to right, #10b981, #059669);
+        border-radius: 10px;
+        transition: background 0.3s ease;
+    }
+
+    .detail-table-scroll::-webkit-scrollbar-thumb:hover {
+        background: linear-gradient(to right, #059669, #047857);
+    }
+
+    .detail-table-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #10b981 #f1f5f9;
+    }
+</style>
+
 <div>
     @if($title)
     <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $title }}</h3>
     @endif
 
-    <div class="relative overflow-x-auto rounded-lg">
+    <div class="detail-table-scroll relative overflow-x-auto rounded-lg">
         <table class="min-w-max w-full table-auto text-sm">
             <thead>
                 <tr class="bg-green-800 text-white uppercase text-sm">

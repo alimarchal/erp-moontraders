@@ -261,7 +261,7 @@
                                 @endif
                             </td>
                             <td class="py-1 px-2 text-right">{{ number_format($item->qty_cases ?? 0, 2) }}</td>
-                            <td class="py-1 px-2 text-right">₨ {{ number_format($item->unit_price_per_case ?? 0, 2) }}
+                            <td class="py-1 px-2 text-right">{{ number_format($item->unit_price_per_case ?? 0, 2) }}
                             </td>
                             <td class="py-1 px-2 text-right">{{ number_format($item->extended_value ?? 0, 2) }}</td>
                             <td class="py-1 px-2 text-right">{{ number_format($item->discount_value ?? 0, 2) }}</td>
@@ -279,15 +279,15 @@
                                 </div>
                                 @endif
                             </td>
-                            <td class="py-1 px-2 text-right">₨ {{ number_format($item->unit_cost, 2) }}</td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->unit_cost, 2) }}</td>
                             <td class="py-1 px-2 text-right">
                                 @if ($item->selling_price)
-                                ₨ {{ number_format($item->selling_price, 2) }}
+                                {{ number_format($item->selling_price, 2) }}
                                 @else
                                 <span class="text-gray-400">—</span>
                                 @endif
                             </td>
-                            <td class="py-1 px-2 text-right font-bold text-emerald-600">₨ {{
+                            <td class="py-1 px-2 text-right font-bold text-emerald-600">{{
                                 number_format($item->total_value_with_taxes ?? $item->total_cost, 2) }}</td>
                         </tr>
                         @endforeach

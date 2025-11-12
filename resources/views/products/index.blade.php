@@ -8,14 +8,28 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
                 <x-label for="filter_product_name" value="Product Name" />
-                <x-input id="filter_product_name" name="filter[product_name]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.product_name')" placeholder="Search name" />
+                <select id="filter_product_name" name="filter[product_name]" class="select2 mt-1 block w-full">
+                    <option value="">All Products</option>
+                    @foreach ($productOptions as $product)
+                    <option value="{{ $product->product_name }}" {{ request('filter.product_name')===$product->
+                        product_name ? 'selected' : '' }}>
+                        {{ $product->product_name }}
+                    </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
                 <x-label for="filter_product_code" value="Product Code" />
-                <x-input id="filter_product_code" name="filter[product_code]" type="text"
-                    class="mt-1 block w-full uppercase" :value="request('filter.product_code')" placeholder="SKU" />
+                <select id="filter_product_code" name="filter[product_code]" class="select2 mt-1 block w-full">
+                    <option value="">All Codes</option>
+                    @foreach ($productOptions as $product)
+                    <option value="{{ $product->product_code }}" {{ request('filter.product_code')===$product->
+                        product_code ? 'selected' : '' }}>
+                        {{ $product->product_code }}
+                    </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>

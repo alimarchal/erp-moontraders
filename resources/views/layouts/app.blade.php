@@ -99,8 +99,12 @@
     <script src="{{ url('select2/select2.min.js') }}" defer></script>
     <script>
         $(document).ready(function () {
-                $('.select2').select2();
+                $('.select2').select2({
+                width: '100%',
+                placeholder: 'Select an option',
+                allowClear: true,
             });
+        });
 
             $('form').submit(function(){
                 // If x-button does not render as a traditional submit button, target it directly by ID or class

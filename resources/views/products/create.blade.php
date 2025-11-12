@@ -27,7 +27,6 @@
                         @include('products.partials.form-fields', [
                         'supplierOptions' => $supplierOptions,
                         'uomOptions' => $uomOptions,
-                        'accountOptions' => $accountOptions,
                         'valuationMethods' => $valuationMethods,
                         ])
 
@@ -41,4 +40,5 @@
             </div>
         </div>
     </div>
+
 </x-app-layout>

@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
-use App\Models\ChartOfAccount;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Uom;
@@ -26,8 +25,8 @@ class ProductController extends Controller
             Product::query()->with(['supplier', 'uom', 'salesUom'])
         )
             ->allowedFilters([
-                AllowedFilter::partial('product_name'),
-                AllowedFilter::partial('product_code'),
+                AllowedFilter::exact('product_name'),
+                AllowedFilter::exact('product_code'),
                 AllowedFilter::partial('brand'),
                 AllowedFilter::partial('barcode'),
                 AllowedFilter::partial('pack_size'),
@@ -42,6 +41,7 @@ class ProductController extends Controller
 
         return view('products.index', [
             'products' => $products,
+            'productOptions' => $this->productOptions(),
             'supplierOptions' => $this->supplierOptions(),
             'uomOptions' => $this->uomOptions(),
             'valuationMethods' => Product::VALUATION_METHODS,
@@ -57,7 +57,6 @@ class ProductController extends Controller
         return view('products.create', [
             'supplierOptions' => $this->supplierOptions(),
             'uomOptions' => $this->uomOptions(),
-            'accountOptions' => $this->accountOptions(),
             'valuationMethods' => Product::VALUATION_METHODS,
         ]);
     }
@@ -127,7 +126,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        $product->load(['supplier', 'uom', 'salesUom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
+        $product->load(['supplier', 'uom', 'salesUom']);
 
         return view('products.show', [
             'product' => $product,
@@ -139,13 +138,12 @@ class ProductController extends Controller
      */
     public function edit(Product $product)
     {
-        $product->load(['supplier', 'uom', 'salesUom', 'inventoryAccount', 'cogsAccount', 'salesRevenueAccount']);
+        $product->load(['supplier', 'uom', 'salesUom']);
 
         return view('products.edit', [
             'product' => $product,
             'supplierOptions' => $this->supplierOptions(),
             'uomOptions' => $this->uomOptions(),
-            'accountOptions' => $this->accountOptions(),
             'valuationMethods' => Product::VALUATION_METHODS,
         ]);
     }
@@ -253,8 +251,10 @@ class ProductController extends Controller
         return Uom::orderBy('uom_name')->get(['id', 'uom_name', 'symbol']);
     }
 
-    protected function accountOptions()
+    protected function productOptions()
     {
-        return ChartOfAccount::orderBy('account_code')->get(['id', 'account_code', 'account_name']);
+        return Product::where('is_active', true)
+            ->orderBy('product_name')
+            ->get(['id', 'product_code', 'product_name']);
     }
 }

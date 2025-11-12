@@ -35,9 +35,6 @@ class Product extends Model
         'reorder_level',
         'unit_sell_price',
         'cost_price',
-        'inventory_account_id',
-        'cogs_account_id',
-        'sales_revenue_account_id',
         'is_active',
     ];
 
@@ -80,29 +77,5 @@ class Product extends Model
     public function salesUom(): BelongsTo
     {
         return $this->belongsTo(Uom::class, 'sales_uom_id');
-    }
-
-    /**
-     * Get the inventory account.
-     */
-    public function inventoryAccount(): BelongsTo
-    {
-        return $this->belongsTo(ChartOfAccount::class, 'inventory_account_id');
-    }
-
-    /**
-     * Get the COGS account.
-     */
-    public function cogsAccount(): BelongsTo
-    {
-        return $this->belongsTo(ChartOfAccount::class, 'cogs_account_id');
-    }
-
-    /**
-     * Get the sales revenue account.
-     */
-    public function salesRevenueAccount(): BelongsTo
-    {
-        return $this->belongsTo(ChartOfAccount::class, 'sales_revenue_account_id');
     }
 }

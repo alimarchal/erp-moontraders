@@ -52,7 +52,7 @@ class ProductSeeder extends Seeder
                     'sales_uom_id' => $productData['sales_uom_id'] ?? null,
                     'uom_conversion_factor' => $productData['uom_conversion_factor'] ?? 1,
                     'cost_price' => $productData['cost_price'] ?? 0,
-                    'unit_sell_price' => $productData['unit_sell_price'] ?? $productData['unit_price'] ?? 0,
+                    'unit_sell_price' => $productData['unit_sell_price'] ?? $productData['unit_sell_price'] ?? 0,
                     'valuation_method' => $productData['valuation_method'] ?? 'FIFO',
                     'is_active' => $productData['is_active'] ?? true,
                 ]);

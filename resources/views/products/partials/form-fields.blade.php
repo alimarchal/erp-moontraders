@@ -46,10 +46,11 @@ $valuationMethods = $valuationMethods ?? [];
     <div>
         <x-label for="uom_id" value="Base UOM (Inventory)" :required="true" />
         <select id="uom_id" name="uom_id" required
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Select Base UOM</option>
             @foreach ($uomOptions as $uom)
-            <option value="{{ $uom->id }}" {{ (int) old('uom_id', optional($product)->uom_id) === $uom->id ? 'selected'
+            <option value="{{ $uom->id }}" {{ (int) old('uom_id', optional($product)->uom_id ?? ($product ? null : 24))
+                === $uom->id ? 'selected'
                 : '' }}>
                 {{ $uom->uom_name }} {{ $uom->symbol ? '(' . $uom->symbol . ')' : '' }}
             </option>
@@ -76,10 +77,11 @@ $valuationMethods = $valuationMethods ?? [];
     <div>
         <x-label for="sales_uom_id" value="Sales UOM (Optional)" />
         <select id="sales_uom_id" name="sales_uom_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Same as Base UOM</option>
             @foreach ($uomOptions as $uom)
-            <option value="{{ $uom->id }}" {{ (int) old('sales_uom_id', optional($product)->sales_uom_id) === $uom->id ?
+            <option value="{{ $uom->id }}" {{ (int) old('sales_uom_id', optional($product)->sales_uom_id ?? ($product ?
+                null : 33)) === $uom->id ?
                 'selected' : '' }}>
                 {{ $uom->uom_name }} {{ $uom->symbol ? '(' . $uom->symbol . ')' : '' }}
             </option>
@@ -140,50 +142,6 @@ $valuationMethods = $valuationMethods ?? [];
         <x-label for="cost_price" value="Cost Price" />
         <x-input id="cost_price" type="number" name="cost_price" step="0.01" min="0" class="mt-1 block w-full"
             :value="old('cost_price', optional($product)->cost_price)" placeholder="950" />
-    </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-    <div>
-        <x-label for="inventory_account_id" value="Inventory Account" />
-        <select id="inventory_account_id" name="inventory_account_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-            <option value="">Default</option>
-            @foreach ($accountOptions as $account)
-            <option value="{{ $account->id }}" {{ (int) old('inventory_account_id', optional($product)->
-                inventory_account_id) === $account->id ? 'selected' : '' }}>
-                {{ $account->account_code }} — {{ $account->account_name }}
-            </option>
-            @endforeach
-        </select>
-    </div>
-
-    <div>
-        <x-label for="cogs_account_id" value="COGS Account" />
-        <select id="cogs_account_id" name="cogs_account_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-            <option value="">Default</option>
-            @foreach ($accountOptions as $account)
-            <option value="{{ $account->id }}" {{ (int) old('cogs_account_id', optional($product)->cogs_account_id) ===
-                $account->id ? 'selected' : '' }}>
-                {{ $account->account_code }} — {{ $account->account_name }}
-            </option>
-            @endforeach
-        </select>
-    </div>
-
-    <div>
-        <x-label for="sales_revenue_account_id" value="Sales Revenue Account" />
-        <select id="sales_revenue_account_id" name="sales_revenue_account_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-            <option value="">Default</option>
-            @foreach ($accountOptions as $account)
-            <option value="{{ $account->id }}" {{ (int) old('sales_revenue_account_id', optional($product)->
-                sales_revenue_account_id) === $account->id ? 'selected' : '' }}>
-                {{ $account->account_code }} — {{ $account->account_name }}
-            </option>
-            @endforeach
-        </select>
     </div>
 </div>
 

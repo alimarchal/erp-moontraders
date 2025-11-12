@@ -122,27 +122,6 @@
                                 :value="number_format((float) $product->reorder_level, 2)" disabled readonly />
                         </div>
                     </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <div>
-                            <x-label value="Inventory Account" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->inventoryAccount ? $product->inventoryAccount->account_code . ' — ' . $product->inventoryAccount->account_name : 'Not linked'"
-                                disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="COGS Account" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->cogsAccount ? $product->cogsAccount->account_code . ' — ' . $product->cogsAccount->account_name : 'Not linked'"
-                                disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="Revenue Account" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->salesRevenueAccount ? $product->salesRevenueAccount->account_code . ' — ' . $product->salesRevenueAccount->account_name : 'Not linked'"
-                                disabled readonly />
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

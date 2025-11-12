@@ -29,7 +29,6 @@
                         'product' => $product,
                         'supplierOptions' => $supplierOptions,
                         'uomOptions' => $uomOptions,
-                        'accountOptions' => $accountOptions,
                         'valuationMethods' => $valuationMethods,
                         ])
 
@@ -43,4 +42,16 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+    <script>
+        $(document).ready(function() {
+            $('.select2').select2({
+                width: '100%',
+                placeholder: 'Select an option',
+                allowClear: false,
+            });
+        });
+    </script>
+    @endpush
 </x-app-layout>

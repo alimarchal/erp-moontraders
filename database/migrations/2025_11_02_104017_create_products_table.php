@@ -36,11 +36,6 @@ return new class extends Migration {
             $table->decimal('unit_sell_price', 15, 2)->default(0)->comment('Selling price or trading price');
             $table->decimal('cost_price', 15, 2)->default(0)->comment('Average cost for COGS calculation');
 
-            // Link to Chart of Accounts for automatic posting
-            $table->foreignId('inventory_account_id')->nullable()->constrained('chart_of_accounts')->nullOnDelete()->comment('Asset account: Inventory - [Product Category]');
-            $table->foreignId('cogs_account_id')->nullable()->constrained('chart_of_accounts')->nullOnDelete()->comment('Expense account: Cost of Goods Sold');
-            $table->foreignId('sales_revenue_account_id')->nullable()->constrained('chart_of_accounts')->nullOnDelete()->comment('Revenue account: Sales Revenue - [Product Category]');
-
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();

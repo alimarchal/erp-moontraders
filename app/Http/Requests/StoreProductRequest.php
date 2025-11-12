@@ -57,9 +57,6 @@ class StoreProductRequest extends FormRequest
             'reorder_level' => ['nullable', 'numeric', 'min:0'],
             'unit_sell_price' => ['nullable', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
-            'inventory_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
-            'cogs_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
-            'sales_revenue_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

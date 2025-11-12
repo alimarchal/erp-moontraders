@@ -32,7 +32,8 @@
         .select2-container .select2-selection--single {
             height: auto;
             /* Reset the height if necessary */
-            padding: 0.7rem 1rem;
+            padding: 0.63rem 1rem;
+            margin-top: 0.25rem;
             /* This should match Tailwind's py-2 px-4 */
             line-height: 1.25;
             /* Adjust based on Tailwind's line height for consistency */
@@ -102,7 +103,7 @@
                 $('.select2').select2({
                 width: '100%',
                 placeholder: 'Select an option',
-                allowClear: true,
+                allowClear: false,
             });
 
             // Handle label clicks for Select2 elements

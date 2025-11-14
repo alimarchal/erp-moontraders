@@ -14,8 +14,11 @@ class GoodsReceiptNoteItem extends Model
         'grn_id',
         'line_no',
         'product_id',
-        'uom_id',
-        'qty_cases',
+        'stock_uom_id',
+        'purchase_uom_id',
+        'qty_in_purchase_uom',
+        'uom_conversion_factor',
+        'qty_in_stock_uom',
         'unit_price_per_case',
         'extended_value',
         'discount_value',
@@ -48,7 +51,9 @@ class GoodsReceiptNoteItem extends Model
     ];
 
     protected $casts = [
-        'qty_cases' => 'decimal:2',
+        'qty_in_purchase_uom' => 'decimal:2',
+        'uom_conversion_factor' => 'decimal:4',
+        'qty_in_stock_uom' => 'decimal:2',
         'unit_price_per_case' => 'decimal:2',
         'extended_value' => 'decimal:2',
         'discount_value' => 'decimal:2',
@@ -83,9 +88,14 @@ class GoodsReceiptNoteItem extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function uom(): BelongsTo
+    public function stockUom(): BelongsTo
     {
-        return $this->belongsTo(Uom::class);
+        return $this->belongsTo(Uom::class, 'stock_uom_id');
+    }
+
+    public function purchaseUom(): BelongsTo
+    {
+        return $this->belongsTo(Uom::class, 'purchase_uom_id');
     }
 
     public function promotionalCampaign(): BelongsTo

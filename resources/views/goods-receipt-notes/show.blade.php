@@ -209,7 +209,7 @@
                     <x-detail-table title="Line Items" :headers="[
                         ['label' => '#', 'align' => 'text-center'],
                         ['label' => 'Product', 'align' => 'text-left'],
-                        ['label' => 'Qty Cases', 'align' => 'text-right'],
+                        ['label' => 'Qty Purchase UOM', 'align' => 'text-right'],
                         ['label' => 'Unit Price/Case', 'align' => 'text-right'],
                         ['label' => 'Extended Value', 'align' => 'text-right'],
                         ['label' => 'Discount', 'align' => 'text-right'],
@@ -251,7 +251,8 @@
                                 </div>
                                 @endif
                             </td>
-                            <td class="py-1 px-2 text-right">{{ number_format($item->qty_cases ?? 0, 2) }}</td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->qty_in_purchase_uom ?? 0, 2) }}
+                            </td>
                             <td class="py-1 px-2 text-right">{{ number_format($item->unit_price_per_case ?? 0, 2) }}
                             </td>
                             <td class="py-1 px-2 text-right">{{ number_format($item->extended_value ?? 0, 2) }}</td>

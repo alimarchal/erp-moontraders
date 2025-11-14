@@ -16,12 +16,17 @@ return new class extends Migration {
             $table->foreignId('grn_id')->constrained('goods_receipt_notes')->cascadeOnDelete();
             $table->integer('line_no')->default(0)->comment('Line sequence in GRN');
 
-            // Product
+            // Product linked to products catelog where product_id likned with supplier 
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
-            $table->foreignId('uom_id')->constrained('uoms');
+            $table->foreignId('stock_uom_id')->nullable()->constrained('uoms')->comment('Base UOM for inventory storage (Piece, Kg, Liter)');
+
+            $table->foreignId('purchase_uom_id')->constrained('uoms')->comment('UOM supplier sells in (Case, Carton, Box)');
+            $table->decimal('qty_in_purchase_uom', 15, 2)->comment('Quantity as per invoice (10 Cases)');
+
+            $table->decimal('uom_conversion_factor', 15, 4)->default(1)->comment('1 Purchase UOM = X Stock UOM (e.g., 1 Case = 24 Pieces)');
+            $table->decimal('qty_in_stock_uom', 15, 2)->comment('Converted quantity for inventory (240 Pieces)');
 
             // Case-based Purchasing
-            $table->decimal('qty_cases', 15, 2)->nullable()->comment('Number of cases purchased');
             $table->decimal('unit_price_per_case', 15, 2)->nullable()->comment('Invoice price per case');
             $table->decimal('extended_value', 15, 2)->nullable()->default(0)->comment('qty_cases × unit_price_per_case');
 

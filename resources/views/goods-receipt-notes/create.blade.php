@@ -78,7 +78,10 @@
 
                         <x-form-table title="Line Items" :headers="[
                             ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
-                            ['label' => 'Qty<br>Cases', 'align' => 'text-center', 'width' => '100px'],
+                            ['label' => 'Purchase<br>UOM', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'Qty<br>Purchase UOM', 'align' => 'text-center', 'width' => '100px'],
+                            ['label' => 'Conversion<br>Factor', 'align' => 'text-center', 'width' => '100px'],
+                            ['label' => 'Qty<br>Stock UOM', 'align' => 'text-center', 'width' => '100px'],
                             ['label' => 'Unit<br>Price', 'align' => 'text-center', 'width' => '120px'],
                             ['label' => 'Extended<br>Value', 'align' => 'text-center', 'width' => '130px'],
                             ['label' => 'Discount<br>Value', 'align' => 'text-center', 'width' => '120px'],
@@ -104,18 +107,43 @@
                                             </select>
                                         </td>
                                         <td class="px-2 py-2">
-                                            <input type="number" :name="`items[${index}][qty_cases]`"
-                                                x-model="item.qty_cases" @input="calculateFromCases(index)" step="0.01"
-                                                min="0"
+                                            <select :name="`items[${index}][purchase_uom_id]`"
+                                                x-model="item.purchase_uom_id" @change="updateConversionFactor(index)"
+                                                class="select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                <option value="">Select UOM</option>
+                                                @foreach ($uoms as $uom)
+                                                <option value="{{ $uom->id }}">{{ $uom->uom_name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][qty_in_purchase_uom]`"
+                                                x-model="item.qty_in_purchase_uom"
+                                                @input="calculateFromPurchaseQty(index)" step="0.01" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
-                                                placeholder="Cases">
+                                                placeholder="Qty">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][uom_conversion_factor]`"
+                                                x-model="item.uom_conversion_factor"
+                                                @input="calculateFromPurchaseQty(index)" step="0.0001" min="0"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                placeholder="Factor">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][qty_in_stock_uom]`"
+                                                x-model="item.qty_in_stock_uom" readonly
+                                                class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right font-semibold"
+                                                placeholder="0.00">
+                                            <input type="hidden" :name="`items[${index}][stock_uom_id]`"
+                                                x-model="item.stock_uom_id">
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][unit_price_per_case]`"
-                                                x-model="item.unit_price_per_case" @input="calculateFromCases(index)"
-                                                step="0.01" min="0"
+                                                x-model="item.unit_price_per_case"
+                                                @input="calculateFromPurchaseQty(index)" step="0.01" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
-                                                placeholder="Price/Case">
+                                                placeholder="Price">
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="text" :value="formatNumber(item.extended_value)" readonly
@@ -164,7 +192,8 @@
                                                 placeholder="0.00">
                                         </td>
                                         <!-- Hidden UOM field - defaults to Piece (ID: 24) -->
-                                        <input type="hidden" :name="`items[${index}][uom_id]`" x-model="item.uom_id">
+                                        <input type="hidden" :name="`items[${index}][stock_uom_id]`"
+                                            x-model="item.stock_uom_id">
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][quantity_received]`"
                                                 x-model="item.quantity_received" step="0.01" min="0" required readonly
@@ -251,6 +280,47 @@
                                 </template>
                             </tbody>
                             <tfoot class="bg-gray-50">
+                                <tr class="font-semibold bg-gray-100">
+                                    <td class="px-2 py-2 text-right">Totals:</td>
+                                    <td class="px-2 py-2"></td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.qty_in_purchase_uom) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2"></td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.qty_in_stock_uom) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2"></td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.extended_value) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.discount_value) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.fmr_allowance) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.discounted_value_before_tax) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.excise_duty) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.sales_tax_value) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.advance_income_tax) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_received) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2"></td>
+                                    <td class="px-2 py-2"></td>
+                                    <td class="px-2 py-2 text-right font-bold text-lg"
+                                        x-text="formatCurrency(grandTotal)"></td>
+                                    <td class="px-2 py-2"></td>
+                                </tr>
                                 <tr>
                                     <td colspan="18" class="px-2 py-2">
                                         <button type="button" @click="addItem()"
@@ -263,12 +333,6 @@
                                             Add Line
                                         </button>
                                     </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="13" class="px-2 py-2 text-right font-semibold">Grand Total:</td>
-                                    <td class="px-2 py-2 text-right font-bold text-lg"
-                                        x-text="formatCurrency(grandTotal)"></td>
-                                    <td></td>
                                 </tr>
                             </tfoot>
                         </x-form-table>
@@ -516,6 +580,7 @@
         const allSuppliers = @json($suppliers); // All suppliers with sales_tax
         const oldItems = @json(old('items', []));
         const defaultUomId = 24; // Piece UOM
+        const defaultPurchaseUomId = 33; // Case UOM
 
         function grnForm() {
             return {
@@ -525,10 +590,13 @@
 
                 items: oldItems.length > 0 ? oldItems.map(item => ({
                     product_id: item.product_id || '',
-                    uom_id: item.uom_id || defaultUomId || '',
-                    qty_cases: parseFloat(item.qty_cases) || 0,
+                    stock_uom_id: item.stock_uom_id || defaultUomId || '',
+                    purchase_uom_id: item.purchase_uom_id || defaultPurchaseUomId,
+                    qty_in_purchase_uom: parseFloat(item.qty_in_purchase_uom) || 0,
+                    uom_conversion_factor: parseFloat(item.uom_conversion_factor) || 1,
+                    qty_in_stock_uom: parseFloat(item.qty_in_stock_uom) || 0,
                     unit_price_per_case: parseFloat(item.unit_price_per_case) || 0,
-                    extended_value: parseFloat(item.extended_value) || (parseFloat(item.qty_cases) || 0) * (parseFloat(item.unit_price_per_case) || 0),
+                    extended_value: parseFloat(item.extended_value) || (parseFloat(item.qty_in_purchase_uom) || 0) * (parseFloat(item.unit_price_per_case) || 0),
                     discount_value: parseFloat(item.discount_value) || 0,
                     fmr_allowance: parseFloat(item.fmr_allowance) || 0,
                     discounted_value_before_tax: parseFloat(item.discounted_value_before_tax) || 0,
@@ -557,8 +625,11 @@
                     total: parseFloat(item.quantity_accepted || 0) * parseFloat(item.unit_cost || 0)
                 })) : [{
                     product_id: '',
-                    uom_id: defaultUomId || '',
-                    qty_cases: 0,
+                    stock_uom_id: defaultUomId || '',
+                    purchase_uom_id: defaultPurchaseUomId,
+                    qty_in_purchase_uom: 0,
+                    uom_conversion_factor: 1,
+                    qty_in_stock_uom: 0,
                     unit_price_per_case: 0,
                     extended_value: 0,
                     discount_value: 0,
@@ -593,8 +664,11 @@
                     const newIndex = this.items.length;
                     this.items.push({
                         product_id: '',
-                        uom_id: defaultUomId || '',
-                        qty_cases: 0,
+                        stock_uom_id: defaultUomId || '',
+                        purchase_uom_id: defaultPurchaseUomId,
+                        qty_in_purchase_uom: 0,
+                        uom_conversion_factor: 1,
+                        qty_in_stock_uom: 0,
                         unit_price_per_case: 0,
                         extended_value: 0,
                         discount_value: 0,
@@ -651,33 +725,44 @@
                     this.items[index].quality_status = 'approved';
                 },
 
-                calculateFromCases(index) {
+                updateConversionFactor(index) {
+                    // When purchase UOM changes, update conversion factor from product data
                     const item = this.items[index];
                     const productId = item.product_id;
-                    const qtyCases = parseFloat(item.qty_cases) || 0;
+                    
+                    if (productId) {
+                        const product = allProducts.find(p => p.id == productId);
+                        if (product && product.uom_conversion_factor) {
+                            item.uom_conversion_factor = parseFloat(product.uom_conversion_factor) || 1;
+                        }
+                    }
+                    
+                    this.calculateFromPurchaseQty(index);
+                },
+
+                calculateFromPurchaseQty(index) {
+                    const item = this.items[index];
+                    const qtyInPurchaseUom = parseFloat(item.qty_in_purchase_uom) || 0;
+                    const conversionFactor = parseFloat(item.uom_conversion_factor) || 1;
                     const unitPrice = parseFloat(item.unit_price_per_case) || 0;
                     
-                    // Calculate Extended Value (Qty Cases × Unit Price per Case)
-                    item.extended_value = qtyCases * unitPrice;
+                    // Calculate Qty in Stock UOM (Qty Purchase UOM × Conversion Factor)
+                    item.qty_in_stock_uom = parseFloat((qtyInPurchaseUom * conversionFactor).toFixed(2));
+                    
+                    // Calculate Extended Value (Qty in Purchase UOM × Unit Price per Case)
+                    item.extended_value = parseFloat((qtyInPurchaseUom * unitPrice).toFixed(2));
+                    
+                    // Set quantity_received same as qty_in_stock_uom
+                    item.quantity_received = item.qty_in_stock_uom;
+                    item.quantity_accepted = item.qty_in_stock_uom;
                     
                     // Trigger tax calculations
                     this.calculateTaxes(index);
-                    
-                    if (!productId || qtyCases <= 0) {
-                        item.quantity_received = 0;
-                        this.updateTotal(index);
-                        return;
-                    }
+                },
 
-                    // Find the product in allProducts array
-                    const product = allProducts.find(p => p.id == productId);
-                    if (product && product.uom_conversion_factor) {
-                        const conversionFactor = parseFloat(product.uom_conversion_factor) || 1;
-                        item.quantity_received = qtyCases * conversionFactor;
-                        
-                        // Qty Accepted always equals Qty Received
-                        item.quantity_accepted = item.quantity_received;
-                    }
+                calculateFromCases(index) {
+                    // Alias for backward compatibility
+                    this.calculateFromPurchaseQty(index);
                 },
 
                 calculateTaxes(index) {
@@ -740,9 +825,12 @@
                         this.items[index].selling_price = product.unit_sell_price || 0;
                         this.items[index].max_selling_price = product.unit_sell_price || 0;
                         
-                        // If qty_cases is already entered, recalculate quantity_received
-                        if (this.items[index].qty_cases > 0) {
-                            this.calculateFromCases(index);
+                        // Set conversion factor from product
+                        this.items[index].uom_conversion_factor = parseFloat(product.uom_conversion_factor) || 1;
+                        
+                        // If qty_in_purchase_uom is already entered, recalculate
+                        if (this.items[index].qty_in_purchase_uom > 0) {
+                            this.calculateFromPurchaseQty(index);
                         }
                     }
                 },

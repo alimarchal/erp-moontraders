@@ -216,7 +216,7 @@
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                         </td>
                                         <td class="px-2 py-2 text-right text-sm font-semibold"
-                                            x-text="formatCurrency(item.total_value_with_taxes)"></td>
+                                            x-text="formatNumber(item.total_value_with_taxes)"></td>
                                         <td class="px-2 py-2 text-center">
                                             <div class="flex justify-center space-x-1">
                                                 <button type="button" @click="openPromoModal(index)"
@@ -292,33 +292,37 @@
                                     </td>
                                     <td class="px-2 py-2"></td>
                                     <td class="px-2 py-2 text-right"
-                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.extended_value) || 0), 0))">
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.extended_value) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
-                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.discount_value) || 0), 0))">
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.discount_value) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
-                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.fmr_allowance) || 0), 0))">
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.fmr_allowance) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
-                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.discounted_value_before_tax) || 0), 0))">
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.discounted_value_before_tax) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
-                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.excise_duty) || 0), 0))">
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.excise_duty) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
-                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.sales_tax_value) || 0), 0))">
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.sales_tax_value) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
-                                        x-text="formatCurrency(items.reduce((sum, item) => sum + (parseFloat(item.advance_income_tax) || 0), 0))">
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.advance_income_tax) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_received) || 0), 0))">
                                     </td>
-                                    <td class="px-2 py-2"></td>
-                                    <td class="px-2 py-2"></td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.unit_cost) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.selling_price) || 0), 0))">
+                                    </td>
                                     <td class="px-2 py-2 text-right font-bold text-lg"
-                                        x-text="formatCurrency(grandTotal)"></td>
+                                        x-text="formatNumber(grandTotal)"></td>
                                     <td class="px-2 py-2"></td>
                                 </tr>
                                 <tr>

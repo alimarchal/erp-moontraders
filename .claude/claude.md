@@ -16,7 +16,8 @@
 ### Backend
 - **Framework**: Laravel 12
 - **PHP Version**: 8.2+
-- **Database**: MariaDB/MySQL
+- **Database**: MariaDB/MySQL/PostgreSQL (We Use All Database Psql/MariaDB/Mysql)
+- **ORM**: Eloquent
 - **Authentication**: Laravel Jetstream with Sanctum
 - **Queue System**: Laravel Queues (database driver)
 

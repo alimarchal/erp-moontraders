@@ -5,7 +5,9 @@
     "scripts": {
           "build": "vite build",
           "dev": "vite",
-          "mcp:db": "sh ./scripts/mcp-postgres.sh"
+          "mcp:postgres": "sh ./scripts/mcp-postgres.sh",
+          "mcp:mysql": "sh ./scripts/mcp-mysql.sh",
+          "mcp:db": "sh ./scripts/mcp-mysql.sh"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.10",

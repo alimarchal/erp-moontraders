@@ -3,22 +3,22 @@
     "private": true,
     "type": "module",
     "scripts": {
-          "build": "vite build",
-          "dev": "vite",
-          "mcp:postgres": "sh ./scripts/mcp-postgres.sh",
-          "mcp:mysql": "sh ./scripts/mcp-mysql.sh",
-          "mcp:db": "sh ./scripts/mcp-mysql.sh"
+        "build": "vite build",
+        "dev": "vite",
+        "mcp:postgres": "sh ./scripts/mcp-postgres.sh",
+        "mcp:mysql": "sh ./scripts/mcp-mysql.sh",
+        "mcp:db": "sh ./scripts/mcp-mysql.sh"
     },
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.10",
         "@tailwindcss/typography": "^0.5.19",
-        "@tailwindcss/vite": "^4.1.16",
-        "autoprefixer": "^10.4.21",
-        "axios": "^1.13.0",
+        "@tailwindcss/vite": "^4.1.17",
+        "autoprefixer": "^10.4.22",
+        "axios": "^1.13.2",
         "concurrently": "^9.2.1",
         "laravel-vite-plugin": "^2.0.1",
         "postcss": "^8.5.6",
         "tailwindcss": "^3.4.18",
-        "vite": "^7.1.12"
+        "vite": "^7.2.2"
     }
 }

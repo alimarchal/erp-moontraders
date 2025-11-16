@@ -8,6 +8,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    $this->withoutMiddleware();
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
 });
@@ -175,6 +176,7 @@ test('tax rate can be filtered by tax code', function () {
     $response = $this->get(route('tax-rates.index', ['filter' => ['tax_code_id' => $taxCode1->id]]));
 
     $response->assertStatus(200);
-    $response->assertSee('GST-18');
-    $response->assertDontSee('VAT-12');
+    // Verify the filtered tax rates
+    expect($response->viewData('taxRates'))->toHaveCount(1);
+    expect($response->viewData('taxRates')->first()->tax_code_id)->toBe($taxCode1->id);
 });

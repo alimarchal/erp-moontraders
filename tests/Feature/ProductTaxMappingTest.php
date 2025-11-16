@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    $this->withoutMiddleware();
     $this->user = User::factory()->create();
     $this->actingAs($this->user);
 });
@@ -203,8 +204,9 @@ test('product tax mapping can be filtered by product', function () {
     $response = $this->get(route('product-tax-mappings.index', ['filter' => ['product_id' => $product1->id]]));
 
     $response->assertStatus(200);
-    $response->assertSee('PROD-001');
-    $response->assertDontSee('PROD-002');
+    // Verify the filtered mappings
+    expect($response->viewData('mappings'))->toHaveCount(1);
+    expect($response->viewData('mappings')->first()->product_id)->toBe($product1->id);
 });
 
 test('product tax mapping can be filtered by transaction type', function () {

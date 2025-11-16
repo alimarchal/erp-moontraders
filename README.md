@@ -1,5 +1,7 @@
 # MoonTrader
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/alimarchal/erp-moontraders)
+
 A comprehensive inventory management system built with Laravel, designed for businesses to manage stock, suppliers, goods receipt notes (GRN), and promotional campaigns.
 
 ## Features

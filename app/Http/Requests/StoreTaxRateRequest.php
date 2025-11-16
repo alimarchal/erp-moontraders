@@ -11,7 +11,7 @@ class StoreTaxRateRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,13 @@ class StoreTaxRateRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'tax_code_id' => ['required', 'integer', 'exists:tax_codes,id'],
+            'rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'effective_from' => ['required', 'date'],
+            'effective_to' => ['nullable', 'date', 'after:effective_from'],
+            'region' => ['nullable', 'string', 'max:100'],
+            'is_active' => ['boolean'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

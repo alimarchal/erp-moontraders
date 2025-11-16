@@ -11,7 +11,7 @@ class UpdateProductTaxMappingRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,11 @@ class UpdateProductTaxMappingRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'product_id' => ['required', 'integer', 'exists:products,id'],
+            'tax_code_id' => ['required', 'integer', 'exists:tax_codes,id'],
+            'transaction_type' => ['required', 'string', 'in:sales,purchase,both'],
+            'is_taxable' => ['boolean'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

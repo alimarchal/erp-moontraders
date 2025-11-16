@@ -4,6 +4,19 @@
 
 **MoonTrader** is a comprehensive customized inventory management system built with Laravel v12.x.x use backend language of PHP Laravel, designed for businesses to manage stock, suppliers, goods receipt notes (GRN), promotional campaigns, and integrated accounting. It implements sophisticated inventory tracking with FIFO/LIFO costing, batch tracking, and multi-warehouse support.
 
+### Memory Instructions (Compact)
+
+- Scaffolding & migrations: use `php artisan make:model ModelName -a` (model, migration, factory, seeder, policy, controller) as baseline; add `-r` if a resource controller is needed separately.
+- CRUD pattern: replicate the structure of `settings/accounting-periods` (controller using Spatie Query Builder, index Blade with filters, create/edit form partials) for any new entity.
+- Filtering: follow accounting periods example with Spatie Query Builder (`allowedFilters`, `allowedSorts`, `defaultSort`, pagination) — keep query params consistent (`filter[search]`, etc.).
+- Blade templates: start from `resources/views/settings/accounting-periods` layout and component usage (table, filters panel, action dropdown) to ensure consistent UI/UX.
+- Consistency: preserve naming conventions, route resource naming (kebab-case), and service-layer delegation for business logic.
+- Journal/accounting changes: never bypass `AccountingService` for double-entry operations; always create reversing entries rather than editing posted ones.
+- Inventory changes: all GRN posting, stock movements, and batch creation must go through `InventoryService` inside DB transactions.
+- Validation: rely on Form Requests; do not duplicate debit/credit balance logic outside service layer.
+- Performance: prefer eager loading + summary tables (`current_stock`, `current_stock_by_batch`) rather than raw aggregation queries.
+- Security: always apply policy checks + Spatie permissions before mutating resources.
+
 ### User Requirements for ERP
 Our process starts with the Delivery Note: multiple suppliers send goods directly to our warehouse (Moon Traders) without any purchase orders. When the goods arrive, we record them in the system based on the Delivery Note and add the stock to inventory. The supplier already provides the maximum selling price, and we enter our per-unit cost in the system. Each morning we issue inventory to our salesmen, whose vehicles are already registered in the ERP, and they sell to retailers, shops and marts throughout the day. In the evening they report what they sold; cash sales are recorded only as totals, while credit sales are logged retailer-wise. Any remaining inventory is either returned to the warehouse or kept in the vehicle as the next day’s opening balance. The system must generate a daily product-wise report for each salesman showing opening stock, issued quantity, sales, returns, and outstanding credit. Since a single retailer may interact with multiple salesmen, the ERP must track credit by salesman as well as by retailer.
 

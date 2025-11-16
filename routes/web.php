@@ -29,6 +29,9 @@ use App\Http\Controllers\GoodsReceiptNoteController;
 use App\Http\Controllers\CurrentStockController;
 use App\Http\Controllers\PromotionalCampaignController;
 use App\Http\Controllers\SupplierPaymentController;
+use App\Http\Controllers\TaxRateController;
+use App\Http\Controllers\ProductTaxMappingController;
+use App\Http\Controllers\TaxTransactionController;
 
 Route::get('/', function () {
     return to_route('login');
@@ -98,6 +101,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
         // Tax Codes CRUD
         Route::resource('tax-codes', TaxCodeController::class);
+
+        // Tax Rates CRUD
+        Route::resource('tax-rates', TaxRateController::class);
+
+        // Product Tax Mappings CRUD
+        Route::resource('product-tax-mappings', ProductTaxMappingController::class);
+
+        // Tax Transactions (Read-only)
+        Route::resource('tax-transactions', TaxTransactionController::class)->only(['index', 'show']);
 
         // Currencies CRUD
         Route::resource('currencies', CurrencyController::class);

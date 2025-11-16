@@ -91,6 +91,54 @@
                     </div>
                 </a>
 
+                <!-- Tax Rates Module Card -->
+                <a href="{{ route('tax-rates.index') }}"
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                    <div class="p-5 flex justify-between">
+                        <div>
+                            <div class="text-3xl font-bold leading-8">{{ \App\Models\TaxRate::count() }}</div>
+                            <div class="mt-1 text-base font-extrabold text-black">Tax Rates</div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="h-16 w-16 text-rose-600">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15.75 10.5V6C15.75 5.17157 15.0784 4.5 14.25 4.5H9.75C8.92157 4.5 8.25 5.17157 8.25 6V10.5M3.75 10.5H20.25M4.5 10.5L5.25 19.5C5.25 20.3284 5.92157 21 6.75 21H17.25C18.0784 21 18.75 20.3284 18.75 19.5L19.5 10.5M9.75 14.25H14.25" />
+                        </svg>
+                    </div>
+                </a>
+
+                <!-- Product Tax Mappings Module Card -->
+                <a href="{{ route('product-tax-mappings.index') }}"
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                    <div class="p-5 flex justify-between">
+                        <div>
+                            <div class="text-3xl font-bold leading-8">{{ \App\Models\ProductTaxMapping::count() }}</div>
+                            <div class="mt-1 text-base font-extrabold text-black">Product Tax Mappings</div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="h-16 w-16 text-fuchsia-600">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M13.5 6H5.25C4.00736 6 3 7.00736 3 8.25V18.75C3 19.9926 4.00736 21 5.25 21H15.75C16.9926 21 18 19.9926 18 18.75V10.5M13.5 6L18 10.5M13.5 6V10.5H18M9 15.75L10.5 17.25L15 12.75" />
+                        </svg>
+                    </div>
+                </a>
+
+                <!-- Tax Transactions Module Card -->
+                <a href="{{ route('tax-transactions.index') }}"
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                    <div class="p-5 flex justify-between">
+                        <div>
+                            <div class="text-3xl font-bold leading-8">{{ \App\Models\TaxTransaction::count() }}</div>
+                            <div class="mt-1 text-base font-extrabold text-black">Tax Transactions</div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="h-16 w-16 text-violet-600">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M12 6V18M15 9.75L12 6.75L9 9.75M15 14.25L12 17.25L9 14.25M3 12H21" />
+                        </svg>
+                    </div>
+                </a>
+
                 <!-- Chart of Accounts Module Card -->
                 <a href="{{ route('chart-of-accounts.index') }}"
                     class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">

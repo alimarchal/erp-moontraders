@@ -234,7 +234,7 @@ class GoodsReceiptNoteController extends Controller
      */
     public function show(GoodsReceiptNote $goodsReceiptNote)
     {
-        $goodsReceiptNote->load(['supplier', 'warehouse', 'receivedBy', 'verifiedBy', 'items.product', 'items.uom', 'items.promotionalCampaign']);
+        $goodsReceiptNote->load(['supplier', 'warehouse', 'receivedBy', 'verifiedBy', 'items.product', 'items.stockUom', 'items.purchaseUom', 'items.promotionalCampaign']);
 
         return view('goods-receipt-notes.show', [
             'grn' => $goodsReceiptNote,

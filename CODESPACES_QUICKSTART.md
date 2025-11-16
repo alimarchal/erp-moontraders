@@ -130,6 +130,7 @@ Password: secret
 
 ```bash
 # Connect to database
+# Note: Password in command line is acceptable only in development environments
 mysql -h mysql -u moontrader -psecret moontrader
 
 # Run migrations
@@ -269,7 +270,16 @@ If you get "port already in use" errors:
 
 1. Check what's running:
    ```bash
-   lsof -i :8000
+   # Check if lsof is available, otherwise use ss or netstat
+   if command -v lsof >/dev/null 2>&1; then
+       lsof -i :8000
+   elif command -v ss >/dev/null 2>&1; then
+       ss -ltnp | grep ':8000'
+   elif command -v netstat >/dev/null 2>&1; then
+       netstat -ltnp | grep ':8000'
+   else
+       echo "No suitable command found. Try: docker ps"
+   fi
    ```
 
 2. Stop the process or use a different port:

@@ -121,6 +121,7 @@ if [ -f .env ]; then
     
     if [[ "$DB_CONNECTION" == "pgsql" && "$DB_HOST" == "postgres" ]]; then
         # PostgreSQL in Docker
+        # Note: PGPASSWORD environment variable is acceptable for development containers only
         if command -v psql &> /dev/null; then
             if PGPASSWORD="$DB_PASS" psql -h postgres -U "$DB_USER" -d postgres -c "SELECT 1" &> /dev/null 2>&1; then
                 echo -e "${GREEN}✓${NC} Can connect to PostgreSQL database"
@@ -133,6 +134,8 @@ if [ -f .env ]; then
             echo -e "${YELLOW}ℹ${NC} psql client not available, skipping PostgreSQL check"
         fi
     elif [[ ("$DB_CONNECTION" == "mysql" || "$DB_CONNECTION" == "mariadb") && "$DB_HOST" == "mysql" ]]; then
+        # MySQL/MariaDB in Docker
+        # Note: Password in command line is acceptable for development containers only
         # MySQL/MariaDB in Docker
         if command -v mysql &> /dev/null; then
             if mysql -h mysql -u "$DB_USER" -p"$DB_PASS" -e "SELECT 1" &> /dev/null 2>&1; then

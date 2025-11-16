@@ -52,6 +52,7 @@ attempt=0
 
 if [[ "$DB_CONNECTION" == "pgsql" ]]; then
     # Wait for PostgreSQL
+    # Note: PGPASSWORD environment variable is acceptable for development containers only
     until PGPASSWORD=$DB_PASSWORD psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d postgres -c "SELECT 1" &> /dev/null || [ $attempt -eq $max_attempts ]; do
         attempt=$((attempt + 1))
         echo "   Attempt $attempt/$max_attempts..."
@@ -59,6 +60,7 @@ if [[ "$DB_CONNECTION" == "pgsql" ]]; then
     done
 elif [[ "$DB_CONNECTION" == "mysql" || "$DB_CONNECTION" == "mariadb" ]]; then
     # Wait for MySQL/MariaDB
+    # Note: Password in command line is acceptable for development containers only
     until mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USERNAME" -p"$DB_PASSWORD" -e "SELECT 1" &> /dev/null || [ $attempt -eq $max_attempts ]; do
         attempt=$((attempt + 1))
         echo "   Attempt $attempt/$max_attempts..."

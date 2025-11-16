@@ -19,6 +19,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       
       - name: Validate devcontainer.json
         run: |
@@ -40,5 +42,5 @@ jobs:
       
       - name: Validate docker-compose.yml
         run: |
-          docker-compose -f .devcontainer/docker-compose.yml config > /dev/null
+          docker compose -f .devcontainer/docker-compose.yml config > /dev/null
           echo "✓ docker-compose.yml is valid"

@@ -109,6 +109,7 @@ php artisan pail              # Log viewer
 php artisan tinker
 
 # Using MySQL CLI
+# Note: Password in command line is acceptable only in development containers
 mysql -h mysql -u moontrader -psecret moontrader
 
 # Run migrations

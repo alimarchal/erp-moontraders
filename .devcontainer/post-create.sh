@@ -19,11 +19,12 @@ if [ ! -f .env ]; then
     echo "⚙️  Creating .env file from .env.example..."
     cp .env.example .env
     
-    # Update database configuration for docker
-    sed -i 's/DB_HOST=127.0.0.1/DB_HOST=mysql/' .env
-    sed -i 's/DB_DATABASE=moontrader/DB_DATABASE=moontrader/' .env
-    sed -i 's/DB_USERNAME=root/DB_USERNAME=moontrader/' .env
-    sed -i 's/DB_PASSWORD=/DB_PASSWORD=secret/' .env
+    # Note: Database configuration is left as-is in .env.example
+    # Users can manually configure their preferred database (MySQL, MariaDB, or PostgreSQL)
+    echo "📝 .env created from .env.example"
+    echo "   You can manually configure database settings:"
+    echo "   - For MySQL: DB_CONNECTION=mysql, DB_HOST=mysql, DB_PORT=3306"
+    echo "   - For PostgreSQL: DB_CONNECTION=pgsql, DB_HOST=postgres, DB_PORT=5432"
 else
     echo "✅ .env file already exists"
 fi
@@ -32,20 +33,49 @@ fi
 echo "🔑 Generating application key..."
 php artisan key:generate --ansi
 
-# Wait for MySQL to be ready
-echo "⏳ Waiting for MySQL to be ready..."
+# Detect database configuration from .env
+DB_CONNECTION=$(grep "^DB_CONNECTION=" .env | cut -d '=' -f2 | tr -d '\r')
+DB_HOST=$(grep "^DB_HOST=" .env | cut -d '=' -f2 | tr -d '\r')
+DB_PORT=$(grep "^DB_PORT=" .env | cut -d '=' -f2 | tr -d '\r')
+DB_USERNAME=$(grep "^DB_USERNAME=" .env | cut -d '=' -f2 | tr -d '\r')
+DB_PASSWORD=$(grep "^DB_PASSWORD=" .env | cut -d '=' -f2 | tr -d '\r')
+
+echo "📊 Detected database configuration:"
+echo "   Connection: $DB_CONNECTION"
+echo "   Host: $DB_HOST"
+echo "   Port: $DB_PORT"
+
+# Wait for database to be ready
+echo "⏳ Waiting for database to be ready..."
 max_attempts=30
 attempt=0
-until mysql -h mysql -u moontrader -psecret -e "SELECT 1" &> /dev/null || [ $attempt -eq $max_attempts ]; do
-    attempt=$((attempt + 1))
-    echo "   Attempt $attempt/$max_attempts..."
-    sleep 2
-done
+
+if [[ "$DB_CONNECTION" == "pgsql" ]]; then
+    # Wait for PostgreSQL
+    until PGPASSWORD=$DB_PASSWORD psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d postgres -c "SELECT 1" &> /dev/null || [ $attempt -eq $max_attempts ]; do
+        attempt=$((attempt + 1))
+        echo "   Attempt $attempt/$max_attempts..."
+        sleep 2
+    done
+elif [[ "$DB_CONNECTION" == "mysql" || "$DB_CONNECTION" == "mariadb" ]]; then
+    # Wait for MySQL/MariaDB
+    until mysql -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USERNAME" -p"$DB_PASSWORD" -e "SELECT 1" &> /dev/null || [ $attempt -eq $max_attempts ]; do
+        attempt=$((attempt + 1))
+        echo "   Attempt $attempt/$max_attempts..."
+        sleep 2
+    done
+else
+    echo "⚠️  Unknown database connection type: $DB_CONNECTION"
+    echo "   Skipping database connectivity check"
+fi
 
 if [ $attempt -eq $max_attempts ]; then
-    echo "⚠️  Warning: Could not connect to MySQL. You may need to run migrations manually."
+    echo "⚠️  Warning: Could not connect to database. You may need to:"
+    echo "   1. Check your .env database settings"
+    echo "   2. Ensure the database service is running"
+    echo "   3. Run migrations manually: php artisan migrate"
 else
-    echo "✅ MySQL is ready!"
+    echo "✅ Database is ready!"
     
     # Run migrations
     echo "🗄️  Running database migrations..."
@@ -74,7 +104,10 @@ echo "   composer dev       - Start development server with queue, logs, and Vit
 echo "   composer test      - Run tests"
 echo "   php artisan serve  - Start Laravel server only"
 echo ""
-echo "📝 Default credentials (if seeded):"
-echo "   Email: admin@example.com"
-echo "   Password: password"
+echo "📝 Database services available:"
+echo "   MySQL:      mysql:3306 (user: moontrader, password: secret)"
+echo "   PostgreSQL: postgres:5432 (user: moontrader, password: secret)"
 echo ""
+echo "💡 Configure your preferred database in .env file"
+echo ""
+

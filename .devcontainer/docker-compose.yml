@@ -16,18 +16,11 @@ services:
     networks:
       - moontrader-network
     
-    # Environment variables
-    environment:
-      - DB_CONNECTION=mysql
-      - DB_HOST=mysql
-      - DB_PORT=3306
-      - DB_DATABASE=moontrader
-      - DB_USERNAME=moontrader
-      - DB_PASSWORD=secret
-    
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally
+    # Note: Database connection is configured in .env - you can choose MySQL or PostgreSQL
     depends_on:
       - mysql
+      - postgres
 
   mysql:
     image: mysql:8.0
@@ -45,8 +38,23 @@ services:
     ports:
       - "3306:3306"
 
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - moontrader-network
+    environment:
+      POSTGRES_DB: moontrader
+      POSTGRES_USER: moontrader
+      POSTGRES_PASSWORD: secret
+    ports:
+      - "5432:5432"
+
 networks:
   moontrader-network:
 
 volumes:
   mysql-data:
+  postgres-data:

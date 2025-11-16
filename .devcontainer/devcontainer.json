@@ -50,7 +50,7 @@
       }
     }
   },
-  "forwardPorts": [8000, 5173, 3306],
+  "forwardPorts": [8000, 5173, 3306, 5432],
   "portsAttributes": {
     "8000": {
       "label": "Laravel Server",
@@ -62,6 +62,10 @@
     },
     "3306": {
       "label": "MySQL",
+      "onAutoForward": "silent"
+    },
+    "5432": {
+      "label": "PostgreSQL",
       "onAutoForward": "silent"
     }
   },

@@ -100,10 +100,11 @@ Your Codespace comes with these extensions ready to use:
 
 ## Database Access
 
-Your Codespace includes a MySQL 8.0 database pre-configured and ready to use.
+Your Codespace includes both MySQL 8.0 and PostgreSQL 16 databases pre-configured and ready to use. You can choose which one to use by configuring your `.env` file.
 
 ### Database Credentials
 
+**MySQL:**
 ```
 Host: mysql
 Port: 3306
@@ -114,9 +115,18 @@ Password: secret
 Root password: root
 ```
 
+**PostgreSQL:**
+```
+Host: postgres
+Port: 5432
+Database: moontrader
+Username: moontrader
+Password: secret
+```
+
 ### Accessing the Database
 
-**From Terminal:**
+**MySQL from Terminal:**
 
 ```bash
 # Connect to database
@@ -132,12 +142,52 @@ php artisan db:seed
 php artisan tinker
 ```
 
+**PostgreSQL from Terminal:**
+
+```bash
+# Connect to database
+PGPASSWORD=secret psql -h postgres -U moontrader moontrader
+
+# Run migrations (after configuring .env for PostgreSQL)
+php artisan migrate
+
+# Run seeders
+php artisan db:seed
+
+# Open Tinker
+php artisan tinker
+```
+
+### Switching Between Databases
+
+Edit your `.env` file:
+
+**For MySQL:**
+```env
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+```
+
+**For PostgreSQL:**
+```env
+DB_CONNECTION=pgsql
+DB_HOST=postgres
+DB_PORT=5432
+```
+
+Then clear config and run migrations:
+```bash
+php artisan config:clear
+php artisan migrate
+```
+
 **From Host Machine (optional):**
 
 If you want to connect from your local machine using a database client:
 
 1. Go to the **PORTS** tab
-2. Right-click on port 3306
+2. Right-click on port 3306 (MySQL) or 5432 (PostgreSQL)
 3. Select **Port Visibility** → **Public** (if needed)
 4. Use the forwarded URL with the credentials above
 

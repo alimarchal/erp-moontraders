@@ -110,29 +110,46 @@ echo ""
 
 # Check if we can connect to database (if in docker environment)
 echo "Checking Database Connection..."
-if command -v mysql &> /dev/null; then
-    # Try to determine DB host from .env
-    if [ -f .env ]; then
-        DB_HOST=$(grep "^DB_HOST=" .env | cut -d '=' -f2)
-        DB_USER=$(grep "^DB_USERNAME=" .env | cut -d '=' -f2)
-        DB_PASS=$(grep "^DB_PASSWORD=" .env | cut -d '=' -f2)
-        DB_NAME=$(grep "^DB_DATABASE=" .env | cut -d '=' -f2)
-        
-        if [ "$DB_HOST" = "mysql" ]; then
-            # Docker environment
-            if mysql -h mysql -u "$DB_USER" -p"$DB_PASS" -e "SELECT 1" &> /dev/null; then
-                echo -e "${GREEN}✓${NC} Can connect to database"
-                mysql -h mysql -u "$DB_USER" -p"$DB_PASS" -e "SELECT VERSION()" | tail -n 1 | sed 's/^/  MySQL: /'
+if [ -f .env ]; then
+    DB_CONNECTION=$(grep "^DB_CONNECTION=" .env | cut -d '=' -f2 | tr -d '\r')
+    DB_HOST=$(grep "^DB_HOST=" .env | cut -d '=' -f2 | tr -d '\r')
+    DB_USER=$(grep "^DB_USERNAME=" .env | cut -d '=' -f2 | tr -d '\r')
+    DB_PASS=$(grep "^DB_PASSWORD=" .env | cut -d '=' -f2 | tr -d '\r')
+    DB_NAME=$(grep "^DB_DATABASE=" .env | cut -d '=' -f2 | tr -d '\r')
+    
+    echo -e "  Configured database: ${YELLOW}$DB_CONNECTION${NC} at ${YELLOW}$DB_HOST${NC}"
+    
+    if [[ "$DB_CONNECTION" == "pgsql" && "$DB_HOST" == "postgres" ]]; then
+        # PostgreSQL in Docker
+        if command -v psql &> /dev/null; then
+            if PGPASSWORD="$DB_PASS" psql -h postgres -U "$DB_USER" -d postgres -c "SELECT 1" &> /dev/null 2>&1; then
+                echo -e "${GREEN}✓${NC} Can connect to PostgreSQL database"
+                PGPASSWORD="$DB_PASS" psql -h postgres -U "$DB_USER" -d postgres -c "SELECT version()" -t | head -n 1 | sed 's/^/  /'
             else
-                echo -e "${YELLOW}⚠${NC} Cannot connect to database (may not be started yet)"
+                echo -e "${YELLOW}⚠${NC} Cannot connect to PostgreSQL (may not be started yet)"
                 echo "  If using docker-compose, run: docker-compose up -d"
             fi
         else
-            echo -e "${YELLOW}ℹ${NC} Skipping database connection test for non-docker host"
+            echo -e "${YELLOW}ℹ${NC} psql client not available, skipping PostgreSQL check"
         fi
+    elif [[ ("$DB_CONNECTION" == "mysql" || "$DB_CONNECTION" == "mariadb") && "$DB_HOST" == "mysql" ]]; then
+        # MySQL/MariaDB in Docker
+        if command -v mysql &> /dev/null; then
+            if mysql -h mysql -u "$DB_USER" -p"$DB_PASS" -e "SELECT 1" &> /dev/null 2>&1; then
+                echo -e "${GREEN}✓${NC} Can connect to MySQL/MariaDB database"
+                mysql -h mysql -u "$DB_USER" -p"$DB_PASS" -e "SELECT VERSION()" 2>/dev/null | tail -n 1 | sed 's/^/  /'
+            else
+                echo -e "${YELLOW}⚠${NC} Cannot connect to MySQL/MariaDB (may not be started yet)"
+                echo "  If using docker-compose, run: docker-compose up -d"
+            fi
+        else
+            echo -e "${YELLOW}ℹ${NC} mysql client not available, skipping MySQL check"
+        fi
+    else
+        echo -e "${YELLOW}ℹ${NC} Skipping database connection test (non-Docker configuration)"
     fi
 else
-    echo -e "${YELLOW}ℹ${NC} MySQL client not available, skipping database check"
+    echo -e "${YELLOW}ℹ${NC} No .env file found, skipping database check"
 fi
 echo ""
 

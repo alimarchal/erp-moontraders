@@ -1,1 +1,0 @@
-I run php artisan test it was working fine in my all databases check and think harder to solve withour breaking anything.

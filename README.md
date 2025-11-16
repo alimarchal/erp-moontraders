@@ -316,6 +316,22 @@ The system includes the following key tables:
 - Journal entries are created automatically when GRNs are posted
 - Promotional items are prioritized in stock consumption
 
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Setting up your development environment
+- Coding standards and conventions
+- Testing guidelines
+- Pull request process
+
+Quick start for contributors:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `composer test`
+5. Submit a pull request
+
 ## License
 
 [Specify your license here]

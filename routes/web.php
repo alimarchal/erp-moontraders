@@ -10,6 +10,7 @@ use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\AccountingPeriodController;
+use App\Http\Controllers\TaxCodeController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseTypeController;
 use App\Http\Controllers\SupplierController;
@@ -94,6 +95,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
 
         // Accounting Periods CRUD
         Route::resource('accounting-periods', AccountingPeriodController::class);
+
+        // Tax Codes CRUD
+        Route::resource('tax-codes', TaxCodeController::class);
 
         // Currencies CRUD
         Route::resource('currencies', CurrencyController::class);

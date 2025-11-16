@@ -75,6 +75,22 @@
                     </div>
                 </a>
 
+                <!-- Tax Codes Module Card -->
+                <a href="{{ route('tax-codes.index') }}"
+                    class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                    <div class="p-5 flex justify-between">
+                        <div>
+                            <div class="text-3xl font-bold leading-8">{{ \App\Models\TaxCode::count() }}</div>
+                            <div class="mt-1 text-base font-extrabold text-black">Tax Codes</div>
+                        </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="h-16 w-16 text-red-600">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15.75 15.75V18M15.75 18V20.25M15.75 18H13.5M15.75 18H18M21 12C21 13.1819 20.7672 14.3522 20.3149 15.4442C19.8626 16.5361 19.1997 17.5282 18.364 18.364C17.5282 19.1997 16.5361 19.8626 15.4442 20.3149C14.3522 20.7672 13.1819 21 12 21C10.8181 21 9.64778 20.7672 8.55585 20.3149C7.46392 19.8626 6.47177 19.1997 5.63604 18.364C4.80031 17.5282 4.13738 16.5361 3.68508 15.4442C3.23279 14.3522 3 13.1819 3 12C3 9.61305 3.94821 7.32387 5.63604 5.63604C7.32387 3.94821 9.61305 3 12 3C14.3869 3 16.6761 3.94821 18.364 5.63604C20.0518 7.32387 21 9.61305 21 12ZM9.75 9.75L14.25 14.25M14.25 9.75L9.75 14.25" />
+                        </svg>
+                    </div>
+                </a>
+
                 <!-- Chart of Accounts Module Card -->
                 <a href="{{ route('chart-of-accounts.index') }}"
                     class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">

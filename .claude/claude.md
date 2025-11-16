@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**MoonTrader** is a comprehensive inventory management system built with Laravel 12xxx use backend language of PHP Laravel, designed for businesses to manage stock, suppliers, goods receipt notes (GRN), promotional campaigns, and integrated accounting. It implements sophisticated inventory tracking with FIFO/LIFO costing, batch tracking, and multi-warehouse support.
+**MoonTrader** is a comprehensive customized inventory management system built with Laravel v12.x.x use backend language of PHP Laravel, designed for businesses to manage stock, suppliers, goods receipt notes (GRN), promotional campaigns, and integrated accounting. It implements sophisticated inventory tracking with FIFO/LIFO costing, batch tracking, and multi-warehouse support.
 
 ### User Requirements for ERP
 Our process starts with the Delivery Note: multiple suppliers send goods directly to our warehouse (Moon Traders) without any purchase orders. When the goods arrive, we record them in the system based on the Delivery Note and add the stock to inventory. The supplier already provides the maximum selling price, and we enter our per-unit cost in the system. Each morning we issue inventory to our salesmen, whose vehicles are already registered in the ERP, and they sell to retailers, shops and marts throughout the day. In the evening they report what they sold; cash sales are recorded only as totals, while credit sales are logged retailer-wise. Any remaining inventory is either returned to the warehouse or kept in the vehicle as the next day’s opening balance. The system must generate a daily product-wise report for each salesman showing opening stock, issued quantity, sales, returns, and outstanding credit. Since a single retailer may interact with multiple salesmen, the ERP must track credit by salesman as well as by retailer.
@@ -19,7 +19,7 @@ Our process starts with the Delivery Note: multiple suppliers send goods directl
 ## Technology Stack
 
 ### Backend
-- **Framework**: Laravel 12
+- **Framework**: Laravel 12 (v12.x)
 - **PHP Version**: 8.2+
 - **Database**: MariaDB/MySQL/PostgreSQL (We Use All Database Psql/MariaDB/Mysql)
 - **ORM**: Eloquent

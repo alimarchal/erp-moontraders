@@ -17,6 +17,8 @@ return new class extends Migration {
      */
     public function up(): void
     {
+        $driver = DB::connection()->getDriverName();
+
         // 1. AUDIT TRAIL TABLE - Track all changes to accounting data
         Schema::create('accounting_audit_log', function (Blueprint $table) {
             $table->id();
@@ -37,6 +39,11 @@ return new class extends Migration {
         });
 
         // 2. SOFT DELETES - Add deleted_at to draft-capable tables
+        // For SQLite: Drop views before altering table, then recreate them
+        if ($driver === 'sqlite') {
+            $this->dropViewsForSQLite();
+        }
+
         Schema::table('journal_entries', function (Blueprint $table) {
             $table->softDeletes()->after('updated_at')->comment('Soft delete timestamp (only for draft entries)');
             $table->foreignId('deleted_by')->nullable()->after('deleted_at')
@@ -77,8 +84,12 @@ return new class extends Migration {
             $table->index('reversed_by_entry_id');
         });
 
+        // Recreate views for SQLite after altering journal_entries table
+        if ($driver === 'sqlite') {
+            $this->recreateViewsForSQLite();
+        }
+
         // 5. ADD AUDIT TRIGGERS (PostgreSQL)
-        $driver = DB::connection()->getDriverName();
 
         if ($driver === 'pgsql') {
             $this->createPostgreSQLAuditTriggers();
@@ -594,6 +605,141 @@ return new class extends Migration {
         } catch (\Exception $e) {
             \Log::warning('MySQL/MariaDB snapshot helpers not created: ' . $e->getMessage());
         }
+    }
+
+    /**
+     * Drop views that depend on journal_entries table (SQLite only)
+     */
+    private function dropViewsForSQLite(): void
+    {
+        DB::statement("DROP VIEW IF EXISTS vw_income_statement");
+        DB::statement("DROP VIEW IF EXISTS vw_balance_sheet");
+        DB::statement("DROP VIEW IF EXISTS vw_general_ledger");
+        DB::statement("DROP VIEW IF EXISTS vw_account_balances");
+        DB::statement("DROP VIEW IF EXISTS vw_trial_balance");
+    }
+
+    /**
+     * Recreate views after altering journal_entries table (SQLite only)
+     */
+    private function recreateViewsForSQLite(): void
+    {
+        // View for Trial Balance
+        DB::statement("
+            CREATE VIEW IF NOT EXISTS vw_trial_balance AS
+            SELECT
+                COALESCE(SUM(jed.debit), 0) AS total_debits,
+                COALESCE(SUM(jed.credit), 0) AS total_credits,
+                COALESCE(SUM(jed.debit), 0) - COALESCE(SUM(jed.credit), 0) AS difference
+            FROM journal_entry_details jed
+            JOIN journal_entries je ON je.id = jed.journal_entry_id
+            WHERE je.status = 'posted'
+        ");
+
+        // View for Account Balances
+        DB::statement("
+            CREATE VIEW IF NOT EXISTS vw_account_balances AS
+            SELECT
+                a.id AS account_id,
+                a.account_code,
+                a.account_name,
+                at.type_name AS account_type,
+                at.report_group,
+                a.normal_balance,
+                COALESCE(SUM(d.debit), 0) AS total_debits,
+                COALESCE(SUM(d.credit), 0) AS total_credits,
+                CASE
+                    WHEN a.normal_balance = 'debit' THEN COALESCE(SUM(d.debit), 0) - COALESCE(SUM(d.credit), 0)
+                    WHEN a.normal_balance = 'credit' THEN COALESCE(SUM(d.credit), 0) - COALESCE(SUM(d.debit), 0)
+                    ELSE 0
+                END AS balance,
+                a.is_group,
+                a.is_active
+            FROM chart_of_accounts a
+            JOIN account_types at ON at.id = a.account_type_id
+            LEFT JOIN journal_entry_details d ON d.chart_of_account_id = a.id
+            LEFT JOIN journal_entries je ON je.id = d.journal_entry_id AND je.status = 'posted'
+            WHERE a.is_active = true
+            GROUP BY a.id, a.account_code, a.account_name, at.type_name, at.report_group, a.normal_balance, a.is_group, a.is_active
+        ");
+
+        // View for General Ledger
+        DB::statement("
+            CREATE VIEW IF NOT EXISTS vw_general_ledger AS
+            SELECT
+                je.id AS journal_entry_id,
+                je.entry_date,
+                je.reference,
+                je.description AS journal_description,
+                je.status,
+                a.id AS account_id,
+                a.account_code,
+                a.account_name,
+                jed.line_no,
+                jed.debit,
+                jed.credit,
+                jed.description AS line_description,
+                cc.code AS cost_center_code,
+                cc.name AS cost_center_name,
+                c.currency_code,
+                je.fx_rate_to_base
+            FROM journal_entry_details jed
+            JOIN journal_entries je ON je.id = jed.journal_entry_id
+            JOIN chart_of_accounts a ON a.id = jed.chart_of_account_id
+            LEFT JOIN cost_centers cc ON cc.id = jed.cost_center_id
+            LEFT JOIN currencies c ON c.id = je.currency_id
+            ORDER BY je.entry_date, je.id, jed.line_no
+        ");
+
+        // View for Balance Sheet
+        DB::statement("
+            CREATE VIEW IF NOT EXISTS vw_balance_sheet AS
+            SELECT
+                a.id AS account_id,
+                a.account_code,
+                a.account_name,
+                at.type_name AS account_type,
+                at.report_group,
+                a.normal_balance,
+                CASE
+                    WHEN a.normal_balance = 'debit' THEN COALESCE(SUM(d.debit), 0) - COALESCE(SUM(d.credit), 0)
+                    WHEN a.normal_balance = 'credit' THEN COALESCE(SUM(d.credit), 0) - COALESCE(SUM(d.debit), 0)
+                    ELSE 0
+                END AS balance
+            FROM chart_of_accounts a
+            JOIN account_types at ON at.id = a.account_type_id
+            LEFT JOIN journal_entry_details d ON d.chart_of_account_id = a.id
+            LEFT JOIN journal_entries je ON je.id = d.journal_entry_id AND je.status = 'posted'
+            WHERE at.report_group = 'BalanceSheet'
+            AND a.is_active = true
+            GROUP BY a.id, a.account_code, a.account_name, at.type_name, at.report_group, a.normal_balance
+            HAVING COALESCE(SUM(d.debit), 0) <> 0 OR COALESCE(SUM(d.credit), 0) <> 0
+        ");
+
+        // View for Income Statement
+        DB::statement("
+            CREATE VIEW IF NOT EXISTS vw_income_statement AS
+            SELECT
+                a.id AS account_id,
+                a.account_code,
+                a.account_name,
+                at.type_name AS account_type,
+                at.report_group,
+                a.normal_balance,
+                CASE
+                    WHEN a.normal_balance = 'debit' THEN COALESCE(SUM(d.debit), 0) - COALESCE(SUM(d.credit), 0)
+                    WHEN a.normal_balance = 'credit' THEN COALESCE(SUM(d.credit), 0) - COALESCE(SUM(d.debit), 0)
+                    ELSE 0
+                END AS balance
+            FROM chart_of_accounts a
+            JOIN account_types at ON at.id = a.account_type_id
+            LEFT JOIN journal_entry_details d ON d.chart_of_account_id = a.id
+            LEFT JOIN journal_entries je ON je.id = d.journal_entry_id AND je.status = 'posted'
+            WHERE at.report_group = 'IncomeStatement'
+            AND a.is_active = true
+            GROUP BY a.id, a.account_code, a.account_name, at.type_name, at.report_group, a.normal_balance
+            HAVING COALESCE(SUM(d.debit), 0) <> 0 OR COALESCE(SUM(d.credit), 0) <> 0
+        ");
     }
 
     /**

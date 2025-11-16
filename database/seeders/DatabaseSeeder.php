@@ -29,6 +29,8 @@ class DatabaseSeeder extends Seeder
             CurrencySeeder::class,              // Add currencies before accounts
             AccountingPeriodSeeder::class,
             ChartOfAccountSeeder::class,
+            TaxCodeSeeder::class,               // Add tax codes after chart of accounts
+            TaxRateSeeder::class,               // Add tax rates after tax codes
             CostCenterSeeder::class,            // Add cost centers before journal entries
             CompanySeeder::class,               // Add company after currencies and cost centers
             WarehouseTypeSeeder::class,         // Add warehouse types after companies

@@ -17,7 +17,11 @@ class TaxRateFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'rate' => $this->faker->randomFloat(2, 0, 30),
+            'effective_from' => now()->subDays(rand(1, 365)),
+            'effective_to' => null,
+            'region' => $this->faker->optional()->state(),
+            'is_active' => true,
         ];
     }
 }

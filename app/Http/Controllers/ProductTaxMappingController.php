@@ -33,7 +33,7 @@ class ProductTaxMappingController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $products = Product::where('status', 'active')->orderBy('product_code')->get();
+        $products = Product::where('is_active', true)->orderBy('product_code')->get();
         $taxCodes = TaxCode::where('is_active', true)->orderBy('tax_code')->get();
 
         return view('settings.product-tax-mappings.index', [
@@ -48,7 +48,7 @@ class ProductTaxMappingController extends Controller
      */
     public function create()
     {
-        $products = Product::where('status', 'active')->orderBy('product_code')->get();
+        $products = Product::where('is_active', true)->orderBy('product_code')->get();
         $taxCodes = TaxCode::where('is_active', true)->orderBy('tax_code')->get();
 
         return view('settings.product-tax-mappings.create', [
@@ -121,7 +121,7 @@ class ProductTaxMappingController extends Controller
      */
     public function edit(ProductTaxMapping $productTaxMapping)
     {
-        $products = Product::where('status', 'active')->orderBy('product_code')->get();
+        $products = Product::where('is_active', true)->orderBy('product_code')->get();
         $taxCodes = TaxCode::where('is_active', true)->orderBy('tax_code')->get();
 
         return view('settings.product-tax-mappings.edit', [

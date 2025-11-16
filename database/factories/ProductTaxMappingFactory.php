@@ -17,7 +17,8 @@ class ProductTaxMappingFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'transaction_type' => $this->faker->randomElement(['sales', 'purchase', 'both']),
+            'is_active' => true,
         ];
     }
 }

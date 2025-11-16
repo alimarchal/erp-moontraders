@@ -1,5 +1,7 @@
 # MoonTrader
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/alimarchal/erp-moontraders)
+
 A comprehensive inventory management system built with Laravel, designed for businesses to manage stock, suppliers, goods receipt notes (GRN), and promotional campaigns.
 
 ## Features
@@ -60,21 +62,47 @@ A comprehensive inventory management system built with Laravel, designed for bus
 
 ## Installation
 
-### 1. Clone the Repository
+### Option 1: GitHub Codespaces (Recommended for Quick Start)
+
+The easiest way to get started is using GitHub Codespaces, which provides a fully configured development environment in the cloud:
+
+1. Click the **Code** button on GitHub
+2. Select **Codespaces** tab
+3. Click **Create codespace on main**
+4. Wait for the environment to build (5-10 minutes first time)
+5. Everything will be automatically set up and ready to use!
+
+See [.devcontainer/README.md](.devcontainer/README.md) for detailed information about the dev container setup.
+
+### Option 2: VS Code Dev Containers
+
+If you prefer to work locally with Docker:
+
+1. Install [Docker Desktop](https://www.docker.com/products/docker-desktop)
+2. Install the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+3. Clone this repository
+4. Open in VS Code and select **Reopen in Container**
+5. Wait for the container to build and setup to complete
+
+See [.devcontainer/README.md](.devcontainer/README.md) for more details.
+
+### Option 3: Manual Installation
+
+#### 1. Clone the Repository
 
 ```bash
 git clone <repository-url>
 cd moontrader
 ```
 
-### 2. Install Dependencies
+#### 2. Install Dependencies
 
 ```bash
 composer install
 npm install
 ```
 
-### 3. Environment Configuration
+#### 3. Environment Configuration
 
 ```bash
 cp .env.example .env
@@ -92,7 +120,7 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-### 4. Database Setup
+#### 4. Database Setup
 
 ```bash
 php artisan migrate --seed
@@ -105,13 +133,13 @@ This will create all necessary tables and seed initial data including:
 - Cost centers
 - Chart of accounts
 
-### 5. Build Assets
+#### 5. Build Assets
 
 ```bash
 npm run build
 ```
 
-### 6. Start Development Server
+#### 6. Start Development Server
 
 #### Using Composer Script (Recommended)
 ```bash
@@ -287,6 +315,22 @@ The system includes the following key tables:
 - FIFO costing is automatically calculated
 - Journal entries are created automatically when GRNs are posted
 - Promotional items are prioritized in stock consumption
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Setting up your development environment
+- Coding standards and conventions
+- Testing guidelines
+- Pull request process
+
+Quick start for contributors:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests: `composer test`
+5. Submit a pull request
 
 ## License
 

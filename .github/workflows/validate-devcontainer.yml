@@ -1,0 +1,46 @@
+name: Validate Dev Container
+
+on:
+  push:
+    paths:
+      - '.devcontainer/**'
+  pull_request:
+    paths:
+      - '.devcontainer/**'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate Configuration Files
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      
+      - name: Validate devcontainer.json
+        run: |
+          cat .devcontainer/devcontainer.json | python3 -m json.tool > /dev/null
+          echo "✓ devcontainer.json is valid JSON"
+      
+      - name: Validate bash scripts
+        run: |
+          bash -n .devcontainer/post-create.sh
+          echo "✓ post-create.sh syntax is valid"
+          bash -n .devcontainer/env-check.sh
+          echo "✓ env-check.sh syntax is valid"
+      
+      - name: Check script permissions
+        run: |
+          test -x .devcontainer/post-create.sh || exit 1
+          test -x .devcontainer/env-check.sh || exit 1
+          echo "✓ Scripts are executable"
+      
+      - name: Validate docker-compose.yml
+        run: |
+          docker compose -f .devcontainer/docker-compose.yml config > /dev/null
+          echo "✓ docker-compose.yml is valid"

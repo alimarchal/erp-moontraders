@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    
+    volumes:
+      - ../:/workspace:cached
+    
+    # Overrides default command so things don't shut down after the process ends
+    command: sleep infinity
+    
+    # Runs app on the same network as the database container, allows "forwardPorts" in devcontainer.json function
+    networks:
+      - moontrader-network
+    
+    # Environment variables
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=moontrader
+      - DB_USERNAME=moontrader
+      - DB_PASSWORD=secret
+    
+    # Use "forwardPorts" in **devcontainer.json** to forward an app port locally
+    depends_on:
+      - mysql
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - moontrader-network
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: moontrader
+      MYSQL_USER: moontrader
+      MYSQL_PASSWORD: secret
+    command: --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+
+networks:
+  moontrader-network:
+
+volumes:
+  mysql-data:

@@ -1,0 +1,84 @@
+{
+  "name": "MoonTrader ERP",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspace",
+  
+  // Configure tool-specific properties
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "bmewburn.vscode-intelephense-client",
+        "MehediDracula.php-namespace-resolver",
+        "amiralizadeh9480.laravel-extra-intellisense",
+        "ryannaddy.laravel-artisan",
+        "onecentlin.laravel-blade",
+        "onecentlin.laravel5-snippets",
+        "shufo.vscode-blade-formatter",
+        "mikestead.dotenv",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "bradlc.vscode-tailwindcss",
+        "Vue.volar",
+        "GitHub.copilot",
+        "GitHub.copilot-chat",
+        "ms-azuretools.vscode-docker",
+        "eamodio.gitlens"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "php.validate.executablePath": "/usr/local/bin/php",
+        "php.suggest.basic": false,
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "[php]": {
+          "editor.defaultFormatter": "bmewburn.vscode-intelephense-client"
+        },
+        "[blade]": {
+          "editor.defaultFormatter": "shufo.vscode-blade-formatter"
+        },
+        "tailwindCSS.includeLanguages": {
+          "blade": "html",
+          "javascript": "javascript",
+          "html": "html"
+        },
+        "files.associations": {
+          "*.blade.php": "blade",
+          ".env*": "dotenv"
+        },
+        "emmet.includeLanguages": {
+          "blade": "html"
+        }
+      }
+    }
+  },
+  
+  // Forward ports
+  "forwardPorts": [8000, 5173, 3306],
+  "portsAttributes": {
+    "8000": {
+      "label": "Laravel Server",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Vite Dev Server",
+      "onAutoForward": "silent"
+    },
+    "3306": {
+      "label": "MySQL",
+      "onAutoForward": "silent"
+    }
+  },
+  
+  // Use 'postCreateCommand' to run commands after the container is created
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  
+  // Set `remoteUser` to `root` to connect as root instead
+  "remoteUser": "vscode",
+  
+  // Features to add to the dev container
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  }
+}

@@ -112,8 +112,8 @@
             </td>
             <td class="py-1 px-2">
                 <div>
-                    @if($gi->supplier && $gi->supplier->company_name)
-                    <span class="font-semibold text-gray-900">{{ $gi->supplier->company_name }}</span>
+                    @if($gi->supplier && $gi->supplier->supplier_name)
+                    <span class="font-semibold text-gray-900">{{ $gi->supplier->supplier_name }}</span>
                     <span class="text-gray-600"> - {{ $gi->employee->name }}</span>
                     @else
                     {{ $gi->employee->name }}

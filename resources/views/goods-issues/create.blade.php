@@ -26,7 +26,7 @@
                         x-data="goodsIssueForm()">
                         @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                             <div>
                                 <x-label for="issue_date" value="Issue Date *" />
                                 <x-input id="issue_date" name="issue_date" type="date" class="mt-1 block w-full"
@@ -75,7 +75,7 @@
                                 </select>
                             </div>
 
-                            <div class="md:col-span-2">
+                            <div class="md:col-span-4">
                                 <x-label for="notes" value="Notes" />
                                 <textarea id="notes" name="notes" rows="2"
                                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">{{ old('notes') }}</textarea>

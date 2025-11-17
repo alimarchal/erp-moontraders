@@ -436,7 +436,8 @@ class GoodsIssueController extends Controller
     private function generateIssueNumber(): string
     {
         $year = now()->year;
-        $lastIssue = GoodsIssue::whereYear('created_at', $year)
+        $lastIssue = GoodsIssue::withTrashed()
+            ->whereYear('created_at', $year)
             ->orderBy('id', 'desc')
             ->first();
 

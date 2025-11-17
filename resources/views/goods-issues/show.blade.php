@@ -81,7 +81,7 @@
                             <p class="text-base font-semibold text-gray-900">
                                 {{ $goodsIssue->employee->name }}</p>
                             @if($goodsIssue->supplier)
-                            <p class="text-sm text-gray-600">{{ $goodsIssue->supplier->company_name }}</p>
+                            <p class="text-sm text-gray-600">{{ $goodsIssue->supplier->supplier_name }}</p>
                             @endif
                         </div>
                     </div>

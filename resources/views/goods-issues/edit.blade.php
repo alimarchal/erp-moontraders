@@ -27,7 +27,7 @@
                         @csrf
                         @method('PUT')
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                             <div>
                                 <x-label for="issue_date" value="Issue Date *" />
                                 <x-input id="issue_date" name="issue_date" type="date" class="mt-1 block w-full"
@@ -80,7 +80,7 @@
                                 </select>
                             </div>
 
-                            <div class="md:col-span-2">
+                            <div class="md:col-span-4">
                                 <x-label for="notes" value="Notes" />
                                 <textarea id="notes" name="notes" rows="2"
                                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">{{ old('notes', $goodsIssue->notes) }}</textarea>
@@ -190,23 +190,14 @@
                             </tfoot>
                         </x-form-table>
 
-                        <div class="flex items-center justify-between mt-6">
-                            <form method="POST" action="{{ route('goods-issues.destroy', $goodsIssue) }}"
-                                onsubmit="return confirm('Are you sure you want to delete this draft goods issue? This action cannot be undone.');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                    class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                    Delete Draft
-                                </button>
-                            </form>
-
-                            <x-button type="button" @click="validateAndSubmit()">
+                        <div class="flex items-center justify-end mt-6">
+                            <x-button type="button" @click="validateAndSubmit()"
+                                class="!bg-green-600 hover:!bg-green-700 focus:!bg-green-700 active:!bg-green-800 focus:!ring-green-500">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M5 13l4 4L19 7" />
+                                </svg>
                                 Update Goods Issue
                             </x-button>
                         </div>

@@ -82,8 +82,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            // Indexes
-            $table->index('asset_code');
+            // Indexes (asset_code already has unique index from line 20)
             $table->index('status');
             $table->index('acquisition_date');
             $table->index('depreciation_start_date');

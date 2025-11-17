@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Goods Issues" :createRoute="route('goods-issues.create')"
-            createLabel="New Goods Issue" :showSearch="true" :showRefresh="true" />
+        <x-page-header title="Goods Issues" :createRoute="route('goods-issues.create')" createLabel="New Goods Issue"
+            :showSearch="true" :showRefresh="true" />
     </x-slot>
 
     <x-filter-section :action="route('goods-issues.index')">
@@ -18,7 +18,8 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Warehouses</option>
                     @foreach ($warehouses as $warehouse)
-                    <option value="{{ $warehouse->id }}" {{ request('filter.warehouse_id')==$warehouse->id ? 'selected' : '' }}>
+                    <option value="{{ $warehouse->id }}" {{ request('filter.warehouse_id')==$warehouse->id ? 'selected'
+                        : '' }}>
                         {{ $warehouse->warehouse_name }}
                     </option>
                     @endforeach
@@ -31,7 +32,8 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Vehicles</option>
                     @foreach ($vehicles as $vehicle)
-                    <option value="{{ $vehicle->id }}" {{ request('filter.vehicle_id')==$vehicle->id ? 'selected' : '' }}>
+                    <option value="{{ $vehicle->id }}" {{ request('filter.vehicle_id')==$vehicle->id ? 'selected' : ''
+                        }}>
                         {{ $vehicle->vehicle_number }} ({{ $vehicle->vehicle_type }})
                     </option>
                     @endforeach
@@ -44,7 +46,8 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Salesmen</option>
                     @foreach ($employees as $employee)
-                    <option value="{{ $employee->id }}" {{ request('filter.employee_id')==$employee->id ? 'selected' : '' }}>
+                    <option value="{{ $employee->id }}" {{ request('filter.employee_id')==$employee->id ? 'selected' :
+                        '' }}>
                         {{ $employee->full_name }}
                     </option>
                     @endforeach
@@ -69,8 +72,8 @@
 
             <div>
                 <x-label for="filter_issue_date_to" value="Issue Date To" />
-                <x-input id="filter_issue_date_to" name="filter[issue_date_to]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.issue_date_to')" />
+                <x-input id="filter_issue_date_to" name="filter[issue_date_to]" type="date" class="mt-1 block w-full"
+                    :value="request('filter.issue_date_to')" />
             </div>
         </div>
     </x-filter-section>
@@ -82,6 +85,7 @@
             ['label' => 'Warehouse'],
             ['label' => 'Vehicle'],
             ['label' => 'Salesman'],
+            ['label' => 'Supplier'],
             ['label' => 'Total Value', 'align' => 'text-right'],
             ['label' => 'Status', 'align' => 'text-center'],
             ['label' => 'Actions', 'align' => 'text-center'],
@@ -108,7 +112,10 @@
                 {{ $gi->vehicle->vehicle_number }}
             </td>
             <td class="py-1 px-2">
-                {{ $gi->employee->full_name }}
+                {{ $gi->employee->name }}
+            </td>
+            <td class="py-1 px-2">
+                <span class="text-xs text-gray-600">{{ $gi->employee->supplier->company_name ?? 'N/A' }}</span>
             </td>
             <td class="py-1 px-2 text-right">
                 <div class="font-semibold text-gray-900">
@@ -123,8 +130,7 @@
                 </span>
             </td>
             <td class="py-1 px-2 text-center">
-                <a href="{{ route('goods-issues.show', $gi) }}"
-                    class="text-blue-600 hover:text-blue-900 mr-2">View</a>
+                <a href="{{ route('goods-issues.show', $gi) }}" class="text-blue-600 hover:text-blue-900 mr-2">View</a>
                 @if ($gi->status === 'draft')
                 <a href="{{ route('goods-issues.edit', $gi) }}"
                     class="text-indigo-600 hover:text-indigo-900 mr-2">Edit</a>

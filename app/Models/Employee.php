@@ -70,4 +70,9 @@ class Employee extends Model
     {
         return $this->belongsToMany(Customer::class, 'customer_employee');
     }
+
+    public function getFullNameAttribute(): string
+    {
+        return $this->name;
+    }
 }

@@ -79,7 +79,10 @@
                         <div>
                             <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Salesman</h3>
                             <p class="text-base font-semibold text-gray-900">
-                                {{ $goodsIssue->employee->full_name }}</p>
+                                {{ $goodsIssue->employee->name }}</p>
+                            @if($goodsIssue->employee->supplier)
+                            <p class="text-sm text-gray-600">{{ $goodsIssue->employee->supplier->company_name }}</p>
+                            @endif
                         </div>
                     </div>
 
@@ -149,7 +152,11 @@
                                         @endif
                                     </td>
                                     <td class="px-3 py-2 text-sm text-right font-semibold">
+                                        @if(isset($item->calculated_total))
+                                        ₨ {{ number_format($item->calculated_total, 2) }}
+                                        @else
                                         ₨ {{ number_format($item->total_value, 2) }}
+                                        @endif
                                     </td>
                                 </tr>
                                 @endforeach
@@ -158,7 +165,12 @@
                                 <tr>
                                     <td colspan="5" class="px-3 py-2 text-sm font-semibold text-right">Total:</td>
                                     <td class="px-3 py-2 text-sm font-bold text-right">
-                                        ₨ {{ number_format($goodsIssue->total_value, 2) }}
+                                        @php
+                                        $grandTotal = $goodsIssue->items->sum(function($item) {
+                                        return $item->calculated_total ?? $item->total_value;
+                                        });
+                                        @endphp
+                                        ₨ {{ number_format($grandTotal, 2) }}
                                     </td>
                                 </tr>
                             </tfoot>

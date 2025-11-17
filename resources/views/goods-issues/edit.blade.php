@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            Create Goods Issue
+            Edit Goods Issue: {{ $goodsIssue->issue_number }}
         </h2>
         <div class="flex justify-center items-center float-right space-x-2">
             <a href="{{ route('goods-issues.index') }}"
@@ -21,14 +21,15 @@
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
-                    <form method="POST" action="{{ route('goods-issues.store') }}" id="goodsIssueForm">
+                    <form method="POST" action="{{ route('goods-issues.update', $goodsIssue) }}" id="goodsIssueForm">
                         @csrf
+                        @method('PUT')
 
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <div>
                                 <x-label for="issue_date" value="Issue Date" class="required" />
                                 <x-input id="issue_date" name="issue_date" type="date" class="mt-1 block w-full"
-                                    :value="old('issue_date', date('Y-m-d'))" required />
+                                    :value="old('issue_date', $goodsIssue->issue_date)" required />
                                 <x-input-error for="issue_date" class="mt-2" />
                             </div>
 
@@ -39,7 +40,8 @@
                                     required>
                                     <option value="">Select Warehouse</option>
                                     @foreach ($warehouses as $warehouse)
-                                    <option value="{{ $warehouse->id }}" {{ old('warehouse_id')==$warehouse->id ?
+                                    <option value="{{ $warehouse->id }}" {{ old('warehouse_id', $goodsIssue->
+                                        warehouse_id)==$warehouse->id ?
                                         'selected' : '' }}>
                                         {{ $warehouse->warehouse_name }}
                                     </option>
@@ -55,7 +57,8 @@
                                     required>
                                     <option value="">Select Vehicle</option>
                                     @foreach ($vehicles as $vehicle)
-                                    <option value="{{ $vehicle->id }}" {{ old('vehicle_id')==$vehicle->id ? 'selected' :
+                                    <option value="{{ $vehicle->id }}" {{ old('vehicle_id', $goodsIssue->
+                                        vehicle_id)==$vehicle->id ? 'selected' :
                                         '' }}>
                                         {{ $vehicle->vehicle_number }} ({{ $vehicle->vehicle_type }})
                                     </option>
@@ -71,7 +74,8 @@
                                     required>
                                     <option value="">Select Salesman</option>
                                     @foreach ($employees as $employee)
-                                    <option value="{{ $employee->id }}" {{ old('employee_id')==$employee->id ?
+                                    <option value="{{ $employee->id }}" {{ old('employee_id', $goodsIssue->
+                                        employee_id)==$employee->id ?
                                         'selected' : '' }}>
                                         {{ $employee->name }} ({{ $employee->employee_code }})
                                     </option>
@@ -83,7 +87,7 @@
                             <div class="md:col-span-2">
                                 <x-label for="notes" value="Notes" />
                                 <textarea id="notes" name="notes" rows="2"
-                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">{{ old('notes') }}</textarea>
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">{{ old('notes', $goodsIssue->notes) }}</textarea>
                                 <x-input-error for="notes" class="mt-2" />
                             </div>
                         </div>
@@ -207,7 +211,11 @@
                         class="border-gray-300 rounded-md shadow-sm w-full text-sm bg-gray-100 text-right font-semibold" />
                 </td>
                 <td class="px-3 py-2 text-center">
-                    <button type="button" onclick="removeItem(this)" class="text-red-600 hover:text-red-900 font-semibold">Remove</button>
+                    <button type="button" onclick="removeItem(this)" class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150" title="Remove">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
                 </td>
             `;
             tbody.appendChild(row);
@@ -430,9 +438,59 @@
         // Add first item on page load if warehouse is selected
         document.addEventListener('DOMContentLoaded', function() {
             const warehouseId = document.getElementById('warehouse_id').value;
+            
+            @if(isset($goodsIssue) && $goodsIssue->items->count() > 0)
+            // Load existing items for editing
+            let loadDelay = 0;
+            @foreach($goodsIssue->items as $item)
+            setTimeout(() => {
+                const savedIndex = itemIndex;
+                addItem();
+                
+                // Wait for Select2 to initialize
+                setTimeout(() => {
+                    // Set product value and trigger change
+                    const productSelect = $(`#product_${savedIndex}`);
+                    productSelect.val({{ $item->product_id }}).trigger('change');
+                    
+                    // Listen for the AJAX call to complete by polling the available quantity field
+                    const checkStockLoaded = setInterval(() => {
+                        const availQty = document.getElementById(`available_qty_${savedIndex}`).value;
+                        
+                        // If stock data has loaded (value changed from initial "0.00")
+                        if (availQty !== '0.00' || productBatches[{{ $item->product_id }}]) {
+                            clearInterval(checkStockLoaded);
+                            
+                            // Now set quantity and UOM
+                            document.getElementById(`quantity_${savedIndex}`).value = {{ $item->quantity_issued }};
+                            document.getElementById(`uom_${savedIndex}`).value = {{ $item->uom_id }};
+                            
+                            // Trigger quantity change to recalculate price breakdown
+                            setTimeout(() => {
+                                updatePriceBasedOnQuantity(savedIndex);
+                            }, 200);
+                        }
+                    }, 200); // Check every 200ms
+                    
+                    // Failsafe: force set after 3 seconds even if stock didn't load
+                    setTimeout(() => {
+                        clearInterval(checkStockLoaded);
+                        if (!document.getElementById(`quantity_${savedIndex}`).value) {
+                            document.getElementById(`quantity_${savedIndex}`).value = {{ $item->quantity_issued }};
+                            document.getElementById(`uom_${savedIndex}`).value = {{ $item->uom_id }};
+                            updatePriceBasedOnQuantity(savedIndex);
+                        }
+                    }, 3000);
+                }, 300);
+            }, loadDelay);
+            loadDelay += 200;
+            @endforeach
+            @else
+            // Add first empty item
             if (warehouseId) {
                 addItem();
             }
+            @endif
         });
     </script>
 </x-app-layout>

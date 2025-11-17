@@ -12,15 +12,18 @@ class GoodsIssueItem extends Model
 
     protected $fillable = [
         'goods_issue_id',
+        'line_no',
         'product_id',
         'quantity_issued',
         'unit_cost',
+        'total_value',
         'uom_id',
     ];
 
     protected $casts = [
         'quantity_issued' => 'decimal:3',
         'unit_cost' => 'decimal:2',
+        'total_value' => 'decimal:2',
     ];
 
     public function goodsIssue(): BelongsTo

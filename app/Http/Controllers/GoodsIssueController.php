@@ -25,7 +25,7 @@ class GoodsIssueController extends Controller
     public function index()
     {
         $goodsIssues = QueryBuilder::for(
-            GoodsIssue::query()->with(['warehouse', 'vehicle', 'employee', 'issuedBy'])
+            GoodsIssue::query()->with(['warehouse', 'vehicle', 'employee.supplier', 'issuedBy'])
         )
             ->allowedFilters([
                 AllowedFilter::partial('issue_number'),
@@ -214,7 +214,7 @@ class GoodsIssueController extends Controller
         $goodsIssue->load([
             'warehouse',
             'vehicle',
-            'employee',
+            'employee.supplier',
             'issuedBy',
             'items.product',
             'items.uom'
@@ -271,6 +271,9 @@ class GoodsIssueController extends Controller
             }
 
             $item->batch_breakdown = $batchBreakdown;
+
+            // Calculate accurate total from batch breakdown (for display purposes)
+            $item->calculated_total = collect($batchBreakdown)->sum('value');
         }
 
         return view('goods-issues.show', [
@@ -296,7 +299,7 @@ class GoodsIssueController extends Controller
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
             'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'employee_code']),
-            'products' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name']),
+            'products' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name', 'uom_id']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
         ]);
     }

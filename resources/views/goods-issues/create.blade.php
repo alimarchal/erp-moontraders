@@ -475,13 +475,13 @@
 
             const alpineComponent = Alpine.$data(document.querySelector('[x-data="goodsIssueForm()"]'));
 
-            // Check for duplicates
+            // Check for duplicates (ensure type consistency)
             const isDuplicate = alpineComponent.items.some((item, idx) => {
-                return idx !== index && item.product_id === productId;
+                return idx !== index && String(item.product_id) === String(productId);
             });
 
             if (isDuplicate) {
-                alert('This product is already added. Please adjust the quantity in the existing row.');
+                alert('⚠️ DUPLICATE PRODUCT!\n\nThis product is already added to the list.\n\nPlease adjust the quantity in the existing row instead of adding it again.');
                 $(`#product_${index}`).val('').trigger('change');
                 alpineComponent.items[index].product_id = '';
                 return;

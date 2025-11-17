@@ -84,12 +84,42 @@ return new class extends Migration {
             $table->index('reversed_by_entry_id');
         });
 
+        // 5. PERFORMANCE INDEXES - Optimize query performance
+        Schema::table('journal_entries', function (Blueprint $table) {
+            $table->index('entry_date', 'idx_je_entry_date');
+            $table->index('status', 'idx_je_status');
+            $table->index(['status', 'entry_date'], 'idx_je_status_date');
+            $table->index('accounting_period_id', 'idx_je_period_id');
+        });
+
+        Schema::table('journal_entry_details', function (Blueprint $table) {
+            $table->index(['chart_of_account_id', 'journal_entry_id'], 'idx_jed_account_entry');
+            $table->index('cost_center_id', 'idx_jed_cost_center');
+        });
+
+        Schema::table('chart_of_accounts', function (Blueprint $table) {
+            $table->index('account_code', 'idx_coa_code');
+            $table->index('account_type_id', 'idx_coa_type');
+            $table->index('is_active', 'idx_coa_active');
+            $table->index('parent_id', 'idx_coa_parent');
+            $table->index(['account_type_id', 'is_active'], 'idx_coa_type_active');
+        });
+
+        Schema::table('accounting_periods', function (Blueprint $table) {
+            $table->index('status', 'idx_ap_status');
+            $table->index(['start_date', 'end_date'], 'idx_ap_date_range');
+        });
+
+        Schema::table('account_types', function (Blueprint $table) {
+            $table->index('report_group', 'idx_at_report_group');
+        });
+
         // Recreate views for SQLite after altering journal_entries table
         if ($driver === 'sqlite') {
             $this->recreateViewsForSQLite();
         }
 
-        // 5. ADD AUDIT TRIGGERS (PostgreSQL)
+        // 6. ADD AUDIT TRIGGERS (PostgreSQL)
 
         if ($driver === 'pgsql') {
             $this->createPostgreSQLAuditTriggers();
@@ -797,6 +827,36 @@ return new class extends Migration {
                 \Log::warning("Could not drop MySQL objects: " . $e->getMessage());
             }
         }
+
+        // Drop performance indexes
+        Schema::table('account_types', function (Blueprint $table) {
+            $table->dropIndex('idx_at_report_group');
+        });
+
+        Schema::table('accounting_periods', function (Blueprint $table) {
+            $table->dropIndex('idx_ap_status');
+            $table->dropIndex('idx_ap_date_range');
+        });
+
+        Schema::table('chart_of_accounts', function (Blueprint $table) {
+            $table->dropIndex('idx_coa_code');
+            $table->dropIndex('idx_coa_type');
+            $table->dropIndex('idx_coa_active');
+            $table->dropIndex('idx_coa_parent');
+            $table->dropIndex('idx_coa_type_active');
+        });
+
+        Schema::table('journal_entry_details', function (Blueprint $table) {
+            $table->dropIndex('idx_jed_account_entry');
+            $table->dropIndex('idx_jed_cost_center');
+        });
+
+        Schema::table('journal_entries', function (Blueprint $table) {
+            $table->dropIndex('idx_je_entry_date');
+            $table->dropIndex('idx_je_status');
+            $table->dropIndex('idx_je_status_date');
+            $table->dropIndex('idx_je_period_id');
+        });
 
         // Drop columns from journal_entries
         Schema::table('journal_entries', function (Blueprint $table) {

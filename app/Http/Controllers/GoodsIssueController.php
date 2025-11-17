@@ -218,66 +218,98 @@ class GoodsIssueController extends Controller
         $goodsIssue->load([
             'warehouse',
             'vehicle',
-            'employee.supplier',
+            'employee',
+            'supplier',
             'issuedBy',
             'items.product',
             'items.uom'
         ]);
 
-        // Calculate batch breakdown for each item (for display purposes)
-        $urgentDate = now()->addDays(30)->toDateString();
-
         foreach ($goodsIssue->items as $item) {
-            $stockLayers = DB::table('stock_valuation_layers as svl')
-                ->join('goods_receipt_note_items as grni', 'svl.grn_item_id', '=', 'grni.id')
-                ->leftJoin('stock_batches as sb', 'svl.stock_batch_id', '=', 'sb.id')
-                ->where('svl.warehouse_id', $goodsIssue->warehouse_id)
-                ->where('svl.product_id', $item->product_id)
-                ->where('svl.is_depleted', false)
-                ->where('svl.quantity_remaining', '>', 0)
-                ->selectRaw("
-                    grni.selling_price,
-                    svl.unit_cost,
-                    svl.priority_order,
-                    svl.quantity_remaining,
-                    svl.is_promotional,
-                    sb.batch_code,
-                    CASE 
-                        WHEN svl.must_sell_before IS NOT NULL AND svl.must_sell_before <= ? THEN 1
-                        ELSE 2
-                    END as urgency_level
-                ", [$urgentDate])
-                ->orderByRaw("urgency_level ASC")
-                ->orderBy('svl.priority_order', 'asc')
-                ->orderBy('svl.receipt_date', 'asc')
-                ->get();
+            if ($goodsIssue->status === 'issued') {
+                // For posted goods issues, get ACTUAL batch breakdown from stock movements
+                $stockMovements = DB::table('stock_movements as sm')
+                    ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
+                    ->where('sm.reference_type', 'App\Models\GoodsIssue')
+                    ->where('sm.reference_id', $goodsIssue->id)
+                    ->where('sm.product_id', $item->product_id)
+                    ->where('sm.movement_type', 'transfer')
+                    ->select(
+                        'sb.batch_code',
+                        DB::raw('ABS(sm.quantity) as quantity'),
+                        'sb.selling_price',
+                        DB::raw('ABS(sm.total_value) as value'),
+                        'sb.is_promotional'
+                    )
+                    ->orderBy('sb.priority_order', 'asc')
+                    ->get();
 
-            // Calculate which batches would be used for this quantity
-            $remainingQty = $item->quantity_issued;
-            $batchBreakdown = [];
+                $batchBreakdown = [];
+                foreach ($stockMovements as $movement) {
+                    $batchBreakdown[] = [
+                        'batch_code' => $movement->batch_code ?? 'N/A',
+                        'quantity' => (float) $movement->quantity,
+                        'selling_price' => (float) $movement->selling_price,
+                        'value' => (float) $movement->value,
+                        'is_promotional' => (bool) $movement->is_promotional,
+                    ];
+                }
 
-            foreach ($stockLayers as $layer) {
-                if ($remainingQty <= 0)
-                    break;
+                $item->batch_breakdown = $batchBreakdown;
+                $item->calculated_total = collect($batchBreakdown)->sum('value');
+            } else {
+                // For draft goods issues, show THEORETICAL batch breakdown
+                $urgentDate = now()->addDays(30)->toDateString();
 
-                $qtyFromBatch = min($remainingQty, $layer->quantity_remaining);
-                $batchValue = $qtyFromBatch * $layer->selling_price;
+                $stockLayers = DB::table('stock_valuation_layers as svl')
+                    ->join('goods_receipt_note_items as grni', 'svl.grn_item_id', '=', 'grni.id')
+                    ->leftJoin('stock_batches as sb', 'svl.stock_batch_id', '=', 'sb.id')
+                    ->where('svl.warehouse_id', $goodsIssue->warehouse_id)
+                    ->where('svl.product_id', $item->product_id)
+                    ->where('svl.is_depleted', false)
+                    ->where('svl.quantity_remaining', '>', 0)
+                    ->selectRaw("
+                        grni.selling_price,
+                        svl.unit_cost,
+                        svl.priority_order,
+                        svl.quantity_remaining,
+                        svl.is_promotional,
+                        sb.batch_code,
+                        CASE 
+                            WHEN svl.must_sell_before IS NOT NULL AND svl.must_sell_before <= ? THEN 1
+                            ELSE 2
+                        END as urgency_level
+                    ", [$urgentDate])
+                    ->orderByRaw("urgency_level ASC")
+                    ->orderBy('svl.priority_order', 'asc')
+                    ->orderBy('svl.receipt_date', 'asc')
+                    ->get();
 
-                $batchBreakdown[] = [
-                    'batch_code' => $layer->batch_code ?? 'N/A',
-                    'quantity' => $qtyFromBatch,
-                    'selling_price' => $layer->selling_price,
-                    'value' => $batchValue,
-                    'is_promotional' => $layer->is_promotional,
-                ];
+                // Calculate which batches would be used for this quantity
+                $remainingQty = $item->quantity_issued;
+                $batchBreakdown = [];
 
-                $remainingQty -= $qtyFromBatch;
+                foreach ($stockLayers as $layer) {
+                    if ($remainingQty <= 0)
+                        break;
+
+                    $qtyFromBatch = min($remainingQty, $layer->quantity_remaining);
+                    $batchValue = $qtyFromBatch * $layer->selling_price;
+
+                    $batchBreakdown[] = [
+                        'batch_code' => $layer->batch_code ?? 'N/A',
+                        'quantity' => (float) $qtyFromBatch,
+                        'selling_price' => (float) $layer->selling_price,
+                        'value' => (float) $batchValue,
+                        'is_promotional' => (bool) $layer->is_promotional,
+                    ];
+
+                    $remainingQty -= $qtyFromBatch;
+                }
+
+                $item->batch_breakdown = $batchBreakdown;
+                $item->calculated_total = collect($batchBreakdown)->sum('value');
             }
-
-            $item->batch_breakdown = $batchBreakdown;
-
-            // Calculate accurate total from batch breakdown (for display purposes)
-            $item->calculated_total = collect($batchBreakdown)->sum('value');
         }
 
         return view('goods-issues.show', [

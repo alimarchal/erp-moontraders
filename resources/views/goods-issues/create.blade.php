@@ -3,9 +3,9 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             Create Goods Issue
         </h2>
-        <div class="flex justify-center items-center float-right space-x-2">
+        <div class="flex justify-center items-center float-right">
             <a href="{{ route('goods-issues.index') }}"
-                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
+                class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -16,27 +16,27 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <x-status-message class="mb-4 shadow-md" />
-
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+            <x-status-message class="mb-4 mt-4 shadow-md" />
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
-                    <form method="POST" action="{{ route('goods-issues.store') }}" id="goodsIssueForm">
+                    <x-validation-errors class="mb-4 mt-4" />
+
+                    <form method="POST" action="{{ route('goods-issues.store') }}" id="goodsIssueForm"
+                        x-data="goodsIssueForm()">
                         @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                             <div>
-                                <x-label for="issue_date" value="Issue Date" class="required" />
+                                <x-label for="issue_date" value="Issue Date *" />
                                 <x-input id="issue_date" name="issue_date" type="date" class="mt-1 block w-full"
                                     :value="old('issue_date', date('Y-m-d'))" required />
-                                <x-input-error for="issue_date" class="mt-2" />
                             </div>
 
                             <div>
-                                <x-label for="warehouse_id" value="Warehouse" class="required" />
-                                <select id="warehouse_id" name="warehouse_id"
-                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
-                                    required>
+                                <x-label for="warehouse_id" value="Warehouse *" />
+                                <select id="warehouse_id" name="warehouse_id" required
+                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Warehouse</option>
                                     @foreach ($warehouses as $warehouse)
                                     <option value="{{ $warehouse->id }}" {{ old('warehouse_id')==$warehouse->id ?
@@ -45,14 +45,12 @@
                                     </option>
                                     @endforeach
                                 </select>
-                                <x-input-error for="warehouse_id" class="mt-2" />
                             </div>
 
                             <div>
-                                <x-label for="vehicle_id" value="Vehicle" class="required" />
-                                <select id="vehicle_id" name="vehicle_id"
-                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
-                                    required>
+                                <x-label for="vehicle_id" value="Vehicle *" />
+                                <select id="vehicle_id" name="vehicle_id" required
+                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Vehicle</option>
                                     @foreach ($vehicles as $vehicle)
                                     <option value="{{ $vehicle->id }}" {{ old('vehicle_id')==$vehicle->id ? 'selected' :
@@ -61,14 +59,12 @@
                                     </option>
                                     @endforeach
                                 </select>
-                                <x-input-error for="vehicle_id" class="mt-2" />
                             </div>
 
                             <div>
-                                <x-label for="employee_id" value="Salesman" class="required" />
-                                <select id="employee_id" name="employee_id"
-                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
-                                    required>
+                                <x-label for="employee_id" value="Salesman *" />
+                                <select id="employee_id" name="employee_id" required
+                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Salesman</option>
                                     @foreach ($employees as $employee)
                                     <option value="{{ $employee->id }}" {{ old('employee_id')==$employee->id ?
@@ -77,57 +73,120 @@
                                     </option>
                                     @endforeach
                                 </select>
-                                <x-input-error for="employee_id" class="mt-2" />
                             </div>
 
                             <div class="md:col-span-2">
                                 <x-label for="notes" value="Notes" />
                                 <textarea id="notes" name="notes" rows="2"
                                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">{{ old('notes') }}</textarea>
-                                <x-input-error for="notes" class="mt-2" />
                             </div>
                         </div>
 
                         <hr class="my-6 border-gray-200">
 
-                        <h3 class="text-lg font-semibold mb-4">Products to Issue</h3>
-
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200" id="itemsTable">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Product</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Qty Available</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Quantity</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">UOM
-                                        </th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Selling
-                                            Price</th>
-                                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                            Total</th>
-                                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                                            Action</th>
+                        <x-form-table title="Products to Issue" :headers="[
+                            ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
+                            ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'Quantity<br>Issued', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'UOM', 'align' => 'text-center', 'width' => '120px'],
+                            ['label' => 'Price<br>Breakdown', 'align' => 'text-left', 'width' => '250px'],
+                            ['label' => 'Total<br>Value', 'align' => 'text-right', 'width' => '140px'],
+                            ['label' => 'Action', 'align' => 'text-center', 'width' => '100px'],
+                        ]">
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="(item, index) in items" :key="index">
+                                    <tr class="align-top">
+                                        <td class="px-2 py-2 align-middle">
+                                            <select :id="`product_${index}`" :name="`items[${index}][product_id]`"
+                                                required
+                                                class="product-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                <option value="">Select Product</option>
+                                            </select>
+                                        </td>
+                                        <td class="px-2 py-2 align-middle">
+                                            <input type="text" :id="`available_qty_${index}`" readonly
+                                                x-model="item.available_qty"
+                                                :class="parseFloat(item.available_qty) <= 0 ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-gray-100'"
+                                                class="rounded-md shadow-sm text-sm w-full text-center font-semibold">
+                                        </td>
+                                        <td class="px-2 py-2 align-middle">
+                                            <input type="number" :name="`items[${index}][quantity_issued]`"
+                                                x-model="item.quantity_issued"
+                                                @input="updatePriceBasedOnQuantity(index)" step="0.001"
+                                                :max="item.available_qty" min="0.001"
+                                                :disabled="parseFloat(item.available_qty) <= 0"
+                                                :required="parseFloat(item.available_qty) > 0"
+                                                :class="parseFloat(item.available_qty) <= 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                        </td>
+                                        <td class="px-2 py-2 align-middle">
+                                            <select :name="`items[${index}][uom_id]`" x-model="item.uom_id"
+                                                :disabled="parseFloat(item.available_qty) <= 0"
+                                                :required="parseFloat(item.available_qty) > 0"
+                                                :class="parseFloat(item.available_qty) <= 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                <option value="">Select UOM</option>
+                                                @foreach ($uoms as $uom)
+                                                <option value="{{ $uom->id }}">{{ $uom->uom_name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="px-2 py-2 align-middle">
+                                            <div :id="`batch_info_${index}`" class="text-xs text-gray-600 max-w-xs">
+                                            </div>
+                                            <div :id="`price_breakdown_${index}`"
+                                                class="text-xs text-gray-700 max-w-xs"></div>
+                                            <input type="hidden" :name="`items[${index}][unit_cost]`"
+                                                x-model="item.unit_cost">
+                                        </td>
+                                        <td class="px-2 py-2 text-right text-sm font-semibold align-middle"
+                                            x-text="formatNumber(item.total_value)"></td>
+                                        <td class="px-2 py-2 text-center align-middle">
+                                            <button type="button" @click="removeItem(index)"
+                                                class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                                :class="items.length === 1 ? 'opacity-40 cursor-not-allowed hover:bg-transparent hover:text-red-600 pointer-events-none' : ''"
+                                                :disabled="items.length === 1" title="Remove Line">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </td>
                                     </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200" id="itemsBody">
-                                    <!-- Items will be added here -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="mt-4">
-                            <button type="button" onclick="addItem()"
-                                class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                                Add Product
-                            </button>
-                        </div>
+                                </template>
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr class="font-semibold bg-gray-100">
+                                    <td class="px-2 py-2 text-right" colspan="2">Totals:</td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_issued) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2"></td>
+                                    <td class="px-2 py-2"></td>
+                                    <td class="px-2 py-2 text-right font-bold text-lg"
+                                        x-text="formatNumber(grandTotal)">
+                                    </td>
+                                    <td class="px-2 py-2"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="7" class="px-2 py-2">
+                                        <button type="button" @click="addItem()"
+                                            class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Add Product
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </x-form-table>
 
                         <div class="flex items-center justify-end mt-6">
-                            <x-button class="ml-4">
+                            <x-button type="button" @click="validateAndSubmit()">
                                 Create Goods Issue
                             </x-button>
                         </div>
@@ -137,123 +196,294 @@
         </div>
     </div>
 
+    @push('scripts')
     <script>
-        let itemIndex = 0;
-        const products = @json($products);
-        const uoms = @json($uoms);
-        let productBatches = {}; // Store batch data for each product
+        let allProducts = []; // All active products
+        let productBatches = {}; // Batch data per product
+        const oldItems = @json(old('items', []));
 
-        function addItem() {
-            const warehouseId = document.getElementById('warehouse_id').value;
-            if (!warehouseId) {
-                alert('Please select a warehouse first');
-                return;
+        function goodsIssueForm() {
+            return {
+                items: oldItems.length > 0 ? oldItems.map(item => ({
+                    product_id: item.product_id || '',
+                    uom_id: item.uom_id || '',
+                    quantity_issued: parseFloat(item.quantity_issued) || 0,
+                    unit_cost: parseFloat(item.unit_cost) || 0,
+                    total_value: parseFloat(item.total_value) || 0,
+                    available_qty: 0,
+                })) : [{
+                    product_id: '',
+                    uom_id: '',
+                    quantity_issued: 0,
+                    unit_cost: 0,
+                    total_value: 0,
+                    available_qty: 0,
+                }],
+
+                validateAndSubmit() {
+                    // Filter out items with 0 or invalid quantity before submitting
+                    const validItems = this.items.filter(item => {
+                        const qty = parseFloat(item.quantity_issued) || 0;
+                        return qty > 0 && item.product_id;
+                    });
+
+                    if (validItems.length === 0) {
+                        alert('⚠️ Cannot create!\n\nNo valid items to create. Please add at least one product with a valid quantity.');
+                        return false;
+                    }
+
+                    // Update items to only include valid ones
+                    this.items = validItems;
+
+                    // Submit the form after a short delay to allow Alpine to update
+                    this.$nextTick(() => {
+                        document.getElementById('goodsIssueForm').submit();
+                    });
+                },
+
+                addItem() {
+                    const warehouseId = document.getElementById('warehouse_id').value;
+                    if (!warehouseId) {
+                        alert('Please select a warehouse first');
+                        return;
+                    }
+
+                    const newIndex = this.items.length;
+                    this.items.push({
+                        product_id: '',
+                        uom_id: '',
+                        quantity_issued: 0,
+                        unit_cost: 0,
+                        total_value: 0,
+                        available_qty: 0,
+                    });
+
+                    // Initialize Select2 for new product dropdown
+                    this.$nextTick(() => {
+                        initializeProductSelect2(newIndex);
+                    });
+                },
+
+                removeItem(index) {
+                    if (this.items.length > 1) {
+                        const productId = this.items[index].product_id;
+                        
+                        // Clear batch data
+                        if (productId && productBatches[productId]) {
+                            delete productBatches[productId];
+                        }
+                        
+                        this.items.splice(index, 1);
+                        
+                        // Reinitialize all Select2 after removal
+                        this.$nextTick(() => {
+                            $('.product-select').each(function() {
+                                if ($(this).data('select2')) {
+                                    $(this).select2('destroy');
+                                }
+                            });
+                            
+                            $('.product-select').each(function(idx) {
+                                initializeProductSelect2(idx);
+                            });
+                        });
+                    }
+                },
+
+                updatePriceBasedOnQuantity(index) {
+                    const item = this.items[index];
+                    const productId = item.product_id;
+                    const quantity = parseFloat(item.quantity_issued) || 0;
+                    const availableQty = parseFloat(item.available_qty) || 0;
+                    
+                    if (!productId || !productBatches[productId]) {
+                        document.getElementById(`price_breakdown_${index}`).innerHTML = '';
+                        document.getElementById(`batch_info_${index}`).innerHTML = '';
+                        item.total_value = 0;
+                        return;
+                    }
+
+                    if (quantity === 0) {
+                        document.getElementById(`price_breakdown_${index}`).innerHTML = '<span class="text-gray-400">Enter quantity</span>';
+                        document.getElementById(`batch_info_${index}`).innerHTML = '';
+                        item.total_value = 0;
+                        return;
+                    }
+
+                    // Validate quantity against available stock
+                    if (quantity > availableQty) {
+                        document.getElementById(`batch_info_${index}`).innerHTML = `
+                            <div class="text-red-600 font-bold">⚠️ ERROR: Quantity exceeds available stock!</div>
+                        `;
+                        document.getElementById(`price_breakdown_${index}`).innerHTML = `
+                            <div class="text-red-600 font-semibold">Entered: ${quantity.toFixed(0)} units</div>
+                            <div class="text-green-600 font-semibold">Available: ${availableQty.toFixed(0)} units</div>
+                            <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${(quantity - availableQty).toFixed(0)} units</div>
+                        `;
+                        item.total_value = 0;
+                        item.unit_cost = 0;
+                        
+                        // Reset quantity to available max
+                        setTimeout(() => {
+                            alert(`⚠️ INVALID QUANTITY!\n\nYou entered: ${quantity.toFixed(0)} units\nAvailable stock: ${availableQty.toFixed(0)} units\n\nQuantity has been reset to maximum available.`);
+                            item.quantity_issued = availableQty;
+                            this.updatePriceBasedOnQuantity(index);
+                        }, 100);
+                        return;
+                    }
+
+                    const batches = productBatches[productId];
+                    let remainingQty = quantity;
+                    let totalValue = 0;
+                    let batchesUsed = [];
+
+                    // Calculate which batches will be used
+                    for (const batch of batches) {
+                        if (remainingQty <= 0) break;
+
+                        const qtyFromBatch = Math.min(remainingQty, batch.quantity);
+                        const batchValue = qtyFromBatch * batch.selling_price;
+                        totalValue += batchValue;
+                        remainingQty -= qtyFromBatch;
+
+                        if (qtyFromBatch > 0) {
+                            batchesUsed.push({
+                                code: batch.batch_code,
+                                qty: qtyFromBatch,
+                                price: batch.selling_price,
+                                value: batchValue,
+                                is_promotional: batch.is_promotional
+                            });
+                        }
+                    }
+
+                    // Check if insufficient stock (shouldn't happen due to above check, but keep as fallback)
+                    if (remainingQty > 0) {
+                        document.getElementById(`batch_info_${index}`).innerHTML = `
+                            <div class="text-red-600 font-bold">⚠️ Insufficient stock!</div>
+                        `;
+                        document.getElementById(`price_breakdown_${index}`).innerHTML = `
+                            <div class="text-sm">Available: ${(quantity - remainingQty).toFixed(0)}</div>
+                            <div class="text-sm text-red-600">Short: ${remainingQty.toFixed(0)}</div>
+                        `;
+                        item.total_value = 0;
+                        return;
+                    }
+                    
+                    // Update batch info - show detailed breakdown at the top
+                    const batchInfoDiv = document.getElementById(`batch_info_${index}`);
+                    if (batchesUsed.length > 0) {
+                        let info = '<div class="text-blue-600 font-semibold mb-1">📦 Issuing from batches:</div>';
+                        batchesUsed.forEach((b, bIndex) => {
+                            const promo = b.is_promotional ? ' 🎁' : '';
+                            info += `<div>Batch ${bIndex + 1}: ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)}${promo}</div>`;
+                        });
+                        batchInfoDiv.innerHTML = info;
+                    }
+                    
+                    // Display price breakdown below batch info
+                    const priceBreakdownDiv = document.getElementById(`price_breakdown_${index}`);
+                    if (batchesUsed.length === 1) {
+                        const b = batchesUsed[0];
+                        priceBreakdownDiv.innerHTML = `
+                            <div class="font-semibold text-green-700 mt-1">= ₨${b.value.toFixed(2)}</div>
+                        `;
+                    } else {
+                        let html = '<div class="mt-1 border-t border-gray-200 pt-1">';
+                        batchesUsed.forEach((b, bIndex) => {
+                            html += `<div>Batch ${bIndex + 1}: = ₨${b.value.toFixed(2)}</div>`;
+                        });
+                        html += `<div class="font-bold text-green-700 border-t border-gray-300 pt-1 mt-1">Total: ₨${totalValue.toFixed(2)}</div>`;
+                        html += '</div>';
+                        priceBreakdownDiv.innerHTML = html;
+                    }
+
+                    // Set total value and average cost
+                    item.total_value = totalValue;
+                    item.unit_cost = quantity > 0 ? totalValue / quantity : 0;
+                },
+
+                get grandTotal() {
+                    return this.items.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0);
+                },
+
+                formatNumber(value) {
+                    return parseFloat(value || 0).toLocaleString('en-PK', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
             }
+        }
 
-            const tbody = document.getElementById('itemsBody');
-            const row = document.createElement('tr');
-            row.setAttribute('data-index', itemIndex);
-            row.setAttribute('data-product-id', ''); // Track product ID to prevent duplicates
-            row.innerHTML = `
-                <td class="px-3 py-2">
-                    <select name="items[${itemIndex}][product_id]" 
-                        id="product_${itemIndex}"
-                        class="product-select border-gray-300 rounded-md shadow-sm w-full text-sm" 
-                        required
-                        onchange="onProductChange(${itemIndex})">
-                        <option value="">Select Product</option>
-                        ${products.map(p => `<option value="${p.id}" data-uom-id="${p.uom_id}">${p.product_code} - ${p.product_name}</option>`).join('')}
-                    </select>
-                    <div id="batch_info_${itemIndex}" class="text-xs mt-1 text-gray-600"></div>
-                </td>
-                <td class="px-3 py-2">
-                    <input type="text" 
-                        id="available_qty_${itemIndex}"
-                        readonly 
-                        class="border-gray-300 rounded-md shadow-sm w-full text-sm bg-gray-100 text-center font-semibold" 
-                        value="0.00" />
-                </td>
-                <td class="px-3 py-2">
-                    <input type="number" 
-                        name="items[${itemIndex}][quantity_issued]" 
-                        id="quantity_${itemIndex}"
-                        step="0.001" 
-                        min="0.001"
-                        class="border-gray-300 rounded-md shadow-sm w-full text-sm" 
-                        required
-                        oninput="updatePriceBasedOnQuantity(${itemIndex})"
-                        onchange="calculateTotal(${itemIndex})" />
-                </td>
-                <td class="px-3 py-2">
-                    <select name="items[${itemIndex}][uom_id]" 
-                        id="uom_${itemIndex}"
-                        class="border-gray-300 rounded-md shadow-sm w-full text-sm" 
-                        required>
-                        <option value="">Select UOM</option>
-                        ${uoms.map(u => `<option value="${u.id}">${u.uom_name}</option>`).join('')}
-                    </select>
-                </td>
-                <td class="px-3 py-2">
-                    <div id="price_breakdown_${itemIndex}" class="text-xs text-gray-700"></div>
-                    <input type="hidden" 
-                        name="items[${itemIndex}][unit_cost]" 
-                        id="unit_cost_${itemIndex}"
-                        value="0" />
-                </td>
-                <td class="px-3 py-2">
-                    <input type="text" 
-                        id="total_${itemIndex}"
-                        readonly 
-                        class="border-gray-300 rounded-md shadow-sm w-full text-sm bg-gray-100 text-right font-semibold" />
-                </td>
-                <td class="px-3 py-2 text-center">
-                    <button type="button" onclick="removeItem(this)" class="text-red-600 hover:text-red-900 font-semibold">Remove</button>
-                </td>
-            `;
-            tbody.appendChild(row);
+        async function initializeProductSelect2(index) {
+            const $select = $(`#product_${index}`);
+            const alpineComponent = Alpine.$data($select.closest('form')[0]);
 
-            // Initialize Select2 for the product dropdown
-            $(`#product_${itemIndex}`).select2({
+            // Initialize Select2
+            $select.select2({
                 placeholder: 'Select Product',
-                allowClear: true,
-                width: '100%'
+                allowClear: false,
+                width: '100%',
+                data: allProducts.map(p => ({
+                    id: p.id,
+                    text: `${p.product_code} - ${p.product_name}`
+                }))
             });
-
-            itemIndex++;
-        }
-
-        function removeItem(button) {
-            const row = button.closest('tr');
-            const productId = row.getAttribute('data-product-id');
             
-            // Clear batch data
-            if (productId && productBatches[productId]) {
-                delete productBatches[productId];
+            // Set initial value from Alpine.js data if exists (for old input)
+            if (alpineComponent && alpineComponent.items && alpineComponent.items[index] && alpineComponent.items[index].product_id) {
+                const savedQuantity = alpineComponent.items[index].quantity_issued;
+                
+                $select.val(alpineComponent.items[index].product_id).trigger('change.select2');
+                
+                // Load stock data for existing product
+                const warehouseId = $('#warehouse_id').val();
+                if (warehouseId && alpineComponent.items[index].product_id) {
+                    await onProductChange(index, alpineComponent.items[index].product_id, warehouseId);
+                    
+                    // Restore the quantity after stock data loads and trigger calculation
+                    if (savedQuantity > 0) {
+                        alpineComponent.items[index].quantity_issued = savedQuantity;
+                        // Trigger price calculation after a short delay to ensure batch data is loaded
+                        setTimeout(() => {
+                            alpineComponent.updatePriceBasedOnQuantity(index);
+                        }, 100);
+                    }
+                }
             }
-            
-            row.remove();
+
+            // Sync with Alpine.js when product changes
+            $select.on('change', async function() {
+                const productId = $(this).val();
+                const warehouseId = $('#warehouse_id').val();
+                
+                if (alpineComponent && alpineComponent.items && alpineComponent.items[index]) {
+                    alpineComponent.items[index].product_id = productId;
+                    
+                    if (productId && warehouseId) {
+                        await onProductChange(index, productId, warehouseId);
+                    }
+                }
+            });
         }
 
-        async function onProductChange(index) {
-            const productSelect = document.getElementById(`product_${index}`);
-            const productId = productSelect.value;
-            const warehouseId = document.getElementById('warehouse_id').value;
-            const currentRow = document.querySelector(`tr[data-index="${index}"]`);
-
+        async function onProductChange(index, productId, warehouseId) {
             if (!productId || !warehouseId) {
                 return;
             }
 
-            // Check if product already exists in other rows
-            const existingRows = Array.from(document.querySelectorAll('#itemsBody tr'));
-            const isDuplicate = existingRows.some(row => {
-                return row !== currentRow && row.getAttribute('data-product-id') === productId;
+            const alpineComponent = Alpine.$data(document.querySelector('[x-data="goodsIssueForm()"]'));
+
+            // Check for duplicates
+            const isDuplicate = alpineComponent.items.some((item, idx) => {
+                return idx !== index && item.product_id === productId;
             });
 
             if (isDuplicate) {
                 alert('This product is already added. Please adjust the quantity in the existing row.');
-                productSelect.value = '';
-                $(`#product_${index}`).val('').trigger('change'); // Clear Select2
+                $(`#product_${index}`).val('').trigger('change');
+                alpineComponent.items[index].product_id = '';
                 return;
             }
 
@@ -263,24 +493,20 @@
 
                 // Store batch data
                 productBatches[productId] = data.batches || [];
-                currentRow.setAttribute('data-product-id', productId);
 
-                // Set available quantity
-                document.getElementById(`available_qty_${index}`).value = parseFloat(data.available_quantity || 0).toFixed(2);
+                // Update Alpine.js data
+                alpineComponent.items[index].available_qty = parseFloat(data.available_quantity || 0).toFixed(2);
+                alpineComponent.items[index].uom_id = data.stock_uom_id || '';
 
-                // Set UOM from product's stock UOM
-                if (data.stock_uom_id) {
-                    document.getElementById(`uom_${index}`).value = data.stock_uom_id;
+                // Show batch info
+                displayBatchInfo(index, data.batches, data.has_multiple_prices);
+
+                // Only clear quantity and price if this is a new product selection (not loading existing item)
+                if (alpineComponent.items[index].quantity_issued === 0 || alpineComponent.items[index].quantity_issued === null || alpineComponent.items[index].quantity_issued === undefined) {
+                    alpineComponent.items[index].total_value = 0;
+                    alpineComponent.items[index].unit_cost = 0;
+                    document.getElementById(`price_breakdown_${index}`).innerHTML = '';
                 }
-
-                // Show batch breakdown if multiple prices exist
-                displayBatchInfo(index, productId, data.batches, data.has_multiple_prices);
-
-                // Clear quantity and price fields
-                document.getElementById(`quantity_${index}`).value = '';
-                document.getElementById(`total_${index}`).value = '';
-                document.getElementById(`price_breakdown_${index}`).innerHTML = '';
-                document.getElementById(`unit_cost_${index}`).value = '0';
 
             } catch (error) {
                 console.error('Error fetching product stock:', error);
@@ -288,7 +514,7 @@
             }
         }
 
-        function displayBatchInfo(index, productId, batches, hasMultiplePrices) {
+        function displayBatchInfo(index, batches, hasMultiplePrices) {
             const batchInfoDiv = document.getElementById(`batch_info_${index}`);
             
             if (!batches || batches.length === 0) {
@@ -308,131 +534,33 @@
             }
         }
 
-        function updatePriceBasedOnQuantity(index) {
-            const row = document.querySelector(`tr[data-index="${index}"]`);
-            const productId = row.getAttribute('data-product-id');
-            const quantity = parseFloat(document.getElementById(`quantity_${index}`).value) || 0;
-            
-            if (!productId || !productBatches[productId]) {
-                document.getElementById(`price_breakdown_${index}`).innerHTML = '';
-                document.getElementById(`total_${index}`).value = '';
+        // Initialize when DOM is ready
+        function initializeGoodsIssueForm() {
+            if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
+                setTimeout(initializeGoodsIssueForm, 100);
                 return;
             }
 
-            if (quantity === 0) {
-                document.getElementById(`price_breakdown_${index}`).innerHTML = '<span class="text-gray-400">Enter quantity</span>';
-                document.getElementById(`total_${index}`).value = '';
-                return;
-            }
+            $(document).ready(function() {
+                // Load all products
+                allProducts = @json($products);
 
-            const batches = productBatches[productId];
-            let remainingQty = quantity;
-            let totalValue = 0;
-            let batchesUsed = [];
-
-            // Calculate which batches will be used and total value
-            for (const batch of batches) {
-                if (remainingQty <= 0) break;
-
-                const qtyFromBatch = Math.min(remainingQty, batch.quantity);
-                const batchValue = qtyFromBatch * batch.selling_price;
-                totalValue += batchValue;
-                remainingQty -= qtyFromBatch;
-
-                if (qtyFromBatch > 0) {
-                    batchesUsed.push({
-                        code: batch.batch_code,
-                        qty: qtyFromBatch,
-                        price: batch.selling_price,
-                        value: batchValue,
-                        is_promotional: batch.is_promotional
-                    });
-                }
-            }
-
-            // Check if requested quantity exceeds available stock
-            if (remainingQty > 0) {
-                document.getElementById(`price_breakdown_${index}`).innerHTML = `
-                    <span class="text-red-600 font-semibold">⚠️ Insufficient stock!</span><br>
-                    <span class="text-sm">Available: ${quantity - remainingQty}, Short: ${remainingQty.toFixed(0)}</span>
-                `;
-                document.getElementById(`total_${index}`).value = '';
-                return;
-            }
-            
-            // Display price breakdown for each batch
-            const priceBreakdownDiv = document.getElementById(`price_breakdown_${index}`);
-            if (batchesUsed.length === 1) {
-                const b = batchesUsed[0];
-                const promo = b.is_promotional ? ' 🎁' : '';
-                priceBreakdownDiv.innerHTML = `
-                    <div class="font-semibold text-green-600">${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)}${promo}</div>
-                `;
-            } else {
-                let html = '<div class="space-y-1">';
-                batchesUsed.forEach((b, idx) => {
-                    const promo = b.is_promotional ? ' 🎁' : '';
-                    html += `
-                        <div class="flex justify-between">
-                            <span class="text-gray-600">${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)}${promo}</span>
-                            <span class="font-semibold">= ₨${b.value.toFixed(2)}</span>
-                        </div>
-                    `;
+                // Initialize standard Select2 dropdowns
+                $('#warehouse_id, #vehicle_id, #employee_id').select2({
+                    placeholder: 'Select an option',
+                    allowClear: false,
+                    width: '100%'
                 });
-                html += '</div>';
-                priceBreakdownDiv.innerHTML = html;
-            }
-            
-            // Update batch info to show which batches are being used
-            const batchInfoDiv = document.getElementById(`batch_info_${index}`);
-            if (batchesUsed.length > 1) {
-                let info = '<div class="text-blue-600 font-semibold mt-1">📦 Using batches:</div>';
-                batchesUsed.forEach(b => {
-                    const promo = b.is_promotional ? ' 🎁' : '';
-                    info += `<div class="ml-2 text-xs">${b.code}: ${b.qty.toFixed(0)} units${promo}</div>`;
-                });
-                batchInfoDiv.innerHTML = info;
-            } else if (batchesUsed.length === 1) {
-                const b = batchesUsed[0];
-                const promo = b.is_promotional ? ' 🎁' : '';
-                batchInfoDiv.innerHTML = `<div class="text-green-600 text-xs">✓ Batch: ${b.code}${promo}</div>`;
-            }
 
-            // Set total value (sum of all batch values)
-            document.getElementById(`total_${index}`).value = totalValue.toFixed(2);
-            
-            // Store average price for backend (for record-keeping)
-            const avgPrice = quantity > 0 ? totalValue / quantity : 0;
-            document.getElementById(`unit_cost_${index}`).value = avgPrice.toFixed(2);
+                // Initialize product selects for existing items
+                $('.product-select').each(function(index) {
+                    initializeProductSelect2(index);
+                });
+            });
         }
 
-        function calculateTotal(index) {
-            // Total is now calculated in updatePriceBasedOnQuantity
-            // This function kept for compatibility
-            updatePriceBasedOnQuantity(index);
-        }
-
-        // Warehouse change handler - clear all items
-        document.getElementById('warehouse_id').addEventListener('change', function() {
-            const tbody = document.getElementById('itemsBody');
-            if (tbody.children.length > 0) {
-                if (confirm('Changing warehouse will clear all items. Continue?')) {
-                    tbody.innerHTML = '';
-                    itemIndex = 0;
-                } else {
-                    // Revert warehouse selection
-                    this.value = this.getAttribute('data-previous-value') || '';
-                }
-            }
-            this.setAttribute('data-previous-value', this.value);
-        });
-
-        // Add first item on page load if warehouse is selected
-        document.addEventListener('DOMContentLoaded', function() {
-            const warehouseId = document.getElementById('warehouse_id').value;
-            if (warehouseId) {
-                addItem();
-            }
-        });
+        // Start initialization
+        initializeGoodsIssueForm();
     </script>
+    @endpush
 </x-app-layout>

@@ -80,8 +80,8 @@
                             <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Salesman</h3>
                             <p class="text-base font-semibold text-gray-900">
                                 {{ $goodsIssue->employee->name }}</p>
-                            @if($goodsIssue->employee->supplier)
-                            <p class="text-sm text-gray-600">{{ $goodsIssue->employee->supplier->company_name }}</p>
+                            @if($goodsIssue->supplier)
+                            <p class="text-sm text-gray-600">{{ $goodsIssue->supplier->company_name }}</p>
                             @endif
                         </div>
                     </div>

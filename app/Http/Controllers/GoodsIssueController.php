@@ -25,7 +25,7 @@ class GoodsIssueController extends Controller
     public function index()
     {
         $goodsIssues = QueryBuilder::for(
-            GoodsIssue::query()->with(['warehouse', 'vehicle', 'employee.supplier', 'issuedBy'])
+            GoodsIssue::query()->with(['warehouse', 'vehicle', 'employee', 'supplier', 'issuedBy'])
         )
             ->allowedFilters([
                 AllowedFilter::partial('issue_number'),
@@ -159,6 +159,9 @@ class GoodsIssueController extends Controller
                 $totalValue += $item['quantity_issued'] * $item['unit_cost'];
             }
 
+            // Get supplier_id from employee
+            $employee = Employee::findOrFail($request->employee_id);
+
             // Create goods issue
             $goodsIssue = GoodsIssue::create([
                 'issue_number' => $issueNumber,
@@ -166,6 +169,7 @@ class GoodsIssueController extends Controller
                 'warehouse_id' => $request->warehouse_id,
                 'vehicle_id' => $request->vehicle_id,
                 'employee_id' => $request->employee_id,
+                'supplier_id' => $employee->supplier_id,
                 'issued_by' => auth()->id(),
                 'status' => 'draft',
                 'total_value' => $totalValue,
@@ -324,12 +328,16 @@ class GoodsIssueController extends Controller
                 $totalValue += $item['quantity_issued'] * $item['unit_cost'];
             }
 
+            // Get supplier_id from employee
+            $employee = Employee::findOrFail($request->employee_id);
+
             // Update goods issue
             $goodsIssue->update([
                 'issue_date' => $request->issue_date,
                 'warehouse_id' => $request->warehouse_id,
                 'vehicle_id' => $request->vehicle_id,
                 'employee_id' => $request->employee_id,
+                'supplier_id' => $employee->supplier_id,
                 'total_value' => $totalValue,
                 'notes' => $request->notes,
             ]);

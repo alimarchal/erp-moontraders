@@ -18,6 +18,7 @@ class GoodsIssue extends Model
         'warehouse_id',
         'vehicle_id',
         'employee_id',
+        'supplier_id',
         'issued_by',
         'status',
         'total_value',
@@ -44,6 +45,11 @@ class GoodsIssue extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function issuedBy(): BelongsTo

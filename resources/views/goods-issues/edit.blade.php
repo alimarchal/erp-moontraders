@@ -137,8 +137,8 @@
                                             </select>
                                         </td>
                                         <td class="px-2 py-2 align-middle">
-                                            <div :id="`batch_info_${index}`"
-                                                class="text-xs text-gray-600 max-w-xs"></div>
+                                            <div :id="`batch_info_${index}`" class="text-xs text-gray-600 max-w-xs">
+                                            </div>
                                             <div :id="`price_breakdown_${index}`"
                                                 class="text-xs text-gray-700 max-w-xs"></div>
                                             <input type="hidden" :name="`items[${index}][unit_cost]`"
@@ -190,7 +190,22 @@
                             </tfoot>
                         </x-form-table>
 
-                        <div class="flex items-center justify-end mt-6">
+                        <div class="flex items-center justify-between mt-6">
+                            <form method="POST" action="{{ route('goods-issues.destroy', $goodsIssue) }}"
+                                onsubmit="return confirm('Are you sure you want to delete this draft goods issue? This action cannot be undone.');">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                    class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:bg-red-700 active:bg-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-2" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Delete Draft
+                                </button>
+                            </form>
+
                             <x-button type="button" @click="validateAndSubmit()">
                                 Update Goods Issue
                             </x-button>
@@ -562,24 +577,6 @@
                 // Initialize product selects for existing items
                 $('.product-select').each(function(index) {
                     initializeProductSelect2(index);
-                });
-
-                // Warehouse change handler
-                $('#warehouse_id').on('change', function() {
-                    const alpineComponent = Alpine.$data(document.querySelector('[x-data="goodsIssueForm()"]'));
-                    
-                    if (alpineComponent && alpineComponent.items.length > 0) {
-                        if (confirm('Changing warehouse will clear all items. Continue?')) {
-                            // Clear all items and batch data
-                            productBatches = {};
-                            alpineComponent.items = [];
-                            alpineComponent.addItem();
-                        } else {
-                            // Revert selection
-                            $(this).val($(this).attr('data-previous-value') || '').trigger('change.select2');
-                        }
-                    }
-                    $(this).attr('data-previous-value', $(this).val());
                 });
             });
         }

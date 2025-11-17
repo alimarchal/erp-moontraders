@@ -227,7 +227,7 @@ GitHub Actions workflow automatically validates on every push/PR to `.devcontain
 - **Reduced Support** - Fewer environment issues
 - **Easier Onboarding** - New contributors productive faster
 - **Better Quality** - Consistent tooling and linting
--- **Cost Effective** - GitHub free tier includes Codespaces
+- **Cost Effective** - GitHub free tier includes Codespaces
 
 ### For the Project
 

@@ -100,29 +100,35 @@
                         ]">
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(item, index) in items" :key="index">
-                                    <tr>
-                                        <td class="px-2 py-2">
+                                    <tr class="align-top">
+                                        <td class="px-2 py-2 align-middle">
                                             <select :id="`product_${index}`" :name="`items[${index}][product_id]`"
                                                 required
                                                 class="product-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">Select Product</option>
                                             </select>
-                                            <div :id="`batch_info_${index}`" class="text-xs mt-1 text-gray-600"></div>
                                         </td>
-                                        <td class="px-2 py-2">
+                                        <td class="px-2 py-2 align-middle">
                                             <input type="text" :id="`available_qty_${index}`" readonly
                                                 x-model="item.available_qty"
-                                                class="border-gray-300 rounded-md shadow-sm text-sm w-full bg-gray-100 text-center font-semibold">
+                                                :class="parseFloat(item.available_qty) <= 0 ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-gray-100'"
+                                                class="rounded-md shadow-sm text-sm w-full text-center font-semibold">
                                         </td>
-                                        <td class="px-2 py-2">
+                                        <td class="px-2 py-2 align-middle">
                                             <input type="number" :name="`items[${index}][quantity_issued]`"
                                                 x-model="item.quantity_issued"
-                                                @input="updatePriceBasedOnQuantity(index)" step="0.001" min="0.001"
-                                                required
+                                                @input="updatePriceBasedOnQuantity(index)" step="0.001"
+                                                :max="item.available_qty" min="0.001"
+                                                :disabled="parseFloat(item.available_qty) <= 0"
+                                                :required="parseFloat(item.available_qty) > 0"
+                                                :class="parseFloat(item.available_qty) <= 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                         </td>
-                                        <td class="px-2 py-2">
-                                            <select :name="`items[${index}][uom_id]`" x-model="item.uom_id" required
+                                        <td class="px-2 py-2 align-middle">
+                                            <select :name="`items[${index}][uom_id]`" x-model="item.uom_id"
+                                                :disabled="parseFloat(item.available_qty) <= 0"
+                                                :required="parseFloat(item.available_qty) > 0"
+                                                :class="parseFloat(item.available_qty) <= 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">Select UOM</option>
                                                 @foreach ($uoms as $uom)
@@ -130,14 +136,17 @@
                                                 @endforeach
                                             </select>
                                         </td>
-                                        <td class="px-2 py-2">
-                                            <div :id="`price_breakdown_${index}`" class="text-xs text-gray-700"></div>
+                                        <td class="px-2 py-2 align-middle">
+                                            <div :id="`batch_info_${index}`"
+                                                class="text-xs text-gray-600 max-w-xs"></div>
+                                            <div :id="`price_breakdown_${index}`"
+                                                class="text-xs text-gray-700 max-w-xs"></div>
                                             <input type="hidden" :name="`items[${index}][unit_cost]`"
                                                 x-model="item.unit_cost">
                                         </td>
-                                        <td class="px-2 py-2 text-right text-sm font-semibold"
+                                        <td class="px-2 py-2 text-right text-sm font-semibold align-middle"
                                             x-text="formatNumber(item.total_value)"></td>
-                                        <td class="px-2 py-2 text-center">
+                                        <td class="px-2 py-2 text-center align-middle">
                                             <button type="button" @click="removeItem(index)"
                                                 class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
                                                 :class="items.length === 1 ? 'opacity-40 cursor-not-allowed hover:bg-transparent hover:text-red-600 pointer-events-none' : ''"
@@ -182,7 +191,7 @@
                         </x-form-table>
 
                         <div class="flex items-center justify-end mt-6">
-                            <x-button>
+                            <x-button type="button" @click="validateAndSubmit()">
                                 Update Goods Issue
                             </x-button>
                         </div>
@@ -216,6 +225,27 @@
                     total_value: parseFloat(item.total_value) || 0,
                     available_qty: 0,
                 })),
+
+                validateAndSubmit() {
+                    // Filter out items with 0 or invalid quantity before submitting
+                    const validItems = this.items.filter(item => {
+                        const qty = parseFloat(item.quantity_issued) || 0;
+                        return qty > 0 && item.product_id;
+                    });
+
+                    if (validItems.length === 0) {
+                        alert('⚠️ Cannot update!\n\nNo valid items to update. Please add at least one product with a valid quantity.');
+                        return false;
+                    }
+
+                    // Update items to only include valid ones
+                    this.items = validItems;
+
+                    // Submit the form after a short delay to allow Alpine to update
+                    this.$nextTick(() => {
+                        document.getElementById('goodsIssueForm').submit();
+                    });
+                },
 
                 addItem() {
                     const warehouseId = document.getElementById('warehouse_id').value;
@@ -270,16 +300,41 @@
                     const item = this.items[index];
                     const productId = item.product_id;
                     const quantity = parseFloat(item.quantity_issued) || 0;
+                    const availableQty = parseFloat(item.available_qty) || 0;
                     
                     if (!productId || !productBatches[productId]) {
                         document.getElementById(`price_breakdown_${index}`).innerHTML = '';
+                        document.getElementById(`batch_info_${index}`).innerHTML = '';
                         item.total_value = 0;
                         return;
                     }
 
                     if (quantity === 0) {
                         document.getElementById(`price_breakdown_${index}`).innerHTML = '<span class="text-gray-400">Enter quantity</span>';
+                        document.getElementById(`batch_info_${index}`).innerHTML = '';
                         item.total_value = 0;
+                        return;
+                    }
+
+                    // Validate quantity against available stock
+                    if (quantity > availableQty) {
+                        document.getElementById(`batch_info_${index}`).innerHTML = `
+                            <div class="text-red-600 font-bold">⚠️ ERROR: Quantity exceeds available stock!</div>
+                        `;
+                        document.getElementById(`price_breakdown_${index}`).innerHTML = `
+                            <div class="text-red-600 font-semibold">Entered: ${quantity.toFixed(0)} units</div>
+                            <div class="text-green-600 font-semibold">Available: ${availableQty.toFixed(0)} units</div>
+                            <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${(quantity - availableQty).toFixed(0)} units</div>
+                        `;
+                        item.total_value = 0;
+                        item.unit_cost = 0;
+                        
+                        // Reset quantity to available max
+                        setTimeout(() => {
+                            alert(`⚠️ INVALID QUANTITY!\n\nYou entered: ${quantity.toFixed(0)} units\nAvailable stock: ${availableQty.toFixed(0)} units\n\nQuantity has been reset to maximum available.`);
+                            item.quantity_issued = availableQty;
+                            this.updatePriceBasedOnQuantity(index);
+                        }, 100);
                         return;
                     }
 
@@ -308,49 +363,45 @@
                         }
                     }
 
-                    // Check if insufficient stock
+                    // Check if insufficient stock (shouldn't happen due to above check, but keep as fallback)
                     if (remainingQty > 0) {
+                        document.getElementById(`batch_info_${index}`).innerHTML = `
+                            <div class="text-red-600 font-bold">⚠️ Insufficient stock!</div>
+                        `;
                         document.getElementById(`price_breakdown_${index}`).innerHTML = `
-                            <span class="text-red-600 font-semibold">⚠️ Insufficient stock!</span><br>
-                            <span class="text-sm">Available: ${quantity - remainingQty}, Short: ${remainingQty.toFixed(0)}</span>
+                            <div class="text-sm">Available: ${(quantity - remainingQty).toFixed(0)}</div>
+                            <div class="text-sm text-red-600">Short: ${remainingQty.toFixed(0)}</div>
                         `;
                         item.total_value = 0;
                         return;
                     }
                     
-                    // Display price breakdown in the Price Breakdown column
+                    // Update batch info - show detailed breakdown at the top
+                    const batchInfoDiv = document.getElementById(`batch_info_${index}`);
+                    if (batchesUsed.length > 0) {
+                        let info = '<div class="text-blue-600 font-semibold mb-1">📦 Issuing from batches:</div>';
+                        batchesUsed.forEach((b, bIndex) => {
+                            const promo = b.is_promotional ? ' 🎁' : '';
+                            info += `<div>Batch ${bIndex + 1}: ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)}${promo}</div>`;
+                        });
+                        batchInfoDiv.innerHTML = info;
+                    }
+                    
+                    // Display price breakdown below batch info
                     const priceBreakdownDiv = document.getElementById(`price_breakdown_${index}`);
                     if (batchesUsed.length === 1) {
                         const b = batchesUsed[0];
-                        const promo = b.is_promotional ? ' 🎁' : '';
                         priceBreakdownDiv.innerHTML = `
-                            <div class="font-semibold text-green-600">${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)}${promo}</div>
+                            <div class="font-semibold text-green-700 mt-1">= ₨${b.value.toFixed(2)}</div>
                         `;
                     } else {
-                        let html = '<div class="space-y-1">';
+                        let html = '<div class="mt-1 border-t border-gray-200 pt-1">';
                         batchesUsed.forEach((b, bIndex) => {
-                            const promo = b.is_promotional ? ' 🎁' : '';
-                            html += `
-                                <div class="flex justify-between">
-                                    <span class="text-gray-600">Batch ${bIndex + 1}: ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)}${promo}</span>
-                                    <span class="font-semibold">= ₨${b.value.toFixed(2)}</span>
-                                </div>
-                            `;
+                            html += `<div>Batch ${bIndex + 1}: = ₨${b.value.toFixed(2)}</div>`;
                         });
+                        html += `<div class="font-bold text-green-700 border-t border-gray-300 pt-1 mt-1">Total: ₨${totalValue.toFixed(2)}</div>`;
                         html += '</div>';
                         priceBreakdownDiv.innerHTML = html;
-                    }
-                    
-                    // Update batch info below product - show detailed breakdown when quantity entered
-                    const batchInfoDiv = document.getElementById(`batch_info_${index}`);
-                    if (batchesUsed.length > 0) {
-                        let info = '<div class="text-blue-600 font-semibold mt-1">📦 Issuing from batches:</div>';
-                        batchesUsed.forEach((b, bIndex) => {
-                            const promo = b.is_promotional ? ' 🎁' : '';
-                            const batchLabel = b.code || `Batch ${bIndex + 1}`;
-                            info += `<div class="ml-2 text-xs">${batchLabel}: <span class="font-semibold">${b.qty.toFixed(0)} units</span> @ ₨${b.price.toFixed(2)}${promo}</div>`;
-                        });
-                        batchInfoDiv.innerHTML = info;
                     }
 
                     // Set total value and average cost

@@ -34,12 +34,16 @@ The following enhancements were implemented through **safe, non-destructive migr
 
 ### Performance Improvements
 
-| Query Type | Before | After | Improvement |
-|------------|--------|-------|-------------|
-| Account Balance | 850ms | 45ms | **95% faster** |
-| Trial Balance | 1.2s | 120ms | **90% faster** |
-| General Ledger | 2.3s | 280ms | **88% faster** |
-| Income Statement | 1.8s | 190ms | **89% faster** |
+**Note**: Performance improvements are estimated based on typical workloads. Actual results may vary depending on data volume, database engine, hardware, and query patterns.
+
+| Query Type | Before | After | Estimated Improvement |
+|------------|--------|-------|----------------------|
+| Account Balance | 850ms | 45ms | ~95% faster* |
+| Trial Balance | 1.2s | 120ms | ~90% faster* |
+| General Ledger | 2.3s | 280ms | ~88% faster* |
+| Income Statement | 1.8s | 190ms | ~89% faster* |
+
+*Actual improvements may vary based on data volume, database engine, and hardware.
 
 ### Key Indexes Added
 
@@ -143,7 +147,7 @@ $service = app(PeriodClosingService::class);
 // Close period (requires retained earnings account ID)
 $result = $service->closeAccountingPeriod(
     periodId: 1,
-    retainedEarningsAccountId: 29 // Capital Stock account
+    retainedEarningsAccountId: 29 // Retained Earnings account
 );
 
 if ($result['success']) {
@@ -170,16 +174,16 @@ Date: 2025-12-31
 Reference: CLOSE-1
 Description: Closing entry for Fiscal Year 2025
 
-Account                     Debit        Credit
-─────────────────────────────────────────────
-Sales Revenue                           250,000.00
-Service Revenue                          75,000.00
-Salaries Expense          150,000.00
-Rent Expense               30,000.00
-Utilities Expense          20,000.00
-Capital Stock/Retained Earnings        125,000.00
-                          ──────────   ──────────
-                          200,000.00   200,000.00
+Account                          Debit        Credit
+──────────────────────────────────────────────────
+Sales Revenue                 250,000.00
+Service Revenue                75,000.00
+Salaries Expense                           150,000.00
+Rent Expense                                30,000.00
+Utilities Expense                           20,000.00
+Retained Earnings                          125,000.00
+                              ──────────   ──────────
+                              325,000.00   325,000.00
 ```
 
 ---

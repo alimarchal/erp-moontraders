@@ -17,7 +17,15 @@ class EmployeeFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'employee_code' => strtoupper(fake()->unique()->bothify('EMP-####')),
+            'name' => fake()->name(),
+            'company_name' => fake()->optional()->company(),
+            'designation' => fake()->optional()->jobTitle(),
+            'phone' => fake()->optional()->phoneNumber(),
+            'email' => fake()->boolean(70) ? fake()->unique()->safeEmail() : null,
+            'address' => fake()->optional()->address(),
+            'hire_date' => fake()->optional()->date(),
+            'is_active' => fake()->boolean(90),
         ];
     }
 }

@@ -14,6 +14,7 @@ return new class extends Migration {
             $table->id();
             $table->foreignId('vehicle_id')->constrained('vehicles')->cascadeOnDelete();
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
+            $table->decimal('opening_balance', 15, 3)->default(0)->comment('Previous day closing = today opening');
             $table->decimal('quantity_on_hand', 15, 3)->default(0);
             $table->decimal('average_cost', 15, 2)->default(0);
             $table->timestamp('last_updated')->useCurrent();

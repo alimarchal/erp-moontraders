@@ -1,0 +1,147 @@
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
+            Goods Issue: {{ $goodsIssue->issue_number }}
+        </h2>
+        <div class="flex justify-center items-center float-right space-x-2">
+            @if ($goodsIssue->status === 'draft')
+            <form action="{{ route('goods-issues.post', $goodsIssue->id) }}" method="POST"
+                onsubmit="return confirm('Are you sure you want to post this Goods Issue? This will transfer inventory from warehouse to vehicle.');"
+                class="inline-block">
+                @csrf
+                <button type="submit"
+                    class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
+                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Post Issue
+                </button>
+            </form>
+            <a href="{{ route('goods-issues.edit', $goodsIssue->id) }}"
+                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                Edit
+            </a>
+            @endif
+            <a href="{{ route('goods-issues.index') }}"
+                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </a>
+        </div>
+    </x-slot>
+
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <x-status-message class="mb-4 shadow-md" />
+
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Issue Number</h3>
+                            <p class="text-lg font-bold text-gray-900">{{ $goodsIssue->issue_number }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Issue Date</h3>
+                            <p class="text-lg text-gray-900">
+                                {{ \Carbon\Carbon::parse($goodsIssue->issue_date)->format('d M Y') }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Status</h3>
+                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full
+                                {{ $goodsIssue->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                {{ $goodsIssue->status === 'issued' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                {{ ucfirst($goodsIssue->status) }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <hr class="my-6 border-gray-200">
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Warehouse</h3>
+                            <p class="text-base font-semibold text-gray-900">
+                                {{ $goodsIssue->warehouse->warehouse_name }}</p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Vehicle</h3>
+                            <p class="text-base font-semibold text-gray-900">
+                                {{ $goodsIssue->vehicle->vehicle_number }}</p>
+                            <p class="text-sm text-gray-600">{{ $goodsIssue->vehicle->vehicle_type }}</p>
+                        </div>
+
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Salesman</h3>
+                            <p class="text-base font-semibold text-gray-900">
+                                {{ $goodsIssue->employee->full_name }}</p>
+                        </div>
+                    </div>
+
+                    <hr class="my-6 border-gray-200">
+
+                    <h3 class="text-lg font-semibold mb-4">Items Issued</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">UOM</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total Value</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach ($goodsIssue->items as $item)
+                                <tr>
+                                    <td class="px-3 py-2 text-sm">{{ $item->line_no }}</td>
+                                    <td class="px-3 py-2 text-sm">
+                                        <div class="font-semibold">{{ $item->product->product_name }}</div>
+                                        <div class="text-xs text-gray-500">{{ $item->product->product_code }}</div>
+                                    </td>
+                                    <td class="px-3 py-2 text-sm text-right">{{ number_format($item->quantity_issued, 3) }}</td>
+                                    <td class="px-3 py-2 text-sm">{{ $item->uom->uom_name }}</td>
+                                    <td class="px-3 py-2 text-sm text-right">Rs {{ number_format($item->unit_cost, 2) }}</td>
+                                    <td class="px-3 py-2 text-sm text-right font-semibold">
+                                        Rs {{ number_format($item->total_value, 2) }}
+                                    </td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr>
+                                    <td colspan="5" class="px-3 py-2 text-sm font-semibold text-right">Total:</td>
+                                    <td class="px-3 py-2 text-sm font-bold text-right">
+                                        Rs {{ number_format($goodsIssue->total_value, 2) }}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    @if ($goodsIssue->notes)
+                    <div class="mt-6">
+                        <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Notes</h3>
+                        <p class="text-sm text-gray-700">{{ $goodsIssue->notes }}</p>
+                    </div>
+                    @endif
+
+                    @if ($goodsIssue->posted_at)
+                    <div class="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
+                        <p class="text-sm text-green-800">
+                            This goods issue was posted on {{ $goodsIssue->posted_at->format('d M Y, h:i A') }}
+                        </p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</x-app-layout>

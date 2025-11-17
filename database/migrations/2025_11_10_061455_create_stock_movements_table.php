@@ -21,7 +21,8 @@ return new class extends Migration {
                 'transfer',      // Warehouse to warehouse
                 'adjustment',    // Stock correction
                 'damage',        // Damaged/expired
-                'theft'          // Theft/loss
+                'theft',         // Theft/loss
+                'sale'           // Sales settlement
             ])->index();
 
             // Polymorphic Reference

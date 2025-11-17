@@ -17,21 +17,17 @@ class WarehouseFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->company() . ' Warehouse',
-            'is_group_warehouse' => fake()->boolean(20),
-            'chart_of_account_id' => null,
+            'warehouse_name' => fake()->company() . ' Warehouse',
+            'disabled' => fake()->boolean(10),
+            'is_group' => fake()->boolean(20),
             'is_rejected_warehouse' => fake()->boolean(10),
-            'company' => fake()->company(),
             'phone_no' => fake()->phoneNumber(),
             'mobile_no' => fake()->phoneNumber(),
             'address_line_1' => fake()->streetAddress(),
             'address_line_2' => fake()->optional()->secondaryAddress(),
             'city' => fake()->city(),
-            'state_province' => fake()->state(),
-            'postal_code' => fake()->postcode(),
-            'country' => fake()->country(),
-            'notes' => fake()->optional()->sentence(),
-            'is_active' => fake()->boolean(90),
+            'state' => fake()->state(),
+            'pin' => fake()->postcode(),
         ];
     }
 }

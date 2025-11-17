@@ -44,6 +44,7 @@ return new class extends Migration {
             $table->foreignId('verified_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('journal_entry_id')->nullable()->constrained('journal_entries')->nullOnDelete();
             $table->text('notes')->nullable();
+            $table->timestamp('posted_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

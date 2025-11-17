@@ -27,6 +27,13 @@
                         :active="request()->routeIs('inventory.*')">
                         {{ __('Inventory') }}
                     </x-nav-link>
+                    <x-nav-link href="{{ route('goods-issues.index') }}" :active="request()->routeIs('goods-issues.*')">
+                        {{ __('Distribution') }}
+                    </x-nav-link>
+                    <x-nav-link href="{{ route('sales-settlements.index') }}"
+                        :active="request()->routeIs('sales-settlements.*')">
+                        {{ __('Sales') }}
+                    </x-nav-link>
                     <x-nav-link href="{{ route('promotional-campaigns.index') }}"
                         :active="request()->routeIs('promotional-campaigns.*')">
                         {{ __('Campaigns') }}
@@ -187,6 +194,14 @@
             <x-responsive-nav-link href="{{ route('inventory.current-stock.index') }}"
                 :active="request()->routeIs('inventory.*')">
                 {{ __('Inventory') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('goods-issues.index') }}"
+                :active="request()->routeIs('goods-issues.*')">
+                {{ __('Distribution') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link href="{{ route('sales-settlements.index') }}"
+                :active="request()->routeIs('sales-settlements.*')">
+                {{ __('Sales') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('promotional-campaigns.index') }}"
                 :active="request()->routeIs('promotional-campaigns.*')">

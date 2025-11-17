@@ -32,6 +32,9 @@ use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\TaxRateController;
 use App\Http\Controllers\ProductTaxMappingController;
 use App\Http\Controllers\TaxTransactionController;
+use App\Http\Controllers\GoodsIssueController;
+use App\Http\Controllers\SalesSettlementController;
+use App\Http\Controllers\Reports\DailySalesReportController;
 
 Route::get('/', function () {
     return to_route('login');
@@ -70,6 +73,24 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
         ->name('api.suppliers.products');
 
     Route::resource('promotional-campaigns', PromotionalCampaignController::class);
+
+    // Goods Issue Routes (Sales Distribution)
+    Route::resource('goods-issues', GoodsIssueController::class);
+    Route::post('goods-issues/{goodsIssue}/post', [GoodsIssueController::class, 'post'])
+        ->name('goods-issues.post');
+
+    // Sales Settlement Routes
+    Route::resource('sales-settlements', SalesSettlementController::class);
+    Route::post('sales-settlements/{salesSettlement}/post', [SalesSettlementController::class, 'post'])
+        ->name('sales-settlements.post');
+
+    // Daily Sales Reports
+    Route::prefix('reports/daily-sales')->name('reports.daily-sales.')->group(function () {
+        Route::get('/', [DailySalesReportController::class, 'index'])->name('index');
+        Route::get('/product-wise', [DailySalesReportController::class, 'productWise'])->name('product-wise');
+        Route::get('/salesman-wise', [DailySalesReportController::class, 'salesmanWise'])->name('salesman-wise');
+        Route::get('/van-stock', [DailySalesReportController::class, 'vanStock'])->name('van-stock');
+    });
 
     // Supplier Payment Routes
     Route::resource('supplier-payments', SupplierPaymentController::class);

@@ -19,8 +19,10 @@ return new class extends Migration {
             $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
             $table->foreignId('issued_by')->constrained('users')->cascadeOnDelete();
             $table->enum('status', ['draft', 'issued', 'settled', 'cancelled'])->default('draft');
+            $table->decimal('total_quantity', 15, 3)->default(0);
             $table->decimal('total_value', 15, 2)->default(0);
             $table->text('notes')->nullable();
+            $table->timestamp('posted_at')->nullable();
             $table->timestamps();
             $table->softDeletes();
 

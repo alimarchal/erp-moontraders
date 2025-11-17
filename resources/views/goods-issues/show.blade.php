@@ -91,11 +91,15 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Quantity</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product
+                                    </th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
+                                        Quantity</th>
                                     <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">UOM</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total Value</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Batch
+                                        Breakdown</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total
+                                        Value</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -106,11 +110,46 @@
                                         <div class="font-semibold">{{ $item->product->product_name }}</div>
                                         <div class="text-xs text-gray-500">{{ $item->product->product_code }}</div>
                                     </td>
-                                    <td class="px-3 py-2 text-sm text-right">{{ number_format($item->quantity_issued, 3) }}</td>
+                                    <td class="px-3 py-2 text-sm text-right">{{ number_format($item->quantity_issued, 3)
+                                        }}</td>
                                     <td class="px-3 py-2 text-sm">{{ $item->uom->uom_name }}</td>
-                                    <td class="px-3 py-2 text-sm text-right">Rs {{ number_format($item->unit_cost, 2) }}</td>
+                                    <td class="px-3 py-2 text-sm">
+                                        @if(isset($item->batch_breakdown) && count($item->batch_breakdown) > 0)
+                                        @if(count($item->batch_breakdown) === 1)
+                                        @php $b = $item->batch_breakdown[0]; @endphp
+                                        <div class="flex items-center space-x-1">
+                                            <span class="font-semibold text-green-600">
+                                                {{ number_format($b['quantity'], 0) }} × ₨{{
+                                                number_format($b['selling_price'], 2) }}
+                                            </span>
+                                            @if($b['is_promotional'])
+                                            <span title="Promotional">🎁</span>
+                                            @endif
+                                        </div>
+                                        @else
+                                        <div class="space-y-1">
+                                            @foreach($item->batch_breakdown as $b)
+                                            <div class="flex justify-between text-xs">
+                                                <span class="text-gray-600">
+                                                    {{ number_format($b['quantity'], 0) }} × ₨{{
+                                                    number_format($b['selling_price'], 2) }}
+                                                    @if($b['is_promotional'])
+                                                    <span title="Promotional">🎁</span>
+                                                    @endif
+                                                </span>
+                                                <span class="font-semibold">= ₨{{ number_format($b['value'], 2)
+                                                    }}</span>
+                                            </div>
+                                            @endforeach
+                                        </div>
+                                        @endif
+                                        @else
+                                        <span class="text-gray-400 text-xs">Avg: ₨{{ number_format($item->unit_cost, 2)
+                                            }}</span>
+                                        @endif
+                                    </td>
                                     <td class="px-3 py-2 text-sm text-right font-semibold">
-                                        Rs {{ number_format($item->total_value, 2) }}
+                                        ₨ {{ number_format($item->total_value, 2) }}
                                     </td>
                                 </tr>
                                 @endforeach
@@ -119,7 +158,7 @@
                                 <tr>
                                     <td colspan="5" class="px-3 py-2 text-sm font-semibold text-right">Total:</td>
                                     <td class="px-3 py-2 text-sm font-bold text-right">
-                                        Rs {{ number_format($goodsIssue->total_value, 2) }}
+                                        ₨ {{ number_format($goodsIssue->total_value, 2) }}
                                     </td>
                                 </tr>
                             </tfoot>

@@ -57,8 +57,88 @@ class GoodsIssueController extends Controller
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
             'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'employee_code']),
-            'products' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name']),
+            'products' => Product::where('is_active', true)
+                ->with(['uom'])
+                ->orderBy('product_name')
+                ->get(['id', 'product_code', 'product_name', 'uom_id']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
+        ]);
+    }
+
+    /**
+     * Get product stock details for a specific warehouse (AJAX endpoint)
+     * Returns selling price from the first priority stock layer with batch breakdown
+     * Database-agnostic: Works with PostgreSQL, MySQL, and MariaDB
+     */
+    public function getProductStock($warehouseId, $productId)
+    {
+        // Get total available quantity
+        $totalStock = DB::table('stock_valuation_layers')
+            ->where('warehouse_id', $warehouseId)
+            ->where('product_id', $productId)
+            ->where('is_depleted', false)
+            ->where('quantity_remaining', '>', 0)
+            ->sum('quantity_remaining');
+
+        // Calculate urgent date threshold (30 days from now)
+        $urgentDate = now()->addDays(30)->toDateString();
+
+        // Get ALL available stock layers ordered by priority
+        // Priority Logic (STRICT ORDER):
+        // 1) URGENT EXPIRY: Items expiring within 30 days (urgency_level = 1)
+        // 2) PRIORITY ORDER: Lower numbers first (1 = Urgent, 99 = Normal FIFO)
+        // 3) FIFO: Oldest receipt date first
+        $stockLayers = DB::table('stock_valuation_layers as svl')
+            ->join('goods_receipt_note_items as grni', 'svl.grn_item_id', '=', 'grni.id')
+            ->leftJoin('stock_batches as sb', 'svl.stock_batch_id', '=', 'sb.id')
+            ->where('svl.warehouse_id', $warehouseId)
+            ->where('svl.product_id', $productId)
+            ->where('svl.is_depleted', false)
+            ->where('svl.quantity_remaining', '>', 0)
+            ->selectRaw("
+                grni.selling_price,
+                svl.unit_cost,
+                svl.priority_order,
+                svl.receipt_date,
+                svl.must_sell_before,
+                svl.quantity_remaining,
+                svl.is_promotional,
+                sb.batch_code,
+                CASE 
+                    WHEN svl.must_sell_before IS NOT NULL AND svl.must_sell_before <= ? THEN 1
+                    ELSE 2
+                END as urgency_level
+            ", [$urgentDate])
+            ->orderByRaw("urgency_level ASC")      // 1st: Urgent items first
+            ->orderBy('svl.priority_order', 'asc')  // 2nd: Priority (1, 2, 3...99)
+            ->orderBy('svl.receipt_date', 'asc')    // 3rd: FIFO (oldest first)
+            ->get();
+
+        // Get the first layer for default price
+        $firstLayer = $stockLayers->first();
+
+        $product = Product::with('uom')->find($productId);
+
+        // Format batch breakdown for display
+        $batches = $stockLayers->map(function ($layer) {
+            return [
+                'batch_code' => $layer->batch_code ?? 'N/A',
+                'quantity' => (float) $layer->quantity_remaining,
+                'selling_price' => (float) $layer->selling_price,
+                'unit_cost' => (float) $layer->unit_cost,
+                'is_promotional' => (bool) $layer->is_promotional,
+                'priority' => (int) $layer->priority_order,
+            ];
+        })->toArray();
+
+        return response()->json([
+            'available_quantity' => $totalStock ?? 0,
+            'selling_price' => $firstLayer->selling_price ?? 0,
+            'unit_cost' => $firstLayer->unit_cost ?? 0,
+            'stock_uom_id' => $product->uom_id ?? null,
+            'stock_uom_name' => $product->uom->uom_name ?? 'Piece',
+            'batches' => $batches,
+            'has_multiple_prices' => $stockLayers->pluck('selling_price')->unique()->count() > 1,
         ]);
     }
 
@@ -139,6 +219,59 @@ class GoodsIssueController extends Controller
             'items.product',
             'items.uom'
         ]);
+
+        // Calculate batch breakdown for each item (for display purposes)
+        $urgentDate = now()->addDays(30)->toDateString();
+
+        foreach ($goodsIssue->items as $item) {
+            $stockLayers = DB::table('stock_valuation_layers as svl')
+                ->join('goods_receipt_note_items as grni', 'svl.grn_item_id', '=', 'grni.id')
+                ->leftJoin('stock_batches as sb', 'svl.stock_batch_id', '=', 'sb.id')
+                ->where('svl.warehouse_id', $goodsIssue->warehouse_id)
+                ->where('svl.product_id', $item->product_id)
+                ->where('svl.is_depleted', false)
+                ->where('svl.quantity_remaining', '>', 0)
+                ->selectRaw("
+                    grni.selling_price,
+                    svl.unit_cost,
+                    svl.priority_order,
+                    svl.quantity_remaining,
+                    svl.is_promotional,
+                    sb.batch_code,
+                    CASE 
+                        WHEN svl.must_sell_before IS NOT NULL AND svl.must_sell_before <= ? THEN 1
+                        ELSE 2
+                    END as urgency_level
+                ", [$urgentDate])
+                ->orderByRaw("urgency_level ASC")
+                ->orderBy('svl.priority_order', 'asc')
+                ->orderBy('svl.receipt_date', 'asc')
+                ->get();
+
+            // Calculate which batches would be used for this quantity
+            $remainingQty = $item->quantity_issued;
+            $batchBreakdown = [];
+
+            foreach ($stockLayers as $layer) {
+                if ($remainingQty <= 0)
+                    break;
+
+                $qtyFromBatch = min($remainingQty, $layer->quantity_remaining);
+                $batchValue = $qtyFromBatch * $layer->selling_price;
+
+                $batchBreakdown[] = [
+                    'batch_code' => $layer->batch_code ?? 'N/A',
+                    'quantity' => $qtyFromBatch,
+                    'selling_price' => $layer->selling_price,
+                    'value' => $batchValue,
+                    'is_promotional' => $layer->is_promotional,
+                ];
+
+                $remainingQty -= $qtyFromBatch;
+            }
+
+            $item->batch_breakdown = $batchBreakdown;
+        }
 
         return view('goods-issues.show', [
             'goodsIssue' => $goodsIssue,

@@ -78,6 +78,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::resource('goods-issues', GoodsIssueController::class);
     Route::post('goods-issues/{goodsIssue}/post', [GoodsIssueController::class, 'post'])
         ->name('goods-issues.post');
+    Route::get('api/warehouses/{warehouse}/products/{product}/stock', [GoodsIssueController::class, 'getProductStock'])
+        ->name('api.warehouses.products.stock');
 
     // Sales Settlement Routes
     Route::resource('sales-settlements', SalesSettlementController::class);

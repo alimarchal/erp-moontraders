@@ -72,7 +72,7 @@ class DailySalesReportController extends Controller
             'settlements' => $settlements,
             'summary' => $summary,
             'employees' => Employee::orderBy('name')->get(['id', 'name']),
-            'vehicles' => Vehicle::orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_name']),
+            'vehicles' => Vehicle::orderBy('vehicle_number')->get(['id', 'vehicle_number']),
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'startDate' => $startDate,
             'endDate' => $endDate,
@@ -223,7 +223,6 @@ class DailySalesReportController extends Controller
             ->select(
                 'v.id as vehicle_id',
                 'v.vehicle_number',
-                'v.vehicle_name',
                 'p.id as product_id',
                 'p.product_code',
                 'p.product_name',
@@ -247,7 +246,7 @@ class DailySalesReportController extends Controller
 
         return view('reports.daily-sales.van-stock', [
             'groupedStock' => $groupedStock,
-            'vehicles' => Vehicle::orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_name']),
+            'vehicles' => Vehicle::orderBy('vehicle_number')->get(['id', 'vehicle_number']),
             'vehicleId' => $vehicleId,
         ]);
     }

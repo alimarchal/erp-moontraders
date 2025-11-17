@@ -44,7 +44,7 @@ class GoodsIssueController extends Controller
             'goodsIssues' => $goodsIssues,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
-            'employees' => Employee::where('is_active', true)->orderBy('full_name')->get(['id', 'full_name']),
+            'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -56,7 +56,7 @@ class GoodsIssueController extends Controller
         return view('goods-issues.create', [
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
-            'employees' => Employee::where('is_active', true)->orderBy('full_name')->get(['id', 'full_name', 'employee_code']),
+            'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'employee_code']),
             'products' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
         ]);
@@ -162,7 +162,7 @@ class GoodsIssueController extends Controller
             'goodsIssue' => $goodsIssue,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
-            'employees' => Employee::where('is_active', true)->orderBy('full_name')->get(['id', 'full_name', 'employee_code']),
+            'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'employee_code']),
             'products' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
         ]);

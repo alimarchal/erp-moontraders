@@ -89,7 +89,7 @@ return new class extends Migration {
             $table->index('entry_date', 'idx_je_entry_date');
             $table->index('status', 'idx_je_status');
             $table->index(['status', 'entry_date'], 'idx_je_status_date');
-            $table->index('accounting_period_id', 'idx_je_period_id');
+            // Note: accounting_period_id already has an index from foreign key constraint
         });
 
         Schema::table('journal_entry_details', function (Blueprint $table) {
@@ -855,7 +855,7 @@ return new class extends Migration {
             $table->dropIndex('idx_je_entry_date');
             $table->dropIndex('idx_je_status');
             $table->dropIndex('idx_je_status_date');
-            $table->dropIndex('idx_je_period_id');
+            // Note: idx_je_period_id was never created (foreign key index is sufficient)
         });
 
         // Drop columns from journal_entries

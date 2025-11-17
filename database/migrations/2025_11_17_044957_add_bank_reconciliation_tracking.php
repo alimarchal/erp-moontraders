@@ -71,6 +71,7 @@ return new class extends Migration
 
         Schema::table('journal_entry_details', function (Blueprint $table) {
             $table->dropIndex('idx_jed_reconciliation_status');
+            $table->dropForeign(['reconciled_by']);
             $table->dropColumn([
                 'reconciliation_status',
                 'reconciled_at',

@@ -78,8 +78,8 @@ class PeriodClosingService
 
                 // Build closing entry lines
                 $closingLines = [];
-                $totalDebits = 0;
-                $totalCredits = 0;
+                $totalExpenses = 0;
+                $totalIncome = 0;
 
                 foreach ($accountBalances as $balance) {
                     $netBalance = (float) $balance->net_balance;
@@ -99,7 +99,7 @@ class PeriodClosingService
                             'credit' => abs($netBalance),
                             'description' => 'Period closing: ' . $balance->account_name,
                         ];
-                        $totalCredits += abs($netBalance);
+                        $totalExpenses += abs($netBalance);
                     } else {
                         // Account has credit balance (typically income)
                         $closingLines[] = [
@@ -108,12 +108,12 @@ class PeriodClosingService
                             'credit' => 0,
                             'description' => 'Period closing: ' . $balance->account_name,
                         ];
-                        $totalDebits += abs($netBalance);
+                        $totalIncome += abs($netBalance);
                     }
                 }
 
                 // Add balancing entry to retained earnings
-                $netIncome = $totalCredits - $totalDebits; // Income - Expenses
+                $netIncome = $totalIncome - $totalExpenses; // Income - Expenses
 
                 if ($netIncome > 0) {
                     // Profit: Credit retained earnings

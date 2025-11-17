@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
 {
@@ -103,6 +104,20 @@ return new class extends Migration
             $table->index('cost_center_id');
         });
 
+        // Add partial unique index for NULL cost_center_id to prevent duplicates
+        // PostgreSQL supports WHERE clause in unique indexes
+        // MySQL 8.0+ doesn't support partial indexes, so multiple NULL values are allowed
+        $driver = DB::connection()->getDriverName();
+        if ($driver === 'pgsql') {
+            DB::statement('
+                CREATE UNIQUE INDEX unique_budget_account_null_cc 
+                ON budget_lines(budget_id, chart_of_account_id) 
+                WHERE cost_center_id IS NULL
+            ');
+        }
+        // For MySQL/MariaDB: NULL values in unique constraints don't conflict
+        // Multiple rows with same budget_id+account_id but NULL cost_center are allowed
+
         // Budget variance tracking (calculated periodically)
         Schema::create('budget_variances', function (Blueprint $table) {
             $table->id();
@@ -150,6 +165,12 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drop partial index for PostgreSQL if it exists
+        $driver = DB::connection()->getDriverName();
+        if ($driver === 'pgsql') {
+            DB::statement('DROP INDEX IF EXISTS unique_budget_account_null_cc');
+        }
+
         Schema::dropIfExists('budget_variances');
         Schema::dropIfExists('budget_lines');
         Schema::dropIfExists('budgets');

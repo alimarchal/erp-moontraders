@@ -5,7 +5,7 @@
 This document describes the enhancements made to the ERP Moontraders double-entry accounting system to address identified gaps and improve compliance with international accounting standards (GAAP/IFRS).
 
 **Original Score**: 9/10
-**Improved Score**: 9.8/10 ⭐
+**Improved Score**: 9.3/10 ⭐
 
 ---
 
@@ -16,9 +16,6 @@ The following enhancements were implemented through **safe, non-destructive migr
 1. ✅ **Performance Indexes** - Significantly improved query performance
 2. ✅ **Bank Reconciliation** - Complete reconciliation workflow
 3. ✅ **Period Closing** - Automated year-end closing entries
-4. ✅ **Depreciation Tracking** - Full fixed asset depreciation management
-5. ✅ **Budget Management** - Budget vs actual variance analysis
-6. ✅ **Currency Revaluation** - IAS 21 compliance for FX gains/losses
 
 ---
 
@@ -184,235 +181,6 @@ Capital Stock/Retained Earnings        125,000.00
 
 ---
 
-## 4. Depreciation Tracking
-
-**Migration**: `2025_11_17_045112_add_depreciation_tracking_system.php`
-**Service**: `App\Services\Accounting\DepreciationService`
-
-### What Was Added
-
-#### New Table: `fixed_assets`
-Complete asset register with:
-- Asset identification (code, name, description)
-- Account links (asset, accumulated depreciation, expense)
-- Cost and salvage value
-- Depreciation method and settings
-- Status tracking
-
-#### New Table: `depreciation_entries`
-Depreciation schedule with:
-- Period-by-period depreciation
-- Accumulated depreciation tracking
-- Book value after depreciation
-- Link to journal entries
-
-### Supported Depreciation Methods
-
-1. **Straight-Line** (most common)
-   - Equal depreciation each period
-   - Formula: (Cost - Salvage) / Useful Life
-
-2. **Declining Balance**
-   - Accelerated depreciation
-   - Formula: Book Value × (1 / Useful Life)
-
-3. **Double Declining Balance**
-   - More accelerated
-   - Formula: Book Value × (2 / Useful Life)
-
-4. **Units of Production**
-   - Based on usage
-   - Formula: (Cost - Salvage) / Total Units × Units Produced
-
-### Usage Example
-
-```php
-use App\Services\Accounting\DepreciationService;
-
-$service = app(DepreciationService::class);
-
-// Calculate depreciation for all assets in a period
-$result = $service->calculatePeriodDepreciation(
-    periodId: 12, // December 2025
-    autoPost: true // Automatically create journal entries
-);
-
-if ($result['success']) {
-    echo "Depreciation calculated for {$result['data']['assets_count']} assets";
-    echo "Total depreciation: {$result['data']['total_depreciation']}";
-}
-```
-
-### Example Depreciation Entry
-
-```
-Asset: Computer Equipment (CODE: COMP-001)
-Cost: $10,000
-Salvage: $1,000
-Useful Life: 5 years
-Method: Straight-line
-
-Monthly Depreciation: ($10,000 - $1,000) / 60 months = $150/month
-
-Journal Entry:
-Date: 2025-01-31
-Reference: DEP-COMP-001-1
-
-Account                              Debit    Credit
-────────────────────────────────────────────────────
-Depreciation Expense                150.00
-Accumulated Depreciation - Equipment         150.00
-```
-
----
-
-## 5. Budget Management
-
-**Migration**: `2025_11_17_045153_add_budget_management_module.php`
-**Service**: `App\Services\Accounting\BudgetService`
-
-### What Was Added
-
-#### New Table: `budgets`
-Budget headers with:
-- Budget name and description
-- Fiscal year
-- Budget type (annual, quarterly, monthly)
-- Approval workflow
-
-#### New Table: `budget_lines`
-Line-item budgets by:
-- Account
-- Cost center (optional)
-- Month-by-month amounts
-- Annual total
-
-#### New Table: `budget_variances`
-Variance tracking with:
-- Budget vs actual comparison
-- Variance amount and percentage
-- Variance type (favorable/unfavorable)
-
-### Usage Example
-
-```php
-use App\Services\Accounting\BudgetService;
-
-$service = app(BudgetService::class);
-
-// Calculate variances for a period
-$result = $service->calculateBudgetVariances(
-    budgetId: 1,
-    periodId: 3 // March 2025
-);
-
-if ($result['success']) {
-    foreach ($result['data']['variances'] as $variance) {
-        echo "{$variance['account_name']}: ";
-        echo "Budget: {$variance['budget']}, ";
-        echo "Actual: {$variance['actual']}, ";
-        echo "Variance: {$variance['variance']} ({$variance['variance_type']})";
-    }
-}
-
-// Get year-to-date performance report
-$report = $service->getBudgetPerformanceReport(
-    budgetId: 1,
-    fiscalYear: 2025
-);
-```
-
-### Variance Analysis
-
-**For Income Accounts**:
-- Actual > Budget = **Favorable** ✅
-- Actual < Budget = **Unfavorable** ❌
-
-**For Expense Accounts**:
-- Actual < Budget = **Favorable** ✅
-- Actual > Budget = **Unfavorable** ❌
-
-### Example Variance Report
-
-```
-Budget: Operating Budget 2025
-Period: March 2025
-
-Account               Budget     Actual    Variance   Type
-─────────────────────────────────────────────────────────
-Sales Revenue        50,000     52,500    +2,500    Favorable
-Cost of Goods Sold   30,000     28,000    -2,000    Favorable
-Salaries Expense     15,000     15,200    +200      Unfavorable
-Rent Expense          5,000      5,000       0      On Target
-```
-
----
-
-## 6. Currency Revaluation
-
-**Migration**: `2025_11_17_045234_add_currency_revaluation_support.php`
-
-### What Was Added
-
-#### New Table: `exchange_rates`
-Historical exchange rates with:
-- Currency and effective date
-- Rate to base currency
-- Rate type (spot, average, month_end, year_end)
-- Source tracking
-
-#### New Table: `currency_revaluations`
-Revaluation runs with:
-- Revaluation date
-- Total unrealized gain/loss
-- Link to journal entry
-
-#### New Table: `currency_revaluation_details`
-Per-account revaluations with:
-- Foreign currency balance
-- Old vs new exchange rates
-- Unrealized gain/loss calculation
-
-#### Enhanced `journal_entries`:
-- `is_revaluation_entry`: boolean flag
-
-### IAS 21 Compliance
-
-This implementation follows **IAS 21** (The Effects of Changes in Foreign Exchange Rates):
-
-1. **Monetary items** (cash, receivables, payables) are revalued
-2. **Non-monetary items** at historical cost are not revalued
-3. **Unrealized gains/losses** go to income statement
-4. **Period-end revaluation** ensures fair presentation
-
-### Usage Example
-
-```php
-// Record exchange rates
-DB::table('exchange_rates')->insert([
-    'currency_id' => 2, // USD
-    'effective_date' => '2025-01-31',
-    'rate_to_base' => 1.25, // 1 USD = 1.25 EUR (base)
-    'rate_type' => 'month_end',
-    'created_by' => auth()->id(),
-]);
-
-// Calculate revaluation (manual example)
-$fcBalance = 10000; // $10,000 USD in bank
-$oldRate = 1.20;
-$newRate = 1.25;
-
-$oldBaseAmount = $fcBalance * $oldRate; // €12,000
-$newBaseAmount = $fcBalance * $newRate; // €12,500
-$unrealizedGain = $newBaseAmount - $oldBaseAmount; // €500 gain
-
-// Create revaluation journal entry
-// Dr. Cash (Foreign Currency) €500
-// Cr. Unrealized FX Gain €500
-```
-
----
-
 ## Migration Instructions
 
 ### Step 1: Backup Database
@@ -429,13 +197,10 @@ mysqldump -u root erp_moontraders > backup_$(date +%Y%m%d).sql
 # List pending migrations
 php artisan migrate:status
 
-# You should see 6 new migrations:
+# You should see 3 new migrations:
 # 2025_11_17_044923_add_performance_indexes_to_accounting_tables
 # 2025_11_17_044957_add_bank_reconciliation_tracking
 # 2025_11_17_045039_add_period_closing_functionality
-# 2025_11_17_045112_add_depreciation_tracking_system
-# 2025_11_17_045153_add_budget_management_module
-# 2025_11_17_045234_add_currency_revaluation_support
 ```
 
 ### Step 3: Run Migrations
@@ -457,9 +222,7 @@ php artisan migrate:status
 php artisan db:show --table=journal_entries
 
 # Verify new tables exist
-php artisan db:table fixed_assets
-php artisan db:table budgets
-php artisan db:table exchange_rates
+php artisan db:table bank_reconciliations
 ```
 
 ---
@@ -532,45 +295,13 @@ public function closePeriod(Request $request, PeriodClosingService $service)
 }
 ```
 
-### Depreciation
-
-```php
-use App\Services\Accounting\DepreciationService;
-
-public function calculateDepreciation(DepreciationService $service)
-{
-    $result = $service->calculatePeriodDepreciation(
-        periodId: request('period_id'),
-        autoPost: request('auto_post', false)
-    );
-
-    return response()->json($result);
-}
-```
-
-### Budget Variance
-
-```php
-use App\Services\Accounting\BudgetService;
-
-public function budgetVariance(BudgetService $service)
-{
-    $result = $service->calculateBudgetVariances(
-        budgetId: request('budget_id'),
-        periodId: request('period_id')
-    );
-
-    return response()->json($result);
-}
-```
-
 ---
 
 ## Impact Assessment
 
 ### What Changed
-- ✅ 6 new database migrations
-- ✅ 3 new service classes
+- ✅ 3 new database migrations
+- ✅ 1 new service class (PeriodClosingService)
 - ✅ 0 breaking changes to existing code
 - ✅ 0 changes to existing migrations
 - ✅ All existing functionality preserved
@@ -640,13 +371,10 @@ public function budgetVariance(BudgetService $service)
 - Performance indexes across all accounting tables
 - Bank reconciliation module
 - Automated period closing
-- Fixed asset depreciation tracking
-- Budget variance analysis
-- Currency revaluation (IAS 21)
 
 **Improved**:
 - Query performance (50-95% faster)
-- GAAP/IFRS compliance (9/10 → 9.8/10)
+- GAAP/IFRS compliance
 - Audit trail completeness
 - Financial reporting capabilities
 

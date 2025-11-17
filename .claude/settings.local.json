@@ -11,7 +11,8 @@
       "Bash(cat:*)",
       "Bash(php artisan migrate:status:*)",
       "Bash(php artisan test:*)",
-      "Bash(php artisan:*)"
+      "Bash(php artisan:*)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

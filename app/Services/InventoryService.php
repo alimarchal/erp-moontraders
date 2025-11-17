@@ -66,7 +66,7 @@ class InventoryService
                     'stock_batch_id' => $stockBatch->id,
                     'warehouse_id' => $grn->warehouse_id,
                     'quantity' => $item->quantity_accepted,
-                    'uom_id' => $item->uom_id,
+                    'uom_id' => $item->stock_uom_id,
                     'unit_cost' => $item->unit_cost,
                     'total_value' => $item->total_cost,
                     'created_by' => auth()->id() ?? 1,

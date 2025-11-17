@@ -123,86 +123,7 @@
                         @endif
                     </div>
 
-                    <hr class="my-6 border-gray-200">
 
-                    @if ($grn->status === 'posted')
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Payment
-                                Status</h3>
-                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
-                                {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
-                                {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
-                                {{ ucfirst($grn->payment_status) }}
-                            </span>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total
-                                Amount</h3>
-                            <p class="text-lg font-bold text-gray-900">₨ {{
-                                number_format($grn->grand_total, 2) }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total Paid
-                            </h3>
-                            <p class="text-lg font-bold text-emerald-600">₨ {{
-                                number_format($grn->total_paid, 2) }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Balance
-                                Due</h3>
-                            <p class="text-lg font-bold {{ $grn->balance > 0 ? 'text-red-600' : 'text-gray-900' }}">
-                                ₨ {{ number_format($grn->balance, 2) }}
-                            </p>
-                        </div>
-                    </div>
-
-                    @if ($grn->payments()->count() > 0)
-                    <div class="mb-6">
-                        <x-detail-table title="Payment History" :headers="[
-                            ['label' => 'Payment #', 'align' => 'text-left'],
-                            ['label' => 'Date', 'align' => 'text-left'],
-                            ['label' => 'Method', 'align' => 'text-left'],
-                            ['label' => 'Status', 'align' => 'text-center'],
-                            ['label' => 'Allocated', 'align' => 'text-right'],
-                            ['label' => 'Action', 'align' => 'text-center'],
-                        ]">
-                            @foreach ($grn->payments()->orderBy('payment_date')->get() as $payment)
-                            <tr class="border-b border-gray-200 text-sm">
-                                <td class="py-1 px-2">{{ $payment->payment_number }}</td>
-                                <td class="py-1 px-2">{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y')
-                                    }}</td>
-                                <td class="py-1 px-2">{{ ucwords(str_replace('_', ' ', $payment->payment_method)) }}
-                                </td>
-                                <td class="py-1 px-2 text-center">
-                                    <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                        {{ $payment->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                        {{ $payment->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
-                                        {{ ucfirst($payment->status) }}
-                                    </span>
-                                </td>
-                                <td class="py-1 px-2 text-right font-semibold">{{
-                                    number_format($payment->pivot->allocated_amount, 2) }}</td>
-                                <td class="py-1 px-2 text-center">
-                                    <a href="{{ route('supplier-payments.show', $payment->id) }}"
-                                        class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-md transition-colors duration-150"
-                                        title="View Payment">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                        </svg>
-                                    </a>
-                                </td>
-                            </tr>
-                            @endforeach
-                        </x-detail-table>
-                    </div>
-                    @endif
-                    @endif
 
                     <hr class="my-6 border-gray-200">
 
@@ -300,6 +221,89 @@
                         <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Notes</h3>
                         <p class="text-sm text-gray-700 whitespace-pre-line">{{ $grn->notes }}</p>
                     </div>
+                    @endif
+
+
+
+                    <hr class="my-6 border-gray-200">
+
+                    @if ($grn->status === 'posted')
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Payment
+                                Status</h3>
+                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
+                                {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
+                                {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                {{ ucfirst($grn->payment_status) }}
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total
+                                Amount</h3>
+                            <p class="text-lg font-bold text-gray-900">₨ {{
+                                number_format($grn->grand_total, 2) }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total Paid
+                            </h3>
+                            <p class="text-lg font-bold text-emerald-600">₨ {{
+                                number_format($grn->total_paid, 2) }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Balance
+                                Due</h3>
+                            <p class="text-lg font-bold {{ $grn->balance > 0 ? 'text-red-600' : 'text-gray-900' }}">
+                                ₨ {{ number_format($grn->balance, 2) }}
+                            </p>
+                        </div>
+                    </div>
+
+                    @if ($grn->payments()->count() > 0)
+                    <div class="mb-6">
+                        <x-detail-table title="Payment History" :headers="[
+                            ['label' => 'Payment #', 'align' => 'text-left'],
+                            ['label' => 'Date', 'align' => 'text-left'],
+                            ['label' => 'Method', 'align' => 'text-left'],
+                            ['label' => 'Status', 'align' => 'text-center'],
+                            ['label' => 'Allocated', 'align' => 'text-right'],
+                            ['label' => 'Action', 'align' => 'text-center'],
+                        ]">
+                            @foreach ($grn->payments()->orderBy('payment_date')->get() as $payment)
+                            <tr class="border-b border-gray-200 text-sm">
+                                <td class="py-1 px-2">{{ $payment->payment_number }}</td>
+                                <td class="py-1 px-2">{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y')
+                                    }}</td>
+                                <td class="py-1 px-2">{{ ucwords(str_replace('_', ' ', $payment->payment_method)) }}
+                                </td>
+                                <td class="py-1 px-2 text-center">
+                                    <span class="px-2 py-1 text-xs font-semibold rounded-full 
+                                        {{ $payment->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                        {{ $payment->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                        {{ ucfirst($payment->status) }}
+                                    </span>
+                                </td>
+                                <td class="py-1 px-2 text-right font-semibold">{{
+                                    number_format($payment->pivot->allocated_amount, 2) }}</td>
+                                <td class="py-1 px-2 text-center">
+                                    <a href="{{ route('supplier-payments.show', $payment->id) }}"
+                                        class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-md transition-colors duration-150"
+                                        title="View Payment">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </x-detail-table>
+                    </div>
+                    @endif
                     @endif
                 </div>
             </div>

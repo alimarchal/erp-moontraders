@@ -88,94 +88,85 @@
 
                     <hr class="my-6 border-gray-200">
 
-                    <h3 class="text-lg font-semibold mb-4">Items Issued</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product
-                                    </th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                                        Quantity</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">UOM</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Batch
-                                        Breakdown</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total
-                                        Value</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($goodsIssue->items as $item)
-                                <tr>
-                                    <td class="px-3 py-2 text-sm">{{ $item->line_no }}</td>
-                                    <td class="px-3 py-2 text-sm">
-                                        <div class="font-semibold">{{ $item->product->product_name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $item->product->product_code }}</div>
-                                    </td>
-                                    <td class="px-3 py-2 text-sm text-right">{{ number_format($item->quantity_issued, 3)
-                                        }}</td>
-                                    <td class="px-3 py-2 text-sm">{{ $item->uom->uom_name }}</td>
-                                    <td class="px-3 py-2 text-sm">
-                                        @if(isset($item->batch_breakdown) && count($item->batch_breakdown) > 0)
-                                        @if(count($item->batch_breakdown) === 1)
-                                        @php $b = $item->batch_breakdown[0]; @endphp
-                                        <div class="flex items-center space-x-1">
-                                            <span class="font-semibold text-green-600">
-                                                {{ number_format($b['quantity'], 0) }} × ₨{{
-                                                number_format($b['selling_price'], 2) }}
-                                            </span>
+                    <x-detail-table title="Items Issued" :headers="[
+                        ['label' => '#', 'align' => 'text-center'],
+                        ['label' => 'Product', 'align' => 'text-left'],
+                        ['label' => 'Quantity Issued', 'align' => 'text-right'],
+                        ['label' => 'UOM', 'align' => 'text-center'],
+                        ['label' => 'Batch Breakdown', 'align' => 'text-left'],
+                        ['label' => 'Total Value', 'align' => 'text-right'],
+                    ]">
+                        @foreach ($goodsIssue->items as $item)
+                        <tr class="border-b border-gray-200 text-sm">
+                            <td class="py-1 px-2 text-center">{{ $item->line_no }}</td>
+                            <td class="py-1 px-2">
+                                <div class="font-semibold text-gray-900">{{ $item->product->product_code }}</div>
+                                <div class="text-xs text-gray-500">{{ $item->product->product_name }}</div>
+                            </td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->quantity_issued, 2) }}</td>
+                            <td class="py-1 px-2 text-center">{{ $item->uom->uom_name }}</td>
+                            <td class="py-1 px-2">
+                                @if(isset($item->batch_breakdown) && count($item->batch_breakdown) > 0)
+                                @if(count($item->batch_breakdown) === 1)
+                                @php $b = $item->batch_breakdown[0]; @endphp
+                                <div class="flex items-center space-x-1">
+                                    <span class="font-semibold text-green-600">
+                                        {{ number_format($b['quantity'], 0) }} × ₨{{
+                                        number_format($b['selling_price'], 2) }}
+                                    </span>
+                                    @if($b['is_promotional'])
+                                    <span
+                                        class="px-2 py-1 ml-1 text-xs font-semibold rounded bg-orange-100 text-orange-800">
+                                        Promotional
+                                    </span>
+                                    @endif
+                                </div>
+                                @else
+                                <div class="space-y-1">
+                                    @foreach($item->batch_breakdown as $b)
+                                    <div class="flex justify-between text-xs">
+                                        <span class="text-gray-600">
+                                            {{ number_format($b['quantity'], 0) }} × ₨{{
+                                            number_format($b['selling_price'], 2) }}
                                             @if($b['is_promotional'])
                                             <span title="Promotional">🎁</span>
                                             @endif
-                                        </div>
-                                        @else
-                                        <div class="space-y-1">
-                                            @foreach($item->batch_breakdown as $b)
-                                            <div class="flex justify-between text-xs">
-                                                <span class="text-gray-600">
-                                                    {{ number_format($b['quantity'], 0) }} × ₨{{
-                                                    number_format($b['selling_price'], 2) }}
-                                                    @if($b['is_promotional'])
-                                                    <span title="Promotional">🎁</span>
-                                                    @endif
-                                                </span>
-                                                <span class="font-semibold">= ₨{{ number_format($b['value'], 2)
-                                                    }}</span>
-                                            </div>
-                                            @endforeach
-                                        </div>
-                                        @endif
-                                        @else
-                                        <span class="text-gray-400 text-xs">Avg: ₨{{ number_format($item->unit_cost, 2)
+                                        </span>
+                                        <span class="font-semibold">= ₨{{ number_format($b['value'], 2)
                                             }}</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2 text-sm text-right font-semibold">
-                                        @if(isset($item->calculated_total))
-                                        ₨ {{ number_format($item->calculated_total, 2) }}
-                                        @else
-                                        ₨ {{ number_format($item->total_value, 2) }}
-                                        @endif
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50">
-                                <tr>
-                                    <td colspan="5" class="px-3 py-2 text-sm font-semibold text-right">Total:</td>
-                                    <td class="px-3 py-2 text-sm font-bold text-right">
-                                        @php
-                                        $grandTotal = $goodsIssue->items->sum(function($item) {
-                                        return $item->calculated_total ?? $item->total_value;
-                                        });
-                                        @endphp
-                                        ₨ {{ number_format($grandTotal, 2) }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                                    </div>
+                                    @endforeach
+                                </div>
+                                @endif
+                                @else
+                                <span class="text-gray-400 text-xs">Avg: ₨{{ number_format($item->unit_cost, 2)
+                                    }}</span>
+                                @endif
+                            </td>
+                            <td class="py-1 px-2 text-right font-bold text-emerald-600">
+                                @if(isset($item->calculated_total))
+                                ₨ {{ number_format($item->calculated_total, 2) }}
+                                @else
+                                ₨ {{ number_format($item->total_value, 2) }}
+                                @endif
+                            </td>
+                        </tr>
+                        @endforeach
+
+                        <x-slot name="footer">
+                            <tr class="border-t-2 border-gray-300">
+                                <td colspan="5" class="py-1 px-2 text-right font-bold text-lg">Grand Total:</td>
+                                <td class="py-1 px-2 text-right font-bold text-lg text-emerald-600">
+                                    @php
+                                    $grandTotal = $goodsIssue->items->sum(function($item) {
+                                    return $item->calculated_total ?? $item->total_value;
+                                    });
+                                    @endphp
+                                    ₨ {{ number_format($grandTotal, 2) }}
+                                </td>
+                            </tr>
+                        </x-slot>
+                    </x-detail-table>
 
                     @if ($goodsIssue->notes)
                     <div class="mt-6">

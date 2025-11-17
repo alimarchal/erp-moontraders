@@ -76,7 +76,7 @@ class BudgetService
                     ->join('journal_entries as je', 'je.id', '=', 'jed.journal_entry_id')
                     ->where('je.status', 'posted')
                     ->where('je.accounting_period_id', $periodId)
-                    ->where('jed.chart_of_account_id', $line->chart_of_account_id');
+                    ->where('jed.chart_of_account_id', $line->chart_of_account_id);
 
                 if ($line->cost_center_id) {
                     $actualQuery->where('jed.cost_center_id', $line->cost_center_id);
@@ -247,7 +247,7 @@ class BudgetService
                         ->join('accounting_periods as ap', 'ap.id', '=', 'je.accounting_period_id')
                         ->where('je.status', 'posted')
                         ->whereYear('je.entry_date', $fiscalYear)
-                        ->where('jed.chart_of_account_id', DB::raw('(SELECT id FROM chart_of_accounts WHERE account_code = "' . $line->account_code . '")'))
+                        ->where('jed.chart_of_account_id', $line->chart_of_account_id)
                         ->sum(DB::raw('jed.debit - jed.credit'));
 
                     $variance = $actualYTD - $line->annual_budget;

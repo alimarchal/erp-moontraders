@@ -79,7 +79,7 @@ class DepreciationService
         $depreciation = $monthlyDepreciation * $months;
 
         // Don't exceed remaining depreciable amount
-        $remainingDepreciable = $asset->depreciable_amount - $asset->total_depreciation;
+        $remainingDepreciable = max(0, $asset->depreciable_amount - $asset->total_depreciation);
 
         return min($depreciation, $remainingDepreciable);
     }
@@ -105,7 +105,7 @@ class DepreciationService
         $depreciation = $bookValue * $rate * ($months / 12);
 
         // Don't depreciate below salvage value
-        $maxDepreciation = $bookValue - $asset->salvage_value;
+        $maxDepreciation = max(0, $bookValue - $asset->salvage_value);
 
         return min($depreciation, $maxDepreciation);
     }
@@ -123,7 +123,7 @@ class DepreciationService
         $depreciation = $perUnitDepreciation * $unitsProduced;
 
         // Don't exceed remaining depreciable amount
-        $remainingDepreciable = $asset->depreciable_amount - $asset->total_depreciation;
+        $remainingDepreciable = max(0, $asset->depreciable_amount - $asset->total_depreciation);
 
         return min($depreciation, $remainingDepreciable);
     }
@@ -184,6 +184,14 @@ class DepreciationService
                         'created_at' => now(),
                         'updated_at' => now(),
                     ]);
+
+                    // Update asset totals immediately after creating depreciation entry
+                    DB::table('fixed_assets')
+                        ->where('id', $asset->id)
+                        ->increment('total_depreciation', $depreciationAmount);
+                    DB::table('fixed_assets')
+                        ->where('id', $asset->id)
+                        ->decrement('book_value', $depreciationAmount);
 
                     $depreciationEntries[] = [
                         'id' => $depreciationId,
@@ -266,14 +274,6 @@ class DepreciationService
                     'status' => 'posted',
                     'posted_at' => now(),
                 ]);
-
-            // Update asset totals
-            DB::table('fixed_assets')
-                ->where('id', $asset->id)
-                ->update([
-                    'total_depreciation' => DB::raw('total_depreciation + ' . $amount),
-                    'book_value' => DB::raw('book_value - ' . $amount),
-                ]);
         }
     }
 
@@ -287,6 +287,10 @@ class DepreciationService
 
         $interval = $start->diff($end);
 
-        return ($interval->y * 12) + $interval->m;
+        $months = ($interval->y * 12) + $interval->m;
+        if ($interval->d > 0) {
+            $months += 1;
+        }
+        return $months;
     }
 }

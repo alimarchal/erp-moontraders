@@ -1,11 +1,15 @@
-here is process 
-Our process starts with the Delivery Note: multiple suppliers send goods directly to our warehouse (Moon Traders) without any purchase orders. When the goods arrive, we record them in the system based on the Delivery Note and add the stock to inventory. The supplier already provides the maximum selling price, and we enter our per-unit cost in the system. Each morning we issue inventory to our salesmen, whose vehicles are already registered in the ERP, and they sell to retailers, shops and marts throughout the day. In the evening they report what they sold; cash sales are recorded only as totals, while credit sales are logged retailer-wise. Any remaining inventory is either returned to the warehouse or kept in the vehicle as the next day’s opening balance. The system must generate a daily product-wise report for each salesman showing opening stock, issued quantity, sales, returns, and outstanding credit. Since a single retailer may interact with multiple salesmen, the ERP must track credit by salesman as well as by retailer.
+https://moontrader.test/sales-settlements/create 
+
+سیل سیٹلمنٹ میں کچھ بہتری کرو اس میں جو پروڈکٹ وائز سیٹلمنٹ جو نظر ارہی ہے وہ تو ٹھیک ہے اس میں ایک ایگزمپل دے دیتا ہوں جس میں ایک میرے پاس ان ڈیٹا بیس ایکسس کر کے دیکھ سکتے ہو کہ شام شاہ جو 
+GI-2025-0006
+گڈ ایشو ہے جب میں اس کو سلیکٹ کرتا ہوں میرے پاس پروڈکٹ وائز ا رہا ہے لیکن سیٹلمنٹ ائٹم میں جو سولڈ ہے ٹرن یا شارٹیج ہوتی ہے وہ ایک ایگریگیٹ میرے پاس ا رہا ہے اس میں کیونکہ اگر میں دیکھوں تو 13500 جو ہے وہ 85 روپے کے ایشو ہوئے ہیں اور پانچ سو جو ہیں وہ 
+نو اشاریہ 53 پہ ایشو ہوئے ہیں 500 اور جب میں اس کو واپس سیٹل کروں گا تو میرے پاس بھی بالکل اسی طرح انا چاہیے بیچ وائز کیونکہ اس میں ایک پرمیشنل ائٹم چل رہا تھا
+
+also make similar table style of https://moontrader.test/goods-issues/8
+
+answer me in english
+
+the distribution issued 
+https://moontrader.test/goods-issues/8
 
 
-
-Now i Have entered my grn and items in grn now posted now tell me from my database what to next the next process is 
-
-now from my database tables tell me in a sequence before working what will happend next how my table keep track all things my each warehouse has also warehouse manager who will checkout to salesman man now just tell me how it work my database table and need any ammendments 
-
-""
-Each morning we issue inventory to our salesmen, whose vehicles are already registered in the ERP, and they sell to retailers, shops and marts throughout the day. In the evening they report what they sold; cash sales are recorded only as totals, while credit sales are logged retailer-wise. Any remaining inventory is either returned to the warehouse or kept in the vehicle as the next day’s opening balance. The system must generate a daily product-wise report for each salesman showing opening stock, issued quantity, sales, returns, and outstanding credit. Since a single retailer may interact with multiple salesmen, the ERP must track credit by salesman as well as by retailer."

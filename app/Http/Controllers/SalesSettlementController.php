@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementItem;
+use App\Models\SalesSettlementItemBatch;
 use App\Models\SalesSettlementSale;
+use App\Models\CreditSale;
 use App\Models\GoodsIssue;
 use App\Models\Customer;
 use App\Http\Requests\StoreSalesSettlementRequest;
@@ -53,13 +55,54 @@ class SalesSettlementController extends Controller
             ->whereDoesntHave('settlement', function ($query) {
                 $query->where('status', 'posted');
             })
-            ->with(['warehouse', 'vehicle', 'employee', 'items.product'])
+            ->with(['warehouse', 'vehicle', 'employee', 'items.product', 'items.uom'])
             ->orderBy('issue_date', 'desc')
             ->get();
 
+        // Add batch breakdown to each goods issue item
+        foreach ($goodsIssues as $gi) {
+            foreach ($gi->items as $item) {
+                $stockMovements = DB::table('stock_movements as sm')
+                    ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
+                    ->where('sm.reference_type', 'App\Models\GoodsIssue')
+                    ->where('sm.reference_id', $gi->id)
+                    ->where('sm.product_id', $item->product_id)
+                    ->where('sm.movement_type', 'transfer')
+                    ->select(
+                        'sb.id as stock_batch_id',
+                        'sb.batch_code',
+                        DB::raw('ABS(sm.quantity) as quantity'),
+                        'sm.unit_cost',
+                        'sb.selling_price',
+                        DB::raw('ABS(sm.total_value) as value'),
+                        'sb.is_promotional'
+                    )
+                    ->orderBy('sb.priority_order', 'asc')
+                    ->get();
+
+                $batchBreakdown = [];
+                foreach ($stockMovements as $movement) {
+                    $batchBreakdown[] = [
+                        'stock_batch_id' => $movement->stock_batch_id,
+                        'batch_code' => $movement->batch_code ?? 'N/A',
+                        'quantity' => (float) $movement->quantity,
+                        'unit_cost' => (float) $movement->unit_cost,
+                        'selling_price' => (float) $movement->selling_price,
+                        'value' => (float) $movement->value,
+                        'is_promotional' => (bool) $movement->is_promotional,
+                    ];
+                }
+
+                $item->batch_breakdown = $batchBreakdown;
+                $item->calculated_total = collect($batchBreakdown)->sum('value');
+            }
+        }
+
         return view('sales-settlements.create', [
             'goodsIssues' => $goodsIssues,
-            'customers' => Customer::where('is_active', true)->orderBy('customer_name')->get(['id', 'customer_code', 'customer_name']),
+            'customers' => Customer::where('is_active', true)
+                ->orderBy('customer_name')
+                ->get(['id', 'customer_code', 'customer_name', 'receivable_balance']),
         ]);
     }
 
@@ -93,8 +136,8 @@ class SalesSettlementController extends Controller
             }
 
             $totalSalesAmount = ($request->cash_sales_amount ?? 0) +
-                              ($request->cheque_sales_amount ?? 0) +
-                              ($request->credit_sales_amount ?? 0);
+                ($request->cheque_sales_amount ?? 0) +
+                ($request->credit_sales_amount ?? 0);
 
             $cashToDeposit = ($request->cash_collected ?? 0) - ($request->expenses_claimed ?? 0);
 
@@ -123,12 +166,12 @@ class SalesSettlementController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            // Create settlement items
+            // Create settlement items with batch breakdown
             foreach ($request->items as $index => $item) {
                 $cogs = $item['quantity_sold'] * $item['unit_cost'];
                 $salesValue = $item['quantity_sold'] * $item['selling_price'];
 
-                SalesSettlementItem::create([
+                $settlementItem = SalesSettlementItem::create([
                     'sales_settlement_id' => $settlement->id,
                     'line_no' => $index + 1,
                     'product_id' => $item['product_id'],
@@ -141,6 +184,24 @@ class SalesSettlementController extends Controller
                     'total_cogs' => $cogs,
                     'total_sales_value' => $salesValue,
                 ]);
+
+                // Store batch breakdown if available
+                if (isset($item['batches']) && is_array($item['batches'])) {
+                    foreach ($item['batches'] as $batch) {
+                        SalesSettlementItemBatch::create([
+                            'sales_settlement_item_id' => $settlementItem->id,
+                            'stock_batch_id' => $batch['stock_batch_id'],
+                            'batch_code' => $batch['batch_code'],
+                            'quantity_issued' => $batch['quantity_issued'] ?? 0,
+                            'quantity_sold' => $batch['quantity_sold'] ?? 0,
+                            'quantity_returned' => $batch['quantity_returned'] ?? 0,
+                            'quantity_shortage' => $batch['quantity_shortage'] ?? 0,
+                            'unit_cost' => $batch['unit_cost'],
+                            'selling_price' => $batch['selling_price'],
+                            'is_promotional' => $batch['is_promotional'] ?? false,
+                        ]);
+                    }
+                }
             }
 
             // Create credit sales records if any
@@ -152,6 +213,21 @@ class SalesSettlementController extends Controller
                         'invoice_number' => $sale['invoice_number'] ?? null,
                         'sale_amount' => $sale['sale_amount'],
                         'payment_type' => $sale['payment_type'],
+                    ]);
+                }
+            }
+
+            // Create credit sales breakdown records if any
+            if (!empty($request->credit_sales)) {
+                foreach ($request->credit_sales as $creditSale) {
+                    CreditSale::create([
+                        'sales_settlement_id' => $settlement->id,
+                        'employee_id' => $goodsIssue->employee_id,
+                        'supplier_id' => $goodsIssue->employee->supplier_id,
+                        'customer_id' => $creditSale['customer_id'],
+                        'invoice_number' => $creditSale['invoice_number'] ?? null,
+                        'sale_amount' => $creditSale['sale_amount'],
+                        'notes' => $creditSale['notes'] ?? null,
                     ]);
                 }
             }
@@ -190,7 +266,11 @@ class SalesSettlementController extends Controller
             'verifiedBy',
             'journalEntry',
             'items.product',
-            'sales.customer'
+            'items.batches.stockBatch',
+            'sales.customer',
+            'creditSales.customer',
+            'creditSales.employee',
+            'creditSales.supplier'
         ]);
 
         return view('sales-settlements.show', [
@@ -209,7 +289,7 @@ class SalesSettlementController extends Controller
                 ->with('error', 'Only draft Sales Settlements can be edited.');
         }
 
-        $salesSettlement->load('items', 'sales');
+        $salesSettlement->load('items', 'sales', 'creditSales');
 
         // Get issued goods issues
         $goodsIssues = GoodsIssue::where('status', 'issued')
@@ -262,8 +342,8 @@ class SalesSettlementController extends Controller
             }
 
             $totalSalesAmount = ($request->cash_sales_amount ?? 0) +
-                              ($request->cheque_sales_amount ?? 0) +
-                              ($request->credit_sales_amount ?? 0);
+                ($request->cheque_sales_amount ?? 0) +
+                ($request->credit_sales_amount ?? 0);
 
             $cashToDeposit = ($request->cash_collected ?? 0) - ($request->expenses_claimed ?? 0);
 
@@ -293,12 +373,13 @@ class SalesSettlementController extends Controller
             // Delete old items and create new ones
             $salesSettlement->items()->delete();
             $salesSettlement->sales()->delete();
+            $salesSettlement->creditSales()->delete();
 
             foreach ($request->items as $index => $item) {
                 $cogs = $item['quantity_sold'] * $item['unit_cost'];
                 $salesValue = $item['quantity_sold'] * $item['selling_price'];
 
-                SalesSettlementItem::create([
+                $settlementItem = SalesSettlementItem::create([
                     'sales_settlement_id' => $salesSettlement->id,
                     'line_no' => $index + 1,
                     'product_id' => $item['product_id'],
@@ -311,6 +392,24 @@ class SalesSettlementController extends Controller
                     'total_cogs' => $cogs,
                     'total_sales_value' => $salesValue,
                 ]);
+
+                // Store batch breakdown if available
+                if (isset($item['batches']) && is_array($item['batches'])) {
+                    foreach ($item['batches'] as $batch) {
+                        SalesSettlementItemBatch::create([
+                            'sales_settlement_item_id' => $settlementItem->id,
+                            'stock_batch_id' => $batch['stock_batch_id'],
+                            'batch_code' => $batch['batch_code'],
+                            'quantity_issued' => $batch['quantity_issued'] ?? 0,
+                            'quantity_sold' => $batch['quantity_sold'] ?? 0,
+                            'quantity_returned' => $batch['quantity_returned'] ?? 0,
+                            'quantity_shortage' => $batch['quantity_shortage'] ?? 0,
+                            'unit_cost' => $batch['unit_cost'],
+                            'selling_price' => $batch['selling_price'],
+                            'is_promotional' => $batch['is_promotional'] ?? false,
+                        ]);
+                    }
+                }
             }
 
             // Create credit sales records if any
@@ -322,6 +421,21 @@ class SalesSettlementController extends Controller
                         'invoice_number' => $sale['invoice_number'] ?? null,
                         'sale_amount' => $sale['sale_amount'],
                         'payment_type' => $sale['payment_type'],
+                    ]);
+                }
+            }
+
+            // Create credit sales breakdown records if any
+            if (!empty($request->credit_sales)) {
+                foreach ($request->credit_sales as $creditSale) {
+                    CreditSale::create([
+                        'sales_settlement_id' => $salesSettlement->id,
+                        'employee_id' => $goodsIssue->employee_id,
+                        'supplier_id' => $goodsIssue->employee->supplier_id,
+                        'customer_id' => $creditSale['customer_id'],
+                        'invoice_number' => $creditSale['invoice_number'] ?? null,
+                        'sale_amount' => $creditSale['sale_amount'],
+                        'notes' => $creditSale['notes'] ?? null,
                     ]);
                 }
             }
@@ -362,6 +476,7 @@ class SalesSettlementController extends Controller
             $settlementNumber = $salesSettlement->settlement_number;
             $salesSettlement->items()->delete();
             $salesSettlement->sales()->delete();
+            $salesSettlement->creditSales()->delete();
             $salesSettlement->delete();
 
             DB::commit();

@@ -97,6 +97,11 @@ class SalesSettlement extends Model
         return $this->hasMany(SalesSettlementSale::class);
     }
 
+    public function creditSales(): HasMany
+    {
+        return $this->hasMany(CreditSale::class);
+    }
+
     public function isDraft(): bool
     {
         return $this->status === 'draft';

@@ -133,82 +133,118 @@
 
                     <hr class="my-6 border-gray-200">
 
-                    <h3 class="text-lg font-semibold mb-4">Product-wise Settlement</h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Issued</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Sold</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Returned</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Shortage</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Unit Cost</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Selling Price</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Sales Value</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($settlement->items as $item)
-                                <tr>
-                                    <td class="px-3 py-2 text-sm">{{ $item->line_no }}</td>
-                                    <td class="px-3 py-2 text-sm">
-                                        <div class="font-semibold">{{ $item->product->product_name }}</div>
-                                        <div class="text-xs text-gray-500">{{ $item->product->product_code }}</div>
-                                    </td>
-                                    <td class="px-3 py-2 text-sm text-right">{{ number_format($item->quantity_issued, 3) }}</td>
-                                    <td class="px-3 py-2 text-sm text-right font-semibold text-green-700">
-                                        {{ number_format($item->quantity_sold, 3) }}
-                                    </td>
-                                    <td class="px-3 py-2 text-sm text-right text-blue-700">
-                                        {{ number_format($item->quantity_returned, 3) }}
-                                    </td>
-                                    <td class="px-3 py-2 text-sm text-right text-red-700">
-                                        {{ number_format($item->quantity_shortage, 3) }}
-                                    </td>
-                                    <td class="px-3 py-2 text-sm text-right">Rs {{ number_format($item->unit_cost, 2) }}</td>
-                                    <td class="px-3 py-2 text-sm text-right">Rs {{ number_format($item->selling_price, 2) }}</td>
-                                    <td class="px-3 py-2 text-sm text-right font-bold">
-                                        Rs {{ number_format($item->total_sales_value, 2) }}
-                                    </td>
-                                </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50">
-                                <tr>
-                                    <td colspan="3" class="px-3 py-2 text-sm">
-                                        <span class="font-semibold">Totals:</span>
-                                    </td>
-                                    <td class="px-3 py-2 text-sm text-right font-bold text-green-700">
-                                        {{ number_format($settlement->total_quantity_sold, 3) }}
-                                    </td>
-                                    <td class="px-3 py-2 text-sm text-right font-bold text-blue-700">
-                                        {{ number_format($settlement->total_quantity_returned, 3) }}
-                                    </td>
-                                    <td class="px-3 py-2 text-sm text-right font-bold text-red-700">
-                                        {{ number_format($settlement->total_quantity_shortage, 3) }}
-                                    </td>
-                                    <td colspan="2" class="px-3 py-2"></td>
-                                    <td class="px-3 py-2 text-sm text-right font-bold">
-                                        Rs {{ number_format($settlement->items->sum('total_sales_value'), 2) }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                    <x-detail-table title="Product-wise Settlement" :headers="[
+                        ['label' => '#', 'align' => 'text-center'],
+                        ['label' => 'Product', 'align' => 'text-left'],
+                        ['label' => 'Issued', 'align' => 'text-right'],
+                        ['label' => 'Batch Breakdown', 'align' => 'text-left'],
+                        ['label' => 'Sold', 'align' => 'text-right'],
+                        ['label' => 'Returned', 'align' => 'text-right'],
+                        ['label' => 'Shortage', 'align' => 'text-right'],
+                        ['label' => 'Sales Value', 'align' => 'text-right'],
+                    ]">
+                        @foreach ($settlement->items as $item)
+                        <tr class="border-b border-gray-200 text-sm">
+                            <td class="py-1 px-2 text-center">{{ $item->line_no }}</td>
+                            <td class="py-1 px-2">
+                                <div class="font-semibold text-gray-900">{{ $item->product->product_code }}</div>
+                                <div class="text-xs text-gray-500">{{ $item->product->product_name }}</div>
+                            </td>
+                            <td class="py-1 px-2 text-right">{{ number_format($item->quantity_issued, 2) }}</td>
+                            <td class="py-1 px-2">
+                                @if($item->batches->count() > 0)
+                                    @if($item->batches->count() === 1)
+                                        @php $b = $item->batches->first(); @endphp
+                                        <div class="flex items-center space-x-1">
+                                            <span class="font-semibold text-green-600">
+                                                {{ number_format($b->quantity_issued, 0) }} × ₨{{ number_format($b->selling_price, 2) }}
+                                            </span>
+                                            @if($b->is_promotional)
+                                                <span class="px-2 py-1 ml-1 text-xs font-semibold rounded bg-orange-100 text-orange-800">
+                                                    Promotional
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="text-xs text-gray-600 mt-1">
+                                            Sold: {{ number_format($b->quantity_sold, 0) }} |
+                                            Returned: {{ number_format($b->quantity_returned, 0) }} |
+                                            Shortage: {{ number_format($b->quantity_shortage, 0) }}
+                                        </div>
+                                    @else
+                                        <div class="space-y-1">
+                                            @foreach($item->batches as $b)
+                                                <div class="text-xs border-l-2 pl-2 {{ $b->is_promotional ? 'border-orange-400' : 'border-gray-300' }}">
+                                                    <div class="flex justify-between">
+                                                        <span class="text-gray-700 font-medium">
+                                                            {{ number_format($b->quantity_issued, 0) }} × ₨{{ number_format($b->selling_price, 2) }}
+                                                            @if($b->is_promotional)
+                                                                <span title="Promotional">🎁</span>
+                                                            @endif
+                                                        </span>
+                                                        <span class="font-semibold">= ₨{{ number_format($b->quantity_issued * $b->selling_price, 2) }}</span>
+                                                    </div>
+                                                    <div class="text-gray-600 mt-0.5">
+                                                        S: {{ number_format($b->quantity_sold, 0) }} |
+                                                        R: {{ number_format($b->quantity_returned, 0) }} |
+                                                        Sh: {{ number_format($b->quantity_shortage, 0) }}
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                @else
+                                    <span class="text-gray-400 text-xs">No batch data</span>
+                                @endif
+                            </td>
+                            <td class="py-1 px-2 text-right font-semibold text-green-700">
+                                {{ number_format($item->quantity_sold, 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right text-blue-700">
+                                {{ number_format($item->quantity_returned, 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right text-red-700">
+                                {{ number_format($item->quantity_shortage, 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right font-bold text-emerald-600">
+                                ₨ {{ number_format($item->total_sales_value, 2) }}
+                            </td>
+                        </tr>
+                        @endforeach
+
+                        <x-slot name="footer">
+                            <tr class="border-t-2 border-gray-300">
+                                <td colspan="4" class="py-1 px-2 text-right font-bold text-lg">Totals:</td>
+                                <td class="py-1 px-2 text-right font-bold text-lg text-green-700">
+                                    {{ number_format($settlement->total_quantity_sold, 2) }}
+                                </td>
+                                <td class="py-1 px-2 text-right font-bold text-lg text-blue-700">
+                                    {{ number_format($settlement->total_quantity_returned, 2) }}
+                                </td>
+                                <td class="py-1 px-2 text-right font-bold text-lg text-red-700">
+                                    {{ number_format($settlement->total_quantity_shortage, 2) }}
+                                </td>
+                                <td class="py-1 px-2 text-right font-bold text-lg text-emerald-600">
+                                    ₨ {{ number_format($settlement->items->sum('total_sales_value'), 2) }}
+                                </td>
+                            </tr>
+                        </x-slot>
+                    </x-detail-table>
 
                     @if ($settlement->sales->count() > 0)
                     <hr class="my-6 border-gray-200">
-                    <h3 class="text-lg font-semibold mb-4">Credit Sales Details</h3>
+                    <h3 class="text-lg font-semibold mb-4">Sales Details</h3>
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-gray-200">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Invoice #</th>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Payment Type</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Customer
+                                    </th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Invoice
+                                        #</th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Payment
+                                        Type</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -217,7 +253,8 @@
                                     <td class="px-3 py-2 text-sm">{{ $sale->customer->customer_name }}</td>
                                     <td class="px-3 py-2 text-sm">{{ $sale->invoice_number ?? '-' }}</td>
                                     <td class="px-3 py-2 text-sm">
-                                        <span class="px-2 py-1 text-xs rounded-full
+                                        <span
+                                            class="px-2 py-1 text-xs rounded-full
                                             {{ $sale->payment_type === 'cash' ? 'bg-green-100 text-green-800' : '' }}
                                             {{ $sale->payment_type === 'cheque' ? 'bg-purple-100 text-purple-800' : '' }}
                                             {{ $sale->payment_type === 'credit' ? 'bg-orange-100 text-orange-800' : '' }}">
@@ -230,6 +267,61 @@
                                 </tr>
                                 @endforeach
                             </tbody>
+                        </table>
+                    </div>
+                    @endif
+
+                    @if ($settlement->creditSales->count() > 0)
+                    <hr class="my-6 border-gray-200">
+                    <h3 class="text-lg font-semibold mb-4">Credit Sales Breakdown</h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Salesman
+                                        / Supplier
+                                    </th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Customer
+                                    </th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Invoice
+                                        #</th>
+                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount
+                                    </th>
+                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Notes
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach ($settlement->creditSales as $creditSale)
+                                <tr>
+                                    <td class="px-3 py-2 text-sm">
+                                        <div class="font-semibold text-blue-900">{{ $creditSale->employee->full_name }}
+                                        </div>
+                                        <div class="text-xs text-gray-600">{{ $creditSale->supplier->supplier_name ??
+                                            'N/A' }}</div>
+                                    </td>
+                                    <td class="px-3 py-2 text-sm font-semibold">
+                                        <div>{{ $creditSale->customer->customer_name }}</div>
+                                        <div class="text-xs text-gray-500">{{ $creditSale->customer->customer_code }}
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-2 text-sm">{{ $creditSale->invoice_number ?? '-' }}</td>
+                                    <td class="px-3 py-2 text-sm text-right font-semibold text-orange-700">
+                                        Rs {{ number_format($creditSale->sale_amount, 2) }}
+                                    </td>
+                                    <td class="px-3 py-2 text-sm text-gray-600">{{ $creditSale->notes ?? '-' }}</td>
+                                </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr>
+                                    <td colspan="3" class="px-3 py-2 text-sm font-semibold">Total Credit Sales:</td>
+                                    <td class="px-3 py-2 text-sm text-right font-bold text-orange-700">
+                                        Rs {{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}
+                                    </td>
+                                    <td class="px-3 py-2"></td>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                     @endif

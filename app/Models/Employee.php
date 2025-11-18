@@ -71,6 +71,11 @@ class Employee extends Model
         return $this->belongsToMany(Customer::class, 'customer_employee');
     }
 
+    public function creditSales(): HasMany
+    {
+        return $this->hasMany(CreditSale::class);
+    }
+
     public function getFullNameAttribute(): string
     {
         return $this->name;

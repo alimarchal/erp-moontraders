@@ -74,7 +74,6 @@ class SalesSettlementController extends Controller
                         DB::raw('ABS(sm.quantity) as quantity'),
                         'sm.unit_cost',
                         'sb.selling_price',
-                        DB::raw('ABS(sm.total_value) as value'),
                         'sb.is_promotional'
                     )
                     ->orderBy('sb.priority_order', 'asc')
@@ -82,13 +81,17 @@ class SalesSettlementController extends Controller
 
                 $batchBreakdown = [];
                 foreach ($stockMovements as $movement) {
+                    $quantity = (float) $movement->quantity;
+                    $sellingPrice = (float) $movement->selling_price;
+                    $value = $quantity * $sellingPrice;
+
                     $batchBreakdown[] = [
                         'stock_batch_id' => $movement->stock_batch_id,
                         'batch_code' => $movement->batch_code ?? 'N/A',
-                        'quantity' => (float) $movement->quantity,
+                        'quantity' => $quantity,
                         'unit_cost' => (float) $movement->unit_cost,
-                        'selling_price' => (float) $movement->selling_price,
-                        'value' => (float) $movement->value,
+                        'selling_price' => $sellingPrice,
+                        'value' => $value,
                         'is_promotional' => (bool) $movement->is_promotional,
                     ];
                 }

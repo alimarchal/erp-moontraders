@@ -86,6 +86,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',
     Route::resource('sales-settlements', SalesSettlementController::class);
     Route::post('sales-settlements/{salesSettlement}/post', [SalesSettlementController::class, 'post'])
         ->name('sales-settlements.post');
+    Route::get('api/sales-settlements/goods-issues', [SalesSettlementController::class, 'fetchGoodsIssues'])
+        ->name('api.sales-settlements.goods-issues');
+    Route::get('api/sales-settlements/goods-issues/{id}/items', [SalesSettlementController::class, 'fetchGoodsIssueItems'])
+        ->name('api.sales-settlements.goods-issues.items');
 
     // Daily Sales Reports
     Route::prefix('reports/daily-sales')->name('reports.daily-sales.')->group(function () {

@@ -49,8 +49,10 @@
                         </p>
 
                         {{-- Section 2: Combined Batch-wise Settlement Table --}}
-                        <div id="settlementTableContainer" style="display: none;">
-                            <x-detail-table title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance)" :headers="[
+                        <div id="settlementTableContainer"
+                            style="display: none; text-align: center; margin: 0px; padding: 0px">
+                            <x-detail-table title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance)"
+                                :headers="[
                                 ['label' => 'Product / Batch', 'align' => 'text-left'],
                                 ['label' => 'UOM', 'align' => 'text-center'],
                                 ['label' => 'Batch Breakdown', 'align' => 'text-left'],
@@ -67,22 +69,34 @@
                                 </tbody>
                                 <x-slot name="footer">
                                     <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                        <td colspan="6" class="py-2 px-2 text-right font-bold text-base">Grand Totals:</td>
-                                        <td class="py-2 px-2 text-right font-bold text-base text-green-700" id="grandTotalSold">0</td>
-                                        <td class="py-2 px-2 text-right font-bold text-base text-blue-700" id="grandTotalReturned">0</td>
-                                        <td class="py-2 px-2 text-right font-bold text-base text-red-700" id="grandTotalShortage">0</td>
-                                        <td class="py-2 px-2 text-right font-bold text-base" id="grandTotalBalance">0</td>
+                                        <td colspan="6" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
+                                        </td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
+                                            id="grandTotalSold">0</td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-blue-700"
+                                            id="grandTotalReturned">0</td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
+                                            id="grandTotalShortage">0</td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalBalance">0
+                                        </td>
                                     </tr>
                                     <tr class="border-t border-gray-300 bg-blue-50">
-                                        <td colspan="6" class="py-3 px-2 text-right font-bold text-lg">Value Totals:</td>
-                                        <td class="py-3 px-2 text-right font-bold text-lg text-green-700" id="grandTotalSoldValue">₨ 0.00</td>
-                                        <td class="py-3 px-2 text-right font-bold text-lg text-blue-700" id="grandTotalReturnValue">₨ 0.00</td>
-                                        <td class="py-3 px-2 text-right font-bold text-lg text-red-700" id="grandTotalShortageValue">₨ 0.00</td>
-                                        <td class="py-3 px-2 text-right font-bold text-2xl" id="valueBalanceCheck">₨ 0.00</td>
+                                        <td colspan="6" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
+                                        </td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
+                                            id="grandTotalSoldValue">₨ 0.00</td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-blue-700"
+                                            id="grandTotalReturnValue">₨ 0.00</td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
+                                            id="grandTotalShortageValue">₨ 0.00</td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm" id="valueBalanceCheck">₨
+                                            0.00</td>
                                     </tr>
                                     <tr class="border-t-2 border-gray-400 bg-gray-200">
-                                        <td colspan="9" class="py-2 px-2 text-right font-bold text-base">Total Issued Value:</td>
-                                        <td class="py-2 px-2 text-right font-bold text-xl text-emerald-700" id="grandTotalIssuedValue">₨ 0.00</td>
+                                        <td colspan="9" class="py-1 px-1 text-right font-bold text-base">Total Issued
+                                            Value:</td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-emerald-700"
+                                            id="grandTotalIssuedValue">₨ 0.00</td>
                                     </tr>
                                 </x-slot>
                             </x-detail-table>
@@ -92,28 +106,19 @@
                             Returned and Shortage as needed.
                         </p>
 
-                        <hr class="my-6 border-gray-200">
+                        <hr class="my-2 border-gray-200">
 
                         {{-- Section 4: Creditors/Credit Sales Breakdown (MOVED BEFORE EXPENSES) --}}
                         <div class="mb-6" x-data="creditSalesManager()">
-                            <div class="flex justify-between items-center mb-4">
-                                <button type="button" @click="addCreditSale()"
-                                    class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Add Credit Sale
-                                </button>
-                            </div>
 
-                            <div x-show="creditSales.length > 0">
+
+                            <div x-show="creditSales.length > 0"
+                                style="display: none; text-align: center; margin: 0px; padding: 0px">
                                 <x-detail-table title="Creditors / Credit Sales Breakdown" :headers="[
                                     ['label' => 'Customer', 'align' => 'text-left'],
                                     ['label' => 'Previous Balance', 'align' => 'text-right'],
-                                    ['label' => 'New Credit', 'align' => 'text-right'],
-                                    ['label' => 'Payment Received', 'align' => 'text-right'],
+                                    ['label' => 'Credit', 'align' => 'text-right'],
+                                    ['label' => 'Recovery', 'align' => 'text-right'],
                                     ['label' => 'New Balance', 'align' => 'text-right'],
                                     ['label' => 'Notes', 'align' => 'text-left'],
                                     ['label' => 'Action', 'align' => 'text-center'],
@@ -121,63 +126,57 @@
                                     <tbody>
                                         <template x-for="(sale, index) in creditSales" :key="index">
                                             <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                                <td class="py-2 px-2">
-                                                    <select
-                                                        :name="'credit_sales[' + index + '][customer_id]'"
+                                                <td class="py-1 px-1">
+                                                    <select :name="'credit_sales[' + index + '][customer_id]'"
                                                         x-model="sale.customer_id"
                                                         @change="updateCustomerBalance(index)"
-                                                        class="border-gray-300 rounded-md text-sm w-full"
-                                                        required>
+                                                        class="border-gray-300 rounded-md text-sm w-full" required>
                                                         <option value="">Select Customer</option>
                                                         @foreach($customers ?? [] as $customer)
-                                                            <option value="{{ $customer->id }}"
-                                                                data-balance="{{ $customer->receivable_balance ?? 0 }}">
-                                                                {{ $customer->customer_name }}
-                                                            </option>
+                                                        <option value="{{ $customer->id }}"
+                                                            data-balance="{{ $customer->receivable_balance ?? 0 }}">
+                                                            {{ $customer->customer_name }}
+                                                        </option>
                                                         @endforeach
                                                     </select>
                                                 </td>
-                                                <td class="py-2 px-2 text-right">
+                                                <td class="py-1 px-1 text-right">
                                                     <input type="number"
                                                         :name="'credit_sales[' + index + '][previous_balance]'"
-                                                        x-model="sale.previous_balance"
-                                                        readonly
+                                                        x-model="sale.previous_balance" readonly
                                                         class="border-gray-300 rounded-md text-sm w-24 text-right bg-gray-100"
                                                         step="0.01" />
                                                 </td>
-                                                <td class="py-2 px-2 text-right">
+                                                <td class="py-1 px-1 text-right">
                                                     <input type="number"
                                                         :name="'credit_sales[' + index + '][sale_amount]'"
                                                         x-model="sale.sale_amount"
                                                         @input="calculateNewBalance(index); updateCreditTotal()"
                                                         class="border-gray-300 rounded-md text-sm w-24 text-right"
-                                                        step="0.01"
-                                                        min="0" />
+                                                        step="0.01" min="0" />
                                                 </td>
-                                                <td class="py-2 px-2 text-right">
+                                                <td class="py-1 px-1 text-right">
                                                     <input type="number"
                                                         :name="'credit_sales[' + index + '][payment_received]'"
                                                         x-model="sale.payment_received"
                                                         @input="calculateNewBalance(index); updateRecoveryTotal()"
                                                         class="border-gray-300 rounded-md text-sm w-24 text-right"
-                                                        step="0.01"
-                                                        min="0" />
+                                                        step="0.01" min="0" />
                                                 </td>
-                                                <td class="py-2 px-2 text-right">
+                                                <td class="py-1 px-1 text-right">
                                                     <span class="font-semibold text-gray-700"
                                                         x-text="formatCurrency(sale.new_balance)"></span>
                                                     <input type="hidden"
                                                         :name="'credit_sales[' + index + '][new_balance]'"
                                                         x-model="sale.new_balance" />
                                                 </td>
-                                                <td class="py-2 px-2">
-                                                    <input type="text"
-                                                        :name="'credit_sales[' + index + '][notes]'"
+                                                <td class="py-1 px-1">
+                                                    <input type="text" :name="'credit_sales[' + index + '][notes]'"
                                                         x-model="sale.notes"
                                                         class="border-gray-300 rounded-md text-sm w-full"
                                                         placeholder="Optional notes" />
                                                 </td>
-                                                <td class="py-2 px-2 text-center">
+                                                <td class="py-1 px-1 text-center">
                                                     <button type="button" @click="removeCreditSale(index)"
                                                         class="text-red-600 hover:text-red-800">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
@@ -192,14 +191,17 @@
                                     </tbody>
                                     <x-slot name="footer">
                                         <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                            <td colspan="2" class="py-2 px-2 text-right font-bold">Total Credit Sales:</td>
-                                            <td class="py-2 px-2 text-right font-bold text-orange-700">
-                                                <span x-text="formatCurrency(creditTotal)"></span>
-                                                <input type="hidden" id="credit_sales_amount" name="credit_sales_amount" :value="creditTotal" />
+                                            <td colspan="2" class="py-1 px-1 text-right font-bold">Total Credit Sales:
                                             </td>
-                                            <td class="py-2 px-2 text-right font-bold text-green-700">
+                                            <td class="py-1 px-1 text-right font-bold text-orange-700">
+                                                <span x-text="formatCurrency(creditTotal)"></span>
+                                                <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
+                                                    :value="creditTotal" />
+                                            </td>
+                                            <td class="py-1 px-1 text-right font-bold text-green-700">
                                                 <span x-text="formatCurrency(recoveryTotal)"></span>
-                                                <input type="hidden" id="credit_recoveries_total" name="credit_recoveries_total" :value="recoveryTotal" />
+                                                <input type="hidden" id="credit_recoveries_total"
+                                                    name="credit_recoveries_total" :value="recoveryTotal" />
                                             </td>
                                             <td colspan="3"></td>
                                         </tr>
@@ -210,6 +212,19 @@
                             <p class="text-sm text-gray-500 mt-2" x-show="creditSales.length === 0">
                                 No credit sales added yet. Click "Add Credit Sale" to add one.
                             </p>
+
+
+                            <div class="flex justify-between items-center mb-4 mt-4">
+                                <button type="button" @click="addCreditSale()"
+                                    class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Add Credit Sale
+                                </button>
+                            </div>
                         </div>
 
                         <hr class="my-6 border-gray-200">
@@ -234,58 +249,74 @@
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">AMR Powder Claim</label>
-                                        <input type="number" id="expense_amr_powder_claim" name="expense_amr_powder_claim" step="0.01" min="0"
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">AMR Powder
+                                            Claim</label>
+                                        <input type="number" id="expense_amr_powder_claim"
+                                            name="expense_amr_powder_claim" step="0.01" min="0"
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">AMR Liquid Claim</label>
-                                        <input type="number" id="expense_amr_liquid_claim" name="expense_amr_liquid_claim" step="0.01" min="0"
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">AMR Liquid
+                                            Claim</label>
+                                        <input type="number" id="expense_amr_liquid_claim"
+                                            name="expense_amr_liquid_claim" step="0.01" min="0"
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Scheme Amount</label>
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Scheme
+                                            Amount</label>
                                         <input type="number" id="expense_scheme" name="expense_scheme" step="0.01"
                                             min="0"
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Advance Tax</label>
-                                        <input type="number" id="expense_advance_tax" name="expense_advance_tax" step="0.01" min="0"
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Advance
+                                            Tax</label>
+                                        <input type="number" id="expense_advance_tax" name="expense_advance_tax"
+                                            step="0.01" min="0"
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Food Charges</label>
-                                        <input type="number" id="expense_food_charges" name="expense_food_charges" step="0.01" min="0"
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Food
+                                            Charges</label>
+                                        <input type="number" id="expense_food_charges" name="expense_food_charges"
+                                            step="0.01" min="0"
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Salesman Charges</label>
-                                        <input type="number" id="expense_salesman_charges" name="expense_salesman_charges" step="0.01" min="0"
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Salesman
+                                            Charges</label>
+                                        <input type="number" id="expense_salesman_charges"
+                                            name="expense_salesman_charges" step="0.01" min="0"
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Loader Charges</label>
-                                        <input type="number" id="expense_loader_charges" name="expense_loader_charges" step="0.01" min="0"
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Loader
+                                            Charges</label>
+                                        <input type="number" id="expense_loader_charges" name="expense_loader_charges"
+                                            step="0.01" min="0"
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Percentage Amount</label>
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Percentage
+                                            Amount</label>
                                         <input type="number" id="expense_percentage" name="expense_percentage"
                                             step="0.01" min="0"
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Miscellaneous Amount</label>
-                                        <input type="number" id="expense_miscellaneous_amount" name="expense_miscellaneous_amount" step="0.01" min="0"
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Miscellaneous
+                                            Amount</label>
+                                        <input type="number" id="expense_miscellaneous_amount"
+                                            name="expense_miscellaneous_amount" step="0.01" min="0"
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
@@ -311,16 +342,20 @@
                                     </svg>
                                     Sales Summary
                                 </h3>
-                                <p class="text-xs text-gray-600 mb-4 italic">Formula: Net Sales + Recoveries = Total Sales | Total Sales - Credit = Balance | Balance - Grand Total Expense = Net Balance | Net Balance - Cash Received = Short/Excess</p>
+                                <p class="text-xs text-gray-600 mb-4 italic">Formula: Net Sales + Recoveries = Total
+                                    Sales | Total Sales - Credit = Balance | Balance - Grand Total Expense = Net Balance
+                                    | Net Balance - Cash Received = Short/Excess</p>
                                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Net Sale (= Item Issue Value)</label>
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Net Sale (= Item
+                                            Issue Value)</label>
                                         <input type="number" id="summary_net_sale" name="summary_net_sale" readonly
                                             class="mt-1 block w-full text-right font-bold text-green-700 bg-green-50 border-green-200 rounded-md text-sm px-2 py-1"
                                             value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Recoveries (from Credit Sales)</label>
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Recoveries (from
+                                            Credit Sales)</label>
                                         <input type="number" id="summary_recovery" name="summary_recovery" readonly
                                             class="mt-1 block w-full text-right font-bold bg-gray-100 border-gray-300 rounded-md text-sm px-2 py-1"
                                             value="0.00" />
@@ -332,7 +367,8 @@
                                             value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Credit (from Credit Sales)</label>
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Credit (from
+                                            Credit Sales)</label>
                                         <input type="number" id="summary_credit" name="summary_credit" readonly
                                             class="mt-1 block w-full text-right font-bold text-orange-700 bg-orange-50 border-orange-200 rounded-md text-sm px-2 py-1"
                                             value="0.00" />
@@ -344,7 +380,8 @@
                                             value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Grand Total Expenses</label>
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Grand Total
+                                            Expenses</label>
                                         <input type="number" id="summary_expenses" name="summary_expenses" readonly
                                             class="mt-1 block w-full text-right font-bold text-red-700 bg-red-50 border-red-200 rounded-md text-sm px-2 py-1"
                                             value="0.00" />
@@ -359,7 +396,8 @@
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
                                         <label class="text-xs font-semibold text-gray-600 block mb-1">Cash
                                             Received</label>
-                                        <input type="number" id="summary_cash_received" name="summary_cash_received" readonly
+                                        <input type="number" id="summary_cash_received" name="summary_cash_received"
+                                            readonly
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1 bg-gray-100"
                                             value="0.00" />
                                     </div>
@@ -764,9 +802,9 @@
                 balanceElement.textContent = grandBalance;
                 // Color code quantity balance
                 if (grandBalance === 0) {
-                    balanceElement.className = 'py-2 px-2 text-right font-bold text-base text-green-600';
+                    balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-green-600';
                 } else {
-                    balanceElement.className = 'py-2 px-2 text-right font-bold text-base text-red-600';
+                    balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-red-600';
                 }
             }
 
@@ -790,9 +828,9 @@
                 valueCheckElement.textContent = formatPKR(grandBalanceValue);
                 // Color code value balance - must be zero
                 if (Math.abs(grandBalanceValue) < 0.01) {
-                    valueCheckElement.className = 'py-3 px-2 text-right font-bold text-2xl text-green-700';
+                    valueCheckElement.className = 'py-1 px-1 text-right font-bold text-sm text-green-700';
                 } else {
-                    valueCheckElement.className = 'py-3 px-2 text-right font-bold text-2xl text-red-700';
+                    valueCheckElement.className = 'py-1 px-1 text-right font-bold text-sm text-red-700';
                 }
             }
 
@@ -983,23 +1021,23 @@
 
                         const settlementRow = `
                             <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                <td class="py-2 px-2" style="max-width: 250px; min-width: 180px;">
+                                <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
                                     <div class="font-semibold text-gray-900 break-words">${productName}</div>
                                     <div class="text-xs text-gray-500 break-words">
                                         ${productCode}<br>Batch: ${batch.batch_code}
                                         ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
                                     </div>
                                 </td>
-                                <td class="py-2 px-2 text-center text-sm font-medium">${uomSymbol}</td>
-                                <td class="py-2 px-2">
+                                <td class="py-1 px-1 text-center text-sm font-medium">${uomSymbol}</td>
+                                <td class="py-1 px-1">
                                     <div class="text-xs text-gray-600">
                                         ${parseFloat(batch.quantity).toLocaleString()} × ₨${parseFloat(batch.selling_price).toFixed(2)}
                                     </div>
                                 </td>
-                                <td class="py-2 px-2 text-right font-semibold">${parseFloat(batch.quantity).toFixed(0)}</td>
-                                <td class="py-2 px-2 text-right text-sm">₨${parseFloat(batch.selling_price).toFixed(2)}</td>
-                                <td class="py-2 px-2 text-right font-bold text-green-700">₨${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
-                                <td class="py-2 px-2 text-right">
+                                <td class="py-1 px-1 text-right font-semibold">${parseFloat(batch.quantity).toFixed(0)}</td>
+                                <td class="py-1 px-1 text-right text-sm">₨${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                <td class="py-1 px-1 text-right font-bold text-green-700">₨${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
+                                <td class="py-1 px-1 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_sold]"
                                         class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
@@ -1012,7 +1050,7 @@
                                         value="0"
                                         oninput="autoFillShortage(${index}, ${batchIdx})">
                                 </td>
-                                <td class="py-2 px-2 text-right">
+                                <td class="py-1 px-1 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_returned]"
                                         class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
@@ -1025,7 +1063,7 @@
                                         value="0"
                                         oninput="autoFillShortage(${index}, ${batchIdx})">
                                 </td>
-                                <td class="py-2 px-2 text-right">
+                                <td class="py-1 px-1 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_shortage]"
                                         class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
@@ -1038,7 +1076,7 @@
                                         value="${batch.quantity}"
                                         oninput="autoFillShortage(${index}, ${batchIdx}, 'shortage')">
                                 </td>
-                                <td class="py-2 px-2 text-right">
+                                <td class="py-1 px-1 text-right">
                                     <span id="balance-${index}-${batchIdx}" class="font-bold text-red-600">0</span>
                                 </td>
                                 <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">

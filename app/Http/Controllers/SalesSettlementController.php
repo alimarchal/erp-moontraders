@@ -102,10 +102,89 @@ class SalesSettlementController extends Controller
         }
 
         return view('sales-settlements.create', [
-            'goodsIssues' => $goodsIssues,
             'customers' => Customer::where('is_active', true)
                 ->orderBy('customer_name')
                 ->get(['id', 'customer_code', 'customer_name', 'receivable_balance']),
+        ]);
+    }
+
+    /**
+     * Fetch goods issues for Select2 dropdown (AJAX on-demand loading)
+     */
+    public function fetchGoodsIssues()
+    {
+        $goodsIssues = GoodsIssue::where('status', 'issued')
+            ->whereDoesntHave('settlement', function ($query) {
+                $query->where('status', 'posted');
+            })
+            ->with(['employee'])
+            ->orderBy('issue_date', 'desc')
+            ->get()
+            ->map(function ($gi) {
+                return [
+                    'id' => $gi->id,
+                    'text' => $gi->issue_number . ' - ' . $gi->employee->full_name . ' (' . $gi->issue_date->format('d M Y') . ')',
+                ];
+            });
+
+        return response()->json($goodsIssues);
+    }
+
+    /**
+     * Fetch single goods issue with items for settlement form (AJAX)
+     */
+    public function fetchGoodsIssueItems($id)
+    {
+        $goodsIssue = GoodsIssue::where('status', 'issued')
+            ->with(['warehouse', 'vehicle', 'employee', 'items.product', 'items.uom'])
+            ->findOrFail($id);
+
+        // Add batch breakdown to each goods issue item
+        foreach ($goodsIssue->items as $item) {
+            $stockMovements = DB::table('stock_movements as sm')
+                ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
+                ->where('sm.reference_type', 'App\Models\GoodsIssue')
+                ->where('sm.reference_id', $goodsIssue->id)
+                ->where('sm.product_id', $item->product_id)
+                ->where('sm.movement_type', 'transfer')
+                ->select(
+                    'sb.id as stock_batch_id',
+                    'sb.batch_code',
+                    DB::raw('ABS(sm.quantity) as quantity'),
+                    'sm.unit_cost',
+                    'sb.selling_price',
+                    'sb.is_promotional'
+                )
+                ->orderBy('sb.priority_order', 'asc')
+                ->get();
+
+            $batchBreakdown = [];
+            foreach ($stockMovements as $movement) {
+                $quantity = (float) $movement->quantity;
+                $sellingPrice = (float) $movement->selling_price;
+                $value = $quantity * $sellingPrice;
+
+                $batchBreakdown[] = [
+                    'stock_batch_id' => $movement->stock_batch_id,
+                    'batch_code' => $movement->batch_code ?? 'N/A',
+                    'quantity' => $quantity,
+                    'unit_cost' => (float) $movement->unit_cost,
+                    'selling_price' => $sellingPrice,
+                    'value' => $value,
+                    'is_promotional' => (bool) $movement->is_promotional,
+                ];
+            }
+
+            $item->batch_breakdown = $batchBreakdown;
+            $item->calculated_total = collect($batchBreakdown)->sum('value');
+        }
+
+        return response()->json([
+            'id' => $goodsIssue->id,
+            'issue_number' => $goodsIssue->issue_number,
+            'employee' => $goodsIssue->employee->full_name,
+            'vehicle' => $goodsIssue->vehicle->vehicle_number,
+            'items' => $goodsIssue->items,
         ]);
     }
 

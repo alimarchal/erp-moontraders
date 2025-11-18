@@ -25,7 +25,7 @@
                         @csrf
 
                         {{-- Section 1: Date & Goods Issue Selection --}}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6" x-data="goodsIssueSelector()">
                             <div>
                                 <x-label for="settlement_date" value="Settlement Date" class="required" />
                                 <x-input id="settlement_date" name="settlement_date" type="date"
@@ -36,31 +36,20 @@
                             <div>
                                 <x-label for="goods_issue_id" value="Select Goods Issue" class="required" />
                                 <select id="goods_issue_id" name="goods_issue_id"
-                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
+                                    class="select2-goods-issue border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
                                     required>
                                     <option value="">Select Goods Issue</option>
-                                    @foreach ($goodsIssues as $gi)
-                                    <option value="{{ $gi->id }}" {{ old('goods_issue_id')==$gi->id ? 'selected' : '' }}
-                                        data-items="{{ json_encode($gi->items) }}"
-                                        data-employee="{{ $gi->employee->full_name }}"
-                                        data-vehicle="{{ $gi->vehicle->vehicle_number }}">
-                                        {{ $gi->issue_number }} - {{ $gi->employee->full_name }} ({{
-                                        $gi->issue_date->format('d M Y') }})
-                                    </option>
-                                    @endforeach
                                 </select>
                                 <x-input-error for="goods_issue_id" class="mt-2" />
                             </div>
                         </div>
-
-                        <hr class="my-6 border-gray-200">
 
                         <p class="text-sm text-gray-500 mt-2" id="noItemsMessage">
                             Select a Goods Issue to load product details
                         </p>
 
                         {{-- Section 2: Combined Batch-wise Settlement Table --}}
-                        <div id="settlementTableContainer" style="display: none;">
+                        <div id="settlementTableContainer" style="display: none;" class="overflow-x-auto">
                             <x-detail-table title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance)" :headers="[
                                 ['label' => 'Product / Batch', 'align' => 'text-left'],
                                 ['label' => 'UOM', 'align' => 'text-center'],
@@ -542,6 +531,34 @@
     <script>
         let invoiceCounter = 1;
 
+        // Alpine.js component for Goods Issue selector
+        function goodsIssueSelector() {
+            return {
+                selectedGoodsIssue: null,
+                loading: false,
+            }
+        }
+
+        // Initialize Select2 with AJAX on-demand loading
+        $(document).ready(function() {
+            $('.select2-goods-issue').select2({
+                width: '100%',
+                placeholder: 'Select a Goods Issue',
+                allowClear: true,
+                ajax: {
+                    url: '{{ route('api.sales-settlements.goods-issues') }}',
+                    dataType: 'json',
+                    delay: 250,
+                    processResults: function (data) {
+                        return {
+                            results: data
+                        };
+                    },
+                    cache: true
+                }
+            });
+        });
+
         function creditSalesManager() {
             return {
                 creditSales: [],
@@ -881,9 +898,11 @@
             updateSalesSummary();
         }
 
-        document.getElementById('goods_issue_id').addEventListener('change', function() {
-            const selectedOption = this.options[this.selectedIndex];
-            if (!selectedOption.value) {
+        // Handle Goods Issue selection with AJAX data loading
+        $('#goods_issue_id').on('change', function() {
+            const goodsIssueId = $(this).val();
+
+            if (!goodsIssueId) {
                 document.getElementById('settlementItemsBody').innerHTML = '';
                 document.getElementById('settlementTableContainer').style.display = 'none';
                 document.getElementById('settlementHelpText').style.display = 'none';
@@ -894,13 +913,21 @@
                 return;
             }
 
-            const items = JSON.parse(selectedOption.dataset.items || '[]');
-            const settlementItemsBody = document.getElementById('settlementItemsBody');
-            settlementItemsBody.innerHTML = '';
+            // Show loading state
+            document.getElementById('noItemsMessage').innerHTML = '<span class="text-blue-600">Loading goods issue data...</span>';
+            document.getElementById('noItemsMessage').style.display = 'block';
 
-            let grandTotal = 0;
+            // Fetch goods issue items via AJAX
+            fetch(`{{ url('api/sales-settlements/goods-issues') }}/${goodsIssueId}/items`)
+                .then(response => response.json())
+                .then(data => {
+                    const items = data.items || [];
+                    const settlementItemsBody = document.getElementById('settlementItemsBody');
+                    settlementItemsBody.innerHTML = '';
 
-            items.forEach((item, index) => {
+                    let grandTotal = 0;
+
+                    items.forEach((item, index) => {
                 const batchBreakdown = item.batch_breakdown || [];
                 const itemTotal = item.calculated_total || item.total_value;
                 grandTotal += parseFloat(itemTotal);
@@ -931,16 +958,20 @@
                 if (batchBreakdown.length > 0) {
                     batchBreakdown.forEach((batch, batchIdx) => {
                         const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
+                        const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
+                        const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
+                        const uomSymbol = (item.uom && item.uom.symbol) ? item.uom.symbol : 'N/A';
+
                         const settlementRow = `
                             <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                <td class="py-2 px-2">
-                                    <div class="font-semibold text-gray-900">${item.product.name}</div>
-                                    <div class="text-xs text-gray-500">
-                                        ${item.product.product_code} | Batch: ${batch.batch_code}
+                                <td class="py-2 px-2" style="max-width: 250px; min-width: 180px;">
+                                    <div class="font-semibold text-gray-900 break-words">${productName}</div>
+                                    <div class="text-xs text-gray-500 break-words">
+                                        ${productCode}<br>Batch: ${batch.batch_code}
                                         ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
                                     </div>
                                 </td>
-                                <td class="py-2 px-2 text-center text-sm font-medium">${item.uom.symbol}</td>
+                                <td class="py-2 px-2 text-center text-sm font-medium">${uomSymbol}</td>
                                 <td class="py-2 px-2">
                                     <div class="text-xs text-gray-600">
                                         ${parseFloat(batch.quantity).toLocaleString()} × ₨${parseFloat(batch.selling_price).toFixed(2)}
@@ -949,10 +980,10 @@
                                 <td class="py-2 px-2 text-right font-semibold">${parseFloat(batch.quantity).toFixed(0)}</td>
                                 <td class="py-2 px-2 text-right text-sm">₨${parseFloat(batch.selling_price).toFixed(2)}</td>
                                 <td class="py-2 px-2 text-right font-bold text-green-700">₨${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
-                                <td class="py-2 px-2">
+                                <td class="py-2 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_sold]"
-                                        class="batch-input w-20 text-right border-gray-300 rounded text-sm px-1 py-1"
+                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
                                         data-item-index="${index}"
                                         data-batch-index="${batchIdx}"
                                         data-type="sold"
@@ -962,10 +993,10 @@
                                         value="0"
                                         oninput="autoFillShortage(${index}, ${batchIdx})">
                                 </td>
-                                <td class="py-2 px-2">
+                                <td class="py-2 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_returned]"
-                                        class="batch-input w-20 text-right border-gray-300 rounded text-sm px-1 py-1"
+                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
                                         data-item-index="${index}"
                                         data-batch-index="${batchIdx}"
                                         data-type="returned"
@@ -975,10 +1006,10 @@
                                         value="0"
                                         oninput="autoFillShortage(${index}, ${batchIdx})">
                                 </td>
-                                <td class="py-2 px-2">
+                                <td class="py-2 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_shortage]"
-                                        class="batch-input w-20 text-right border-gray-300 rounded text-sm px-1 py-1"
+                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
                                         data-item-index="${index}"
                                         data-batch-index="${batchIdx}"
                                         data-type="shortage"
@@ -1005,21 +1036,27 @@
                 }
             });
 
-            // Show relevant sections
-            document.getElementById('noItemsMessage').style.display = 'none';
-            document.getElementById('settlementTableContainer').style.display = 'block';
-            document.getElementById('settlementHelpText').style.display = 'block';
-            document.getElementById('salesSummarySection').style.display = 'block';
-            document.getElementById('expensesSection').style.display = 'block';
-            document.getElementById('cashDetailSection').style.display = 'block';
+                    // Show relevant sections
+                    document.getElementById('noItemsMessage').style.display = 'none';
+                    document.getElementById('settlementTableContainer').style.display = 'block';
+                    document.getElementById('settlementHelpText').style.display = 'block';
+                    document.getElementById('salesSummarySection').style.display = 'block';
+                    document.getElementById('expensesSection').style.display = 'block';
+                    document.getElementById('cashDetailSection').style.display = 'block';
 
-            // Initialize balances for all batch rows
-            items.forEach((item, index) => {
-                const batchBreakdown = item.batch_breakdown || [];
-                batchBreakdown.forEach((batch, batchIdx) => {
-                    calculateBatchBalance(index, batchIdx);
+                    // Initialize balances for all batch rows
+                    items.forEach((item, index) => {
+                        const batchBreakdown = item.batch_breakdown || [];
+                        batchBreakdown.forEach((batch, batchIdx) => {
+                            calculateBatchBalance(index, batchIdx);
+                        });
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching goods issue items:', error);
+                    document.getElementById('noItemsMessage').innerHTML = '<span class="text-red-600">Error loading goods issue data. Please try again.</span>';
+                    document.getElementById('settlementTableContainer').style.display = 'none';
                 });
-            });
         });
     </script>
     @endpush

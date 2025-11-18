@@ -541,6 +541,8 @@
 
         // Initialize Select2 with AJAX on-demand loading
         $(document).ready(function() {
+            console.log('Initializing Select2 for goods issue dropdown');
+
             $('.select2-goods-issue').select2({
                 width: '100%',
                 placeholder: 'Select a Goods Issue',
@@ -550,6 +552,7 @@
                     dataType: 'json',
                     delay: 250,
                     processResults: function (data) {
+                        console.log('Select2 data loaded:', data);
                         return {
                             results: data
                         };
@@ -557,6 +560,8 @@
                     cache: true
                 }
             });
+
+            console.log('Select2 initialized successfully');
         });
 
         function creditSalesManager() {

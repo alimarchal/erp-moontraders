@@ -529,9 +529,31 @@
                                                 </tr>
                                             </tbody>
                                         </table>
-                                        <div class="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 italic">
-                                            <strong>Formula:</strong> Net Sale + Recovery = Total Sale | Total - Credit = Balance | Balance - Expenses = Net Balance | Cash Received - Net Balance = Short/Excess
+                                        <div class="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 leading-relaxed">
+                                            <strong class="block mb-1">Formula:</strong>
+                                            <div class="space-y-0.5">
+                                                <div>• Net Sale (Mean SOLD Items)</div>
+                                                <div>• Recovery (from customer)</div>
+                                                <div>• <strong>Total Sale</strong> = Net Sale + Recovery</div>
+                                                <div>• Credit (Grand Total of Credit to Customers)</div>
+                                                <div>• <strong>Balance</strong> = Total Sale - Credit</div>
+                                                <div>• Expenses (Sum of All Expenses)</div>
+                                                <div>• <strong>Net Balance</strong> = Balance - Expenses</div>
+                                                <div>• Cash Received (Cash Detail Denomination Breakdown)</div>
+                                                <div>• <strong>Short/Excess</strong> = Cash Received - Net Balance</div>
+                                            </div>
                                         </div>
+
+                                        {{-- Hidden input fields for calculations --}}
+                                        <input type="hidden" id="summary_net_sale" name="summary_net_sale" value="0.00" />
+                                        <input type="hidden" id="summary_recovery" name="summary_recovery" value="0.00" />
+                                        <input type="hidden" id="summary_total_sale" value="0.00" />
+                                        <input type="hidden" id="summary_credit" name="summary_credit" value="0.00" />
+                                        <input type="hidden" id="summary_balance" value="0.00" />
+                                        <input type="hidden" id="summary_expenses" name="summary_expenses" value="0.00" />
+                                        <input type="hidden" id="summary_net_balance" value="0.00" />
+                                        <input type="hidden" id="summary_cash_received" name="summary_cash_received" value="0.00" />
+                                        <input type="hidden" id="summary_short_excess" value="0.00" />
                                     </div>
                                 </div>
                             </div>
@@ -1051,12 +1073,14 @@
             const amrLiquid = parseFloat(document.getElementById('expense_amr_liquid_claim').value) || 0;
             const scheme = parseFloat(document.getElementById('expense_scheme').value) || 0;
             const advanceTax = parseFloat(document.getElementById('expense_advance_tax').value) || 0;
-            const foodSalesmanLoader = parseFloat(document.getElementById('expense_food_salesman_loader').value) || 0;
+            const foodCharges = parseFloat(document.getElementById('expense_food_charges').value) || 0;
+            const salesmanCharges = parseFloat(document.getElementById('expense_salesman_charges').value) || 0;
+            const loaderCharges = parseFloat(document.getElementById('expense_loader_charges').value) || 0;
             const percentage = parseFloat(document.getElementById('expense_percentage').value) || 0;
             const miscellaneousAmount = parseFloat(document.getElementById('expense_miscellaneous_amount').value) || 0;
 
             const totalExpenses = tollTax + amrPowder + amrLiquid + scheme + advanceTax +
-                                 foodSalesmanLoader + percentage + miscellaneousAmount;
+                                 foodCharges + salesmanCharges + loaderCharges + percentage + miscellaneousAmount;
 
             document.getElementById('totalExpensesDisplay').textContent = '₨ ' + totalExpenses.toLocaleString('en-PK', {
                 minimumFractionDigits: 2,

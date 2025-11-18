@@ -116,14 +116,15 @@
                             </x-slot>
                         </x-detail-table>
                     </div>
-                    <p class="text-sm text-blue-600 mt-2" style="display: none;" id="settlementHelpText">
+                    <p class="text-sm text-blue-600 mt-2 p-2" style="display: none;" id="settlementHelpText">
                         💡 Tip: When you enter Sold quantity, the remaining will auto-calculate. You can then adjust
                         Returned and Shortage as needed.
                     </p>
+                </div>
+                <div class="pr-6 pl-6 pt-2">
 
                     {{-- Section 2: Creditors/Credit Sales Breakdown (MOVED HERE) --}}
                     <div class="mb-6" style="display: none;" id="creditSalesSection" x-data="creditSalesManager()">
-                        <hr class="my-6 border-gray-200">
 
                         <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
                             <svg class="w-6 h-6 mr-2 text-orange-600" fill="none" stroke="currentColor"
@@ -448,7 +449,8 @@
                                             <span class="text-sm font-bold text-emerald-900">💰 Total Cash
                                                 Received</span>
                                             <span class="text-lg font-bold text-emerald-900"
-                                                id="grandTotalCashDisplay">₨ 0.00</span>
+                                                id="grandTotalCashDisplay">₨
+                                                0.00</span>
                                         </div>
                                     </div>
                                 </div>
@@ -605,7 +607,8 @@
                                             <tr class="bg-gray-50">
                                                 <td class="py-1 px-2 font-semibold">Balance</td>
                                                 <td class="py-1 px-2 text-right font-semibold"
-                                                    id="summary_balance_display">₨ 0.00</td>
+                                                    id="summary_balance_display">
+                                                    ₨ 0.00</td>
                                             </tr>
                                             <tr class="border-t border-gray-200">
                                                 <td class="py-1 px-2 text-red-700">Expenses</td>
@@ -664,7 +667,7 @@
                 </div>
 
                 {{-- Section 8: Notes (MOVED TO BOTTOM) --}}
-                <div class="mb-6">
+                <div class="mb-6 p-6">
                     <x-label for="notes" value="Notes" />
                     <textarea id="notes" name="notes" rows="3"
                         class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"

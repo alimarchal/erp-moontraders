@@ -1230,7 +1230,7 @@
                                         ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
                                     </div>
                                 </td>
-                                <td class="py-1 px-1">
+                                <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
                                     <div class="text-xs text-gray-600">
                                         ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
                                     </div>

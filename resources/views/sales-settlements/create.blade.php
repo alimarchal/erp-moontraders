@@ -172,7 +172,7 @@
                                             </td>
                                             <td class="py-1 px-1 text-right">
                                                 <input type="number" :name="'credit_sales[' + index + '][sale_amount]'"
-                                                    x-model="sale.sale_amount"
+                                                    x-model.number="sale.sale_amount"
                                                     @input="calculateNewBalance(index); updateCreditTotal()"
                                                     class="border-gray-300 rounded-md text-sm w-24 text-right"
                                                     step="0.01" min="0" />
@@ -180,7 +180,7 @@
                                             <td class="py-1 px-1 text-right">
                                                 <input type="number"
                                                     :name="'credit_sales[' + index + '][payment_received]'"
-                                                    x-model="sale.payment_received"
+                                                    x-model.number="sale.payment_received"
                                                     @input="calculateNewBalance(index); updateRecoveryTotal()"
                                                     class="border-gray-300 rounded-md text-sm w-24 text-right"
                                                     step="0.01" min="0" />
@@ -414,7 +414,7 @@
                                                             class="border-gray-300 rounded px-1 py-0.5 text-xs"
                                                             placeholder="Bank" required />
                                                         <input type="number" :name="'cheques[' + index + '][amount]'"
-                                                            x-model="cheque.amount" @input="updateChequeTotal()"
+                                                            x-model.number="cheque.amount" @input="updateChequeTotal()"
                                                             class="border-gray-300 rounded px-1 py-0.5 text-xs text-right font-semibold"
                                                             placeholder="0.00" step="0.01" min="0" required />
                                                     </div>
@@ -621,7 +621,11 @@
                                                     id="summary_net_balance_display">₨ 0.00</td>
                                             </tr>
                                             <tr class="border-t border-gray-200">
-                                                <td class="py-1 px-2">Cash Received (counted)</td>
+                                                <td class="py-1 px-2">
+                                                    <div>Cash Received (counted)</div>
+                                                    <div class="text-xs text-gray-500 italic">Physical Cash + Bank
+                                                        Transfer + Cheques</div>
+                                                </td>
                                                 <td class="py-1 px-2 text-right font-semibold text-green-700"
                                                     id="summary_cash_received_display">₨ 0.00</td>
                                             </tr>
@@ -796,7 +800,8 @@
 
                 updateCreditTotal() {
                     this.creditTotal = this.creditSales.reduce((sum, sale) => {
-                        return sum + (parseFloat(sale.sale_amount) || 0);
+                        const amount = parseFloat(sale.sale_amount);
+                        return sum + (isNaN(amount) ? 0 : amount);
                     }, 0);
 
                     document.getElementById('credit_sales_amount').value = this.creditTotal.toFixed(2);
@@ -806,7 +811,8 @@
 
                 updateRecoveryTotal() {
                     this.recoveryTotal = this.creditSales.reduce((sum, sale) => {
-                        return sum + (parseFloat(sale.payment_received) || 0);
+                        const amount = parseFloat(sale.payment_received);
+                        return sum + (isNaN(amount) ? 0 : amount);
                     }, 0);
 
                     document.getElementById('credit_recoveries_total').value = this.recoveryTotal.toFixed(2);
@@ -1157,7 +1163,9 @@
 
                 updateChequeTotal() {
                     this.chequeTotal = this.cheques.reduce((sum, cheque) => {
-                        return sum + (parseFloat(cheque.amount) || 0);
+                        // Convert to number to handle string inputs correctly
+                        const amount = parseFloat(cheque.amount);
+                        return sum + (isNaN(amount) ? 0 : amount);
                     }, 0);
                     updateCashTotal(); // Update overall cash total
                 },

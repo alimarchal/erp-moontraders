@@ -179,12 +179,34 @@ class SalesSettlementController extends Controller
             $item->calculated_total = collect($batchBreakdown)->sum('value');
         }
 
+        // Format items to ensure product and uom data are included
+        $formattedItems = $goodsIssue->items->map(function ($item) {
+            return [
+                'id' => $item->id,
+                'product_id' => $item->product_id,
+                'quantity_issued' => $item->quantity_issued,
+                'unit_cost' => $item->unit_cost,
+                'calculated_total' => $item->calculated_total,
+                'product' => [
+                    'id' => $item->product->id,
+                    'name' => $item->product->name,
+                    'product_code' => $item->product->product_code,
+                ],
+                'uom' => [
+                    'id' => $item->uom->id,
+                    'symbol' => $item->uom->symbol,
+                    'name' => $item->uom->name,
+                ],
+                'batch_breakdown' => $item->batch_breakdown,
+            ];
+        });
+
         return response()->json([
             'id' => $goodsIssue->id,
             'issue_number' => $goodsIssue->issue_number,
             'employee' => $goodsIssue->employee->full_name,
             'vehicle' => $goodsIssue->vehicle->vehicle_number,
-            'items' => $goodsIssue->items,
+            'items' => $formattedItems,
         ]);
     }
 

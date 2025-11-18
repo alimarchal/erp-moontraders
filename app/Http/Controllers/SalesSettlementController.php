@@ -189,7 +189,7 @@ class SalesSettlementController extends Controller
                 'calculated_total' => $item->calculated_total,
                 'product' => [
                     'id' => $item->product->id,
-                    'name' => $item->product->name,
+                    'name' => $item->product->product_name,
                     'product_code' => $item->product->product_code,
                 ],
                 'uom' => [

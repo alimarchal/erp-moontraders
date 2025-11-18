@@ -51,9 +51,10 @@
                         {{-- Section 2: Combined Batch-wise Settlement Table --}}
                         <div id="settlementTableContainer"
                             style="display: none; text-align: center; margin: 0px; padding: 0px">
-                            <x-detail-table title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance)"
+                            <x-detail-table title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance = BF)"
                                 :headers="[
                                 ['label' => 'Product / Batch', 'align' => 'text-left'],
+                                ['label' => 'Issue Date', 'align' => 'text-center'],
                                 ['label' => 'UOM', 'align' => 'text-center'],
                                 ['label' => 'Batch Breakdown', 'align' => 'text-left'],
                                 ['label' => 'Qty Issued', 'align' => 'text-right'],
@@ -63,13 +64,14 @@
                                 ['label' => 'Returned', 'align' => 'text-right'],
                                 ['label' => 'Shortage', 'align' => 'text-right'],
                                 ['label' => 'Balance', 'align' => 'text-right'],
+                                ['label' => 'BF Balance', 'align' => 'text-right'],
                             ]">
                                 <tbody id="settlementItemsBody">
                                     <!-- Settlement items will be populated here -->
                                 </tbody>
                                 <x-slot name="footer">
                                     <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                        <td colspan="6" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
+                                        <td colspan="7" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
                                         </td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
                                             id="grandTotalSold">0</td>
@@ -79,9 +81,11 @@
                                             id="grandTotalShortage">0</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalBalance">0
                                         </td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700" id="grandTotalBF">0
+                                        </td>
                                     </tr>
                                     <tr class="border-t border-gray-300 bg-blue-50">
-                                        <td colspan="6" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
+                                        <td colspan="7" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
                                         </td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
                                             id="grandTotalSoldValue">₨ 0.00</td>
@@ -93,7 +97,7 @@
                                             0.00</td>
                                     </tr>
                                     <tr class="border-t-2 border-gray-400 bg-gray-200">
-                                        <td colspan="9" class="py-1 px-1 text-right font-bold text-base">Total Issued
+                                        <td colspan="10" class="py-1 px-1 text-right font-bold text-base">Total Issued
                                             Value:</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-emerald-700"
                                             id="grandTotalIssuedValue">₨ 0.00</td>
@@ -105,6 +109,229 @@
                             💡 Tip: When you enter Sold quantity, the remaining will auto-calculate. You can then adjust
                             Returned and Shortage as needed.
                         </p>
+
+                        <hr class="my-2 border-gray-200">
+
+                        {{-- Section 3: Side-by-Side Expense Detail and Sales Summary --}}
+                        <div id="expenseAndSalesSummarySection" style="display: none;" class="mb-4">
+                            <div class="grid grid-cols-2 gap-3">
+                                {{-- LEFT SIDE: Expense Detail Table --}}
+                                <div class="bg-white rounded border border-gray-200">
+                                    <div class="bg-red-100 border-b border-red-200 px-2 py-1">
+                                        <h3 class="text-sm font-bold text-gray-900">Expense Detail</h3>
+                                    </div>
+                                    <table class="w-full text-xs">
+                                        <thead>
+                                            <tr class="bg-gray-50">
+                                                <th class="py-1 px-1 text-left border-b">Sr.No</th>
+                                                <th class="py-1 px-1 text-left border-b">Description</th>
+                                                <th class="py-1 px-1 text-right border-b">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">1</td>
+                                                <td class="py-1 px-1">Labor</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="expense_toll_tax" name="expense_toll_tax" step="0.01" min="0"
+                                                        class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">2</td>
+                                                <td class="py-1 px-1">Food</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="expense_food_charges" name="expense_food_charges" step="0.01" min="0"
+                                                        class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">3</td>
+                                                <td class="py-1 px-1">Salesman</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="expense_salesman_charges" name="expense_salesman_charges" step="0.01" min="0"
+                                                        class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">4</td>
+                                                <td class="py-1 px-1">Loader</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="expense_loader_charges" name="expense_loader_charges" step="0.01" min="0"
+                                                        class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">5</td>
+                                                <td class="py-1 px-1">AMR Powder</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="expense_amr_powder_claim" name="expense_amr_powder_claim" step="0.01" min="0"
+                                                        class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">6</td>
+                                                <td class="py-1 px-1">AMR Liquid</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="expense_amr_liquid_claim" name="expense_amr_liquid_claim" step="0.01" min="0"
+                                                        class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">7</td>
+                                                <td class="py-1 px-1">Scheme</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="expense_scheme" name="expense_scheme" step="0.01" min="0"
+                                                        class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">8</td>
+                                                <td class="py-1 px-1">Advance Tax</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="expense_advance_tax" name="expense_advance_tax" step="0.01" min="0"
+                                                        class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">9</td>
+                                                <td class="py-1 px-1">Percentage</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="expense_percentage" name="expense_percentage" step="0.01" min="0"
+                                                        class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">10</td>
+                                                <td class="py-1 px-1">Miscellaneous</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="expense_miscellaneous_amount" name="expense_miscellaneous_amount" step="0.01" min="0"
+                                                        class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="bg-red-50 border-t-2 border-red-300">
+                                                <td colspan="2" class="py-1 px-1 text-right font-bold">Total:</td>
+                                                <td class="py-1 px-1 text-right font-bold text-red-700" id="totalExpensesDisplay">₨ 0.00</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {{-- RIGHT SIDE: Sales Summary Table --}}
+                                <div class="bg-white rounded border border-gray-200">
+                                    <div class="bg-blue-100 border-b border-blue-200 px-2 py-1">
+                                        <h3 class="text-sm font-bold text-gray-900">Sales Summary</h3>
+                                    </div>
+                                    <table class="w-full text-xs">
+                                        <thead>
+                                            <tr class="bg-gray-50">
+                                                <th class="py-1 px-1 text-left border-b">Sr.No</th>
+                                                <th class="py-1 px-1 text-left border-b">Description</th>
+                                                <th class="py-1 px-1 text-right border-b">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">1</td>
+                                                <td class="py-1 px-1">Net Sale</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="summary_net_sale" name="summary_net_sale" readonly
+                                                        class="w-full text-right font-semibold text-green-700 bg-green-50 border-green-200 rounded text-xs px-1 py-0.5"
+                                                        value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">2</td>
+                                                <td class="py-1 px-1">Recoveries</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="summary_recovery" name="summary_recovery" readonly
+                                                        class="w-full text-right font-semibold bg-gray-100 border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b bg-blue-50">
+                                                <td class="py-1 px-1">3</td>
+                                                <td class="py-1 px-1 font-bold">Total Sale</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="summary_total_sale" readonly
+                                                        class="w-full text-right font-bold text-blue-700 bg-blue-100 border-blue-200 rounded text-xs px-1 py-0.5"
+                                                        value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">4</td>
+                                                <td class="py-1 px-1">Credit</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="summary_credit" name="summary_credit" readonly
+                                                        class="w-full text-right font-semibold text-orange-700 bg-orange-50 border-orange-200 rounded text-xs px-1 py-0.5"
+                                                        value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">5</td>
+                                                <td class="py-1 px-1">Balance</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="summary_balance" readonly
+                                                        class="w-full text-right font-semibold bg-gray-100 border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">6</td>
+                                                <td class="py-1 px-1">Expenses</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="summary_expenses" name="summary_expenses" readonly
+                                                        class="w-full text-right font-semibold text-red-700 bg-red-50 border-red-200 rounded text-xs px-1 py-0.5"
+                                                        value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">7</td>
+                                                <td class="py-1 px-1">Net Balance</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="summary_net_balance" readonly
+                                                        class="w-full text-right font-semibold bg-gray-100 border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">8</td>
+                                                <td class="py-1 px-1">Cash Received</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="summary_cash_received" name="summary_cash_received" readonly
+                                                        class="w-full text-right font-semibold border-gray-300 rounded text-xs px-1 py-0.5 bg-gray-100"
+                                                        value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="border-b">
+                                                <td class="py-1 px-1">9</td>
+                                                <td class="py-1 px-1">Short/Excess</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number" id="summary_short_excess" readonly
+                                                        class="w-full text-right font-semibold bg-purple-50 border-purple-200 rounded text-xs px-1 py-0.5"
+                                                        value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="bg-blue-50 border-t-2 border-blue-300">
+                                                <td colspan="3" class="py-1 px-1 text-xs text-gray-600 italic">
+                                                    Formula: Net Sale + Recoveries = Total Sale | Total - Credit = Balance | Balance - Expenses = Net | Net - Cash = Short/Excess
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
 
                         <hr class="my-2 border-gray-200">
 
@@ -227,192 +454,9 @@
                             </div>
                         </div>
 
-                        <hr class="my-6 border-gray-200">
+                        <hr class="my-2 border-gray-200">
 
-                        {{-- Section 5: ENHANCED Expense Detail --}}
-                        <div id="expensesSection" style="display: none;" class="mb-6">
-                            <div
-                                class="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-lg border-2 border-red-200">
-                                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    Expense Detail
-                                </h3>
-                                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Toll Tax</label>
-                                        <input type="number" id="expense_toll_tax" name="expense_toll_tax" step="0.01"
-                                            min="0"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateExpensesTotal()" value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">AMR Powder
-                                            Claim</label>
-                                        <input type="number" id="expense_amr_powder_claim"
-                                            name="expense_amr_powder_claim" step="0.01" min="0"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateExpensesTotal()" value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">AMR Liquid
-                                            Claim</label>
-                                        <input type="number" id="expense_amr_liquid_claim"
-                                            name="expense_amr_liquid_claim" step="0.01" min="0"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateExpensesTotal()" value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Scheme
-                                            Amount</label>
-                                        <input type="number" id="expense_scheme" name="expense_scheme" step="0.01"
-                                            min="0"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateExpensesTotal()" value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Advance
-                                            Tax</label>
-                                        <input type="number" id="expense_advance_tax" name="expense_advance_tax"
-                                            step="0.01" min="0"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateExpensesTotal()" value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Food
-                                            Charges</label>
-                                        <input type="number" id="expense_food_charges" name="expense_food_charges"
-                                            step="0.01" min="0"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateExpensesTotal()" value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Salesman
-                                            Charges</label>
-                                        <input type="number" id="expense_salesman_charges"
-                                            name="expense_salesman_charges" step="0.01" min="0"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateExpensesTotal()" value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Loader
-                                            Charges</label>
-                                        <input type="number" id="expense_loader_charges" name="expense_loader_charges"
-                                            step="0.01" min="0"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateExpensesTotal()" value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Percentage
-                                            Amount</label>
-                                        <input type="number" id="expense_percentage" name="expense_percentage"
-                                            step="0.01" min="0"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateExpensesTotal()" value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Miscellaneous
-                                            Amount</label>
-                                        <input type="number" id="expense_miscellaneous_amount"
-                                            name="expense_miscellaneous_amount" step="0.01" min="0"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateExpensesTotal()" value="0.00" />
-                                    </div>
-                                </div>
-                                <div class="mt-4 bg-white p-4 rounded-md shadow-sm border-2 border-red-300">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-base font-bold text-gray-700">Grand Total Expense:</span>
-                                        <span class="text-2xl font-bold text-red-700" id="totalExpensesDisplay">₨
-                                            0.00</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Section 6: Sales Summary --}}
-                        <div id="salesSummarySection" style="display: none;" class="mb-6">
-                            <div
-                                class="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-200">
-                                <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                    </svg>
-                                    Sales Summary
-                                </h3>
-                                <p class="text-xs text-gray-600 mb-4 italic">Formula: Net Sales + Recoveries = Total
-                                    Sales | Total Sales - Credit = Balance | Balance - Grand Total Expense = Net Balance
-                                    | Net Balance - Cash Received = Short/Excess</p>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Net Sale (= Item
-                                            Issue Value)</label>
-                                        <input type="number" id="summary_net_sale" name="summary_net_sale" readonly
-                                            class="mt-1 block w-full text-right font-bold text-green-700 bg-green-50 border-green-200 rounded-md text-sm px-2 py-1"
-                                            value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Recoveries (from
-                                            Credit Sales)</label>
-                                        <input type="number" id="summary_recovery" name="summary_recovery" readonly
-                                            class="mt-1 block w-full text-right font-bold bg-gray-100 border-gray-300 rounded-md text-sm px-2 py-1"
-                                            value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Total Sale</label>
-                                        <input type="number" id="summary_total_sale" readonly
-                                            class="mt-1 block w-full text-right font-bold text-blue-700 bg-blue-50 border-blue-200 rounded-md text-sm px-2 py-1"
-                                            value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Credit (from
-                                            Credit Sales)</label>
-                                        <input type="number" id="summary_credit" name="summary_credit" readonly
-                                            class="mt-1 block w-full text-right font-bold text-orange-700 bg-orange-50 border-orange-200 rounded-md text-sm px-2 py-1"
-                                            value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Balance</label>
-                                        <input type="number" id="summary_balance" readonly
-                                            class="mt-1 block w-full text-right font-bold bg-gray-100 border-gray-300 rounded-md text-sm px-2 py-1"
-                                            value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Grand Total
-                                            Expenses</label>
-                                        <input type="number" id="summary_expenses" name="summary_expenses" readonly
-                                            class="mt-1 block w-full text-right font-bold text-red-700 bg-red-50 border-red-200 rounded-md text-sm px-2 py-1"
-                                            value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Net
-                                            Balance</label>
-                                        <input type="number" id="summary_net_balance" readonly
-                                            class="mt-1 block w-full text-right font-bold bg-gray-100 border-gray-300 rounded-md text-sm px-2 py-1"
-                                            value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Cash
-                                            Received</label>
-                                        <input type="number" id="summary_cash_received" name="summary_cash_received"
-                                            readonly
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1 bg-gray-100"
-                                            value="0.00" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border col-span-2">
-                                        <label
-                                            class="text-xs font-semibold text-gray-600 block mb-1">Short/Excess</label>
-                                        <input type="number" id="summary_short_excess" readonly
-                                            class="mt-1 block w-full text-right font-bold bg-purple-50 border-purple-200 rounded-md text-sm px-2 py-1"
-                                            value="0.00" />
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {{-- Section 7: Cash Detail --}}
+                        {{-- Section 5: Cash Detail --}}
                         <div id="cashDetailSection" style="display: none;" class="mb-6">
                             <div
                                 class="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-lg border-2 border-green-200">
@@ -490,19 +534,73 @@
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateCashTotal()" value="0" />
                                     </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Bank 1</label>
-                                        <input type="number" id="bank_1" name="bank_1" min="0" step="0.01"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateCashTotal()" value="0" />
-                                    </div>
-                                    <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Bank 2</label>
-                                        <input type="number" id="bank_2" name="bank_2" min="0" step="0.01"
-                                            class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
-                                            oninput="updateCashTotal()" value="0" />
+                                </div>
+
+                                {{-- Bank Transfer / Online Payment --}}
+                                <div class="mt-4 bg-white p-3 rounded-md shadow-sm border">
+                                    <label class="text-xs font-semibold text-gray-600 block mb-2">Bank Transfer / Online Payment</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <div>
+                                            <label class="text-xs text-gray-500 block mb-1">Select Bank Account</label>
+                                            <select id="bank_account_id" name="bank_account_id"
+                                                class="border-gray-300 rounded text-xs w-full px-2 py-1">
+                                                <option value="">No Bank Transfer</option>
+                                                @foreach(\App\Models\BankAccount::where('is_active', true)->get() as $bank)
+                                                    <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{ $bank->bank_name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label class="text-xs text-gray-500 block mb-1">Amount</label>
+                                            <input type="number" id="bank_transfer_amount" name="bank_transfer_amount" min="0" step="0.01"
+                                                class="block w-full text-right border-gray-300 rounded text-xs px-2 py-1"
+                                                oninput="updateCashTotal()" value="0" />
+                                        </div>
                                     </div>
                                 </div>
+
+                                {{-- Cheque Details --}}
+                                <div class="mt-4 bg-white p-3 rounded-md shadow-sm border" x-data="chequeManager()">
+                                    <div class="flex justify-between items-center mb-2">
+                                        <label class="text-xs font-semibold text-gray-600">Cheque Details</label>
+                                        <button type="button" @click="addCheque()"
+                                            class="text-xs px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600">
+                                            Add Cheque
+                                        </button>
+                                    </div>
+                                    <div x-show="cheques.length > 0" class="space-y-2">
+                                        <template x-for="(cheque, index) in cheques" :key="index">
+                                            <div class="grid grid-cols-5 gap-2 p-2 bg-gray-50 rounded">
+                                                <input type="text" :name="'cheques[' + index + '][cheque_number]'"
+                                                    x-model="cheque.cheque_number"
+                                                    class="border-gray-300 rounded text-xs px-2 py-1"
+                                                    placeholder="Cheque #" />
+                                                <input type="number" :name="'cheques[' + index + '][amount]'"
+                                                    x-model="cheque.amount" @input="updateChequeTotal()"
+                                                    class="border-gray-300 rounded text-xs px-2 py-1 text-right"
+                                                    placeholder="Amount" step="0.01" min="0" />
+                                                <input type="text" :name="'cheques[' + index + '][bank_name]'"
+                                                    x-model="cheque.bank_name"
+                                                    class="border-gray-300 rounded text-xs px-2 py-1"
+                                                    placeholder="Bank Name" />
+                                                <input type="date" :name="'cheques[' + index + '][date]'"
+                                                    x-model="cheque.date"
+                                                    class="border-gray-300 rounded text-xs px-2 py-1" />
+                                                <button type="button" @click="removeCheque(index)"
+                                                    class="text-red-600 hover:text-red-800 text-xs">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </template>
+                                        <div class="text-right font-semibold text-sm">
+                                            Total Cheques: <span x-text="formatCurrency(chequeTotal)"></span>
+                                            <input type="hidden" id="total_cheques" name="total_cheques" :value="chequeTotal" />
+                                        </div>
+                                    </div>
+                                    <p x-show="cheques.length === 0" class="text-xs text-gray-500 italic">No cheques added yet. Click "Add Cheque" to add one.</p>
+                                </div>
+                            </div>
+
                                 <div class="mt-4 bg-white p-4 rounded-md shadow-sm border-2 border-green-300">
                                     <div class="flex justify-between items-center">
                                         <span class="text-base font-bold text-gray-700">Total Cash:</span>
@@ -665,6 +763,7 @@
 
             const balance = issued - sold - returned - shortage;
             const balanceSpan = document.getElementById(`balance-${itemIndex}-${batchIndex}`);
+            const bfBalanceSpan = document.getElementById(`bf-balance-${itemIndex}-${batchIndex}`);
 
             if (balanceSpan) {
                 balanceSpan.textContent = balance;
@@ -674,6 +773,18 @@
                     balanceSpan.className = 'font-bold text-green-600';
                 } else {
                     balanceSpan.className = 'font-bold text-red-600';
+                }
+            }
+
+            // BF Balance is same as Balance (Brought Forward)
+            if (bfBalanceSpan) {
+                bfBalanceSpan.textContent = balance;
+                if (balance === 0) {
+                    bfBalanceSpan.className = 'font-semibold text-green-600';
+                } else if (balance > 0) {
+                    bfBalanceSpan.className = 'font-semibold text-purple-600';
+                } else {
+                    bfBalanceSpan.className = 'font-semibold text-red-600';
                 }
             }
 
@@ -896,6 +1007,42 @@
             updateSalesSummary();
         }
 
+        // Cheque Manager (Alpine.js component)
+        function chequeManager() {
+            return {
+                cheques: [],
+                chequeTotal: 0,
+
+                addCheque() {
+                    this.cheques.push({
+                        cheque_number: '',
+                        amount: 0,
+                        bank_name: '',
+                        date: new Date().toISOString().split('T')[0]
+                    });
+                },
+
+                removeCheque(index) {
+                    this.cheques.splice(index, 1);
+                    this.updateChequeTotal();
+                },
+
+                updateChequeTotal() {
+                    this.chequeTotal = this.cheques.reduce((sum, cheque) => {
+                        return sum + (parseFloat(cheque.amount) || 0);
+                    }, 0);
+                    updateCashTotal(); // Update overall cash total
+                },
+
+                formatCurrency(value) {
+                    return '₨ ' + parseFloat(value || 0).toLocaleString('en-PK', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+            }
+        }
+
         // Helper function to clear settlement form
         function clearSettlementForm() {
             document.getElementById('settlementItemsBody').innerHTML = '';
@@ -903,8 +1050,7 @@
             document.getElementById('settlementHelpText').style.display = 'none';
             document.getElementById('noItemsMessage').style.display = 'block';
             document.getElementById('noItemsMessage').innerHTML = 'Select a Goods Issue to load product details';
-            document.getElementById('salesSummarySection').style.display = 'none';
-            document.getElementById('expensesSection').style.display = 'none';
+            document.getElementById('expenseAndSalesSummarySection').style.display = 'none';
             document.getElementById('cashDetailSection').style.display = 'none';
         }
 
@@ -918,8 +1064,8 @@
             const denom20 = (parseFloat(document.getElementById('denom_20').value) || 0) * 20;
             const denom10 = (parseFloat(document.getElementById('denom_10').value) || 0) * 10;
             const coins = parseFloat(document.getElementById('denom_coins').value) || 0;
-            const bank1 = parseFloat(document.getElementById('bank_1').value) || 0;
-            const bank2 = parseFloat(document.getElementById('bank_2').value) || 0;
+            const bankTransfer = parseFloat(document.getElementById('bank_transfer_amount').value) || 0;
+            const chequesTotal = parseFloat(document.getElementById('total_cheques')?.value) || 0;
 
             // Update individual denomination totals
             document.getElementById('denom_5000_total').textContent = '₨ ' + denom5000.toLocaleString('en-PK');
@@ -930,7 +1076,7 @@
             document.getElementById('denom_20_total').textContent = '₨ ' + denom20.toLocaleString('en-PK');
             document.getElementById('denom_10_total').textContent = '₨ ' + denom10.toLocaleString('en-PK');
 
-            const totalCash = denom5000 + denom1000 + denom500 + denom100 + denom50 + denom20 + denom10 + coins + bank1 + bank2;
+            const totalCash = denom5000 + denom1000 + denom500 + denom100 + denom50 + denom20 + denom10 + coins + bankTransfer + chequesTotal;
 
             document.getElementById('totalCashDisplay').textContent = '₨ ' + totalCash.toLocaleString('en-PK', {
                 minimumFractionDigits: 2,
@@ -1028,6 +1174,7 @@
                                         ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
                                     </div>
                                 </td>
+                                <td class="py-1 px-1 text-center text-xs">${data.issue_date || 'N/A'}</td>
                                 <td class="py-1 px-1 text-center text-sm font-medium">${uomSymbol}</td>
                                 <td class="py-1 px-1">
                                     <div class="text-xs text-gray-600">
@@ -1079,6 +1226,9 @@
                                 <td class="py-1 px-1 text-right">
                                     <span id="balance-${index}-${batchIdx}" class="font-bold text-red-600">0</span>
                                 </td>
+                                <td class="py-1 px-1 text-right">
+                                    <span id="bf-balance-${index}-${batchIdx}" class="font-semibold text-purple-600">0</span>
+                                </td>
                                 <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
                                 <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
                                 <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
@@ -1098,8 +1248,7 @@
                     document.getElementById('noItemsMessage').style.display = 'none';
                     document.getElementById('settlementTableContainer').style.display = 'block';
                     document.getElementById('settlementHelpText').style.display = 'block';
-                    document.getElementById('salesSummarySection').style.display = 'block';
-                    document.getElementById('expensesSection').style.display = 'block';
+                    document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
                     document.getElementById('cashDetailSection').style.display = 'block';
 
                     // Initialize balances for all batch rows

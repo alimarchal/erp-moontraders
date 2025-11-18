@@ -54,7 +54,7 @@
 
                         <div class="bg-blue-50 p-4 rounded-lg mb-6">
                             <h4 class="font-semibold text-gray-900 mb-3">Financial Summary</h4>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                                 <div>
                                     <x-label for="cash_sales_amount" value="Cash Sales Amount" />
                                     <x-input id="cash_sales_amount" name="cash_sales_amount" type="number" step="0.01"
@@ -77,6 +77,14 @@
                                         min="0" class="mt-1 block w-full" :value="old('credit_sales_amount', 0)"
                                         oninput="calculateFinancialBalance()" />
                                     <x-input-error for="credit_sales_amount" class="mt-2" />
+                                </div>
+
+                                <div>
+                                    <x-label for="credit_recoveries" value="Credit Recoveries" />
+                                    <x-input id="credit_recoveries" name="credit_recoveries" type="number" step="0.01" min="0"
+                                        class="mt-1 block w-full" :value="old('credit_recoveries', 0)"
+                                        oninput="calculateFinancialBalance()" />
+                                    <x-input-error for="credit_recoveries" class="mt-2" />
                                 </div>
 
                                 <div>
@@ -105,7 +113,7 @@
                             </div>
 
                             <div class="mt-4 p-4 bg-white rounded-md border-2 border-blue-200">
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                                     <div>
                                         <span class="text-gray-600">Total Sales:</span>
                                         <span class="font-bold text-lg ml-2" id="totalSalesDisplay">Rs 0.00</span>
@@ -115,12 +123,16 @@
                                         <span class="font-bold text-lg ml-2" id="totalCollectionDisplay">Rs 0.00</span>
                                     </div>
                                     <div>
+                                        <span class="text-gray-600">Credit Recoveries:</span>
+                                        <span class="font-bold text-lg ml-2" id="creditRecoveriesDisplay">Rs 0.00</span>
+                                    </div>
+                                    <div>
                                         <span class="text-gray-600">Financial Balance:</span>
                                         <span class="font-bold text-lg ml-2" id="financialBalanceDisplay">Rs 0.00</span>
                                     </div>
                                 </div>
                                 <p class="text-xs text-gray-500 mt-2">
-                                    Balance = Total Sales - (Cash Collected + Cheques Collected - Expenses)
+                                    Balance = Total Sales - (Cash Collected + Cheques Collected + Credit Recoveries - Expenses)
                                 </p>
                             </div>
                         </div>
@@ -177,10 +189,10 @@
                                 <x-slot name="footer">
                                     <tr class="border-t-2 border-gray-300 bg-gray-100">
                                         <td colspan="3" class="py-2 px-2 text-right font-bold text-base">Grand Totals:</td>
-                                        <td class="py-2 px-2 text-right font-bold text-base text-green-700" id="grandTotalSold">0.000</td>
-                                        <td class="py-2 px-2 text-right font-bold text-base text-blue-700" id="grandTotalReturned">0.000</td>
-                                        <td class="py-2 px-2 text-right font-bold text-base text-red-700" id="grandTotalShortage">0.000</td>
-                                        <td class="py-2 px-2 text-right font-bold text-base" id="grandTotalBalance">0.000</td>
+                                        <td class="py-2 px-2 text-right font-bold text-base text-green-700" id="grandTotalSold">0</td>
+                                        <td class="py-2 px-2 text-right font-bold text-base text-blue-700" id="grandTotalReturned">0</td>
+                                        <td class="py-2 px-2 text-right font-bold text-base text-red-700" id="grandTotalShortage">0</td>
+                                        <td class="py-2 px-2 text-right font-bold text-base" id="grandTotalBalance">0</td>
                                     </tr>
                                 </x-slot>
                             </x-detail-table>
@@ -389,17 +401,19 @@
             const cashSales = parseFloat(document.getElementById('cash_sales_amount').value) || 0;
             const chequeSales = parseFloat(document.getElementById('cheque_sales_amount').value) || 0;
             const creditSales = parseFloat(document.getElementById('credit_sales_amount').value) || 0;
+            const creditRecoveries = parseFloat(document.getElementById('credit_recoveries').value) || 0;
             const cashCollected = parseFloat(document.getElementById('cash_collected').value) || 0;
             const chequesCollected = parseFloat(document.getElementById('cheques_collected').value) || 0;
             const expensesClaimed = parseFloat(document.getElementById('expenses_claimed').value) || 0;
 
             const totalSales = cashSales + chequeSales + creditSales;
-            const totalCollection = cashCollected + chequesCollected - expensesClaimed;
+            const totalCollection = cashCollected + chequesCollected + creditRecoveries - expensesClaimed;
             const financialBalance = totalSales - totalCollection;
 
             // Update displays
             document.getElementById('totalSalesDisplay').textContent = 'Rs ' + totalSales.toLocaleString('en-PK', {minimumFractionDigits: 2});
             document.getElementById('totalCollectionDisplay').textContent = 'Rs ' + totalCollection.toLocaleString('en-PK', {minimumFractionDigits: 2});
+            document.getElementById('creditRecoveriesDisplay').textContent = 'Rs ' + creditRecoveries.toLocaleString('en-PK', {minimumFractionDigits: 2});
 
             const balanceDisplay = document.getElementById('financialBalanceDisplay');
             balanceDisplay.textContent = 'Rs ' + financialBalance.toLocaleString('en-PK', {minimumFractionDigits: 2});
@@ -423,19 +437,19 @@
 
             if (!issuedInput || !soldInput || !returnedInput || !shortageInput) return;
 
-            const issued = parseFloat(issuedInput.value) || 0;
-            const sold = parseFloat(soldInput.value) || 0;
-            const returned = parseFloat(returnedInput.value) || 0;
-            const shortage = parseFloat(shortageInput.value) || 0;
+            const issued = parseInt(issuedInput.value) || 0;
+            const sold = parseInt(soldInput.value) || 0;
+            const returned = parseInt(returnedInput.value) || 0;
+            const shortage = parseInt(shortageInput.value) || 0;
 
             const balance = issued - sold - returned - shortage;
             const balanceSpan = document.getElementById(`balance-${itemIndex}-${batchIndex}`);
 
             if (balanceSpan) {
-                balanceSpan.textContent = balance.toFixed(3);
+                balanceSpan.textContent = balance;
 
                 // Color coding: green if balanced, red if not
-                if (Math.abs(balance) < 0.001) {
+                if (balance === 0) {
                     balanceSpan.className = 'font-bold text-green-600';
                 } else {
                     balanceSpan.className = 'font-bold text-red-600';
@@ -455,14 +469,14 @@
 
             if (!issuedInput || !soldInput || !returnedInput || !shortageInput) return;
 
-            const issued = parseFloat(issuedInput.value) || 0;
-            const sold = parseFloat(soldInput.value) || 0;
-            const returned = parseFloat(returnedInput.value) || 0;
+            const issued = parseInt(issuedInput.value) || 0;
+            const sold = parseInt(soldInput.value) || 0;
+            const returned = parseInt(returnedInput.value) || 0;
 
-            // Only auto-fill if shortage hasn't been manually set and is not the field being edited
-            if (skipField !== 'shortage' && (parseFloat(shortageInput.value) || 0) === 0) {
+            // Auto-calculate shortage if not manually editing the shortage field
+            if (skipField !== 'shortage') {
                 const autoShortage = Math.max(0, issued - sold - returned);
-                shortageInput.value = autoShortage.toFixed(3);
+                shortageInput.value = autoShortage;
             }
 
             calculateBatchBalance(itemIndex, batchIndex);
@@ -476,7 +490,7 @@
 
             // Sum up all batch quantities for this item
             document.querySelectorAll(`.batch-input[data-item-index="${itemIndex}"]`).forEach(input => {
-                const value = parseFloat(input.value) || 0;
+                const value = parseInt(input.value) || 0;
                 const type = input.dataset.type;
 
                 if (type === 'sold') soldTotal += value;
@@ -489,9 +503,9 @@
             const returnedField = document.querySelector(`.item-${itemIndex}-qty-returned`);
             const shortageField = document.querySelector(`.item-${itemIndex}-qty-shortage`);
 
-            if (soldField) soldField.value = soldTotal.toFixed(3);
-            if (returnedField) returnedField.value = returnedTotal.toFixed(3);
-            if (shortageField) shortageField.value = shortageTotal.toFixed(3);
+            if (soldField) soldField.value = soldTotal;
+            if (returnedField) returnedField.value = returnedTotal;
+            if (shortageField) shortageField.value = shortageTotal;
 
             // Update grand totals
             updateGrandTotals();
@@ -506,7 +520,7 @@
 
             // Sum all batch inputs
             document.querySelectorAll('.batch-input').forEach(input => {
-                const value = parseFloat(input.value) || 0;
+                const value = parseInt(input.value) || 0;
                 const type = input.dataset.type;
 
                 if (type === 'sold') grandSold += value;
@@ -517,22 +531,22 @@
             // Get total issued from hidden inputs
             document.querySelectorAll('input[name*="[quantity_issued]"][type="hidden"]').forEach(input => {
                 if (input.name.includes('[batches][')) {
-                    grandIssued += parseFloat(input.value) || 0;
+                    grandIssued += parseInt(input.value) || 0;
                 }
             });
 
             const grandBalance = grandIssued - grandSold - grandReturned - grandShortage;
 
             // Update displays
-            document.getElementById('grandTotalSold').textContent = grandSold.toFixed(3);
-            document.getElementById('grandTotalReturned').textContent = grandReturned.toFixed(3);
-            document.getElementById('grandTotalShortage').textContent = grandShortage.toFixed(3);
+            document.getElementById('grandTotalSold').textContent = grandSold.toLocaleString('en-PK');
+            document.getElementById('grandTotalReturned').textContent = grandReturned.toLocaleString('en-PK');
+            document.getElementById('grandTotalShortage').textContent = grandShortage.toLocaleString('en-PK');
 
             const balanceElement = document.getElementById('grandTotalBalance');
-            balanceElement.textContent = grandBalance.toFixed(3);
+            balanceElement.textContent = grandBalance.toLocaleString('en-PK');
 
             // Color code balance
-            if (Math.abs(grandBalance) < 0.001) {
+            if (grandBalance === 0) {
                 balanceElement.className = 'py-2 px-2 text-right font-bold text-base text-green-600';
             } else {
                 balanceElement.className = 'py-2 px-2 text-right font-bold text-base text-red-600';
@@ -644,7 +658,7 @@
                                     ${isFirst ? productAggregateInputs : ''}
                                     <input type="hidden" name="items[${index}][batches][${bIndex}][stock_batch_id]" value="${b.stock_batch_id || ''}" />
                                     <input type="hidden" name="items[${index}][batches][${bIndex}][batch_code]" value="${b.batch_code || ''}" />
-                                    <input type="hidden" name="items[${index}][batches][${bIndex}][quantity_issued]" value="${b.quantity || 0}" />
+                                    <input type="hidden" name="items[${index}][batches][${bIndex}][quantity_issued]" value="${Math.round(b.quantity || 0)}" />
                                     <input type="hidden" name="items[${index}][batches][${bIndex}][unit_cost]" value="${b.unit_cost || item.unit_cost}" />
                                     <input type="hidden" name="items[${index}][batches][${bIndex}][selling_price]" value="${b.selling_price || 0}" />
                                     <input type="hidden" name="items[${index}][batches][${bIndex}][is_promotional]" value="${b.is_promotional ? 1 : 0}" />
@@ -653,37 +667,37 @@
                                         ${b.is_promotional ? '🎁 ' : ''}${b.batch_code || 'N/A'}
                                     </div>
                                 </td>
-                                <td class="py-1 px-2 text-right font-medium">${parseFloat(b.quantity).toLocaleString('en-PK', {minimumFractionDigits: 0})}</td>
+                                <td class="py-1 px-2 text-right font-medium">${Math.round(parseFloat(b.quantity)).toLocaleString('en-PK')}</td>
                                 <td class="py-1 px-2 text-right">₨${parseFloat(b.selling_price).toFixed(2)}</td>
-                                <td class="py-1 px-2">
+                                <td class="py-1 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${bIndex}][quantity_sold]"
-                                        step="0.001" min="0" max="${b.quantity}"
-                                        class="border-gray-300 rounded-md shadow-sm w-20 text-sm text-right batch-input"
+                                        step="1" min="0" max="${Math.round(b.quantity)}"
+                                        class="border-gray-300 rounded-md shadow-sm w-28 text-sm text-right batch-input"
                                         data-item-index="${index}" data-type="sold"
                                         oninput="autoFillShortage(${index}, ${bIndex}, 'sold')"
                                         value="0" />
                                 </td>
-                                <td class="py-1 px-2">
+                                <td class="py-1 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${bIndex}][quantity_returned]"
-                                        step="0.001" min="0" max="${b.quantity}"
-                                        class="border-gray-300 rounded-md shadow-sm w-20 text-sm text-right batch-input"
+                                        step="1" min="0" max="${Math.round(b.quantity)}"
+                                        class="border-gray-300 rounded-md shadow-sm w-28 text-sm text-right batch-input"
                                         data-item-index="${index}" data-type="returned"
                                         oninput="autoFillShortage(${index}, ${bIndex}, 'returned')"
                                         value="0" />
                                 </td>
-                                <td class="py-1 px-2">
+                                <td class="py-1 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${bIndex}][quantity_shortage]"
-                                        step="0.001" min="0" max="${b.quantity}"
-                                        class="border-gray-300 rounded-md shadow-sm w-20 text-sm text-right batch-input"
+                                        step="1" min="0" max="${Math.round(b.quantity)}"
+                                        class="border-gray-300 rounded-md shadow-sm w-28 text-sm text-right batch-input"
                                         data-item-index="${index}" data-type="shortage"
                                         oninput="calculateBatchBalance(${index}, ${bIndex})"
                                         value="0" />
                                 </td>
                                 <td class="py-1 px-2 text-right">
-                                    <span id="balance-${index}-${bIndex}" class="font-bold text-red-600">${parseFloat(b.quantity).toFixed(3)}</span>
+                                    <span id="balance-${index}-${bIndex}" class="font-bold text-red-600">${Math.round(parseFloat(b.quantity))}</span>
                                 </td>
                             </tr>
                         `;

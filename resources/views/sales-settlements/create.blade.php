@@ -117,82 +117,130 @@
                             Returned and Shortage as needed.
                         </p>
 
-                        <hr class="my-6 border-gray-200">
+                        {{-- Section 2: Creditors/Credit Sales Breakdown (MOVED HERE) --}}
+                        <div class="mb-6" style="display: none;" id="creditSalesSection" x-data="creditSalesManager()">
+                            <hr class="my-6 border-gray-200">
 
-                        {{-- Sales Summary Dashboard --}}
-                        <div id="salesSummaryDashboard" style="display: none;" class="mb-6">
                             <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                                <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                <svg class="w-6 h-6 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                 </svg>
-                                Sales Summary
+                                Creditors / Credit Sales Breakdown
                             </h3>
 
-                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                                <div class="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-lg p-4 shadow-sm">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="text-xs font-semibold text-green-700 uppercase tracking-wide">Cash Sales</p>
-                                            <p class="text-2xl font-bold text-green-900 mt-1" id="display_cash_sales">₨ 0.00</p>
-                                            <input type="hidden" id="cash_sales_amount" name="cash_sales_amount" value="0">
-                                        </div>
-                                        <div class="bg-green-200 rounded-full p-3">
-                                            <svg class="w-6 h-6 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div x-show="creditSales.length > 0" x-cloak class="bg-white border-2 border-orange-200 rounded-lg overflow-hidden shadow-sm">
+                                <x-detail-table title="" :headers="[
+                                    ['label' => 'Customer', 'align' => 'text-left'],
+                                    ['label' => 'Previous Balance', 'align' => 'text-right'],
+                                    ['label' => 'Credit', 'align' => 'text-right'],
+                                    ['label' => 'Recovery', 'align' => 'text-right'],
+                                    ['label' => 'New Balance', 'align' => 'text-right'],
+                                    ['label' => 'Notes', 'align' => 'text-left'],
+                                    ['label' => 'Action', 'align' => 'text-center'],
+                                ]">
+                                    <tbody>
+                                        <template x-for="(sale, index) in creditSales" :key="index">
+                                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                                <td class="py-1 px-1">
+                                                    <select :name="'credit_sales[' + index + '][customer_id]'"
+                                                        x-model="sale.customer_id"
+                                                        @change="updateCustomerBalance(index)"
+                                                        class="border-gray-300 rounded-md text-sm w-full" required>
+                                                        <option value="">Select Customer</option>
+                                                        @foreach(\App\Models\Customer::orderBy('customer_name')->get()
+                                                        as $customer)
+                                                        <option value="{{ $customer->id }}"
+                                                            data-balance="{{ $customer->receivable_balance ?? 0 }}">
+                                                            {{ $customer->customer_name }}
+                                                        </option>
+                                                        @endforeach
+                                                    </select>
+                                                </td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number"
+                                                        :name="'credit_sales[' + index + '][previous_balance]'"
+                                                        x-model="sale.previous_balance" readonly
+                                                        class="border-gray-300 rounded-md text-sm w-24 text-right bg-gray-100"
+                                                        step="0.01" />
+                                                </td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number"
+                                                        :name="'credit_sales[' + index + '][sale_amount]'"
+                                                        x-model="sale.sale_amount"
+                                                        @input="calculateNewBalance(index); updateCreditTotal()"
+                                                        class="border-gray-300 rounded-md text-sm w-24 text-right"
+                                                        step="0.01" min="0" />
+                                                </td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number"
+                                                        :name="'credit_sales[' + index + '][payment_received]'"
+                                                        x-model="sale.payment_received"
+                                                        @input="calculateNewBalance(index); updateRecoveryTotal()"
+                                                        class="border-gray-300 rounded-md text-sm w-24 text-right"
+                                                        step="0.01" min="0" />
+                                                </td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <span class="font-semibold text-gray-700"
+                                                        x-text="formatCurrency(sale.new_balance)"></span>
+                                                    <input type="hidden"
+                                                        :name="'credit_sales[' + index + '][new_balance]'"
+                                                        x-model="sale.new_balance" />
+                                                </td>
+                                                <td class="py-1 px-1">
+                                                    <input type="text" :name="'credit_sales[' + index + '][notes]'"
+                                                        x-model="sale.notes"
+                                                        class="border-gray-300 rounded-md text-sm w-full"
+                                                        placeholder="Optional notes" />
+                                                </td>
+                                                <td class="py-1 px-1 text-center">
+                                                    <button type="button" @click="removeCreditSale(index)"
+                                                        class="text-red-600 hover:text-red-800">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
+                                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                    <x-slot name="footer">
+                                        <tr class="border-t-2 border-gray-300 bg-gray-100">
+                                            <td colspan="2" class="py-1 px-1 text-right font-bold">Total Credit Sales:
+                                            </td>
+                                            <td class="py-1 px-1 text-right font-bold text-orange-700">
+                                                <span x-text="formatCurrency(creditTotal)"></span>
+                                                <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
+                                                    :value="creditTotal" />
+                                            </td>
+                                            <td class="py-1 px-1 text-right font-bold text-green-700">
+                                                <span x-text="formatCurrency(recoveryTotal)"></span>
+                                                <input type="hidden" id="credit_recoveries_total"
+                                                    name="credit_recoveries_total" :value="recoveryTotal" />
+                                            </td>
+                                            <td colspan="3"></td>
+                                        </tr>
+                                    </x-slot>
+                                </x-detail-table>
+                            </div>
 
-                                <div class="bg-gradient-to-br from-purple-50 to-purple-100 border-2 border-purple-300 rounded-lg p-4 shadow-sm">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="text-xs font-semibold text-purple-700 uppercase tracking-wide">Cheque Sales</p>
-                                            <p class="text-2xl font-bold text-purple-900 mt-1" id="display_cheque_sales">₨ 0.00</p>
-                                            <input type="hidden" id="cheque_sales_amount" name="cheque_sales_amount" value="0">
-                                            <p class="text-xs text-purple-600 mt-1"><span id="cheque_count_display">0</span> cheque(s)</p>
-                                        </div>
-                                        <div class="bg-purple-200 rounded-full p-3">
-                                            <svg class="w-6 h-6 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
+                            <p class="text-sm text-gray-500 mt-2" x-show="creditSales.length === 0">
+                                No credit sales added yet. Click "Add Credit Sale" to add one.
+                            </p>
 
-                                <div class="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-300 rounded-lg p-4 shadow-sm">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="text-xs font-semibold text-orange-700 uppercase tracking-wide">Credit Sales</p>
-                                            <p class="text-2xl font-bold text-orange-900 mt-1" id="display_credit_sales">₨ 0.00</p>
-                                            <p class="text-xs text-orange-600 mt-1"><span id="credit_customer_count">0</span> customer(s)</p>
-                                        </div>
-                                        <div class="bg-orange-200 rounded-full p-3">
-                                            <svg class="w-6 h-6 text-orange-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-400 rounded-lg p-4 shadow-sm">
-                                    <div class="flex items-center justify-between">
-                                        <div>
-                                            <p class="text-xs font-semibold text-blue-700 uppercase tracking-wide">Total Sales</p>
-                                            <p class="text-2xl font-bold text-blue-900 mt-1" id="display_total_sales">₨ 0.00</p>
-                                            <p class="text-xs text-blue-600 mt-1">All payment types</p>
-                                        </div>
-                                        <div class="bg-blue-200 rounded-full p-3">
-                                            <svg class="w-6 h-6 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="flex justify-between items-center mb-4 mt-4">
+                                <button type="button" @click="addCreditSale()"
+                                    class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Add Credit Sale
+                                </button>
                             </div>
                         </div>
-
-                        <hr class="my-2 border-gray-200">
 
                         {{-- Section 3: Side-by-Side Cash Detail, Expense Detail, and Sales Summary --}}
                         <div id="expenseAndSalesSummarySection" style="display: none;" class="mb-4">
@@ -429,7 +477,7 @@
                                     </div>
                                 </div>
 
-                                {{-- THIRD COLUMN: Sales Summary --}}
+                                {{-- THIRD COLUMN: Sales Summary (Auto-Calculating) --}}
                                 <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
                                     <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2">
                                         <h4 class="text-sm font-bold text-white">Sales Summary</h4>
@@ -444,39 +492,46 @@
                                             </thead>
                                             <tbody class="divide-y divide-gray-200">
                                                 <tr>
-                                                    <td class="py-1 px-2">Cash Sales</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-green-700" id="summary_cash_sales_display">₨ 0.00</td>
+                                                    <td class="py-1 px-2">Net Sale (Sold Items)</td>
+                                                    <td class="py-1 px-2 text-right font-semibold text-green-700" id="summary_net_sale_display">₨ 0.00</td>
                                                 </tr>
                                                 <tr>
-                                                    <td class="py-1 px-2">Cheque Sales</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-purple-700" id="summary_cheque_sales_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Credit Sales</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-orange-700" id="summary_credit_sales_display">₨ 0.00</td>
+                                                    <td class="py-1 px-2">Recovery (from customers)</td>
+                                                    <td class="py-1 px-2 text-right font-semibold text-teal-700" id="summary_recovery_display">₨ 0.00</td>
                                                 </tr>
                                                 <tr class="bg-blue-100 border-t-2 border-blue-300">
-                                                    <td class="py-1.5 px-2 font-bold text-blue-900">Total Sales</td>
-                                                    <td class="py-1.5 px-2 text-right font-bold text-blue-900 text-base" id="summary_total_sales_display">₨ 0.00</td>
+                                                    <td class="py-1.5 px-2 font-bold text-blue-900">Total Sale</td>
+                                                    <td class="py-1.5 px-2 text-right font-bold text-blue-900" id="summary_total_sale_display">₨ 0.00</td>
                                                 </tr>
                                                 <tr>
-                                                    <td class="py-1 px-2">Credit Recoveries</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-teal-700" id="summary_credit_recoveries_display">₨ 0.00</td>
+                                                    <td class="py-1 px-2">Credit (to customers)</td>
+                                                    <td class="py-1 px-2 text-right font-semibold text-orange-700" id="summary_credit_display">₨ 0.00</td>
                                                 </tr>
-                                                <tr class="bg-green-50">
-                                                    <td class="py-1 px-2 font-semibold">Grand Total</td>
-                                                    <td class="py-1 px-2 text-right font-bold text-green-900" id="summary_grand_total_display">₨ 0.00</td>
+                                                <tr class="bg-gray-50">
+                                                    <td class="py-1 px-2 font-semibold">Balance</td>
+                                                    <td class="py-1 px-2 text-right font-semibold" id="summary_balance_display">₨ 0.00</td>
                                                 </tr>
-                                                <tr class="border-t-2 border-gray-300">
-                                                    <td class="py-1 px-2 text-red-700">Less: Expenses</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-red-700" id="summary_total_expenses_display">₨ 0.00</td>
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-1 px-2 text-red-700">Expenses</td>
+                                                    <td class="py-1 px-2 text-right font-semibold text-red-700" id="summary_expenses_display">₨ 0.00</td>
                                                 </tr>
-                                                <tr class="bg-gradient-to-r from-green-100 to-emerald-100 border-t-2 border-green-300">
-                                                    <td class="py-2 px-2 font-bold text-green-900">Net Cash to Deposit</td>
-                                                    <td class="py-2 px-2 text-right font-bold text-green-900 text-lg" id="summary_net_cash_display">₨ 0.00</td>
+                                                <tr class="bg-indigo-50">
+                                                    <td class="py-1.5 px-2 font-bold text-indigo-900">Net Balance</td>
+                                                    <td class="py-1.5 px-2 text-right font-bold text-indigo-900" id="summary_net_balance_display">₨ 0.00</td>
+                                                </tr>
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-1 px-2">Cash Received (counted)</td>
+                                                    <td class="py-1 px-2 text-right font-semibold text-green-700" id="summary_cash_received_display">₨ 0.00</td>
+                                                </tr>
+                                                <tr class="bg-gradient-to-r from-purple-100 to-purple-50 border-t-2 border-purple-300">
+                                                    <td class="py-2 px-2 font-bold text-purple-900">Short/Excess</td>
+                                                    <td class="py-2 px-2 text-right font-bold text-purple-900 text-base" id="summary_short_excess_display">₨ 0.00</td>
                                                 </tr>
                                             </tbody>
                                         </table>
+                                        <div class="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 italic">
+                                            <strong>Formula:</strong> Net Sale + Recovery = Total Sale | Total - Credit = Balance | Balance - Expenses = Net Balance | Cash Received - Net Balance = Short/Excess
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -808,8 +863,6 @@
                         <hr class="my-2 border-gray-200">
 
                 </div>
-
-                <hr class="my-6 border-gray-200">
 
                 {{-- Section 8: Notes (MOVED TO BOTTOM) --}}
                 <div class="mb-6">
@@ -1188,21 +1241,47 @@
             const totalSale = netSale + recovery;
             const balance = totalSale - credit;
             const netBalance = balance - expenses;
-            const shortExcess = netBalance - cashReceived;
+            const shortExcess = cashReceived - netBalance; // CORRECTED: Cash Received - Net Balance
 
             document.getElementById('summary_total_sale').value = totalSale.toFixed(2);
             document.getElementById('summary_balance').value = balance.toFixed(2);
             document.getElementById('summary_net_balance').value = netBalance.toFixed(2);
             document.getElementById('summary_short_excess').value = shortExcess.toFixed(2);
 
-            // Color code short/excess
+            // Format currency for display
+            const formatPKR = (val) => '₨ ' + val.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+            // Update display fields in the Sales Summary table (3rd column)
+            const netSaleDisplay = document.getElementById('summary_net_sale_display');
+            const recoveryDisplay = document.getElementById('summary_recovery_display');
+            const totalSaleDisplay = document.getElementById('summary_total_sale_display');
+            const creditDisplay = document.getElementById('summary_credit_display');
+            const balanceDisplay = document.getElementById('summary_balance_display');
+            const expensesDisplay = document.getElementById('summary_expenses_display');
+            const netBalanceDisplay = document.getElementById('summary_net_balance_display');
+            const cashReceivedDisplay = document.getElementById('summary_cash_received_display');
+            const shortExcessDisplay = document.getElementById('summary_short_excess_display');
+
+            if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);
+            if (recoveryDisplay) recoveryDisplay.textContent = formatPKR(recovery);
+            if (totalSaleDisplay) totalSaleDisplay.textContent = formatPKR(totalSale);
+            if (creditDisplay) creditDisplay.textContent = formatPKR(credit);
+            if (balanceDisplay) balanceDisplay.textContent = formatPKR(balance);
+            if (expensesDisplay) expensesDisplay.textContent = formatPKR(expenses);
+            if (netBalanceDisplay) netBalanceDisplay.textContent = formatPKR(netBalance);
+            if (cashReceivedDisplay) cashReceivedDisplay.textContent = formatPKR(cashReceived);
+            if (shortExcessDisplay) shortExcessDisplay.textContent = formatPKR(shortExcess);
+
+            // Color code short/excess in the old input field
             const shortExcessEl = document.getElementById('summary_short_excess');
-            if (Math.abs(shortExcess) < 0.01) {
-                shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-green-100 border-green-300 rounded-md text-sm px-2 py-1';
-            } else if (shortExcess > 0) {
-                shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-red-100 border-red-300 rounded-md text-sm px-2 py-1 text-red-700';
-            } else {
-                shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-blue-100 border-blue-300 rounded-md text-sm px-2 py-1 text-blue-700';
+            if (shortExcessEl) {
+                if (Math.abs(shortExcess) < 0.01) {
+                    shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-green-100 border-green-300 rounded-md text-sm px-2 py-1';
+                } else if (shortExcess > 0) {
+                    shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-red-100 border-red-300 rounded-md text-sm px-2 py-1 text-red-700';
+                } else {
+                    shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-blue-100 border-blue-300 rounded-md text-sm px-2 py-1 text-blue-700';
+                }
             }
         }
 
@@ -1272,9 +1351,11 @@
             document.getElementById('settlementHelpText').style.display = 'none';
             document.getElementById('noItemsMessage').style.display = 'block';
             document.getElementById('noItemsMessage').innerHTML = 'Select a Goods Issue to load product details';
+            document.getElementById('creditSalesSection').style.display = 'none';
             document.getElementById('expenseAndSalesSummarySection').style.display = 'none';
             document.getElementById('chequeDetailSection').style.display = 'none';
-            document.getElementById('salesSummarySection').style.display = 'none';
+            const salesSummarySection = document.getElementById('salesSummarySection');
+            if (salesSummarySection) salesSummarySection.style.display = 'none';
         }
 
         // Cash Detail denomination breakdown
@@ -1472,9 +1553,11 @@
                     document.getElementById('noItemsMessage').style.display = 'none';
                     document.getElementById('settlementTableContainer').style.display = 'block';
                     document.getElementById('settlementHelpText').style.display = 'block';
+                    document.getElementById('creditSalesSection').style.display = 'block';
                     document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
                     document.getElementById('chequeDetailSection').style.display = 'block';
-                    document.getElementById('salesSummarySection').style.display = 'block';
+                    const salesSummarySection = document.getElementById('salesSummarySection');
+                    if (salesSummarySection) salesSummarySection.style.display = 'block';
 
                     // Initialize balances for all batch rows
                     items.forEach((item, index) => {

@@ -1,10 +1,6 @@
-it should auto calculating remove the old Sales Summary and move Creditors / Credit Sales Breakdown table and button below 💡 Tip: When you enter Sold quantity, the remaining will auto-calculate. You can then adjust Returned and Shortage as needed. before Cash Reconciliation & Settlement
-Net Sale (Mean SOLD Items)	
-Recovery (form customer)
-Total Sale ( Net Sale + Recovery )
-Credit 	(Grand TOtal of Credit to Customers)
-Balance	(Total Sale - Credit)
-Expenses  (Sum of All Expenses)
-Net Balance	(Balance - Expenses)
-Cash Received (Cash Detail (Denomination Breakdown)	)
-Short/Excess (Cash Received  - Net Balance)
+emove the old summery from below /Users/alirazamarchal/Herd/moontrader/resources/views/sales-settlements/create.blade.php Cheque Payment Details reditors / Credit Sales
+  Breakdown
+  No credit sales added yet. Click "Add Credit Sale" to add one.
+  Add Credit Sale
+
+  as they appear twice and expense is not calculating

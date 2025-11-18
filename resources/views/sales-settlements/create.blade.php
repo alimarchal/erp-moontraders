@@ -89,19 +89,24 @@
                                         <td colspan="6" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
                                         </td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
-                                            id="grandTotalSoldValue">₨ 0.00</td>
+                                            id="grandTotalSoldValue">0.00</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-blue-700"
-                                            id="grandTotalReturnValue">₨ 0.00</td>
+                                            id="grandTotalReturnValue">0.00</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
-                                            id="grandTotalShortageValue">₨ 0.00</td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm" id="valueBalanceCheck">₨
-                                            0.00</td>
+                                            id="grandTotalShortageValue">0.00</td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm" id="valueBalanceCheck">0.00
+                                        </td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
+                                            id="grandTotalBFValue">0.00</td>
                                     </tr>
                                     <tr class="border-t-2 border-gray-400 bg-gray-200">
-                                        <td colspan="9" class="py-1 px-1 text-right font-bold text-base">Total Issued
-                                            Value:</td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-emerald-700"
-                                            id="grandTotalIssuedValue">₨ 0.00</td>
+                                        <td colspan="3" class="py-1 px-1 text-right font-bold text-base">Total Issued:
+                                        </td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalIssued">0</td>
+                                        <td colspan="2" class="py-1 px-1 text-right font-bold text-base">Total Value:
+                                        </td>
+                                        <td colspan="5" class="py-1 px-1 text-right font-bold text-sm text-emerald-700"
+                                            id="grandTotalIssuedValue">0.00</td>
                                     </tr>
                                 </x-slot>
                             </x-detail-table>
@@ -923,15 +928,22 @@
             const grandBalance = grandIssued - grandSold - grandReturned - grandShortage;
             const grandBalanceValue = grandIssuedValue - grandSoldValue - grandReturnValue - grandShortageValue;
 
+            // BF Balance is same as Balance (what's being brought forward)
+            const grandBF = grandBalance;
+            const grandBFValue = grandBalanceValue;
+
             // Update quantity displays with null checks
             const soldEl = document.getElementById('grandTotalSold');
             const returnedEl = document.getElementById('grandTotalReturned');
             const shortageEl = document.getElementById('grandTotalShortage');
             const balanceElement = document.getElementById('grandTotalBalance');
+            const bfElement = document.getElementById('grandTotalBF');
+            const issuedEl = document.getElementById('grandTotalIssued');
 
             if (soldEl) soldEl.textContent = grandSold;
             if (returnedEl) returnedEl.textContent = grandReturned;
             if (shortageEl) shortageEl.textContent = grandShortage;
+            if (issuedEl) issuedEl.textContent = grandIssued;
 
             if (balanceElement) {
                 balanceElement.textContent = grandBalance;
@@ -940,6 +952,19 @@
                     balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-green-600';
                 } else {
                     balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-red-600';
+                }
+            }
+
+            // Update BF Balance display
+            if (bfElement) {
+                bfElement.textContent = grandBF;
+                // Color code BF balance
+                if (grandBF === 0) {
+                    bfElement.className = 'py-1 px-1 text-right font-bold text-sm text-purple-700';
+                } else if (grandBF > 0) {
+                    bfElement.className = 'py-1 px-1 text-right font-bold text-sm text-purple-600';
+                } else {
+                    bfElement.className = 'py-1 px-1 text-right font-bold text-sm text-red-600';
                 }
             }
 
@@ -952,6 +977,7 @@
             const balanceValueEl = document.getElementById('grandTotalBalanceValue');
             const issuedValueEl = document.getElementById('grandTotalIssuedValue');
             const valueCheckElement = document.getElementById('valueBalanceCheck');
+            const bfValueElement = document.getElementById('grandTotalBFValue');
 
             if (soldValueEl) soldValueEl.textContent = formatPKR(grandSoldValue);
             if (returnValueEl) returnValueEl.textContent = formatPKR(grandReturnValue);
@@ -967,6 +993,11 @@
                 } else {
                     valueCheckElement.className = 'py-1 px-1 text-right font-bold text-sm text-red-700';
                 }
+            }
+
+            // Update BF Value display
+            if (bfValueElement) {
+                bfValueElement.textContent = formatPKR(grandBFValue);
             }
 
             // Update Sales Summary with sold value (Net Sale = Item Issue Value)
@@ -1201,15 +1232,15 @@
                                 <td class="py-1 px-1 text-center text-sm font-medium">${uomSymbol}</td>
                                 <td class="py-1 px-1">
                                     <div class="text-xs text-gray-600">
-                                        ${parseFloat(batch.quantity).toLocaleString()} × ₨${parseFloat(batch.selling_price).toFixed(2)}
+                                        ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)}
                                     </div>
                                 </td>
                                 <td class="py-1 px-1 text-right">
                                     <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
                                     <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
                                 </td>
-                                <td class="py-1 px-1 text-right text-sm">₨${parseFloat(batch.selling_price).toFixed(2)}</td>
-                                <td class="py-1 px-1 text-right font-bold text-green-700">₨${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
+                                <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
                                 <td class="py-1 px-1 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_sold]"

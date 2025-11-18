@@ -41,7 +41,7 @@ class SalesSettlement extends Model
         'expense_salesman_charges',
         'expense_loader_charges',
         'expense_percentage',
-        'expense_message_amount',
+        'expense_miscellaneous_amount',
         'cash_to_deposit',
         'status',
         'verified_by',
@@ -74,7 +74,7 @@ class SalesSettlement extends Model
         'expense_salesman_charges' => 'decimal:2',
         'expense_loader_charges' => 'decimal:2',
         'expense_percentage' => 'decimal:2',
-        'expense_message_amount' => 'decimal:2',
+        'expense_miscellaneous_amount' => 'decimal:2',
         'cash_to_deposit' => 'decimal:2',
         'posted_at' => 'datetime',
     ];

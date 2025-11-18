@@ -354,8 +354,8 @@
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
                                     <div class="bg-white p-3 rounded-md shadow-sm border">
-                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Message Amount</label>
-                                        <input type="number" id="expense_message_amount" name="expense_message_amount" step="0.01" min="0"
+                                        <label class="text-xs font-semibold text-gray-600 block mb-1">Miscellaneous Amount</label>
+                                        <input type="number" id="expense_miscellaneous_amount" name="expense_miscellaneous_amount" step="0.01" min="0"
                                             class="mt-1 block w-full text-right font-bold border-gray-300 rounded-md text-sm px-2 py-1"
                                             oninput="updateExpensesTotal()" value="0.00" />
                                     </div>
@@ -866,10 +866,10 @@
             const salesmanCharges = parseFloat(document.getElementById('expense_salesman_charges').value) || 0;
             const loaderCharges = parseFloat(document.getElementById('expense_loader_charges').value) || 0;
             const percentage = parseFloat(document.getElementById('expense_percentage').value) || 0;
-            const messageAmount = parseFloat(document.getElementById('expense_message_amount').value) || 0;
+            const miscellaneousAmount = parseFloat(document.getElementById('expense_miscellaneous_amount').value) || 0;
 
             const totalExpenses = tollTax + amrPowder + amrLiquid + scheme + advanceTax +
-                                 foodCharges + salesmanCharges + loaderCharges + percentage + messageAmount;
+                                 foodCharges + salesmanCharges + loaderCharges + percentage + miscellaneousAmount;
 
             document.getElementById('totalExpensesDisplay').textContent = '₨ ' + totalExpenses.toLocaleString('en-PK', {
                 minimumFractionDigits: 2,

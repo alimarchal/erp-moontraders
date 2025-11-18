@@ -43,6 +43,18 @@ class SalesSettlement extends Model
         'expense_percentage',
         'expense_miscellaneous_amount',
         'cash_to_deposit',
+        'denom_5000',
+        'denom_1000',
+        'denom_500',
+        'denom_100',
+        'denom_50',
+        'denom_20',
+        'denom_10',
+        'denom_coins',
+        'bank_transfer_amount',
+        'bank_account_id',
+        'cheque_count',
+        'cheque_details',
         'status',
         'verified_by',
         'journal_entry_id',
@@ -76,6 +88,9 @@ class SalesSettlement extends Model
         'expense_percentage' => 'decimal:2',
         'expense_miscellaneous_amount' => 'decimal:2',
         'cash_to_deposit' => 'decimal:2',
+        'denom_coins' => 'decimal:2',
+        'bank_transfer_amount' => 'decimal:2',
+        'cheque_details' => 'array',
         'posted_at' => 'datetime',
     ];
 
@@ -122,6 +137,11 @@ class SalesSettlement extends Model
     public function creditSales(): HasMany
     {
         return $this->hasMany(CreditSale::class);
+    }
+
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
     }
 
     public function isDraft(): bool

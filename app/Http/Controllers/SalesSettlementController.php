@@ -204,6 +204,7 @@ class SalesSettlementController extends Controller
         return response()->json([
             'id' => $goodsIssue->id,
             'issue_number' => $goodsIssue->issue_number,
+            'issue_date' => $goodsIssue->issue_date->format('d M Y'),
             'employee' => $goodsIssue->employee->full_name,
             'vehicle' => $goodsIssue->vehicle->vehicle_number,
             'items' => $formattedItems,
@@ -257,6 +258,12 @@ class SalesSettlementController extends Controller
                 ($request->expense_percentage ?? 0) +
                 ($request->expense_miscellaneous_amount ?? 0);
 
+            // Prepare cheque details as JSON
+            $chequeDetails = null;
+            if ($request->has('cheques') && is_array($request->cheques)) {
+                $chequeDetails = $request->cheques;
+            }
+
             // Create sales settlement
             $settlement = SalesSettlement::create([
                 'settlement_number' => $settlementNumber,
@@ -289,6 +296,21 @@ class SalesSettlementController extends Controller
                 'expense_percentage' => $request->expense_percentage ?? 0,
                 'expense_miscellaneous_amount' => $request->expense_miscellaneous_amount ?? 0,
                 'cash_to_deposit' => $cashToDeposit,
+                // Cash denomination breakdown
+                'denom_5000' => $request->denom_5000 ?? 0,
+                'denom_1000' => $request->denom_1000 ?? 0,
+                'denom_500' => $request->denom_500 ?? 0,
+                'denom_100' => $request->denom_100 ?? 0,
+                'denom_50' => $request->denom_50 ?? 0,
+                'denom_20' => $request->denom_20 ?? 0,
+                'denom_10' => $request->denom_10 ?? 0,
+                'denom_coins' => $request->denom_coins ?? 0,
+                // Bank transfer details
+                'bank_transfer_amount' => $request->bank_transfer_amount ?? 0,
+                'bank_account_id' => $request->bank_account_id ?: null,
+                // Cheque details
+                'cheque_count' => is_array($chequeDetails) ? count($chequeDetails) : 0,
+                'cheque_details' => $chequeDetails,
                 'status' => 'draft',
                 'notes' => $request->notes,
             ]);

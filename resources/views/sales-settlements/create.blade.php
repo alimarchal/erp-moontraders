@@ -55,8 +55,8 @@
                                 title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance = BF)"
                                 :headers="[
                                 ['label' => 'Product / Batch', 'align' => 'text-left'],
-                                ['label' => 'UOM', 'align' => 'text-center'],
                                 ['label' => 'Batch Breakdown', 'align' => 'text-left'],
+                                ['label' => 'B/F', 'align' => 'text-right'],
                                 ['label' => 'Qty Issued', 'align' => 'text-right'],
                                 ['label' => 'Price', 'align' => 'text-right'],
                                 ['label' => 'Value', 'align' => 'text-right'],
@@ -64,15 +64,18 @@
                                 ['label' => 'Returned', 'align' => 'text-right'],
                                 ['label' => 'Shortage', 'align' => 'text-right'],
                                 ['label' => 'Balance', 'align' => 'text-right'],
-                                ['label' => 'BF Balance', 'align' => 'text-right'],
                             ]">
                                 <tbody id="settlementItemsBody">
                                     <!-- Settlement items will be populated here -->
                                 </tbody>
                                 <x-slot name="footer">
                                     <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                        <td colspan="6" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
+                                        <td colspan="3" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
                                         </td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
+                                            id="grandTotalBF">0
+                                        </td>
+                                        <td colspan="2" class="py-1 px-1"></td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
                                             id="grandTotalSold">0</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-blue-700"
@@ -81,13 +84,13 @@
                                             id="grandTotalShortage">0</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalBalance">0
                                         </td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
-                                            id="grandTotalBF">0
-                                        </td>
                                     </tr>
                                     <tr class="border-t border-gray-300 bg-blue-50">
-                                        <td colspan="6" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
+                                        <td colspan="3" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
                                         </td>
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
+                                            id="grandTotalBFValue">0.00</td>
+                                        <td colspan="2" class="py-1 px-1"></td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
                                             id="grandTotalSoldValue">0.00</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-blue-700"
@@ -96,8 +99,6 @@
                                             id="grandTotalShortageValue">0.00</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm" id="valueBalanceCheck">0.00
                                         </td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
-                                            id="grandTotalBFValue">0.00</td>
                                     </tr>
                                     <tr class="border-t-2 border-gray-400 bg-gray-200">
                                         <td colspan="3" class="py-1 px-1 text-right font-bold text-base">Total Issued:
@@ -1229,11 +1230,13 @@
                                         ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
                                     </div>
                                 </td>
-                                <td class="py-1 px-1 text-center text-sm font-medium">${uomSymbol}</td>
                                 <td class="py-1 px-1">
                                     <div class="text-xs text-gray-600">
-                                        ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)}
+                                        ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
                                     </div>
+                                </td>
+                                <td class="py-1 px-1 text-right">
+                                    <span id="bf-balance-${index}-${batchIdx}" class="font-semibold text-purple-600">0</span>
                                 </td>
                                 <td class="py-1 px-1 text-right">
                                     <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
@@ -1282,9 +1285,6 @@
                                 </td>
                                 <td class="py-1 px-1 text-right">
                                     <span id="balance-${index}-${batchIdx}" class="font-bold text-red-600">0</span>
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <span id="bf-balance-${index}-${batchIdx}" class="font-semibold text-purple-600">0</span>
                                 </td>
                                 <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
                                 <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">

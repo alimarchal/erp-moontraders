@@ -51,10 +51,10 @@
                         {{-- Section 2: Combined Batch-wise Settlement Table --}}
                         <div id="settlementTableContainer"
                             style="display: none; text-align: center; margin: 0px; padding: 0px">
-                            <x-detail-table title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance = BF)"
+                            <x-detail-table
+                                title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance = BF)"
                                 :headers="[
                                 ['label' => 'Product / Batch', 'align' => 'text-left'],
-                                ['label' => 'Issue Date', 'align' => 'text-center'],
                                 ['label' => 'UOM', 'align' => 'text-center'],
                                 ['label' => 'Batch Breakdown', 'align' => 'text-left'],
                                 ['label' => 'Qty Issued', 'align' => 'text-right'],
@@ -71,7 +71,7 @@
                                 </tbody>
                                 <x-slot name="footer">
                                     <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                        <td colspan="7" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
+                                        <td colspan="6" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
                                         </td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
                                             id="grandTotalSold">0</td>
@@ -81,11 +81,12 @@
                                             id="grandTotalShortage">0</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalBalance">0
                                         </td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700" id="grandTotalBF">0
+                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
+                                            id="grandTotalBF">0
                                         </td>
                                     </tr>
                                     <tr class="border-t border-gray-300 bg-blue-50">
-                                        <td colspan="7" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
+                                        <td colspan="6" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
                                         </td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
                                             id="grandTotalSoldValue">₨ 0.00</td>
@@ -97,7 +98,7 @@
                                             0.00</td>
                                     </tr>
                                     <tr class="border-t-2 border-gray-400 bg-gray-200">
-                                        <td colspan="10" class="py-1 px-1 text-right font-bold text-base">Total Issued
+                                        <td colspan="9" class="py-1 px-1 text-right font-bold text-base">Total Issued
                                             Value:</td>
                                         <td class="py-1 px-1 text-right font-bold text-sm text-emerald-700"
                                             id="grandTotalIssuedValue">₨ 0.00</td>
@@ -133,7 +134,8 @@
                                                 <td class="py-1 px-1">1</td>
                                                 <td class="py-1 px-1">Labor</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="expense_toll_tax" name="expense_toll_tax" step="0.01" min="0"
+                                                    <input type="number" id="expense_toll_tax" name="expense_toll_tax"
+                                                        step="0.01" min="0"
                                                         class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
                                                         oninput="updateExpensesTotal()" value="0.00" />
                                                 </td>
@@ -142,7 +144,8 @@
                                                 <td class="py-1 px-1">2</td>
                                                 <td class="py-1 px-1">Food</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="expense_food_charges" name="expense_food_charges" step="0.01" min="0"
+                                                    <input type="number" id="expense_food_charges"
+                                                        name="expense_food_charges" step="0.01" min="0"
                                                         class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
                                                         oninput="updateExpensesTotal()" value="0.00" />
                                                 </td>
@@ -151,7 +154,8 @@
                                                 <td class="py-1 px-1">3</td>
                                                 <td class="py-1 px-1">Salesman</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="expense_salesman_charges" name="expense_salesman_charges" step="0.01" min="0"
+                                                    <input type="number" id="expense_salesman_charges"
+                                                        name="expense_salesman_charges" step="0.01" min="0"
                                                         class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
                                                         oninput="updateExpensesTotal()" value="0.00" />
                                                 </td>
@@ -160,7 +164,8 @@
                                                 <td class="py-1 px-1">4</td>
                                                 <td class="py-1 px-1">Loader</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="expense_loader_charges" name="expense_loader_charges" step="0.01" min="0"
+                                                    <input type="number" id="expense_loader_charges"
+                                                        name="expense_loader_charges" step="0.01" min="0"
                                                         class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
                                                         oninput="updateExpensesTotal()" value="0.00" />
                                                 </td>
@@ -169,7 +174,8 @@
                                                 <td class="py-1 px-1">5</td>
                                                 <td class="py-1 px-1">AMR Powder</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="expense_amr_powder_claim" name="expense_amr_powder_claim" step="0.01" min="0"
+                                                    <input type="number" id="expense_amr_powder_claim"
+                                                        name="expense_amr_powder_claim" step="0.01" min="0"
                                                         class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
                                                         oninput="updateExpensesTotal()" value="0.00" />
                                                 </td>
@@ -178,7 +184,8 @@
                                                 <td class="py-1 px-1">6</td>
                                                 <td class="py-1 px-1">AMR Liquid</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="expense_amr_liquid_claim" name="expense_amr_liquid_claim" step="0.01" min="0"
+                                                    <input type="number" id="expense_amr_liquid_claim"
+                                                        name="expense_amr_liquid_claim" step="0.01" min="0"
                                                         class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
                                                         oninput="updateExpensesTotal()" value="0.00" />
                                                 </td>
@@ -187,7 +194,8 @@
                                                 <td class="py-1 px-1">7</td>
                                                 <td class="py-1 px-1">Scheme</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="expense_scheme" name="expense_scheme" step="0.01" min="0"
+                                                    <input type="number" id="expense_scheme" name="expense_scheme"
+                                                        step="0.01" min="0"
                                                         class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
                                                         oninput="updateExpensesTotal()" value="0.00" />
                                                 </td>
@@ -196,7 +204,8 @@
                                                 <td class="py-1 px-1">8</td>
                                                 <td class="py-1 px-1">Advance Tax</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="expense_advance_tax" name="expense_advance_tax" step="0.01" min="0"
+                                                    <input type="number" id="expense_advance_tax"
+                                                        name="expense_advance_tax" step="0.01" min="0"
                                                         class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
                                                         oninput="updateExpensesTotal()" value="0.00" />
                                                 </td>
@@ -205,7 +214,8 @@
                                                 <td class="py-1 px-1">9</td>
                                                 <td class="py-1 px-1">Percentage</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="expense_percentage" name="expense_percentage" step="0.01" min="0"
+                                                    <input type="number" id="expense_percentage"
+                                                        name="expense_percentage" step="0.01" min="0"
                                                         class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
                                                         oninput="updateExpensesTotal()" value="0.00" />
                                                 </td>
@@ -214,14 +224,16 @@
                                                 <td class="py-1 px-1">10</td>
                                                 <td class="py-1 px-1">Miscellaneous</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="expense_miscellaneous_amount" name="expense_miscellaneous_amount" step="0.01" min="0"
+                                                    <input type="number" id="expense_miscellaneous_amount"
+                                                        name="expense_miscellaneous_amount" step="0.01" min="0"
                                                         class="w-full text-right border-gray-300 rounded text-xs px-1 py-0.5"
                                                         oninput="updateExpensesTotal()" value="0.00" />
                                                 </td>
                                             </tr>
                                             <tr class="bg-red-50 border-t-2 border-red-300">
                                                 <td colspan="2" class="py-1 px-1 text-right font-bold">Total:</td>
-                                                <td class="py-1 px-1 text-right font-bold text-red-700" id="totalExpensesDisplay">₨ 0.00</td>
+                                                <td class="py-1 px-1 text-right font-bold text-red-700"
+                                                    id="totalExpensesDisplay">₨ 0.00</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -245,7 +257,8 @@
                                                 <td class="py-1 px-1">1</td>
                                                 <td class="py-1 px-1">Net Sale</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="summary_net_sale" name="summary_net_sale" readonly
+                                                    <input type="number" id="summary_net_sale" name="summary_net_sale"
+                                                        readonly
                                                         class="w-full text-right font-semibold text-green-700 bg-green-50 border-green-200 rounded text-xs px-1 py-0.5"
                                                         value="0.00" />
                                                 </td>
@@ -254,7 +267,8 @@
                                                 <td class="py-1 px-1">2</td>
                                                 <td class="py-1 px-1">Recoveries</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="summary_recovery" name="summary_recovery" readonly
+                                                    <input type="number" id="summary_recovery" name="summary_recovery"
+                                                        readonly
                                                         class="w-full text-right font-semibold bg-gray-100 border-gray-300 rounded text-xs px-1 py-0.5"
                                                         value="0.00" />
                                                 </td>
@@ -272,7 +286,8 @@
                                                 <td class="py-1 px-1">4</td>
                                                 <td class="py-1 px-1">Credit</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="summary_credit" name="summary_credit" readonly
+                                                    <input type="number" id="summary_credit" name="summary_credit"
+                                                        readonly
                                                         class="w-full text-right font-semibold text-orange-700 bg-orange-50 border-orange-200 rounded text-xs px-1 py-0.5"
                                                         value="0.00" />
                                                 </td>
@@ -290,7 +305,8 @@
                                                 <td class="py-1 px-1">6</td>
                                                 <td class="py-1 px-1">Expenses</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="summary_expenses" name="summary_expenses" readonly
+                                                    <input type="number" id="summary_expenses" name="summary_expenses"
+                                                        readonly
                                                         class="w-full text-right font-semibold text-red-700 bg-red-50 border-red-200 rounded text-xs px-1 py-0.5"
                                                         value="0.00" />
                                                 </td>
@@ -308,7 +324,8 @@
                                                 <td class="py-1 px-1">8</td>
                                                 <td class="py-1 px-1">Cash Received</td>
                                                 <td class="py-1 px-1 text-right">
-                                                    <input type="number" id="summary_cash_received" name="summary_cash_received" readonly
+                                                    <input type="number" id="summary_cash_received"
+                                                        name="summary_cash_received" readonly
                                                         class="w-full text-right font-semibold border-gray-300 rounded text-xs px-1 py-0.5 bg-gray-100"
                                                         value="0.00" />
                                                 </td>
@@ -324,7 +341,8 @@
                                             </tr>
                                             <tr class="bg-blue-50 border-t-2 border-blue-300">
                                                 <td colspan="3" class="py-1 px-1 text-xs text-gray-600 italic">
-                                                    Formula: Net Sale + Recoveries = Total Sale | Total - Credit = Balance | Balance - Expenses = Net | Net - Cash = Short/Excess
+                                                    Formula: Net Sale + Recoveries = Total Sale | Total - Credit =
+                                                    Balance | Balance - Expenses = Net | Net - Cash = Short/Excess
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -359,7 +377,8 @@
                                                         @change="updateCustomerBalance(index)"
                                                         class="border-gray-300 rounded-md text-sm w-full" required>
                                                         <option value="">Select Customer</option>
-                                                        @foreach($customers ?? [] as $customer)
+                                                        @foreach(\App\Models\Customer::orderBy('customer_name')->get()
+                                                        as $customer)
                                                         <option value="{{ $customer->id }}"
                                                             data-balance="{{ $customer->receivable_balance ?? 0 }}">
                                                             {{ $customer->customer_name }}
@@ -538,21 +557,24 @@
 
                                 {{-- Bank Transfer / Online Payment --}}
                                 <div class="mt-4 bg-white p-3 rounded-md shadow-sm border">
-                                    <label class="text-xs font-semibold text-gray-600 block mb-2">Bank Transfer / Online Payment</label>
+                                    <label class="text-xs font-semibold text-gray-600 block mb-2">Bank Transfer / Online
+                                        Payment</label>
                                     <div class="grid grid-cols-2 gap-2">
                                         <div>
                                             <label class="text-xs text-gray-500 block mb-1">Select Bank Account</label>
                                             <select id="bank_account_id" name="bank_account_id"
                                                 class="border-gray-300 rounded text-xs w-full px-2 py-1">
                                                 <option value="">No Bank Transfer</option>
-                                                @foreach(\App\Models\BankAccount::where('is_active', true)->get() as $bank)
-                                                    <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{ $bank->bank_name }}</option>
+                                                @foreach(\App\Models\BankAccount::active()->get() as $bank)
+                                                <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{
+                                                    $bank->bank_name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
                                         <div>
                                             <label class="text-xs text-gray-500 block mb-1">Amount</label>
-                                            <input type="number" id="bank_transfer_amount" name="bank_transfer_amount" min="0" step="0.01"
+                                            <input type="number" id="bank_transfer_amount" name="bank_transfer_amount"
+                                                min="0" step="0.01"
                                                 class="block w-full text-right border-gray-300 rounded text-xs px-2 py-1"
                                                 oninput="updateCashTotal()" value="0" />
                                         </div>
@@ -594,47 +616,49 @@
                                         </template>
                                         <div class="text-right font-semibold text-sm">
                                             Total Cheques: <span x-text="formatCurrency(chequeTotal)"></span>
-                                            <input type="hidden" id="total_cheques" name="total_cheques" :value="chequeTotal" />
+                                            <input type="hidden" id="total_cheques" name="total_cheques"
+                                                :value="chequeTotal" />
                                         </div>
                                     </div>
-                                    <p x-show="cheques.length === 0" class="text-xs text-gray-500 italic">No cheques added yet. Click "Add Cheque" to add one.</p>
+                                    <p x-show="cheques.length === 0" class="text-xs text-gray-500 italic">No cheques
+                                        added yet. Click "Add Cheque" to add one.</p>
                                 </div>
                             </div>
 
-                                <div class="mt-4 bg-white p-4 rounded-md shadow-sm border-2 border-green-300">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-base font-bold text-gray-700">Total Cash:</span>
-                                        <span class="text-2xl font-bold text-green-700" id="totalCashDisplay">₨
-                                            0.00</span>
-                                    </div>
+                            <div class="mt-4 bg-white p-4 rounded-md shadow-sm border-2 border-green-300">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-base font-bold text-gray-700">Total Cash:</span>
+                                    <span class="text-2xl font-bold text-green-700" id="totalCashDisplay">₨
+                                        0.00</span>
                                 </div>
                             </div>
                         </div>
-
-                        <hr class="my-6 border-gray-200">
-
-                        {{-- Section 8: Notes (MOVED TO BOTTOM) --}}
-                        <div class="mb-6">
-                            <x-label for="notes" value="Notes" />
-                            <textarea id="notes" name="notes" rows="3"
-                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
-                                placeholder="Add any additional notes or remarks here...">{{ old('notes') }}</textarea>
-                            <x-input-error for="notes" class="mt-2" />
-                        </div>
-
-                        <div class="flex justify-end space-x-3">
-                            <a href="{{ route('sales-settlements.index') }}"
-                                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                                Cancel
-                            </a>
-                            <x-button type="submit">
-                                Create Settlement
-                            </x-button>
-                        </div>
-                    </form>
                 </div>
+
+                <hr class="my-6 border-gray-200">
+
+                {{-- Section 8: Notes (MOVED TO BOTTOM) --}}
+                <div class="mb-6">
+                    <x-label for="notes" value="Notes" />
+                    <textarea id="notes" name="notes" rows="3"
+                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
+                        placeholder="Add any additional notes or remarks here...">{{ old('notes') }}</textarea>
+                    <x-input-error for="notes" class="mt-2" />
+                </div>
+
+                <div class="flex justify-end space-x-3">
+                    <a href="{{ route('sales-settlements.index') }}"
+                        class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
+                        Cancel
+                    </a>
+                    <x-button type="submit">
+                        Create Settlement
+                    </x-button>
+                </div>
+                </form>
             </div>
         </div>
+    </div>
     </div>
 
     @push('scripts')
@@ -1174,14 +1198,16 @@
                                         ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
                                     </div>
                                 </td>
-                                <td class="py-1 px-1 text-center text-xs">${data.issue_date || 'N/A'}</td>
                                 <td class="py-1 px-1 text-center text-sm font-medium">${uomSymbol}</td>
                                 <td class="py-1 px-1">
                                     <div class="text-xs text-gray-600">
                                         ${parseFloat(batch.quantity).toLocaleString()} × ₨${parseFloat(batch.selling_price).toFixed(2)}
                                     </div>
                                 </td>
-                                <td class="py-1 px-1 text-right font-semibold">${parseFloat(batch.quantity).toFixed(0)}</td>
+                                <td class="py-1 px-1 text-right">
+                                    <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
+                                    <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
+                                </td>
                                 <td class="py-1 px-1 text-right text-sm">₨${parseFloat(batch.selling_price).toFixed(2)}</td>
                                 <td class="py-1 px-1 text-right font-bold text-green-700">₨${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
                                 <td class="py-1 px-1 text-right">

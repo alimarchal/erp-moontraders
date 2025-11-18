@@ -633,18 +633,34 @@
                                             </tr>
                                         </tbody>
                                     </table>
-                                    <div class="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 leading-relaxed">
-                                        <strong class="block mb-1">Formula:</strong>
-                                        <div class="space-y-0.5">
-                                            <div>• Net Sale (Mean SOLD Items)</div>
-                                            <div>• Recovery (from customer)</div>
-                                            <div>• <strong>Total Sale</strong> = Net Sale + Recovery</div>
-                                            <div>• Credit (Grand Total of Credit to Customers)</div>
-                                            <div>• <strong>Balance</strong> = Total Sale - Credit</div>
-                                            <div>• Expenses (Sum of All Expenses)</div>
-                                            <div>• <strong>Net Balance</strong> = Balance - Expenses</div>
-                                            <div>• Cash Received (Cash Detail Denomination Breakdown)</div>
-                                            <div>• <strong>Short/Excess</strong> = Cash Received - Net Balance</div>
+                                    <div
+                                        class="mt-2 p-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200 text-xs text-gray-700 leading-relaxed">
+                                        <strong
+                                            class="block mb-2 text-sm text-gray-900 border-b border-gray-300 pb-1">Settlement
+                                            Calculation Formula:</strong>
+                                        <div class="space-y-1">
+                                            <div><span class="font-semibold text-gray-800">Net Sale:</span> Value of
+                                                sold items</div>
+                                            <div><span class="font-semibold text-gray-800">Recovery:</span> Payments
+                                                received from customers</div>
+                                            <div class="pl-2"><span class="font-bold text-blue-700">Total Sale</span> =
+                                                Net Sale + Recovery</div>
+                                            <div class="border-t border-gray-200 pt-1 mt-1"><span
+                                                    class="font-semibold text-gray-800">Credit:</span> Grand total of
+                                                credit extended to customers</div>
+                                            <div class="pl-2"><span class="font-bold text-gray-700">Balance</span> =
+                                                Total Sale - Credit</div>
+                                            <div class="border-t border-gray-200 pt-1 mt-1"><span
+                                                    class="font-semibold text-gray-800">Expenses:</span> Sum of all
+                                                expenses incurred</div>
+                                            <div class="pl-2"><span class="font-bold text-indigo-700">Net Balance</span>
+                                                = Balance - Expenses</div>
+                                            <div class="border-t border-gray-200 pt-1 mt-1"><span
+                                                    class="font-semibold text-gray-800">Cash Received:</span> Total from
+                                                cash denomination breakdown</div>
+                                            <div class="pl-2"><span
+                                                    class="font-bold text-purple-700">Short/Excess</span> = Cash
+                                                Received - Net Balance</div>
                                         </div>
                                     </div>
 

@@ -49,55 +49,43 @@
                         </p>
 
                         {{-- Section 2: Combined Batch-wise Settlement Table --}}
-                        <div id="settlementTableContainer" style="display: none;" class="mb-6">
-                            <h3 class="text-lg font-bold text-gray-900 mb-4 flex items-center">
-                                <svg class="w-5 h-5 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                                </svg>
-                                Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance)
-                            </h3>
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 border">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product / Batch</th>
-                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">UOM</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Batch Breakdown</th>
-                                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Qty Issued</th>
-                                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Price</th>
-                                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Value</th>
-                                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Sold</th>
-                                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Returned</th>
-                                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Shortage</th>
-                                            <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Balance</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200" id="settlementItemsBody">
-                                        <!-- Settlement items will be populated here -->
-                                    </tbody>
-                                    <tfoot class="bg-gray-100 border-t-2 border-gray-300">
-                                        <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                            <td colspan="6" class="py-2 px-3 text-right font-bold text-base">Grand Totals:</td>
-                                            <td class="py-2 px-3 text-right font-bold text-base text-green-700" id="grandTotalSold">0</td>
-                                            <td class="py-2 px-3 text-right font-bold text-base text-blue-700" id="grandTotalReturned">0</td>
-                                            <td class="py-2 px-3 text-right font-bold text-base text-red-700" id="grandTotalShortage">0</td>
-                                            <td class="py-2 px-3 text-right font-bold text-base" id="grandTotalBalance">0</td>
-                                        </tr>
-                                        <tr class="border-t border-gray-300 bg-blue-50">
-                                            <td colspan="6" class="py-3 px-3 text-right font-bold text-lg">Value Totals:</td>
-                                            <td class="py-3 px-3 text-right font-bold text-lg text-green-700" id="grandTotalSoldValue">₨ 0.00</td>
-                                            <td class="py-3 px-3 text-right font-bold text-lg text-blue-700" id="grandTotalReturnValue">₨ 0.00</td>
-                                            <td class="py-3 px-3 text-right font-bold text-lg text-red-700" id="grandTotalShortageValue">₨ 0.00</td>
-                                            <td class="py-3 px-3 text-right font-bold text-2xl" id="valueBalanceCheck">₨ 0.00</td>
-                                        </tr>
-                                        <tr class="border-t-2 border-gray-400 bg-gray-200">
-                                            <td colspan="9" class="py-2 px-3 text-right font-bold text-base">Total Issued Value:</td>
-                                            <td class="py-2 px-3 text-right font-bold text-xl text-emerald-700" id="grandTotalIssuedValue">₨ 0.00</td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
+                        <div id="settlementTableContainer" style="display: none;">
+                            <x-detail-table title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance)" :headers="[
+                                ['label' => 'Product / Batch', 'align' => 'text-left'],
+                                ['label' => 'UOM', 'align' => 'text-center'],
+                                ['label' => 'Batch Breakdown', 'align' => 'text-left'],
+                                ['label' => 'Qty Issued', 'align' => 'text-right'],
+                                ['label' => 'Price', 'align' => 'text-right'],
+                                ['label' => 'Value', 'align' => 'text-right'],
+                                ['label' => 'Sold', 'align' => 'text-right'],
+                                ['label' => 'Returned', 'align' => 'text-right'],
+                                ['label' => 'Shortage', 'align' => 'text-right'],
+                                ['label' => 'Balance', 'align' => 'text-right'],
+                            ]">
+                                <tbody id="settlementItemsBody">
+                                    <!-- Settlement items will be populated here -->
+                                </tbody>
+                                <x-slot name="footer">
+                                    <tr class="border-t-2 border-gray-300 bg-gray-100">
+                                        <td colspan="6" class="py-2 px-2 text-right font-bold text-base">Grand Totals:</td>
+                                        <td class="py-2 px-2 text-right font-bold text-base text-green-700" id="grandTotalSold">0</td>
+                                        <td class="py-2 px-2 text-right font-bold text-base text-blue-700" id="grandTotalReturned">0</td>
+                                        <td class="py-2 px-2 text-right font-bold text-base text-red-700" id="grandTotalShortage">0</td>
+                                        <td class="py-2 px-2 text-right font-bold text-base" id="grandTotalBalance">0</td>
+                                    </tr>
+                                    <tr class="border-t border-gray-300 bg-blue-50">
+                                        <td colspan="6" class="py-3 px-2 text-right font-bold text-lg">Value Totals:</td>
+                                        <td class="py-3 px-2 text-right font-bold text-lg text-green-700" id="grandTotalSoldValue">₨ 0.00</td>
+                                        <td class="py-3 px-2 text-right font-bold text-lg text-blue-700" id="grandTotalReturnValue">₨ 0.00</td>
+                                        <td class="py-3 px-2 text-right font-bold text-lg text-red-700" id="grandTotalShortageValue">₨ 0.00</td>
+                                        <td class="py-3 px-2 text-right font-bold text-2xl" id="valueBalanceCheck">₨ 0.00</td>
+                                    </tr>
+                                    <tr class="border-t-2 border-gray-400 bg-gray-200">
+                                        <td colspan="9" class="py-2 px-2 text-right font-bold text-base">Total Issued Value:</td>
+                                        <td class="py-2 px-2 text-right font-bold text-xl text-emerald-700" id="grandTotalIssuedValue">₨ 0.00</td>
+                                    </tr>
+                                </x-slot>
+                            </x-detail-table>
                         </div>
                         <p class="text-sm text-blue-600 mt-2" style="display: none;" id="settlementHelpText">
                             💡 Tip: When you enter Sold quantity, the remaining will auto-calculate. You can then adjust
@@ -109,13 +97,6 @@
                         {{-- Section 4: Creditors/Credit Sales Breakdown (MOVED BEFORE EXPENSES) --}}
                         <div class="mb-6" x-data="creditSalesManager()">
                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-lg font-bold text-gray-900 flex items-center">
-                                    <svg class="w-5 h-5 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                    Creditors / Credit Sales Breakdown
-                                </h3>
                                 <button type="button" @click="addCreditSale()"
                                     class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
@@ -127,34 +108,20 @@
                                 </button>
                             </div>
 
-                            <div class="overflow-x-auto" x-show="creditSales.length > 0">
-                                <table class="min-w-full divide-y divide-gray-200 border">
-                                    <thead class="bg-gray-50">
-                                        <tr>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                                Customer</th>
-                                            <th
-                                                class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                                                Previous Balance</th>
-                                            <th
-                                                class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                                                New Credit</th>
-                                            <th
-                                                class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                                                Payment Received</th>
-                                            <th
-                                                class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                                                New Balance</th>
-                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">
-                                                Notes</th>
-                                            <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                                                Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="bg-white divide-y divide-gray-200">
+                            <div x-show="creditSales.length > 0">
+                                <x-detail-table title="Creditors / Credit Sales Breakdown" :headers="[
+                                    ['label' => 'Customer', 'align' => 'text-left'],
+                                    ['label' => 'Previous Balance', 'align' => 'text-right'],
+                                    ['label' => 'New Credit', 'align' => 'text-right'],
+                                    ['label' => 'Payment Received', 'align' => 'text-right'],
+                                    ['label' => 'New Balance', 'align' => 'text-right'],
+                                    ['label' => 'Notes', 'align' => 'text-left'],
+                                    ['label' => 'Action', 'align' => 'text-center'],
+                                ]">
+                                    <tbody>
                                         <template x-for="(sale, index) in creditSales" :key="index">
-                                            <tr>
-                                                <td class="px-3 py-2">
+                                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                                <td class="py-2 px-2">
                                                     <select
                                                         :name="'credit_sales[' + index + '][customer_id]'"
                                                         x-model="sale.customer_id"
@@ -170,7 +137,7 @@
                                                         @endforeach
                                                     </select>
                                                 </td>
-                                                <td class="px-3 py-2 text-right">
+                                                <td class="py-2 px-2 text-right">
                                                     <input type="number"
                                                         :name="'credit_sales[' + index + '][previous_balance]'"
                                                         x-model="sale.previous_balance"
@@ -178,7 +145,7 @@
                                                         class="border-gray-300 rounded-md text-sm w-24 text-right bg-gray-100"
                                                         step="0.01" />
                                                 </td>
-                                                <td class="px-3 py-2 text-right">
+                                                <td class="py-2 px-2 text-right">
                                                     <input type="number"
                                                         :name="'credit_sales[' + index + '][sale_amount]'"
                                                         x-model="sale.sale_amount"
@@ -187,7 +154,7 @@
                                                         step="0.01"
                                                         min="0" />
                                                 </td>
-                                                <td class="px-3 py-2 text-right">
+                                                <td class="py-2 px-2 text-right">
                                                     <input type="number"
                                                         :name="'credit_sales[' + index + '][payment_received]'"
                                                         x-model="sale.payment_received"
@@ -196,21 +163,21 @@
                                                         step="0.01"
                                                         min="0" />
                                                 </td>
-                                                <td class="px-3 py-2 text-right">
+                                                <td class="py-2 px-2 text-right">
                                                     <span class="font-semibold text-gray-700"
                                                         x-text="formatCurrency(sale.new_balance)"></span>
                                                     <input type="hidden"
                                                         :name="'credit_sales[' + index + '][new_balance]'"
                                                         x-model="sale.new_balance" />
                                                 </td>
-                                                <td class="px-3 py-2">
+                                                <td class="py-2 px-2">
                                                     <input type="text"
                                                         :name="'credit_sales[' + index + '][notes]'"
                                                         x-model="sale.notes"
                                                         class="border-gray-300 rounded-md text-sm w-full"
                                                         placeholder="Optional notes" />
                                                 </td>
-                                                <td class="px-3 py-2 text-center">
+                                                <td class="py-2 px-2 text-center">
                                                     <button type="button" @click="removeCreditSale(index)"
                                                         class="text-red-600 hover:text-red-800">
                                                         <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
@@ -223,21 +190,21 @@
                                             </tr>
                                         </template>
                                     </tbody>
-                                    <tfoot class="bg-gray-100 border-t-2 border-gray-300">
-                                        <tr>
-                                            <td colspan="2" class="px-3 py-3 text-right font-bold">Total Credit Sales:</td>
-                                            <td class="px-3 py-3 text-right font-bold text-orange-700">
+                                    <x-slot name="footer">
+                                        <tr class="border-t-2 border-gray-300 bg-gray-100">
+                                            <td colspan="2" class="py-2 px-2 text-right font-bold">Total Credit Sales:</td>
+                                            <td class="py-2 px-2 text-right font-bold text-orange-700">
                                                 <span x-text="formatCurrency(creditTotal)"></span>
                                                 <input type="hidden" id="credit_sales_amount" name="credit_sales_amount" :value="creditTotal" />
                                             </td>
-                                            <td class="px-3 py-3 text-right font-bold text-green-700">
+                                            <td class="py-2 px-2 text-right font-bold text-green-700">
                                                 <span x-text="formatCurrency(recoveryTotal)"></span>
                                                 <input type="hidden" id="credit_recoveries_total" name="credit_recoveries_total" :value="recoveryTotal" />
                                             </td>
                                             <td colspan="3"></td>
                                         </tr>
-                                    </tfoot>
-                                </table>
+                                    </x-slot>
+                                </x-detail-table>
                             </div>
 
                             <p class="text-sm text-gray-500 mt-2" x-show="creditSales.length === 0">
@@ -797,9 +764,9 @@
                 balanceElement.textContent = grandBalance;
                 // Color code quantity balance
                 if (grandBalance === 0) {
-                    balanceElement.className = 'py-2 px-3 text-right font-bold text-base text-green-600';
+                    balanceElement.className = 'py-2 px-2 text-right font-bold text-base text-green-600';
                 } else {
-                    balanceElement.className = 'py-2 px-3 text-right font-bold text-base text-red-600';
+                    balanceElement.className = 'py-2 px-2 text-right font-bold text-base text-red-600';
                 }
             }
 
@@ -823,9 +790,9 @@
                 valueCheckElement.textContent = formatPKR(grandBalanceValue);
                 // Color code value balance - must be zero
                 if (Math.abs(grandBalanceValue) < 0.01) {
-                    valueCheckElement.className = 'py-3 px-3 text-right font-bold text-2xl text-green-700';
+                    valueCheckElement.className = 'py-3 px-2 text-right font-bold text-2xl text-green-700';
                 } else {
-                    valueCheckElement.className = 'py-3 px-3 text-right font-bold text-2xl text-red-700';
+                    valueCheckElement.className = 'py-3 px-2 text-right font-bold text-2xl text-red-700';
                 }
             }
 
@@ -1004,29 +971,35 @@
                 if (batchBreakdown.length > 0) {
                     batchBreakdown.forEach((batch, batchIdx) => {
                         const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
+
+                        // Debug: log the item data
+                        console.log('Item data:', item);
+                        console.log('Product:', item.product);
+                        console.log('Product name:', item.product?.name);
+
                         const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
                         const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
                         const uomSymbol = (item.uom && item.uom.symbol) ? item.uom.symbol : 'N/A';
 
                         const settlementRow = `
-                            <tr>
-                                <td class="py-2 px-3" style="max-width: 250px; min-width: 180px;">
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-2 px-2" style="max-width: 250px; min-width: 180px;">
                                     <div class="font-semibold text-gray-900 break-words">${productName}</div>
                                     <div class="text-xs text-gray-500 break-words">
                                         ${productCode}<br>Batch: ${batch.batch_code}
                                         ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
                                     </div>
                                 </td>
-                                <td class="py-2 px-3 text-center text-sm font-medium">${uomSymbol}</td>
-                                <td class="py-2 px-3">
+                                <td class="py-2 px-2 text-center text-sm font-medium">${uomSymbol}</td>
+                                <td class="py-2 px-2">
                                     <div class="text-xs text-gray-600">
                                         ${parseFloat(batch.quantity).toLocaleString()} × ₨${parseFloat(batch.selling_price).toFixed(2)}
                                     </div>
                                 </td>
-                                <td class="py-2 px-3 text-right font-semibold">${parseFloat(batch.quantity).toFixed(0)}</td>
-                                <td class="py-2 px-3 text-right text-sm">₨${parseFloat(batch.selling_price).toFixed(2)}</td>
-                                <td class="py-2 px-3 text-right font-bold text-green-700">₨${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
-                                <td class="py-2 px-3 text-right">
+                                <td class="py-2 px-2 text-right font-semibold">${parseFloat(batch.quantity).toFixed(0)}</td>
+                                <td class="py-2 px-2 text-right text-sm">₨${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                <td class="py-2 px-2 text-right font-bold text-green-700">₨${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
+                                <td class="py-2 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_sold]"
                                         class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
@@ -1039,7 +1012,7 @@
                                         value="0"
                                         oninput="autoFillShortage(${index}, ${batchIdx})">
                                 </td>
-                                <td class="py-2 px-3 text-right">
+                                <td class="py-2 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_returned]"
                                         class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
@@ -1052,7 +1025,7 @@
                                         value="0"
                                         oninput="autoFillShortage(${index}, ${batchIdx})">
                                 </td>
-                                <td class="py-2 px-3 text-right">
+                                <td class="py-2 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_shortage]"
                                         class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
@@ -1065,7 +1038,7 @@
                                         value="${batch.quantity}"
                                         oninput="autoFillShortage(${index}, ${batchIdx}, 'shortage')">
                                 </td>
-                                <td class="py-2 px-3 text-right">
+                                <td class="py-2 px-2 text-right">
                                     <span id="balance-${index}-${batchIdx}" class="font-bold text-red-600">0</span>
                                 </td>
                                 <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">

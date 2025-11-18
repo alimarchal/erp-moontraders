@@ -367,79 +367,158 @@
                                         </tbody>
                                     </table>
 
-                                    {{-- Bank Transfer Section --}}
-                                    <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
-                                        <label class="text-xs font-bold text-blue-900 block mb-2">💳 Bank Transfer /
-                                            Online Payment</label>
-                                        <select id="bank_account_id" name="bank_account_id"
-                                            class="select2-bank-account w-full border-gray-300 rounded text-xs mb-2">
-                                            <option value="">No Bank Transfer</option>
-                                            @foreach(\App\Models\BankAccount::active()->get() as $bank)
-                                            <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{
-                                                $bank->bank_name }}</option>
-                                            @endforeach
-                                        </select>
-                                        <input type="number" id="bank_transfer_amount" name="bank_transfer_amount"
-                                            min="0" step="0.01" placeholder="Enter amount"
-                                            class="w-full text-right border-gray-300 rounded text-xs px-2 py-1"
-                                            oninput="updateCashTotal()" value="0" />
+                                    {{-- Bank Transfer Section - Enhanced Professional UI --}}
+                                    <div class="mt-3">
+                                        <div
+                                            class="bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-2 rounded-t flex items-center gap-2">
+                                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                            </svg>
+                                            <label class="text-sm font-bold text-white">Bank Transfer / Online
+                                                Payment</label>
+                                        </div>
+                                        <div class="border-x border-b border-blue-200 rounded-b bg-white p-3">
+                                            <div class="mb-3">
+                                                <label class="text-xs font-medium text-gray-600 block mb-1">Select Bank
+                                                    Account</label>
+                                                <select id="bank_account_id" name="bank_account_id"
+                                                    class="select2-bank-account w-full border-gray-300 rounded text-sm px-2 py-2 focus:border-blue-500 focus:ring focus:ring-blue-200">
+                                                    <option value="">No Bank Transfer</option>
+                                                    @foreach(\App\Models\BankAccount::active()->get() as $bank)
+                                                    <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{
+                                                        $bank->bank_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="text-xs font-medium text-gray-600 block mb-1">Transfer
+                                                    Amount (₨)</label>
+                                                <input type="text" id="bank_transfer_amount" name="bank_transfer_amount"
+                                                    placeholder="0.00" inputmode="decimal"
+                                                    class="w-full text-right border-gray-300 rounded text-sm font-bold px-3 py-2 bg-blue-50 focus:border-blue-500 focus:ring focus:ring-blue-200"
+                                                    oninput="this.value = this.value.replace(/[^0-9.]/g, ''); updateCashTotal()"
+                                                    value="0" />
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    {{-- Cheque Section (Alpine.js) --}}
+                                    {{-- Cheque Section (Alpine.js) - Enhanced Professional UI --}}
                                     <div x-data="chequeManager()" class="mt-3">
-                                        <div class="flex justify-between items-center mb-2">
-                                            <label class="text-xs font-bold text-purple-900">📝 Cheque Payments</label>
+                                        <div
+                                            class="bg-gradient-to-r from-purple-600 to-purple-700 px-3 py-2 rounded-t flex justify-between items-center">
+                                            <label class="text-sm font-bold text-white flex items-center gap-2">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                Cheque Payments
+                                            </label>
                                             <button type="button" @click="addCheque()"
-                                                class="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700">
-                                                + Add
+                                                class="text-xs px-3 py-1.5 bg-white text-purple-700 rounded font-semibold hover:bg-purple-50 transition shadow-sm flex items-center gap-1">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M12 4v16m8-8H4" />
+                                                </svg>
+                                                Add Cheque
                                             </button>
                                         </div>
-                                        <div x-show="cheques.length > 0" class="space-y-2 max-h-48 overflow-y-auto">
-                                            <template x-for="(cheque, index) in cheques" :key="index">
-                                                <div class="p-2 bg-purple-50 border border-purple-200 rounded text-xs">
-                                                    <div class="grid grid-cols-2 gap-1 mb-1">
-                                                        <input type="text"
-                                                            :name="'cheques[' + index + '][cheque_number]'"
-                                                            x-model="cheque.cheque_number"
-                                                            class="border-gray-300 rounded px-1 py-0.5 text-xs font-mono"
-                                                            placeholder="CHQ #" required />
-                                                        <input type="date" :name="'cheques[' + index + '][cheque_date]'"
-                                                            x-model="cheque.cheque_date"
-                                                            class="border-gray-300 rounded px-1 py-0.5 text-xs"
-                                                            required />
-                                                    </div>
-                                                    <div class="grid grid-cols-2 gap-1 mb-1">
-                                                        <input type="text" :name="'cheques[' + index + '][bank_name]'"
-                                                            x-model="cheque.bank_name"
-                                                            class="border-gray-300 rounded px-1 py-0.5 text-xs"
-                                                            placeholder="Bank" required />
-                                                        <input type="number" :name="'cheques[' + index + '][amount]'"
-                                                            x-model.number="cheque.amount" @input="updateChequeTotal()"
-                                                            class="border-gray-300 rounded px-1 py-0.5 text-xs text-right font-semibold"
-                                                            placeholder="0.00" step="0.01" min="0" required />
-                                                    </div>
-                                                    <button type="button" @click="removeCheque(index)"
-                                                        class="w-full text-xs py-0.5 bg-red-500 text-white rounded hover:bg-red-600">
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            </template>
-                                        </div>
+
                                         <div x-show="cheques.length > 0"
-                                            class="mt-2 p-2 bg-purple-100 border border-purple-300 rounded">
-                                            <div class="flex justify-between text-xs font-bold text-purple-900">
-                                                <span>Total Cheques:</span>
-                                                <span x-text="formatCurrency(chequeTotal)"></span>
+                                            class="border-x border-b border-purple-200 rounded-b">
+                                            <div class="space-y-0 max-h-64 overflow-y-auto bg-white">
+                                                <template x-for="(cheque, index) in cheques" :key="index">
+                                                    <div class="p-3 border-b border-purple-100 hover:bg-purple-50 transition"
+                                                        :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'">
+                                                        <div class="grid grid-cols-12 gap-2 items-center">
+                                                            <div class="col-span-3">
+                                                                <label
+                                                                    class="text-xs font-medium text-gray-600 block mb-1">Cheque
+                                                                    #</label>
+                                                                <input type="text"
+                                                                    :name="'cheques[' + index + '][cheque_number]'"
+                                                                    x-model="cheque.cheque_number"
+                                                                    class="w-full border-gray-300 rounded text-xs font-mono px-2 py-1.5 focus:border-purple-500 focus:ring focus:ring-purple-200"
+                                                                    placeholder="CHQ-12345" required />
+                                                            </div>
+                                                            <div class="col-span-3">
+                                                                <label
+                                                                    class="text-xs font-medium text-gray-600 block mb-1">Bank
+                                                                    Name</label>
+                                                                <input type="text"
+                                                                    :name="'cheques[' + index + '][bank_name]'"
+                                                                    x-model="cheque.bank_name"
+                                                                    class="w-full border-gray-300 rounded text-xs px-2 py-1.5 focus:border-purple-500 focus:ring focus:ring-purple-200"
+                                                                    placeholder="Bank Name" required />
+                                                            </div>
+                                                            <div class="col-span-2">
+                                                                <label
+                                                                    class="text-xs font-medium text-gray-600 block mb-1">Date</label>
+                                                                <input type="date"
+                                                                    :name="'cheques[' + index + '][cheque_date]'"
+                                                                    x-model="cheque.cheque_date"
+                                                                    class="w-full border-gray-300 rounded text-xs px-2 py-1.5 focus:border-purple-500 focus:ring focus:ring-purple-200"
+                                                                    required />
+                                                            </div>
+                                                            <div class="col-span-3">
+                                                                <label
+                                                                    class="text-xs font-medium text-gray-600 block mb-1">Amount
+                                                                    (₨)</label>
+                                                                <input type="text"
+                                                                    :name="'cheques[' + index + '][amount]'"
+                                                                    x-model="cheque.amount" @input="updateChequeTotal()"
+                                                                    @blur="cheque.amount = parseFloat(cheque.amount) || 0"
+                                                                    class="w-full border-gray-300 rounded text-xs text-right font-bold px-2 py-1.5 focus:border-purple-500 focus:ring focus:ring-purple-200 bg-purple-50"
+                                                                    placeholder="0.00" inputmode="decimal" required />
+                                                            </div>
+                                                            <div class="col-span-1 flex justify-center">
+                                                                <button type="button" @click="removeCheque(index)"
+                                                                    class="mt-5 p-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition">
+                                                                    <svg class="w-4 h-4" fill="none"
+                                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round"
+                                                                            stroke-linejoin="round" stroke-width="2"
+                                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
                                             </div>
-                                            <input type="hidden" id="total_cheques" name="total_cheques"
-                                                :value="chequeTotal" />
-                                            <input type="hidden" id="cheque_count" name="cheque_count"
-                                                :value="cheques.length" />
+                                            <div
+                                                class="bg-gradient-to-r from-purple-100 to-purple-50 border-t-2 border-purple-300 px-3 py-2.5">
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-sm font-bold text-purple-900">Total Cheques (<span
+                                                            x-text="cheques.length"></span>):</span>
+                                                    <span class="text-lg font-bold text-purple-900"
+                                                        x-text="formatCurrency(chequeTotal)"></span>
+                                                </div>
+                                                <input type="hidden" id="total_cheques" name="total_cheques"
+                                                    :value="chequeTotal" />
+                                                <input type="hidden" id="cheque_count" name="cheque_count"
+                                                    :value="cheques.length" />
+                                            </div>
                                         </div>
-                                        <p x-show="cheques.length === 0"
-                                            class="text-xs text-gray-500 text-center py-2 italic">
-                                            No cheques added
-                                        </p>
+
+                                        <div x-show="cheques.length === 0"
+                                            class="border-x border-b border-purple-200 rounded-b bg-white p-6">
+                                            <div class="text-center">
+                                                <svg class="w-12 h-12 mx-auto text-purple-200 mb-2" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                <p class="text-xs text-gray-500 italic">No cheques added yet</p>
+                                                <p class="text-xs text-gray-400 mt-1">Click "Add Cheque" to record a
+                                                    payment</p>
+                                            </div>
+                                        </div>
                                     </div>
 
                                     {{-- Grand Total --}}
@@ -1150,10 +1229,12 @@
                 addCheque() {
                     this.cheques.push({
                         cheque_number: '',
-                        amount: 0,
+                        cheque_date: new Date().toISOString().split('T')[0],
                         bank_name: '',
-                        date: new Date().toISOString().split('T')[0]
+                        amount: 0
                     });
+                    // Trigger update immediately
+                    this.$nextTick(() => this.updateChequeTotal());
                 },
 
                 removeCheque(index) {
@@ -1164,7 +1245,7 @@
                 updateChequeTotal() {
                     this.chequeTotal = this.cheques.reduce((sum, cheque) => {
                         // Convert to number to handle string inputs correctly
-                        const amount = parseFloat(cheque.amount);
+                        const amount = parseFloat(String(cheque.amount).replace(/[^0-9.-]/g, ''));
                         return sum + (isNaN(amount) ? 0 : amount);
                     }, 0);
                     updateCashTotal(); // Update overall cash total

@@ -144,6 +144,18 @@ class SalesSettlementController extends Controller
 
             $cashToDeposit = ($request->cash_collected ?? 0) + ($request->credit_recoveries ?? 0) - ($request->expenses_claimed ?? 0);
 
+            // Calculate total expenses from individual fields
+            $totalExpenses = ($request->expense_toll_tax ?? 0) +
+                ($request->expense_amr_powder_claim ?? 0) +
+                ($request->expense_amr_liquid_claim ?? 0) +
+                ($request->expense_scheme ?? 0) +
+                ($request->expense_advance_tax ?? 0) +
+                ($request->expense_food_charges ?? 0) +
+                ($request->expense_salesman_charges ?? 0) +
+                ($request->expense_loader_charges ?? 0) +
+                ($request->expense_percentage ?? 0) +
+                ($request->expense_message_amount ?? 0);
+
             // Create sales settlement
             $settlement = SalesSettlement::create([
                 'settlement_number' => $settlementNumber,
@@ -158,13 +170,23 @@ class SalesSettlementController extends Controller
                 'cash_sales_amount' => $request->cash_sales_amount ?? 0,
                 'cheque_sales_amount' => $request->cheque_sales_amount ?? 0,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
-                'credit_recoveries' => $request->credit_recoveries ?? 0,
+                'credit_recoveries' => $request->credit_recoveries_total ?? 0,
                 'total_quantity_sold' => $totalQuantitySold,
                 'total_quantity_returned' => $totalQuantityReturned,
                 'total_quantity_shortage' => $totalQuantityShortage,
-                'cash_collected' => $request->cash_collected ?? 0,
+                'cash_collected' => $request->summary_cash_received ?? 0,
                 'cheques_collected' => $request->cheques_collected ?? 0,
-                'expenses_claimed' => $request->expenses_claimed ?? 0,
+                'expenses_claimed' => $totalExpenses,
+                'expense_toll_tax' => $request->expense_toll_tax ?? 0,
+                'expense_amr_powder_claim' => $request->expense_amr_powder_claim ?? 0,
+                'expense_amr_liquid_claim' => $request->expense_amr_liquid_claim ?? 0,
+                'expense_scheme' => $request->expense_scheme ?? 0,
+                'expense_advance_tax' => $request->expense_advance_tax ?? 0,
+                'expense_food_charges' => $request->expense_food_charges ?? 0,
+                'expense_salesman_charges' => $request->expense_salesman_charges ?? 0,
+                'expense_loader_charges' => $request->expense_loader_charges ?? 0,
+                'expense_percentage' => $request->expense_percentage ?? 0,
+                'expense_message_amount' => $request->expense_message_amount ?? 0,
                 'cash_to_deposit' => $cashToDeposit,
                 'status' => 'draft',
                 'notes' => $request->notes,

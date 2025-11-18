@@ -343,24 +343,83 @@
                                                     <td colspan="2" class="py-1.5 px-2 font-bold text-green-900">Total Physical Cash</td>
                                                     <td class="py-1.5 px-2 text-right font-bold text-green-900" id="totalCashDisplay">₨ 0.00</td>
                                                 </tr>
-                                                <tr class="bg-blue-50 border-t border-gray-200">
-                                                    <td colspan="3" class="py-2 px-2">
-                                                        <label class="text-xs font-semibold text-blue-900 block mb-1">Bank Transfer / Online Payment</label>
-                                                        <select id="bank_account_id" name="bank_account_id"
-                                                            class="w-full border-gray-300 rounded text-xs px-2 py-1 mb-1">
-                                                            <option value="">No Bank Transfer</option>
-                                                            @foreach(\App\Models\BankAccount::active()->get() as $bank)
-                                                            <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{ $bank->bank_name }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                        <input type="number" id="bank_transfer_amount" name="bank_transfer_amount"
-                                                            min="0" step="0.01" placeholder="Enter amount"
-                                                            class="w-full text-right border-gray-300 rounded text-xs px-2 py-1"
-                                                            oninput="updateCashTotal()" value="0" />
-                                                    </td>
-                                                </tr>
                                             </tbody>
                                         </table>
+
+                                        {{-- Bank Transfer Section --}}
+                                        <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                                            <label class="text-xs font-bold text-blue-900 block mb-2">💳 Bank Transfer / Online Payment</label>
+                                            <select id="bank_account_id" name="bank_account_id"
+                                                class="select2-bank-account w-full border-gray-300 rounded text-xs mb-2">
+                                                <option value="">No Bank Transfer</option>
+                                                @foreach(\App\Models\BankAccount::active()->get() as $bank)
+                                                <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{ $bank->bank_name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <input type="number" id="bank_transfer_amount" name="bank_transfer_amount"
+                                                min="0" step="0.01" placeholder="Enter amount"
+                                                class="w-full text-right border-gray-300 rounded text-xs px-2 py-1"
+                                                oninput="updateCashTotal()" value="0" />
+                                        </div>
+
+                                        {{-- Cheque Section (Alpine.js) --}}
+                                        <div x-data="chequeManager()" class="mt-3">
+                                            <div class="flex justify-between items-center mb-2">
+                                                <label class="text-xs font-bold text-purple-900">📝 Cheque Payments</label>
+                                                <button type="button" @click="addCheque()"
+                                                    class="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700">
+                                                    + Add
+                                                </button>
+                                            </div>
+                                            <div x-show="cheques.length > 0" class="space-y-2 max-h-48 overflow-y-auto">
+                                                <template x-for="(cheque, index) in cheques" :key="index">
+                                                    <div class="p-2 bg-purple-50 border border-purple-200 rounded text-xs">
+                                                        <div class="grid grid-cols-2 gap-1 mb-1">
+                                                            <input type="text" :name="'cheques[' + index + '][cheque_number]'"
+                                                                x-model="cheque.cheque_number"
+                                                                class="border-gray-300 rounded px-1 py-0.5 text-xs font-mono"
+                                                                placeholder="CHQ #" required />
+                                                            <input type="date" :name="'cheques[' + index + '][cheque_date]'"
+                                                                x-model="cheque.cheque_date"
+                                                                class="border-gray-300 rounded px-1 py-0.5 text-xs" required />
+                                                        </div>
+                                                        <div class="grid grid-cols-2 gap-1 mb-1">
+                                                            <input type="text" :name="'cheques[' + index + '][bank_name]'"
+                                                                x-model="cheque.bank_name"
+                                                                class="border-gray-300 rounded px-1 py-0.5 text-xs"
+                                                                placeholder="Bank" required />
+                                                            <input type="number" :name="'cheques[' + index + '][amount]'"
+                                                                x-model="cheque.amount" @input="updateChequeTotal()"
+                                                                class="border-gray-300 rounded px-1 py-0.5 text-xs text-right font-semibold"
+                                                                placeholder="0.00" step="0.01" min="0" required />
+                                                        </div>
+                                                        <button type="button" @click="removeCheque(index)"
+                                                            class="w-full text-xs py-0.5 bg-red-500 text-white rounded hover:bg-red-600">
+                                                            Remove
+                                                        </button>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                            <div x-show="cheques.length > 0" class="mt-2 p-2 bg-purple-100 border border-purple-300 rounded">
+                                                <div class="flex justify-between text-xs font-bold text-purple-900">
+                                                    <span>Total Cheques:</span>
+                                                    <span x-text="formatCurrency(chequeTotal)"></span>
+                                                </div>
+                                                <input type="hidden" id="total_cheques" name="total_cheques" :value="chequeTotal" />
+                                                <input type="hidden" id="cheque_count" name="cheque_count" :value="cheques.length" />
+                                            </div>
+                                            <p x-show="cheques.length === 0" class="text-xs text-gray-500 text-center py-2 italic">
+                                                No cheques added
+                                            </p>
+                                        </div>
+
+                                        {{-- Grand Total --}}
+                                        <div class="mt-3 p-2 bg-gradient-to-r from-emerald-100 to-emerald-50 border-2 border-emerald-400 rounded">
+                                            <div class="flex justify-between items-center">
+                                                <span class="text-sm font-bold text-emerald-900">💰 Total Cash Received</span>
+                                                <span class="text-lg font-bold text-emerald-900" id="grandTotalCashDisplay">₨ 0.00</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -559,90 +618,6 @@
                             </div>
                         </div>
 
-                        {{-- Section 3b: Cheque Details (ENHANCED) --}}
-                        <div id="chequeDetailSection" style="display: none;" class="mb-6" x-data="chequeManager()">
-                            <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                                <svg class="w-6 h-6 mr-2 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Cheque Payment Details
-                                <span class="ml-2 text-sm font-normal text-purple-600" x-show="cheques.length > 0">
-                                    (<span x-text="cheques.length"></span> cheque<span x-show="cheques.length > 1">s</span>)
-                                </span>
-                            </h3>
-
-                            <div class="bg-white border-2 border-purple-200 rounded-lg overflow-hidden shadow-sm">
-                                <div class="bg-gradient-to-r from-purple-500 to-purple-600 px-4 py-3 flex justify-between items-center">
-                                    <div class="text-sm font-bold text-white">Enter Cheque Information</div>
-                                    <button type="button" @click="addCheque()"
-                                        class="inline-flex items-center px-3 py-2 bg-white text-purple-700 text-xs font-semibold rounded-md hover:bg-purple-50 shadow-sm">
-                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Add Cheque
-                                    </button>
-                                </div>
-                                <div class="divide-y divide-gray-200">
-                                    <template x-for="(cheque, index) in cheques" :key="index">
-                                        <div class="p-4 hover:bg-purple-50 transition-colors" :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'">
-                                            <div class="grid grid-cols-5 gap-3 items-center">
-                                                <div>
-                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Cheque Number</label>
-                                                    <input type="text" :name="'cheques[' + index + '][cheque_number]'"
-                                                        x-model="cheque.cheque_number"
-                                                        class="w-full border-gray-300 rounded text-sm px-2 py-1.5 font-mono"
-                                                        placeholder="CHQ-12345" required />
-                                                </div>
-                                                <div>
-                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Date</label>
-                                                    <input type="date" :name="'cheques[' + index + '][cheque_date]'"
-                                                        x-model="cheque.cheque_date"
-                                                        class="w-full border-gray-300 rounded text-sm px-2 py-1.5" required />
-                                                </div>
-                                                <div>
-                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Bank Name</label>
-                                                    <input type="text" :name="'cheques[' + index + '][bank_name]'"
-                                                        x-model="cheque.bank_name"
-                                                        class="w-full border-gray-300 rounded text-sm px-2 py-1.5"
-                                                        placeholder="Bank Name" required />
-                                                </div>
-                                                <div>
-                                                    <label class="block text-xs font-medium text-gray-700 mb-1">Amount</label>
-                                                    <input type="number" :name="'cheques[' + index + '][amount]'"
-                                                        x-model="cheque.amount" @input="updateChequeTotal()"
-                                                        class="w-full border-gray-300 rounded text-sm px-2 py-1.5 text-right font-semibold"
-                                                        placeholder="0.00" step="0.01" min="0" required />
-                                                </div>
-                                                <div class="flex items-end">
-                                                    <button type="button" @click="removeCheque(index)"
-                                                        class="w-full inline-flex items-center justify-center px-3 py-2 bg-red-500 text-white text-xs font-semibold rounded-md hover:bg-red-600">
-                                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                        </svg>
-                                                        Remove
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                                <div x-show="cheques.length > 0" class="bg-gradient-to-r from-purple-100 to-purple-50 px-4 py-3 border-t-2 border-purple-300">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-sm font-bold text-gray-900">Total Cheques Received:</span>
-                                        <span class="text-xl font-bold text-purple-900" x-text="formatCurrency(chequeTotal)"></span>
-                                    </div>
-                                    <input type="hidden" id="total_cheques" name="total_cheques" :value="chequeTotal" />
-                                    <input type="hidden" id="cheque_count" name="cheque_count" :value="cheques.length" />
-                                </div>
-                                <div x-show="cheques.length === 0" class="p-6 text-center">
-                                    <svg class="w-12 h-12 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    <p class="text-sm text-gray-500 italic">No cheques added yet. Click "Add Cheque" to add one.</p>
-                                </div>
-                            </div>
-                        </div>
-
                 </div>
 
                 {{-- Section 8: Notes (MOVED TO BOTTOM) --}}
@@ -704,6 +679,13 @@
             });
 
             console.log('Select2 initialized successfully');
+
+            // Initialize Select2 for bank account dropdown
+            $('.select2-bank-account').select2({
+                width: '100%',
+                placeholder: 'No Bank Transfer',
+                allowClear: true
+            });
         });
 
         function creditSalesManager() {
@@ -1003,10 +985,10 @@
                 bfValueElement.textContent = formatPKR(grandBFValue);
             }
 
-            // Update Sales Summary with sold value (Net Sale = Item Issue Value)
+            // Update Sales Summary with sold value (Net Sale = Value of SOLD Items)
             const netSaleEl = document.getElementById('summary_net_sale');
             if (netSaleEl) {
-                netSaleEl.value = grandIssuedValue.toFixed(2);
+                netSaleEl.value = grandSoldValue.toFixed(2);
             }
             updateSalesSummary();
         }
@@ -1136,7 +1118,6 @@
             document.getElementById('noItemsMessage').innerHTML = 'Select a Goods Issue to load product details';
             document.getElementById('creditSalesSection').style.display = 'none';
             document.getElementById('expenseAndSalesSummarySection').style.display = 'none';
-            document.getElementById('chequeDetailSection').style.display = 'none';
             const salesSummarySection = document.getElementById('salesSummarySection');
             if (salesSummarySection) salesSummarySection.style.display = 'none';
         }
@@ -1163,12 +1144,23 @@
             document.getElementById('denom_20_total').textContent = '₨ ' + denom20.toLocaleString('en-PK');
             document.getElementById('denom_10_total').textContent = '₨ ' + denom10.toLocaleString('en-PK');
 
-            const totalCash = denom5000 + denom1000 + denom500 + denom100 + denom50 + denom20 + denom10 + coins + bankTransfer + chequesTotal;
+            const physicalCashTotal = denom5000 + denom1000 + denom500 + denom100 + denom50 + denom20 + denom10 + coins;
+            const totalCash = physicalCashTotal + bankTransfer + chequesTotal;
 
-            document.getElementById('totalCashDisplay').textContent = '₨ ' + totalCash.toLocaleString('en-PK', {
+            // Update physical cash display
+            document.getElementById('totalCashDisplay').textContent = '₨ ' + physicalCashTotal.toLocaleString('en-PK', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2
             });
+
+            // Update grand total cash display
+            const grandTotalDisplay = document.getElementById('grandTotalCashDisplay');
+            if (grandTotalDisplay) {
+                grandTotalDisplay.textContent = '₨ ' + totalCash.toLocaleString('en-PK', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
 
             // Update cash received in sales summary
             document.getElementById('summary_cash_received').value = totalCash.toFixed(2);
@@ -1338,7 +1330,6 @@
                     document.getElementById('settlementHelpText').style.display = 'block';
                     document.getElementById('creditSalesSection').style.display = 'block';
                     document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
-                    document.getElementById('chequeDetailSection').style.display = 'block';
                     const salesSummarySection = document.getElementById('salesSummarySection');
                     if (salesSummarySection) salesSummarySection.style.display = 'block';
 

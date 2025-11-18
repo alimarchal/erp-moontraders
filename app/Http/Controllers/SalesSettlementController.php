@@ -142,7 +142,7 @@ class SalesSettlementController extends Controller
                 ($request->cheque_sales_amount ?? 0) +
                 ($request->credit_sales_amount ?? 0);
 
-            $cashToDeposit = ($request->cash_collected ?? 0) - ($request->expenses_claimed ?? 0);
+            $cashToDeposit = ($request->cash_collected ?? 0) + ($request->credit_recoveries ?? 0) - ($request->expenses_claimed ?? 0);
 
             // Create sales settlement
             $settlement = SalesSettlement::create([
@@ -158,6 +158,7 @@ class SalesSettlementController extends Controller
                 'cash_sales_amount' => $request->cash_sales_amount ?? 0,
                 'cheque_sales_amount' => $request->cheque_sales_amount ?? 0,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
+                'credit_recoveries' => $request->credit_recoveries ?? 0,
                 'total_quantity_sold' => $totalQuantitySold,
                 'total_quantity_returned' => $totalQuantityReturned,
                 'total_quantity_shortage' => $totalQuantityShortage,
@@ -348,7 +349,7 @@ class SalesSettlementController extends Controller
                 ($request->cheque_sales_amount ?? 0) +
                 ($request->credit_sales_amount ?? 0);
 
-            $cashToDeposit = ($request->cash_collected ?? 0) - ($request->expenses_claimed ?? 0);
+            $cashToDeposit = ($request->cash_collected ?? 0) + ($request->credit_recoveries ?? 0) - ($request->expenses_claimed ?? 0);
 
             // Update sales settlement
             $salesSettlement->update([
@@ -363,6 +364,7 @@ class SalesSettlementController extends Controller
                 'cash_sales_amount' => $request->cash_sales_amount ?? 0,
                 'cheque_sales_amount' => $request->cheque_sales_amount ?? 0,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
+                'credit_recoveries' => $request->credit_recoveries ?? 0,
                 'total_quantity_sold' => $totalQuantitySold,
                 'total_quantity_returned' => $totalQuantityReturned,
                 'total_quantity_shortage' => $totalQuantityShortage,

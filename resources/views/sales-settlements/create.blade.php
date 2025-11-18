@@ -560,17 +560,19 @@
             const cashSales = parseFloat(document.getElementById('cash_sales_amount').value) || 0;
             const chequeSales = parseFloat(document.getElementById('cheque_sales_amount').value) || 0;
             const creditSales = parseFloat(document.getElementById('credit_sales_amount').value) || 0;
+            const creditRecoveries = parseFloat(document.getElementById('credit_recoveries').value) || 0;
             const cashCollected = parseFloat(document.getElementById('cash_collected').value) || 0;
             const chequesCollected = parseFloat(document.getElementById('cheques_collected').value) || 0;
             const expensesClaimed = parseFloat(document.getElementById('expenses_claimed').value) || 0;
 
             const totalSales = cashSales + chequeSales + creditSales;
-            const totalCollection = cashCollected + chequesCollected - expensesClaimed;
+            const totalCollection = cashCollected + chequesCollected + creditRecoveries - expensesClaimed;
             const financialBalance = totalSales - totalCollection;
 
             // Update displays
             document.getElementById('totalSalesDisplay').textContent = 'Rs ' + totalSales.toLocaleString('en-PK', {minimumFractionDigits: 2});
             document.getElementById('totalCollectionDisplay').textContent = 'Rs ' + totalCollection.toLocaleString('en-PK', {minimumFractionDigits: 2});
+            document.getElementById('creditRecoveriesDisplay').textContent = 'Rs ' + creditRecoveries.toLocaleString('en-PK', {minimumFractionDigits: 2});
 
             const balanceDisplay = document.getElementById('financialBalanceDisplay');
             balanceDisplay.textContent = 'Rs ' + financialBalance.toLocaleString('en-PK', {minimumFractionDigits: 2});
@@ -955,7 +957,7 @@
                                     ${isFirst ? productAggregateInputs : ''}
                                     <input type="hidden" name="items[${index}][batches][${bIndex}][stock_batch_id]" value="${b.stock_batch_id || ''}" />
                                     <input type="hidden" name="items[${index}][batches][${bIndex}][batch_code]" value="${b.batch_code || ''}" />
-                                    <input type="hidden" name="items[${index}][batches][${bIndex}][quantity_issued]" value="${b.quantity || 0}" />
+                                    <input type="hidden" name="items[${index}][batches][${bIndex}][quantity_issued]" value="${Math.round(b.quantity || 0)}" />
                                     <input type="hidden" name="items[${index}][batches][${bIndex}][unit_cost]" value="${b.unit_cost || item.unit_cost}" />
                                     <input type="hidden" name="items[${index}][batches][${bIndex}][selling_price]" value="${b.selling_price || 0}" />
                                     <input type="hidden" name="items[${index}][batches][${bIndex}][is_promotional]" value="${b.is_promotional ? 1 : 0}" />
@@ -964,9 +966,9 @@
                                         ${b.is_promotional ? '🎁 ' : ''}${b.batch_code || 'N/A'}
                                     </div>
                                 </td>
-                                <td class="py-1 px-2 text-right font-medium">${parseFloat(b.quantity).toLocaleString('en-PK', {minimumFractionDigits: 0})}</td>
+                                <td class="py-1 px-2 text-right font-medium">${Math.round(parseFloat(b.quantity)).toLocaleString('en-PK')}</td>
                                 <td class="py-1 px-2 text-right">₨${parseFloat(b.selling_price).toFixed(2)}</td>
-                                <td class="py-1 px-2">
+                                <td class="py-1 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${bIndex}][quantity_sold]"
                                         step="0.001" min="0" max="${b.quantity}"
@@ -975,7 +977,7 @@
                                         oninput="autoFillShortage(${index}, ${bIndex}, 'sold')"
                                         value="0" />
                                 </td>
-                                <td class="py-1 px-2">
+                                <td class="py-1 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${bIndex}][quantity_returned]"
                                         step="0.001" min="0" max="${b.quantity}"
@@ -984,7 +986,7 @@
                                         oninput="autoFillShortage(${index}, ${bIndex}, 'returned')"
                                         value="0" />
                                 </td>
-                                <td class="py-1 px-2">
+                                <td class="py-1 px-2 text-right">
                                     <input type="number"
                                         name="items[${index}][batches][${bIndex}][quantity_shortage]"
                                         step="0.001" min="0" max="${b.quantity}"
@@ -994,7 +996,7 @@
                                         value="0" />
                                 </td>
                                 <td class="py-1 px-2 text-right">
-                                    <span id="balance-${index}-${bIndex}" class="font-bold text-red-600">${parseFloat(b.quantity).toFixed(3)}</span>
+                                    <span id="balance-${index}-${bIndex}" class="font-bold text-red-600">${Math.round(parseFloat(b.quantity))}</span>
                                 </td>
                             </tr>
                         `;

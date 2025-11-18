@@ -20,12 +20,12 @@
             <x-status-message class="mb-4 shadow-md" />
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
+                <div class="pt-6 pl-6 pr-6">
                     <form method="POST" action="{{ route('sales-settlements.store') }}" id="settlementForm">
                         @csrf
 
                         {{-- Section 1: Date & Goods Issue Selection --}}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6" x-data="goodsIssueSelector()">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2" x-data="goodsIssueSelector()">
                             <div>
                                 <x-label for="settlement_date" value="Settlement Date" class="required" />
                                 <x-input id="settlement_date" name="settlement_date" type="date"
@@ -42,18 +42,22 @@
                                 </select>
                                 <x-input-error for="goods_issue_id" class="mt-2" />
                             </div>
-                        </div>
 
-                        <p class="text-sm text-gray-500 mt-2" id="noItemsMessage">
+                        </div>
+                        <p class="text-sm text-gray-500 " id="noItemsMessage">
                             Select a Goods Issue to load product details
                         </p>
 
-                        {{-- Section 2: Combined Batch-wise Settlement Table --}}
-                        <div id="settlementTableContainer"
-                            style="display: none; text-align: center; margin: 0px; padding: 0px">
-                            <x-detail-table
-                                title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance = BF)"
-                                :headers="[
+
+                </div>
+
+                <div class="mb-2">
+
+                    {{-- Section 2: Combined Batch-wise Settlement Table --}}
+                    <div id="settlementTableContainer"
+                        style="display: none; text-align: center; margin: 0px; padding: 0px">
+                        <x-detail-table title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance = BF)"
+                            :headers="[
                                 ['label' => 'Product / Batch', 'align' => 'text-left'],
                                 ['label' => 'Batch Breakdown', 'align' => 'text-left'],
                                 ['label' => 'B/F', 'align' => 'text-right'],
@@ -65,71 +69,74 @@
                                 ['label' => 'Shortage', 'align' => 'text-right'],
                                 ['label' => 'Balance', 'align' => 'text-right'],
                             ]">
-                                <tbody id="settlementItemsBody">
-                                    <!-- Settlement items will be populated here -->
-                                </tbody>
-                                <x-slot name="footer">
-                                    <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                        <td colspan="3" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
-                                        </td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
-                                            id="grandTotalBF">0
-                                        </td>
-                                        <td colspan="2" class="py-1 px-1"></td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
-                                            id="grandTotalSold">0</td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-blue-700"
-                                            id="grandTotalReturned">0</td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
-                                            id="grandTotalShortage">0</td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalBalance">0
-                                        </td>
-                                    </tr>
-                                    <tr class="border-t border-gray-300 bg-blue-50">
-                                        <td colspan="3" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
-                                        </td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
-                                            id="grandTotalBFValue">0.00</td>
-                                        <td colspan="2" class="py-1 px-1"></td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
-                                            id="grandTotalSoldValue">0.00</td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-blue-700"
-                                            id="grandTotalReturnValue">0.00</td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
-                                            id="grandTotalShortageValue">0.00</td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm" id="valueBalanceCheck">0.00
-                                        </td>
-                                    </tr>
-                                    <tr class="border-t-2 border-gray-400 bg-gray-200">
-                                        <td colspan="3" class="py-1 px-1 text-right font-bold text-base">Total Issued:
-                                        </td>
-                                        <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalIssued">0</td>
-                                        <td colspan="2" class="py-1 px-1 text-right font-bold text-base">Total Value:
-                                        </td>
-                                        <td colspan="5" class="py-1 px-1 text-right font-bold text-sm text-emerald-700"
-                                            id="grandTotalIssuedValue">0.00</td>
-                                    </tr>
-                                </x-slot>
-                            </x-detail-table>
-                        </div>
-                        <p class="text-sm text-blue-600 mt-2" style="display: none;" id="settlementHelpText">
-                            💡 Tip: When you enter Sold quantity, the remaining will auto-calculate. You can then adjust
-                            Returned and Shortage as needed.
-                        </p>
+                            <tbody id="settlementItemsBody">
+                                <!-- Settlement items will be populated here -->
+                            </tbody>
+                            <x-slot name="footer">
+                                <tr class="border-t-2 border-gray-300 bg-gray-100">
+                                    <td colspan="3" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
+                                    </td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
+                                        id="grandTotalBF">0
+                                    </td>
+                                    <td colspan="2" class="py-1 px-1"></td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
+                                        id="grandTotalSold">0</td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-blue-700"
+                                        id="grandTotalReturned">0</td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
+                                        id="grandTotalShortage">0</td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalBalance">0
+                                    </td>
+                                </tr>
+                                <tr class="border-t border-gray-300 bg-blue-50">
+                                    <td colspan="3" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
+                                    </td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
+                                        id="grandTotalBFValue">0.00</td>
+                                    <td colspan="2" class="py-1 px-1"></td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
+                                        id="grandTotalSoldValue">0.00</td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-blue-700"
+                                        id="grandTotalReturnValue">0.00</td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
+                                        id="grandTotalShortageValue">0.00</td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm" id="valueBalanceCheck">0.00
+                                    </td>
+                                </tr>
+                                <tr class="border-t-2 border-gray-400 bg-gray-200">
+                                    <td colspan="3" class="py-1 px-1 text-right font-bold text-base">Total Issued:
+                                    </td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalIssued">0</td>
+                                    <td colspan="2" class="py-1 px-1 text-right font-bold text-base">Total Value:
+                                    </td>
+                                    <td colspan="5" class="py-1 px-1 text-right font-bold text-sm text-emerald-700"
+                                        id="grandTotalIssuedValue">0.00</td>
+                                </tr>
+                            </x-slot>
+                        </x-detail-table>
+                    </div>
+                    <p class="text-sm text-blue-600 mt-2" style="display: none;" id="settlementHelpText">
+                        💡 Tip: When you enter Sold quantity, the remaining will auto-calculate. You can then adjust
+                        Returned and Shortage as needed.
+                    </p>
 
-                        {{-- Section 2: Creditors/Credit Sales Breakdown (MOVED HERE) --}}
-                        <div class="mb-6" style="display: none;" id="creditSalesSection" x-data="creditSalesManager()">
-                            <hr class="my-6 border-gray-200">
+                    {{-- Section 2: Creditors/Credit Sales Breakdown (MOVED HERE) --}}
+                    <div class="mb-6" style="display: none;" id="creditSalesSection" x-data="creditSalesManager()">
+                        <hr class="my-6 border-gray-200">
 
-                            <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                                <svg class="w-6 h-6 mr-2 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                                Creditors / Credit Sales Breakdown
-                            </h3>
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-orange-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                            Creditors / Credit Sales Breakdown
+                        </h3>
 
-                            <div x-show="creditSales.length > 0" x-cloak class="bg-white border-2 border-orange-200 rounded-lg overflow-hidden shadow-sm">
-                                <x-detail-table title="" :headers="[
+                        <div x-show="creditSales.length > 0" x-cloak
+                            class="bg-white border-2 border-orange-200 rounded-lg overflow-hidden shadow-sm">
+                            <x-detail-table title="" :headers="[
                                     ['label' => 'Customer', 'align' => 'text-left'],
                                     ['label' => 'Previous Balance', 'align' => 'text-right'],
                                     ['label' => 'Credit', 'align' => 'text-right'],
@@ -138,485 +145,521 @@
                                     ['label' => 'Notes', 'align' => 'text-left'],
                                     ['label' => 'Action', 'align' => 'text-center'],
                                 ]">
-                                    <tbody>
-                                        <template x-for="(sale, index) in creditSales" :key="index">
-                                            <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                                <td class="py-1 px-1">
-                                                    <select :name="'credit_sales[' + index + '][customer_id]'"
-                                                        x-model="sale.customer_id"
-                                                        @change="updateCustomerBalance(index)"
-                                                        class="border-gray-300 rounded-md text-sm w-full" required>
-                                                        <option value="">Select Customer</option>
-                                                        @foreach(\App\Models\Customer::orderBy('customer_name')->get()
-                                                        as $customer)
-                                                        <option value="{{ $customer->id }}"
-                                                            data-balance="{{ $customer->receivable_balance ?? 0 }}">
-                                                            {{ $customer->customer_name }}
-                                                        </option>
-                                                        @endforeach
-                                                    </select>
+                                <tbody>
+                                    <template x-for="(sale, index) in creditSales" :key="index">
+                                        <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                            <td class="py-1 px-1">
+                                                <select :name="'credit_sales[' + index + '][customer_id]'"
+                                                    x-model="sale.customer_id" @change="updateCustomerBalance(index)"
+                                                    class="border-gray-300 rounded-md text-sm w-full" required>
+                                                    <option value="">Select Customer</option>
+                                                    @foreach(\App\Models\Customer::orderBy('customer_name')->get()
+                                                    as $customer)
+                                                    <option value="{{ $customer->id }}"
+                                                        data-balance="{{ $customer->receivable_balance ?? 0 }}">
+                                                        {{ $customer->customer_name }}
+                                                    </option>
+                                                    @endforeach
+                                                </select>
+                                            </td>
+                                            <td class="py-1 px-1 text-right">
+                                                <input type="number"
+                                                    :name="'credit_sales[' + index + '][previous_balance]'"
+                                                    x-model="sale.previous_balance" readonly
+                                                    class="border-gray-300 rounded-md text-sm w-24 text-right bg-gray-100"
+                                                    step="0.01" />
+                                            </td>
+                                            <td class="py-1 px-1 text-right">
+                                                <input type="number" :name="'credit_sales[' + index + '][sale_amount]'"
+                                                    x-model="sale.sale_amount"
+                                                    @input="calculateNewBalance(index); updateCreditTotal()"
+                                                    class="border-gray-300 rounded-md text-sm w-24 text-right"
+                                                    step="0.01" min="0" />
+                                            </td>
+                                            <td class="py-1 px-1 text-right">
+                                                <input type="number"
+                                                    :name="'credit_sales[' + index + '][payment_received]'"
+                                                    x-model="sale.payment_received"
+                                                    @input="calculateNewBalance(index); updateRecoveryTotal()"
+                                                    class="border-gray-300 rounded-md text-sm w-24 text-right"
+                                                    step="0.01" min="0" />
+                                            </td>
+                                            <td class="py-1 px-1 text-right">
+                                                <span class="font-semibold text-gray-700"
+                                                    x-text="formatCurrency(sale.new_balance)"></span>
+                                                <input type="hidden" :name="'credit_sales[' + index + '][new_balance]'"
+                                                    x-model="sale.new_balance" />
+                                            </td>
+                                            <td class="py-1 px-1">
+                                                <input type="text" :name="'credit_sales[' + index + '][notes]'"
+                                                    x-model="sale.notes"
+                                                    class="border-gray-300 rounded-md text-sm w-full"
+                                                    placeholder="Optional notes" />
+                                            </td>
+                                            <td class="py-1 px-1 text-center">
+                                                <button type="button" @click="removeCreditSale(index)"
+                                                    class="text-red-600 hover:text-red-800">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                        viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                                <x-slot name="footer">
+                                    <tr class="border-t-2 border-gray-300 bg-gray-100">
+                                        <td colspan="2" class="py-1 px-1 text-right font-bold">Total Credit Sales:
+                                        </td>
+                                        <td class="py-1 px-1 text-right font-bold text-orange-700">
+                                            <span x-text="formatCurrency(creditTotal)"></span>
+                                            <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
+                                                :value="creditTotal" />
+                                        </td>
+                                        <td class="py-1 px-1 text-right font-bold text-green-700">
+                                            <span x-text="formatCurrency(recoveryTotal)"></span>
+                                            <input type="hidden" id="credit_recoveries_total"
+                                                name="credit_recoveries_total" :value="recoveryTotal" />
+                                        </td>
+                                        <td colspan="3"></td>
+                                    </tr>
+                                </x-slot>
+                            </x-detail-table>
+                        </div>
+
+                        <p class="text-sm text-gray-500 mt-2" x-show="creditSales.length === 0">
+                            No credit sales added yet. Click "Add Credit Sale" to add one.
+                        </p>
+
+                        <div class="flex justify-between items-center mb-4 mt-4">
+                            <button type="button" @click="addCreditSale()"
+                                class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 4v16m8-8H4" />
+                                </svg>
+                                Add Credit Sale
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Section 3: Side-by-Side Cash Detail, Expense Detail, and Sales Summary --}}
+                    <div id="expenseAndSalesSummarySection" style="display: none;" class="mb-4">
+                        <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                            <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            Cash Reconciliation & Settlement
+                        </h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {{-- LEFT SIDE: Cash Detail (Denomination Breakdown) --}}
+                            <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
+                                <div class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2">
+                                    <h4 class="text-sm font-bold text-white">Cash Detail (Denomination Breakdown)</h4>
+                                </div>
+                                <div class="p-3">
+                                    <table class="w-full text-xs">
+                                        <thead>
+                                            <tr class="border-b-2 border-gray-300">
+                                                <th class="py-1.5 px-2 text-left text-gray-700">Denomination</th>
+                                                <th class="py-1.5 px-2 text-right text-gray-700">Qty</th>
+                                                <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200">
+                                            <tr>
+                                                <td class="py-1 px-2">₨ 5,000 Notes</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="denom_5000" name="denom_5000" min="0"
+                                                        step="1"
+                                                        class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateCashTotal()" value="0" />
                                                 </td>
-                                                <td class="py-1 px-1 text-right">
-                                                    <input type="number"
-                                                        :name="'credit_sales[' + index + '][previous_balance]'"
-                                                        x-model="sale.previous_balance" readonly
-                                                        class="border-gray-300 rounded-md text-sm w-24 text-right bg-gray-100"
-                                                        step="0.01" />
+                                                <td class="py-1 px-2 text-right font-semibold" id="denom_5000_total">₨
+                                                    0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">₨ 1,000 Notes</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="denom_1000" name="denom_1000" min="0"
+                                                        step="1"
+                                                        class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateCashTotal()" value="0" />
                                                 </td>
-                                                <td class="py-1 px-1 text-right">
-                                                    <input type="number"
-                                                        :name="'credit_sales[' + index + '][sale_amount]'"
-                                                        x-model="sale.sale_amount"
-                                                        @input="calculateNewBalance(index); updateCreditTotal()"
-                                                        class="border-gray-300 rounded-md text-sm w-24 text-right"
-                                                        step="0.01" min="0" />
+                                                <td class="py-1 px-2 text-right font-semibold" id="denom_1000_total">₨
+                                                    0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">₨ 500 Notes</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="denom_500" name="denom_500" min="0"
+                                                        step="1"
+                                                        class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateCashTotal()" value="0" />
                                                 </td>
-                                                <td class="py-1 px-1 text-right">
-                                                    <input type="number"
-                                                        :name="'credit_sales[' + index + '][payment_received]'"
-                                                        x-model="sale.payment_received"
-                                                        @input="calculateNewBalance(index); updateRecoveryTotal()"
-                                                        class="border-gray-300 rounded-md text-sm w-24 text-right"
-                                                        step="0.01" min="0" />
+                                                <td class="py-1 px-2 text-right font-semibold" id="denom_500_total">₨
+                                                    0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">₨ 100 Notes</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="denom_100" name="denom_100" min="0"
+                                                        step="1"
+                                                        class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateCashTotal()" value="0" />
                                                 </td>
-                                                <td class="py-1 px-1 text-right">
-                                                    <span class="font-semibold text-gray-700"
-                                                        x-text="formatCurrency(sale.new_balance)"></span>
-                                                    <input type="hidden"
-                                                        :name="'credit_sales[' + index + '][new_balance]'"
-                                                        x-model="sale.new_balance" />
+                                                <td class="py-1 px-2 text-right font-semibold" id="denom_100_total">₨
+                                                    0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">₨ 50 Notes</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="denom_50" name="denom_50" min="0" step="1"
+                                                        class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateCashTotal()" value="0" />
                                                 </td>
-                                                <td class="py-1 px-1">
-                                                    <input type="text" :name="'credit_sales[' + index + '][notes]'"
-                                                        x-model="sale.notes"
-                                                        class="border-gray-300 rounded-md text-sm w-full"
-                                                        placeholder="Optional notes" />
+                                                <td class="py-1 px-2 text-right font-semibold" id="denom_50_total">₨
+                                                    0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">₨ 20 Notes</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="denom_20" name="denom_20" min="0" step="1"
+                                                        class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateCashTotal()" value="0" />
                                                 </td>
-                                                <td class="py-1 px-1 text-center">
-                                                    <button type="button" @click="removeCreditSale(index)"
-                                                        class="text-red-600 hover:text-red-800">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5"
-                                                            fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                                stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                        </svg>
-                                                    </button>
+                                                <td class="py-1 px-2 text-right font-semibold" id="denom_20_total">₨
+                                                    0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">₨ 10 Notes</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="denom_10" name="denom_10" min="0" step="1"
+                                                        class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateCashTotal()" value="0" />
+                                                </td>
+                                                <td class="py-1 px-2 text-right font-semibold" id="denom_10_total">₨
+                                                    0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">Loose Cash/Coins</td>
+                                                <td class="py-1 px-2 text-right">-</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="denom_coins" name="denom_coins" min="0"
+                                                        step="0.01"
+                                                        class="w-20 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateCashTotal()" value="0" />
                                                 </td>
                                             </tr>
-                                        </template>
-                                    </tbody>
-                                    <x-slot name="footer">
-                                        <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                            <td colspan="2" class="py-1 px-1 text-right font-bold">Total Credit Sales:
-                                            </td>
-                                            <td class="py-1 px-1 text-right font-bold text-orange-700">
-                                                <span x-text="formatCurrency(creditTotal)"></span>
-                                                <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
-                                                    :value="creditTotal" />
-                                            </td>
-                                            <td class="py-1 px-1 text-right font-bold text-green-700">
-                                                <span x-text="formatCurrency(recoveryTotal)"></span>
-                                                <input type="hidden" id="credit_recoveries_total"
-                                                    name="credit_recoveries_total" :value="recoveryTotal" />
-                                            </td>
-                                            <td colspan="3"></td>
-                                        </tr>
-                                    </x-slot>
-                                </x-detail-table>
-                            </div>
+                                            <tr class="bg-green-100 border-t-2 border-green-300">
+                                                <td colspan="2" class="py-1.5 px-2 font-bold text-green-900">Total
+                                                    Physical Cash</td>
+                                                <td class="py-1.5 px-2 text-right font-bold text-green-900"
+                                                    id="totalCashDisplay">₨ 0.00</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
 
-                            <p class="text-sm text-gray-500 mt-2" x-show="creditSales.length === 0">
-                                No credit sales added yet. Click "Add Credit Sale" to add one.
-                            </p>
-
-                            <div class="flex justify-between items-center mb-4 mt-4">
-                                <button type="button" @click="addCreditSale()"
-                                    class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Add Credit Sale
-                                </button>
-                            </div>
-                        </div>
-
-                        {{-- Section 3: Side-by-Side Cash Detail, Expense Detail, and Sales Summary --}}
-                        <div id="expenseAndSalesSummarySection" style="display: none;" class="mb-4">
-                            <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                                <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                                Cash Reconciliation & Settlement
-                            </h3>
-
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {{-- LEFT SIDE: Cash Detail (Denomination Breakdown) --}}
-                                <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
-                                    <div class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2">
-                                        <h4 class="text-sm font-bold text-white">Cash Detail (Denomination Breakdown)</h4>
+                                    {{-- Bank Transfer Section --}}
+                                    <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                                        <label class="text-xs font-bold text-blue-900 block mb-2">💳 Bank Transfer /
+                                            Online Payment</label>
+                                        <select id="bank_account_id" name="bank_account_id"
+                                            class="select2-bank-account w-full border-gray-300 rounded text-xs mb-2">
+                                            <option value="">No Bank Transfer</option>
+                                            @foreach(\App\Models\BankAccount::active()->get() as $bank)
+                                            <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{
+                                                $bank->bank_name }}</option>
+                                            @endforeach
+                                        </select>
+                                        <input type="number" id="bank_transfer_amount" name="bank_transfer_amount"
+                                            min="0" step="0.01" placeholder="Enter amount"
+                                            class="w-full text-right border-gray-300 rounded text-xs px-2 py-1"
+                                            oninput="updateCashTotal()" value="0" />
                                     </div>
-                                    <div class="p-3">
-                                        <table class="w-full text-xs">
-                                            <thead>
-                                                <tr class="border-b-2 border-gray-300">
-                                                    <th class="py-1.5 px-2 text-left text-gray-700">Denomination</th>
-                                                    <th class="py-1.5 px-2 text-right text-gray-700">Qty</th>
-                                                    <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-gray-200">
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 5,000 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="denom_5000" name="denom_5000" min="0" step="1"
-                                                            class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
-                                                    </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_5000_total">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 1,000 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="denom_1000" name="denom_1000" min="0" step="1"
-                                                            class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
-                                                    </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_1000_total">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 500 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="denom_500" name="denom_500" min="0" step="1"
-                                                            class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
-                                                    </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_500_total">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 100 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="denom_100" name="denom_100" min="0" step="1"
-                                                            class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
-                                                    </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_100_total">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 50 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="denom_50" name="denom_50" min="0" step="1"
-                                                            class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
-                                                    </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_50_total">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 20 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="denom_20" name="denom_20" min="0" step="1"
-                                                            class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
-                                                    </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_20_total">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 10 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="denom_10" name="denom_10" min="0" step="1"
-                                                            class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
-                                                    </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_10_total">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Loose Cash/Coins</td>
-                                                    <td class="py-1 px-2 text-right">-</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="denom_coins" name="denom_coins" min="0" step="0.01"
-                                                            class="w-20 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
-                                                    </td>
-                                                </tr>
-                                                <tr class="bg-green-100 border-t-2 border-green-300">
-                                                    <td colspan="2" class="py-1.5 px-2 font-bold text-green-900">Total Physical Cash</td>
-                                                    <td class="py-1.5 px-2 text-right font-bold text-green-900" id="totalCashDisplay">₨ 0.00</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
 
-                                        {{-- Bank Transfer Section --}}
-                                        <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
-                                            <label class="text-xs font-bold text-blue-900 block mb-2">💳 Bank Transfer / Online Payment</label>
-                                            <select id="bank_account_id" name="bank_account_id"
-                                                class="select2-bank-account w-full border-gray-300 rounded text-xs mb-2">
-                                                <option value="">No Bank Transfer</option>
-                                                @foreach(\App\Models\BankAccount::active()->get() as $bank)
-                                                <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{ $bank->bank_name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <input type="number" id="bank_transfer_amount" name="bank_transfer_amount"
-                                                min="0" step="0.01" placeholder="Enter amount"
-                                                class="w-full text-right border-gray-300 rounded text-xs px-2 py-1"
-                                                oninput="updateCashTotal()" value="0" />
+                                    {{-- Cheque Section (Alpine.js) --}}
+                                    <div x-data="chequeManager()" class="mt-3">
+                                        <div class="flex justify-between items-center mb-2">
+                                            <label class="text-xs font-bold text-purple-900">📝 Cheque Payments</label>
+                                            <button type="button" @click="addCheque()"
+                                                class="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700">
+                                                + Add
+                                            </button>
                                         </div>
-
-                                        {{-- Cheque Section (Alpine.js) --}}
-                                        <div x-data="chequeManager()" class="mt-3">
-                                            <div class="flex justify-between items-center mb-2">
-                                                <label class="text-xs font-bold text-purple-900">📝 Cheque Payments</label>
-                                                <button type="button" @click="addCheque()"
-                                                    class="text-xs px-2 py-1 bg-purple-600 text-white rounded hover:bg-purple-700">
-                                                    + Add
-                                                </button>
-                                            </div>
-                                            <div x-show="cheques.length > 0" class="space-y-2 max-h-48 overflow-y-auto">
-                                                <template x-for="(cheque, index) in cheques" :key="index">
-                                                    <div class="p-2 bg-purple-50 border border-purple-200 rounded text-xs">
-                                                        <div class="grid grid-cols-2 gap-1 mb-1">
-                                                            <input type="text" :name="'cheques[' + index + '][cheque_number]'"
-                                                                x-model="cheque.cheque_number"
-                                                                class="border-gray-300 rounded px-1 py-0.5 text-xs font-mono"
-                                                                placeholder="CHQ #" required />
-                                                            <input type="date" :name="'cheques[' + index + '][cheque_date]'"
-                                                                x-model="cheque.cheque_date"
-                                                                class="border-gray-300 rounded px-1 py-0.5 text-xs" required />
-                                                        </div>
-                                                        <div class="grid grid-cols-2 gap-1 mb-1">
-                                                            <input type="text" :name="'cheques[' + index + '][bank_name]'"
-                                                                x-model="cheque.bank_name"
-                                                                class="border-gray-300 rounded px-1 py-0.5 text-xs"
-                                                                placeholder="Bank" required />
-                                                            <input type="number" :name="'cheques[' + index + '][amount]'"
-                                                                x-model="cheque.amount" @input="updateChequeTotal()"
-                                                                class="border-gray-300 rounded px-1 py-0.5 text-xs text-right font-semibold"
-                                                                placeholder="0.00" step="0.01" min="0" required />
-                                                        </div>
-                                                        <button type="button" @click="removeCheque(index)"
-                                                            class="w-full text-xs py-0.5 bg-red-500 text-white rounded hover:bg-red-600">
-                                                            Remove
-                                                        </button>
+                                        <div x-show="cheques.length > 0" class="space-y-2 max-h-48 overflow-y-auto">
+                                            <template x-for="(cheque, index) in cheques" :key="index">
+                                                <div class="p-2 bg-purple-50 border border-purple-200 rounded text-xs">
+                                                    <div class="grid grid-cols-2 gap-1 mb-1">
+                                                        <input type="text"
+                                                            :name="'cheques[' + index + '][cheque_number]'"
+                                                            x-model="cheque.cheque_number"
+                                                            class="border-gray-300 rounded px-1 py-0.5 text-xs font-mono"
+                                                            placeholder="CHQ #" required />
+                                                        <input type="date" :name="'cheques[' + index + '][cheque_date]'"
+                                                            x-model="cheque.cheque_date"
+                                                            class="border-gray-300 rounded px-1 py-0.5 text-xs"
+                                                            required />
                                                     </div>
-                                                </template>
-                                            </div>
-                                            <div x-show="cheques.length > 0" class="mt-2 p-2 bg-purple-100 border border-purple-300 rounded">
-                                                <div class="flex justify-between text-xs font-bold text-purple-900">
-                                                    <span>Total Cheques:</span>
-                                                    <span x-text="formatCurrency(chequeTotal)"></span>
+                                                    <div class="grid grid-cols-2 gap-1 mb-1">
+                                                        <input type="text" :name="'cheques[' + index + '][bank_name]'"
+                                                            x-model="cheque.bank_name"
+                                                            class="border-gray-300 rounded px-1 py-0.5 text-xs"
+                                                            placeholder="Bank" required />
+                                                        <input type="number" :name="'cheques[' + index + '][amount]'"
+                                                            x-model="cheque.amount" @input="updateChequeTotal()"
+                                                            class="border-gray-300 rounded px-1 py-0.5 text-xs text-right font-semibold"
+                                                            placeholder="0.00" step="0.01" min="0" required />
+                                                    </div>
+                                                    <button type="button" @click="removeCheque(index)"
+                                                        class="w-full text-xs py-0.5 bg-red-500 text-white rounded hover:bg-red-600">
+                                                        Remove
+                                                    </button>
                                                 </div>
-                                                <input type="hidden" id="total_cheques" name="total_cheques" :value="chequeTotal" />
-                                                <input type="hidden" id="cheque_count" name="cheque_count" :value="cheques.length" />
-                                            </div>
-                                            <p x-show="cheques.length === 0" class="text-xs text-gray-500 text-center py-2 italic">
-                                                No cheques added
-                                            </p>
+                                            </template>
                                         </div>
-
-                                        {{-- Grand Total --}}
-                                        <div class="mt-3 p-2 bg-gradient-to-r from-emerald-100 to-emerald-50 border-2 border-emerald-400 rounded">
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-sm font-bold text-emerald-900">💰 Total Cash Received</span>
-                                                <span class="text-lg font-bold text-emerald-900" id="grandTotalCashDisplay">₨ 0.00</span>
+                                        <div x-show="cheques.length > 0"
+                                            class="mt-2 p-2 bg-purple-100 border border-purple-300 rounded">
+                                            <div class="flex justify-between text-xs font-bold text-purple-900">
+                                                <span>Total Cheques:</span>
+                                                <span x-text="formatCurrency(chequeTotal)"></span>
                                             </div>
+                                            <input type="hidden" id="total_cheques" name="total_cheques"
+                                                :value="chequeTotal" />
+                                            <input type="hidden" id="cheque_count" name="cheque_count"
+                                                :value="cheques.length" />
                                         </div>
+                                        <p x-show="cheques.length === 0"
+                                            class="text-xs text-gray-500 text-center py-2 italic">
+                                            No cheques added
+                                        </p>
                                     </div>
-                                </div>
 
-                                {{-- RIGHT SIDE: Expense Detail Table --}}
-                                <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
-                                    <div class="bg-gradient-to-r from-red-500 to-red-600 px-3 py-2">
-                                        <h4 class="text-sm font-bold text-white">Expense Detail</h4>
-                                    </div>
-                                    <div class="p-3">
-                                        <table class="w-full text-xs">
-                                            <thead>
-                                                <tr class="border-b-2 border-gray-300">
-                                                    <th class="py-1.5 px-2 text-left text-gray-700">Description</th>
-                                                    <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-gray-200">
-                                                <tr>
-                                                    <td class="py-1 px-2">Toll Tax / Labor</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_toll_tax" name="expense_toll_tax"
-                                                            step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">AMR Powder Claim</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_amr_powder_claim"
-                                                            name="expense_amr_powder_claim" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">AMR Liquid Claim</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_amr_liquid_claim"
-                                                            name="expense_amr_liquid_claim" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Scheme</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_scheme" name="expense_scheme"
-                                                            step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Advance Tax</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_advance_tax"
-                                                            name="expense_advance_tax" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Food Charges</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_food_charges"
-                                                            name="expense_food_charges" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Salesman Charges</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_salesman_charges"
-                                                            name="expense_salesman_charges" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Loader Charges</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_loader_charges"
-                                                            name="expense_loader_charges" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Percentage</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_percentage"
-                                                            name="expense_percentage" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Miscellaneous</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_miscellaneous_amount"
-                                                            name="expense_miscellaneous_amount" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr class="bg-red-100 border-t-2 border-red-300">
-                                                    <td class="py-1.5 px-2 font-bold text-red-900">Total Expenses</td>
-                                                    <td class="py-1.5 px-2 text-right font-bold text-red-900" id="totalExpensesDisplay">₨ 0.00</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                {{-- THIRD COLUMN: Sales Summary (Auto-Calculating) --}}
-                                <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
-                                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2">
-                                        <h4 class="text-sm font-bold text-white">Sales Summary</h4>
-                                    </div>
-                                    <div class="p-3">
-                                        <table class="w-full text-xs">
-                                            <thead>
-                                                <tr class="border-b-2 border-gray-300">
-                                                    <th class="py-1.5 px-2 text-left text-gray-700">Description</th>
-                                                    <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-gray-200">
-                                                <tr>
-                                                    <td class="py-1 px-2">Net Sale (Sold Items)</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-green-700" id="summary_net_sale_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Recovery (from customers)</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-teal-700" id="summary_recovery_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr class="bg-blue-100 border-t-2 border-blue-300">
-                                                    <td class="py-1.5 px-2 font-bold text-blue-900">Total Sale</td>
-                                                    <td class="py-1.5 px-2 text-right font-bold text-blue-900" id="summary_total_sale_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Credit (to customers)</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-orange-700" id="summary_credit_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr class="bg-gray-50">
-                                                    <td class="py-1 px-2 font-semibold">Balance</td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="summary_balance_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr class="border-t border-gray-200">
-                                                    <td class="py-1 px-2 text-red-700">Expenses</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-red-700" id="summary_expenses_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr class="bg-indigo-50">
-                                                    <td class="py-1.5 px-2 font-bold text-indigo-900">Net Balance</td>
-                                                    <td class="py-1.5 px-2 text-right font-bold text-indigo-900" id="summary_net_balance_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr class="border-t border-gray-200">
-                                                    <td class="py-1 px-2">Cash Received (counted)</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-green-700" id="summary_cash_received_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr class="bg-gradient-to-r from-purple-100 to-purple-50 border-t-2 border-purple-300">
-                                                    <td class="py-2 px-2 font-bold text-purple-900">Short/Excess</td>
-                                                    <td class="py-2 px-2 text-right font-bold text-purple-900 text-base" id="summary_short_excess_display">₨ 0.00</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                        <div class="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 leading-relaxed">
-                                            <strong class="block mb-1">Formula:</strong>
-                                            <div class="space-y-0.5">
-                                                <div>• Net Sale (Mean SOLD Items)</div>
-                                                <div>• Recovery (from customer)</div>
-                                                <div>• <strong>Total Sale</strong> = Net Sale + Recovery</div>
-                                                <div>• Credit (Grand Total of Credit to Customers)</div>
-                                                <div>• <strong>Balance</strong> = Total Sale - Credit</div>
-                                                <div>• Expenses (Sum of All Expenses)</div>
-                                                <div>• <strong>Net Balance</strong> = Balance - Expenses</div>
-                                                <div>• Cash Received (Cash Detail Denomination Breakdown)</div>
-                                                <div>• <strong>Short/Excess</strong> = Cash Received - Net Balance</div>
-                                            </div>
+                                    {{-- Grand Total --}}
+                                    <div
+                                        class="mt-3 p-2 bg-gradient-to-r from-emerald-100 to-emerald-50 border-2 border-emerald-400 rounded">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-sm font-bold text-emerald-900">💰 Total Cash
+                                                Received</span>
+                                            <span class="text-lg font-bold text-emerald-900"
+                                                id="grandTotalCashDisplay">₨ 0.00</span>
                                         </div>
-
-                                        {{-- Hidden input fields for calculations --}}
-                                        <input type="hidden" id="summary_net_sale" name="summary_net_sale" value="0.00" />
-                                        <input type="hidden" id="summary_recovery" name="summary_recovery" value="0.00" />
-                                        <input type="hidden" id="summary_total_sale" value="0.00" />
-                                        <input type="hidden" id="summary_credit" name="summary_credit" value="0.00" />
-                                        <input type="hidden" id="summary_balance" value="0.00" />
-                                        <input type="hidden" id="summary_expenses" name="summary_expenses" value="0.00" />
-                                        <input type="hidden" id="summary_net_balance" value="0.00" />
-                                        <input type="hidden" id="summary_cash_received" name="summary_cash_received" value="0.00" />
-                                        <input type="hidden" id="summary_short_excess" value="0.00" />
                                     </div>
                                 </div>
                             </div>
+
+                            {{-- RIGHT SIDE: Expense Detail Table --}}
+                            <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
+                                <div class="bg-gradient-to-r from-red-500 to-red-600 px-3 py-2">
+                                    <h4 class="text-sm font-bold text-white">Expense Detail</h4>
+                                </div>
+                                <div class="p-3">
+                                    <table class="w-full text-xs">
+                                        <thead>
+                                            <tr class="border-b-2 border-gray-300">
+                                                <th class="py-1.5 px-2 text-left text-gray-700">Description</th>
+                                                <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200">
+                                            <tr>
+                                                <td class="py-1 px-2">Toll Tax / Labor</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="expense_toll_tax" name="expense_toll_tax"
+                                                        step="0.01" min="0"
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">AMR Powder Claim</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="expense_amr_powder_claim"
+                                                        name="expense_amr_powder_claim" step="0.01" min="0"
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">AMR Liquid Claim</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="expense_amr_liquid_claim"
+                                                        name="expense_amr_liquid_claim" step="0.01" min="0"
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">Scheme</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="expense_scheme" name="expense_scheme"
+                                                        step="0.01" min="0"
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">Advance Tax</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="expense_advance_tax"
+                                                        name="expense_advance_tax" step="0.01" min="0"
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">Food Charges</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="expense_food_charges"
+                                                        name="expense_food_charges" step="0.01" min="0"
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">Salesman Charges</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="expense_salesman_charges"
+                                                        name="expense_salesman_charges" step="0.01" min="0"
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">Loader Charges</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="expense_loader_charges"
+                                                        name="expense_loader_charges" step="0.01" min="0"
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">Percentage</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="expense_percentage"
+                                                        name="expense_percentage" step="0.01" min="0"
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">Miscellaneous</td>
+                                                <td class="py-1 px-2 text-right">
+                                                    <input type="number" id="expense_miscellaneous_amount"
+                                                        name="expense_miscellaneous_amount" step="0.01" min="0"
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
+                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                </td>
+                                            </tr>
+                                            <tr class="bg-red-100 border-t-2 border-red-300">
+                                                <td class="py-1.5 px-2 font-bold text-red-900">Total Expenses</td>
+                                                <td class="py-1.5 px-2 text-right font-bold text-red-900"
+                                                    id="totalExpensesDisplay">₨ 0.00</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            {{-- THIRD COLUMN: Sales Summary (Auto-Calculating) --}}
+                            <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
+                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2">
+                                    <h4 class="text-sm font-bold text-white">Sales Summary</h4>
+                                </div>
+                                <div class="p-3">
+                                    <table class="w-full text-xs">
+                                        <thead>
+                                            <tr class="border-b-2 border-gray-300">
+                                                <th class="py-1.5 px-2 text-left text-gray-700">Description</th>
+                                                <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-200">
+                                            <tr>
+                                                <td class="py-1 px-2">Net Sale (Sold Items)</td>
+                                                <td class="py-1 px-2 text-right font-semibold text-green-700"
+                                                    id="summary_net_sale_display">₨ 0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">Recovery (from customers)</td>
+                                                <td class="py-1 px-2 text-right font-semibold text-teal-700"
+                                                    id="summary_recovery_display">₨ 0.00</td>
+                                            </tr>
+                                            <tr class="bg-blue-100 border-t-2 border-blue-300">
+                                                <td class="py-1.5 px-2 font-bold text-blue-900">Total Sale</td>
+                                                <td class="py-1.5 px-2 text-right font-bold text-blue-900"
+                                                    id="summary_total_sale_display">₨ 0.00</td>
+                                            </tr>
+                                            <tr>
+                                                <td class="py-1 px-2">Credit (to customers)</td>
+                                                <td class="py-1 px-2 text-right font-semibold text-orange-700"
+                                                    id="summary_credit_display">₨ 0.00</td>
+                                            </tr>
+                                            <tr class="bg-gray-50">
+                                                <td class="py-1 px-2 font-semibold">Balance</td>
+                                                <td class="py-1 px-2 text-right font-semibold"
+                                                    id="summary_balance_display">₨ 0.00</td>
+                                            </tr>
+                                            <tr class="border-t border-gray-200">
+                                                <td class="py-1 px-2 text-red-700">Expenses</td>
+                                                <td class="py-1 px-2 text-right font-semibold text-red-700"
+                                                    id="summary_expenses_display">₨ 0.00</td>
+                                            </tr>
+                                            <tr class="bg-indigo-50">
+                                                <td class="py-1.5 px-2 font-bold text-indigo-900">Net Balance</td>
+                                                <td class="py-1.5 px-2 text-right font-bold text-indigo-900"
+                                                    id="summary_net_balance_display">₨ 0.00</td>
+                                            </tr>
+                                            <tr class="border-t border-gray-200">
+                                                <td class="py-1 px-2">Cash Received (counted)</td>
+                                                <td class="py-1 px-2 text-right font-semibold text-green-700"
+                                                    id="summary_cash_received_display">₨ 0.00</td>
+                                            </tr>
+                                            <tr
+                                                class="bg-gradient-to-r from-purple-100 to-purple-50 border-t-2 border-purple-300">
+                                                <td class="py-2 px-2 font-bold text-purple-900">Short/Excess</td>
+                                                <td class="py-2 px-2 text-right font-bold text-purple-900 text-base"
+                                                    id="summary_short_excess_display">₨ 0.00</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="mt-2 p-2 bg-gray-50 rounded text-xs text-gray-600 leading-relaxed">
+                                        <strong class="block mb-1">Formula:</strong>
+                                        <div class="space-y-0.5">
+                                            <div>• Net Sale (Mean SOLD Items)</div>
+                                            <div>• Recovery (from customer)</div>
+                                            <div>• <strong>Total Sale</strong> = Net Sale + Recovery</div>
+                                            <div>• Credit (Grand Total of Credit to Customers)</div>
+                                            <div>• <strong>Balance</strong> = Total Sale - Credit</div>
+                                            <div>• Expenses (Sum of All Expenses)</div>
+                                            <div>• <strong>Net Balance</strong> = Balance - Expenses</div>
+                                            <div>• Cash Received (Cash Detail Denomination Breakdown)</div>
+                                            <div>• <strong>Short/Excess</strong> = Cash Received - Net Balance</div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Hidden input fields for calculations --}}
+                                    <input type="hidden" id="summary_net_sale" name="summary_net_sale" value="0.00" />
+                                    <input type="hidden" id="summary_recovery" name="summary_recovery" value="0.00" />
+                                    <input type="hidden" id="summary_total_sale" value="0.00" />
+                                    <input type="hidden" id="summary_credit" name="summary_credit" value="0.00" />
+                                    <input type="hidden" id="summary_balance" value="0.00" />
+                                    <input type="hidden" id="summary_expenses" name="summary_expenses" value="0.00" />
+                                    <input type="hidden" id="summary_net_balance" value="0.00" />
+                                    <input type="hidden" id="summary_cash_received" name="summary_cash_received"
+                                        value="0.00" />
+                                    <input type="hidden" id="summary_short_excess" value="0.00" />
+                                </div>
+                            </div>
                         </div>
+                    </div>
 
                 </div>
 

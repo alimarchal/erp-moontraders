@@ -154,7 +154,7 @@ class SalesSettlementController extends Controller
                 ($request->expense_salesman_charges ?? 0) +
                 ($request->expense_loader_charges ?? 0) +
                 ($request->expense_percentage ?? 0) +
-                ($request->expense_message_amount ?? 0);
+                ($request->expense_miscellaneous_amount ?? 0);
 
             // Create sales settlement
             $settlement = SalesSettlement::create([
@@ -186,7 +186,7 @@ class SalesSettlementController extends Controller
                 'expense_salesman_charges' => $request->expense_salesman_charges ?? 0,
                 'expense_loader_charges' => $request->expense_loader_charges ?? 0,
                 'expense_percentage' => $request->expense_percentage ?? 0,
-                'expense_message_amount' => $request->expense_message_amount ?? 0,
+                'expense_miscellaneous_amount' => $request->expense_miscellaneous_amount ?? 0,
                 'cash_to_deposit' => $cashToDeposit,
                 'status' => 'draft',
                 'notes' => $request->notes,

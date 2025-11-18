@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('expense_salesman_charges', 12, 2)->default(0)->after('expense_food_charges');
             $table->decimal('expense_loader_charges', 12, 2)->default(0)->after('expense_salesman_charges');
             $table->decimal('expense_percentage', 12, 2)->default(0)->after('expense_loader_charges');
-            $table->decimal('expense_message_amount', 12, 2)->default(0)->after('expense_percentage');
+            $table->decimal('expense_miscellaneous_amount', 12, 2)->default(0)->after('expense_percentage');
         });
     }
 
@@ -42,7 +42,7 @@ return new class extends Migration
                 'expense_salesman_charges',
                 'expense_loader_charges',
                 'expense_percentage',
-                'expense_message_amount',
+                'expense_miscellaneous_amount',
             ]);
         });
     }

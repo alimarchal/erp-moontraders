@@ -55,52 +55,19 @@
 
                         <hr class="my-6 border-gray-200">
 
-                        {{-- Section 2: Item Issue Amount (Prominent Display) --}}
-                        <div id="itemIssueAmountSection" style="display: none;" class="mb-6">
-                            <div class="bg-gradient-to-br from-emerald-50 to-green-50 p-6 rounded-lg border-2 border-emerald-300 shadow-lg">
-                                <h3 class="text-xl font-bold text-gray-900 mb-3 flex items-center">
-                                    <svg class="w-6 h-6 mr-2 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                    Total Item Issue Value
-                                </h3>
-                                <div class="bg-white p-5 rounded-md shadow-md border-2 border-emerald-400">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-lg font-bold text-gray-700">Total Value Issued:</span>
-                                        <span class="text-4xl font-bold text-emerald-700" id="grandTotal">₨ 0.00</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="itemsTableContainer" style="display: none;">
-                            <x-detail-table title="Items Issued (Detail)" :headers="[
-                                ['label' => '#', 'align' => 'text-center'],
-                                ['label' => 'Product', 'align' => 'text-left'],
-                                ['label' => 'Quantity Issued', 'align' => 'text-right'],
-                                ['label' => 'UOM', 'align' => 'text-center'],
-                                ['label' => 'Batch Breakdown', 'align' => 'text-left'],
-                                ['label' => 'Total Value', 'align' => 'text-right'],
-                            ]">
-                                <tbody id="itemsBody">
-                                    <!-- Items will be loaded from selected goods issue -->
-                                </tbody>
-                            </x-detail-table>
-                        </div>
-
                         <p class="text-sm text-gray-500 mt-2" id="noItemsMessage">
                             Select a Goods Issue to load product details
                         </p>
 
-                        <hr class="my-6 border-gray-200">
-
-                        {{-- Section 3: Batch-wise Settlement --}}
+                        {{-- Section 2: Combined Batch-wise Settlement Table --}}
                         <div id="settlementTableContainer" style="display: none;">
                             <x-detail-table title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance)" :headers="[
                                 ['label' => 'Product / Batch', 'align' => 'text-left'],
-                                ['label' => 'Issued', 'align' => 'text-right'],
+                                ['label' => 'UOM', 'align' => 'text-center'],
+                                ['label' => 'Batch Breakdown', 'align' => 'text-left'],
+                                ['label' => 'Qty Issued', 'align' => 'text-right'],
                                 ['label' => 'Price', 'align' => 'text-right'],
+                                ['label' => 'Value', 'align' => 'text-right'],
                                 ['label' => 'Sold', 'align' => 'text-right'],
                                 ['label' => 'Returned', 'align' => 'text-right'],
                                 ['label' => 'Shortage', 'align' => 'text-right'],
@@ -111,7 +78,7 @@
                                 </tbody>
                                 <x-slot name="footer">
                                     <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                        <td colspan="3" class="py-2 px-2 text-right font-bold text-base">Grand Totals:
+                                        <td colspan="6" class="py-2 px-2 text-right font-bold text-base">Grand Totals:
                                         </td>
                                         <td class="py-2 px-2 text-right font-bold text-base text-green-700"
                                             id="grandTotalSold">0</td>
@@ -123,14 +90,14 @@
                                             0</td>
                                     </tr>
                                     <tr class="border-t border-gray-300 bg-blue-50">
-                                        <td colspan="3" class="py-3 px-2 text-right font-bold text-lg">Value Totals:</td>
+                                        <td colspan="6" class="py-3 px-2 text-right font-bold text-lg">Value Totals:</td>
                                         <td class="py-3 px-2 text-right font-bold text-lg text-green-700" id="grandTotalSoldValue">₨ 0.00</td>
                                         <td class="py-3 px-2 text-right font-bold text-lg text-blue-700" id="grandTotalReturnValue">₨ 0.00</td>
                                         <td class="py-3 px-2 text-right font-bold text-lg text-red-700" id="grandTotalShortageValue">₨ 0.00</td>
                                         <td class="py-3 px-2 text-right font-bold text-2xl" id="valueBalanceCheck">₨ 0.00</td>
                                     </tr>
                                     <tr class="border-t-2 border-gray-400 bg-gray-200">
-                                        <td colspan="6" class="py-2 px-2 text-right font-bold text-base">Total Issued Value:</td>
+                                        <td colspan="9" class="py-2 px-2 text-right font-bold text-base">Total Issued Value:</td>
                                         <td class="py-2 px-2 text-right font-bold text-xl text-emerald-700" id="grandTotalIssuedValue">₨ 0.00</td>
                                     </tr>
                                 </x-slot>
@@ -917,10 +884,7 @@
         document.getElementById('goods_issue_id').addEventListener('change', function() {
             const selectedOption = this.options[this.selectedIndex];
             if (!selectedOption.value) {
-                document.getElementById('itemsBody').innerHTML = '';
                 document.getElementById('settlementItemsBody').innerHTML = '';
-                document.getElementById('itemsTableContainer').style.display = 'none';
-                document.getElementById('itemIssueAmountSection').style.display = 'none';
                 document.getElementById('settlementTableContainer').style.display = 'none';
                 document.getElementById('settlementHelpText').style.display = 'none';
                 document.getElementById('noItemsMessage').style.display = 'block';
@@ -931,9 +895,7 @@
             }
 
             const items = JSON.parse(selectedOption.dataset.items || '[]');
-            const itemsBody = document.getElementById('itemsBody');
             const settlementItemsBody = document.getElementById('settlementItemsBody');
-            itemsBody.innerHTML = '';
             settlementItemsBody.innerHTML = '';
 
             let grandTotal = 0;
@@ -953,49 +915,6 @@
                     avgSellingPrice = parseFloat(item.unit_cost);
                 }
 
-                // Build batch breakdown HTML
-                let batchHtml = '';
-                if (batchBreakdown.length === 1) {
-                    const b = batchBreakdown[0];
-                    batchHtml = `
-                        <div class="flex items-center space-x-1">
-                            <span class="font-semibold text-green-600">
-                                ${parseFloat(b.quantity).toLocaleString()} × ₨${parseFloat(b.selling_price).toFixed(2)}
-                            </span>
-                            ${b.is_promotional ? '<span class="ml-1 px-2 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
-                        </div>
-                    `;
-                } else if (batchBreakdown.length > 1) {
-                    batchHtml = '<div class="space-y-0.5">';
-                    batchBreakdown.forEach(b => {
-                        batchHtml += `
-                            <div class="flex items-center space-x-1">
-                                <span class="text-xs text-gray-600">Batch ${b.batch_code}:</span>
-                                <span class="font-semibold text-green-600 text-sm">
-                                    ${parseFloat(b.quantity).toLocaleString()} × ₨${parseFloat(b.selling_price).toFixed(2)}
-                                </span>
-                                ${b.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
-                            </div>
-                        `;
-                    });
-                    batchHtml += '</div>';
-                }
-
-                // Items display row
-                const itemRow = `
-                    <tr class="border-b border-gray-200 hover:bg-gray-50">
-                        <td class="py-2 px-2 text-center text-sm">${index + 1}</td>
-                        <td class="py-2 px-2">
-                            <div class="font-semibold text-gray-900">${item.product.name}</div>
-                            <div class="text-xs text-gray-500">${item.product.product_code}</div>
-                        </td>
-                        <td class="py-2 px-2 text-right font-semibold">${parseFloat(item.quantity_issued).toLocaleString()}</td>
-                        <td class="py-2 px-2 text-center text-sm">${item.uom.symbol}</td>
-                        <td class="py-2 px-2">${batchHtml}</td>
-                        <td class="py-2 px-2 text-right font-bold text-green-700">₨ ${parseFloat(itemTotal).toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
-                    </tr>
-                `;
-                itemsBody.innerHTML += itemRow;
 
                 // Hidden fields for product-level data
                 let hiddenFields = `
@@ -1011,17 +930,25 @@
                 // Settlement rows (one per batch)
                 if (batchBreakdown.length > 0) {
                     batchBreakdown.forEach((batch, batchIdx) => {
+                        const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
                         const settlementRow = `
                             <tr class="border-b border-gray-200 hover:bg-gray-50">
                                 <td class="py-2 px-2">
                                     <div class="font-semibold text-gray-900">${item.product.name}</div>
                                     <div class="text-xs text-gray-500">
-                                        Batch: ${batch.batch_code}
+                                        ${item.product.product_code} | Batch: ${batch.batch_code}
                                         ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
                                     </div>
                                 </td>
+                                <td class="py-2 px-2 text-center text-sm font-medium">${item.uom.symbol}</td>
+                                <td class="py-2 px-2">
+                                    <div class="text-xs text-gray-600">
+                                        ${parseFloat(batch.quantity).toLocaleString()} × ₨${parseFloat(batch.selling_price).toFixed(2)}
+                                    </div>
+                                </td>
                                 <td class="py-2 px-2 text-right font-semibold">${parseFloat(batch.quantity).toFixed(0)}</td>
-                                <td class="py-2 px-2 text-right text-sm">₨ ${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                <td class="py-2 px-2 text-right text-sm">₨${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                <td class="py-2 px-2 text-right font-bold text-green-700">₨${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
                                 <td class="py-2 px-2">
                                     <input type="number"
                                         name="items[${index}][batches][${batchIdx}][quantity_sold]"
@@ -1078,12 +1005,8 @@
                 }
             });
 
-            document.getElementById('grandTotal').textContent = '₨ ' + grandTotal.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
             // Show relevant sections
             document.getElementById('noItemsMessage').style.display = 'none';
-            document.getElementById('itemIssueAmountSection').style.display = 'block';
-            document.getElementById('itemsTableContainer').style.display = 'block';
             document.getElementById('settlementTableContainer').style.display = 'block';
             document.getElementById('settlementHelpText').style.display = 'block';
             document.getElementById('salesSummarySection').style.display = 'block';

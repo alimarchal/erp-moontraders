@@ -1,15 +1,10 @@
-https://moontrader.test/sales-settlements/create 
-
-سیل سیٹلمنٹ میں کچھ بہتری کرو اس میں جو پروڈکٹ وائز سیٹلمنٹ جو نظر ارہی ہے وہ تو ٹھیک ہے اس میں ایک ایگزمپل دے دیتا ہوں جس میں ایک میرے پاس ان ڈیٹا بیس ایکسس کر کے دیکھ سکتے ہو کہ شام شاہ جو 
-GI-2025-0006
-گڈ ایشو ہے جب میں اس کو سلیکٹ کرتا ہوں میرے پاس پروڈکٹ وائز ا رہا ہے لیکن سیٹلمنٹ ائٹم میں جو سولڈ ہے ٹرن یا شارٹیج ہوتی ہے وہ ایک ایگریگیٹ میرے پاس ا رہا ہے اس میں کیونکہ اگر میں دیکھوں تو 13500 جو ہے وہ 85 روپے کے ایشو ہوئے ہیں اور پانچ سو جو ہیں وہ 
-نو اشاریہ 53 پہ ایشو ہوئے ہیں 500 اور جب میں اس کو واپس سیٹل کروں گا تو میرے پاس بھی بالکل اسی طرح انا چاہیے بیچ وائز کیونکہ اس میں ایک پرمیشنل ائٹم چل رہا تھا
-
-also make similar table style of https://moontrader.test/goods-issues/8
-
-answer me in english
-
-the distribution issued 
-https://moontrader.test/goods-issues/8
-
-
+it should auto calculating remove the old Sales Summary and move Creditors / Credit Sales Breakdown table and button below 💡 Tip: When you enter Sold quantity, the remaining will auto-calculate. You can then adjust Returned and Shortage as needed. before Cash Reconciliation & Settlement
+Net Sale (Mean SOLD Items)	
+Recovery (form customer)
+Total Sale ( Net Sale + Recovery )
+Credit 	(Grand TOtal of Credit to Customers)
+Balance	(Total Sale - Credit)
+Expenses  (Sum of All Expenses)
+Net Balance	(Balance - Expenses)
+Cash Received (Cash Detail (Denomination Breakdown)	)
+Short/Excess (Cash Received  - Net Balance)

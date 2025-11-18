@@ -644,6 +644,69 @@ class SalesSettlementController extends Controller
 
     /**
      * Post sales settlement to record sales and update inventory
+     *
+     * TODO: Chart of Accounts (COA) Integration for Complete Accounting
+     * ================================================================
+     * When posting a sales settlement, the following journal entries should be created:
+     *
+     * 1. SALES REVENUE RECOGNITION:
+     *    Dr. Cash / Accounts Receivable (Customer)  [Total Sales]
+     *        Cr. Sales Revenue                      [Total Sales Value]
+     *        Cr. Sales Tax Payable                  [If applicable]
+     *
+     * 2. COST OF GOODS SOLD (COGS):
+     *    Dr. Cost of Goods Sold                     [Total COGS]
+     *        Cr. Inventory                          [Reduce inventory at cost]
+     *
+     * 3. CASH RECONCILIATION:
+     *    Dr. Cash in Hand                           [Denomination breakdown total]
+     *    Dr. Cash at Bank                           [Bank transfer amount]
+     *    Dr. Cheques Receivable                     [Cheque details total]
+     *        Cr. Cash / AR (from sales above)       [Match against sales]
+     *
+     * 4. EXPENSE RECOGNITION:
+     *    Dr. Toll Tax Expense                       [expense_toll_tax]
+     *    Dr. AMR Powder Claim Expense               [expense_amr_powder_claim]
+     *    Dr. AMR Liquid Claim Expense               [expense_amr_liquid_claim]
+     *    Dr. Scheme Expense                         [expense_scheme]
+     *    Dr. Advance Tax Expense                    [expense_advance_tax]
+     *    Dr. Food Charges Expense                   [expense_food_charges]
+     *    Dr. Salesman Charges Expense               [expense_salesman_charges]
+     *    Dr. Loader Charges Expense                 [expense_loader_charges]
+     *    Dr. Percentage Expense                     [expense_percentage]
+     *    Dr. Miscellaneous Expense                  [expense_miscellaneous_amount]
+     *        Cr. Cash in Hand                       [Total expenses claimed]
+     *
+     * 5. CREDIT SALES (AR) TRACKING:
+     *    For each credit sale record:
+     *    Dr. Accounts Receivable - Customer         [sale_amount]
+     *        Cr. Sales Revenue                      [Already recorded above]
+     *
+     * 6. CREDIT RECOVERIES:
+     *    Dr. Cash in Hand                           [credit_recoveries]
+     *        Cr. Accounts Receivable - Customer     [Reduce AR balance]
+     *
+     * 7. BANK/CHEQUE DETAILS:
+     *    For bank transfers:
+     *    Dr. Bank Account [bank_account_id]         [bank_transfer_amount]
+     *        Cr. Cash in Hand                       [Transfer from cash]
+     *
+     *    For cheques:
+     *    Dr. Cheques in Hand                        [cheques_collected]
+     *        Cr. Cash/AR                            [From customer payments]
+     *
+     * 8. SALESMAN ANALYSIS TRACKING:
+     *    - Track per-salesman daily performance
+     *    - Record BF (Brought Forward) balances
+     *    - Maintain salesman-wise product movement
+     *    - Store data for reports/analytics
+     *
+     * IMPLEMENTATION NOTES:
+     * - Use AccountingService->createJournalEntry() for double-entry posting
+     * - Ensure all debits equal all credits (accounting equation balance)
+     * - Link journal_entry_id back to sales_settlement record
+     * - Store cost_center_id for departmental accounting if applicable
+     * - Create detailed audit trail with all COA account references
      */
     public function post(SalesSettlement $salesSettlement)
     {

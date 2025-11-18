@@ -32,7 +32,7 @@
 
 <div>
     @if($title)
-    <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $title }}</h3>
+    <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $title }}</h3>
     @endif
 
     <div class="detail-table-scroll relative overflow-x-auto rounded-lg">

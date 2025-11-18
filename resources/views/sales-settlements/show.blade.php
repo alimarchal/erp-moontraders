@@ -113,21 +113,35 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                         <div>
                             <h3 class="text-sm font-semibold text-gray-500 uppercase">Cash Collected</h3>
                             <p class="text-lg font-semibold text-gray-900">
                                 Rs {{ number_format($settlement->cash_collected, 2) }}</p>
                         </div>
                         <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Cheques Collected</h3>
+                            <p class="text-lg font-semibold text-gray-900">
+                                Rs {{ number_format($settlement->cheques_collected, 2) }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Credit Recoveries</h3>
+                            <p class="text-lg font-semibold text-blue-700">
+                                Rs {{ number_format($settlement->credit_recoveries, 2) }}</p>
+                        </div>
+                        <div>
                             <h3 class="text-sm font-semibold text-gray-500 uppercase">Expenses Claimed</h3>
                             <p class="text-lg font-semibold text-red-700">
                                 Rs {{ number_format($settlement->expenses_claimed, 2) }}</p>
                         </div>
-                        <div>
+                    </div>
+
+                    <div class="bg-green-50 p-4 rounded-lg mb-6">
+                        <div class="text-center">
                             <h3 class="text-sm font-semibold text-gray-500 uppercase">Cash to Deposit</h3>
-                            <p class="text-lg font-bold text-green-900">
+                            <p class="text-2xl font-bold text-green-900">
                                 Rs {{ number_format($settlement->cash_to_deposit, 2) }}</p>
+                            <p class="text-xs text-gray-600 mt-1">Cash Collected + Cheques Collected + Credit Recoveries - Expenses</p>
                         </div>
                     </div>
 

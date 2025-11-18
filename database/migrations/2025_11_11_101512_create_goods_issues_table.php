@@ -17,6 +17,7 @@ return new class extends Migration {
             $table->foreignId('warehouse_id')->constrained('warehouses')->cascadeOnDelete();
             $table->foreignId('vehicle_id')->constrained('vehicles')->cascadeOnDelete();
             $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
+            $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->onDelete('restrict');
             $table->foreignId('issued_by')->constrained('users')->cascadeOnDelete();
             $table->enum('status', ['draft', 'issued', 'settled', 'cancelled'])->default('draft');
             $table->decimal('total_quantity', 15, 3)->default(0);

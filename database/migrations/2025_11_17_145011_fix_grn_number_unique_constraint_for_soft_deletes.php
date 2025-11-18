@@ -17,8 +17,19 @@ return new class extends Migration {
         });
 
         // Create a partial unique index that only applies to non-deleted records
-        // This allows reusing GRN numbers after soft deletion
-        DB::statement('CREATE UNIQUE INDEX goods_receipt_notes_grn_number_unique ON goods_receipt_notes (grn_number) WHERE deleted_at IS NULL');
+        // PostgreSQL supports WHERE clause, MySQL/MariaDB doesn't
+        $driver = DB::getDriverName();
+
+        if ($driver === 'pgsql') {
+            // PostgreSQL: Use partial unique index
+            DB::statement('CREATE UNIQUE INDEX goods_receipt_notes_grn_number_unique ON goods_receipt_notes (grn_number) WHERE deleted_at IS NULL');
+        } else {
+            // MySQL/MariaDB: Create unique index on (grn_number, deleted_at)
+            // NULL values are not considered equal in MySQL unique indexes
+            Schema::table('goods_receipt_notes', function (Blueprint $table) {
+                $table->unique(['grn_number', 'deleted_at'], 'goods_receipt_notes_grn_number_unique');
+            });
+        }
     }
 
     /**
@@ -26,8 +37,17 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        // Drop the partial unique index
-        DB::statement('DROP INDEX IF EXISTS goods_receipt_notes_grn_number_unique');
+        $driver = DB::getDriverName();
+
+        if ($driver === 'pgsql') {
+            // Drop the partial unique index
+            DB::statement('DROP INDEX IF EXISTS goods_receipt_notes_grn_number_unique');
+        } else {
+            // Drop the compound unique index
+            Schema::table('goods_receipt_notes', function (Blueprint $table) {
+                $table->dropUnique('goods_receipt_notes_grn_number_unique');
+            });
+        }
 
         // Restore the original simple unique constraint
         Schema::table('goods_receipt_notes', function (Blueprint $table) {

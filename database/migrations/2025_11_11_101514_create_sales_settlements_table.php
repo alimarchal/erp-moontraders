@@ -40,6 +40,21 @@ return new class extends Migration {
             $table->decimal('expenses_claimed', 15, 2)->default(0);
             $table->decimal('cash_to_deposit', 15, 2)->default(0);
 
+            // Credit Recoveries
+            $table->decimal('credit_recoveries', 15, 2)->default(0);
+
+            // Detailed Expense Fields
+            $table->decimal('expense_toll_tax', 12, 2)->default(0);
+            $table->decimal('expense_amr_powder_claim', 12, 2)->default(0);
+            $table->decimal('expense_amr_liquid_claim', 12, 2)->default(0);
+            $table->decimal('expense_scheme', 12, 2)->default(0);
+            $table->decimal('expense_advance_tax', 12, 2)->default(0);
+            $table->decimal('expense_food_charges', 12, 2)->default(0);
+            $table->decimal('expense_salesman_charges', 12, 2)->default(0);
+            $table->decimal('expense_loader_charges', 12, 2)->default(0);
+            $table->decimal('expense_percentage', 12, 2)->default(0);
+            $table->decimal('expense_miscellaneous_amount', 12, 2)->default(0);
+
             $table->enum('status', ['draft', 'verified', 'posted'])->default('draft');
             $table->foreignId('verified_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('journal_entry_id')->nullable()->constrained('journal_entries')->nullOnDelete();

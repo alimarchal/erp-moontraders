@@ -541,6 +541,8 @@
 
         // Initialize Select2 with AJAX on-demand loading
         $(document).ready(function() {
+            console.log('Initializing Select2 for goods issue dropdown');
+
             $('.select2-goods-issue').select2({
                 width: '100%',
                 placeholder: 'Select a Goods Issue',
@@ -550,6 +552,7 @@
                     dataType: 'json',
                     delay: 250,
                     processResults: function (data) {
+                        console.log('Select2 data loaded:', data);
                         return {
                             results: data
                         };
@@ -557,6 +560,8 @@
                     cache: true
                 }
             });
+
+            console.log('Select2 initialized successfully');
         });
 
         function creditSalesManager() {
@@ -771,42 +776,57 @@
             const grandBalance = grandIssued - grandSold - grandReturned - grandShortage;
             const grandBalanceValue = grandIssuedValue - grandSoldValue - grandReturnValue - grandShortageValue;
 
-            // Update quantity displays
-            document.getElementById('grandTotalSold').textContent = grandSold;
-            document.getElementById('grandTotalReturned').textContent = grandReturned;
-            document.getElementById('grandTotalShortage').textContent = grandShortage;
-
+            // Update quantity displays with null checks
+            const soldEl = document.getElementById('grandTotalSold');
+            const returnedEl = document.getElementById('grandTotalReturned');
+            const shortageEl = document.getElementById('grandTotalShortage');
             const balanceElement = document.getElementById('grandTotalBalance');
-            balanceElement.textContent = grandBalance;
 
-            // Color code quantity balance
-            if (grandBalance === 0) {
-                balanceElement.className = 'py-2 px-2 text-right font-bold text-base text-green-600';
-            } else {
-                balanceElement.className = 'py-2 px-2 text-right font-bold text-base text-red-600';
+            if (soldEl) soldEl.textContent = grandSold;
+            if (returnedEl) returnedEl.textContent = grandReturned;
+            if (shortageEl) shortageEl.textContent = grandShortage;
+
+            if (balanceElement) {
+                balanceElement.textContent = grandBalance;
+                // Color code quantity balance
+                if (grandBalance === 0) {
+                    balanceElement.className = 'py-2 px-2 text-right font-bold text-base text-green-600';
+                } else {
+                    balanceElement.className = 'py-2 px-2 text-right font-bold text-base text-red-600';
+                }
             }
 
-            // Update value displays
+            // Update value displays with null checks
             const formatPKR = (val) => '₨ ' + val.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
-            document.getElementById('grandTotalSoldValue').textContent = formatPKR(grandSoldValue);
-            document.getElementById('grandTotalReturnValue').textContent = formatPKR(grandReturnValue);
-            document.getElementById('grandTotalShortageValue').textContent = formatPKR(grandShortageValue);
-            document.getElementById('grandTotalBalanceValue').textContent = formatPKR(grandBalanceValue);
-            document.getElementById('grandTotalIssuedValue').textContent = formatPKR(grandIssuedValue);
-
+            const soldValueEl = document.getElementById('grandTotalSoldValue');
+            const returnValueEl = document.getElementById('grandTotalReturnValue');
+            const shortageValueEl = document.getElementById('grandTotalShortageValue');
+            const balanceValueEl = document.getElementById('grandTotalBalanceValue');
+            const issuedValueEl = document.getElementById('grandTotalIssuedValue');
             const valueCheckElement = document.getElementById('valueBalanceCheck');
-            valueCheckElement.textContent = formatPKR(grandBalanceValue);
 
-            // Color code value balance - must be zero
-            if (Math.abs(grandBalanceValue) < 0.01) {
-                valueCheckElement.className = 'py-3 px-2 text-right font-bold text-2xl text-green-700';
-            } else {
-                valueCheckElement.className = 'py-3 px-2 text-right font-bold text-2xl text-red-700';
+            if (soldValueEl) soldValueEl.textContent = formatPKR(grandSoldValue);
+            if (returnValueEl) returnValueEl.textContent = formatPKR(grandReturnValue);
+            if (shortageValueEl) shortageValueEl.textContent = formatPKR(grandShortageValue);
+            if (balanceValueEl) balanceValueEl.textContent = formatPKR(grandBalanceValue);
+            if (issuedValueEl) issuedValueEl.textContent = formatPKR(grandIssuedValue);
+
+            if (valueCheckElement) {
+                valueCheckElement.textContent = formatPKR(grandBalanceValue);
+                // Color code value balance - must be zero
+                if (Math.abs(grandBalanceValue) < 0.01) {
+                    valueCheckElement.className = 'py-3 px-2 text-right font-bold text-2xl text-green-700';
+                } else {
+                    valueCheckElement.className = 'py-3 px-2 text-right font-bold text-2xl text-red-700';
+                }
             }
 
             // Update Sales Summary with sold value (Net Sale = Item Issue Value)
-            document.getElementById('summary_net_sale').value = grandIssuedValue.toFixed(2);
+            const netSaleEl = document.getElementById('summary_net_sale');
+            if (netSaleEl) {
+                netSaleEl.value = grandIssuedValue.toFixed(2);
+            }
             updateSalesSummary();
         }
 
@@ -864,6 +884,18 @@
             updateSalesSummary();
         }
 
+        // Helper function to clear settlement form
+        function clearSettlementForm() {
+            document.getElementById('settlementItemsBody').innerHTML = '';
+            document.getElementById('settlementTableContainer').style.display = 'none';
+            document.getElementById('settlementHelpText').style.display = 'none';
+            document.getElementById('noItemsMessage').style.display = 'block';
+            document.getElementById('noItemsMessage').innerHTML = 'Select a Goods Issue to load product details';
+            document.getElementById('salesSummarySection').style.display = 'none';
+            document.getElementById('expensesSection').style.display = 'none';
+            document.getElementById('cashDetailSection').style.display = 'none';
+        }
+
         // Cash Detail denomination breakdown
         function updateCashTotal() {
             const denom5000 = (parseFloat(document.getElementById('denom_5000').value) || 0) * 5000;
@@ -899,29 +931,36 @@
         }
 
         // Handle Goods Issue selection with AJAX data loading
-        $('#goods_issue_id').on('change', function() {
-            const goodsIssueId = $(this).val();
+        // Use Select2 specific event instead of standard change
+        $('#goods_issue_id').on('select2:select', function(e) {
+            const goodsIssueId = e.params.data.id;
+            console.log('Selected Goods Issue ID:', goodsIssueId);
 
             if (!goodsIssueId) {
-                document.getElementById('settlementItemsBody').innerHTML = '';
-                document.getElementById('settlementTableContainer').style.display = 'none';
-                document.getElementById('settlementHelpText').style.display = 'none';
-                document.getElementById('noItemsMessage').style.display = 'block';
-                document.getElementById('salesSummarySection').style.display = 'none';
-                document.getElementById('expensesSection').style.display = 'none';
-                document.getElementById('cashDetailSection').style.display = 'none';
+                clearSettlementForm();
                 return;
             }
 
             // Show loading state
-            document.getElementById('noItemsMessage').innerHTML = '<span class="text-blue-600">Loading goods issue data...</span>';
+            document.getElementById('noItemsMessage').innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner fa-spin"></i> Loading goods issue data...</span>';
             document.getElementById('noItemsMessage').style.display = 'block';
 
             // Fetch goods issue items via AJAX
-            fetch(`{{ url('api/sales-settlements/goods-issues') }}/${goodsIssueId}/items`)
-                .then(response => response.json())
+            const apiUrl = `{{ url('api/sales-settlements/goods-issues') }}/${goodsIssueId}/items`;
+            console.log('Fetching from:', apiUrl);
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Received data:', data);
                     const items = data.items || [];
+                    console.log('Number of items:', items.length);
+
                     const settlementItemsBody = document.getElementById('settlementItemsBody');
                     settlementItemsBody.innerHTML = '';
 
@@ -1037,6 +1076,7 @@
             });
 
                     // Show relevant sections
+                    console.log('Displaying settlement table and sections');
                     document.getElementById('noItemsMessage').style.display = 'none';
                     document.getElementById('settlementTableContainer').style.display = 'block';
                     document.getElementById('settlementHelpText').style.display = 'block';
@@ -1051,12 +1091,20 @@
                             calculateBatchBalance(index, batchIdx);
                         });
                     });
+                    console.log('Settlement form loaded successfully');
                 })
                 .catch(error => {
                     console.error('Error fetching goods issue items:', error);
                     document.getElementById('noItemsMessage').innerHTML = '<span class="text-red-600">Error loading goods issue data. Please try again.</span>';
+                    document.getElementById('noItemsMessage').style.display = 'block';
                     document.getElementById('settlementTableContainer').style.display = 'none';
                 });
+        });
+
+        // Handle clearing the select2 dropdown
+        $('#goods_issue_id').on('select2:clear', function() {
+            console.log('Goods Issue selection cleared');
+            clearSettlementForm();
         });
     </script>
     @endpush

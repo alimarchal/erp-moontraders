@@ -35,7 +35,7 @@
     <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $title }}</h3>
     @endif
 
-    <div class="detail-table-scroll relative overflow-x-auto rounded-lg">
+    <div class="detail-table-scroll relative overflow-x-auto">
         <table class="min-w-max w-full table-auto text-sm">
             <thead>
                 <tr class="bg-green-800 text-white uppercase text-sm">

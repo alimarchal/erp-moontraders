@@ -53,8 +53,9 @@ class SalesSettlement extends Model
         'denom_coins',
         'bank_transfer_amount',
         'bank_account_id',
+        'bank_transfers', // JSON array for multiple bank transfers
         'cheque_count',
-        'cheque_details',
+        'cheque_details', // JSON array for multiple cheques
         'status',
         'verified_by',
         'journal_entry_id',
@@ -90,7 +91,8 @@ class SalesSettlement extends Model
         'cash_to_deposit' => 'decimal:2',
         'denom_coins' => 'decimal:2',
         'bank_transfer_amount' => 'decimal:2',
-        'cheque_details' => 'array',
+        'bank_transfers' => 'array', // JSON array for multiple bank transfers
+        'cheque_details' => 'array', // JSON array for multiple cheques
         'posted_at' => 'datetime',
     ];
 

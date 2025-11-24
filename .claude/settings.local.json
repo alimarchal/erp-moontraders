@@ -12,7 +12,8 @@
       "Bash(php artisan migrate:status:*)",
       "Bash(php artisan test:*)",
       "Bash(php artisan:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(psql:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,6 +1,3 @@
-emove the old summery from below /Users/alirazamarchal/Herd/moontrader/resources/views/sales-settlements/create.blade.php Cheque Payment Details reditors / Credit Sales
-  Breakdown
-  No credit sales added yet. Click "Add Credit Sale" to add one.
-  Add Credit Sale
+Improve  this /Users/alirazamarchal/Herd/moontrader/resources/views/sales-settlements/create.blade.php for Bank Transfer / Online Payment  and Cheque Payments as we might get tranfer to multiple account via salesman the system should cater this need and there is a minor bug or anything else when i add any number in 4000 for example in Cheque Payments i get in sale summery 400 when i press the dot . at that moment it get 4000 also check the schema for saving all the details of Cash Detail (Denomination Breakdown) multiple cheques and multiple bank accunt as we use this for COA. For expense details check my coa account and add the number after my existing label where should it hit as professional for example AMR Powder Claim (1000) like that. In the table of Creditors / Credit Sales Breakdown use select2 for selecting the customer and remove extra size of table use full width similar to Batch-wise Settlement make sure it work and test it by you.
 
-  as they appear twice and expense is not calculating
+

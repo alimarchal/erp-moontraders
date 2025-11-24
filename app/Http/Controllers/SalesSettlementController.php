@@ -258,10 +258,24 @@ class SalesSettlementController extends Controller
                 ($request->expense_percentage ?? 0) +
                 ($request->expense_miscellaneous_amount ?? 0);
 
+            // Prepare bank transfer details as JSON array
+            $bankTransfers = null;
+            $totalBankTransfers = 0;
+            if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
+                $bankTransfers = $request->bank_transfers;
+                foreach ($bankTransfers as $transfer) {
+                    $totalBankTransfers += floatval($transfer['amount'] ?? 0);
+                }
+            }
+
             // Prepare cheque details as JSON
             $chequeDetails = null;
+            $totalCheques = 0;
             if ($request->has('cheques') && is_array($request->cheques)) {
                 $chequeDetails = $request->cheques;
+                foreach ($chequeDetails as $cheque) {
+                    $totalCheques += floatval($cheque['amount'] ?? 0);
+                }
             }
 
             // Create sales settlement
@@ -276,14 +290,14 @@ class SalesSettlementController extends Controller
                 'total_value_issued' => $totalValueIssued,
                 'total_sales_amount' => $totalSalesAmount,
                 'cash_sales_amount' => $request->cash_sales_amount ?? 0,
-                'cheque_sales_amount' => $request->cheque_sales_amount ?? 0,
+                'cheque_sales_amount' => $totalCheques,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
                 'credit_recoveries' => $request->credit_recoveries_total ?? 0,
                 'total_quantity_sold' => $totalQuantitySold,
                 'total_quantity_returned' => $totalQuantityReturned,
                 'total_quantity_shortage' => $totalQuantityShortage,
                 'cash_collected' => $request->summary_cash_received ?? 0,
-                'cheques_collected' => $request->cheques_collected ?? 0,
+                'cheques_collected' => $totalCheques,
                 'expenses_claimed' => $totalExpenses,
                 'expense_toll_tax' => $request->expense_toll_tax ?? 0,
                 'expense_amr_powder_claim' => $request->expense_amr_powder_claim ?? 0,
@@ -305,9 +319,10 @@ class SalesSettlementController extends Controller
                 'denom_20' => $request->denom_20 ?? 0,
                 'denom_10' => $request->denom_10 ?? 0,
                 'denom_coins' => $request->denom_coins ?? 0,
-                // Bank transfer details
-                'bank_transfer_amount' => $request->bank_transfer_amount ?? 0,
-                'bank_account_id' => $request->bank_account_id ?: null,
+                // Bank transfer details - Store as JSON array for multiple transfers
+                'bank_transfer_amount' => $totalBankTransfers,
+                'bank_account_id' => null, // Deprecated - now using bank_transfers array
+                'bank_transfers' => $bankTransfers,
                 // Cheque details
                 'cheque_count' => is_array($chequeDetails) ? count($chequeDetails) : 0,
                 'cheque_details' => $chequeDetails,

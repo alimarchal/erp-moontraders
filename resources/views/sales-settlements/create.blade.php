@@ -121,132 +121,119 @@
                         Returned and Shortage as needed.
                     </p>
                 </div>
+
+                {{-- Section 2: Creditors/Credit Sales Breakdown - Full Width like Batch-wise Settlement --}}
+                <div class="mb-2" style="display: none;" id="creditSalesSection" x-data="creditSalesManager()">
+                    <x-detail-table title="Creditors / Credit Sales Breakdown" :headers="[
+                            ['label' => 'Customer', 'align' => 'text-left'],
+                            ['label' => 'Previous Balance', 'align' => 'text-right'],
+                            ['label' => 'Credit', 'align' => 'text-right'],
+                            ['label' => 'Recovery', 'align' => 'text-right'],
+                            ['label' => 'New Balance', 'align' => 'text-right'],
+                            ['label' => 'Notes', 'align' => 'text-left'],
+                            ['label' => 'Action', 'align' => 'text-center'],
+                        ]">
+                        <tbody id="creditSalesBody">
+                            <template x-for="(sale, index) in creditSales" :key="index">
+                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                    <td class="py-1 px-1" style="min-width: 250px;">
+                                        <select :name="'credit_sales[' + index + '][customer_id]'"
+                                            :id="'customer_select_' + index"
+                                            class="border-gray-300 rounded-md text-sm w-full"
+                                            style="width: 100%;"
+                                            required
+                                            @change="updateCustomerBalance(index)">
+                                            <option value="">Select Customer</option>
+                                            @foreach(\App\Models\Customer::orderBy('customer_name')->get() as $customer)
+                                                <option value="{{ $customer->id }}" data-balance="{{ $customer->receivable_balance ?? 0 }}">
+                                                    {{ $customer->customer_name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </td>
+                                    <td class="py-1 px-1 text-right">
+                                        <input type="number"
+                                            :name="'credit_sales[' + index + '][previous_balance]'"
+                                            x-model="sale.previous_balance" readonly
+                                            class="border-gray-300 rounded-md text-sm w-24 text-right bg-gray-100"
+                                            step="0.01" />
+                                    </td>
+                                    <td class="py-1 px-1 text-right">
+                                        <input type="number" :name="'credit_sales[' + index + '][sale_amount]'"
+                                            x-model.number="sale.sale_amount"
+                                            @input="calculateNewBalance(index); updateCreditTotal()"
+                                            class="border-gray-300 rounded-md text-sm w-24 text-right"
+                                            step="0.01" min="0" />
+                                    </td>
+                                    <td class="py-1 px-1 text-right">
+                                        <input type="number"
+                                            :name="'credit_sales[' + index + '][payment_received]'"
+                                            x-model.number="sale.payment_received"
+                                            @input="calculateNewBalance(index); updateRecoveryTotal()"
+                                            class="border-gray-300 rounded-md text-sm w-24 text-right"
+                                            step="0.01" min="0" />
+                                    </td>
+                                    <td class="py-1 px-1 text-right">
+                                        <span class="font-semibold text-gray-700"
+                                            x-text="formatCurrency(sale.new_balance)"></span>
+                                        <input type="hidden" :name="'credit_sales[' + index + '][new_balance]'"
+                                            x-model="sale.new_balance" />
+                                    </td>
+                                    <td class="py-1 px-1">
+                                        <input type="text" :name="'credit_sales[' + index + '][notes]'"
+                                            x-model="sale.notes"
+                                            class="border-gray-300 rounded-md text-sm w-full"
+                                            placeholder="Optional notes" />
+                                    </td>
+                                    <td class="py-1 px-1 text-center">
+                                        <button type="button" @click="removeCreditSale(index)"
+                                            class="text-red-600 hover:text-red-800">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                        <x-slot name="footer">
+                            <tr class="border-t-2 border-gray-300 bg-gray-100">
+                                <td colspan="2" class="py-1 px-1 text-right font-bold">Total Credit Sales:</td>
+                                <td class="py-1 px-1 text-right font-bold text-orange-700">
+                                    <span x-text="formatCurrency(creditTotal)"></span>
+                                    <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
+                                        :value="creditTotal" />
+                                </td>
+                                <td class="py-1 px-1 text-right font-bold text-green-700">
+                                    <span x-text="formatCurrency(recoveryTotal)"></span>
+                                    <input type="hidden" id="credit_recoveries_total"
+                                        name="credit_recoveries_total" :value="recoveryTotal" />
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                            <tr class="border-t border-gray-200 bg-orange-50">
+                                <td colspan="7" class="py-2 px-2">
+                                    <button type="button" @click="addCreditSale()"
+                                        class="inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 4v16m8-8H4" />
+                                        </svg>
+                                        Add Credit Sale
+                                    </button>
+                                </td>
+                            </tr>
+                        </x-slot>
+                    </x-detail-table>
+                    <p class="text-sm text-blue-600 mt-2 p-2">
+                        💡 Tip: Add credit sales to record amounts extended to customers and any recoveries received.
+                    </p>
+                </div>
+
                 <div class="pr-6 pl-6 pt-2">
-
-                    {{-- Section 2: Creditors/Credit Sales Breakdown (MOVED HERE) --}}
-                    <div class="mb-6" style="display: none;" id="creditSalesSection" x-data="creditSalesManager()">
-
-                        <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
-                            <svg class="w-6 h-6 mr-2 text-orange-600" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                            </svg>
-                            Creditors / Credit Sales Breakdown
-                        </h3>
-
-                        <div x-show="creditSales.length > 0" x-cloak
-                            class="bg-white border-2 border-orange-200 rounded-lg overflow-hidden shadow-sm">
-                            <x-detail-table title="" :headers="[
-                                    ['label' => 'Customer', 'align' => 'text-left'],
-                                    ['label' => 'Previous Balance', 'align' => 'text-right'],
-                                    ['label' => 'Credit', 'align' => 'text-right'],
-                                    ['label' => 'Recovery', 'align' => 'text-right'],
-                                    ['label' => 'New Balance', 'align' => 'text-right'],
-                                    ['label' => 'Notes', 'align' => 'text-left'],
-                                    ['label' => 'Action', 'align' => 'text-center'],
-                                ]">
-                                <tbody>
-                                    <template x-for="(sale, index) in creditSales" :key="index">
-                                        <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                            <td class="py-1 px-1">
-                                                <select :name="'credit_sales[' + index + '][customer_id]'"
-                                                    x-model="sale.customer_id" @change="updateCustomerBalance(index)"
-                                                    class="border-gray-300 rounded-md text-sm w-full" required>
-                                                    <option value="">Select Customer</option>
-                                                    @foreach(\App\Models\Customer::orderBy('customer_name')->get()
-                                                    as $customer)
-                                                    <option value="{{ $customer->id }}"
-                                                        data-balance="{{ $customer->receivable_balance ?? 0 }}">
-                                                        {{ $customer->customer_name }}
-                                                    </option>
-                                                    @endforeach
-                                                </select>
-                                            </td>
-                                            <td class="py-1 px-1 text-right">
-                                                <input type="number"
-                                                    :name="'credit_sales[' + index + '][previous_balance]'"
-                                                    x-model="sale.previous_balance" readonly
-                                                    class="border-gray-300 rounded-md text-sm w-24 text-right bg-gray-100"
-                                                    step="0.01" />
-                                            </td>
-                                            <td class="py-1 px-1 text-right">
-                                                <input type="number" :name="'credit_sales[' + index + '][sale_amount]'"
-                                                    x-model.number="sale.sale_amount"
-                                                    @input="calculateNewBalance(index); updateCreditTotal()"
-                                                    class="border-gray-300 rounded-md text-sm w-24 text-right"
-                                                    step="0.01" min="0" />
-                                            </td>
-                                            <td class="py-1 px-1 text-right">
-                                                <input type="number"
-                                                    :name="'credit_sales[' + index + '][payment_received]'"
-                                                    x-model.number="sale.payment_received"
-                                                    @input="calculateNewBalance(index); updateRecoveryTotal()"
-                                                    class="border-gray-300 rounded-md text-sm w-24 text-right"
-                                                    step="0.01" min="0" />
-                                            </td>
-                                            <td class="py-1 px-1 text-right">
-                                                <span class="font-semibold text-gray-700"
-                                                    x-text="formatCurrency(sale.new_balance)"></span>
-                                                <input type="hidden" :name="'credit_sales[' + index + '][new_balance]'"
-                                                    x-model="sale.new_balance" />
-                                            </td>
-                                            <td class="py-1 px-1">
-                                                <input type="text" :name="'credit_sales[' + index + '][notes]'"
-                                                    x-model="sale.notes"
-                                                    class="border-gray-300 rounded-md text-sm w-full"
-                                                    placeholder="Optional notes" />
-                                            </td>
-                                            <td class="py-1 px-1 text-center">
-                                                <button type="button" @click="removeCreditSale(index)"
-                                                    class="text-red-600 hover:text-red-800">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                                        viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </template>
-                                </tbody>
-                                <x-slot name="footer">
-                                    <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                        <td colspan="2" class="py-1 px-1 text-right font-bold">Total Credit Sales:
-                                        </td>
-                                        <td class="py-1 px-1 text-right font-bold text-orange-700">
-                                            <span x-text="formatCurrency(creditTotal)"></span>
-                                            <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
-                                                :value="creditTotal" />
-                                        </td>
-                                        <td class="py-1 px-1 text-right font-bold text-green-700">
-                                            <span x-text="formatCurrency(recoveryTotal)"></span>
-                                            <input type="hidden" id="credit_recoveries_total"
-                                                name="credit_recoveries_total" :value="recoveryTotal" />
-                                        </td>
-                                        <td colspan="3"></td>
-                                    </tr>
-                                </x-slot>
-                            </x-detail-table>
-                        </div>
-
-                        <p class="text-sm text-gray-500 mt-2" x-show="creditSales.length === 0">
-                            No credit sales added yet. Click "Add Credit Sale" to add one.
-                        </p>
-
-                        <div class="flex justify-between items-center mb-4 mt-4">
-                            <button type="button" @click="addCreditSale()"
-                                class="inline-flex items-center px-3 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 4v16m8-8H4" />
-                                </svg>
-                                Add Credit Sale
-                            </button>
-                        </div>
-                    </div>
-
                     {{-- Section 3: Side-by-Side Cash Detail, Expense Detail, and Sales Summary --}}
                     <div id="expenseAndSalesSummarySection" style="display: none;" class="mb-4">
                         <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
@@ -367,39 +354,102 @@
                                         </tbody>
                                     </table>
 
-                                    {{-- Bank Transfer Section - Enhanced Professional UI --}}
-                                    <div class="mt-3">
+                                    {{-- Bank Transfer Section - Enhanced Professional UI with Multiple Transfers --}}
+                                    <div x-data="bankTransferManager()" class="mt-3">
                                         <div
-                                            class="bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-2 rounded-t flex items-center gap-2">
-                                            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                            </svg>
-                                            <label class="text-sm font-bold text-white">Bank Transfer / Online
-                                                Payment</label>
+                                            class="bg-gradient-to-r from-blue-600 to-blue-700 px-3 py-2 rounded-t flex justify-between items-center">
+                                            <label class="text-sm font-bold text-white flex items-center gap-2">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                </svg>
+                                                Bank Transfer / Online Payment
+                                            </label>
+                                            <button type="button" @click="addBankTransfer()"
+                                                class="text-xs px-3 py-1.5 bg-white text-blue-700 rounded font-semibold hover:bg-blue-50 transition shadow-sm flex items-center gap-1">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M12 4v16m8-8H4" />
+                                                </svg>
+                                                Add Transfer
+                                            </button>
                                         </div>
-                                        <div class="border-x border-b border-blue-200 rounded-b bg-white p-3">
-                                            <div class="mb-3">
-                                                <label class="text-xs font-medium text-gray-600 block mb-1">Select Bank
-                                                    Account</label>
-                                                <select id="bank_account_id" name="bank_account_id"
-                                                    class="select2-bank-account w-full border-gray-300 rounded text-sm px-2 py-2 focus:border-blue-500 focus:ring focus:ring-blue-200">
-                                                    <option value="">No Bank Transfer</option>
-                                                    @foreach(\App\Models\BankAccount::active()->get() as $bank)
-                                                    <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{
-                                                        $bank->bank_name }}</option>
-                                                    @endforeach
-                                                </select>
+
+                                        <div x-show="bankTransfers.length > 0"
+                                            class="border-x border-b border-blue-200 rounded-b">
+                                            <div class="space-y-0 max-h-64 overflow-y-auto bg-white">
+                                                <template x-for="(transfer, index) in bankTransfers" :key="index">
+                                                    <div class="p-3 border-b border-blue-100 hover:bg-blue-50 transition"
+                                                        :class="index % 2 === 0 ? 'bg-white' : 'bg-gray-50'">
+                                                        <div class="grid grid-cols-12 gap-2 items-center">
+                                                            <div class="col-span-6">
+                                                                <label
+                                                                    class="text-xs font-medium text-gray-600 block mb-1">Bank
+                                                                    Account</label>
+                                                                <select
+                                                                    :name="'bank_transfers[' + index + '][bank_account_id]'"
+                                                                    x-model="transfer.bank_account_id"
+                                                                    class="w-full border-gray-300 rounded text-xs px-2 py-1.5 focus:border-blue-500 focus:ring focus:ring-blue-200"
+                                                                    required>
+                                                                    <option value="">Select Bank Account</option>
+                                                                    @foreach(\App\Models\BankAccount::active()->get() as $bank)
+                                                                        <option value="{{ $bank->id }}">{{ $bank->account_name }} - {{ $bank->bank_name }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-span-5">
+                                                                <label
+                                                                    class="text-xs font-medium text-gray-600 block mb-1">Transfer
+                                                                    Amount (₨)</label>
+                                                                <input type="number" step="0.01" min="0"
+                                                                    :name="'bank_transfers[' + index + '][amount]'"
+                                                                    x-model="transfer.amount"
+                                                                    @input="updateBankTransferTotal()"
+                                                                    class="w-full border-gray-300 rounded text-xs text-right font-bold px-2 py-1.5 focus:border-blue-500 focus:ring focus:ring-blue-200 bg-blue-50"
+                                                                    placeholder="0.00" required />
+                                                            </div>
+                                                            <div class="col-span-1 flex justify-center">
+                                                                <button type="button" @click="removeBankTransfer(index)"
+                                                                    class="mt-5 p-1.5 bg-red-500 text-white rounded hover:bg-red-600 transition">
+                                                                    <svg class="w-4 h-4" fill="none"
+                                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round"
+                                                                            stroke-linejoin="round" stroke-width="2"
+                                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                    </svg>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </template>
                                             </div>
-                                            <div>
-                                                <label class="text-xs font-medium text-gray-600 block mb-1">Transfer
-                                                    Amount (₨)</label>
-                                                <input type="text" id="bank_transfer_amount" name="bank_transfer_amount"
-                                                    placeholder="0.00" inputmode="decimal"
-                                                    class="w-full text-right border-gray-300 rounded text-sm font-bold px-3 py-2 bg-blue-50 focus:border-blue-500 focus:ring focus:ring-blue-200"
-                                                    oninput="this.value = this.value.replace(/[^0-9.]/g, ''); updateCashTotal()"
-                                                    value="0" />
+                                            <div
+                                                class="bg-gradient-to-r from-blue-100 to-blue-50 border-t-2 border-blue-300 px-3 py-2.5">
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-sm font-bold text-blue-900">Total Bank Transfers
+                                                        (<span x-text="bankTransfers.length"></span>):</span>
+                                                    <span class="text-lg font-bold text-blue-900"
+                                                        x-text="formatCurrency(bankTransferTotal)"></span>
+                                                </div>
+                                                <input type="hidden" id="total_bank_transfers" name="total_bank_transfers"
+                                                    :value="bankTransferTotal" />
+                                            </div>
+                                        </div>
+
+                                        <div x-show="bankTransfers.length === 0"
+                                            class="border-x border-b border-blue-200 rounded-b bg-white p-6">
+                                            <div class="text-center">
+                                                <svg class="w-12 h-12 mx-auto text-blue-200 mb-2" fill="none"
+                                                    stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                </svg>
+                                                <p class="text-xs text-gray-500 italic">No bank transfers added yet</p>
+                                                <p class="text-xs text-gray-400 mt-1">Click "Add Transfer" to record a
+                                                    payment</p>
                                             </div>
                                         </div>
                                     </div>
@@ -468,12 +518,11 @@
                                                                 <label
                                                                     class="text-xs font-medium text-gray-600 block mb-1">Amount
                                                                     (₨)</label>
-                                                                <input type="text"
+                                                                <input type="number" step="0.01" min="0"
                                                                     :name="'cheques[' + index + '][amount]'"
                                                                     x-model="cheque.amount" @input="updateChequeTotal()"
-                                                                    @blur="cheque.amount = parseFloat(cheque.amount) || 0"
                                                                     class="w-full border-gray-300 rounded text-xs text-right font-bold px-2 py-1.5 focus:border-purple-500 focus:ring focus:ring-purple-200 bg-purple-50"
-                                                                    placeholder="0.00" inputmode="decimal" required />
+                                                                    placeholder="0.00" required />
                                                             </div>
                                                             <div class="col-span-1 flex justify-center">
                                                                 <button type="button" @click="removeCheque(index)"
@@ -824,13 +873,6 @@
             });
 
             console.log('Select2 initialized successfully');
-
-            // Initialize Select2 for bank account dropdown
-            $('.select2-bank-account').select2({
-                width: '100%',
-                placeholder: 'No Bank Transfer',
-                allowClear: true
-            });
         });
 
         function creditSalesManager() {
@@ -852,18 +894,46 @@
                         new_balance: 0,
                         notes: ''
                     });
+
+                    // Initialize Select2 for the newly added customer dropdown
+                    this.$nextTick(() => {
+                        const index = this.creditSales.length - 1;
+                        const selectId = '#customer_select_' + index;
+                        $(selectId).select2({
+                            width: '100%',
+                            placeholder: 'Select Customer',
+                            allowClear: true
+                        });
+
+                        // Handle Select2 change event to update Alpine model
+                        $(selectId).on('change', function() {
+                            const selectedValue = $(this).val();
+                            const selectedOption = $(this).find('option:selected');
+                            const balance = parseFloat(selectedOption.data('balance') || 0);
+
+                            // Manually trigger Alpine's update
+                            const event = new Event('change', { bubbles: true });
+                            this.dispatchEvent(event);
+                        });
+                    });
                 },
 
                 removeCreditSale(index) {
+                    // Destroy Select2 before removing the element
+                    const selectId = '#customer_select_' + index;
+                    if ($(selectId).data('select2')) {
+                        $(selectId).select2('destroy');
+                    }
+
                     this.creditSales.splice(index, 1);
                     this.updateCreditTotal();
                     this.updateRecoveryTotal();
                 },
 
                 updateCustomerBalance(index) {
-                    const selectElement = event.target;
-                    const selectedOption = selectElement.options[selectElement.selectedIndex];
-                    const balance = parseFloat(selectedOption.dataset.balance || 0);
+                    const selectId = '#customer_select_' + index;
+                    const selectedOption = $(selectId).find('option:selected');
+                    const balance = parseFloat(selectedOption.data('balance') || 0);
                     this.creditSales[index].previous_balance = balance;
                     this.calculateNewBalance(index);
                 },
@@ -1220,6 +1290,42 @@
             updateSalesSummary();
         }
 
+        // Bank Transfer Manager (Alpine.js component)
+        function bankTransferManager() {
+            return {
+                bankTransfers: [],
+                bankTransferTotal: 0,
+
+                addBankTransfer() {
+                    this.bankTransfers.push({
+                        bank_account_id: '',
+                        amount: 0
+                    });
+                    this.$nextTick(() => this.updateBankTransferTotal());
+                },
+
+                removeBankTransfer(index) {
+                    this.bankTransfers.splice(index, 1);
+                    this.updateBankTransferTotal();
+                },
+
+                updateBankTransferTotal() {
+                    this.bankTransferTotal = this.bankTransfers.reduce((sum, transfer) => {
+                        const amount = parseFloat(transfer.amount);
+                        return sum + (isNaN(amount) ? 0 : amount);
+                    }, 0);
+                    updateCashTotal(); // Update overall cash total
+                },
+
+                formatCurrency(value) {
+                    return '₨ ' + parseFloat(value || 0).toLocaleString('en-PK', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+            }
+        }
+
         // Cheque Manager (Alpine.js component)
         function chequeManager() {
             return {
@@ -1233,7 +1339,6 @@
                         bank_name: '',
                         amount: 0
                     });
-                    // Trigger update immediately
                     this.$nextTick(() => this.updateChequeTotal());
                 },
 
@@ -1244,8 +1349,7 @@
 
                 updateChequeTotal() {
                     this.chequeTotal = this.cheques.reduce((sum, cheque) => {
-                        // Convert to number to handle string inputs correctly
-                        const amount = parseFloat(String(cheque.amount).replace(/[^0-9.-]/g, ''));
+                        const amount = parseFloat(cheque.amount);
                         return sum + (isNaN(amount) ? 0 : amount);
                     }, 0);
                     updateCashTotal(); // Update overall cash total
@@ -1283,7 +1387,7 @@
             const denom20 = (parseFloat(document.getElementById('denom_20').value) || 0) * 20;
             const denom10 = (parseFloat(document.getElementById('denom_10').value) || 0) * 10;
             const coins = parseFloat(document.getElementById('denom_coins').value) || 0;
-            const bankTransfer = parseFloat(document.getElementById('bank_transfer_amount').value) || 0;
+            const bankTransferTotal = parseFloat(document.getElementById('total_bank_transfers')?.value) || 0;
             const chequesTotal = parseFloat(document.getElementById('total_cheques')?.value) || 0;
 
             // Update individual denomination totals
@@ -1296,7 +1400,7 @@
             document.getElementById('denom_10_total').textContent = '₨ ' + denom10.toLocaleString('en-PK');
 
             const physicalCashTotal = denom5000 + denom1000 + denom500 + denom100 + denom50 + denom20 + denom10 + coins;
-            const totalCash = physicalCashTotal + bankTransfer + chequesTotal;
+            const totalCash = physicalCashTotal + bankTransferTotal + chequesTotal;
 
             // Update physical cash display
             document.getElementById('totalCashDisplay').textContent = '₨ ' + physicalCashTotal.toLocaleString('en-PK', {

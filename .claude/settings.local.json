@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(composer require:*)",
+      "Bash(php artisan boost:install:*)",
+      "Bash(php artisan boost:mcp:*)",
+      "Bash(php artisan list:*)",
+      "Bash(php artisan tinker:*)",
+      "Bash(php artisan config:clear:*)",
+      "Bash(php artisan:*)",
+      "Bash(php -r:*)",
+      "Bash(cat:*)",
+      "Bash(herd restart:*)",
+      "Bash(mysql:*)",
+      "Bash(DB_CONNECTION=mysql php artisan db:show:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -12,7 +12,9 @@
       "Bash(cat:*)",
       "Bash(herd restart:*)",
       "Bash(mysql:*)",
-      "Bash(DB_CONNECTION=mysql php artisan db:show:*)"
+      "Bash(DB_CONNECTION=mysql php artisan db:show:*)",
+      "Bash(claude mcp list:*)",
+      "Bash(claude mcp add:*)"
     ],
     "deny": [],
     "ask": []

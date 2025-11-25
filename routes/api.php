@@ -8,6 +8,15 @@ Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+// Customer API Routes
+Route::get('/customers/{customer}/balance', function ($customerId) {
+    $customer = \App\Models\Customer::findOrFail($customerId);
+
+    return response()->json([
+        'balance' => $customer->receivable_balance ?? 0,
+    ]);
+});
+
 // Accounting Transactions API Routes
 Route::prefix('transactions')->group(function () {
     // General journal entry

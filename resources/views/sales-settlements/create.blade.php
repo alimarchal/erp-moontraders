@@ -122,116 +122,6 @@
                     </p>
                 </div>
 
-                {{-- Section 2: Creditors/Credit Sales Breakdown - Full Width like Batch-wise Settlement --}}
-                <div class="mb-2" style="display: none;" id="creditSalesSection" x-data="creditSalesManager()">
-                    <x-detail-table title="Creditors / Credit Sales Breakdown" :headers="[
-                            ['label' => 'Customer', 'align' => 'text-left'],
-                            ['label' => 'Previous Balance', 'align' => 'text-right'],
-                            ['label' => 'Credit', 'align' => 'text-right'],
-                            ['label' => 'Recovery', 'align' => 'text-right'],
-                            ['label' => 'New Balance', 'align' => 'text-right'],
-                            ['label' => 'Notes', 'align' => 'text-left'],
-                            ['label' => 'Action', 'align' => 'text-center'],
-                        ]">
-                        <tbody id="creditSalesBody">
-                            <template x-for="(sale, index) in creditSales" :key="index">
-                                <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                    <td class="py-1 px-1" style="min-width: 250px;">
-                                        <select :name="'credit_sales[' + index + '][customer_id]'"
-                                            :id="'customer_select_' + index"
-                                            class="border-gray-300 rounded-md text-sm w-full"
-                                            style="width: 100%;"
-                                            required
-                                            @change="updateCustomerBalance(index)">
-                                            <option value="">Select Customer</option>
-                                            @foreach(\App\Models\Customer::orderBy('customer_name')->get() as $customer)
-                                                <option value="{{ $customer->id }}" data-balance="{{ $customer->receivable_balance ?? 0 }}">
-                                                    {{ $customer->customer_name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </td>
-                                    <td class="py-1 px-1 text-right">
-                                        <input type="number"
-                                            :name="'credit_sales[' + index + '][previous_balance]'"
-                                            x-model="sale.previous_balance" readonly
-                                            class="border-gray-300 rounded-md text-sm w-24 text-right bg-gray-100"
-                                            step="0.01" />
-                                    </td>
-                                    <td class="py-1 px-1 text-right">
-                                        <input type="number" :name="'credit_sales[' + index + '][sale_amount]'"
-                                            x-model.number="sale.sale_amount"
-                                            @input="calculateNewBalance(index); updateCreditTotal()"
-                                            class="border-gray-300 rounded-md text-sm w-24 text-right"
-                                            step="0.01" min="0" />
-                                    </td>
-                                    <td class="py-1 px-1 text-right">
-                                        <input type="number"
-                                            :name="'credit_sales[' + index + '][payment_received]'"
-                                            x-model.number="sale.payment_received"
-                                            @input="calculateNewBalance(index); updateRecoveryTotal()"
-                                            class="border-gray-300 rounded-md text-sm w-24 text-right"
-                                            step="0.01" min="0" />
-                                    </td>
-                                    <td class="py-1 px-1 text-right">
-                                        <span class="font-semibold text-gray-700"
-                                            x-text="formatCurrency(sale.new_balance)"></span>
-                                        <input type="hidden" :name="'credit_sales[' + index + '][new_balance]'"
-                                            x-model="sale.new_balance" />
-                                    </td>
-                                    <td class="py-1 px-1">
-                                        <input type="text" :name="'credit_sales[' + index + '][notes]'"
-                                            x-model="sale.notes"
-                                            class="border-gray-300 rounded-md text-sm w-full"
-                                            placeholder="Optional notes" />
-                                    </td>
-                                    <td class="py-1 px-1 text-center">
-                                        <button type="button" @click="removeCreditSale(index)"
-                                            class="text-red-600 hover:text-red-800">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                            </svg>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                        <x-slot name="footer">
-                            <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                <td colspan="2" class="py-1 px-1 text-right font-bold">Total Credit Sales:</td>
-                                <td class="py-1 px-1 text-right font-bold text-orange-700">
-                                    <span x-text="formatCurrency(creditTotal)"></span>
-                                    <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
-                                        :value="creditTotal" />
-                                </td>
-                                <td class="py-1 px-1 text-right font-bold text-green-700">
-                                    <span x-text="formatCurrency(recoveryTotal)"></span>
-                                    <input type="hidden" id="credit_recoveries_total"
-                                        name="credit_recoveries_total" :value="recoveryTotal" />
-                                </td>
-                                <td colspan="3"></td>
-                            </tr>
-                            <tr class="border-t border-gray-200 bg-orange-50">
-                                <td colspan="7" class="py-2 px-2">
-                                    <button type="button" @click="addCreditSale()"
-                                        class="inline-flex items-center px-3 py-1.5 bg-green-600 text-white text-sm rounded-md hover:bg-green-700">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M12 4v16m8-8H4" />
-                                        </svg>
-                                        Add Credit Sale
-                                    </button>
-                                </td>
-                            </tr>
-                        </x-slot>
-                    </x-detail-table>
-                    <p class="text-sm text-blue-600 mt-2 p-2">
-                        💡 Tip: Add credit sales to record amounts extended to customers and any recoveries received.
-                    </p>
-                </div>
 
                 <div class="pr-6 pl-6 pt-2">
                     {{-- Section 3: Side-by-Side Cash Detail, Expense Detail, and Sales Summary --}}
@@ -354,8 +244,31 @@
                                         </tbody>
                                     </table>
 
-                                    {{-- Bank Transfer and Cheque Payment Links with Totals --}}
+                                    {{-- Credit Sales, Bank Transfer and Cheque Payment Links with Totals --}}
                                     <div class="mt-3 space-y-3">
+                                        {{-- Credit Sales --}}
+                                        <div class="border border-orange-300 rounded-lg overflow-hidden bg-orange-50">
+                                            <button type="button"
+                                                class="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
+                                                onclick="window.dispatchEvent(new CustomEvent('open-credit-sales-modal'))">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                                Creditors / Credit Sales Breakdown
+                                            </button>
+                                            <div class="px-4 py-2 bg-white border-t border-orange-200">
+                                                <div class="flex justify-between items-center mb-1">
+                                                    <span class="text-xs font-semibold text-orange-900">Total Credit Sales:</span>
+                                                    <span class="text-sm font-bold text-orange-700" id="creditSalesTotalDisplay">₨ 0.00</span>
+                                                </div>
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-xs font-semibold text-green-900">Total Recovery:</span>
+                                                    <span class="text-sm font-bold text-green-700" id="creditRecoveryTotalDisplay">₨ 0.00</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                         {{-- Bank Transfer --}}
                                         <div class="border border-blue-300 rounded-lg overflow-hidden bg-blue-50">
                                             <button type="button"
@@ -392,6 +305,8 @@
                                     </div>
 
                                     {{-- Hidden inputs for totals (will be populated by modals) --}}
+                                    <input type="hidden" id="credit_sales_amount" name="credit_sales_amount" value="0.00" />
+                                    <input type="hidden" id="credit_recoveries_total" name="credit_recoveries_total" value="0.00" />
                                     <input type="hidden" id="total_bank_transfers" name="total_bank_transfers" value="0.00" />
                                     <input type="hidden" id="total_cheques" name="total_cheques" value="0.00" />
 
@@ -624,6 +539,7 @@
                                     <x-advance-tax-modal :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
                                     <x-bank-transfer-modal :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
                                     <x-cheque-payment-modal :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
+                                    <x-credit-sales-modal :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
                                 </div>
                             </div>
                         </div>
@@ -692,108 +608,6 @@
             console.log('Select2 initialized successfully');
         });
 
-        function creditSalesManager() {
-            return {
-                creditSales: [],
-                creditTotal: 0,
-                recoveryTotal: 0,
-
-                addCreditSale() {
-                    const year = new Date().getFullYear();
-                    const invoiceNumber = `INV-${year}-${String(invoiceCounter++).padStart(4, '0')}`;
-
-                    this.creditSales.push({
-                        customer_id: '',
-                        invoice_number: invoiceNumber,
-                        sale_amount: 0,
-                        payment_received: 0,
-                        previous_balance: 0,
-                        new_balance: 0,
-                        notes: ''
-                    });
-
-                    // Initialize Select2 for the newly added customer dropdown
-                    this.$nextTick(() => {
-                        const index = this.creditSales.length - 1;
-                        const selectId = '#customer_select_' + index;
-                        $(selectId).select2({
-                            width: '100%',
-                            placeholder: 'Select Customer',
-                            allowClear: true
-                        });
-
-                        // Handle Select2 change event to update Alpine model
-                        $(selectId).on('change', function() {
-                            const selectedValue = $(this).val();
-                            const selectedOption = $(this).find('option:selected');
-                            const balance = parseFloat(selectedOption.data('balance') || 0);
-
-                            // Manually trigger Alpine's update
-                            const event = new Event('change', { bubbles: true });
-                            this.dispatchEvent(event);
-                        });
-                    });
-                },
-
-                removeCreditSale(index) {
-                    // Destroy Select2 before removing the element
-                    const selectId = '#customer_select_' + index;
-                    if ($(selectId).data('select2')) {
-                        $(selectId).select2('destroy');
-                    }
-
-                    this.creditSales.splice(index, 1);
-                    this.updateCreditTotal();
-                    this.updateRecoveryTotal();
-                },
-
-                updateCustomerBalance(index) {
-                    const selectId = '#customer_select_' + index;
-                    const selectedOption = $(selectId).find('option:selected');
-                    const balance = parseFloat(selectedOption.data('balance') || 0);
-                    this.creditSales[index].previous_balance = balance;
-                    this.calculateNewBalance(index);
-                },
-
-                calculateNewBalance(index) {
-                    const sale = this.creditSales[index];
-                    const previousBalance = parseFloat(sale.previous_balance || 0);
-                    const newCredit = parseFloat(sale.sale_amount || 0);
-                    const paymentReceived = parseFloat(sale.payment_received || 0);
-
-                    sale.new_balance = previousBalance + newCredit - paymentReceived;
-                },
-
-                updateCreditTotal() {
-                    this.creditTotal = this.creditSales.reduce((sum, sale) => {
-                        const amount = parseFloat(sale.sale_amount);
-                        return sum + (isNaN(amount) ? 0 : amount);
-                    }, 0);
-
-                    document.getElementById('credit_sales_amount').value = this.creditTotal.toFixed(2);
-                    document.getElementById('summary_credit').value = this.creditTotal.toFixed(2);
-                    updateSalesSummary();
-                },
-
-                updateRecoveryTotal() {
-                    this.recoveryTotal = this.creditSales.reduce((sum, sale) => {
-                        const amount = parseFloat(sale.payment_received);
-                        return sum + (isNaN(amount) ? 0 : amount);
-                    }, 0);
-
-                    document.getElementById('credit_recoveries_total').value = this.recoveryTotal.toFixed(2);
-                    document.getElementById('summary_recovery').value = this.recoveryTotal.toFixed(2);
-                    updateSalesSummary();
-                },
-
-                formatCurrency(value) {
-                    return '₨ ' + parseFloat(value || 0).toLocaleString('en-PK', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
-                }
-            }
-        }
 
         // Function to calculate balance for a batch row
         function calculateBatchBalance(itemIndex, batchIndex) {
@@ -1113,7 +927,6 @@
             document.getElementById('settlementHelpText').style.display = 'none';
             document.getElementById('noItemsMessage').style.display = 'block';
             document.getElementById('noItemsMessage').innerHTML = 'Select a Goods Issue to load product details';
-            document.getElementById('creditSalesSection').style.display = 'none';
             document.getElementById('expenseAndSalesSummarySection').style.display = 'none';
             const salesSummarySection = document.getElementById('salesSummarySection');
             if (salesSummarySection) salesSummarySection.style.display = 'none';
@@ -1325,7 +1138,6 @@
                     document.getElementById('noItemsMessage').style.display = 'none';
                     document.getElementById('settlementTableContainer').style.display = 'block';
                     document.getElementById('settlementHelpText').style.display = 'block';
-                    document.getElementById('creditSalesSection').style.display = 'block';
                     document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
                     const salesSummarySection = document.getElementById('salesSummarySection');
                     if (salesSummarySection) salesSummarySection.style.display = 'block';

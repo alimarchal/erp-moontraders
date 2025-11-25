@@ -635,12 +635,18 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td class="py-1 px-2">Advance Tax (1171)</td>
+                                                <td class="py-1 px-2">
+                                                    <button type="button"
+                                                        class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
+                                                        onclick="window.dispatchEvent(new CustomEvent('open-advance-tax-modal'))">
+                                                        Advance Tax (1171)
+                                                    </button>
+                                                </td>
                                                 <td class="py-1 px-2 text-right">
                                                     <input type="number" id="expense_advance_tax"
                                                         name="expense_advance_tax" step="0.01" min="0"
-                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                        oninput="updateExpensesTotal()" value="0.00" />
+                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5 bg-gray-100"
+                                                        value="0.00" readonly />
                                                 </td>
                                             </tr>
                                             <tr>
@@ -789,6 +795,8 @@
                                     <input type="hidden" id="summary_cash_received" name="summary_cash_received"
                                         value="0.00" />
                                     <input type="hidden" id="summary_short_excess" value="0.00" />
+
+                                    <x-advance-tax-modal :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
                                 </div>
                             </div>
                         </div>

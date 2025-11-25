@@ -165,7 +165,7 @@ class CustomerController extends Controller
 
             $updated = $customer->update($validated);
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

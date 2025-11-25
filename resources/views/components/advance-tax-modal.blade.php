@@ -43,7 +43,7 @@
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                     <div class="md:col-span-6">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Customer Name</label>
-                        <select x-model.number="form.customer_id"
+                        <select id="advance_tax_customer_select"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500">
                             <option value="">Select Customer</option>
                             <template x-for="customer in customers" :key="customer.id">
@@ -137,13 +137,37 @@
                 amount: '',
             },
             entries: [],
+            select2Initialized: false,
 
             openModal() {
                 this.show = true;
+
+                // Initialize select2 after the modal is fully rendered
+                this.$nextTick(() => {
+                    if (!this.select2Initialized) {
+                        this.initializeSelect2();
+                        this.select2Initialized = true;
+                    }
+                });
             },
 
             closeModal() {
                 this.show = false;
+            },
+
+            initializeSelect2() {
+                const self = this;
+                $('#advance_tax_customer_select').select2({
+                    width: '100%',
+                    placeholder: 'Select Customer',
+                    allowClear: true,
+                    dropdownParent: $('#advance_tax_customer_select').parent()
+                });
+
+                // Handle select2 change event
+                $('#advance_tax_customer_select').on('change', function() {
+                    self.form.customer_id = $(this).val();
+                });
             },
 
             addEntry() {
@@ -168,8 +192,12 @@
                     amount: parseFloat(amount.toFixed(2)),
                 });
 
+                // Reset form
                 this.form.customer_id = '';
                 this.form.amount = '';
+
+                // Reset select2 dropdown
+                $('#advance_tax_customer_select').val(null).trigger('change');
             },
 
             removeEntry(index) {

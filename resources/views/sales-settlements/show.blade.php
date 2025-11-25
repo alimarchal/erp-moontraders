@@ -491,16 +491,14 @@
                                     <tbody class="divide-y divide-gray-200">
                                         @php
                                             $expenses = [
-                                                ['label' => 'Toll Tax / Labor', 'amount' => $settlement->expense_toll_tax ?? 0],
-                                                ['label' => 'AMR Powder Claim', 'amount' => $settlement->expense_amr_powder_claim ?? 0],
-                                                ['label' => 'AMR Liquid Claim', 'amount' => $settlement->expense_amr_liquid_claim ?? 0],
-                                                ['label' => 'Scheme', 'amount' => $settlement->expense_scheme ?? 0],
-                                                ['label' => 'Advance Tax', 'amount' => $settlement->expense_advance_tax ?? 0],
-                                                ['label' => 'Food Charges', 'amount' => $settlement->expense_food_charges ?? 0],
-                                                ['label' => 'Salesman Charges', 'amount' => $settlement->expense_salesman_charges ?? 0],
-                                                ['label' => 'Loader Charges', 'amount' => $settlement->expense_loader_charges ?? 0],
-                                                ['label' => 'Percentage', 'amount' => $settlement->expense_percentage ?? 0],
-                                                ['label' => 'Miscellaneous', 'amount' => $settlement->expense_miscellaneous_amount ?? 0],
+                                                ['label' => 'Toll Tax (52250)', 'amount' => $settlement->expense_toll_tax ?? 0],
+                                                ['label' => 'AMR Powder (52230)', 'amount' => $settlement->expense_amr_powder_claim ?? 0],
+                                                ['label' => 'AMR Liquid (52240)', 'amount' => $settlement->expense_amr_liquid_claim ?? 0],
+                                                ['label' => 'Scheme Discount Expense (52270)', 'amount' => $settlement->expense_scheme ?? 0],
+                                                ['label' => 'Advance Tax (1171)', 'amount' => $settlement->expense_advance_tax ?? 0],
+                                                ['label' => 'Food/Salesman/Loader Charges (52260)', 'amount' => $settlement->expense_food_charges ?? 0],
+                                                ['label' => 'Percentage Expense (52280)', 'amount' => $settlement->expense_percentage ?? 0],
+                                                ['label' => 'Miscellaneous Expenses (52110)', 'amount' => $settlement->expense_miscellaneous_amount ?? 0],
                                             ];
                                         @endphp
                                         @foreach($expenses as $expense)

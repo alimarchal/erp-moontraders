@@ -599,7 +599,7 @@
                                         </thead>
                                         <tbody class="divide-y divide-gray-200">
                                             <tr>
-                                                <td class="py-1 px-2">Toll Tax / Labor</td>
+                                                <td class="py-1 px-2">Toll Tax (52250)</td>
                                                 <td class="py-1 px-2 text-right">
                                                     <input type="number" id="expense_toll_tax" name="expense_toll_tax"
                                                         step="0.01" min="0"
@@ -608,7 +608,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td class="py-1 px-2">AMR Powder Claim</td>
+                                                <td class="py-1 px-2">AMR Powder (52230)</td>
                                                 <td class="py-1 px-2 text-right">
                                                     <input type="number" id="expense_amr_powder_claim"
                                                         name="expense_amr_powder_claim" step="0.01" min="0"
@@ -617,7 +617,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td class="py-1 px-2">AMR Liquid Claim</td>
+                                                <td class="py-1 px-2">AMR Liquid (52240)</td>
                                                 <td class="py-1 px-2 text-right">
                                                     <input type="number" id="expense_amr_liquid_claim"
                                                         name="expense_amr_liquid_claim" step="0.01" min="0"
@@ -626,7 +626,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td class="py-1 px-2">Scheme</td>
+                                                <td class="py-1 px-2">Scheme Discount Expense (52270)</td>
                                                 <td class="py-1 px-2 text-right">
                                                     <input type="number" id="expense_scheme" name="expense_scheme"
                                                         step="0.01" min="0"
@@ -635,7 +635,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td class="py-1 px-2">Advance Tax</td>
+                                                <td class="py-1 px-2">Advance Tax (1171)</td>
                                                 <td class="py-1 px-2 text-right">
                                                     <input type="number" id="expense_advance_tax"
                                                         name="expense_advance_tax" step="0.01" min="0"
@@ -644,7 +644,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td class="py-1 px-2">Food Charges</td>
+                                                <td class="py-1 px-2">Food/Salesman/Loader Charges (52260)</td>
                                                 <td class="py-1 px-2 text-right">
                                                     <input type="number" id="expense_food_charges"
                                                         name="expense_food_charges" step="0.01" min="0"
@@ -653,25 +653,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td class="py-1 px-2">Salesman Charges</td>
-                                                <td class="py-1 px-2 text-right">
-                                                    <input type="number" id="expense_salesman_charges"
-                                                        name="expense_salesman_charges" step="0.01" min="0"
-                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                        oninput="updateExpensesTotal()" value="0.00" />
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="py-1 px-2">Loader Charges</td>
-                                                <td class="py-1 px-2 text-right">
-                                                    <input type="number" id="expense_loader_charges"
-                                                        name="expense_loader_charges" step="0.01" min="0"
-                                                        class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                        oninput="updateExpensesTotal()" value="0.00" />
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td class="py-1 px-2">Percentage</td>
+                                                <td class="py-1 px-2">Percentage Expense (52280)</td>
                                                 <td class="py-1 px-2 text-right">
                                                     <input type="number" id="expense_percentage"
                                                         name="expense_percentage" step="0.01" min="0"
@@ -680,7 +662,7 @@
                                                 </td>
                                             </tr>
                                             <tr>
-                                                <td class="py-1 px-2">Miscellaneous</td>
+                                                <td class="py-1 px-2">Miscellaneous Expenses (52110)</td>
                                                 <td class="py-1 px-2 text-right">
                                                     <input type="number" id="expense_miscellaneous_amount"
                                                         name="expense_miscellaneous_amount" step="0.01" min="0"
@@ -1273,13 +1255,11 @@
             const scheme = parseFloat(document.getElementById('expense_scheme').value) || 0;
             const advanceTax = parseFloat(document.getElementById('expense_advance_tax').value) || 0;
             const foodCharges = parseFloat(document.getElementById('expense_food_charges').value) || 0;
-            const salesmanCharges = parseFloat(document.getElementById('expense_salesman_charges').value) || 0;
-            const loaderCharges = parseFloat(document.getElementById('expense_loader_charges').value) || 0;
             const percentage = parseFloat(document.getElementById('expense_percentage').value) || 0;
             const miscellaneousAmount = parseFloat(document.getElementById('expense_miscellaneous_amount').value) || 0;
 
             const totalExpenses = tollTax + amrPowder + amrLiquid + scheme + advanceTax +
-                                 foodCharges + salesmanCharges + loaderCharges + percentage + miscellaneousAmount;
+                                 foodCharges + percentage + miscellaneousAmount;
 
             document.getElementById('totalExpensesDisplay').textContent = '₨ ' + totalExpenses.toLocaleString('en-PK', {
                 minimumFractionDigits: 2,

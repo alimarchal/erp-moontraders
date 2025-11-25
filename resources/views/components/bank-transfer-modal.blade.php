@@ -267,6 +267,12 @@
                     entriesInput.value = JSON.stringify(this.entries);
                 }
 
+                // Update the display total
+                const displayElement = document.getElementById('bankTransferTotalDisplay');
+                if (displayElement) {
+                    displayElement.textContent = this.formatCurrency(total);
+                }
+
                 if (typeof updateCashTotal === 'function') {
                     updateCashTotal();
                 }

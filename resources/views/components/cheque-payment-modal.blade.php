@@ -271,6 +271,12 @@
                     entriesInput.value = JSON.stringify(this.entries);
                 }
 
+                // Update the display total
+                const displayElement = document.getElementById('chequeTotalDisplay');
+                if (displayElement) {
+                    displayElement.textContent = this.formatCurrency(total);
+                }
+
                 if (typeof updateCashTotal === 'function') {
                     updateCashTotal();
                 }

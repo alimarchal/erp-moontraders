@@ -14,13 +14,14 @@
       "Bash(mysql:*)",
       "Bash(DB_CONNECTION=mysql php artisan db:show:*)",
       "Bash(claude mcp list:*)",
-      "Bash(claude mcp add:*)"
+      "Bash(claude mcp add:*)",
+      "Bash(vendor/bin/pint:*)"
     ],
     "deny": [],
     "ask": []
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "laravel-boost"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

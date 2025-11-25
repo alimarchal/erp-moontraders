@@ -76,6 +76,11 @@ class Employee extends Model
         return $this->hasMany(CreditSale::class);
     }
 
+    public function ledgerEntries(): HasMany
+    {
+        return $this->hasMany(SalesmanLedger::class);
+    }
+
     public function getFullNameAttribute(): string
     {
         return $this->name;

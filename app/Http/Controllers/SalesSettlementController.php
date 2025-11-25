@@ -2,20 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreSalesSettlementRequest;
+use App\Http\Requests\UpdateSalesSettlementRequest;
+use App\Models\CreditSale;
+use App\Models\Customer;
+use App\Models\GoodsIssue;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementItem;
 use App\Models\SalesSettlementItemBatch;
 use App\Models\SalesSettlementSale;
-use App\Models\CreditSale;
-use App\Models\GoodsIssue;
-use App\Models\Customer;
-use App\Http\Requests\StoreSalesSettlementRequest;
-use App\Http\Requests\UpdateSalesSettlementRequest;
 use App\Services\DistributionService;
+use App\Services\LedgerService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class SalesSettlementController extends Controller
 {
@@ -123,7 +124,7 @@ class SalesSettlementController extends Controller
             ->map(function ($gi) {
                 return [
                     'id' => $gi->id,
-                    'text' => $gi->issue_number . ' - ' . $gi->employee->full_name . ' (' . $gi->issue_date->format('d M Y') . ')',
+                    'text' => $gi->issue_number.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
                 ];
             });
 
@@ -369,7 +370,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (!empty($request->sales)) {
+            if (! empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -382,7 +383,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (!empty($request->credit_sales)) {
+            if (! empty($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -394,6 +395,14 @@ class SalesSettlementController extends Controller
                         'notes' => $creditSale['notes'] ?? null,
                     ]);
                 }
+            }
+
+            // Create ledger entries for customers and salesman
+            $ledgerService = app(LedgerService::class);
+            $ledgerResult = $ledgerService->processSalesSettlement($settlement);
+
+            if (! $ledgerResult['success']) {
+                throw new \Exception('Ledger processing failed: '.$ledgerResult['message']);
             }
 
             DB::commit();
@@ -413,7 +422,7 @@ class SalesSettlementController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Sales Settlement: ' . $e->getMessage());
+                ->with('error', 'Unable to create Sales Settlement: '.$e->getMessage());
         }
     }
 
@@ -434,7 +443,7 @@ class SalesSettlementController extends Controller
             'sales.customer',
             'creditSales.customer',
             'creditSales.employee',
-            'creditSales.supplier'
+            'creditSales.supplier',
         ]);
 
         return view('sales-settlements.show', [
@@ -578,7 +587,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (!empty($request->sales)) {
+            if (! empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -591,7 +600,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (!empty($request->credit_sales)) {
+            if (! empty($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $salesSettlement->id,

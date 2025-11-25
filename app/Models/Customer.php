@@ -105,6 +105,11 @@ class Customer extends Model
         return $this->hasMany(CreditSale::class);
     }
 
+    public function ledgerEntries(): HasMany
+    {
+        return $this->hasMany(CustomerLedger::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

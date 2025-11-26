@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\GoodsReceiptNote;
-use App\Models\StockBatch;
-use App\Models\StockMovement;
-use App\Models\StockLedgerEntry;
-use App\Models\StockValuationLayer;
+use App\Models\ChartOfAccount;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
-use App\Models\ChartOfAccount;
+use App\Models\GoodsReceiptNote;
+use App\Models\StockBatch;
+use App\Models\StockLedgerEntry;
+use App\Models\StockMovement;
+use App\Models\StockValuationLayer;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class InventoryService
 {
@@ -92,15 +92,16 @@ class InventoryService
 
             return [
                 'success' => true,
-                'message' => "GRN {$grn->grn_number} posted successfully to inventory" . ($journalEntry ? " and accounting" : ""),
+                'message' => "GRN {$grn->grn_number} posted successfully to inventory".($journalEntry ? ' and accounting' : ''),
                 'data' => $grn->fresh(),
             ];
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return [
                 'success' => false,
-                'message' => 'Failed to post GRN: ' . $e->getMessage(),
+                'message' => 'Failed to post GRN: '.$e->getMessage(),
                 'data' => null,
             ];
         }
@@ -108,60 +109,102 @@ class InventoryService
 
     /**
      * Create Journal Entry for GRN posting
-     * Dr. Inventory (Asset) - Account 1161 Stock In Hand
-     * Cr. Accounts Payable (Liability) - Account 2111 Creditors
+     *
+     * Accounting Entries:
+     * Dr. Inventory - Main (Asset) - Account 1161 Stock In Hand (net of discounts)
+     * Dr. Inventory - GST Component (Asset) - Account 1162 (if any)
+     * Dr. Inventory - Tax Component (Asset) - Account 1163 (if any)
+     * Dr. Inventory - Excise Duty (Asset) - Account 1164 (if any)
+     * Cr. FMR Allowance - Account 4210 (income/contra-cost, if any)
+     * Cr. Accounts Payable (Liability) - Account 2111 Creditors (amount payable to supplier)
      */
     protected function createGrnJournalEntry(GoodsReceiptNote $grn)
     {
         try {
             // Load supplier relationship if not already loaded
-            $grn->loadMissing('supplier');
+            $grn->loadMissing('supplier', 'items');
 
-            // Find the Inventory and Accounts Payable accounts from Chart of Accounts
+            // Find required accounts from Chart of Accounts
             $inventoryAccount = ChartOfAccount::where('account_code', '1161')->first();
             $apAccount = ChartOfAccount::where('account_code', '2111')->first();
+            $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
 
-            if (!$inventoryAccount) {
-                Log::warning('Inventory account (1161 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: ' . $grn->id);
+            if (! $inventoryAccount) {
+                Log::warning('Inventory account (1161 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
+
                 return null;
             }
 
-            if (!$apAccount) {
-                Log::warning('Accounts Payable account (2111 - Creditors) not found in Chart of Accounts. Skipping journal entry for GRN: ' . $grn->id);
+            if (! $apAccount) {
+                Log::warning('Accounts Payable account (2111 - Creditors) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
+
                 return null;
             }
 
-            // Calculate total amount from GRN items
-            $totalAmount = $grn->items->sum('total_cost');
+            // Calculate amounts from GRN items
+            $extendedValue = $grn->items->sum('extended_value');
+            $totalDiscounts = $grn->items->sum('discount_value');
+            $totalFmrAllowance = $grn->items->sum('fmr_allowance');
+            $totalGst = $grn->items->sum('sales_tax_value');
+            $totalAdvanceTax = $grn->items->sum('advance_income_tax');
+            $totalExciseDuty = $grn->items->sum('excise_duty') ?? 0;
 
-            if ($totalAmount <= 0) {
-                Log::warning('GRN total amount is zero or negative. Skipping journal entry for GRN: ' . $grn->id);
+            // Calculate inventory components
+            // Total inventory cost = extended value - discounts + all taxes
+            $totalInventoryAsset = $extendedValue - $totalDiscounts + $totalGst + $totalAdvanceTax + $totalExciseDuty;
+
+            // Calculate amount payable to supplier (what we actually pay)
+            // Creditors = Total Inventory - FMR Allowance
+            $creditorAmount = $totalInventoryAsset - $totalFmrAllowance;
+
+            if ($totalInventoryAsset <= 0) {
+                Log::warning('GRN net inventory value is zero or negative. Skipping journal entry for GRN: '.$grn->id);
+
                 return null;
             }
+
+            // Prepare journal entry lines
+            $journalLines = [];
+            $lineNo = 1;
+
+            // Dr. Inventory (all costs capitalized into one account)
+            $journalLines[] = [
+                'line_no' => $lineNo++,
+                'account_id' => $inventoryAccount->id,
+                'debit' => $totalInventoryAsset,
+                'credit' => 0,
+                'description' => "Inventory received - {$grn->items->count()} item(s) (full cost including taxes)",
+                'cost_center_id' => null,
+            ];
+
+            // Cr. FMR Allowance (if any) - Income/contra-cost
+            if ($totalFmrAllowance > 0 && $fmrAllowanceAccount) {
+                $journalLines[] = [
+                    'line_no' => $lineNo++,
+                    'account_id' => $fmrAllowanceAccount->id,
+                    'debit' => 0,
+                    'credit' => $totalFmrAllowance,
+                    'description' => 'FMR allowance - income for handling returns',
+                    'cost_center_id' => null,
+                ];
+            }
+
+            // Cr. Accounts Payable (amount payable to supplier)
+            $journalLines[] = [
+                'line_no' => $lineNo++,
+                'account_id' => $apAccount->id,
+                'debit' => 0,
+                'credit' => $creditorAmount,
+                'description' => "Amount payable to {$grn->supplier->supplier_name}",
+                'cost_center_id' => null,
+            ];
 
             // Prepare journal entry data
             $journalEntryData = [
                 'entry_date' => Carbon::parse($grn->receipt_date)->toDateString(),
                 'reference' => $grn->supplier_invoice_number ?? $grn->grn_number,
                 'description' => "GRN #{$grn->grn_number} - Goods received from {$grn->supplier->supplier_name}",
-                'reference_type' => 'App\Models\GoodsReceiptNote',
-                'reference_id' => $grn->id,
-                'lines' => [
-                    [
-                        'account_id' => $inventoryAccount->id,
-                        'debit' => $totalAmount,
-                        'credit' => 0,
-                        'description' => "Inventory received - {$grn->items->count()} item(s)",
-                        'cost_center_id' => 6, // CC006: Warehouse & Inventory
-                    ],
-                    [
-                        'account_id' => $apAccount->id,
-                        'debit' => 0,
-                        'credit' => $totalAmount,
-                        'description' => "Amount payable to {$grn->supplier->supplier_name}",
-                        'cost_center_id' => 10, // CC010: Procurement & Purchasing
-                    ],
-                ],
+                'lines' => $journalLines,
                 'auto_post' => true, // Automatically post the entry
             ];
 
@@ -170,44 +213,62 @@ class InventoryService
             $result = $accountingService->createJournalEntry($journalEntryData);
 
             if ($result['success']) {
-                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number}");
+                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Inventory Main: {$inventoryMain} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | Excise: {$totalExciseDuty} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount} | Total Inventory Asset: {$totalInventoryAsset}");
+
                 return $result['data'];
             } else {
-                Log::error("Failed to create journal entry for GRN {$grn->grn_number}: " . $result['message']);
+                Log::error("Failed to create journal entry for GRN {$grn->grn_number}: ".$result['message']);
+
                 return null;
             }
 
         } catch (\Exception $e) {
-            Log::error("Exception creating journal entry for GRN {$grn->id}: " . $e->getMessage());
+            Log::error("Exception creating journal entry for GRN {$grn->id}: ".$e->getMessage());
+
             return null;
         }
     }
 
     /**
      * Create Reversing Journal Entry for GRN reversal
+     *
+     * Reversal Entries (opposite of posting entries):
      * Dr. Accounts Payable (Liability) - Account 2111 Creditors
-     * Cr. Inventory (Asset) - Account 1161 Stock In Hand
+     * Dr. FMR Allowance - Account 4210 (reverse the credit, if any)
+     * Cr. Inventory (Asset) - Account 1161 Stock In Hand (full cost including taxes)
      */
     protected function createGrnReversingJournalEntry(GoodsReceiptNote $grn)
     {
         try {
             // Load supplier relationship if not already loaded
-            $grn->loadMissing('supplier');
+            $grn->loadMissing('supplier', 'items');
 
-            // Find the Inventory and Accounts Payable accounts from Chart of Accounts
+            // Find required accounts from Chart of Accounts
             $inventoryAccount = ChartOfAccount::where('account_code', '1161')->first();
             $apAccount = ChartOfAccount::where('account_code', '2111')->first();
+            $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
 
-            if (!$inventoryAccount || !$apAccount) {
-                Log::warning('Required accounts not found in Chart of Accounts. Skipping reversing journal entry for GRN: ' . $grn->id);
+            if (! $inventoryAccount || ! $apAccount) {
+                Log::warning('Required accounts not found in Chart of Accounts. Skipping reversing journal entry for GRN: '.$grn->id);
+
                 return null;
             }
 
-            // Calculate total amount from GRN items
-            $totalAmount = $grn->items->sum('total_cost');
+            // Calculate amounts from GRN items (same as posting)
+            $extendedValue = $grn->items->sum('extended_value');
+            $totalDiscounts = $grn->items->sum('discount_value');
+            $totalFmrAllowance = $grn->items->sum('fmr_allowance');
+            $totalGst = $grn->items->sum('sales_tax_value');
+            $totalAdvanceTax = $grn->items->sum('advance_income_tax');
+            $totalExciseDuty = $grn->items->sum('excise_duty') ?? 0;
 
-            if ($totalAmount <= 0) {
-                Log::warning('GRN total amount is zero or negative. Skipping reversing journal entry for GRN: ' . $grn->id);
+            // Calculate inventory components (same as posting)
+            $totalInventoryAsset = $extendedValue - $totalDiscounts + $totalGst + $totalAdvanceTax + $totalExciseDuty;
+            $creditorAmount = $totalInventoryAsset - $totalFmrAllowance;
+
+            if ($totalInventoryAsset <= 0) {
+                Log::warning('GRN net inventory value is zero or negative. Skipping reversing journal entry for GRN: '.$grn->id);
+
                 return null;
             }
 
@@ -217,29 +278,48 @@ class InventoryService
             $itemCount = $grn->items->count();
             $itemsText = $itemCount === 1 ? '1 item' : "{$itemCount} items";
 
-            // Prepare reversing journal entry data (opposite of original entry)
+            // Prepare reversing journal entry lines (opposite of posting entries)
+            $journalLines = [];
+            $lineNo = 1;
+
+            // Dr. Accounts Payable - reverse the credit
+            $journalLines[] = [
+                'line_no' => $lineNo++,
+                'account_id' => $apAccount->id,
+                'debit' => $creditorAmount,
+                'credit' => 0,
+                'description' => "Reversal - Liability to {$grn->supplier->supplier_name} reduced ({$itemsText})",
+                'cost_center_id' => null,
+            ];
+
+            // Dr. FMR Allowance (if any) - reverse the credit
+            if ($totalFmrAllowance > 0 && $fmrAllowanceAccount) {
+                $journalLines[] = [
+                    'line_no' => $lineNo++,
+                    'account_id' => $fmrAllowanceAccount->id,
+                    'debit' => $totalFmrAllowance,
+                    'credit' => 0,
+                    'description' => 'Reversal - FMR allowance',
+                    'cost_center_id' => null,
+                ];
+            }
+
+            // Cr. Inventory (all costs) - reverse the debit
+            $journalLines[] = [
+                'line_no' => $lineNo++,
+                'account_id' => $inventoryAccount->id,
+                'debit' => 0,
+                'credit' => $totalInventoryAsset,
+                'description' => "Reversal - Inventory returned to supplier ({$itemsText})",
+                'cost_center_id' => null,
+            ];
+
+            // Prepare reversing journal entry data
             $journalEntryData = [
                 'entry_date' => now()->toDateString(),
                 'reference' => $grn->supplier_invoice_number ?? $grn->grn_number,
                 'description' => $description,
-                'reference_type' => 'App\Models\GoodsReceiptNote',
-                'reference_id' => $grn->id,
-                'lines' => [
-                    [
-                        'account_id' => $apAccount->id,
-                        'debit' => $totalAmount,
-                        'credit' => 0,
-                        'description' => "Reversal - Liability to {$grn->supplier->supplier_name} reduced ({$itemsText})",
-                        'cost_center_id' => 10, // CC010: Procurement & Purchasing
-                    ],
-                    [
-                        'account_id' => $inventoryAccount->id,
-                        'debit' => 0,
-                        'credit' => $totalAmount,
-                        'description' => "Reversal - Inventory returned to supplier ({$itemsText})",
-                        'cost_center_id' => 6, // CC006: Warehouse & Inventory
-                    ],
-                ],
+                'lines' => $journalLines,
                 'auto_post' => true, // Automatically post the entry
             ];
 
@@ -248,15 +328,18 @@ class InventoryService
             $result = $accountingService->createJournalEntry($journalEntryData);
 
             if ($result['success']) {
-                Log::info("Reversing journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number}");
+                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->id} | Total Inventory: {$totalInventoryAsset} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
+
                 return $result['data'];
             } else {
-                Log::error("Failed to create reversing journal entry for GRN {$grn->grn_number}: " . $result['message']);
+                Log::error("Failed to create reversing journal entry for GRN {$grn->grn_number}: ".$result['message']);
+
                 return null;
             }
 
         } catch (\Exception $e) {
-            Log::error("Exception creating reversing journal entry for GRN {$grn->id}: " . $e->getMessage());
+            Log::error("Exception creating reversing journal entry for GRN {$grn->id}: ".$e->getMessage());
+
             return null;
         }
     }
@@ -274,6 +357,7 @@ class InventoryService
 
             if ($draftPayments->isEmpty()) {
                 Log::info("No draft payments found for GRN {$grn->grn_number}");
+
                 return;
             }
 
@@ -306,7 +390,7 @@ class InventoryService
             }
 
         } catch (\Exception $e) {
-            Log::error("Error cancelling draft payments for GRN {$grn->id}: " . $e->getMessage());
+            Log::error("Error cancelling draft payments for GRN {$grn->id}: ".$e->getMessage());
             // Don't throw exception, just log it - reversal should still succeed
         }
     }
@@ -594,7 +678,7 @@ class InventoryService
 
             return [
                 'success' => false,
-                'message' => 'Failed to reverse GRN: ' . $e->getMessage(),
+                'message' => 'Failed to reverse GRN: '.$e->getMessage(),
                 'data' => null,
             ];
         }

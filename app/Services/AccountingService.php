@@ -14,19 +14,16 @@ class AccountingService
     /**
      * Create a journal entry with multiple lines.
      *
-     * @param array $data
      * @return array{success: bool, data: ?JournalEntry, message: string}
      */
     public function createJournalEntry(array $data): array
     {
-        return $this->persistJournalEntry(new JournalEntry(), $data, true);
+        return $this->persistJournalEntry(new JournalEntry, $data, true);
     }
 
     /**
      * Update an existing journal entry while enforcing double-entry rules.
      *
-     * @param JournalEntry $journalEntry
-     * @param array $data
      * @return array{success: bool, data: ?JournalEntry, message: string}
      */
     public function updateJournalEntry(JournalEntry $journalEntry, array $data): array
@@ -98,7 +95,7 @@ class AccountingService
             return [
                 'success' => false,
                 'data' => null,
-                'message' => 'Failed to post journal entry: ' . $e->getMessage(),
+                'message' => 'Failed to post journal entry: '.$e->getMessage(),
             ];
         }
     }
@@ -120,9 +117,9 @@ class AccountingService
                     'currency_id' => $originalEntry->currency_id,
                     'entry_date' => now()->toDateString(),
                     'reference' => $originalEntry->reference
-                        ? 'REV-' . $originalEntry->reference
-                        : 'REV-' . $originalEntry->id,
-                    'description' => $description ?? 'Reversal of entry #' . $originalEntry->id,
+                        ? 'REV-'.$originalEntry->reference
+                        : 'REV-'.$originalEntry->id,
+                    'description' => $description ?? 'Reversal of entry #'.$originalEntry->id,
                     'status' => 'draft',
                     'fx_rate_to_base' => $originalEntry->fx_rate_to_base,
                 ]);
@@ -138,7 +135,7 @@ class AccountingService
                         'debit' => (float) $detail->credit,
                         'credit' => (float) $detail->debit,
                         'description' => $detail->description
-                            ? 'Reversal: ' . $detail->description
+                            ? 'Reversal: '.$detail->description
                             : 'Reversal entry',
                     ]);
                 }
@@ -165,7 +162,7 @@ class AccountingService
             return [
                 'success' => false,
                 'data' => null,
-                'message' => 'Failed to reverse journal entry: ' . $e->getMessage(),
+                'message' => 'Failed to reverse journal entry: '.$e->getMessage(),
             ];
         }
     }
@@ -173,16 +170,13 @@ class AccountingService
     /**
      * Quick cash receipt entry (with rollback on error).
      *
-     * @param float $amount
-     * @param int $revenueAccountId
-     * @param string $description
-     * @param array $options ['reference', 'cost_center_id', 'auto_post']
+     * @param  array  $options  ['reference', 'cost_center_id', 'auto_post']
      */
     public function recordCashReceipt(float $amount, int $revenueAccountId, string $description, array $options = []): array
     {
         return $this->createJournalEntry([
             'entry_date' => now()->toDateString(),
-            'reference' => $options['reference'] ?? 'CR-' . date('YmdHis'),
+            'reference' => $options['reference'] ?? 'CR-'.date('YmdHis'),
             'description' => $description,
             'lines' => [
                 [
@@ -211,7 +205,7 @@ class AccountingService
     {
         return $this->createJournalEntry([
             'entry_date' => now()->toDateString(),
-            'reference' => $options['reference'] ?? 'CP-' . date('YmdHis'),
+            'reference' => $options['reference'] ?? 'CP-'.date('YmdHis'),
             'description' => $description,
             'lines' => [
                 [
@@ -240,14 +234,14 @@ class AccountingService
     {
         return $this->createJournalEntry([
             'entry_date' => now()->toDateString(),
-            'reference' => $options['reference'] ?? 'INV-' . date('YmdHis'),
+            'reference' => $options['reference'] ?? 'INV-'.date('YmdHis'),
             'description' => $description,
             'lines' => [
                 [
                     'account_id' => 4, // Accounts receivable (code: 1111)
                     'debit' => $amount,
                     'credit' => 0,
-                    'description' => 'Invoice to ' . $customerReference,
+                    'description' => 'Invoice to '.$customerReference,
                     'cost_center_id' => $options['cost_center_id'] ?? null,
                 ],
                 [
@@ -269,21 +263,21 @@ class AccountingService
     {
         return $this->createJournalEntry([
             'entry_date' => now()->toDateString(),
-            'reference' => $options['reference'] ?? 'REC-' . date('YmdHis'),
-            'description' => 'Payment received from ' . $customerReference,
+            'reference' => $options['reference'] ?? 'REC-'.date('YmdHis'),
+            'description' => 'Payment received from '.$customerReference,
             'lines' => [
                 [
                     'account_id' => 7, // Cash (code: 1131)
                     'debit' => $amount,
                     'credit' => 0,
-                    'description' => 'Cash received from ' . $customerReference,
+                    'description' => 'Cash received from '.$customerReference,
                     'cost_center_id' => $options['cost_center_id'] ?? null,
                 ],
                 [
                     'account_id' => 4, // Accounts receivable (code: 1111)
                     'debit' => 0,
                     'credit' => $amount,
-                    'description' => 'Settlement of invoice ' . ($options['invoice_ref'] ?? ''),
+                    'description' => 'Settlement of invoice '.($options['invoice_ref'] ?? ''),
                     'cost_center_id' => $options['cost_center_id'] ?? null,
                 ],
             ],
@@ -323,9 +317,6 @@ class AccountingService
     /**
      * Persist a journal entry and its detail lines.
      *
-     * @param JournalEntry $journalEntry
-     * @param array $data
-     * @param bool $isNew
      * @return array{success: bool, data: ?JournalEntry, message: string}
      */
     protected function persistJournalEntry(JournalEntry $journalEntry, array $data, bool $isNew): array
@@ -338,7 +329,7 @@ class AccountingService
                 $fxRate = $data['fx_rate_to_base'] ?? $data['fx_rate'] ?? 1.0;
 
                 $journalEntry->fill([
-                    'currency_id' => $data['currency_id'] ?? $journalEntry->currency_id ?? 1,
+                    'currency_id' => $data['currency_id'] ?? $journalEntry->currency_id ?? $this->getBaseCurrencyId(),
                     'entry_date' => $data['entry_date'],
                     'reference' => $data['reference'] ?? null,
                     'description' => $data['description'] ?? null,
@@ -410,7 +401,7 @@ class AccountingService
             return [
                 'success' => false,
                 'data' => $journalEntry->exists ? $journalEntry->loadMissing(['details']) : null,
-                'message' => 'Failed to ' . ($isNew ? 'create' : 'update') . ' journal entry: ' . $e->getMessage(),
+                'message' => 'Failed to '.($isNew ? 'create' : 'update').' journal entry: '.$e->getMessage(),
             ];
         }
     }
@@ -418,7 +409,7 @@ class AccountingService
     /**
      * Normalise line payload.
      *
-     * @param array<int, array<string, mixed>> $lines
+     * @param  array<int, array<string, mixed>>  $lines
      * @return Collection<int, array<string, mixed>>
      */
     protected function normalizeLines(array $lines): Collection
@@ -439,7 +430,8 @@ class AccountingService
     /**
      * Validate a set of journal entry lines.
      *
-     * @param Collection<int, array<string, mixed>> $lines
+     * @param  Collection<int, array<string, mixed>>  $lines
+     *
      * @throws \Exception
      */
     protected function validateLines(Collection $lines): void
@@ -457,18 +449,18 @@ class AccountingService
 
         foreach ($lines as $index => $line) {
             if (empty($line['account_id'])) {
-                throw new \Exception('Account is required for line ' . ($index + 1) . '.');
+                throw new \Exception('Account is required for line '.($index + 1).'.');
             }
 
             $debit = $line['debit'];
             $credit = $line['credit'];
 
             if ($debit > 0 && $credit > 0) {
-                throw new \Exception('Line ' . ($index + 1) . ' cannot have both debit and credit amounts.');
+                throw new \Exception('Line '.($index + 1).' cannot have both debit and credit amounts.');
             }
 
             if ($debit <= 0 && $credit <= 0) {
-                throw new \Exception('Line ' . ($index + 1) . ' must have either a debit or credit amount.');
+                throw new \Exception('Line '.($index + 1).' must have either a debit or credit amount.');
             }
         }
     }
@@ -499,5 +491,13 @@ class AccountingService
             'posted_at' => now(),
             'posted_by' => auth()->id(),
         ]);
+    }
+
+    /**
+     * Get the base currency ID
+     */
+    protected function getBaseCurrencyId(): int
+    {
+        return \App\Models\Currency::where('is_base_currency', true)->value('id') ?? 1;
     }
 }

@@ -3,19 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\GoodsReceiptNote;
-use App\Models\Supplier;
-use App\Models\Warehouse;
 use App\Models\Product;
-use App\Models\Uom;
 use App\Models\PromotionalCampaign;
+use App\Models\Supplier;
+use App\Models\Uom;
+use App\Models\Warehouse;
 use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\Rule;
-use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class GoodsReceiptNoteController extends Controller
 {
@@ -136,16 +135,20 @@ class GoodsReceiptNoteController extends Controller
 
             // Calculate totals
             $total_quantity = 0;
-            $total_amount = 0;
+            $total_amount = 0; // Total inventory cost (includes FMR)
+            $amount_payable = 0; // Amount payable to supplier (excludes FMR)
 
             foreach ($validated['items'] as $item) {
                 $qty = $item['quantity_accepted'] ?? $item['quantity_received'];
                 $total_quantity += $qty;
+                // total_amount = inventory cost (includes FMR in unit_cost)
                 $total_amount += $qty * $item['unit_cost'];
+                // amount_payable = what we owe supplier (excludes FMR)
+                $amount_payable += $item['total_value_with_taxes'] ?? 0;
             }
 
-            $grand_total = $total_amount + ($validated['tax_amount'] ?? 0)
-                + ($validated['freight_charges'] ?? 0) + ($validated['other_charges'] ?? 0);
+            // grand_total = amount payable to supplier + freight + other charges
+            $grand_total = $amount_payable + ($validated['freight_charges'] ?? 0) + ($validated['other_charges'] ?? 0);
 
             // Create GRN
             $grn = GoodsReceiptNote::create([
@@ -291,7 +294,10 @@ class GoodsReceiptNoteController extends Controller
             'items' => 'required|array|min:1',
             'items.*.product_id' => 'required|exists:products,id',
             'items.*.stock_uom_id' => 'required|exists:uoms,id',
+            'items.*.purchase_uom_id' => 'nullable|exists:uoms,id',
             'items.*.qty_in_purchase_uom' => 'nullable|numeric|min:0',
+            'items.*.uom_conversion_factor' => 'nullable|numeric|min:0',
+            'items.*.qty_in_stock_uom' => 'nullable|numeric|min:0',
             'items.*.unit_price_per_case' => 'nullable|numeric|min:0',
             'items.*.extended_value' => 'nullable|numeric|min:0',
             'items.*.discount_value' => 'nullable|numeric|min:0',
@@ -327,16 +333,20 @@ class GoodsReceiptNoteController extends Controller
         try {
             // Calculate totals
             $total_quantity = 0;
-            $total_amount = 0;
+            $total_amount = 0; // Total inventory cost (includes FMR)
+            $amount_payable = 0; // Amount payable to supplier (excludes FMR)
 
             foreach ($validated['items'] as $item) {
                 $qty = $item['quantity_accepted'] ?? $item['quantity_received'];
                 $total_quantity += $qty;
+                // total_amount = inventory cost (includes FMR in unit_cost)
                 $total_amount += $qty * $item['unit_cost'];
+                // amount_payable = what we owe supplier (excludes FMR)
+                $amount_payable += $item['total_value_with_taxes'] ?? 0;
             }
 
-            $grand_total = $total_amount + ($validated['tax_amount'] ?? 0)
-                + ($validated['freight_charges'] ?? 0) + ($validated['other_charges'] ?? 0);
+            // grand_total = amount payable to supplier + freight + other charges
+            $grand_total = $amount_payable + ($validated['freight_charges'] ?? 0) + ($validated['other_charges'] ?? 0);
 
             // Update GRN
             $goodsReceiptNote->update([
@@ -365,10 +375,10 @@ class GoodsReceiptNoteController extends Controller
                     'line_no' => $index + 1,
                     'product_id' => $item['product_id'],
                     'stock_uom_id' => $item['stock_uom_id'],
-                    'purchase_uom_id' => $item['purchase_uom_id'],
+                    'purchase_uom_id' => $item['purchase_uom_id'] ?? null,
                     'qty_in_purchase_uom' => $item['qty_in_purchase_uom'] ?? null,
-                    'uom_conversion_factor' => $item['uom_conversion_factor'],
-                    'qty_in_stock_uom' => $item['qty_in_stock_uom'],
+                    'uom_conversion_factor' => $item['uom_conversion_factor'] ?? 1,
+                    'qty_in_stock_uom' => $item['qty_in_stock_uom'] ?? $item['quantity_received'],
                     'unit_price_per_case' => $item['unit_price_per_case'] ?? null,
                     'extended_value' => $item['extended_value'] ?? 0,
                     'discount_value' => $item['discount_value'] ?? 0,
@@ -536,6 +546,7 @@ class GoodsReceiptNoteController extends Controller
             });
         } catch (\Exception $e) {
             \Log::error('Failed to create auto payment: ' . $e->getMessage());
+
             return null;
         }
     }
@@ -553,13 +564,14 @@ class GoodsReceiptNoteController extends Controller
         // Verify user's password
         if (!Hash::check($request->password, auth()->user()->password)) {
             Log::warning("Failed GRN reversal attempt for {$goodsReceiptNote->grn_number} - Invalid password by user: " . auth()->user()->name);
+
             return redirect()
                 ->back()
                 ->with('error', 'Invalid password. GRN reversal requires your password confirmation.');
         }
 
         // Log password confirmation
-        Log::info("GRN reversal password confirmed for {$goodsReceiptNote->grn_number} by user: " . auth()->user()->name . " (ID: " . auth()->id() . ")");
+        Log::info("GRN reversal password confirmed for {$goodsReceiptNote->grn_number} by user: " . auth()->user()->name . ' (ID: ' . auth()->id() . ')');
 
         // Check if GRN has any posted payments
         $hasPostedPayments = $goodsReceiptNote->payments()

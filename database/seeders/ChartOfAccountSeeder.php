@@ -23,7 +23,7 @@ class ChartOfAccountSeeder extends Seeder
 
         // Get the base currency (PKR)
         $baseCurrency = DB::table('currencies')->where('is_base_currency', true)->first();
-        if (!$baseCurrency) {
+        if (! $baseCurrency) {
             throw new \Exception('Base currency not found. Please run CurrencySeeder first.');
         }
 
@@ -42,6 +42,9 @@ class ChartOfAccountSeeder extends Seeder
             ['name' => 'Earnest Money', 'parent' => 'Securities and Deposits', 'type' => '', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Stock Assets', 'parent' => 'Current Assets', 'type' => 'Stock', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Stock In Hand', 'parent' => 'Stock Assets', 'type' => 'Stock', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
+            ['name' => 'Inventory - GST Component', 'parent' => 'Stock Assets', 'type' => 'Stock', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
+            ['name' => 'Inventory - Tax Component', 'parent' => 'Stock Assets', 'type' => 'Stock', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
+            ['name' => 'Inventory - Excise Duty', 'parent' => 'Stock Assets', 'type' => 'Stock', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Tax Assets', 'parent' => 'Current Assets', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Advance Tax', 'parent' => 'Tax Assets', 'type' => 'Tax', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Fixed Assets', 'parent' => 'Application of Funds (Assets)', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
@@ -151,7 +154,7 @@ class ChartOfAccountSeeder extends Seeder
                 $parentId = null;
                 $level = 0;
                 $rootPrefix = $this->getRootPrefix($accountTypeId);
-                $newCode = $rootPrefix . '000'; // e.g., 1000, 2000
+                $newCode = $rootPrefix.'000'; // e.g., 1000, 2000
             } else {
                 // This is a child. We assume the parent was already processed.
                 $parentId = $nameToIdMap[$parentName];
@@ -170,19 +173,19 @@ class ChartOfAccountSeeder extends Seeder
                 if ($level == 1) {
                     // Child of a Root (e.g., Current Assets) -> 1100
                     $base = substr($parentCode, 0, 1); // "1"
-                    $newCode = $base . $childIndex . '00'; // "1" + "1" + "00" = "1100"
+                    $newCode = $base.$childIndex.'00'; // "1" + "1" + "00" = "1100"
                 } elseif ($level == 2) {
                     // Child of Level 1 (e.g., Accounts Receivable) -> 1110
                     $base = substr($parentCode, 0, 2); // "11"
-                    $newCode = $base . $childIndex . '0'; // "11" + "1" + "0" = "1110"
+                    $newCode = $base.$childIndex.'0'; // "11" + "1" + "0" = "1110"
                 } elseif ($level == 3) {
                     // Child of Level 2 (e.g., Debtors) -> 1111
                     $base = substr($parentCode, 0, 3); // "111"
-                    $newCode = $base . $childIndex; // "111" + "1" = "1111"
+                    $newCode = $base.$childIndex; // "111" + "1" = "1111"
                 } else {
                     // Deeper levels -> 11111, 111111
                     $base = $parentCode;
-                    $newCode = $base . $childIndex; // "1111" + "1" = "11111"
+                    $newCode = $base.$childIndex; // "1111" + "1" = "11111"
                 }
             }
 
@@ -200,7 +203,7 @@ class ChartOfAccountSeeder extends Seeder
                 'normal_balance' => $normalBalance,
                 'description' => $row['type'] ?: null,
                 'is_group' => (bool) $row['is_group'],
-                'is_active' => !(bool) $row['disabled'],
+                'is_active' => ! (bool) $row['disabled'],
                 'created_at' => $now,
                 'updated_at' => $now,
             ];

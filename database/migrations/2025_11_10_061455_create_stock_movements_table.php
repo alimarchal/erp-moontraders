@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -23,7 +22,9 @@ return new class extends Migration
                 'adjustment',    // Stock correction
                 'damage',        // Damaged/expired
                 'theft',         // Theft/loss
-                'sale',           // Sales settlement
+                'sale',          // Sales settlement
+                'return',        // Sales return to warehouse
+                'shortage',      // Sales shortage/loss
             ])->index();
 
             // Polymorphic Reference

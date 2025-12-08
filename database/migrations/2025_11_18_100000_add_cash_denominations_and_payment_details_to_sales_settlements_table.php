@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -25,6 +24,7 @@ return new class extends Migration
             // Bank transfer/online payment details
             $table->decimal('bank_transfer_amount', 15, 2)->default(0)->after('denom_coins');
             $table->foreignId('bank_account_id')->nullable()->after('bank_transfer_amount')->constrained('bank_accounts')->nullOnDelete();
+            $table->json('bank_transfers')->nullable()->after('bank_account_id')->comment('Array of bank transfers with bank_account_id and amount');
 
             // Cheque details
             $table->integer('cheque_count')->default(0)->after('bank_account_id');
@@ -50,6 +50,7 @@ return new class extends Migration
                 'denom_coins',
                 'bank_transfer_amount',
                 'bank_account_id',
+                'bank_transfers',
                 'cheque_count',
                 'cheque_details',
             ]);

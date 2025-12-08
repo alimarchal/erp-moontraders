@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -39,6 +38,8 @@ return new class extends Migration
             $table->decimal('cash_collected', 15, 2)->default(0);
             $table->decimal('cheques_collected', 15, 2)->default(0);
             $table->decimal('expenses_claimed', 15, 2)->default(0);
+            $table->decimal('gross_profit', 15, 2)->nullable()->comment('Calculated: total_sales_amount - total_cogs');
+            $table->decimal('total_cogs', 15, 2)->nullable()->comment('Total cost of goods sold');
             $table->decimal('cash_to_deposit', 15, 2)->default(0);
 
             // Credit Recoveries

@@ -32,9 +32,10 @@ class DistributionService
             }
 
             foreach ($goodsIssue->items as $item) {
-                // Check warehouse stock availability
+                // Lock CurrentStock row to prevent race conditions
                 $warehouseStock = CurrentStock::where('product_id', $item->product_id)
                     ->where('warehouse_id', $goodsIssue->warehouse_id)
+                    ->lockForUpdate()
                     ->first();
 
                 if (! $warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
@@ -64,18 +65,19 @@ class DistributionService
                         'reference_id' => $goodsIssue->id,
                         'movement_date' => $goodsIssue->issue_date,
                         'product_id' => $item->product_id,
-                        'stock_batch_id' => $batch->id, // NOW TRACKING BATCH
+                        'stock_batch_id' => $batch->id,
                         'warehouse_id' => $goodsIssue->warehouse_id,
-                        'quantity' => -$qtyFromBatch, // Negative for outgoing
+                        'quantity' => -$qtyFromBatch,
                         'uom_id' => $item->uom_id,
                         'unit_cost' => $batch->unit_cost,
                         'total_value' => $qtyFromBatch * $batch->unit_cost,
                         'created_by' => auth()->id() ?? 1,
                     ]);
 
-                    // Update current_stock_by_batch
+                    // Lock and update current_stock_by_batch
                     $stockByBatch = CurrentStockByBatch::where('stock_batch_id', $batch->id)
                         ->where('warehouse_id', $goodsIssue->warehouse_id)
+                        ->lockForUpdate()
                         ->first();
 
                     if ($stockByBatch) {
@@ -88,10 +90,11 @@ class DistributionService
                         $stockByBatch->save();
                     }
 
-                    // Update stock valuation layer
+                    // Lock and update stock valuation layer
                     $valuationLayer = StockValuationLayer::where('stock_batch_id', $batch->id)
                         ->where('warehouse_id', $goodsIssue->warehouse_id)
                         ->where('quantity_remaining', '>', 0)
+                        ->lockForUpdate()
                         ->first();
 
                     if ($valuationLayer) {
@@ -103,12 +106,8 @@ class DistributionService
                     }
                 }
 
-                // Update warehouse current stock
-                $warehouseStock->quantity_on_hand -= $item->quantity_issued;
-                $warehouseStock->quantity_available -= $item->quantity_issued;
-                $warehouseStock->total_value = $warehouseStock->quantity_on_hand * $warehouseStock->average_cost;
-                $warehouseStock->last_updated = now();
-                $warehouseStock->save();
+                // Recalculate CurrentStock from StockValuationLayer (source of truth)
+                $this->syncCurrentStockFromValuationLayers($item->product_id, $goodsIssue->warehouse_id);
 
                 // Update or create van stock balance (aggregate, not batch-specific)
                 $vanStock = VanStockBalance::firstOrNew([
@@ -213,6 +212,67 @@ class DistributionService
             'batches' => $allocations,
             'total_allocated' => $quantityNeeded - $remainingQty,
         ];
+    }
+
+    /**
+     * Sync CurrentStock from StockValuationLayer (source of truth)
+     * This ensures CurrentStock always matches the sum of valuation layers
+     */
+    private function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
+    {
+        // Calculate totals from stock_valuation_layers (source of truth)
+        $layerData = StockValuationLayer::where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->selectRaw('
+                COALESCE(SUM(quantity_remaining), 0) as total_qty,
+                COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value
+            ')
+            ->first();
+
+        $totalQty = (float) ($layerData->total_qty ?? 0);
+        $totalValue = (float) ($layerData->total_value ?? 0);
+        $avgCost = $totalQty > 0 ? $totalValue / $totalQty : 0;
+
+        // Count batches from current_stock_by_batch
+        $totalBatches = CurrentStockByBatch::where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->where('quantity_on_hand', '>', 0)
+            ->count();
+
+        $promotionalBatches = CurrentStockByBatch::where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->where('is_promotional', true)
+            ->where('quantity_on_hand', '>', 0)
+            ->count();
+
+        $priorityBatches = CurrentStockByBatch::where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->where('priority_order', '<', 99)
+            ->where('quantity_on_hand', '>', 0)
+            ->count();
+
+        // Update or create CurrentStock with calculated values
+        $currentStock = CurrentStock::lockForUpdate()->firstOrNew([
+            'product_id' => $productId,
+            'warehouse_id' => $warehouseId,
+        ]);
+
+        $currentStock->quantity_on_hand = $totalQty;
+        $currentStock->quantity_available = $totalQty - ($currentStock->quantity_reserved ?? 0);
+        $currentStock->average_cost = $avgCost;
+        $currentStock->total_value = $totalValue;
+        $currentStock->total_batches = $totalBatches;
+        $currentStock->promotional_batches = $promotionalBatches;
+        $currentStock->priority_batches = $priorityBatches;
+        $currentStock->last_updated = now();
+        $currentStock->save();
+
+        Log::debug('CurrentStock synced from valuation layers', [
+            'product_id' => $productId,
+            'warehouse_id' => $warehouseId,
+            'quantity_on_hand' => $totalQty,
+            'total_value' => $totalValue,
+        ]);
     }
 
     /**
@@ -352,28 +412,9 @@ class DistributionService
                 $vanStock->last_updated = now();
                 $vanStock->save();
 
-                // Update warehouse current stock for returns
-                if ($item->quantity_returned > 0) {
-                    $warehouseStock = CurrentStock::firstOrNew([
-                        'product_id' => $item->product_id,
-                        'warehouse_id' => $settlement->warehouse_id,
-                    ]);
-
-                    $warehouseStock->quantity_on_hand += $item->quantity_returned;
-                    $warehouseStock->quantity_available += $item->quantity_returned;
-
-                    // Recalculate average cost using batch costs
-                    $returnValue = 0;
-                    foreach ($item->batches as $itemBatch) {
-                        $returnValue += $itemBatch->quantity_returned * $itemBatch->unit_cost;
-                    }
-
-                    $totalQty = $warehouseStock->quantity_on_hand;
-                    $totalValue = ($warehouseStock->total_value ?? 0) + $returnValue;
-                    $warehouseStock->average_cost = $totalQty > 0 ? $totalValue / $totalQty : 0;
-                    $warehouseStock->total_value = $totalValue;
-                    $warehouseStock->last_updated = now();
-                    $warehouseStock->save();
+                // Sync warehouse CurrentStock from valuation layers for returns/shortages
+                if ($item->quantity_returned > 0 || $item->quantity_shortage > 0) {
+                    $this->syncCurrentStockFromValuationLayers($item->product_id, $settlement->warehouse_id);
                 }
 
                 // Calculate gross profit for this item

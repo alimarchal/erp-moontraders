@@ -13,7 +13,6 @@ use App\Models\SalesSettlementItem;
 use App\Models\SalesSettlementItemBatch;
 use App\Models\SalesSettlementSale;
 use App\Services\DistributionService;
-use App\Services\LedgerService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -125,7 +124,7 @@ class SalesSettlementController extends Controller
             ->map(function ($gi) {
                 return [
                     'id' => $gi->id,
-                    'text' => $gi->issue_number.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
+                    'text' => $gi->issue_number . ' - ' . $gi->employee->full_name . ' (' . $gi->issue_date->format('d M Y') . ')',
                 ];
             });
 
@@ -256,7 +255,7 @@ class SalesSettlementController extends Controller
 
                 // Calculate selling price from batches or use unit_cost as fallback
                 $sellingPrice = $item['selling_price'] ?? null;
-                if (! $sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
+                if (!$sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
                     $totalQty = 0;
                     $totalValue = 0;
                     foreach ($item['batches'] as $batch) {
@@ -374,7 +373,7 @@ class SalesSettlementController extends Controller
             foreach ($request->items as $index => $item) {
                 // Calculate selling price from batches if not provided at item level
                 $sellingPrice = $item['selling_price'] ?? 0;
-                if (! $sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
+                if (!$sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
                     $totalQty = 0;
                     $totalValue = 0;
                     foreach ($item['batches'] as $batch) {
@@ -428,7 +427,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (! empty($request->sales)) {
+            if (!empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -441,7 +440,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
+            if (!empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -456,7 +455,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create advance tax breakdown records if any
-            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
+            if (!empty($request->advance_taxes) && is_array($request->advance_taxes)) {
                 foreach ($request->advance_taxes as $advanceTax) {
                     SalesSettlementAdvanceTax::create([
                         'sales_settlement_id' => $settlement->id,
@@ -470,19 +469,14 @@ class SalesSettlementController extends Controller
                 }
             }
 
-            // Create ledger entries for customers and salesman
-            $ledgerService = app(LedgerService::class);
-            $ledgerResult = $ledgerService->processSalesSettlement($settlement);
-
-            if (! $ledgerResult['success']) {
-                throw new \Exception('Ledger processing failed: '.$ledgerResult['message']);
-            }
+            // NOTE: Ledger entries are created when the settlement is POSTED
+            // via DistributionService::postSalesSettlement() to avoid duplicates
 
             DB::commit();
 
             return redirect()
                 ->route('sales-settlements.show', $settlement)
-                ->with('success', "Sales Settlement '{$settlement->settlement_number}' created successfully.");
+                ->with('success', "Sales Settlement '{$settlement->settlement_number}' created successfully. Please POST the settlement to finalize.");
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -495,7 +489,7 @@ class SalesSettlementController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Sales Settlement: '.$e->getMessage());
+                ->with('error', 'Unable to create Sales Settlement: ' . $e->getMessage());
         }
     }
 
@@ -594,7 +588,7 @@ class SalesSettlementController extends Controller
 
                 // Calculate selling price from batches if available
                 $sellingPrice = $item['selling_price'] ?? null;
-                if (! $sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
+                if (!$sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
                     $totalQty = 0;
                     $totalValue = 0;
                     foreach ($item['batches'] as $batch) {
@@ -694,7 +688,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (! empty($request->sales)) {
+            if (!empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -707,7 +701,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
+            if (!empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $salesSettlement->id,

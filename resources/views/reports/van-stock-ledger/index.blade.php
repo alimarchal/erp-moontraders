@@ -85,134 +85,76 @@
         </div>
     </div>
 
-    <div class="py-2">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-4 sm:p-6">
-                    <!-- Results Count -->
-                    <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <span class="text-sm text-gray-700">
-                            Showing {{ $movements->firstItem() ?? 0 }} to {{ $movements->lastItem() ?? 0 }}
-                            of {{ number_format($movements->total()) }} movements
-                        </span>
-                    </div>
-
-                    <!-- Responsive Table -->
-                    <div class="overflow-x-auto -mx-4 sm:mx-0">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th
-                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                        Date</th>
-                                    <th
-                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                        Vehicle</th>
-                                    <th
-                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                        Product</th>
-                                    <th
-                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                        Movement Type</th>
-                                    <th
-                                        class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                        Qty</th>
-                                    <th
-                                        class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                        Unit Cost</th>
-                                    <th
-                                        class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                        Total Value</th>
-                                    <th
-                                        class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
-                                        Reference</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($movements as $movement)
-                                <tr
-                                    class="hover:bg-gray-50 {{ $movement->quantity > 0 ? 'bg-green-50' : 'bg-red-50' }}">
-                                    <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                                        {{ \Carbon\Carbon::parse($movement->movement_date)->format('M d, Y') }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                                        @if($movement->stockBatch?->grn?->vehicle)
-                                        <a href="{{ route('reports.van-stock-ledger.vehicle-ledger', $movement->stockBatch->grn->vehicle) }}"
-                                            class="text-indigo-600 hover:text-indigo-900" target="_blank">
-                                            {{ $movement->stockBatch->grn->vehicle->vehicle_number }}
-                                        </a>
-                                        @else
-                                        -
-                                        @endif
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                                        {{ $movement->product?->product_name ?? '-' }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm whitespace-nowrap">
-                                        <span class="px-2 py-1 rounded-full text-xs font-medium
-                                            @if(in_array($movement->movement_type, ['issue', 'goods_issue']))
-                                                bg-blue-100 text-blue-800
-                                            @elseif(in_array($movement->movement_type, ['sale', 'settlement_sale']))
-                                                bg-green-100 text-green-800
-                                            @elseif(in_array($movement->movement_type, ['return', 'settlement_return']))
-                                                bg-yellow-100 text-yellow-800
-                                            @elseif(in_array($movement->movement_type, ['shortage', 'settlement_shortage']))
-                                                bg-red-100 text-red-800
-                                            @else
-                                                bg-gray-100 text-gray-800
-                                            @endif">
-                                            {{ ucwords(str_replace('_', ' ', $movement->movement_type)) }}
-                                        </span>
-                                    </td>
-                                    <td
-                                        class="px-4 py-3 text-sm text-right whitespace-nowrap {{ $movement->quantity > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium' }}">
-                                        {{ $movement->quantity > 0 ? '+' : '' }}{{ number_format($movement->quantity) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 text-right whitespace-nowrap">
-                                        PKR {{ number_format($movement->unit_cost, 2) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-gray-900 text-right whitespace-nowrap">
-                                        PKR {{ number_format(abs($movement->quantity * $movement->unit_cost), 2) }}
-                                    </td>
-                                    <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                        @if($movement->reference)
-                                        @php
-                                        $refClass = class_basename($movement->reference_type);
-                                        @endphp
-                                        {{ $refClass }}: {{ $movement->reference->reference_number ??
-                                        $movement->reference->id ?? '-' }}
-                                        @else
-                                        -
-                                        @endif
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
-                                        <div class="flex flex-col items-center">
-                                            <svg class="w-12 h-12 text-gray-300 mb-2" fill="none" stroke="currentColor"
-                                                viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                                            </svg>
-                                            <p>No stock movements found</p>
-                                            <p class="text-xs mt-1">Try adjusting your filters</p>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    @if($movements->hasPages())
-                    <div class="mt-4">
-                        {{ $movements->links() }}
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
+    <x-data-table :items="$movements" :headers="[
+        ['label' => '#', 'align' => 'text-center'],
+        ['label' => 'Date'],
+        ['label' => 'Vehicle'],
+        ['label' => 'Product'],
+        ['label' => 'Movement Type'],
+        ['label' => 'Qty', 'align' => 'text-right'],
+        ['label' => 'Unit Cost', 'align' => 'text-right'],
+        ['label' => 'Total Value', 'align' => 'text-right'],
+        ['label' => 'Reference'],
+    ]" emptyMessage="No stock movements found. Try adjusting your filters.">
+        @foreach($movements as $index => $movement)
+        <tr
+            class="border-b border-gray-200 text-sm hover:bg-gray-50 {{ $movement->quantity > 0 ? 'bg-green-50' : 'bg-red-50' }}">
+            <td class="py-1 px-2 text-center">
+                {{ $movements->firstItem() + $index }}
+            </td>
+            <td class="py-1 px-2 whitespace-nowrap">
+                {{ \Carbon\Carbon::parse($movement->movement_date)->format('d-m-Y') }}
+            </td>
+            <td class="py-1 px-2 whitespace-nowrap">
+                @if($movement->stockBatch?->grn?->vehicle)
+                <a href="{{ route('reports.van-stock-ledger.vehicle-ledger', $movement->stockBatch->grn->vehicle) }}"
+                    class="text-indigo-600 hover:text-indigo-900" target="_blank">
+                    {{ $movement->stockBatch->grn->vehicle->vehicle_number }}
+                </a>
+                @else
+                -
+                @endif
+            </td>
+            <td class="py-1 px-2 whitespace-nowrap">
+                {{ $movement->product?->product_name ?? '-' }}
+            </td>
+            <td class="py-1 px-2 whitespace-nowrap">
+                <span class="px-2 py-1 rounded-full text-xs font-medium
+                    @if(in_array($movement->movement_type, ['issue', 'goods_issue']))
+                        bg-blue-100 text-blue-800
+                    @elseif(in_array($movement->movement_type, ['sale', 'settlement_sale']))
+                        bg-green-100 text-green-800
+                    @elseif(in_array($movement->movement_type, ['return', 'settlement_return']))
+                        bg-yellow-100 text-yellow-800
+                    @elseif(in_array($movement->movement_type, ['shortage', 'settlement_shortage']))
+                        bg-red-100 text-red-800
+                    @else
+                        bg-gray-100 text-gray-800
+                    @endif">
+                    {{ ucwords(str_replace('_', ' ', $movement->movement_type)) }}
+                </span>
+            </td>
+            <td
+                class="py-1 px-2 text-right font-mono {{ $movement->quantity > 0 ? 'text-green-600 font-medium' : 'text-red-600 font-medium' }}">
+                {{ $movement->quantity > 0 ? '+' : '' }}{{ number_format($movement->quantity) }}
+            </td>
+            <td class="py-1 px-2 text-right font-mono">
+                {{ number_format($movement->unit_cost, 2) }}
+            </td>
+            <td class="py-1 px-2 text-right font-mono">
+                {{ number_format(abs($movement->quantity * $movement->unit_cost), 2) }}
+            </td>
+            <td class="py-1 px-2 text-gray-500 whitespace-nowrap">
+                @if($movement->reference)
+                @php
+                $refClass = class_basename($movement->reference_type);
+                @endphp
+                {{ $refClass }}: {{ $movement->reference->reference_number ?? $movement->reference->id ?? '-' }}
+                @else
+                -
+                @endif
+            </td>
+        </tr>
+        @endforeach
+    </x-data-table>
 </x-app-layout>

@@ -5,17 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\CreditSale;
 use App\Models\Customer;
 use App\Models\Employee;
+use Illuminate\Http\Request;
 
 class CreditSalesReportController extends Controller
 {
-    public function salesmanCreditHistory()
+    public function salesmanCreditHistory(Request $request)
     {
-        $salesmenWithCredits = Employee::whereHas('creditSales')
+        $query = Employee::whereHas('creditSales')
             ->withCount('creditSales')
             ->withSum('creditSales', 'sale_amount')
-            ->with('supplier')
-            ->orderBy('credit_sales_sum_sale_amount', 'desc')
-            ->get();
+            ->with('supplier');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('first_name', 'like', "%{$search}%")
+                    ->orWhere('last_name', 'like', "%{$search}%")
+                    ->orWhere('employee_code', 'like', "%{$search}%");
+            });
+        }
+
+        $salesmenWithCredits = $query->orderBy('credit_sales_sum_sale_amount', 'desc')
+            ->paginate(50)
+            ->withQueryString();
 
         return view('reports.credit-sales.salesman-history', [
             'salesmen' => $salesmenWithCredits,
@@ -35,13 +47,25 @@ class CreditSalesReportController extends Controller
         ]);
     }
 
-    public function customerCreditHistory()
+    public function customerCreditHistory(Request $request)
     {
-        $customersWithCredits = Customer::whereHas('creditSales')
+        $query = Customer::whereHas('creditSales')
             ->withCount('creditSales')
-            ->withSum('creditSales', 'sale_amount')
-            ->orderBy('credit_sales_sum_sale_amount', 'desc')
-            ->get();
+            ->withSum('creditSales', 'sale_amount');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('customer_name', 'like', "%{$search}%")
+                    ->orWhere('customer_code', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('business_name', 'like', "%{$search}%");
+            });
+        }
+
+        $customersWithCredits = $query->orderBy('credit_sales_sum_sale_amount', 'desc')
+            ->paginate(50)
+            ->withQueryString();
 
         return view('reports.credit-sales.customer-history', [
             'customers' => $customersWithCredits,

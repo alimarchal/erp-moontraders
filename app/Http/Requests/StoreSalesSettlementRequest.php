@@ -15,6 +15,31 @@ class StoreSalesSettlementRequest extends FormRequest
     }
 
     /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation(): void
+    {
+        // Decode JSON strings from modals before validation
+        if ($this->has('credit_sales') && is_string($this->credit_sales)) {
+            $this->merge([
+                'credit_sales' => json_decode($this->credit_sales, true),
+            ]);
+        }
+
+        if ($this->has('bank_transfers') && is_string($this->bank_transfers)) {
+            $this->merge([
+                'bank_transfers' => json_decode($this->bank_transfers, true),
+            ]);
+        }
+
+        if ($this->has('cheques') && is_string($this->cheques)) {
+            $this->merge([
+                'cheques' => json_decode($this->cheques, true),
+            ]);
+        }
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>

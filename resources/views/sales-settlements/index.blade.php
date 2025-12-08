@@ -44,6 +44,7 @@
             ['label' => 'Vehicle'],
             ['label' => 'Total Sales', 'align' => 'text-right'],
             ['label' => 'Cash/Credit', 'align' => 'text-right'],
+            ['label' => 'Profit', 'align' => 'text-right'],
             ['label' => 'Status', 'align' => 'text-center'],
             ['label' => 'Actions', 'align' => 'text-center'],
         ]" emptyMessage="No sales settlements found." :emptyRoute="route('sales-settlements.create')"
@@ -83,6 +84,16 @@
                 <div class="text-xs text-orange-700">
                     Credit: Rs {{ number_format($settlement->credit_sales_amount, 2) }}
                 </div>
+            </td>
+            <td class="py-1 px-2 text-right">
+                <div class="font-semibold {{ $settlement->gross_profit > 0 ? 'text-green-700' : 'text-red-700' }}">
+                    Rs {{ number_format($settlement->gross_profit ?? 0, 2) }}
+                </div>
+                @if($settlement->total_cogs > 0)
+                <div class="text-xs text-gray-500">
+                    COGS: Rs {{ number_format($settlement->total_cogs, 2) }}
+                </div>
+                @endif
             </td>
             <td class="py-1 px-2 text-center">
                 <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full

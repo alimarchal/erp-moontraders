@@ -328,6 +328,71 @@
                     </div>
                     @endif
 
+                    {{-- Bank Transfer / Online Payment Details Section --}}
+                    @if($settlement->bank_transfers && is_array($settlement->bank_transfers) && count($settlement->bank_transfers) > 0)
+                    <hr class="my-6 border-gray-200">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        Bank Transfer / Online Payment Details ({{ count($settlement->bank_transfers) }} Transfer{{ count($settlement->bank_transfers) > 1 ? 's' : '' }})
+                    </h3>
+
+                    <div class="bg-white border-2 border-blue-200 rounded-lg overflow-hidden shadow-sm">
+                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3">
+                            <div class="grid grid-cols-4 gap-4">
+                                <div class="text-xs font-bold text-white uppercase">Customer</div>
+                                <div class="text-xs font-bold text-white uppercase">Reference / Transaction ID</div>
+                                <div class="text-xs font-bold text-white uppercase text-right">Amount</div>
+                                <div class="text-xs font-bold text-white uppercase">Notes</div>
+                            </div>
+                        </div>
+                        <div class="divide-y divide-gray-200">
+                            @foreach($settlement->bank_transfers as $index => $transfer)
+                            <div class="px-4 py-4 hover:bg-blue-50 transition-colors {{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
+                                <div class="grid grid-cols-4 gap-4 items-center">
+                                    <div class="flex items-center">
+                                        <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded flex items-center justify-center">
+                                            <svg class="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                            </svg>
+                                        </div>
+                                        <div class="ml-3">
+                                            <div class="text-sm font-semibold text-gray-900">
+                                                @if(isset($transfer['customer_id']) && $transfer['customer_id'])
+                                                    @php
+                                                        $customer = \App\Models\Customer::find($transfer['customer_id']);
+                                                    @endphp
+                                                    {{ $customer ? $customer->customer_name : 'N/A' }}
+                                                @else
+                                                    General Transfer
+                                                @endif
+                                            </div>
+                                            <div class="text-xs text-gray-500">Transfer #{{ $index + 1 }}</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-sm font-mono text-gray-700">
+                                        {{ $transfer['reference'] ?? 'N/A' }}
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-base font-bold text-blue-700">₨ {{ number_format($transfer['amount'] ?? 0, 2) }}</span>
+                                    </div>
+                                    <div class="text-sm text-gray-600">
+                                        {{ $transfer['notes'] ?? '-' }}
+                                    </div>
+                                </div>
+                            </div>
+                            @endforeach
+                        </div>
+                        <div class="bg-gradient-to-r from-blue-100 to-blue-50 border-t-2 border-blue-300 px-4 py-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm font-bold text-blue-900">Total Bank Transfers ({{ count($settlement->bank_transfers) }} transaction{{ count($settlement->bank_transfers) > 1 ? 's' : '' }}):</span>
+                                <span class="text-xl font-bold text-blue-900">₨ {{ number_format($settlement->bank_transfer_amount, 2) }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
                     {{-- Credit Recoveries Section --}}
                     @if($settlement->credit_recoveries > 0)
                     <hr class="my-6 border-gray-200">
@@ -354,6 +419,37 @@
                             <div class="text-right">
                                 <p class="text-4xl font-bold text-teal-900">₨ {{ number_format($settlement->credit_recoveries, 2) }}</p>
                                 <p class="text-xs text-teal-700 mt-1 font-semibold">Reduces Accounts Receivable</p>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Advance Tax Section --}}
+                    @if($settlement->expense_advance_tax > 0)
+                    <hr class="my-6 border-gray-200">
+                    <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
+                        <svg class="w-6 h-6 mr-2 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l3.5-2 3.5 2 3.5-2 3.5 2zM10 8.5a.5.5 0 11-1 0 .5.5 0 011 0zm5 5a.5.5 0 11-1 0 .5.5 0 011 0z" />
+                        </svg>
+                        Advance Tax Deduction (Account Code: 1171)
+                    </h3>
+
+                    <div class="bg-gradient-to-r from-amber-50 to-yellow-50 border-2 border-amber-300 rounded-lg p-6 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="bg-amber-100 rounded-full p-4 mr-4">
+                                    <svg class="w-8 h-8 text-amber-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <p class="text-sm font-semibold text-gray-600 uppercase tracking-wide">Advance Income Tax Withheld</p>
+                                    <p class="text-xs text-gray-500 mt-1">Deducted at source as per tax regulations</p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-4xl font-bold text-amber-900">₨ {{ number_format($settlement->expense_advance_tax, 2) }}</p>
+                                <p class="text-xs text-amber-700 mt-1 font-semibold">Government Tax Liability</p>
                             </div>
                         </div>
                     </div>

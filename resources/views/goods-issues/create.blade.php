@@ -342,7 +342,7 @@
                         if (remainingQty <= 0) break;
 
                         const qtyFromBatch = Math.min(remainingQty, batch.quantity);
-                        const batchValue = qtyFromBatch * batch.selling_price;
+                        const batchValue = qtyFromBatch * batch.unit_cost;
                         totalValue += batchValue;
                         remainingQty -= qtyFromBatch;
 
@@ -350,7 +350,7 @@
                             batchesUsed.push({
                                 code: batch.batch_code,
                                 qty: qtyFromBatch,
-                                price: batch.selling_price,
+                                price: batch.unit_cost,
                                 value: batchValue,
                                 is_promotional: batch.is_promotional
                             });

@@ -562,7 +562,8 @@
                                     <x-cheque-payment-modal
                                         :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
                                     <x-credit-sales-modal
-                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
+                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
+                                        entriesInputId="credit_sales" />
                                 </div>
                             </div>
                         </div>
@@ -882,6 +883,36 @@
             document.getElementById('summary_net_balance').value = netBalance.toFixed(2);
             document.getElementById('summary_short_excess').value = shortExcess.toFixed(2);
 
+            // Calculate and populate sales breakdown for controller
+            // Credit sales and cheques are captured separately via modals
+            const creditSalesAmount = parseFloat(document.getElementById('credit_sales_amount').value) || 0;
+            const chequeSalesAmount = parseFloat(document.getElementById('total_cheques').value) || 0;
+
+            // Cash sales = Net Sale - Credit Sales - Cheque Sales
+            const cashSalesAmount = Math.max(0, netSale - creditSalesAmount - chequeSalesAmount);
+
+            // Create or update hidden input for cash_sales_amount if it doesn't exist
+            let cashSalesInput = document.getElementById('cash_sales_amount');
+            if (!cashSalesInput) {
+                cashSalesInput = document.createElement('input');
+                cashSalesInput.type = 'hidden';
+                cashSalesInput.id = 'cash_sales_amount';
+                cashSalesInput.name = 'cash_sales_amount';
+                document.getElementById('settlementForm').appendChild(cashSalesInput);
+            }
+            cashSalesInput.value = cashSalesAmount.toFixed(2);
+
+            // Also update cheque_sales_amount in case it's not set
+            let chequeSalesInput = document.getElementById('cheque_sales_amount');
+            if (!chequeSalesInput) {
+                chequeSalesInput = document.createElement('input');
+                chequeSalesInput.type = 'hidden';
+                chequeSalesInput.id = 'cheque_sales_amount';
+                chequeSalesInput.name = 'cheque_sales_amount';
+                document.getElementById('settlementForm').appendChild(chequeSalesInput);
+            }
+            chequeSalesInput.value = chequeSalesAmount.toFixed(2);
+
             // Format currency for display
             const formatPKR = (val) => '₨ ' + val.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
 
@@ -1052,8 +1083,10 @@
                 }
 
 
-                // Hidden fields for product-level data
-                let hiddenFields = `
+                // Container div for product-level hidden fields (will be placed outside the table)
+                let hiddenFieldsContainer = document.createElement('div');
+                hiddenFieldsContainer.className = 'hidden-fields-container';
+                hiddenFieldsContainer.innerHTML = `
                     <input type="hidden" name="items[${index}][goods_issue_item_id]" value="${item.id}">
                     <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
                     <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
@@ -1143,16 +1176,25 @@
                                 <td class="py-1 px-1 text-right">
                                     <span id="balance-${index}-${batchIdx}" class="font-bold text-red-600">0</span>
                                 </td>
-                                <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
-                                <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
-                                <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
-                                <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
-                                <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
-                                <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
+                            </tr>
+                            <tr class="hidden-row" style="display:none;">
+                                <td colspan="10">
+                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
+                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
+                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
+                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
+                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
+                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
+                                </td>
                             </tr>
                         `;
-                        settlementItemsBody.innerHTML += settlementRow + hiddenFields;
-                        hiddenFields = ''; // Only add once
+                        settlementItemsBody.innerHTML += settlementRow;
+
+                        // Add product-level hidden fields only once (on first batch)
+                        if (batchIdx === 0) {
+                            // Append hidden fields container to the form (outside the table)
+                            document.getElementById('settlementForm').appendChild(hiddenFieldsContainer);
+                        }
                     });
                 }
             });

@@ -124,7 +124,7 @@ class SalesSettlementController extends Controller
             ->map(function ($gi) {
                 return [
                     'id' => $gi->id,
-                    'text' => $gi->issue_number . ' - ' . $gi->employee->full_name . ' (' . $gi->issue_date->format('d M Y') . ')',
+                    'text' => $gi->issue_number.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
                 ];
             });
 
@@ -223,6 +223,13 @@ class SalesSettlementController extends Controller
             // Get goods issue
             $goodsIssue = GoodsIssue::with('items')->findOrFail($request->goods_issue_id);
 
+            // Debug: Log the incoming request data
+            Log::info('Sales Settlement Request Data', [
+                'goods_issue_id' => $request->goods_issue_id,
+                'items_count' => count($request->items ?? []),
+                'items_data' => $request->items,
+            ]);
+
             // Generate settlement number
             $settlementNumber = $this->generateSettlementNumber();
 
@@ -232,6 +239,8 @@ class SalesSettlementController extends Controller
             $totalQuantitySold = 0;
             $totalQuantityReturned = 0;
             $totalQuantityShortage = 0;
+            $totalCogs = 0;
+            $totalSalesValue = 0;
 
             foreach ($request->items as $item) {
                 $totalQuantityIssued += $item['quantity_issued'];
@@ -239,7 +248,34 @@ class SalesSettlementController extends Controller
                 $totalQuantitySold += $item['quantity_sold'];
                 $totalQuantityReturned += $item['quantity_returned'] ?? 0;
                 $totalQuantityShortage += $item['quantity_shortage'] ?? 0;
+
+                // Calculate COGS (Cost of Goods Sold) and Sales Value
+                $itemCogs = $item['quantity_sold'] * $item['unit_cost'];
+                $totalCogs += $itemCogs;
+
+                // Calculate selling price from batches or use unit_cost as fallback
+                $sellingPrice = $item['selling_price'] ?? null;
+                if (! $sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
+                    $totalQty = 0;
+                    $totalValue = 0;
+                    foreach ($item['batches'] as $batch) {
+                        $batchQty = $batch['quantity_issued'] ?? 0;
+                        $batchPrice = $batch['selling_price'] ?? 0;
+                        $totalQty += $batchQty;
+                        $totalValue += $batchQty * $batchPrice;
+                    }
+                    $sellingPrice = $totalQty > 0 ? $totalValue / $totalQty : 0;
+                }
+                if (empty($sellingPrice)) {
+                    $sellingPrice = $item['unit_cost'] ?? 0;
+                }
+
+                $itemSalesValue = $item['quantity_sold'] * $sellingPrice;
+                $totalSalesValue += $itemSalesValue;
             }
+
+            // Calculate Gross Profit = Sales Value - COGS
+            $grossProfit = $totalSalesValue - $totalCogs;
 
             $totalSalesAmount = ($request->cash_sales_amount ?? 0) +
                 ($request->cheque_sales_amount ?? 0) +
@@ -300,6 +336,8 @@ class SalesSettlementController extends Controller
                 'cash_collected' => $request->summary_cash_received ?? 0,
                 'cheques_collected' => $totalCheques,
                 'expenses_claimed' => $totalExpenses,
+                'gross_profit' => $grossProfit,
+                'total_cogs' => $totalCogs,
                 'expense_toll_tax' => $request->expense_toll_tax ?? 0,
                 'expense_amr_powder_claim' => $request->expense_amr_powder_claim ?? 0,
                 'expense_amr_liquid_claim' => $request->expense_amr_liquid_claim ?? 0,
@@ -335,7 +373,7 @@ class SalesSettlementController extends Controller
             foreach ($request->items as $index => $item) {
                 // Calculate selling price from batches if not provided at item level
                 $sellingPrice = $item['selling_price'] ?? 0;
-                if (!$sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
+                if (! $sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
                     $totalQty = 0;
                     $totalValue = 0;
                     foreach ($item['batches'] as $batch) {
@@ -345,6 +383,11 @@ class SalesSettlementController extends Controller
                         $totalValue += $batchQty * $batchPrice;
                     }
                     $sellingPrice = $totalQty > 0 ? $totalValue / $totalQty : 0;
+                }
+
+                // Ensure selling price is never null or empty - use unit_cost as fallback
+                if (empty($sellingPrice)) {
+                    $sellingPrice = $item['unit_cost'] ?? 0;
                 }
 
                 $cogs = $item['quantity_sold'] * $item['unit_cost'];
@@ -383,7 +426,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (!empty($request->sales)) {
+            if (! empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -396,7 +439,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (!empty($request->credit_sales)) {
+            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -414,8 +457,8 @@ class SalesSettlementController extends Controller
             $ledgerService = app(LedgerService::class);
             $ledgerResult = $ledgerService->processSalesSettlement($settlement);
 
-            if (!$ledgerResult['success']) {
-                throw new \Exception('Ledger processing failed: ' . $ledgerResult['message']);
+            if (! $ledgerResult['success']) {
+                throw new \Exception('Ledger processing failed: '.$ledgerResult['message']);
             }
 
             DB::commit();
@@ -435,7 +478,7 @@ class SalesSettlementController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Sales Settlement: ' . $e->getMessage());
+                ->with('error', 'Unable to create Sales Settlement: '.$e->getMessage());
         }
     }
 
@@ -518,6 +561,8 @@ class SalesSettlementController extends Controller
             $totalQuantitySold = 0;
             $totalQuantityReturned = 0;
             $totalQuantityShortage = 0;
+            $totalCogs = 0;
+            $totalSalesValue = 0;
 
             foreach ($request->items as $item) {
                 $totalQuantityIssued += $item['quantity_issued'];
@@ -525,7 +570,37 @@ class SalesSettlementController extends Controller
                 $totalQuantitySold += $item['quantity_sold'];
                 $totalQuantityReturned += $item['quantity_returned'] ?? 0;
                 $totalQuantityShortage += $item['quantity_shortage'] ?? 0;
+
+                // Calculate COGS for this item
+                $itemCogs = $item['quantity_sold'] * $item['unit_cost'];
+                $totalCogs += $itemCogs;
+
+                // Calculate selling price from batches if available
+                $sellingPrice = $item['selling_price'] ?? null;
+                if (! $sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
+                    $totalQty = 0;
+                    $totalValue = 0;
+                    foreach ($item['batches'] as $batch) {
+                        $batchQty = $batch['quantity_issued'] ?? 0;
+                        $batchPrice = $batch['selling_price'] ?? 0;
+                        $totalQty += $batchQty;
+                        $totalValue += $batchQty * $batchPrice;
+                    }
+                    $sellingPrice = $totalQty > 0 ? $totalValue / $totalQty : 0;
+                }
+
+                // Fall back to unit cost if no selling price
+                if (empty($sellingPrice)) {
+                    $sellingPrice = $item['unit_cost'] ?? 0;
+                }
+
+                // Calculate sales value for this item
+                $itemSalesValue = $item['quantity_sold'] * $sellingPrice;
+                $totalSalesValue += $itemSalesValue;
             }
+
+            // Calculate gross profit
+            $grossProfit = $totalSalesValue - $totalCogs;
 
             $totalSalesAmount = ($request->cash_sales_amount ?? 0) +
                 ($request->cheque_sales_amount ?? 0) +
@@ -554,6 +629,8 @@ class SalesSettlementController extends Controller
                 'cheques_collected' => $request->cheques_collected ?? 0,
                 'expenses_claimed' => $request->expenses_claimed ?? 0,
                 'cash_to_deposit' => $cashToDeposit,
+                'gross_profit' => $grossProfit,
+                'total_cogs' => $totalCogs,
                 'notes' => $request->notes,
             ]);
 
@@ -600,7 +677,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (!empty($request->sales)) {
+            if (! empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -613,7 +690,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (!empty($request->credit_sales)) {
+            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $salesSettlement->id,

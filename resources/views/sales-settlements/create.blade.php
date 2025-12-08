@@ -557,7 +557,8 @@
                                     <input type="hidden" id="summary_short_excess" value="0.00" />
 
                                     <x-advance-tax-modal
-                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
+                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
+                                        entriesInputId="advance_taxes" />
                                     <x-bank-transfer-modal
                                         :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
                                         entriesInputId="bank_transfers" />

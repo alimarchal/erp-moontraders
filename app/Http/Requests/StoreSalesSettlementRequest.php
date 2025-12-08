@@ -26,6 +26,12 @@ class StoreSalesSettlementRequest extends FormRequest
             ]);
         }
 
+        if ($this->has('advance_taxes') && is_string($this->advance_taxes)) {
+            $this->merge([
+                'advance_taxes' => json_decode($this->advance_taxes, true),
+            ]);
+        }
+
         if ($this->has('bank_transfers') && is_string($this->bank_transfers)) {
             $this->merge([
                 'bank_transfers' => json_decode($this->bank_transfers, true),
@@ -93,6 +99,15 @@ class StoreSalesSettlementRequest extends FormRequest
             'credit_sales.*.invoice_number' => 'nullable|string|max:100',
             'credit_sales.*.sale_amount' => 'required_with:credit_sales|numeric|min:0',
             'credit_sales.*.notes' => 'nullable|string',
+
+            // Advance tax breakdown
+            'advance_taxes' => 'nullable|array',
+            'advance_taxes.*.customer_id' => 'required_with:advance_taxes|exists:customers,id',
+            'advance_taxes.*.sale_amount' => 'nullable|numeric|min:0',
+            'advance_taxes.*.tax_rate' => 'nullable|numeric|min:0|max:100',
+            'advance_taxes.*.tax_amount' => 'required_with:advance_taxes|numeric|min:0',
+            'advance_taxes.*.invoice_number' => 'nullable|string|max:100',
+            'advance_taxes.*.notes' => 'nullable|string',
 
             // Bank transfers
             'bank_transfers' => 'nullable|array',

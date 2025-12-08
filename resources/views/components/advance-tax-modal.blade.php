@@ -54,7 +54,7 @@
                     <div class="md:col-span-5">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Advance Tax Deduction Amount
                             (₨)</label>
-                        <input type="number" min="0" step="0.01" x-model="form.amount"
+                        <input type="number" min="0" step="0.01" x-model="form.tax_amount"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500"
                             placeholder="0.00" @keydown.enter.prevent="addEntry()" />
                     </div>
@@ -89,7 +89,7 @@
                                     <td class="px-3 py-2 font-semibold text-gray-700" x-text="index + 1"></td>
                                     <td class="px-3 py-2 text-gray-800" x-text="entry.customer_name"></td>
                                     <td class="px-3 py-2 text-right font-semibold text-indigo-700"
-                                        x-text="formatCurrency(entry.amount)"></td>
+                                        x-text="formatCurrency(entry.tax_amount)"></td>
                                     <td class="px-3 py-2 text-center">
                                         <button type="button" @click="removeEntry(index)"
                                             class="text-red-600 hover:text-red-800 text-xs font-semibold">
@@ -134,7 +134,7 @@
             customers,
             form: {
                 customer_id: '',
-                amount: '',
+                tax_amount: '',
             },
             entries: [],
             select2Initialized: false,
@@ -172,14 +172,14 @@
 
             addEntry() {
                 const customerId = this.form.customer_id;
-                const amount = parseFloat(this.form.amount);
+                const taxAmount = parseFloat(this.form.tax_amount);
 
                 if (!customerId) {
                     alert('Please select a customer.');
                     return;
                 }
 
-                if (isNaN(amount) || amount <= 0) {
+                if (isNaN(taxAmount) || taxAmount <= 0) {
                     alert('Please enter a valid advance tax amount greater than zero.');
                     return;
                 }
@@ -189,12 +189,12 @@
                 this.entries.push({
                     customer_id: customerId,
                     customer_name: customerName,
-                    amount: parseFloat(amount.toFixed(2)),
+                    tax_amount: parseFloat(taxAmount.toFixed(2)),
                 });
 
                 // Reset form
                 this.form.customer_id = '';
-                this.form.amount = '';
+                this.form.tax_amount = '';
 
                 // Reset select2 dropdown
                 $('#advance_tax_customer_select').val(null).trigger('change');
@@ -241,8 +241,8 @@
 
             get total() {
                 return this.entries.reduce((sum, entry) => {
-                    const amount = parseFloat(entry.amount);
-                    return sum + (isNaN(amount) ? 0 : amount);
+                    const taxAmount = parseFloat(entry.tax_amount);
+                    return sum + (isNaN(taxAmount) ? 0 : taxAmount);
                 }, 0);
             },
         };

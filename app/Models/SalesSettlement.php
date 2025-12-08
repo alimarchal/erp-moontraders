@@ -145,6 +145,11 @@ class SalesSettlement extends Model
         return $this->hasMany(CreditSale::class);
     }
 
+    public function advanceTaxes(): HasMany
+    {
+        return $this->hasMany(SalesSettlementAdvanceTax::class);
+    }
+
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class);

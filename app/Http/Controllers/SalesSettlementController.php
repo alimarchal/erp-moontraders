@@ -8,6 +8,7 @@ use App\Models\CreditSale;
 use App\Models\Customer;
 use App\Models\GoodsIssue;
 use App\Models\SalesSettlement;
+use App\Models\SalesSettlementAdvanceTax;
 use App\Models\SalesSettlementItem;
 use App\Models\SalesSettlementItemBatch;
 use App\Models\SalesSettlementSale;
@@ -395,6 +396,7 @@ class SalesSettlementController extends Controller
 
                 $settlementItem = SalesSettlementItem::create([
                     'sales_settlement_id' => $settlement->id,
+                    'goods_issue_item_id' => $item['goods_issue_item_id'] ?? null,
                     'product_id' => $item['product_id'],
                     'quantity_issued' => $item['quantity_issued'],
                     'quantity_sold' => $item['quantity_sold'],
@@ -433,7 +435,7 @@ class SalesSettlementController extends Controller
                         'customer_id' => $sale['customer_id'],
                         'invoice_number' => $sale['invoice_number'] ?? null,
                         'sale_amount' => $sale['sale_amount'],
-                        'payment_type' => $sale['payment_type'],
+                        'sale_type' => $sale['payment_type'] ?? $sale['sale_type'] ?? 'cash',
                     ]);
                 }
             }
@@ -449,6 +451,21 @@ class SalesSettlementController extends Controller
                         'invoice_number' => $creditSale['invoice_number'] ?? null,
                         'sale_amount' => $creditSale['sale_amount'],
                         'notes' => $creditSale['notes'] ?? null,
+                    ]);
+                }
+            }
+
+            // Create advance tax breakdown records if any
+            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
+                foreach ($request->advance_taxes as $advanceTax) {
+                    SalesSettlementAdvanceTax::create([
+                        'sales_settlement_id' => $settlement->id,
+                        'customer_id' => $advanceTax['customer_id'],
+                        'sale_amount' => $advanceTax['sale_amount'] ?? 0,
+                        'tax_rate' => $advanceTax['tax_rate'] ?? 0.25,
+                        'tax_amount' => $advanceTax['tax_amount'],
+                        'invoice_number' => $advanceTax['invoice_number'] ?? null,
+                        'notes' => $advanceTax['notes'] ?? null,
                     ]);
                 }
             }

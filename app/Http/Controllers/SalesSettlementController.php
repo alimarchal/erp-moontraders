@@ -511,6 +511,7 @@ class SalesSettlementController extends Controller
             'creditSales.customer',
             'creditSales.employee',
             'creditSales.supplier',
+            'advanceTaxes.customer',
         ]);
 
         return view('sales-settlements.show', [

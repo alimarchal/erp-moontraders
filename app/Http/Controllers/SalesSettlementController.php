@@ -124,7 +124,7 @@ class SalesSettlementController extends Controller
             ->map(function ($gi) {
                 return [
                     'id' => $gi->id,
-                    'text' => $gi->issue_number.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
+                    'text' => $gi->issue_number . ' - ' . $gi->employee->full_name . ' (' . $gi->issue_date->format('d M Y') . ')',
                 ];
             });
 
@@ -335,7 +335,7 @@ class SalesSettlementController extends Controller
             foreach ($request->items as $index => $item) {
                 // Calculate selling price from batches if not provided at item level
                 $sellingPrice = $item['selling_price'] ?? 0;
-                if (! $sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
+                if (!$sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
                     $totalQty = 0;
                     $totalValue = 0;
                     foreach ($item['batches'] as $batch) {
@@ -352,14 +352,13 @@ class SalesSettlementController extends Controller
 
                 $settlementItem = SalesSettlementItem::create([
                     'sales_settlement_id' => $settlement->id,
-                    'line_no' => $index + 1,
                     'product_id' => $item['product_id'],
                     'quantity_issued' => $item['quantity_issued'],
                     'quantity_sold' => $item['quantity_sold'],
                     'quantity_returned' => $item['quantity_returned'] ?? 0,
                     'quantity_shortage' => $item['quantity_shortage'] ?? 0,
                     'unit_cost' => $item['unit_cost'],
-                    'selling_price' => $sellingPrice,
+                    'unit_selling_price' => $sellingPrice,
                     'total_cogs' => $cogs,
                     'total_sales_value' => $salesValue,
                 ]);
@@ -384,7 +383,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (! empty($request->sales)) {
+            if (!empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -397,7 +396,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (! empty($request->credit_sales)) {
+            if (!empty($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -415,8 +414,8 @@ class SalesSettlementController extends Controller
             $ledgerService = app(LedgerService::class);
             $ledgerResult = $ledgerService->processSalesSettlement($settlement);
 
-            if (! $ledgerResult['success']) {
-                throw new \Exception('Ledger processing failed: '.$ledgerResult['message']);
+            if (!$ledgerResult['success']) {
+                throw new \Exception('Ledger processing failed: ' . $ledgerResult['message']);
             }
 
             DB::commit();
@@ -436,7 +435,7 @@ class SalesSettlementController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Sales Settlement: '.$e->getMessage());
+                ->with('error', 'Unable to create Sales Settlement: ' . $e->getMessage());
         }
     }
 
@@ -601,7 +600,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (! empty($request->sales)) {
+            if (!empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -614,7 +613,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (! empty($request->credit_sales)) {
+            if (!empty($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $salesSettlement->id,

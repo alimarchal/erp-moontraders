@@ -579,7 +579,7 @@
                     <x-input-error for="notes" class="mt-2" />
                 </div>
 
-                <div class="flex justify-end space-x-3">
+                <div class="flex justify-end space-x-3 mb-4 mr-4">
                     <a href="{{ route('sales-settlements.index') }}"
                         class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
                         Cancel

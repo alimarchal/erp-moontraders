@@ -38,8 +38,8 @@ class DistributionService
                     ->lockForUpdate()
                     ->first();
 
-                if (! $warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
-                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: ".($warehouseStock->quantity_on_hand ?? 0).", Required: {$item->quantity_issued}");
+                if (!$warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
+                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: " . ($warehouseStock->quantity_on_hand ?? 0) . ", Required: {$item->quantity_issued}");
                 }
 
                 // Allocate stock from batches with PROMOTIONAL PRIORITY
@@ -116,7 +116,7 @@ class DistributionService
                 ]);
 
                 // Set opening balance if this is first issue of the day
-                if ($vanStock->quantity_on_hand == 0 && ! $vanStock->exists) {
+                if ($vanStock->quantity_on_hand == 0 && !$vanStock->exists) {
                     $vanStock->opening_balance = 0;
                 }
 
@@ -148,14 +148,14 @@ class DistributionService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to post goods issue: '.$e->getMessage(), [
+            Log::error('Failed to post goods issue: ' . $e->getMessage(), [
                 'goods_issue_id' => $goodsIssue->id ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to post Goods Issue: '.$e->getMessage(),
+                'message' => 'Failed to post Goods Issue: ' . $e->getMessage(),
                 'data' => null,
             ];
         }
@@ -301,7 +301,7 @@ class DistributionService
                     ->where('product_id', $item->product_id)
                     ->first();
 
-                if (! $vanStock) {
+                if (!$vanStock) {
                     throw new \Exception("No van stock found for product ID {$item->product_id}");
                 }
 
@@ -313,15 +313,41 @@ class DistributionService
                 // Get UOM from goods issue item if available, otherwise from product
                 $uomId = $item->goodsIssueItem?->uom_id ?? $item->product->base_uom_id ?? 1;
 
+                // Check if batch-level quantities are populated
+                $batchSoldTotal = $item->batches->sum('quantity_sold');
+                $batchReturnedTotal = $item->batches->sum('quantity_returned');
+                $batchShortageTotal = $item->batches->sum('quantity_shortage');
+
+                // If batch totals are zero but item totals are non-zero, distribute to first batch
+                $useFallback = ($batchSoldTotal == 0 && $batchReturnedTotal == 0 && $batchShortageTotal == 0)
+                    && ($item->quantity_sold > 0 || $item->quantity_returned > 0 || $item->quantity_shortage > 0);
+
                 // Process using ACTUAL BATCH DATA from sales_settlement_item_batches
+                $isFirstBatch = true;
                 foreach ($item->batches as $itemBatch) {
                     $batch = $itemBatch->stockBatch;
-                    if (! $batch) {
+                    if (!$batch) {
                         continue;
                     }
 
+                    // Determine quantities to use (fallback to item-level for first batch if batch-level is empty)
+                    $soldQty = $useFallback && $isFirstBatch ? (float) $item->quantity_sold : (float) $itemBatch->quantity_sold;
+                    $returnedQty = $useFallback && $isFirstBatch ? (float) $item->quantity_returned : (float) $itemBatch->quantity_returned;
+                    $shortageQty = $useFallback && $isFirstBatch ? (float) $item->quantity_shortage : (float) $itemBatch->quantity_shortage;
+
+                    // Update batch record if using fallback values
+                    if ($useFallback && $isFirstBatch) {
+                        $itemBatch->update([
+                            'quantity_sold' => $soldQty,
+                            'quantity_returned' => $returnedQty,
+                            'quantity_shortage' => $shortageQty,
+                        ]);
+                    }
+
+                    $isFirstBatch = false;
+
                     // 1. SALES: Create stock movement for sold quantities from this batch
-                    if ($itemBatch->quantity_sold > 0) {
+                    if ($soldQty > 0) {
                         StockMovement::create([
                             'movement_type' => 'sale',
                             'reference_type' => 'App\Models\SalesSettlement',
@@ -330,16 +356,16 @@ class DistributionService
                             'product_id' => $item->product_id,
                             'stock_batch_id' => $batch->id,
                             'warehouse_id' => $settlement->warehouse_id,
-                            'quantity' => -$itemBatch->quantity_sold,
+                            'quantity' => -$soldQty,
                             'uom_id' => $uomId,
                             'unit_cost' => $itemBatch->unit_cost,
-                            'total_value' => $itemBatch->quantity_sold * $itemBatch->unit_cost,
+                            'total_value' => $soldQty * $itemBatch->unit_cost,
                             'created_by' => auth()->id() ?? 1,
                         ]);
                     }
 
                     // 2. RETURNS: Go back to SAME batch (not random allocation)
-                    if ($itemBatch->quantity_returned > 0) {
+                    if ($returnedQty > 0) {
                         StockMovement::create([
                             'movement_type' => 'return',
                             'reference_type' => 'App\Models\SalesSettlement',
@@ -348,10 +374,10 @@ class DistributionService
                             'product_id' => $item->product_id,
                             'stock_batch_id' => $batch->id,
                             'warehouse_id' => $settlement->warehouse_id,
-                            'quantity' => $itemBatch->quantity_returned, // Positive for return
+                            'quantity' => $returnedQty, // Positive for return
                             'uom_id' => $uomId,
                             'unit_cost' => $itemBatch->unit_cost,
-                            'total_value' => $itemBatch->quantity_returned * $itemBatch->unit_cost,
+                            'total_value' => $returnedQty * $itemBatch->unit_cost,
                             'created_by' => auth()->id() ?? 1,
                         ]);
 
@@ -361,7 +387,7 @@ class DistributionService
                             ->first();
 
                         if ($stockByBatch) {
-                            $stockByBatch->quantity_on_hand += $itemBatch->quantity_returned;
+                            $stockByBatch->quantity_on_hand += $returnedQty;
                             $stockByBatch->status = 'active';
                             $stockByBatch->last_updated = now();
                             $stockByBatch->save();
@@ -371,7 +397,7 @@ class DistributionService
                                 'stock_batch_id' => $batch->id,
                                 'product_id' => $item->product_id,
                                 'warehouse_id' => $settlement->warehouse_id,
-                                'quantity_on_hand' => $itemBatch->quantity_returned,
+                                'quantity_on_hand' => $returnedQty,
                                 'status' => 'active',
                                 'last_updated' => now(),
                             ]);
@@ -383,13 +409,13 @@ class DistributionService
                             ->first();
 
                         if ($valuationLayer) {
-                            $valuationLayer->quantity_remaining += $itemBatch->quantity_returned;
+                            $valuationLayer->quantity_remaining += $returnedQty;
                             $valuationLayer->save();
                         }
                     }
 
                     // 3. SHORTAGES: Record as loss from SAME batch
-                    if ($itemBatch->quantity_shortage > 0) {
+                    if ($shortageQty > 0) {
                         StockMovement::create([
                             'movement_type' => 'shortage', // New type for clarity
                             'reference_type' => 'App\Models\SalesSettlement',
@@ -398,10 +424,10 @@ class DistributionService
                             'product_id' => $item->product_id,
                             'stock_batch_id' => $batch->id,
                             'warehouse_id' => $settlement->warehouse_id,
-                            'quantity' => -$itemBatch->quantity_shortage, // Negative for loss
+                            'quantity' => -$shortageQty, // Negative for loss
                             'uom_id' => $uomId,
                             'unit_cost' => $itemBatch->unit_cost,
-                            'total_value' => $itemBatch->quantity_shortage * $itemBatch->unit_cost,
+                            'total_value' => $shortageQty * $itemBatch->unit_cost,
                             'created_by' => auth()->id() ?? 1,
                         ]);
                     }
@@ -452,14 +478,14 @@ class DistributionService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to post sales settlement: '.$e->getMessage(), [
+            Log::error('Failed to post sales settlement: ' . $e->getMessage(), [
                 'settlement_id' => $settlement->id ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to post Sales Settlement: '.$e->getMessage(),
+                'message' => 'Failed to post Sales Settlement: ' . $e->getMessage(),
                 'data' => null,
             ];
         }
@@ -478,7 +504,7 @@ class DistributionService
             // Get all required accounts
             $accounts = $this->getAccountingAccounts();
 
-            if (! $this->validateRequiredAccounts($accounts)) {
+            if (!$this->validateRequiredAccounts($accounts)) {
                 Log::warning('Required accounts not found for sales journal entry', [
                     'settlement_id' => $settlement->id,
                     'missing_accounts' => $this->getMissingAccounts($accounts),
@@ -877,7 +903,7 @@ class DistributionService
     {
         $required = ['cash', 'debtors', 'inventory', 'sales', 'cogs'];
         foreach ($required as $key) {
-            if (! isset($accounts[$key]) || ! $accounts[$key]) {
+            if (!isset($accounts[$key]) || !$accounts[$key]) {
                 return false;
             }
         }
@@ -892,7 +918,7 @@ class DistributionService
     {
         $missing = [];
         foreach ($accounts as $key => $account) {
-            if (! $account) {
+            if (!$account) {
                 $missing[] = $key;
             }
         }

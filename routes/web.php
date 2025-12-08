@@ -19,10 +19,12 @@ use App\Http\Controllers\ProductTaxMappingController;
 use App\Http\Controllers\PromotionalCampaignController;
 use App\Http\Controllers\Reports\AccountBalancesController;
 use App\Http\Controllers\Reports\BalanceSheetController;
+use App\Http\Controllers\Reports\CreditorsLedgerController;
 use App\Http\Controllers\Reports\DailySalesReportController;
 use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\TrialBalanceController;
+use App\Http\Controllers\Reports\VanStockLedgerController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SalesSettlementController;
 use App\Http\Controllers\SettingsController;
@@ -105,6 +107,22 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/salesman/{employee}', [CreditSalesReportController::class, 'salesmanCreditDetails'])->name('salesman-details');
         Route::get('/customer-history', [CreditSalesReportController::class, 'customerCreditHistory'])->name('customer-history');
         Route::get('/customer/{customer}', [CreditSalesReportController::class, 'customerCreditDetails'])->name('customer-details');
+    });
+
+    // Creditors Ledger (Accounts Receivable) Reports
+    Route::prefix('reports/creditors-ledger')->name('reports.creditors-ledger.')->group(function () {
+        Route::get('/', [CreditorsLedgerController::class, 'index'])->name('index');
+        Route::get('/customer/{customer}/ledger', [CreditorsLedgerController::class, 'customerLedger'])->name('customer-ledger');
+        Route::get('/customer/{customer}/credit-sales', [CreditorsLedgerController::class, 'customerCreditSales'])->name('customer-credit-sales');
+        Route::get('/salesman-creditors', [CreditorsLedgerController::class, 'salesmanCreditors'])->name('salesman-creditors');
+        Route::get('/aging-report', [CreditorsLedgerController::class, 'agingReport'])->name('aging-report');
+    });
+
+    // Van Stock Ledger Reports
+    Route::prefix('reports/van-stock-ledger')->name('reports.van-stock-ledger.')->group(function () {
+        Route::get('/', [VanStockLedgerController::class, 'index'])->name('index');
+        Route::get('/summary', [VanStockLedgerController::class, 'summary'])->name('summary');
+        Route::get('/vehicle/{vehicle}', [VanStockLedgerController::class, 'vehicleLedger'])->name('vehicle-ledger');
     });
 
     // Supplier Payment Routes

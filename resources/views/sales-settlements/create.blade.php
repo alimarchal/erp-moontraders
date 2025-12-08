@@ -251,20 +251,26 @@
                                             <button type="button"
                                                 class="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
                                                 onclick="window.dispatchEvent(new CustomEvent('open-credit-sales-modal'))">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
                                                         d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                                                 </svg>
                                                 Creditors / Credit Sales Breakdown
                                             </button>
                                             <div class="px-4 py-2 bg-white border-t border-orange-200">
                                                 <div class="flex justify-between items-center mb-1">
-                                                    <span class="text-xs font-semibold text-orange-900">Total Credit Sales:</span>
-                                                    <span class="text-sm font-bold text-orange-700" id="creditSalesTotalDisplay">₨ 0.00</span>
+                                                    <span class="text-xs font-semibold text-orange-900">Total Credit
+                                                        Sales:</span>
+                                                    <span class="text-sm font-bold text-orange-700"
+                                                        id="creditSalesTotalDisplay">₨ 0.00</span>
                                                 </div>
                                                 <div class="flex justify-between items-center">
-                                                    <span class="text-xs font-semibold text-green-900">Total Recovery:</span>
-                                                    <span class="text-sm font-bold text-green-700" id="creditRecoveryTotalDisplay">₨ 0.00</span>
+                                                    <span class="text-xs font-semibold text-green-900">Total
+                                                        Recovery:</span>
+                                                    <span class="text-sm font-bold text-green-700"
+                                                        id="creditRecoveryTotalDisplay">₨ 0.00</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -274,15 +280,20 @@
                                             <button type="button"
                                                 class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
                                                 onclick="window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'))">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
                                                         d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                                                 </svg>
                                                 Bank Transfer / Online Payment
                                             </button>
-                                            <div class="px-4 py-2 bg-white border-t border-blue-200 flex justify-between items-center">
-                                                <span class="text-xs font-semibold text-blue-900">Total Bank Transfers:</span>
-                                                <span class="text-sm font-bold text-blue-700" id="bankTransferTotalDisplay">₨ 0.00</span>
+                                            <div
+                                                class="px-4 py-2 bg-white border-t border-blue-200 flex justify-between items-center">
+                                                <span class="text-xs font-semibold text-blue-900">Total Bank
+                                                    Transfers:</span>
+                                                <span class="text-sm font-bold text-blue-700"
+                                                    id="bankTransferTotalDisplay">₨ 0.00</span>
                                             </div>
                                         </div>
 
@@ -291,23 +302,31 @@
                                             <button type="button"
                                                 class="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
                                                 onclick="window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'))">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
                                                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                                 </svg>
                                                 Cheque Payments
                                             </button>
-                                            <div class="px-4 py-2 bg-white border-t border-purple-200 flex justify-between items-center">
-                                                <span class="text-xs font-semibold text-purple-900">Total Cheques:</span>
-                                                <span class="text-sm font-bold text-purple-700" id="chequeTotalDisplay">₨ 0.00</span>
+                                            <div
+                                                class="px-4 py-2 bg-white border-t border-purple-200 flex justify-between items-center">
+                                                <span class="text-xs font-semibold text-purple-900">Total
+                                                    Cheques:</span>
+                                                <span class="text-sm font-bold text-purple-700"
+                                                    id="chequeTotalDisplay">₨ 0.00</span>
                                             </div>
                                         </div>
                                     </div>
 
                                     {{-- Hidden inputs for totals (will be populated by modals) --}}
-                                    <input type="hidden" id="credit_sales_amount" name="credit_sales_amount" value="0.00" />
-                                    <input type="hidden" id="credit_recoveries_total" name="credit_recoveries_total" value="0.00" />
-                                    <input type="hidden" id="total_bank_transfers" name="total_bank_transfers" value="0.00" />
+                                    <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
+                                        value="0.00" />
+                                    <input type="hidden" id="credit_recoveries_total" name="credit_recoveries_total"
+                                        value="0.00" />
+                                    <input type="hidden" id="total_bank_transfers" name="total_bank_transfers"
+                                        value="0.00" />
                                     <input type="hidden" id="total_cheques" name="total_cheques" value="0.00" />
 
                                     {{-- Grand Total --}}
@@ -536,10 +555,14 @@
                                         value="0.00" />
                                     <input type="hidden" id="summary_short_excess" value="0.00" />
 
-                                    <x-advance-tax-modal :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
-                                    <x-bank-transfer-modal :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
-                                    <x-cheque-payment-modal :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
-                                    <x-credit-sales-modal :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
+                                    <x-advance-tax-modal
+                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
+                                    <x-bank-transfer-modal
+                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
+                                    <x-cheque-payment-modal
+                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
+                                    <x-credit-sales-modal
+                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
                                 </div>
                             </div>
                         </div>
@@ -1035,6 +1058,7 @@
                     <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
                     <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
                     <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
+                    <input type="hidden" name="items[${index}][selling_price]" value="${avgSellingPrice}">
                     <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="0">
                     <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="0">
                     <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="0">

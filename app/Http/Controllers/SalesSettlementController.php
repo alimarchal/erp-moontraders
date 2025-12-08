@@ -333,8 +333,22 @@ class SalesSettlementController extends Controller
 
             // Create settlement items with batch breakdown
             foreach ($request->items as $index => $item) {
+                // Calculate selling price from batches if not provided at item level
+                $sellingPrice = $item['selling_price'] ?? 0;
+                if (! $sellingPrice && isset($item['batches']) && is_array($item['batches'])) {
+                    $totalQty = 0;
+                    $totalValue = 0;
+                    foreach ($item['batches'] as $batch) {
+                        $batchQty = $batch['quantity_issued'] ?? 0;
+                        $batchPrice = $batch['selling_price'] ?? 0;
+                        $totalQty += $batchQty;
+                        $totalValue += $batchQty * $batchPrice;
+                    }
+                    $sellingPrice = $totalQty > 0 ? $totalValue / $totalQty : 0;
+                }
+
                 $cogs = $item['quantity_sold'] * $item['unit_cost'];
-                $salesValue = $item['quantity_sold'] * $item['selling_price'];
+                $salesValue = $item['quantity_sold'] * $sellingPrice;
 
                 $settlementItem = SalesSettlementItem::create([
                     'sales_settlement_id' => $settlement->id,
@@ -345,7 +359,7 @@ class SalesSettlementController extends Controller
                     'quantity_returned' => $item['quantity_returned'] ?? 0,
                     'quantity_shortage' => $item['quantity_shortage'] ?? 0,
                     'unit_cost' => $item['unit_cost'],
-                    'selling_price' => $item['selling_price'],
+                    'selling_price' => $sellingPrice,
                     'total_cogs' => $cogs,
                     'total_sales_value' => $salesValue,
                 ]);

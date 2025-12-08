@@ -1,26 +1,15 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            Credit Sales Details - {{ $customer->customer_name }}
-        </h2>
-        <div class="float-right">
-            <a href="{{ route('reports.credit-sales.customer-history') }}"
-                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
-        </div>
+        <x-page-header title="Credit Sales Details - {{ $customer->customer_name }}" :createRoute="null" createLabel=""
+            :showSearch="true" :showRefresh="true" backRoute="reports.credit-sales.customer-history" />
     </x-slot>
 
-    <div class="py-6">
+    <div class="py-2">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md" />
 
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg mb-6">
-                <div class="p-6">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6">
+                <div class="p-4 sm:p-6">
                     <h3 class="text-lg font-semibold mb-4">Customer Information</h3>
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>

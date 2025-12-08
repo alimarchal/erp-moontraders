@@ -24,7 +24,7 @@ class UpdateCompanyRequest extends FormRequest
         $companyId = $this->route('company')?->id;
 
         return [
-            'company_name' => ['required', 'string', 'max:255', 'unique:companies,company_name,' . $companyId],
+            'company_name' => ['required', 'string', 'max:255', 'unique:companies,company_name,'.$companyId],
             'abbr' => ['nullable', 'string', 'max:50'],
             'country' => ['nullable', 'string', 'max:191'],
             'tax_id' => ['nullable', 'string', 'max:191'],
@@ -39,7 +39,7 @@ class UpdateCompanyRequest extends FormRequest
             'date_of_establishment' => ['nullable', 'date'],
             'date_of_incorporation' => ['nullable', 'date', 'after_or_equal:date_of_establishment'],
             'date_of_commencement' => ['nullable', 'date'],
-            'parent_company_id' => ['nullable', 'exists:companies,id', 'not_in:' . $companyId],
+            'parent_company_id' => ['nullable', 'exists:companies,id', 'not_in:'.$companyId],
             'is_group' => ['boolean'],
             'lft' => ['nullable', 'integer', 'min:0'],
             'rgt' => ['nullable', 'integer', 'min:0'],

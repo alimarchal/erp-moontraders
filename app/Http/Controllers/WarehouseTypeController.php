@@ -121,7 +121,7 @@ class WarehouseTypeController extends Controller
         try {
             $updated = $warehouseType->update($request->validated());
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

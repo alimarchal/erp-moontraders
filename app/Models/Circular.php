@@ -3,24 +3,23 @@
 namespace App\Models;
 
 use App\Traits\UserTracking;
-use Spatie\Activitylog\LogOptions;
-use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Circular extends Model
 {
     use HasFactory, UserTracking;
-    use SoftDeletes;
-    use LogsActivity;
     use HasUuids;
+    use LogsActivity;
+    use SoftDeletes;
 
     // public $incrementing = false;
     // protected $keyType = 'string';
-
 
     protected $fillable = [
         'circular_no',
@@ -59,11 +58,8 @@ class Circular extends Model
         return $this->belongsTo(User::class, 'update_by');
     }
 
-
     /**
      * Get activity log options.
-     *
-     * @return \Spatie\Activitylog\LogOptions
      */
     public function getActivitylogOptions(): LogOptions
     {
@@ -71,7 +67,6 @@ class Circular extends Model
             ->logAll()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => "Circular has been {$eventName}");
+            ->setDescriptionForEvent(fn (string $eventName) => "Circular has been {$eventName}");
     }
-
 }

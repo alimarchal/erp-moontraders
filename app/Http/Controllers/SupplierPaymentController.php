@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\SupplierPayment;
-use App\Models\Supplier;
 use App\Models\BankAccount;
+use App\Models\Supplier;
+use App\Models\SupplierPayment;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class SupplierPaymentController extends Controller
 {
@@ -84,7 +84,7 @@ class SupplierPaymentController extends Controller
         // Filter out empty allocations before validation
         if ($request->has('grn_allocations')) {
             $allocations = array_filter($request->grn_allocations, function ($allocation) {
-                return !empty($allocation['grn_id']) && isset($allocation['amount']) && $allocation['amount'] > 0;
+                return ! empty($allocation['grn_id']) && isset($allocation['amount']) && $allocation['amount'] > 0;
             });
             $request->merge(['grn_allocations' => array_values($allocations)]);
         }
@@ -132,7 +132,7 @@ class SupplierPaymentController extends Controller
             ]);
 
             // Create GRN allocations if provided
-            if (!empty($validated['grn_allocations'])) {
+            if (! empty($validated['grn_allocations'])) {
                 foreach ($validated['grn_allocations'] as $allocation) {
                     if ($allocation['amount'] > 0) {
                         $payment->grnAllocations()->create([
@@ -151,7 +151,8 @@ class SupplierPaymentController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Failed to create payment: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to create payment: '.$e->getMessage());
         }
     }
 
@@ -200,7 +201,7 @@ class SupplierPaymentController extends Controller
 
         // Filter out empty allocations
         $allocations = array_filter($request->grn_allocations ?? [], function ($allocation) {
-            return !empty($allocation['grn_id']) && isset($allocation['amount']) && $allocation['amount'] > 0;
+            return ! empty($allocation['grn_id']) && isset($allocation['amount']) && $allocation['amount'] > 0;
         });
 
         $validated = $request->validate([
@@ -249,7 +250,8 @@ class SupplierPaymentController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withInput()->with('error', 'Failed to update payment: ' . $e->getMessage());
+
+            return back()->withInput()->with('error', 'Failed to update payment: '.$e->getMessage());
         }
     }
 
@@ -268,17 +270,18 @@ class SupplierPaymentController extends Controller
         ]);
 
         // Verify user's password
-        if (!\Hash::check($request->password, auth()->user()->password)) {
-            \Log::warning("Failed payment posting attempt for {$supplierPayment->payment_number} - Invalid password by user: " . auth()->user()->name);
+        if (! \Hash::check($request->password, auth()->user()->password)) {
+            \Log::warning("Failed payment posting attempt for {$supplierPayment->payment_number} - Invalid password by user: ".auth()->user()->name);
+
             return back()->with('error', 'Invalid password. Payment posting requires your password confirmation.');
         }
 
         // Log password confirmation
-        \Log::info("Payment posting password confirmed for {$supplierPayment->payment_number} by user: " . auth()->user()->name . " (ID: " . auth()->id() . ")");
+        \Log::info("Payment posting password confirmed for {$supplierPayment->payment_number} by user: ".auth()->user()->name.' (ID: '.auth()->id().')');
 
         // Validate bank account is selected for non-cash payments
-        if (in_array($supplierPayment->payment_method, ['bank_transfer', 'cheque', 'online']) && !$supplierPayment->bank_account_id) {
-            return back()->with('error', 'Bank account is required for ' . str_replace('_', ' ', $supplierPayment->payment_method) . ' payments. Please edit the payment and select a bank account.');
+        if (in_array($supplierPayment->payment_method, ['bank_transfer', 'cheque', 'online']) && ! $supplierPayment->bank_account_id) {
+            return back()->with('error', 'Bank account is required for '.str_replace('_', ' ', $supplierPayment->payment_method).' payments. Please edit the payment and select a bank account.');
         }
 
         $result = $this->paymentService->postSupplierPayment($supplierPayment);
@@ -321,7 +324,7 @@ class SupplierPaymentController extends Controller
         ]);
 
         // Verify user password
-        if (!\Hash::check($request->password, auth()->user()->password)) {
+        if (! \Hash::check($request->password, auth()->user()->password)) {
             return back()->with('error', 'Invalid password. Payment reversal cancelled.');
         }
 

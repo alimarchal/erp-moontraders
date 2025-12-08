@@ -130,7 +130,7 @@ class GoodsReceiptNoteItem extends Model
     public function getMargin(): float
     {
         $sellingPrice = $this->getEffectiveSellingPrice();
-        if (!$sellingPrice) {
+        if (! $sellingPrice) {
             return 0;
         }
 

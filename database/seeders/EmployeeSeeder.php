@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Employee;
-use App\Models\CostCenter;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class EmployeeSeeder extends Seeder
@@ -85,7 +83,7 @@ class EmployeeSeeder extends Seeder
      */
     protected function getCostCenterForDesignation(?string $designation): ?int
     {
-        if (!$designation) {
+        if (! $designation) {
             return null;
         }
 
@@ -118,15 +116,17 @@ class EmployeeSeeder extends Seeder
     {
         $dataPath = database_path('seeders/data/employee_list.json');
 
-        if (!file_exists($dataPath)) {
+        if (! file_exists($dataPath)) {
             $this->command?->warn('Employee data file not found, skipping employee seed.');
+
             return;
         }
 
         $records = json_decode(file_get_contents($dataPath), true);
 
-        if (!is_array($records) || $records === []) {
+        if (! is_array($records) || $records === []) {
             $this->command?->warn('Employee data file is empty, skipping employee seed.');
+
             return;
         }
 

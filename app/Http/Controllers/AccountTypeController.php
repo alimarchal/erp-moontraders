@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAccountTypeRequest;
+use App\Http\Requests\UpdateAccountTypeRequest;
 use App\Models\AccountType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
-use App\Http\Requests\StoreAccountTypeRequest;
-use App\Http\Requests\UpdateAccountTypeRequest;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * AccountTypeController handles CRUD operations for account types
@@ -20,8 +19,7 @@ class AccountTypeController extends Controller
 {
     /**
      * Display paginated list of account types with filtering capabilities
-     * 
-     * @param Request $request
+     *
      * @return \Illuminate\View\View
      */
     public function index(Request $request)
@@ -61,8 +59,7 @@ class AccountTypeController extends Controller
     /**
      * Store new account type
      * Uses transaction for data consistency
-     * 
-     * @param StoreAccountTypeRequest $request
+     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreAccountTypeRequest $request)
@@ -100,7 +97,7 @@ class AccountTypeController extends Controller
                 ->withInput()
                 ->with('error', [
                     'message' => 'Something went wrong. Please try again.',
-                    'db' => $e->getMessage()
+                    'db' => $e->getMessage(),
                 ]);
 
         } catch (\Exception $e) {
@@ -132,9 +129,7 @@ class AccountTypeController extends Controller
     /**
      * Update existing account type
      * Uses transaction for data consistency
-     * 
-     * @param UpdateAccountTypeRequest $request
-     * @param AccountType $accountType
+     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateAccountTypeRequest $request, AccountType $accountType)
@@ -150,8 +145,9 @@ class AccountTypeController extends Controller
             $isUpdated = $accountType->update($validated);
 
             // Check if any changes were actually made
-            if (!$isUpdated) {
+            if (! $isUpdated) {
                 DB::rollBack();
+
                 return redirect()->back()
                     ->with('info', 'No changes were made to the account type.');
             }
@@ -178,14 +174,14 @@ class AccountTypeController extends Controller
             Log::error('Database error updating account type', [
                 'account_type_id' => $accountType->id,
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id()
+                'user_id' => auth()->id(),
             ]);
 
             return redirect()->back()
                 ->withInput()
                 ->with('error', [
                     'message' => 'Something went wrong. Please try again.',
-                    'db' => $e->getMessage()
+                    'db' => $e->getMessage(),
                 ]);
 
         } catch (\Exception $e) {

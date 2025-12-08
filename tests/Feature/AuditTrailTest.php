@@ -134,7 +134,7 @@ class AuditTrailTest extends TestCase
             );
         }
 
-        $this->assertTrue(true, 'Stored procedures check passed for ' . $driver);
+        $this->assertTrue(true, 'Stored procedures check passed for '.$driver);
     }
 
     /**
@@ -155,18 +155,18 @@ class AuditTrailTest extends TestCase
                 $userId = DB::selectOne("SELECT current_setting('app.current_user_id', true) as value");
                 $this->assertEquals($user->id, $userId->value);
             } elseif (in_array($driver, ['mysql', 'mariadb'])) {
-                DB::statement("SET @current_user_id = ?", [$user->id]);
-                DB::statement("SET @ip_address = ?", ['192.168.1.1']);
-                DB::statement("SET @user_agent = ?", ['Test Browser']);
+                DB::statement('SET @current_user_id = ?', [$user->id]);
+                DB::statement('SET @ip_address = ?', ['192.168.1.1']);
+                DB::statement('SET @user_agent = ?', ['Test Browser']);
 
                 // Try to retrieve the values
-                $result = DB::selectOne("SELECT @current_user_id as user_id");
+                $result = DB::selectOne('SELECT @current_user_id as user_id');
                 $this->assertEquals($user->id, $result->user_id);
             }
 
-            $this->assertTrue(true, 'Audit context can be set for ' . $driver);
+            $this->assertTrue(true, 'Audit context can be set for '.$driver);
         } catch (\Exception $e) {
-            $this->fail('Failed to set audit context: ' . $e->getMessage());
+            $this->fail('Failed to set audit context: '.$e->getMessage());
         }
     }
 }

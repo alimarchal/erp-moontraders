@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Request;
 
 /**
  * Trait for manually logging accounting changes when database triggers aren't sufficient.
- * 
+ *
  * Use this trait when:
  * - You need to log application-level changes (not just database changes)
  * - You need custom audit messages
@@ -19,13 +19,12 @@ trait AuditsAccountingChanges
     /**
      * Manually create an audit log entry
      *
-     * @param string $tableName The table being audited
-     * @param int $recordId The ID of the record
-     * @param string $action INSERT, UPDATE, DELETE, or custom action
-     * @param array|null $oldValues Previous values (optional)
-     * @param array|null $newValues New values (optional)
-     * @param array|null $changedFields List of changed fields (optional)
-     * @return void
+     * @param  string  $tableName  The table being audited
+     * @param  int  $recordId  The ID of the record
+     * @param  string  $action  INSERT, UPDATE, DELETE, or custom action
+     * @param  array|null  $oldValues  Previous values (optional)
+     * @param  array|null  $newValues  New values (optional)
+     * @param  array|null  $changedFields  List of changed fields (optional)
      */
     protected function logAuditChange(
         string $tableName,
@@ -50,7 +49,7 @@ trait AuditsAccountingChanges
             ]);
         } catch (\Exception $e) {
             // Log error but don't break the application
-            \Log::error('Failed to create audit log entry: ' . $e->getMessage(), [
+            \Log::error('Failed to create audit log entry: '.$e->getMessage(), [
                 'table' => $tableName,
                 'record_id' => $recordId,
                 'action' => $action,
@@ -61,11 +60,10 @@ trait AuditsAccountingChanges
     /**
      * Log a custom audit event (for non-CRUD operations)
      *
-     * @param string $action Custom action name (e.g., 'PERIOD_CLOSED', 'ENTRY_REVERSED')
-     * @param string $tableName The primary table involved
-     * @param int $recordId The primary record ID
-     * @param array $metadata Additional context about the action
-     * @return void
+     * @param  string  $action  Custom action name (e.g., 'PERIOD_CLOSED', 'ENTRY_REVERSED')
+     * @param  string  $tableName  The primary table involved
+     * @param  int  $recordId  The primary record ID
+     * @param  array  $metadata  Additional context about the action
      */
     protected function logCustomAuditEvent(
         string $action,
@@ -84,9 +82,6 @@ trait AuditsAccountingChanges
     /**
      * Get audit history for a specific record
      *
-     * @param string $tableName
-     * @param int $recordId
-     * @param int $limit
      * @return \Illuminate\Support\Collection
      */
     protected function getAuditHistory(string $tableName, int $recordId, int $limit = 50)
@@ -102,8 +97,6 @@ trait AuditsAccountingChanges
     /**
      * Get recent changes by a specific user
      *
-     * @param int|null $userId
-     * @param int $limit
      * @return \Illuminate\Support\Collection
      */
     protected function getUserAuditHistory(?int $userId = null, int $limit = 100)

@@ -18,15 +18,17 @@ class VehicleSeeder extends Seeder
     {
         $jsonPath = database_path('seeders/data/vehicles.json');
 
-        if (!file_exists($jsonPath)) {
+        if (! file_exists($jsonPath)) {
             $this->command?->warn("Vehicle data file not found at {$jsonPath}, skipping vehicle seed.");
+
             return;
         }
 
         $payload = json_decode(file_get_contents($jsonPath), true);
 
-        if (!is_array($payload) || $payload === []) {
+        if (! is_array($payload) || $payload === []) {
             $this->command?->warn('Vehicle data file is empty, skipping vehicle seed.');
+
             return;
         }
 
@@ -35,6 +37,7 @@ class VehicleSeeder extends Seeder
             ->get()
             ->mapWithKeys(function (Employee $employee) {
                 $normalized = strtolower(preg_replace('/\s+/', ' ', trim((string) $employee->name)));
+
                 return [$normalized => $employee];
             });
 
@@ -42,7 +45,7 @@ class VehicleSeeder extends Seeder
             $vehicleNumber = isset($row['vehicle_number']) ? strtoupper(trim((string) $row['vehicle_number'])) : null;
             $registrationNumber = isset($row['registration_number']) ? strtoupper(trim((string) $row['registration_number'])) : null;
 
-            if (!$vehicleNumber || !$registrationNumber) {
+            if (! $vehicleNumber || ! $registrationNumber) {
                 continue;
             }
 

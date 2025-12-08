@@ -4,11 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
+use App\Models\Company;
 use App\Models\Employee;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Warehouse;
-use App\Models\Supplier;
-use App\Models\Company;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +36,7 @@ class EmployeeController extends Controller
                 AllowedFilter::exact('warehouse_id'),
                 AllowedFilter::exact('supplier_id'),
                 AllowedFilter::exact('company_id'),
-                AllowedFilter::callback('is_active', fn($query, $value) => $this->applyBooleanFilter($query, 'is_active', $value)),
+                AllowedFilter::callback('is_active', fn ($query, $value) => $this->applyBooleanFilter($query, 'is_active', $value)),
             ])
             ->orderBy('employee_code')
             ->paginate(15)
@@ -159,7 +159,7 @@ class EmployeeController extends Controller
         try {
             $updated = $employee->update($request->validated());
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

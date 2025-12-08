@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProductTaxMappingRequest;
 use App\Http\Requests\UpdateProductTaxMappingRequest;
-use App\Models\ProductTaxMapping;
 use App\Models\Product;
+use App\Models\ProductTaxMapping;
 use App\Models\TaxCode;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -141,7 +141,7 @@ class ProductTaxMappingController extends Controller
         try {
             $updated = $productTaxMapping->update($request->validated());
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

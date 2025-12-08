@@ -7,8 +7,8 @@ use App\Models\CurrentStockByBatch;
 use App\Models\Product;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
-use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class CurrentStockController extends Controller
 {

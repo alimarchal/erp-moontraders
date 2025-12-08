@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class JournalEntryDetailSeeder extends Seeder
 {
@@ -19,7 +19,7 @@ class JournalEntryDetailSeeder extends Seeder
         $now = Carbon::now();
 
         // Resolve account IDs by account_name that exist in your Chart of Accounts seeder
-        $id = fn(string $name) => DB::table('chart_of_accounts')->where('account_name', $name)->value('id');
+        $id = fn (string $name) => DB::table('chart_of_accounts')->where('account_name', $name)->value('id');
 
         $rows = [
             // 1) Initial capital investment - $50,000
@@ -69,7 +69,7 @@ class JournalEntryDetailSeeder extends Seeder
 
         foreach ($rows as $r) {
             $accountId = $id($r['account']);
-            if (!$accountId) {
+            if (! $accountId) {
                 // Skip if account not found to avoid seeder failure; could also throw exception
                 continue;
             }

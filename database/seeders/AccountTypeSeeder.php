@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class AccountTypeSeeder extends Seeder
 {
@@ -25,7 +25,7 @@ class AccountTypeSeeder extends Seeder
                 'report_group' => 'BalanceSheet',
                 'description' => 'What your business owns (e.g., cash, equipment, inventory).',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
             [
                 'id' => 2,
@@ -33,7 +33,7 @@ class AccountTypeSeeder extends Seeder
                 'report_group' => 'BalanceSheet',
                 'description' => 'What your business owes to others (e.g., loans, accounts payable).',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
             [
                 'id' => 3,
@@ -41,7 +41,7 @@ class AccountTypeSeeder extends Seeder
                 'report_group' => 'BalanceSheet',
                 'description' => 'The net worth of the company.',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
             [
                 'id' => 4,
@@ -49,7 +49,7 @@ class AccountTypeSeeder extends Seeder
                 'report_group' => 'IncomeStatement',
                 'description' => 'Money earned from sales and services.',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
             [
                 'id' => 5,
@@ -57,7 +57,7 @@ class AccountTypeSeeder extends Seeder
                 'report_group' => 'IncomeStatement',
                 'description' => 'Costs incurred to operate the business (e.g., rent, salaries).',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
         ]);
 

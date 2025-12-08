@@ -3,7 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -135,10 +136,10 @@ return new class extends Migration {
      */
     public function down(): void
     {
-        DB::statement("DROP VIEW IF EXISTS vw_income_statement");
-        DB::statement("DROP VIEW IF EXISTS vw_balance_sheet");
-        DB::statement("DROP VIEW IF EXISTS vw_general_ledger");
-        DB::statement("DROP VIEW IF EXISTS vw_account_balances");
-        DB::statement("DROP VIEW IF EXISTS vw_trial_balance");
+        DB::statement('DROP VIEW IF EXISTS vw_income_statement');
+        DB::statement('DROP VIEW IF EXISTS vw_balance_sheet');
+        DB::statement('DROP VIEW IF EXISTS vw_general_ledger');
+        DB::statement('DROP VIEW IF EXISTS vw_account_balances');
+        DB::statement('DROP VIEW IF EXISTS vw_trial_balance');
     }
 };

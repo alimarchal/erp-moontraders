@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTaxCodeRequest;
 use App\Http\Requests\UpdateTaxCodeRequest;
-use App\Models\TaxCode;
 use App\Models\ChartOfAccount;
+use App\Models\TaxCode;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -151,7 +151,7 @@ class TaxCodeController extends Controller
         try {
             $updated = $taxCode->update($request->validated());
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

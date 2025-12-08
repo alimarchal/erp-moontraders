@@ -1,48 +1,48 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\CompanyController;
-use App\Http\Controllers\CurrencyController;
-use App\Http\Controllers\SettingsController;
-use App\Http\Controllers\ReportsController;
-use App\Http\Controllers\CostCenterController;
-use App\Http\Controllers\AccountTypeController;
-use App\Http\Controllers\JournalEntryController;
-use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\AccountingPeriodController;
-use App\Http\Controllers\TaxCodeController;
-use App\Http\Controllers\WarehouseController;
-use App\Http\Controllers\WarehouseTypeController;
-use App\Http\Controllers\SupplierController;
-use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\VehicleController;
-use App\Http\Controllers\UomController;
-use App\Http\Controllers\ProductController;
+use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\BankAccountController;
-use App\Http\Controllers\Reports\GeneralLedgerController;
+use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CostCenterController;
+use App\Http\Controllers\CreditSalesReportController;
+use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\CurrentStockController;
+use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\GoodsIssueController;
+use App\Http\Controllers\GoodsReceiptNoteController;
+use App\Http\Controllers\JournalEntryController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductTaxMappingController;
+use App\Http\Controllers\PromotionalCampaignController;
 use App\Http\Controllers\Reports\AccountBalancesController;
 use App\Http\Controllers\Reports\BalanceSheetController;
+use App\Http\Controllers\Reports\DailySalesReportController;
+use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\TrialBalanceController;
-use App\Http\Controllers\GoodsReceiptNoteController;
-use App\Http\Controllers\CurrentStockController;
-use App\Http\Controllers\PromotionalCampaignController;
-use App\Http\Controllers\SupplierPaymentController;
-use App\Http\Controllers\TaxRateController;
-use App\Http\Controllers\ProductTaxMappingController;
-use App\Http\Controllers\TaxTransactionController;
-use App\Http\Controllers\GoodsIssueController;
+use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SalesSettlementController;
-use App\Http\Controllers\Reports\DailySalesReportController;
-use App\Http\Controllers\CreditSalesReportController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\SupplierPaymentController;
+use App\Http\Controllers\TaxCodeController;
+use App\Http\Controllers\TaxRateController;
+use App\Http\Controllers\TaxTransactionController;
+use App\Http\Controllers\UomController;
+use App\Http\Controllers\VehicleController;
+use App\Http\Controllers\WarehouseController;
+use App\Http\Controllers\WarehouseTypeController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return to_route('login');
     // view('welcome');
 });
 
-Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified',])->group(function () {
+Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified'])->group(function () {
     Route::get('/dashboard', function () {
         return view('dashboard');
     })->name('dashboard');

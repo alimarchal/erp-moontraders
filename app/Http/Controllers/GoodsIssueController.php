@@ -2,20 +2,20 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\GoodsIssue;
-use App\Models\GoodsIssueItem;
-use App\Models\Warehouse;
-use App\Models\Vehicle;
-use App\Models\Employee;
-use App\Models\Product;
-use App\Models\Uom;
 use App\Http\Requests\StoreGoodsIssueRequest;
 use App\Http\Requests\UpdateGoodsIssueRequest;
+use App\Models\Employee;
+use App\Models\GoodsIssue;
+use App\Models\GoodsIssueItem;
+use App\Models\Product;
+use App\Models\Uom;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use App\Services\DistributionService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class GoodsIssueController extends Controller
 {
@@ -95,7 +95,7 @@ class GoodsIssueController extends Controller
             ->where('svl.product_id', $productId)
             ->where('svl.is_depleted', false)
             ->where('svl.quantity_remaining', '>', 0)
-            ->selectRaw("
+            ->selectRaw('
                 grni.selling_price,
                 svl.unit_cost,
                 svl.priority_order,
@@ -108,8 +108,8 @@ class GoodsIssueController extends Controller
                     WHEN svl.must_sell_before IS NOT NULL AND svl.must_sell_before <= ? THEN 1
                     ELSE 2
                 END as urgency_level
-            ", [$urgentDate])
-            ->orderByRaw("urgency_level ASC")      // 1st: Urgent items first
+            ', [$urgentDate])
+            ->orderByRaw('urgency_level ASC')      // 1st: Urgent items first
             ->orderBy('svl.priority_order', 'asc')  // 2nd: Priority (1, 2, 3...99)
             ->orderBy('svl.receipt_date', 'asc')    // 3rd: FIFO (oldest first)
             ->get();
@@ -206,7 +206,7 @@ class GoodsIssueController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Goods Issue: ' . $e->getMessage());
+                ->with('error', 'Unable to create Goods Issue: '.$e->getMessage());
         }
     }
 
@@ -222,7 +222,7 @@ class GoodsIssueController extends Controller
             'supplier',
             'issuedBy',
             'items.product',
-            'items.uom'
+            'items.uom',
         ]);
 
         foreach ($goodsIssue->items as $item) {
@@ -271,7 +271,7 @@ class GoodsIssueController extends Controller
                     ->where('svl.product_id', $item->product_id)
                     ->where('svl.is_depleted', false)
                     ->where('svl.quantity_remaining', '>', 0)
-                    ->selectRaw("
+                    ->selectRaw('
                         grni.selling_price,
                         svl.unit_cost,
                         svl.priority_order,
@@ -282,8 +282,8 @@ class GoodsIssueController extends Controller
                             WHEN svl.must_sell_before IS NOT NULL AND svl.must_sell_before <= ? THEN 1
                             ELSE 2
                         END as urgency_level
-                    ", [$urgentDate])
-                    ->orderByRaw("urgency_level ASC")
+                    ', [$urgentDate])
+                    ->orderByRaw('urgency_level ASC')
                     ->orderBy('svl.priority_order', 'asc')
                     ->orderBy('svl.receipt_date', 'asc')
                     ->get();
@@ -293,8 +293,9 @@ class GoodsIssueController extends Controller
                 $batchBreakdown = [];
 
                 foreach ($stockLayers as $layer) {
-                    if ($remainingQty <= 0)
+                    if ($remainingQty <= 0) {
                         break;
+                    }
 
                     $qtyFromBatch = min($remainingQty, $layer->quantity_remaining);
                     $batchValue = $qtyFromBatch * $layer->selling_price;

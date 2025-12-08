@@ -2,9 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Supplier;
 use App\Models\Currency;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Supplier;
 use Illuminate\Database\Seeder;
 
 class SupplierSeeder extends Seeder
@@ -116,7 +115,6 @@ class SupplierSeeder extends Seeder
                 'is_internal_supplier' => false,
                 'default_currency_id' => $defaultCurrency?->id,
             ],
-
 
             [
                 'supplier_name' => 'Pakistan Tobbaco Company',

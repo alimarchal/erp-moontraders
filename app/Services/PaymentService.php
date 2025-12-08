@@ -2,13 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\SupplierPayment;
 use App\Models\ChartOfAccount;
-use App\Models\PaymentGrnAllocation;
 use App\Models\GoodsReceiptNote;
+use App\Models\SupplierPayment;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
 
 class PaymentService
 {
@@ -31,8 +30,8 @@ class PaymentService
             }
 
             // Validate bank account is selected for non-cash payment methods
-            if (in_array($payment->payment_method, ['bank_transfer', 'cheque', 'online']) && !$payment->bank_account_id) {
-                throw new \Exception('Bank account is required for ' . str_replace('_', ' ', $payment->payment_method) . ' payment method');
+            if (in_array($payment->payment_method, ['bank_transfer', 'cheque', 'online']) && ! $payment->bank_account_id) {
+                throw new \Exception('Bank account is required for '.str_replace('_', ' ', $payment->payment_method).' payment method');
             }
 
             // Create accounting journal entry
@@ -49,15 +48,16 @@ class PaymentService
 
             return [
                 'success' => true,
-                'message' => "Payment {$payment->payment_number} posted successfully" . ($journalEntry ? " with journal entry" : ""),
+                'message' => "Payment {$payment->payment_number} posted successfully".($journalEntry ? ' with journal entry' : ''),
                 'data' => $payment->fresh(),
             ];
 
         } catch (\Exception $e) {
             DB::rollBack();
+
             return [
                 'success' => false,
-                'message' => 'Failed to post payment: ' . $e->getMessage(),
+                'message' => 'Failed to post payment: '.$e->getMessage(),
                 'data' => null,
             ];
         }
@@ -74,8 +74,9 @@ class PaymentService
             // Find Creditors account
             $creditorsAccount = ChartOfAccount::where('account_code', '2111')->first();
 
-            if (!$creditorsAccount) {
-                Log::warning('Creditors account (2111) not found. Skipping journal entry for payment: ' . $payment->id);
+            if (! $creditorsAccount) {
+                Log::warning('Creditors account (2111) not found. Skipping journal entry for payment: '.$payment->id);
+
                 return null;
             }
 
@@ -98,8 +99,9 @@ class PaymentService
                 $paymentAccount = ChartOfAccount::where('account_code', $paymentAccountCode)->first();
             }
 
-            if (!$paymentAccount) {
-                Log::warning("Payment account ({$paymentAccountCode}) not found. Skipping journal entry for payment: " . $payment->id);
+            if (! $paymentAccount) {
+                Log::warning("Payment account ({$paymentAccountCode}) not found. Skipping journal entry for payment: ".$payment->id);
+
                 return null;
             }
 
@@ -108,8 +110,9 @@ class PaymentService
             if ($hasChildren) {
                 // If it's a parent, try to find first child (leaf)
                 $paymentAccount = ChartOfAccount::where('parent_id', $paymentAccount->id)->first();
-                if (!$paymentAccount) {
-                    Log::warning("No leaf account found under {$paymentAccountCode}. Skipping journal entry for payment: " . $payment->id);
+                if (! $paymentAccount) {
+                    Log::warning("No leaf account found under {$paymentAccountCode}. Skipping journal entry for payment: ".$payment->id);
+
                     return null;
                 }
             }
@@ -117,7 +120,8 @@ class PaymentService
             $amount = $payment->amount;
 
             if ($amount <= 0) {
-                Log::warning('Payment amount is zero or negative. Skipping journal entry for payment: ' . $payment->id);
+                Log::warning('Payment amount is zero or negative. Skipping journal entry for payment: '.$payment->id);
+
                 return null;
             }
 
@@ -147,7 +151,7 @@ class PaymentService
                         'account_id' => $paymentAccount->id,
                         'debit' => 0,
                         'credit' => $amount,
-                        'description' => "Paid via {$payment->payment_method}" . ($payment->reference_number ? " ({$payment->reference_number})" : ""),
+                        'description' => "Paid via {$payment->payment_method}".($payment->reference_number ? " ({$payment->reference_number})" : ''),
                         'cost_center_id' => 1, // CC001: Finance & Accounting
                     ],
                 ],
@@ -160,14 +164,17 @@ class PaymentService
 
             if ($result['success']) {
                 Log::info("Journal entry created for payment {$payment->payment_number}: JE #{$result['data']->entry_number}");
+
                 return $result['data'];
             } else {
-                Log::error("Failed to create journal entry for payment {$payment->payment_number}: " . $result['message']);
+                Log::error("Failed to create journal entry for payment {$payment->payment_number}: ".$result['message']);
+
                 return null;
             }
 
         } catch (\Exception $e) {
-            Log::error("Exception creating journal entry for payment {$payment->id}: " . $e->getMessage());
+            Log::error("Exception creating journal entry for payment {$payment->id}: ".$e->getMessage());
+
             return null;
         }
     }
@@ -204,7 +211,7 @@ class PaymentService
                 SELECT allocations.grn_id, SUM(allocations.allocated_amount) as total_paid
                 FROM payment_grn_allocations allocations
                 INNER JOIN supplier_payments sp ON allocations.supplier_payment_id = sp.id
-                WHERE sp.status = ' . DB::connection()->getPdo()->quote('posted') . '
+                WHERE sp.status = '.DB::connection()->getPdo()->quote('posted').'
                 GROUP BY allocations.grn_id
             ) as payments'), 'grn.id', '=', 'payments.grn_id')
             ->select([
@@ -256,16 +263,17 @@ class PaymentService
 
             return [
                 'success' => true,
-                'message' => "Payment {$payment->payment_number} reversed successfully" . ($reversingEntry ? " with reversing journal entry" : ""),
+                'message' => "Payment {$payment->payment_number} reversed successfully".($reversingEntry ? ' with reversing journal entry' : ''),
                 'data' => $payment->fresh(),
             ];
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error("Failed to reverse payment {$payment->id}: " . $e->getMessage());
+            Log::error("Failed to reverse payment {$payment->id}: ".$e->getMessage());
+
             return [
                 'success' => false,
-                'message' => 'Failed to reverse payment: ' . $e->getMessage(),
+                'message' => 'Failed to reverse payment: '.$e->getMessage(),
                 'data' => null,
             ];
         }
@@ -281,8 +289,9 @@ class PaymentService
             // Find Creditors account
             $creditorsAccount = ChartOfAccount::where('account_code', '2111')->first();
 
-            if (!$creditorsAccount) {
-                Log::warning('Creditors account (2111) not found. Skipping reversing journal entry for payment: ' . $payment->id);
+            if (! $creditorsAccount) {
+                Log::warning('Creditors account (2111) not found. Skipping reversing journal entry for payment: '.$payment->id);
+
                 return null;
             }
 
@@ -305,8 +314,9 @@ class PaymentService
                 $paymentAccount = ChartOfAccount::where('account_code', $paymentAccountCode)->first();
             }
 
-            if (!$paymentAccount) {
-                Log::warning("Payment account ({$paymentAccountCode}) not found. Skipping reversing journal entry for payment: " . $payment->id);
+            if (! $paymentAccount) {
+                Log::warning("Payment account ({$paymentAccountCode}) not found. Skipping reversing journal entry for payment: ".$payment->id);
+
                 return null;
             }
 
@@ -315,8 +325,9 @@ class PaymentService
             if ($hasChildren) {
                 // If it's a parent, try to find first child (leaf)
                 $paymentAccount = ChartOfAccount::where('parent_id', $paymentAccount->id)->first();
-                if (!$paymentAccount) {
-                    Log::warning("No leaf account found under {$paymentAccountCode}. Skipping reversing journal entry for payment: " . $payment->id);
+                if (! $paymentAccount) {
+                    Log::warning("No leaf account found under {$paymentAccountCode}. Skipping reversing journal entry for payment: ".$payment->id);
+
                     return null;
                 }
             }
@@ -324,7 +335,8 @@ class PaymentService
             $amount = $payment->amount;
 
             if ($amount <= 0) {
-                Log::warning('Payment amount is zero or negative. Skipping reversing journal entry for payment: ' . $payment->id);
+                Log::warning('Payment amount is zero or negative. Skipping reversing journal entry for payment: '.$payment->id);
+
                 return null;
             }
 
@@ -353,7 +365,7 @@ class PaymentService
                         'account_id' => $creditorsAccount->id,
                         'debit' => 0,
                         'credit' => $amount,
-                        'description' => "Reversal - Payment to supplier returned",
+                        'description' => 'Reversal - Payment to supplier returned',
                         'cost_center_id' => 10, // CC010: Procurement & Purchasing
                     ],
                 ],
@@ -366,14 +378,17 @@ class PaymentService
 
             if ($result['success']) {
                 Log::info("Reversing journal entry created for payment {$payment->payment_number}: JE #{$result['data']->entry_number}");
+
                 return $result['data'];
             } else {
-                Log::error("Failed to create reversing journal entry for payment {$payment->payment_number}: " . $result['message']);
+                Log::error("Failed to create reversing journal entry for payment {$payment->payment_number}: ".$result['message']);
+
                 return null;
             }
 
         } catch (\Exception $e) {
-            Log::error("Exception creating reversing journal entry for payment {$payment->id}: " . $e->getMessage());
+            Log::error("Exception creating reversing journal entry for payment {$payment->id}: ".$e->getMessage());
+
             return null;
         }
     }

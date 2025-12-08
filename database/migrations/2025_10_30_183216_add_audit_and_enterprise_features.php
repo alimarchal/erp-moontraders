@@ -2,13 +2,14 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
-     * 
+     *
      * Adds enterprise-grade features:
      * 1. Comprehensive audit trail for all accounting data changes
      * 2. Soft deletes for draft journal entries
@@ -226,7 +227,7 @@ return new class extends Migration {
             'journal_entry_details',
             'accounting_periods',
             'account_types',
-            'cost_centers'
+            'cost_centers',
         ];
 
         foreach ($auditTables as $table) {
@@ -257,13 +258,13 @@ return new class extends Migration {
             \$\$ LANGUAGE plpgsql;
         ");
 
-        DB::unprepared("
+        DB::unprepared('
             DROP TRIGGER IF EXISTS trg_prevent_hard_delete ON journal_entries;
             CREATE TRIGGER trg_prevent_hard_delete
             BEFORE DELETE ON journal_entries
             FOR EACH ROW
             EXECUTE FUNCTION prevent_hard_delete_posted();
-        ");
+        ');
     }
 
     /**
@@ -391,7 +392,7 @@ return new class extends Migration {
             'journal_entry_details',
             'accounting_periods',
             'account_types',
-            'cost_centers'
+            'cost_centers',
         ];
 
         foreach ($auditTables as $table) {
@@ -498,7 +499,7 @@ return new class extends Migration {
                     END
                 ");
             } catch (\Exception $e) {
-                \Log::warning("Skipped audit triggers for {$table}: " . $e->getMessage());
+                \Log::warning("Skipped audit triggers for {$table}: ".$e->getMessage());
             }
         }
     }
@@ -509,7 +510,7 @@ return new class extends Migration {
     private function createMySQLSoftDeleteProtection(): void
     {
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_mysql_prevent_hard_delete");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_mysql_prevent_hard_delete');
             DB::unprepared("
                 CREATE TRIGGER trg_mysql_prevent_hard_delete
                 BEFORE DELETE ON journal_entries
@@ -522,7 +523,7 @@ return new class extends Migration {
                 END
             ");
         } catch (\Exception $e) {
-            \Log::warning('MySQL/MariaDB soft delete protection not created: ' . $e->getMessage());
+            \Log::warning('MySQL/MariaDB soft delete protection not created: '.$e->getMessage());
         }
     }
 
@@ -533,7 +534,7 @@ return new class extends Migration {
     {
         try {
             // Stored procedure to create period snapshots
-            DB::unprepared("DROP PROCEDURE IF EXISTS sp_create_period_snapshots");
+            DB::unprepared('DROP PROCEDURE IF EXISTS sp_create_period_snapshots');
             DB::unprepared("
                 CREATE PROCEDURE sp_create_period_snapshots(IN p_period_id BIGINT)
                 BEGIN
@@ -598,7 +599,7 @@ return new class extends Migration {
             ");
 
             // Function to get account balance using snapshots
-            DB::unprepared("DROP FUNCTION IF EXISTS fn_account_balance_fast");
+            DB::unprepared('DROP FUNCTION IF EXISTS fn_account_balance_fast');
             DB::unprepared("
                 CREATE FUNCTION fn_account_balance_fast(
                     p_account_id BIGINT,
@@ -633,7 +634,7 @@ return new class extends Migration {
                 END
             ");
         } catch (\Exception $e) {
-            \Log::warning('MySQL/MariaDB snapshot helpers not created: ' . $e->getMessage());
+            \Log::warning('MySQL/MariaDB snapshot helpers not created: '.$e->getMessage());
         }
     }
 
@@ -642,11 +643,11 @@ return new class extends Migration {
      */
     private function dropViewsForSQLite(): void
     {
-        DB::statement("DROP VIEW IF EXISTS vw_income_statement");
-        DB::statement("DROP VIEW IF EXISTS vw_balance_sheet");
-        DB::statement("DROP VIEW IF EXISTS vw_general_ledger");
-        DB::statement("DROP VIEW IF EXISTS vw_account_balances");
-        DB::statement("DROP VIEW IF EXISTS vw_trial_balance");
+        DB::statement('DROP VIEW IF EXISTS vw_income_statement');
+        DB::statement('DROP VIEW IF EXISTS vw_balance_sheet');
+        DB::statement('DROP VIEW IF EXISTS vw_general_ledger');
+        DB::statement('DROP VIEW IF EXISTS vw_account_balances');
+        DB::statement('DROP VIEW IF EXISTS vw_trial_balance');
     }
 
     /**
@@ -694,7 +695,7 @@ return new class extends Migration {
         ");
 
         // View for General Ledger
-        DB::statement("
+        DB::statement('
             CREATE VIEW IF NOT EXISTS vw_general_ledger AS
             SELECT
                 je.id AS journal_entry_id,
@@ -719,7 +720,7 @@ return new class extends Migration {
             LEFT JOIN cost_centers cc ON cc.id = jed.cost_center_id
             LEFT JOIN currencies c ON c.id = je.currency_id
             ORDER BY je.entry_date, je.id, jed.line_no
-        ");
+        ');
 
         // View for Balance Sheet
         DB::statement("
@@ -788,16 +789,16 @@ return new class extends Migration {
                 'journal_entry_details',
                 'accounting_periods',
                 'account_types',
-                'cost_centers'
+                'cost_centers',
             ];
             foreach ($tables as $table) {
                 DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table} ON {$table}");
             }
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_prevent_hard_delete ON journal_entries");
-            DB::unprepared("DROP FUNCTION IF EXISTS audit_accounting_changes() CASCADE");
-            DB::unprepared("DROP FUNCTION IF EXISTS prevent_hard_delete_posted() CASCADE");
-            DB::unprepared("DROP FUNCTION IF EXISTS sp_create_period_snapshots(BIGINT) CASCADE");
-            DB::unprepared("DROP FUNCTION IF EXISTS fn_account_balance_fast(BIGINT, DATE) CASCADE");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_prevent_hard_delete ON journal_entries');
+            DB::unprepared('DROP FUNCTION IF EXISTS audit_accounting_changes() CASCADE');
+            DB::unprepared('DROP FUNCTION IF EXISTS prevent_hard_delete_posted() CASCADE');
+            DB::unprepared('DROP FUNCTION IF EXISTS sp_create_period_snapshots(BIGINT) CASCADE');
+            DB::unprepared('DROP FUNCTION IF EXISTS fn_account_balance_fast(BIGINT, DATE) CASCADE');
         } elseif (in_array($driver, ['mysql', 'mariadb'])) {
             // MySQL/MariaDB cleanup
             $tables = [
@@ -806,7 +807,7 @@ return new class extends Migration {
                 'journal_entry_details',
                 'accounting_periods',
                 'account_types',
-                'cost_centers'
+                'cost_centers',
             ];
 
             foreach ($tables as $table) {
@@ -815,16 +816,16 @@ return new class extends Migration {
                     DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_update");
                     DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_delete");
                 } catch (\Exception $e) {
-                    \Log::warning("Could not drop triggers for {$table}: " . $e->getMessage());
+                    \Log::warning("Could not drop triggers for {$table}: ".$e->getMessage());
                 }
             }
 
             try {
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_mysql_prevent_hard_delete");
-                DB::unprepared("DROP PROCEDURE IF EXISTS sp_create_period_snapshots");
-                DB::unprepared("DROP FUNCTION IF EXISTS fn_account_balance_fast");
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_mysql_prevent_hard_delete');
+                DB::unprepared('DROP PROCEDURE IF EXISTS sp_create_period_snapshots');
+                DB::unprepared('DROP FUNCTION IF EXISTS fn_account_balance_fast');
             } catch (\Exception $e) {
-                \Log::warning("Could not drop MySQL objects: " . $e->getMessage());
+                \Log::warning('Could not drop MySQL objects: '.$e->getMessage());
             }
         }
 

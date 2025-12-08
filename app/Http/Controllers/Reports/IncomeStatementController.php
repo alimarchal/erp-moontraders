@@ -4,11 +4,8 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\AccountingPeriod;
-use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\QueryBuilder;
 
 class IncomeStatementController extends Controller
 {
@@ -58,7 +55,7 @@ class IncomeStatementController extends Controller
 
         // Use database function for PostgreSQL, direct query for MySQL
         if ($driver === 'pgsql') {
-            $accounts = collect(DB::select("SELECT * FROM fn_income_statement(?::date, ?::date)", [$startDate, $endDate]));
+            $accounts = collect(DB::select('SELECT * FROM fn_income_statement(?::date, ?::date)', [$startDate, $endDate]));
         } else {
             // MySQL compatible query with proper date filtering
             $accounts = DB::table('chart_of_accounts as a')
@@ -77,7 +74,7 @@ class IncomeStatementController extends Controller
                             THEN COALESCE(SUM(d.credit - d.debit), 0)
                             ELSE 0
                         END AS balance
-                    ")
+                    "),
                 ])
                 ->join('account_types as at', 'at.id', '=', 'a.account_type_id')
                 ->leftJoin(DB::raw("(

@@ -3,10 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\CreditSale;
-use App\Models\Employee;
 use App\Models\Customer;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Models\Employee;
 
 class CreditSalesReportController extends Controller
 {

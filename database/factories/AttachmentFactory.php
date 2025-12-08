@@ -28,8 +28,8 @@ class AttachmentFactory extends Factory
 
         return [
             'journal_entry_id' => JournalEntry::factory(),
-            'file_name' => fake()->word() . '.' . $extensions[$fileType],
-            'file_path' => 'attachments/' . fake()->uuid() . '.' . $extensions[$fileType],
+            'file_name' => fake()->word().'.'.$extensions[$fileType],
+            'file_path' => 'attachments/'.fake()->uuid().'.'.$extensions[$fileType],
             'file_type' => $fileType,
             'file_size' => fake()->numberBetween(1024, 5242880), // 1KB to 5MB
             'description' => fake()->optional()->sentence(),

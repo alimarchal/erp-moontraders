@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class TaxRateSeeder extends Seeder
 {
@@ -116,7 +116,7 @@ class TaxRateSeeder extends Seeder
         }
 
         // Insert tax rates
-        if (!empty($taxRates)) {
+        if (! empty($taxRates)) {
             DB::table('tax_rates')->insert($taxRates);
             $this->command->info('Tax rates seeded successfully.');
         } else {

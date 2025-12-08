@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\PromotionalCampaign;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Spatie\QueryBuilder\QueryBuilder;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class PromotionalCampaignController extends Controller
 {
@@ -87,7 +86,7 @@ class PromotionalCampaignController extends Controller
     public function update(Request $request, PromotionalCampaign $promotionalCampaign)
     {
         $validated = $request->validate([
-            'campaign_code' => 'required|string|max:50|unique:promotional_campaigns,campaign_code,' . $promotionalCampaign->id,
+            'campaign_code' => 'required|string|max:50|unique:promotional_campaigns,campaign_code,'.$promotionalCampaign->id,
             'campaign_name' => 'required|string|max:255',
             'description' => 'nullable|string',
             'start_date' => 'required|date',

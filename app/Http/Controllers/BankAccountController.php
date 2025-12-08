@@ -127,7 +127,7 @@ class BankAccountController extends Controller
 
             $updated = $bankAccount->update($payload);
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

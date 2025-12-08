@@ -169,7 +169,7 @@ class CompanyController extends Controller
 
             $updated = $company->update($data);
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

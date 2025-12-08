@@ -137,7 +137,7 @@ class UomController extends Controller
 
             $updated = $uom->update($validated);
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

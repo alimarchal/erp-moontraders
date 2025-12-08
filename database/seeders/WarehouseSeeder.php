@@ -2,11 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\ChartOfAccount;
+use App\Models\Company;
 use App\Models\Warehouse;
 use App\Models\WarehouseType;
-use App\Models\Company;
-use App\Models\ChartOfAccount;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class WarehouseSeeder extends Seeder

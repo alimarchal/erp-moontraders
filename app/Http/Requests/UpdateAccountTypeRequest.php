@@ -27,7 +27,7 @@ class UpdateAccountTypeRequest extends FormRequest
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('account_types', 'type_name')->ignore($this->account_type)
+                Rule::unique('account_types', 'type_name')->ignore($this->account_type),
             ],
             'report_group' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],

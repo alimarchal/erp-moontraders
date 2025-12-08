@@ -5,7 +5,8 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -37,8 +38,8 @@ return new class extends Migration {
         $driver = Schema::getConnection()->getDriverName();
 
         if ($driver === 'pgsql') {
-            DB::statement("ALTER TABLE journal_entries ALTER COLUMN status TYPE VARCHAR(255)");
-            DB::statement("ALTER TABLE journal_entries ALTER COLUMN status SET NOT NULL");
+            DB::statement('ALTER TABLE journal_entries ALTER COLUMN status TYPE VARCHAR(255)');
+            DB::statement('ALTER TABLE journal_entries ALTER COLUMN status SET NOT NULL');
             DB::statement("ALTER TABLE journal_entries ALTER COLUMN status SET DEFAULT 'draft'");
             DB::statement('ALTER TABLE journal_entries DROP CONSTRAINT IF EXISTS journal_entries_status_check');
             DB::statement("ALTER TABLE journal_entries ADD CONSTRAINT journal_entries_status_check CHECK (status IN ('draft', 'posted', 'void'))");

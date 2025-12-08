@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Spatie\Permission\Models\Role;
-use Spatie\Permission\Models\Permission;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller implements HasMiddleware
 {
@@ -21,10 +21,12 @@ class RoleController extends Controller implements HasMiddleware
             new Middleware('role_or_permission:assign permissions', only: ['store', 'update']),
         ];
     }
+
     // Show the form for creating a new role
     public function create()
     {
         $permissions = Permission::all();
+
         return view('roles.create', compact('permissions'));
     }
 
@@ -35,7 +37,7 @@ class RoleController extends Controller implements HasMiddleware
             'name' => 'required|string|max:255|unique:roles,name',
             'guard_name' => 'required|string|max:255',
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,id'
+            'permissions.*' => 'exists:permissions,id',
         ]);
 
         $role = Role::create([
@@ -58,7 +60,7 @@ class RoleController extends Controller implements HasMiddleware
 
         // Apply filters based on request inputs
         if ($name = $request->input('filter.name')) {
-            $query->where('name', 'LIKE', '%' . $name . '%');
+            $query->where('name', 'LIKE', '%'.$name.'%');
         }
 
         if ($createdAt = $request->input('filter.created_at')) {
@@ -72,12 +74,12 @@ class RoleController extends Controller implements HasMiddleware
         return view('roles.index', compact('roles'));
     }
 
-
     // Show the form for editing the specified role
     public function edit(Role $role)
     {
         $permissions = Permission::all();
         $rolePermissions = $role->permissions->pluck('id')->toArray();
+
         return view('roles.edit', compact('role', 'permissions', 'rolePermissions'));
     }
 
@@ -85,10 +87,10 @@ class RoleController extends Controller implements HasMiddleware
     public function update(Request $request, Role $role)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'name' => 'required|string|max:255|unique:roles,name,'.$role->id,
             'guard_name' => 'required|string|max:255',
             'permissions' => 'array',
-            'permissions.*' => 'exists:permissions,id'
+            'permissions.*' => 'exists:permissions,id',
         ]);
 
         $role->update([

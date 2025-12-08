@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreWarehouseRequest;
 use App\Http\Requests\UpdateWarehouseRequest;
-use App\Models\Warehouse;
 use App\Models\ChartOfAccount;
 use App\Models\Company;
+use App\Models\Warehouse;
 use App\Models\WarehouseType;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
@@ -147,7 +147,7 @@ class WarehouseController extends Controller
         try {
             $updated = $warehouse->update($request->validated());
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

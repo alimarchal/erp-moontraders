@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class TaxCodeSeeder extends Seeder
 {
@@ -30,7 +30,7 @@ class TaxCodeSeeder extends Seeder
             ->where('account_name', 'Advance Tax')
             ->first();
 
-        if (!$gstPayableAccount || !$taxReceivableAccount) {
+        if (! $gstPayableAccount || ! $taxReceivableAccount) {
             throw new \Exception('Required tax accounts not found. Please run ChartOfAccountSeeder first.');
         }
 

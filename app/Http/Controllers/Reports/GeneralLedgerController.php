@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\GeneralLedgerEntry;
-use App\Models\AccountingPeriod;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -42,7 +42,7 @@ class GeneralLedgerController extends Controller
                     'filter' => array_merge($request->input('filter', []), [
                         'entry_date_from' => $entryDateFrom,
                         'entry_date_to' => $entryDateTo,
-                    ])
+                    ]),
                 ]);
             }
         }

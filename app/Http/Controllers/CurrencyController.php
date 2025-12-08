@@ -153,7 +153,7 @@ class CurrencyController extends Controller
 
             $updated = $currency->update($validated);
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

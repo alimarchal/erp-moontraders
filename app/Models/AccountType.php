@@ -3,20 +3,21 @@
 namespace App\Models;
 
 use App\Traits\UserTracking;
-use Spatie\Activitylog\LogOptions;
-use Illuminate\Database\Eloquent\Model;
-use Spatie\Activitylog\Traits\LogsActivity;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class AccountType extends Model
 {
     /** @use HasFactory<\Database\Factories\AccountTypeFactory> */
     use HasFactory;
-    use UserTracking;
-    use SoftDeletes;
+
     use LogsActivity;
+    use SoftDeletes;
+    use UserTracking;
 
     /**
      * The attributes that are mass assignable.
@@ -39,8 +40,6 @@ class AccountType extends Model
 
     /**
      * Get activity log options.
-     *
-     * @return \Spatie\Activitylog\LogOptions
      */
     public function getActivitylogOptions(): LogOptions
     {
@@ -48,6 +47,6 @@ class AccountType extends Model
             ->logAll()
             ->logOnlyDirty()
             ->dontSubmitEmptyLogs()
-            ->setDescriptionForEvent(fn(string $eventName) => "Account Type has been {$eventName}");
+            ->setDescriptionForEvent(fn (string $eventName) => "Account Type has been {$eventName}");
     }
 }

@@ -20,10 +20,10 @@ class CostCenterFactory extends Factory
 
         return [
             'parent_id' => null,
-            'code' => $type === 'cost_center' ? 'CC' . fake()->unique()->numberBetween(1000, 9999) : 'PROJ' . fake()->unique()->numberBetween(100, 999),
+            'code' => $type === 'cost_center' ? 'CC'.fake()->unique()->numberBetween(1000, 9999) : 'PROJ'.fake()->unique()->numberBetween(100, 999),
             'name' => $type === 'cost_center'
-                ? fake()->randomElement(['Marketing', 'Sales', 'IT', 'HR', 'Finance', 'Operations']) . ' Department'
-                : fake()->catchPhrase() . ' Project',
+                ? fake()->randomElement(['Marketing', 'Sales', 'IT', 'HR', 'Finance', 'Operations']).' Department'
+                : fake()->catchPhrase().' Project',
             'description' => fake()->optional()->paragraph(),
             'type' => $type,
             'start_date' => $type === 'project' ? fake()->dateTimeBetween('-1 year', 'now') : null,
@@ -37,9 +37,9 @@ class CostCenterFactory extends Factory
      */
     public function project(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'type' => 'project',
-            'code' => 'PROJ' . fake()->unique()->numberBetween(100, 999),
+            'code' => 'PROJ'.fake()->unique()->numberBetween(100, 999),
             'start_date' => fake()->dateTimeBetween('-1 year', 'now'),
             'end_date' => fake()->dateTimeBetween('now', '+1 year'),
         ]);
@@ -50,9 +50,9 @@ class CostCenterFactory extends Factory
      */
     public function department(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'type' => 'cost_center',
-            'code' => 'CC' . fake()->unique()->numberBetween(1000, 9999),
+            'code' => 'CC'.fake()->unique()->numberBetween(1000, 9999),
             'start_date' => null,
             'end_date' => null,
         ]);

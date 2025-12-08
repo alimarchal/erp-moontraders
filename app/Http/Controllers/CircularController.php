@@ -2,21 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\Circular;
-use App\Models\Division;
-use Illuminate\Http\Request;
-use App\Helpers\FileStorageHelper;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Spatie\QueryBuilder\QueryBuilder;
-use Spatie\QueryBuilder\AllowedFilter;
 use Alimarchal\IdGenerator\IdGenerator;
-use Illuminate\Support\Facades\Storage;
+use App\Helpers\FileStorageHelper;
 use App\Http\Requests\StoreCircularRequest;
 use App\Http\Requests\UpdateCircularRequest;
+use App\Models\Circular;
+use App\Models\Division;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * CircularController handles CRUD operations for circulars
@@ -26,8 +23,7 @@ class CircularController extends Controller
 {
     /**
      * Display paginated list of circulars with filtering capabilities
-     * 
-     * @param Request $request
+     *
      * @return \Illuminate\View\View
      */
     public function index(Request $request, IdGenerator $idGenerator)
@@ -43,7 +39,7 @@ class CircularController extends Controller
                 }),
                 AllowedFilter::callback('date_to', function ($query, $value) {
                     $query->whereDate('created_at', '<=', $value);
-                })
+                }),
             ])
             ->with(['user', 'division', 'updatedBy'])          // Eager load relationships
             ->latest()                                                   // Order by newest first
@@ -54,20 +50,20 @@ class CircularController extends Controller
 
     /**
      * Show form to create new circular
-     * 
+     *
      * @return \Illuminate\View\View
      */
     public function create()
     {
         $divisions = Division::all(); // Get divisions for dropdown
+
         return view('circulars.create', compact('divisions'));
     }
 
     /**
      * Store new circular with file attachment
      * Uses transaction for data consistency
-     * 
-     * @param StoreCircularRequest $request
+     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function store(StoreCircularRequest $request)
@@ -75,17 +71,14 @@ class CircularController extends Controller
         // Start database transaction
         DB::beginTransaction();
 
-
         // Create folder path based on division name
-        $folderName = 'Circulars/' . Division::find($request->division_id)->name;
+        $folderName = 'Circulars/'.Division::find($request->division_id)->name;
 
         try {
             // Get validated data from form request
             $validated = $request->validated();
-            //$circular_number_auto_generated = generateUniqueId('circular', 'circulars', 'circular_number');
+            // $circular_number_auto_generated = generateUniqueId('circular', 'circulars', 'circular_number');
             $validated['circular_number'] = generateUniqueId('circular', 'circulars', 'circular_number');
-
-
 
             // Handle file upload if attachment provided
             if ($request->hasFile('attachment')) {
@@ -135,9 +128,7 @@ class CircularController extends Controller
     /**
      * Update existing circular with optional file replacement
      * Uses transaction for data consistency
-     * 
-     * @param UpdateCircularRequest $request
-     * @param Circular $circular
+     *
      * @return \Illuminate\Http\RedirectResponse
      */
     public function update(UpdateCircularRequest $request, Circular $circular)
@@ -146,7 +137,7 @@ class CircularController extends Controller
         DB::beginTransaction();
 
         // Create folder path based on division name
-        $folderName = 'Circulars/' . Division::find($request->division_id)->name;
+        $folderName = 'Circulars/'.Division::find($request->division_id)->name;
 
         try {
             // Get validated data from form request
@@ -158,9 +149,6 @@ class CircularController extends Controller
                 if ($circular->attachment) {
                     FileStorageHelper::deleteFile($circular->attachment);
                 }
-
-
-
 
                 // Handle file upload update if attachment provided
                 if ($request->hasFile('attachment')) {
@@ -176,8 +164,9 @@ class CircularController extends Controller
             $isUpdated = $circular->update($validated);
 
             // Check if any changes were actually made
-            if (!$isUpdated) {
+            if (! $isUpdated) {
                 DB::rollBack();
+
                 return redirect()->back()
                     ->with('info', 'No changes were made to the circular.');
             }
@@ -204,7 +193,7 @@ class CircularController extends Controller
             Log::error('Database error updating circular', [
                 'circular_id' => $circular->id,
                 'error' => $e->getMessage(),
-                'user_id' => auth()->id()
+                'user_id' => auth()->id(),
             ]);
 
             return redirect()->back()
@@ -223,14 +212,14 @@ class CircularController extends Controller
 
     /**
      * Show form to edit existing circular
-     * 
-     * @param Circular $circular
+     *
      * @return \Illuminate\View\View
      */
     public function edit(Circular $circular)
     {
         $divisions = Division::all(); // Get divisions for dropdown
         $users = User::all();         // Get users for dropdown
+
         return view('circulars.edit', compact('circular', 'divisions', 'users'));
     }
 }

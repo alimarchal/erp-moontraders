@@ -25,8 +25,8 @@ class UpdateVehicleRequest extends FormRequest
         $vehicleId = is_object($vehicle) ? $vehicle->id : $vehicle;
 
         return [
-            'vehicle_number' => ['required', 'string', 'max:191', 'unique:vehicles,vehicle_number,' . $vehicleId],
-            'registration_number' => ['required', 'string', 'max:191', 'unique:vehicles,registration_number,' . $vehicleId],
+            'vehicle_number' => ['required', 'string', 'max:191', 'unique:vehicles,vehicle_number,'.$vehicleId],
+            'registration_number' => ['required', 'string', 'max:191', 'unique:vehicles,registration_number,'.$vehicleId],
             'vehicle_type' => ['nullable', 'string', 'max:100'],
             'make_model' => ['nullable', 'string', 'max:191'],
             'year' => ['nullable', 'string', 'max:4'],

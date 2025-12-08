@@ -17,7 +17,7 @@ class SetDatabaseAuditContext
      * - Current authenticated user ID
      * - Client IP address
      * - User agent (browser/client info)
-     * 
+     *
      * These values are then available to database triggers for automatic audit logging.
      */
     public function handle(Request $request, Closure $next): Response
@@ -37,17 +37,17 @@ class SetDatabaseAuditContext
                     DB::statement("SELECT set_config('app.current_user_id', ?, false)", [$userId]);
                     DB::statement("SELECT set_config('app.ip_address', ?, false)", [$ipAddress]);
                     DB::statement("SELECT set_config('app.user_agent', ?, false)", [
-                        str_replace("'", "''", $userAgent) // Escape single quotes
+                        str_replace("'", "''", $userAgent), // Escape single quotes
                     ]);
                 } elseif (in_array($driver, ['mysql', 'mariadb'])) {
                     // MySQL: Use user-defined variables
-                    DB::statement("SET @current_user_id = ?", [$userId]);
-                    DB::statement("SET @ip_address = ?", [$ipAddress]);
-                    DB::statement("SET @user_agent = ?", [$userAgent]);
+                    DB::statement('SET @current_user_id = ?', [$userId]);
+                    DB::statement('SET @ip_address = ?', [$ipAddress]);
+                    DB::statement('SET @user_agent = ?', [$userAgent]);
                 }
             } catch (\Exception $e) {
                 // Log error but don't break the application
-                \Log::warning('Failed to set database audit context: ' . $e->getMessage());
+                \Log::warning('Failed to set database audit context: '.$e->getMessage());
             }
         }
 

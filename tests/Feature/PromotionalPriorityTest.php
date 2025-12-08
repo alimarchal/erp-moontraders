@@ -1,23 +1,23 @@
 <?php
 
+use App\Models\CurrentStockByBatch;
+use App\Models\Employee;
+use App\Models\GoodsIssue;
+use App\Models\GoodsIssueItem;
 use App\Models\GoodsReceiptNote;
 use App\Models\GoodsReceiptNoteItem;
 use App\Models\Product;
-use App\Models\Supplier;
-use App\Models\Warehouse;
-use App\Models\Vehicle;
-use App\Models\Employee;
-use App\Models\Uom;
-use App\Models\GoodsIssue;
-use App\Models\GoodsIssueItem;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementItem;
 use App\Models\StockBatch;
 use App\Models\StockMovement;
-use App\Models\CurrentStockByBatch;
+use App\Models\Supplier;
+use App\Models\Uom;
 use App\Models\VanStockBalance;
-use App\Services\InventoryService;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use App\Services\DistributionService;
+use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

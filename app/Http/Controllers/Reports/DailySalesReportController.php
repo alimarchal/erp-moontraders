@@ -9,7 +9,6 @@ use App\Models\Vehicle;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class DailySalesReportController extends Controller
 {

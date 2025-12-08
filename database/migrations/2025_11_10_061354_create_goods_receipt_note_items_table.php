@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -16,7 +17,7 @@ return new class extends Migration {
             $table->foreignId('grn_id')->constrained('goods_receipt_notes')->cascadeOnDelete();
             $table->integer('line_no')->default(0)->comment('Line sequence in GRN');
 
-            // Product linked to products catelog where product_id likned with supplier 
+            // Product linked to products catelog where product_id likned with supplier
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignId('stock_uom_id')->nullable()->constrained('uoms')->comment('Base UOM for inventory storage (Piece, Kg, Liter)');
 

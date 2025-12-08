@@ -4,8 +4,8 @@ namespace Database\Seeders;
 
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
-use Illuminate\Database\Seeder;
 use Carbon\Carbon;
+use Illuminate\Database\Seeder;
 
 class BankAccountSeeder extends Seeder
 {
@@ -16,7 +16,7 @@ class BankAccountSeeder extends Seeder
         // Find the "Bank Accounts" parent group in Chart of Accounts
         $bankAccountsGroup = ChartOfAccount::where('account_name', 'Bank Accounts')->first();
 
-        if (!$bankAccountsGroup) {
+        if (! $bankAccountsGroup) {
             throw new \Exception('Bank Accounts group not found in Chart of Accounts. Please run ChartOfAccountSeeder first.');
         }
 
@@ -94,9 +94,9 @@ class BankAccountSeeder extends Seeder
             $baseCode = substr($bankAccountsGroup->account_code, 0, 3);  // "112"
 
             if ($counter <= 9) {
-                $accountCode = $baseCode . '0' . $counter;  // "11201" to "11209"
+                $accountCode = $baseCode.'0'.$counter;  // "11201" to "11209"
             } else {
-                $accountCode = $baseCode . $counter;  // "11210"
+                $accountCode = $baseCode.$counter;  // "11210"
             }
 
             // Create a Chart of Account entry for this bank account
@@ -105,7 +105,7 @@ class BankAccountSeeder extends Seeder
                 'account_type_id' => $bankAccountsGroup->account_type_id,
                 'currency_id' => $baseCurrency->id,
                 'account_code' => $accountCode,
-                'account_name' => $accountData['account_name'] . ' - ' . $accountData['account_number'],
+                'account_name' => $accountData['account_name'].' - '.$accountData['account_number'],
                 'normal_balance' => 'debit',
                 'description' => 'Bank',
                 'is_group' => false,

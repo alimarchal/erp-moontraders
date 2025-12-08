@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTaxRateRequest;
 use App\Http\Requests\UpdateTaxRateRequest;
-use App\Models\TaxRate;
 use App\Models\TaxCode;
+use App\Models\TaxRate;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -128,7 +128,7 @@ class TaxRateController extends Controller
         try {
             $updated = $taxRate->update($request->validated());
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

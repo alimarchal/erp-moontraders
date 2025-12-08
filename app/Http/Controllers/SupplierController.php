@@ -140,7 +140,7 @@ class SupplierController extends Controller
         try {
             $updated = $supplier->update($request->validated());
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

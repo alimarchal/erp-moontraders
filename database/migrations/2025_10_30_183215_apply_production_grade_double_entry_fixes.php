@@ -2,13 +2,14 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
-     * 
+     *
      * Production-grade fixes for double-entry accounting system:
      * 1. Stricter debit/credit XOR (one side MUST be > 0)
      * 2. Accounting period check on UPDATE to 'posted'
@@ -50,19 +51,19 @@ return new class extends Migration {
 
         // SQLite doesn't support ALTER TABLE ADD/DROP CONSTRAINT
         if ($driver !== 'sqlite') {
-            DB::statement("
+            DB::statement('
                 ALTER TABLE journal_entry_details
                 DROP CONSTRAINT IF EXISTS chk_debit_xor_credit
-            ");
+            ');
 
-            DB::statement("
+            DB::statement('
                 ALTER TABLE journal_entry_details
                 ADD CONSTRAINT chk_debit_xor_credit
                 CHECK (
                     (debit > 0 AND credit = 0) OR
                     (credit > 0 AND debit = 0)
                 )
-            ");
+            ');
         }
     }
 
@@ -75,11 +76,11 @@ return new class extends Migration {
 
         // SQLite doesn't support ALTER TABLE ADD CONSTRAINT
         if ($driver !== 'sqlite') {
-            DB::statement("
+            DB::statement('
                 ALTER TABLE journal_entries
                 ADD CONSTRAINT chk_fx_rate_positive
                 CHECK (fx_rate_to_base > 0)
-            ");
+            ');
         }
     }
 
@@ -91,10 +92,10 @@ return new class extends Migration {
         $driver = DB::connection()->getDriverName();
 
         if ($driver === 'pgsql') {
-            DB::statement("
+            DB::statement('
                 ALTER TABLE account_types
                 DROP CONSTRAINT IF EXISTS chk_report_group
-            ");
+            ');
 
             DB::statement("
                 ALTER TABLE account_types
@@ -110,12 +111,14 @@ return new class extends Migration {
                     CHECK (report_group IN ('BalanceSheet', 'IncomeStatement'))
                 ");
             } catch (\Exception $e) {
-                \Log::warning('Could not add report_group constraint: ' . $e->getMessage());
+                \Log::warning('Could not add report_group constraint: '.$e->getMessage());
             }
         }
-    }    /**
-         * Add unique constraint on account type names
-         */
+    }
+
+    /**
+     * Add unique constraint on account type names
+     */
     private function addUniqueAccountTypeName(): void
     {
         Schema::table('account_types', function (Blueprint $table) {
@@ -152,14 +155,14 @@ return new class extends Migration {
             $$ LANGUAGE plpgsql;
         ");
 
-        DB::unprepared("
+        DB::unprepared('
             DROP TRIGGER IF EXISTS trg_block_posted_journal_updates ON journal_entries;
             
             CREATE TRIGGER trg_block_posted_journal_updates
             BEFORE UPDATE ON journal_entries
             FOR EACH ROW
             EXECUTE FUNCTION block_posted_journal_changes();
-        ");
+        ');
 
         // Function to block deletes on posted journal entries
         DB::unprepared("
@@ -174,14 +177,14 @@ return new class extends Migration {
             $$ LANGUAGE plpgsql;
         ");
 
-        DB::unprepared("
+        DB::unprepared('
             DROP TRIGGER IF EXISTS trg_block_posted_journal_deletes ON journal_entries;
             
             CREATE TRIGGER trg_block_posted_journal_deletes
             BEFORE DELETE ON journal_entries
             FOR EACH ROW
             EXECUTE FUNCTION block_posted_journal_deletes();
-        ");
+        ');
 
         // Function to block changes to posted journal entry details
         DB::unprepared("
@@ -207,23 +210,23 @@ return new class extends Migration {
             $$ LANGUAGE plpgsql;
         ");
 
-        DB::unprepared("
+        DB::unprepared('
             DROP TRIGGER IF EXISTS trg_block_posted_detail_updates ON journal_entry_details;
             
             CREATE TRIGGER trg_block_posted_detail_updates
             BEFORE UPDATE ON journal_entry_details
             FOR EACH ROW
             EXECUTE FUNCTION block_posted_detail_changes();
-        ");
+        ');
 
-        DB::unprepared("
+        DB::unprepared('
             DROP TRIGGER IF EXISTS trg_block_posted_detail_deletes ON journal_entry_details;
             
             CREATE TRIGGER trg_block_posted_detail_deletes
             BEFORE DELETE ON journal_entry_details
             FOR EACH ROW
             EXECUTE FUNCTION block_posted_detail_changes();
-        ");
+        ');
 
         // Enhanced period check on UPDATE when status changes to 'posted'
         DB::unprepared("
@@ -267,14 +270,14 @@ return new class extends Migration {
             $$ LANGUAGE plpgsql;
         ");
 
-        DB::unprepared("
+        DB::unprepared('
             DROP TRIGGER IF EXISTS trg_auto_set_accounting_period ON journal_entries;
             
             CREATE TRIGGER trg_auto_set_accounting_period
             BEFORE INSERT OR UPDATE ON journal_entries
             FOR EACH ROW
             EXECUTE FUNCTION auto_set_accounting_period();
-        ");
+        ');
     }
 
     /**
@@ -285,7 +288,7 @@ return new class extends Migration {
         try {
             // Trigger to block updates on posted journal entries
             try {
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_journal_updates");
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_journal_updates');
             } catch (\Exception $e) {
                 // Ignore
             }
@@ -303,12 +306,12 @@ return new class extends Migration {
                     END
                 ");
             } catch (\Exception $e) {
-                \Log::warning('Skipped trg_block_posted_journal_updates: ' . $e->getMessage());
+                \Log::warning('Skipped trg_block_posted_journal_updates: '.$e->getMessage());
             }
 
             // Trigger to block deletes on posted journal entries
             try {
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_journal_deletes");
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_journal_deletes');
             } catch (\Exception $e) {
                 // Ignore
             }
@@ -326,12 +329,12 @@ return new class extends Migration {
                     END
                 ");
             } catch (\Exception $e) {
-                \Log::warning('Skipped trg_block_posted_journal_deletes: ' . $e->getMessage());
+                \Log::warning('Skipped trg_block_posted_journal_deletes: '.$e->getMessage());
             }
 
             // Trigger to block updates on posted journal entry details
             try {
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_detail_updates");
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_detail_updates');
             } catch (\Exception $e) {
                 // Ignore
             }
@@ -357,12 +360,12 @@ return new class extends Migration {
                     END
                 ");
             } catch (\Exception $e) {
-                \Log::warning('Skipped trg_block_posted_detail_updates: ' . $e->getMessage());
+                \Log::warning('Skipped trg_block_posted_detail_updates: '.$e->getMessage());
             }
 
             // Trigger to block deletes on posted journal entry details
             try {
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_detail_deletes");
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_detail_deletes');
             } catch (\Exception $e) {
                 // Ignore
             }
@@ -388,12 +391,12 @@ return new class extends Migration {
                     END
                 ");
             } catch (\Exception $e) {
-                \Log::warning('Skipped trg_block_posted_detail_deletes: ' . $e->getMessage());
+                \Log::warning('Skipped trg_block_posted_detail_deletes: '.$e->getMessage());
             }
 
             // Enhanced period check on UPDATE when status changes to 'posted'
             try {
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_update");
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_check_accounting_period_update');
             } catch (\Exception $e) {
                 // Ignore
             }
@@ -428,12 +431,12 @@ return new class extends Migration {
                     END
                 ");
             } catch (\Exception $e) {
-                \Log::warning('Skipped trg_check_accounting_period_update: ' . $e->getMessage());
+                \Log::warning('Skipped trg_check_accounting_period_update: '.$e->getMessage());
             }
 
             // Auto-set accounting_period_id based on entry_date
             try {
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_auto_set_accounting_period");
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_auto_set_accounting_period');
             } catch (\Exception $e) {
                 // Ignore
             }
@@ -472,12 +475,12 @@ return new class extends Migration {
                     END
                 ");
             } catch (\Exception $e) {
-                \Log::warning('Skipped trg_auto_set_accounting_period: ' . $e->getMessage());
+                \Log::warning('Skipped trg_auto_set_accounting_period: '.$e->getMessage());
             }
 
             // Auto-set on UPDATE as well
             try {
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_auto_set_accounting_period_update");
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_auto_set_accounting_period_update');
             } catch (\Exception $e) {
                 // Ignore
             }
@@ -516,11 +519,11 @@ return new class extends Migration {
                     END
                 ");
             } catch (\Exception $e) {
-                \Log::warning('Skipped trg_auto_set_accounting_period_update: ' . $e->getMessage());
+                \Log::warning('Skipped trg_auto_set_accounting_period_update: '.$e->getMessage());
             }
 
         } catch (\Exception $e) {
-            \Log::warning('Some MySQL triggers could not be created: ' . $e->getMessage());
+            \Log::warning('Some MySQL triggers could not be created: '.$e->getMessage());
         }
     }
 
@@ -533,12 +536,12 @@ return new class extends Migration {
 
         // Drop constraints (skip on SQLite)
         if ($driver !== 'sqlite') {
-            DB::statement("ALTER TABLE journal_entry_details DROP CONSTRAINT IF EXISTS chk_debit_xor_credit");
-            DB::statement("ALTER TABLE journal_entries DROP CONSTRAINT IF EXISTS chk_fx_rate_positive");
-            DB::statement("ALTER TABLE account_types DROP CONSTRAINT IF EXISTS chk_report_group");
+            DB::statement('ALTER TABLE journal_entry_details DROP CONSTRAINT IF EXISTS chk_debit_xor_credit');
+            DB::statement('ALTER TABLE journal_entries DROP CONSTRAINT IF EXISTS chk_fx_rate_positive');
+            DB::statement('ALTER TABLE account_types DROP CONSTRAINT IF EXISTS chk_report_group');
 
             // Restore old XOR constraint (allowing both zero)
-            DB::statement("
+            DB::statement('
                 ALTER TABLE journal_entry_details
                 ADD CONSTRAINT chk_debit_xor_credit
                 CHECK (
@@ -546,7 +549,7 @@ return new class extends Migration {
                     (credit > 0 AND debit = 0) OR
                     (debit = 0 AND credit = 0)
                 )
-            ");
+            ');
         }
 
         Schema::table('account_types', function (Blueprint $table) {
@@ -555,25 +558,25 @@ return new class extends Migration {
 
         // Drop triggers
         if ($driver === 'pgsql') {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_journal_updates ON journal_entries");
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_journal_deletes ON journal_entries");
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_detail_updates ON journal_entry_details");
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_detail_deletes ON journal_entry_details");
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_update ON journal_entries");
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_auto_set_accounting_period ON journal_entries");
-            DB::unprepared("DROP FUNCTION IF EXISTS block_posted_journal_changes()");
-            DB::unprepared("DROP FUNCTION IF EXISTS block_posted_journal_deletes()");
-            DB::unprepared("DROP FUNCTION IF EXISTS block_posted_detail_changes()");
-            DB::unprepared("DROP FUNCTION IF EXISTS auto_set_accounting_period()");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_journal_updates ON journal_entries');
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_journal_deletes ON journal_entries');
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_detail_updates ON journal_entry_details');
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_detail_deletes ON journal_entry_details');
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_check_accounting_period_update ON journal_entries');
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_auto_set_accounting_period ON journal_entries');
+            DB::unprepared('DROP FUNCTION IF EXISTS block_posted_journal_changes()');
+            DB::unprepared('DROP FUNCTION IF EXISTS block_posted_journal_deletes()');
+            DB::unprepared('DROP FUNCTION IF EXISTS block_posted_detail_changes()');
+            DB::unprepared('DROP FUNCTION IF EXISTS auto_set_accounting_period()');
         } else {
             try {
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_journal_updates");
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_journal_deletes");
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_detail_updates");
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_block_posted_detail_deletes");
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_update");
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_auto_set_accounting_period");
-                DB::unprepared("DROP TRIGGER IF EXISTS trg_auto_set_accounting_period_update");
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_journal_updates');
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_journal_deletes');
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_detail_updates');
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_block_posted_detail_deletes');
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_check_accounting_period_update');
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_auto_set_accounting_period');
+                DB::unprepared('DROP TRIGGER IF EXISTS trg_auto_set_accounting_period_update');
             } catch (\Exception $e) {
                 // Ignore
             }

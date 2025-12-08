@@ -131,7 +131,7 @@ class AccountingPeriodController extends Controller
         try {
             $updated = $accountingPeriod->update($request->validated());
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

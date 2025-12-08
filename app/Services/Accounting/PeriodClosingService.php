@@ -4,8 +4,6 @@ namespace App\Services\Accounting;
 
 use App\Models\AccountingPeriod;
 use App\Models\AccountType;
-use App\Models\ChartOfAccount;
-use App\Models\JournalEntry;
 use App\Services\AccountingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -30,8 +28,7 @@ class PeriodClosingService
     /**
      * Close an accounting period by transferring income/expense balances to retained earnings.
      *
-     * @param int $periodId
-     * @param int $retainedEarningsAccountId The chart of account ID for retained earnings
+     * @param  int  $retainedEarningsAccountId  The chart of account ID for retained earnings
      * @return array{success: bool, data: mixed, message: string}
      */
     public function closeAccountingPeriod(int $periodId, int $retainedEarningsAccountId): array
@@ -97,7 +94,7 @@ class PeriodClosingService
                             'account_id' => $balance->chart_of_account_id,
                             'debit' => 0,
                             'credit' => abs($netBalance),
-                            'description' => 'Period closing: ' . $balance->account_name,
+                            'description' => 'Period closing: '.$balance->account_name,
                         ];
                         $totalCredits += abs($netBalance);
                     } else {
@@ -106,7 +103,7 @@ class PeriodClosingService
                             'account_id' => $balance->chart_of_account_id,
                             'debit' => abs($netBalance),
                             'credit' => 0,
-                            'description' => 'Period closing: ' . $balance->account_name,
+                            'description' => 'Period closing: '.$balance->account_name,
                         ];
                         $totalDebits += abs($netBalance);
                     }
@@ -121,7 +118,7 @@ class PeriodClosingService
                         'account_id' => $retainedEarningsAccountId,
                         'debit' => 0,
                         'credit' => $netIncome,
-                        'description' => 'Transfer of net income for period ' . $period->name,
+                        'description' => 'Transfer of net income for period '.$period->name,
                     ];
                 } elseif ($netIncome < 0) {
                     // Loss: Debit retained earnings
@@ -129,15 +126,15 @@ class PeriodClosingService
                         'account_id' => $retainedEarningsAccountId,
                         'debit' => abs($netIncome),
                         'credit' => 0,
-                        'description' => 'Transfer of net loss for period ' . $period->name,
+                        'description' => 'Transfer of net loss for period '.$period->name,
                     ];
                 }
 
                 // Create the closing journal entry
                 $closingEntryData = [
                     'entry_date' => $period->end_date,
-                    'reference' => 'CLOSE-' . $period->id,
-                    'description' => 'Closing entry for ' . $period->name,
+                    'reference' => 'CLOSE-'.$period->id,
+                    'description' => 'Closing entry for '.$period->name,
                     'accounting_period_id' => $periodId,
                     'lines' => $closingLines,
                     'auto_post' => true,
@@ -145,8 +142,8 @@ class PeriodClosingService
 
                 $result = $this->accountingService->createJournalEntry($closingEntryData);
 
-                if (!$result['success']) {
-                    throw new \Exception('Failed to create closing entry: ' . $result['message']);
+                if (! $result['success']) {
+                    throw new \Exception('Failed to create closing entry: '.$result['message']);
                 }
 
                 $closingEntry = $result['data'];
@@ -181,7 +178,7 @@ class PeriodClosingService
                         'closing_entry' => $closingEntry->load(['details.account']),
                         'net_income' => $netIncome,
                     ],
-                    'message' => "Period '{$period->name}' closed successfully. Net income: " . number_format($netIncome, 2),
+                    'message' => "Period '{$period->name}' closed successfully. Net income: ".number_format($netIncome, 2),
                 ];
             });
         } catch (\Exception $e) {
@@ -193,7 +190,7 @@ class PeriodClosingService
             return [
                 'success' => false,
                 'data' => null,
-                'message' => 'Failed to close period: ' . $e->getMessage(),
+                'message' => 'Failed to close period: '.$e->getMessage(),
             ];
         }
     }
@@ -201,7 +198,6 @@ class PeriodClosingService
     /**
      * Reopen a closed accounting period (for corrections).
      *
-     * @param int $periodId
      * @return array{success: bool, data: mixed, message: string}
      */
     public function reopenAccountingPeriod(int $periodId): array
@@ -221,8 +217,8 @@ class PeriodClosingService
                         'Reversal due to period reopening'
                     );
 
-                    if (!$result['success']) {
-                        throw new \Exception('Failed to reverse closing entry: ' . $result['message']);
+                    if (! $result['success']) {
+                        throw new \Exception('Failed to reverse closing entry: '.$result['message']);
                     }
                 }
 
@@ -256,7 +252,7 @@ class PeriodClosingService
             return [
                 'success' => false,
                 'data' => null,
-                'message' => 'Failed to reopen period: ' . $e->getMessage(),
+                'message' => 'Failed to reopen period: '.$e->getMessage(),
             ];
         }
     }

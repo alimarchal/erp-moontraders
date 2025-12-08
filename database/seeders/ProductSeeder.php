@@ -3,8 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Product;
-use App\Models\Supplier;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -17,20 +15,22 @@ class ProductSeeder extends Seeder
     {
         $jsonPath = database_path('seeders/data/sku.json');
 
-        if (!file_exists($jsonPath)) {
+        if (! file_exists($jsonPath)) {
             $this->command->warn('⚠️  sku.json not found. Skipping product seeding.');
+
             return;
         }
 
         $json = file_get_contents($jsonPath);
         $products = json_decode($json, true);
 
-        if (!$products || !is_array($products)) {
+        if (! $products || ! is_array($products)) {
             $this->command->error('❌ Invalid JSON format in sku.json');
+
             return;
         }
 
-        $this->command->info('📦 Seeding ' . count($products) . ' products from sku.json...');
+        $this->command->info('📦 Seeding '.count($products).' products from sku.json...');
 
         DB::beginTransaction();
 
@@ -60,10 +60,10 @@ class ProductSeeder extends Seeder
 
             DB::commit();
 
-            $this->command->info('✅ Successfully seeded ' . count($products) . ' products');
+            $this->command->info('✅ Successfully seeded '.count($products).' products');
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->command->error('❌ Error seeding products: ' . $e->getMessage());
+            $this->command->error('❌ Error seeding products: '.$e->getMessage());
             throw $e;
         }
     }

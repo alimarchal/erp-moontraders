@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use Carbon\Carbon;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class AccountingPeriodSeeder extends Seeder
 {
@@ -25,7 +25,7 @@ class AccountingPeriodSeeder extends Seeder
                 'end_date' => '2024-12-31',
                 'status' => 'closed',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
             [
                 'name' => 'Fiscal Year 2025',
@@ -33,7 +33,7 @@ class AccountingPeriodSeeder extends Seeder
                 'end_date' => '2025-12-31',
                 'status' => 'open',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
             [
                 'name' => 'Q1 2025',
@@ -41,7 +41,7 @@ class AccountingPeriodSeeder extends Seeder
                 'end_date' => '2025-03-31',
                 'status' => 'closed',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
             [
                 'name' => 'Q2 2025',
@@ -49,7 +49,7 @@ class AccountingPeriodSeeder extends Seeder
                 'end_date' => '2025-06-30',
                 'status' => 'closed',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
             [
                 'name' => 'Q3 2025',
@@ -57,7 +57,7 @@ class AccountingPeriodSeeder extends Seeder
                 'end_date' => '2025-09-30',
                 'status' => 'closed',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
             [
                 'name' => 'Q4 2025',
@@ -65,7 +65,7 @@ class AccountingPeriodSeeder extends Seeder
                 'end_date' => '2025-12-31',
                 'status' => 'open',
                 'created_at' => $now,
-                'updated_at' => $now
+                'updated_at' => $now,
             ],
         ]);
     }

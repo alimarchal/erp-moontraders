@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Customer;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -12,19 +11,21 @@ class CustomerSeeder extends Seeder
     {
         $jsonPath = database_path('seeders/data/customers.json');
 
-        if (!file_exists($jsonPath)) {
+        if (! file_exists($jsonPath)) {
             $this->command->warn('customers.json not found, skipping customer seeding');
+
             return;
         }
 
         $customers = json_decode(file_get_contents($jsonPath), true);
 
-        if (!$customers) {
+        if (! $customers) {
             $this->command->warn('Failed to parse customers.json');
+
             return;
         }
 
-        $this->command->info('Seeding ' . count($customers) . ' customers...');
+        $this->command->info('Seeding '.count($customers).' customers...');
 
         // Insert in chunks for better performance
         $chunks = array_chunk($customers, 100);
@@ -61,7 +62,7 @@ class CustomerSeeder extends Seeder
             DB::table('customers')->insert($insertData);
         }
 
-        $this->command->info('✓ Successfully seeded ' . count($customers) . ' customers');
+        $this->command->info('✓ Successfully seeded '.count($customers).' customers');
     }
 
     private function normalizeChannelType(string $type): string
@@ -75,7 +76,7 @@ class CustomerSeeder extends Seeder
             'Hotel & Accommodation',
             'Petromart',
             '3rd Party',
-            'Other'
+            'Other',
         ];
 
         $type = trim($type);

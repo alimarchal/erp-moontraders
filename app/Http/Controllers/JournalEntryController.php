@@ -36,7 +36,7 @@ class JournalEntryController extends Controller
         }
 
         if ($reference = $request->input('filter.reference')) {
-            $query->where('reference', 'like', '%' . $reference . '%');
+            $query->where('reference', 'like', '%'.$reference.'%');
         }
 
         if ($dateFrom = $request->input('filter.date_from')) {

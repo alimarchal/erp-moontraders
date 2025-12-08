@@ -11,6 +11,7 @@ class CostCenter extends Model
     use HasFactory;
 
     public const TYPE_COST_CENTER = 'cost_center';
+
     public const TYPE_PROJECT = 'project';
 
     protected $fillable = [

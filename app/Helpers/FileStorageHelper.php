@@ -1,8 +1,9 @@
 <?php
+
 namespace App\Helpers;
 
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class FileStorageHelper
 {
@@ -14,7 +15,7 @@ class FileStorageHelper
         string $modelClass,
         string $folderName,
         array $relationData = [],
-        string $subFolder = null,
+        ?string $subFolder = null,
         array $additionalFields = []
     ): array {
         return self::storeFilesWithDisk($files, $modelClass, $folderName, 'public', $relationData, $subFolder, $additionalFields);
@@ -28,7 +29,7 @@ class FileStorageHelper
         string $modelClass,
         string $folderName,
         array $relationData = [],
-        string $subFolder = null,
+        ?string $subFolder = null,
         array $additionalFields = []
     ): array {
         return self::storeFilesWithDisk($files, $modelClass, $folderName, 'local', $relationData, $subFolder, $additionalFields);
@@ -37,7 +38,7 @@ class FileStorageHelper
     /**
      * Store single file (PUBLIC - storage/app/public/) - Direct URL access
      */
-    public static function storeSingleFile($file, string $folderName, string $subFolder = null): string
+    public static function storeSingleFile($file, string $folderName, ?string $subFolder = null): string
     {
         return self::storeSingleFileWithDisk($file, $folderName, 'public', $subFolder);
     }
@@ -45,7 +46,7 @@ class FileStorageHelper
     /**
      * Store single file (PRIVATE - storage/app/) - Controlled access only
      */
-    public static function storeSinglePrivateFile($file, string $folderName, string $subFolder = null): string
+    public static function storeSinglePrivateFile($file, string $folderName, ?string $subFolder = null): string
     {
         return self::storeSingleFileWithDisk($file, $folderName, 'local', $subFolder);
     }
@@ -75,15 +76,15 @@ class FileStorageHelper
         string $folderName,
         string $disk,
         array $relationData = [],
-        string $subFolder = null,
+        ?string $subFolder = null,
         array $additionalFields = []
     ): array {
         $attachments = [];
 
         foreach ($files as $file) {
             if ($file->isValid()) {
-                $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
-                //$storagePath = $folderName . ($subFolder ? '/' . $subFolder : '');
+                $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
+                // $storagePath = $folderName . ($subFolder ? '/' . $subFolder : '');
                 $storagePath = $folderName;
                 $path = $file->storeAs($storagePath, $filename, $disk);
 
@@ -94,7 +95,7 @@ class FileStorageHelper
                     'mime_type' => $file->getMimeType(),
                     'file_size' => $file->getSize(),
                     'uploaded_by' => auth()->id(),
-                    'storage_disk' => $disk
+                    'storage_disk' => $disk,
                 ], $relationData, $additionalFields);
 
                 $attachment = $modelClass::create($data);
@@ -108,13 +109,13 @@ class FileStorageHelper
     /**
      * Core method for storing single file
      */
-    private static function storeSingleFileWithDisk($file, string $folderName, string $disk, string $subFolder = null): string
+    private static function storeSingleFileWithDisk($file, string $folderName, string $disk, ?string $subFolder = null): string
     {
-        if (!$file || !$file->isValid()) {
+        if (! $file || ! $file->isValid()) {
             throw new \Exception('Invalid file provided');
         }
 
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $filename = Str::uuid().'.'.$file->getClientOriginalExtension();
         // $storagePath = $folderName . ($subFolder ? '/' . $subFolder : '');
         $storagePath = $folderName;
 

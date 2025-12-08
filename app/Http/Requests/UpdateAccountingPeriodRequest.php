@@ -22,7 +22,7 @@ class UpdateAccountingPeriodRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:191', 'unique:accounting_periods,name,' . $this->route('accounting_period')->id],
+            'name' => ['required', 'string', 'max:191', 'unique:accounting_periods,name,'.$this->route('accounting_period')->id],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after_or_equal:start_date'],
             'status' => ['required', 'in:open,closed,archived'],

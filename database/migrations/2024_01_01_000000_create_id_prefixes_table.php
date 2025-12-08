@@ -2,10 +2,11 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB; // ← ADD THIS LINE
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema; // ← ADD THIS LINE
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         Schema::create('id_prefixes', function (Blueprint $table) {

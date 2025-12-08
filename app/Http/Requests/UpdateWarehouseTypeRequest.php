@@ -22,7 +22,7 @@ class UpdateWarehouseTypeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255', 'unique:warehouse_types,name,' . $this->route('warehouseType')->id],
+            'name' => ['sometimes', 'required', 'string', 'max:255', 'unique:warehouse_types,name,'.$this->route('warehouseType')->id],
             'description' => ['nullable', 'string'],
             'is_active' => ['sometimes', 'boolean'],
         ];

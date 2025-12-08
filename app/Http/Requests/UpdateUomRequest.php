@@ -25,7 +25,7 @@ class UpdateUomRequest extends FormRequest
         $uomId = is_object($uom) ? $uom->id : $uom;
 
         return [
-            'uom_name' => ['required', 'string', 'max:191', 'unique:uoms,uom_name,' . $uomId],
+            'uom_name' => ['required', 'string', 'max:191', 'unique:uoms,uom_name,'.$uomId],
             'symbol' => ['nullable', 'string', 'max:50'],
             'description' => ['nullable', 'string'],
             'must_be_whole_number' => ['sometimes', 'boolean'],

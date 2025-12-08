@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
-use App\Models\ChartOfAccount;
 use App\Models\AccountingPeriod;
+use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -33,7 +33,7 @@ class AccountBalancesController extends Controller
         }
 
         // Default to today if no date specified
-        if (!$asOfDate) {
+        if (! $asOfDate) {
             $asOfDate = now()->format('Y-m-d');
         }
 
@@ -85,7 +85,7 @@ class AccountBalancesController extends Controller
                 AllowedFilter::callback('balance_min', function ($query, $value) use ($asOfDate) {
                     if (filled($value)) {
                         $query->havingRaw(
-                            "COALESCE(SUM(CASE WHEN journal_entries.entry_date <= ? THEN journal_entry_details.debit - journal_entry_details.credit ELSE 0 END), 0) >= ?",
+                            'COALESCE(SUM(CASE WHEN journal_entries.entry_date <= ? THEN journal_entry_details.debit - journal_entry_details.credit ELSE 0 END), 0) >= ?',
                             [$asOfDate, $value]
                         );
                     }
@@ -93,7 +93,7 @@ class AccountBalancesController extends Controller
                 AllowedFilter::callback('balance_max', function ($query, $value) use ($asOfDate) {
                     if (filled($value)) {
                         $query->havingRaw(
-                            "COALESCE(SUM(CASE WHEN journal_entries.entry_date <= ? THEN journal_entry_details.debit - journal_entry_details.credit ELSE 0 END), 0) <= ?",
+                            'COALESCE(SUM(CASE WHEN journal_entries.entry_date <= ? THEN journal_entry_details.debit - journal_entry_details.credit ELSE 0 END), 0) <= ?',
                             [$asOfDate, $value]
                         );
                     }

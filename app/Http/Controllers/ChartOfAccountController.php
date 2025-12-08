@@ -152,7 +152,7 @@ class ChartOfAccountController extends Controller
 
             $updated = $chartOfAccount->update($validated);
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

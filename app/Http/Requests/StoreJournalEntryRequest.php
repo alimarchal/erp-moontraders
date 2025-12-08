@@ -31,7 +31,7 @@ class StoreJournalEntryRequest extends FormRequest
                 ];
             })
             ->filter(function ($line) {
-                return !empty($line['account_id'])
+                return ! empty($line['account_id'])
                     || $line['debit'] !== 0.0
                     || $line['credit'] !== 0.0;
             })
@@ -91,6 +91,7 @@ class StoreJournalEntryRequest extends FormRequest
 
             if ($lines->count() < 2) {
                 $validator->errors()->add('lines', 'At least two lines are required for a journal entry.');
+
                 return;
             }
 

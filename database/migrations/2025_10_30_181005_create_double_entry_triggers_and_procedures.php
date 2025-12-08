@@ -3,7 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -94,7 +95,7 @@ return new class extends Migration {
 
         // OPTIMIZED: Single constraint trigger instead of 3 separate triggers
         // Deferrable to end of transaction so temporary unbalance is allowed
-        DB::unprepared("
+        DB::unprepared('
             DROP TRIGGER IF EXISTS trg_journal_balance_insert ON journal_entry_details;
             DROP TRIGGER IF EXISTS trg_journal_balance_update ON journal_entry_details;
             DROP TRIGGER IF EXISTS trg_journal_balance_delete ON journal_entry_details;
@@ -104,7 +105,7 @@ return new class extends Migration {
             DEFERRABLE INITIALLY DEFERRED
             FOR EACH ROW
             EXECUTE FUNCTION check_journal_balance();
-        ");
+        ');
 
         // Function to check leaf account only
         DB::unprepared("
@@ -126,13 +127,13 @@ return new class extends Migration {
             \$\$ LANGUAGE plpgsql;
         ");
 
-        DB::unprepared("
+        DB::unprepared('
             DROP TRIGGER IF EXISTS trg_leaf_account_only ON journal_entry_details;
             CREATE TRIGGER trg_leaf_account_only
             BEFORE INSERT OR UPDATE ON journal_entry_details
             FOR EACH ROW
             EXECUTE FUNCTION check_leaf_account_only();
-        ");
+        ');
 
         // Function to check accounting period
         DB::unprepared("
@@ -161,13 +162,13 @@ return new class extends Migration {
             \$\$ LANGUAGE plpgsql;
         ");
 
-        DB::unprepared("
+        DB::unprepared('
             DROP TRIGGER IF EXISTS trg_check_accounting_period ON journal_entries;
             CREATE TRIGGER trg_check_accounting_period
             BEFORE INSERT OR UPDATE ON journal_entries
             FOR EACH ROW
             EXECUTE FUNCTION check_accounting_period();
-        ");
+        ');
 
         // Function to enforce single base currency
         DB::unprepared("
@@ -191,13 +192,13 @@ return new class extends Migration {
             \$\$ LANGUAGE plpgsql;
         ");
 
-        DB::unprepared("
+        DB::unprepared('
             DROP TRIGGER IF EXISTS trg_single_base_currency ON currencies;
             CREATE TRIGGER trg_single_base_currency
             BEFORE INSERT OR UPDATE ON currencies
             FOR EACH ROW
             EXECUTE FUNCTION check_single_base_currency();
-        ");
+        ');
     }
 
     private function createPostgreSQLAccountingFunctions(): void
@@ -478,7 +479,7 @@ return new class extends Migration {
 
         // Stored procedure to check journal balance
         try {
-            DB::unprepared("DROP PROCEDURE IF EXISTS sp_check_journal_balance");
+            DB::unprepared('DROP PROCEDURE IF EXISTS sp_check_journal_balance');
         } catch (\Exception $e) {
             // Ignore errors on drop - may not exist or system table issue
         }
@@ -514,14 +515,15 @@ return new class extends Migration {
             ");
         } catch (\Exception $e) {
             // Skip procedure creation if system table issues exist
-            \Log::warning('Skipped sp_check_journal_balance procedure creation: ' . $e->getMessage());
+            \Log::warning('Skipped sp_check_journal_balance procedure creation: '.$e->getMessage());
+
             return; // Skip all MySQL triggers if procedure creation fails
         }
 
         // OPTIMIZED: Only check balance when transitioning to 'posted' status
         // MySQL limitation: No deferrable constraints, so we only check on posting
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_before_post");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_journal_balance_before_post');
         } catch (\Exception $e) {
             // Ignore errors on drop
         }
@@ -538,7 +540,7 @@ return new class extends Migration {
 
         // Trigger for leaf account check
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_leaf_account_only_insert");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_leaf_account_only_insert');
         } catch (\Exception $e) {
             // Ignore errors on drop
         }
@@ -563,7 +565,7 @@ return new class extends Migration {
         ");
 
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_leaf_account_only_update");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_leaf_account_only_update');
         } catch (\Exception $e) {
             // Ignore errors on drop
         }
@@ -589,7 +591,7 @@ return new class extends Migration {
 
         // Trigger for accounting period check
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_insert");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_check_accounting_period_insert');
         } catch (\Exception $e) {
             // Ignore errors on drop
         }
@@ -623,7 +625,7 @@ return new class extends Migration {
         ");
 
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_update");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_check_accounting_period_update');
         } catch (\Exception $e) {
             // Ignore errors on drop
         }
@@ -658,7 +660,7 @@ return new class extends Migration {
 
         // Trigger for single base currency
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_single_base_currency");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_single_base_currency');
         } catch (\Exception $e) {
             // Ignore errors on drop
         }
@@ -683,7 +685,7 @@ return new class extends Migration {
         ");
 
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_single_base_currency_update");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_single_base_currency_update');
         } catch (\Exception $e) {
             // Ignore errors on drop
         }
@@ -713,31 +715,31 @@ return new class extends Migration {
      */
     private function dropPostgreSQLTriggers(): void
     {
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_insert ON journal_entry_details CASCADE");
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_update ON journal_entry_details CASCADE");
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_delete ON journal_entry_details CASCADE");
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance ON journal_entry_details CASCADE");
-        DB::unprepared("DROP FUNCTION IF EXISTS check_journal_balance() CASCADE");
+        DB::unprepared('DROP TRIGGER IF EXISTS trg_journal_balance_insert ON journal_entry_details CASCADE');
+        DB::unprepared('DROP TRIGGER IF EXISTS trg_journal_balance_update ON journal_entry_details CASCADE');
+        DB::unprepared('DROP TRIGGER IF EXISTS trg_journal_balance_delete ON journal_entry_details CASCADE');
+        DB::unprepared('DROP TRIGGER IF EXISTS trg_journal_balance ON journal_entry_details CASCADE');
+        DB::unprepared('DROP FUNCTION IF EXISTS check_journal_balance() CASCADE');
 
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_leaf_account_only ON journal_entry_details CASCADE");
-        DB::unprepared("DROP FUNCTION IF EXISTS check_leaf_account_only() CASCADE");
+        DB::unprepared('DROP TRIGGER IF EXISTS trg_leaf_account_only ON journal_entry_details CASCADE');
+        DB::unprepared('DROP FUNCTION IF EXISTS check_leaf_account_only() CASCADE');
 
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period ON journal_entries CASCADE");
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period_update ON journal_entries CASCADE");
-        DB::unprepared("DROP FUNCTION IF EXISTS check_accounting_period() CASCADE");
+        DB::unprepared('DROP TRIGGER IF EXISTS trg_check_accounting_period ON journal_entries CASCADE');
+        DB::unprepared('DROP TRIGGER IF EXISTS trg_check_accounting_period_update ON journal_entries CASCADE');
+        DB::unprepared('DROP FUNCTION IF EXISTS check_accounting_period() CASCADE');
 
-        DB::unprepared("DROP TRIGGER IF EXISTS trg_single_base_currency ON currencies CASCADE");
-        DB::unprepared("DROP FUNCTION IF EXISTS check_single_base_currency() CASCADE");
+        DB::unprepared('DROP TRIGGER IF EXISTS trg_single_base_currency ON currencies CASCADE');
+        DB::unprepared('DROP FUNCTION IF EXISTS check_single_base_currency() CASCADE');
     }
 
     private function dropPostgreSQLAccountingFunctions(): void
     {
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_income_statement(DATE, DATE) CASCADE");
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_balance_sheet(DATE) CASCADE");
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_general_ledger(DATE, DATE, BIGINT) CASCADE");
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_account_balances(DATE, DATE) CASCADE");
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_trial_balance_summary(DATE) CASCADE");
-        DB::unprepared("DROP FUNCTION IF EXISTS fn_trial_balance(DATE) CASCADE");
+        DB::unprepared('DROP FUNCTION IF EXISTS fn_income_statement(DATE, DATE) CASCADE');
+        DB::unprepared('DROP FUNCTION IF EXISTS fn_balance_sheet(DATE) CASCADE');
+        DB::unprepared('DROP FUNCTION IF EXISTS fn_general_ledger(DATE, DATE, BIGINT) CASCADE');
+        DB::unprepared('DROP FUNCTION IF EXISTS fn_account_balances(DATE, DATE) CASCADE');
+        DB::unprepared('DROP FUNCTION IF EXISTS fn_trial_balance_summary(DATE) CASCADE');
+        DB::unprepared('DROP FUNCTION IF EXISTS fn_trial_balance(DATE) CASCADE');
     }
 
     /**
@@ -746,48 +748,48 @@ return new class extends Migration {
     private function dropMySQLTriggers(): void
     {
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_insert");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_journal_balance_insert');
         } catch (\Exception $e) {
             // Ignore errors
         }
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_update");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_journal_balance_update');
         } catch (\Exception $e) {
             // Ignore errors
         }
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_delete");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_journal_balance_delete');
         } catch (\Exception $e) {
             // Ignore errors
         }
         try {
-            DB::unprepared("DROP PROCEDURE IF EXISTS sp_check_journal_balance");
+            DB::unprepared('DROP PROCEDURE IF EXISTS sp_check_journal_balance');
         } catch (\Exception $e) {
             // Ignore errors
         }
 
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_leaf_account_only");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_leaf_account_only');
         } catch (\Exception $e) {
             // Ignore errors
         }
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_check_accounting_period");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_check_accounting_period');
         } catch (\Exception $e) {
             // Ignore errors
         }
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_single_base_currency");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_single_base_currency');
         } catch (\Exception $e) {
             // Ignore errors
         }
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_single_base_currency_update");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_single_base_currency_update');
         } catch (\Exception $e) {
             // Ignore errors
         }
         try {
-            DB::unprepared("DROP TRIGGER IF EXISTS trg_journal_balance_before_post");
+            DB::unprepared('DROP TRIGGER IF EXISTS trg_journal_balance_before_post');
         } catch (\Exception $e) {
             // Ignore errors
         }

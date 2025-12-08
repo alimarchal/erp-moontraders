@@ -22,7 +22,7 @@ class UpdateTaxCodeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tax_code' => ['required', 'string', 'max:20', 'unique:tax_codes,tax_code,' . $this->route('tax_code')->id],
+            'tax_code' => ['required', 'string', 'max:20', 'unique:tax_codes,tax_code,'.$this->route('tax_code')->id],
             'name' => ['required', 'string', 'max:100'],
             'description' => ['nullable', 'string'],
             'tax_type' => ['required', 'in:sales_tax,gst,vat,withholding_tax,excise,customs_duty'],

@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -35,7 +36,7 @@ return new class extends Migration {
                 'Hotel & Accommodation',
                 'Petromart',
                 '3rd Party',
-                'Other'
+                'Other',
             ])->default('General Store')->index()->comment('Business channel/category');
             $table->enum('customer_category', ['A', 'B', 'C', 'D'])->default('C')->comment('Customer tier/priority');
 

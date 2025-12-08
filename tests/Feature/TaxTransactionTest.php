@@ -1,9 +1,9 @@
 <?php
 
-use App\Models\User;
-use App\Models\TaxTransaction;
 use App\Models\TaxCode;
 use App\Models\TaxRate;
+use App\Models\TaxTransaction;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

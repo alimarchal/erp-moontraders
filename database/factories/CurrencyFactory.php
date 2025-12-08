@@ -40,7 +40,7 @@ class CurrencyFactory extends Factory
      */
     public function base(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'is_base_currency' => true,
             'exchange_rate' => 1.000000,
         ]);

@@ -8,13 +8,13 @@ use App\Models\Company;
 use App\Models\Employee;
 use App\Models\Supplier;
 use App\Models\Vehicle;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class VehicleController extends Controller
 {
@@ -161,7 +161,7 @@ class VehicleController extends Controller
 
             $updated = $vehicle->update($validated);
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()
@@ -265,7 +265,7 @@ class VehicleController extends Controller
                 'filters' => $request->get('filter', []),
             ]);
 
-            return $pdf->download('vehicles-list-' . now()->format('Y-m-d') . '.pdf');
+            return $pdf->download('vehicles-list-'.now()->format('Y-m-d').'.pdf');
         } catch (\Throwable $e) {
             Log::error('Error generating vehicles PDF', [
                 'error' => $e->getMessage(),

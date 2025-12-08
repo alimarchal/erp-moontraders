@@ -7,8 +7,6 @@ use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\QueryBuilder;
 
 class TrialBalanceController extends Controller
 {
@@ -102,8 +100,8 @@ class TrialBalanceController extends Controller
         }
 
         // Calculate trial balance summary from account balances (not raw journal entries)
-        $totalDebitBalance = $accountsCollection->filter(fn($a) => $a->balance > 0)->sum('balance');
-        $totalCreditBalance = abs($accountsCollection->filter(fn($a) => $a->balance < 0)->sum('balance'));
+        $totalDebitBalance = $accountsCollection->filter(fn ($a) => $a->balance > 0)->sum('balance');
+        $totalCreditBalance = abs($accountsCollection->filter(fn ($a) => $a->balance < 0)->sum('balance'));
 
         $trialBalance = (object) [
             'total_debits' => $totalDebitBalance,

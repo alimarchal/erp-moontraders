@@ -17,7 +17,7 @@ class GoodsIssueFactory extends Factory
     public function definition(): array
     {
         return [
-            'issue_number' => 'GI-TEST-' . fake()->unique()->numberBetween(1000, 9999),
+            'issue_number' => 'GI-TEST-'.fake()->unique()->numberBetween(1000, 9999),
             'issue_date' => now(),
             'status' => 'draft',
             'total_quantity' => 0,

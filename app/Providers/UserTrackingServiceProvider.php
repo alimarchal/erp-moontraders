@@ -4,8 +4,6 @@ namespace App\Providers;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\ServiceProvider;
-use Schema;
-
 
 class UserTrackingServiceProvider extends ServiceProvider
 {

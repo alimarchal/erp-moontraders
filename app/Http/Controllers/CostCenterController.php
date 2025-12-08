@@ -166,7 +166,7 @@ class CostCenterController extends Controller
         try {
             $updated = $costCenter->update($validated);
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

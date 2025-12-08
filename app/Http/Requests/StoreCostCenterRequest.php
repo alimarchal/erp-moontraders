@@ -59,7 +59,7 @@ class StoreCostCenterRequest extends FormRequest
     public function withValidator($validator): void
     {
         $validator->after(function ($validator) {
-            if (!$this->parent_id) {
+            if (! $this->parent_id) {
                 return;
             }
 

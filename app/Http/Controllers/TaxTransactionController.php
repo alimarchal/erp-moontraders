@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTaxTransactionRequest;
 use App\Http\Requests\UpdateTaxTransactionRequest;
-use App\Models\TaxTransaction;
 use App\Models\TaxCode;
+use App\Models\TaxTransaction;
 use Illuminate\Http\Request;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;

@@ -70,14 +70,14 @@ class StoreSalesSettlementRequest extends FormRequest
 
             // Batch level validation
             'items.*.batches' => 'nullable|array',
-            'items.*.batches.*.stock_batch_id' => 'required_with:items.*.batches|exists:stock_batches,id',
+            'items.*.batches.*.stock_batch_id' => 'required|exists:stock_batches,id',
             'items.*.batches.*.batch_code' => 'nullable|string|max:100',
-            'items.*.batches.*.quantity_issued' => 'required_with:items.*.batches|numeric|min:0',
-            'items.*.batches.*.quantity_sold' => 'required_with:items.*.batches|numeric|min:0',
+            'items.*.batches.*.quantity_issued' => 'required|numeric|min:0',
+            'items.*.batches.*.quantity_sold' => 'nullable|numeric|min:0',
             'items.*.batches.*.quantity_returned' => 'nullable|numeric|min:0',
             'items.*.batches.*.quantity_shortage' => 'nullable|numeric|min:0',
-            'items.*.batches.*.unit_cost' => 'required_with:items.*.batches|numeric|min:0',
-            'items.*.batches.*.selling_price' => 'required_with:items.*.batches|numeric|min:0',
+            'items.*.batches.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.batches.*.selling_price' => 'required|numeric|min:0',
             'items.*.batches.*.is_promotional' => 'nullable|boolean',
 
             // Sales/Credit sales validation

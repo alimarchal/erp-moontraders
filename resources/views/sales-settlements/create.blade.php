@@ -18,6 +18,7 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md" />
+            <x-validation-errors class="mb-4" />
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="pt-6 pl-6 pr-6">
@@ -558,9 +559,11 @@
                                     <x-advance-tax-modal
                                         :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
                                     <x-bank-transfer-modal
-                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
+                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
+                                        entriesInputId="bank_transfers" />
                                     <x-cheque-payment-modal
-                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" />
+                                        :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
+                                        entriesInputId="cheques" />
                                     <x-credit-sales-modal
                                         :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
                                         entriesInputId="credit_sales" />
@@ -630,6 +633,40 @@
             });
 
             console.log('Select2 initialized successfully');
+
+            // Restore old value if validation failed and redirected back
+            @if(old('goods_issue_id'))
+            const oldGoodsIssueId = '{{ old('goods_issue_id') }}';
+            console.log('Restoring old goods_issue_id:', oldGoodsIssueId);
+
+            // Fetch the goods issue details to populate the Select2
+            fetch('{{ url('api/sales-settlements/goods-issues') }}/' + oldGoodsIssueId + '/items')
+                .then(response => response.json())
+                .then(data => {
+                    // Create a new option and append to the Select2
+                    const option = new Option(
+                        data.issue_number + ' - ' + data.employee + ' (' + data.issue_date + ')',
+                        oldGoodsIssueId,
+                        true,
+                        true
+                    );
+                    $('#goods_issue_id').append(option).trigger('change');
+
+                    // Trigger the select2:select event to load the items
+                    $('#goods_issue_id').trigger({
+                        type: 'select2:select',
+                        params: {
+                            data: {
+                                id: oldGoodsIssueId,
+                                text: data.issue_number + ' - ' + data.employee + ' (' + data.issue_date + ')'
+                            }
+                        }
+                    });
+                })
+                .catch(error => {
+                    console.error('Error restoring old goods issue selection:', error);
+                });
+            @endif
         });
 
 
@@ -1177,18 +1214,21 @@
                                     <span id="balance-${index}-${batchIdx}" class="font-bold text-red-600">0</span>
                                 </td>
                             </tr>
-                            <tr class="hidden-row" style="display:none;">
-                                <td colspan="10">
-                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
-                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
-                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
-                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
-                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
-                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
-                                </td>
-                            </tr>
                         `;
                         settlementItemsBody.innerHTML += settlementRow;
+
+                        // Create batch-level hidden fields container (outside table)
+                        const batchHiddenFields = document.createElement('div');
+                        batchHiddenFields.className = 'batch-hidden-fields';
+                        batchHiddenFields.innerHTML = `
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
+                        `;
+                        document.getElementById('settlementForm').appendChild(batchHiddenFields);
 
                         // Add product-level hidden fields only once (on first batch)
                         if (batchIdx === 0) {

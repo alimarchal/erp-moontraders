@@ -97,7 +97,7 @@
         @foreach ($settlements as $index => $settlement)
         <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
-                {{ $settlements->firstItem() + $index }}
+                {{ $loop->iteration }}
             </td>
             <td class="py-1 px-2 whitespace-nowrap">
                 {{ $settlement->settlement_date->format('d-m-Y') }}

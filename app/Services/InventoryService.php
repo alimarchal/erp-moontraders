@@ -128,6 +128,8 @@ class InventoryService
             $inventoryAccount = ChartOfAccount::where('account_code', '1161')->first();
             $apAccount = ChartOfAccount::where('account_code', '2111')->first();
             $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
+            $gstAccount = ChartOfAccount::where('account_code', '2121')->first();
+            $advanceTaxAccount = ChartOfAccount::where('account_code', '1171')->first();
 
             if (! $inventoryAccount) {
                 Log::warning('Inventory account (1161 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
@@ -149,15 +151,17 @@ class InventoryService
             $totalAdvanceTax = $grn->items->sum('advance_income_tax');
             $totalExciseDuty = $grn->items->sum('excise_duty') ?? 0;
 
-            // Calculate inventory components
-            // Total inventory cost = extended value - discounts + all taxes
-            $totalInventoryAsset = $extendedValue - $totalDiscounts + $totalGst + $totalAdvanceTax + $totalExciseDuty;
+            // Calculate inventory value (net of discounts, not including taxes)
+            $netInventoryValue = $extendedValue - $totalDiscounts;
+
+            // Total debits = Net inventory + GST + Advance Tax + Excise
+            $totalDebits = $netInventoryValue + $totalGst + $totalAdvanceTax + $totalExciseDuty;
 
             // Calculate amount payable to supplier (what we actually pay)
-            // Creditors = Total Inventory - FMR Allowance
-            $creditorAmount = $totalInventoryAsset - $totalFmrAllowance;
+            // Creditors = Total inventory cost - FMR Allowance
+            $creditorAmount = $totalDebits - $totalFmrAllowance;
 
-            if ($totalInventoryAsset <= 0) {
+            if ($netInventoryValue <= 0) {
                 Log::warning('GRN net inventory value is zero or negative. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
@@ -167,15 +171,54 @@ class InventoryService
             $journalLines = [];
             $lineNo = 1;
 
-            // Dr. Inventory (all costs capitalized into one account)
+            // Dr. Inventory (net of discounts)
             $journalLines[] = [
                 'line_no' => $lineNo++,
                 'account_id' => $inventoryAccount->id,
-                'debit' => $totalInventoryAsset,
+                'debit' => $netInventoryValue,
                 'credit' => 0,
-                'description' => "Inventory received - {$grn->items->count()} item(s) (full cost including taxes)",
+                'description' => "Inventory received - {$grn->items->count()} item(s) (net of discounts)",
                 'cost_center_id' => null,
             ];
+
+            // Dr. GST (Input Tax Credit, if any)
+            if ($totalGst > 0 && $gstAccount) {
+                $journalLines[] = [
+                    'line_no' => $lineNo++,
+                    'account_id' => $gstAccount->id,
+                    'debit' => $totalGst,
+                    'credit' => 0,
+                    'description' => 'GST Input Tax Credit',
+                    'cost_center_id' => null,
+                ];
+            }
+
+            // Dr. Advance Tax (if any)
+            if ($totalAdvanceTax > 0 && $advanceTaxAccount) {
+                $journalLines[] = [
+                    'line_no' => $lineNo++,
+                    'account_id' => $advanceTaxAccount->id,
+                    'debit' => $totalAdvanceTax,
+                    'credit' => 0,
+                    'description' => 'Advance Income Tax',
+                    'cost_center_id' => null,
+                ];
+            }
+
+            // Dr. Excise Duty (if any)
+            if ($totalExciseDuty > 0) {
+                $exciseAccount = ChartOfAccount::where('account_code', '1164')->first();
+                if ($exciseAccount) {
+                    $journalLines[] = [
+                        'line_no' => $lineNo++,
+                        'account_id' => $exciseAccount->id,
+                        'debit' => $totalExciseDuty,
+                        'credit' => 0,
+                        'description' => 'Excise Duty on Imports',
+                        'cost_center_id' => null,
+                    ];
+                }
+            }
 
             // Cr. FMR Allowance (if any) - Income/contra-cost
             if ($totalFmrAllowance > 0 && $fmrAllowanceAccount) {
@@ -213,7 +256,7 @@ class InventoryService
             $result = $accountingService->createJournalEntry($journalEntryData);
 
             if ($result['success']) {
-                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Inventory Main: {$inventoryMain} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | Excise: {$totalExciseDuty} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount} | Total Inventory Asset: {$totalInventoryAsset}");
+                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Inventory: {$netInventoryValue} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | Excise: {$totalExciseDuty} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
 
                 return $result['data'];
             } else {
@@ -235,7 +278,9 @@ class InventoryService
      * Reversal Entries (opposite of posting entries):
      * Dr. Accounts Payable (Liability) - Account 2111 Creditors
      * Dr. FMR Allowance - Account 4210 (reverse the credit, if any)
-     * Cr. Inventory (Asset) - Account 1161 Stock In Hand (full cost including taxes)
+     * Cr. Inventory (Asset) - Account 1161 Stock In Hand (net of discounts)
+     * Cr. GST - Account 2121 (reverse the debit, if any)
+     * Cr. Advance Tax - Account 1171 (reverse the debit, if any)
      */
     protected function createGrnReversingJournalEntry(GoodsReceiptNote $grn)
     {
@@ -247,6 +292,8 @@ class InventoryService
             $inventoryAccount = ChartOfAccount::where('account_code', '1161')->first();
             $apAccount = ChartOfAccount::where('account_code', '2111')->first();
             $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
+            $gstAccount = ChartOfAccount::where('account_code', '2121')->first();
+            $advanceTaxAccount = ChartOfAccount::where('account_code', '1171')->first();
 
             if (! $inventoryAccount || ! $apAccount) {
                 Log::warning('Required accounts not found in Chart of Accounts. Skipping reversing journal entry for GRN: '.$grn->id);
@@ -263,10 +310,11 @@ class InventoryService
             $totalExciseDuty = $grn->items->sum('excise_duty') ?? 0;
 
             // Calculate inventory components (same as posting)
-            $totalInventoryAsset = $extendedValue - $totalDiscounts + $totalGst + $totalAdvanceTax + $totalExciseDuty;
-            $creditorAmount = $totalInventoryAsset - $totalFmrAllowance;
+            $netInventoryValue = $extendedValue - $totalDiscounts;
+            $totalDebits = $netInventoryValue + $totalGst + $totalAdvanceTax + $totalExciseDuty;
+            $creditorAmount = $totalDebits - $totalFmrAllowance;
 
-            if ($totalInventoryAsset <= 0) {
+            if ($netInventoryValue <= 0) {
                 Log::warning('GRN net inventory value is zero or negative. Skipping reversing journal entry for GRN: '.$grn->id);
 
                 return null;
@@ -304,15 +352,54 @@ class InventoryService
                 ];
             }
 
-            // Cr. Inventory (all costs) - reverse the debit
+            // Cr. Inventory (net of discounts) - reverse the debit
             $journalLines[] = [
                 'line_no' => $lineNo++,
                 'account_id' => $inventoryAccount->id,
                 'debit' => 0,
-                'credit' => $totalInventoryAsset,
+                'credit' => $netInventoryValue,
                 'description' => "Reversal - Inventory returned to supplier ({$itemsText})",
                 'cost_center_id' => null,
             ];
+
+            // Cr. GST (if any) - reverse the debit
+            if ($totalGst > 0 && $gstAccount) {
+                $journalLines[] = [
+                    'line_no' => $lineNo++,
+                    'account_id' => $gstAccount->id,
+                    'debit' => 0,
+                    'credit' => $totalGst,
+                    'description' => 'Reversal - GST Input Tax Credit',
+                    'cost_center_id' => null,
+                ];
+            }
+
+            // Cr. Advance Tax (if any) - reverse the debit
+            if ($totalAdvanceTax > 0 && $advanceTaxAccount) {
+                $journalLines[] = [
+                    'line_no' => $lineNo++,
+                    'account_id' => $advanceTaxAccount->id,
+                    'debit' => 0,
+                    'credit' => $totalAdvanceTax,
+                    'description' => 'Reversal - Advance Income Tax',
+                    'cost_center_id' => null,
+                ];
+            }
+
+            // Cr. Excise Duty (if any) - reverse the debit
+            if ($totalExciseDuty > 0) {
+                $exciseAccount = ChartOfAccount::where('account_code', '1164')->first();
+                if ($exciseAccount) {
+                    $journalLines[] = [
+                        'line_no' => $lineNo++,
+                        'account_id' => $exciseAccount->id,
+                        'debit' => 0,
+                        'credit' => $totalExciseDuty,
+                        'description' => 'Reversal - Excise Duty on Imports',
+                        'cost_center_id' => null,
+                    ];
+                }
+            }
 
             // Prepare reversing journal entry data
             $journalEntryData = [
@@ -328,7 +415,7 @@ class InventoryService
             $result = $accountingService->createJournalEntry($journalEntryData);
 
             if ($result['success']) {
-                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->id} | Total Inventory: {$totalInventoryAsset} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
+                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->id} | Inventory: {$netInventoryValue} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
 
                 return $result['data'];
             } else {

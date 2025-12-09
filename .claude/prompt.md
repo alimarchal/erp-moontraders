@@ -1,0 +1,1 @@
+Instead of going to https://moontrader.test/promotional-campaigns and create a campaigns it should be auto created and remove Campaign, and Discount % from Promotional & Batch Details from https://moontrader.test/goods-receipt-notes/create and edit make sure it will work correctly after this make sure all view and table should be work correctly

@@ -34,10 +34,6 @@
                         :active="request()->routeIs('sales-settlements.*')">
                         {{ __('Sales') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('promotional-campaigns.index') }}"
-                        :active="request()->routeIs('promotional-campaigns.*')">
-                        {{ __('Campaigns') }}
-                    </x-nav-link>
                     <x-nav-link href="{{ route('settings.index') }}"
                         :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*')">
                         {{ __('Settings') }}
@@ -202,10 +198,6 @@
             <x-responsive-nav-link href="{{ route('sales-settlements.index') }}"
                 :active="request()->routeIs('sales-settlements.*')">
                 {{ __('Sales') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('promotional-campaigns.index') }}"
-                :active="request()->routeIs('promotional-campaigns.*')">
-                {{ __('Campaigns') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link href="{{ route('settings.index') }}"
                 :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*')">

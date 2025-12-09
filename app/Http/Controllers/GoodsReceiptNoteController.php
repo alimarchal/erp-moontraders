@@ -57,10 +57,6 @@ class GoodsReceiptNoteController extends Controller
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             // Don't load all products - will be loaded via AJAX when supplier is selected
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
-            'campaigns' => PromotionalCampaign::where('is_active', true)
-                ->whereDate('end_date', '>=', now())
-                ->orderBy('campaign_name')
-                ->get(['id', 'campaign_code', 'campaign_name']),
         ]);
     }
 
@@ -174,6 +170,30 @@ class GoodsReceiptNoteController extends Controller
                 $qty_accepted = $item['quantity_accepted'] ?? $item['quantity_received'];
                 $qty_rejected = $item['quantity_rejected'] ?? 0;
 
+                // Auto-create or update promotional campaign if promotional_price is set
+                $promotionalCampaignId = null;
+                $isPromotional = false;
+                if (!empty($item['promotional_price']) && $item['promotional_price'] > 0) {
+                    $product = Product::find($item['product_id']);
+                    $campaignCode = 'PROMO-' . $grn->grn_number . '-' . ($index + 1);
+                    $campaign = PromotionalCampaign::updateOrCreate(
+                        ['campaign_code' => $campaignCode],
+                        [
+                            'campaign_name' => 'GRN Promo: ' . ($product->product_name ?? 'Product ' . $item['product_id']),
+                            'description' => 'Auto-created promotional campaign for GRN ' . $grn->grn_number,
+                            'start_date' => $validated['receipt_date'],
+                            'end_date' => $item['must_sell_before'] ?? now()->addMonths(3),
+                            'discount_type' => 'special_price',
+                            'discount_value' => $item['promotional_price'],
+                            'is_active' => true,
+                            'is_auto_apply' => false,
+                            'created_by' => auth()->id(),
+                        ]
+                    );
+                    $promotionalCampaignId = $campaign->id;
+                    $isPromotional = true;
+                }
+
                 $grn->items()->create([
                     'line_no' => $index + 1,
                     'product_id' => $item['product_id'],
@@ -197,10 +217,10 @@ class GoodsReceiptNoteController extends Controller
                     'unit_cost' => $item['unit_cost'],
                     'total_cost' => $qty_accepted * $item['unit_cost'],
                     'selling_price' => $item['selling_price'] ?? null,
-                    'promotional_campaign_id' => $item['promotional_campaign_id'] ?? null,
-                    'is_promotional' => ! empty($item['promotional_campaign_id']),
+                    'promotional_campaign_id' => $promotionalCampaignId,
+                    'is_promotional' => $isPromotional,
                     'promotional_price' => $item['promotional_price'] ?? null,
-                    'promotional_discount_percent' => $item['promotional_discount_percent'] ?? null,
+                    'promotional_discount_percent' => null,
                     'priority_order' => $item['priority_order'] ?? 99,
                     'must_sell_before' => $item['must_sell_before'] ?? null,
                     'batch_number' => $item['batch_number'] ?? null,
@@ -228,7 +248,7 @@ class GoodsReceiptNoteController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create GRN: '.$e->getMessage());
+                ->with('error', 'Unable to create GRN: ' . $e->getMessage());
         }
     }
 
@@ -262,10 +282,6 @@ class GoodsReceiptNoteController extends Controller
             'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax']),
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
-            'campaigns' => PromotionalCampaign::where('is_active', true)
-                ->whereDate('end_date', '>=', now())
-                ->orderBy('campaign_name')
-                ->get(['id', 'campaign_code', 'campaign_name', 'discount_type', 'buy_quantity', 'get_quantity']),
         ]);
     }
 
@@ -371,6 +387,30 @@ class GoodsReceiptNoteController extends Controller
                 $qty_accepted = $item['quantity_accepted'] ?? $item['quantity_received'];
                 $qty_rejected = $item['quantity_rejected'] ?? 0;
 
+                // Auto-create or update promotional campaign if promotional_price is set
+                $promotionalCampaignId = null;
+                $isPromotional = false;
+                if (!empty($item['promotional_price']) && $item['promotional_price'] > 0) {
+                    $product = Product::find($item['product_id']);
+                    $campaignCode = 'PROMO-' . $goodsReceiptNote->grn_number . '-' . ($index + 1);
+                    $campaign = PromotionalCampaign::updateOrCreate(
+                        ['campaign_code' => $campaignCode],
+                        [
+                            'campaign_name' => 'GRN Promo: ' . ($product->product_name ?? 'Product ' . $item['product_id']),
+                            'description' => 'Auto-created promotional campaign for GRN ' . $goodsReceiptNote->grn_number,
+                            'start_date' => $validated['receipt_date'],
+                            'end_date' => $item['must_sell_before'] ?? now()->addMonths(3),
+                            'discount_type' => 'special_price',
+                            'discount_value' => $item['promotional_price'],
+                            'is_active' => true,
+                            'is_auto_apply' => false,
+                            'created_by' => auth()->id(),
+                        ]
+                    );
+                    $promotionalCampaignId = $campaign->id;
+                    $isPromotional = true;
+                }
+
                 $goodsReceiptNote->items()->create([
                     'line_no' => $index + 1,
                     'product_id' => $item['product_id'],
@@ -394,10 +434,10 @@ class GoodsReceiptNoteController extends Controller
                     'unit_cost' => $item['unit_cost'],
                     'total_cost' => $qty_accepted * $item['unit_cost'],
                     'selling_price' => $item['selling_price'] ?? null,
-                    'promotional_campaign_id' => $item['promotional_campaign_id'] ?? null,
-                    'is_promotional' => ! empty($item['promotional_campaign_id']),
+                    'promotional_campaign_id' => $promotionalCampaignId,
+                    'is_promotional' => $isPromotional,
                     'promotional_price' => $item['promotional_price'] ?? null,
-                    'promotional_discount_percent' => $item['promotional_discount_percent'] ?? null,
+                    'promotional_discount_percent' => null,
                     'selling_strategy' => $item['selling_strategy'] ?? 'fifo',
                     'priority_order' => $item['priority_order'] ?? 99,
                     'must_sell_before' => $item['must_sell_before'] ?? null,
@@ -490,7 +530,7 @@ class GoodsReceiptNoteController extends Controller
 
             return redirect()
                 ->route('goods-receipt-notes.show', $goodsReceiptNote->id)
-                ->with('status', $result['message'].' A draft payment has been created for this GRN.');
+                ->with('status', $result['message'] . ' A draft payment has been created for this GRN.');
         }
 
         return redirect()
@@ -529,9 +569,9 @@ class GoodsReceiptNoteController extends Controller
                     'bank_account_id' => $defaultBankAccount?->id,
                     'payment_date' => now()->toDateString(),
                     'payment_method' => 'bank_transfer',
-                    'reference_number' => 'Auto-generated for GRN: '.$grn->grn_number,
+                    'reference_number' => 'Auto-generated for GRN: ' . $grn->grn_number,
                     'amount' => $grn->grand_total,
-                    'description' => 'Auto-generated payment for GRN: '.$grn->grn_number,
+                    'description' => 'Auto-generated payment for GRN: ' . $grn->grn_number,
                     'status' => 'draft',
                     'created_by' => auth()->id(),
                 ]);
@@ -545,7 +585,7 @@ class GoodsReceiptNoteController extends Controller
                 return $payment;
             });
         } catch (\Exception $e) {
-            \Log::error('Failed to create auto payment: '.$e->getMessage());
+            \Log::error('Failed to create auto payment: ' . $e->getMessage());
 
             return null;
         }
@@ -562,8 +602,8 @@ class GoodsReceiptNoteController extends Controller
         ]);
 
         // Verify user's password
-        if (! Hash::check($request->password, auth()->user()->password)) {
-            Log::warning("Failed GRN reversal attempt for {$goodsReceiptNote->grn_number} - Invalid password by user: ".auth()->user()->name);
+        if (!Hash::check($request->password, auth()->user()->password)) {
+            Log::warning("Failed GRN reversal attempt for {$goodsReceiptNote->grn_number} - Invalid password by user: " . auth()->user()->name);
 
             return redirect()
                 ->back()
@@ -571,7 +611,7 @@ class GoodsReceiptNoteController extends Controller
         }
 
         // Log password confirmation
-        Log::info("GRN reversal password confirmed for {$goodsReceiptNote->grn_number} by user: ".auth()->user()->name.' (ID: '.auth()->id().')');
+        Log::info("GRN reversal password confirmed for {$goodsReceiptNote->grn_number} by user: " . auth()->user()->name . ' (ID: ' . auth()->id() . ')');
 
         // Check if GRN has any posted payments
         $hasPostedPayments = $goodsReceiptNote->payments()

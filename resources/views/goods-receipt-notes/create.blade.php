@@ -16,7 +16,7 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 mt-4 shadow-md" />
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
@@ -221,7 +221,7 @@
                                             <div class="flex justify-center space-x-1">
                                                 <button type="button" @click="openPromoModal(index)"
                                                     class="inline-flex items-center justify-center w-8 h-8 hover:bg-purple-100 rounded-md transition-colors duration-150"
-                                                    :class="item.promotional_campaign_id ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-100' : 'text-purple-600 hover:text-purple-800'"
+                                                    :class="item.promotional_price ? 'text-orange-600 hover:text-orange-800 hover:bg-orange-100' : 'text-purple-600 hover:text-purple-800'"
                                                     title="Promotional & Batch Details">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
                                                         viewBox="0 0 24 24" stroke="currentColor">
@@ -244,12 +244,8 @@
                                         </td>
 
                                         <!-- Hidden inputs for promotional fields -->
-                                        <input type="hidden" :name="`items[${index}][promotional_campaign_id]`"
-                                            x-model="item.promotional_campaign_id">
                                         <input type="hidden" :name="`items[${index}][promotional_price]`"
                                             x-model="item.promotional_price">
-                                        <input type="hidden" :name="`items[${index}][promotional_discount_percent]`"
-                                            x-model="item.promotional_discount_percent">
                                         <input type="hidden" :name="`items[${index}][selling_strategy]`"
                                             x-model="item.selling_strategy">
                                         <input type="hidden" :name="`items[${index}][priority_order]`"
@@ -410,40 +406,14 @@
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div>
                                                 <label class="block text-sm font-medium text-gray-700 mb-1">
-                                                    Campaign
-                                                </label>
-                                                <select x-model="items[currentEditIndex].promotional_campaign_id"
-                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
-                                                    <option value="">None</option>
-                                                    @foreach ($campaigns as $campaign)
-                                                    <option value="{{ $campaign->id }}">
-                                                        {{ $campaign->campaign_code }} - {{ $campaign->campaign_name }}
-                                                        @if ($campaign->discount_type === 'buy_x_get_y')
-                                                        ({{ $campaign->buy_quantity }}+{{ $campaign->get_quantity }})
-                                                        @endif
-                                                    </option>
-                                                    @endforeach
-                                                </select>
-                                            </div>
-
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">
                                                     Promotional Price
                                                 </label>
                                                 <input type="number" x-model="items[currentEditIndex].promotional_price"
                                                     step="0.01" min="0"
                                                     class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
-                                                    :disabled="!items[currentEditIndex].promotional_campaign_id">
-                                            </div>
-
-                                            <div>
-                                                <label class="block text-sm font-medium text-gray-700 mb-1">
-                                                    Discount %
-                                                </label>
-                                                <input type="number"
-                                                    x-model="items[currentEditIndex].promotional_discount_percent"
-                                                    step="0.01" min="0" max="100"
-                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                                    placeholder="Leave empty if not promotional">
+                                                <p class="text-xs text-gray-500 mt-1">Enter a promotional price to mark
+                                                    this batch as promotional</p>
                                             </div>
 
                                             <div>
@@ -485,8 +455,7 @@
                                                     Must Sell Before
                                                 </label>
                                                 <input type="date" x-model="items[currentEditIndex].must_sell_before"
-                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
-                                                    :disabled="!items[currentEditIndex].promotional_campaign_id">
+                                                    class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                             </div>
 
                                             <div>
@@ -565,7 +534,7 @@
                                         class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
                                         Clear All
                                     </button>
-                                    <button type="button" @click="showPromoModal = false"
+                                    <button type="button" @click="savePromoModal()"
                                         class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                         Save & Close
                                     </button>
@@ -616,9 +585,7 @@
                     unit_cost: parseFloat(item.unit_cost) || 0,
                     selling_price: parseFloat(item.selling_price) || 0,
                     max_selling_price: parseFloat(item.max_selling_price) || parseFloat(item.selling_price) || 0,
-                    promotional_campaign_id: item.promotional_campaign_id || '',
                     promotional_price: parseFloat(item.promotional_price) || 0,
-                    promotional_discount_percent: parseFloat(item.promotional_discount_percent) || 0,
                     selling_strategy: item.selling_strategy || 'fifo',
                     priority_order: parseInt(item.priority_order) || null,
                     must_sell_before: item.must_sell_before || '',
@@ -651,9 +618,7 @@
                     unit_cost: 0,
                     selling_price: 0,
                     max_selling_price: 0,
-                    promotional_campaign_id: '',
                     promotional_price: 0,
-                    promotional_discount_percent: 0,
                     selling_strategy: 'fifo',
                     priority_order: null,
                     must_sell_before: '',
@@ -690,9 +655,7 @@
                         unit_cost: 0,
                         selling_price: 0,
                         max_selling_price: 0,
-                        promotional_campaign_id: '',
                         promotional_price: 0,
-                        promotional_discount_percent: 0,
                         selling_strategy: 'fifo',
                         priority_order: null,
                         must_sell_before: '',
@@ -715,9 +678,7 @@
                 },
 
                 clearPromoFields(index) {
-                    this.items[index].promotional_campaign_id = '';
                     this.items[index].promotional_price = 0;
-                    this.items[index].promotional_discount_percent = 0;
                     this.items[index].selling_strategy = 'fifo';
                     this.items[index].priority_order = null;
                     this.items[index].must_sell_before = '';
@@ -727,6 +688,17 @@
                     this.items[index].lot_number = '';
                     this.items[index].storage_location = '';
                     this.items[index].quality_status = 'approved';
+                },
+
+                savePromoModal() {
+                    const index = this.currentEditIndex;
+                    if (index !== null) {
+                        const promoPrice = parseFloat(this.items[index].promotional_price) || 0;
+                        if (promoPrice > 0) {
+                            this.items[index].selling_price = promoPrice;
+                        }
+                    }
+                    this.showPromoModal = false;
                 },
 
                 updateConversionFactor(index) {

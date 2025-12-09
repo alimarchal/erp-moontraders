@@ -77,23 +77,27 @@
     </x-filter-section>
 
     {{-- Summary Cards --}}
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-            <div class="text-sm text-gray-500">Total Credit Sales</div>
-            <div class="text-2xl font-bold text-blue-700">₨ {{ number_format($totals->total_debits ?? 0, 2) }}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-            <div class="text-sm text-gray-500">Total Recoveries</div>
-            <div class="text-2xl font-bold text-green-700">₨ {{ number_format($totals->total_credits ?? 0, 2) }}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
-            <div class="text-sm text-gray-500">Outstanding Balance</div>
-            <div class="text-2xl font-bold text-orange-700">₨ {{ number_format(($totals->total_debits ?? 0) -
-                ($totals->total_credits ?? 0), 2) }}</div>
-        </div>
-        <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
-            <div class="text-sm text-gray-500">Total Customers</div>
-            <div class="text-2xl font-bold text-purple-700">{{ $customers->total() }}</div>
+
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+                <div class="text-sm text-gray-500">Total Credit Sales</div>
+                <div class="text-2xl font-bold text-blue-700">₨ {{ number_format($totals->total_debits ?? 0, 2) }}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+                <div class="text-sm text-gray-500">Total Recoveries</div>
+                <div class="text-2xl font-bold text-green-700">₨ {{ number_format($totals->total_credits ?? 0, 2) }}
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
+                <div class="text-sm text-gray-500">Outstanding Balance</div>
+                <div class="text-2xl font-bold text-orange-700">₨ {{ number_format(($totals->total_debits ?? 0) -
+                    ($totals->total_credits ?? 0), 2) }}</div>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+                <div class="text-sm text-gray-500">Total Customers</div>
+                <div class="text-2xl font-bold text-purple-700">{{ $customers->total() }}</div>
+            </div>
         </div>
     </div>
 

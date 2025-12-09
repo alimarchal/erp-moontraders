@@ -12,6 +12,7 @@ use App\Models\SalesSettlementAdvanceTax;
 use App\Models\SalesSettlementItem;
 use App\Models\SalesSettlementItemBatch;
 use App\Models\SalesSettlementSale;
+use App\Models\VanStockBalance;
 use App\Services\DistributionService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -140,8 +141,22 @@ class SalesSettlementController extends Controller
             ->with(['warehouse', 'vehicle', 'employee', 'items.product', 'items.uom'])
             ->findOrFail($id);
 
+        // Get existing van stock balances (B/F - Brought Forward) for this vehicle
+        $vanStockBalances = VanStockBalance::where('vehicle_id', $goodsIssue->vehicle_id)
+            ->where('quantity_on_hand', '>', 0)
+            ->get()
+            ->keyBy('product_id');
+
         // Add batch breakdown to each goods issue item
         foreach ($goodsIssue->items as $item) {
+            // Get current van stock for this product
+            $vanStock = $vanStockBalances->get($item->product_id);
+            $currentVanQty = $vanStock ? (float) $vanStock->quantity_on_hand : 0;
+
+            // B/F (Brought Forward) = Current Van Stock - Quantity from THIS Goods Issue
+            // Because van stock already includes the issued quantity from this goods issue
+            $item->bf_quantity = max(0, $currentVanQty - (float) $item->quantity_issued);
+
             $stockMovements = DB::table('stock_movements as sm')
                 ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
                 ->where('sm.reference_type', 'App\Models\GoodsIssue')
@@ -186,6 +201,7 @@ class SalesSettlementController extends Controller
                 'id' => $item->id,
                 'product_id' => $item->product_id,
                 'quantity_issued' => $item->quantity_issued,
+                'bf_quantity' => $item->bf_quantity ?? 0,
                 'unit_cost' => $item->unit_cost,
                 'calculated_total' => $item->calculated_total,
                 'product' => [

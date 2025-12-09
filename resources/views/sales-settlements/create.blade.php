@@ -57,29 +57,30 @@
                     {{-- Section 2: Combined Batch-wise Settlement Table --}}
                     <div id="settlementTableContainer"
                         style="display: none; text-align: center; margin: 0px; padding: 0px">
-                        <x-detail-table title="Batch-wise Settlement (Issue - Sold - Return - Shortage = Balance = BF)"
+                        <x-detail-table
+                            title="Batch-wise Settlement (B/F + Issued = Total Available | Sold + Returned + Shortage + Balance = Total)"
                             :headers="[
                                 ['label' => 'Product / Batch', 'align' => 'text-left'],
                                 ['label' => 'Batch Breakdown', 'align' => 'text-left'],
-                                ['label' => 'B/F', 'align' => 'text-right'],
+                                ['label' => 'B/F (In)', 'align' => 'text-right'],
                                 ['label' => 'Qty Issued', 'align' => 'text-right'],
                                 ['label' => 'Price', 'align' => 'text-right'],
                                 ['label' => 'Value', 'align' => 'text-right'],
                                 ['label' => 'Sold', 'align' => 'text-right'],
                                 ['label' => 'Returned', 'align' => 'text-right'],
                                 ['label' => 'Shortage', 'align' => 'text-right'],
-                                ['label' => 'Balance', 'align' => 'text-right'],
+                                ['label' => 'B/F (Out)', 'align' => 'text-right'],
                             ]">
                             <tbody id="settlementItemsBody">
                                 <!-- Settlement items will be populated here -->
                             </tbody>
                             <x-slot name="footer">
                                 <tr class="border-t-2 border-gray-300 bg-gray-100">
-                                    <td colspan="3" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:
-                                    </td>
+                                    <td colspan="2" class="py-1 px-1 text-right font-bold text-sm">Grand Totals:</td>
                                     <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
-                                        id="grandTotalBF">0
-                                    </td>
+                                        id="grandTotalBFIn">-</td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
+                                        id="grandTotalIssued">0</td>
                                     <td colspan="2" class="py-1 px-1"></td>
                                     <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
                                         id="grandTotalSold">0</td>
@@ -87,32 +88,24 @@
                                         id="grandTotalReturned">0</td>
                                     <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
                                         id="grandTotalShortage">0</td>
-                                    <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalBalance">0
-                                    </td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-orange-700"
+                                        id="grandTotalBalance">0</td>
                                 </tr>
                                 <tr class="border-t border-gray-300 bg-blue-50">
-                                    <td colspan="3" class="py-1 px-1 text-right font-bold text-sm">Value Totals:
-                                    </td>
+                                    <td colspan="2" class="py-1 px-1 text-right font-bold text-sm">Value Totals:</td>
                                     <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
-                                        id="grandTotalBFValue">0.00</td>
+                                        id="grandTotalBFInValue">-</td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-purple-700"
+                                        id="grandTotalIssuedValue">₨ 0.00</td>
                                     <td colspan="2" class="py-1 px-1"></td>
                                     <td class="py-1 px-1 text-right font-bold text-sm text-green-700"
-                                        id="grandTotalSoldValue">0.00</td>
+                                        id="grandTotalSoldValue">₨ 0.00</td>
                                     <td class="py-1 px-1 text-right font-bold text-sm text-blue-700"
-                                        id="grandTotalReturnValue">0.00</td>
+                                        id="grandTotalReturnValue">₨ 0.00</td>
                                     <td class="py-1 px-1 text-right font-bold text-sm text-red-700"
-                                        id="grandTotalShortageValue">0.00</td>
-                                    <td class="py-1 px-1 text-right font-bold text-sm" id="valueBalanceCheck">0.00
-                                    </td>
-                                </tr>
-                                <tr class="border-t-2 border-gray-400 bg-gray-200">
-                                    <td colspan="3" class="py-1 px-1 text-right font-bold text-base">Total Issued:
-                                    </td>
-                                    <td class="py-1 px-1 text-right font-bold text-sm" id="grandTotalIssued">0</td>
-                                    <td colspan="2" class="py-1 px-1 text-right font-bold text-base">Total Value:
-                                    </td>
-                                    <td colspan="5" class="py-1 px-1 text-right font-bold text-sm text-emerald-700"
-                                        id="grandTotalIssuedValue">0.00</td>
+                                        id="grandTotalShortageValue">₨ 0.00</td>
+                                    <td class="py-1 px-1 text-right font-bold text-sm text-orange-700"
+                                        id="grandTotalBalanceValue">₨ 0.00</td>
                                 </tr>
                             </x-slot>
                         </x-detail-table>
@@ -672,8 +665,10 @@
 
 
         // Function to calculate balance for a batch row
+        // B/F (Out) = B/F (In) + Qty Issued - Sold - Returned - Shortage
         function calculateBatchBalance(itemIndex, batchIndex) {
             const issuedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_issued]"]`);
+            const bfInInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][bf_quantity]"]`);
             const soldInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_sold]"]`);
             const returnedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_returned]"]`);
             const shortageInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_shortage]"]`);
@@ -681,34 +676,28 @@
             if (!issuedInput || !soldInput || !returnedInput || !shortageInput) return;
 
             const issued = Math.round(parseFloat(issuedInput.value) || 0);
+            const bfIn = Math.round(parseFloat(bfInInput?.value) || 0);
             const sold = Math.round(parseFloat(soldInput.value) || 0);
             const returned = Math.round(parseFloat(returnedInput.value) || 0);
             const shortage = Math.round(parseFloat(shortageInput.value) || 0);
 
-            const balance = issued - sold - returned - shortage;
-            const balanceSpan = document.getElementById(`balance-${itemIndex}-${batchIndex}`);
-            const bfBalanceSpan = document.getElementById(`bf-balance-${itemIndex}-${batchIndex}`);
+            // Total available = B/F (In) + Issued
+            const totalAvailable = bfIn + issued;
+            // B/F (Out) = Total Available - Sold - Returned - Shortage
+            const bfOut = totalAvailable - sold - returned - shortage;
+            
+            const bfOutSpan = document.getElementById(`bf-out-${itemIndex}-${batchIndex}`);
 
-            if (balanceSpan) {
-                balanceSpan.textContent = balance;
+            if (bfOutSpan) {
+                bfOutSpan.textContent = bfOut;
 
-                // Color coding: green if balanced, red if not
-                if (balance === 0) {
-                    balanceSpan.className = 'font-bold text-green-600';
+                // Color coding: green if zero (fully settled), orange if positive (stock remaining on van), red if negative (error)
+                if (bfOut === 0) {
+                    bfOutSpan.className = 'font-bold text-green-600';
+                } else if (bfOut > 0) {
+                    bfOutSpan.className = 'font-bold text-orange-600';
                 } else {
-                    balanceSpan.className = 'font-bold text-red-600';
-                }
-            }
-
-            // BF Balance is same as Balance (Brought Forward)
-            if (bfBalanceSpan) {
-                bfBalanceSpan.textContent = balance;
-                if (balance === 0) {
-                    bfBalanceSpan.className = 'font-semibold text-green-600';
-                } else if (balance > 0) {
-                    bfBalanceSpan.className = 'font-semibold text-purple-600';
-                } else {
-                    bfBalanceSpan.className = 'font-semibold text-red-600';
+                    bfOutSpan.className = 'font-bold text-red-600';
                 }
             }
 
@@ -716,9 +705,10 @@
             updateProductTotals(itemIndex);
         }
 
-        // Auto-fill shortage when sold + returned is entered
+        // Auto-fill B/F (Out) when sold + returned is entered (no longer auto-fill shortage)
         function autoFillShortage(itemIndex, batchIndex, skipField = null) {
             const issuedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_issued]"]`);
+            const bfInInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][bf_quantity]"]`);
             const soldInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_sold]"]`);
             const returnedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_returned]"]`);
             const shortageInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_shortage]"]`);
@@ -726,15 +716,16 @@
             if (!issuedInput || !soldInput || !returnedInput || !shortageInput) return;
 
             const issued = Math.round(parseFloat(issuedInput.value) || 0);
+            const bfIn = Math.round(parseFloat(bfInInput?.value) || 0);
             const sold = Math.round(parseFloat(soldInput.value) || 0);
             const returned = Math.round(parseFloat(returnedInput.value) || 0);
+            const shortage = Math.round(parseFloat(shortageInput.value) || 0);
 
-            // Auto-fill shortage when entering sold or returned (but not when editing shortage itself)
-            if (skipField !== 'shortage') {
-                const autoShortage = Math.max(0, issued - sold - returned);
-                shortageInput.value = autoShortage;
-            }
+            // Total available = B/F (In) + Issued
+            const totalAvailable = bfIn + issued;
 
+            // No longer auto-fill shortage - user must enter it manually
+            // B/F (Out) is calculated automatically
             calculateBatchBalance(itemIndex, batchIndex);
         }
 
@@ -804,7 +795,10 @@
                 }
             });
 
-            // Get total issued from hidden inputs
+            // Get total issued and B/F (In) from hidden inputs
+            let grandBfIn = 0;
+            let grandBfInValue = 0;
+
             document.querySelectorAll('input[name*="[batches]"][name*="[quantity_issued]"]').forEach(input => {
                 const qty = Math.round(parseFloat(input.value) || 0);
                 grandIssued += qty;
@@ -817,49 +811,44 @@
                     const priceInput = document.querySelector(`input[name="items[${itemIdx}][batches][${batchIdx}][selling_price]"]`);
                     const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
                     grandIssuedValue += qty * price;
+
+                    // Also get B/F (In) for this batch
+                    const bfInput = document.querySelector(`input[name="items[${itemIdx}][batches][${batchIdx}][bf_quantity]"]`);
+                    const bfQty = Math.round(parseFloat(bfInput?.value) || 0);
+                    grandBfIn += bfQty;
+                    grandBfInValue += bfQty * price;
                 }
             });
 
-            const grandBalance = grandIssued - grandSold - grandReturned - grandShortage;
-            const grandBalanceValue = grandIssuedValue - grandSoldValue - grandReturnValue - grandShortageValue;
-
-            // BF Balance is same as Balance (what's being brought forward)
-            const grandBF = grandBalance;
-            const grandBFValue = grandBalanceValue;
+            // B/F (Out) = B/F (In) + Issued - Sold - Returned - Shortage
+            const grandTotalAvailable = grandBfIn + grandIssued;
+            const grandBfOut = grandTotalAvailable - grandSold - grandReturned - grandShortage;
+            const grandBfOutValue = (grandBfInValue + grandIssuedValue) - grandSoldValue - grandReturnValue - grandShortageValue;
 
             // Update quantity displays with null checks
             const soldEl = document.getElementById('grandTotalSold');
             const returnedEl = document.getElementById('grandTotalReturned');
             const shortageEl = document.getElementById('grandTotalShortage');
             const balanceElement = document.getElementById('grandTotalBalance');
-            const bfElement = document.getElementById('grandTotalBF');
+            const bfInEl = document.getElementById('grandTotalBFIn');
             const issuedEl = document.getElementById('grandTotalIssued');
 
             if (soldEl) soldEl.textContent = grandSold;
             if (returnedEl) returnedEl.textContent = grandReturned;
             if (shortageEl) shortageEl.textContent = grandShortage;
             if (issuedEl) issuedEl.textContent = grandIssued;
+            if (bfInEl) bfInEl.textContent = grandBfIn > 0 ? grandBfIn : '-';
 
+            // Update B/F (Out) display
             if (balanceElement) {
-                balanceElement.textContent = grandBalance;
-                // Color code quantity balance
-                if (grandBalance === 0) {
+                balanceElement.textContent = grandBfOut;
+                // Color code: green if zero, orange if positive (stock left on van), red if negative
+                if (grandBfOut === 0) {
                     balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-green-600';
+                } else if (grandBfOut > 0) {
+                    balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-orange-600';
                 } else {
                     balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-red-600';
-                }
-            }
-
-            // Update BF Balance display
-            if (bfElement) {
-                bfElement.textContent = grandBF;
-                // Color code BF balance
-                if (grandBF === 0) {
-                    bfElement.className = 'py-1 px-1 text-right font-bold text-sm text-purple-700';
-                } else if (grandBF > 0) {
-                    bfElement.className = 'py-1 px-1 text-right font-bold text-sm text-purple-600';
-                } else {
-                    bfElement.className = 'py-1 px-1 text-right font-bold text-sm text-red-600';
                 }
             }
 
@@ -871,29 +860,14 @@
             const shortageValueEl = document.getElementById('grandTotalShortageValue');
             const balanceValueEl = document.getElementById('grandTotalBalanceValue');
             const issuedValueEl = document.getElementById('grandTotalIssuedValue');
-            const valueCheckElement = document.getElementById('valueBalanceCheck');
-            const bfValueElement = document.getElementById('grandTotalBFValue');
+            const bfInValueEl = document.getElementById('grandTotalBFInValue');
 
             if (soldValueEl) soldValueEl.textContent = formatPKR(grandSoldValue);
             if (returnValueEl) returnValueEl.textContent = formatPKR(grandReturnValue);
             if (shortageValueEl) shortageValueEl.textContent = formatPKR(grandShortageValue);
-            if (balanceValueEl) balanceValueEl.textContent = formatPKR(grandBalanceValue);
+            if (balanceValueEl) balanceValueEl.textContent = formatPKR(grandBfOutValue);
             if (issuedValueEl) issuedValueEl.textContent = formatPKR(grandIssuedValue);
-
-            if (valueCheckElement) {
-                valueCheckElement.textContent = formatPKR(grandBalanceValue);
-                // Color code value balance - must be zero
-                if (Math.abs(grandBalanceValue) < 0.01) {
-                    valueCheckElement.className = 'py-1 px-1 text-right font-bold text-sm text-green-700';
-                } else {
-                    valueCheckElement.className = 'py-1 px-1 text-right font-bold text-sm text-red-700';
-                }
-            }
-
-            // Update BF Value display
-            if (bfValueElement) {
-                bfValueElement.textContent = formatPKR(grandBFValue);
-            }
+            if (bfInValueEl) bfInValueEl.textContent = grandBfIn > 0 ? formatPKR(grandBfInValue) : '-';
 
             // Update Sales Summary with sold value (Net Sale = Value of SOLD Items)
             const netSaleEl = document.getElementById('summary_net_sale');
@@ -1128,6 +1102,7 @@
                     <input type="hidden" name="items[${index}][goods_issue_item_id]" value="${item.id}">
                     <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
                     <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
+                    <input type="hidden" name="items[${index}][bf_quantity]" value="${item.bf_quantity || 0}">
                     <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
                     <input type="hidden" name="items[${index}][selling_price]" value="${avgSellingPrice}">
                     <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="0">
@@ -1135,10 +1110,15 @@
                     <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="0">
                 `;
 
+                // Get B/F quantity for this item (from van stock)
+                const itemBfQuantity = parseFloat(item.bf_quantity) || 0;
+
                 // Settlement rows (one per batch)
                 if (batchBreakdown.length > 0) {
                     batchBreakdown.forEach((batch, batchIdx) => {
                         const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
+                        // For B/F, distribute proportionally across batches or show on first batch only
+                        const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
 
                         // Debug: log the item data
                         console.log('Item data:', item);
@@ -1164,7 +1144,8 @@
                                     </div>
                                 </td>
                                 <td class="py-1 px-1 text-right">
-                                    <span id="bf-balance-${index}-${batchIdx}" class="font-semibold text-purple-600">0</span>
+                                    <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
+                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
                                 </td>
                                 <td class="py-1 px-1 text-right">
                                     <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
@@ -1179,8 +1160,9 @@
                                         data-item-index="${index}"
                                         data-batch-index="${batchIdx}"
                                         data-type="sold"
+                                        data-bf-quantity="${batchBfQuantity}"
                                         min="0"
-                                        max="${batch.quantity}"
+                                        max="${parseFloat(batch.quantity) + batchBfQuantity}"
                                         step="1"
                                         value="0"
                                         oninput="autoFillShortage(${index}, ${batchIdx})">
@@ -1193,7 +1175,7 @@
                                         data-batch-index="${batchIdx}"
                                         data-type="returned"
                                         min="0"
-                                        max="${batch.quantity}"
+                                        max="${parseFloat(batch.quantity) + batchBfQuantity}"
                                         step="1"
                                         value="0"
                                         oninput="autoFillShortage(${index}, ${batchIdx})">
@@ -1206,13 +1188,13 @@
                                         data-batch-index="${batchIdx}"
                                         data-type="shortage"
                                         min="0"
-                                        max="${batch.quantity}"
+                                        max="${parseFloat(batch.quantity) + batchBfQuantity}"
                                         step="1"
-                                        value="${batch.quantity}"
+                                        value="0"
                                         oninput="autoFillShortage(${index}, ${batchIdx}, 'shortage')">
                                 </td>
                                 <td class="py-1 px-1 text-right">
-                                    <span id="balance-${index}-${batchIdx}" class="font-bold text-red-600">0</span>
+                                    <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${parseFloat(batch.quantity) + batchBfQuantity}</span>
                                 </td>
                             </tr>
                         `;

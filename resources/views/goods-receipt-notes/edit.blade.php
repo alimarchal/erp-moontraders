@@ -344,24 +344,6 @@
 
                         <hr class="my-6 border-gray-200">
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <x-label for="tax_amount" value="Tax Amount" />
-                                <x-input id="tax_amount" name="tax_amount" type="number" step="0.01"
-                                    class="mt-1 block w-full" :value="old('tax_amount', $grn->tax_amount)" />
-                            </div>
-                            <div>
-                                <x-label for="freight_charges" value="Freight Charges" />
-                                <x-input id="freight_charges" name="freight_charges" type="number" step="0.01"
-                                    class="mt-1 block w-full" :value="old('freight_charges', $grn->freight_charges)" />
-                            </div>
-                            <div>
-                                <x-label for="other_charges" value="Other Charges" />
-                                <x-input id="other_charges" name="other_charges" type="number" step="0.01"
-                                    class="mt-1 block w-full" :value="old('other_charges', $grn->other_charges)" />
-                            </div>
-                        </div>
-
                         <div class="mt-4">
                             <x-label for="notes" value="Notes" />
                             <textarea id="notes" name="notes" rows="3"

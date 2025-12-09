@@ -80,128 +80,78 @@
 
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Stock Batches</h3>
 
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Batch
-                                        Code
-                                    </th>
-                                    <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                                        Receipt
-                                        Date</th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">
-                                        Quantity
-                                    </th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Unit
-                                        Cost
-                                    </th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Selling
-                                        Price
-                                    </th>
-                                    <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">Total
-                                        Value
-                                    </th>
-                                    <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">
-                                        Priority
-                                    </th>
-                                    <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Expiry
-                                    </th>
-                                    <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase">Status
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($batches as $batch)
-                                <tr class="hover:bg-gray-50">
-                                    <td class="px-3 py-2 text-sm">
-                                        <div class="font-semibold text-gray-900">
-                                            {{ $batch->stockBatch->batch_code }}
-                                        </div>
-                                        @if($batch->is_promotional)
-                                        <span
-                                            class="inline-flex items-center px-2 py-0.5 mt-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
-                                            Promotional
-                                        </span>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2 text-center text-sm text-gray-700">
-                                        {{ \Carbon\Carbon::parse($batch->stockBatch->receipt_date)->format('d M Y') }}
-                                    </td>
-                                    <td class="px-3 py-2 text-right text-sm font-semibold text-gray-900">
-                                        {{ number_format($batch->quantity_on_hand, 2) }}
-                                    </td>
-                                    <td class="px-3 py-2 text-right text-sm text-gray-700">
-                                        ₨ {{ number_format($batch->unit_cost, 2) }}
-                                    </td>
-                                    <td class="px-3 py-2 text-right text-sm text-gray-700">
-                                        @if($batch->stockBatch->selling_price)
-                                        ₨ {{ number_format($batch->stockBatch->selling_price, 2) }}
-                                        @else
-                                        <span class="text-gray-400">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2 text-right text-sm font-semibold text-gray-900">
-                                        ₨ {{ number_format($batch->total_value, 2) }}
-                                    </td>
-                                    <td class="px-3 py-2 text-center text-sm">
-                                        <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                            {{ $batch->priority_order < 50 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' }}">
-                                            {{ $batch->priority_order }}
-                                        </span>
-                                        @if($batch->must_sell_before)
-                                        <div class="text-xs text-red-600 mt-1">
-                                            Sell by: {{ \Carbon\Carbon::parse($batch->must_sell_before)->format('d M Y')
-                                            }}
-                                        </div>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2 text-center text-sm">
-                                        @if($batch->expiry_date)
-                                        <span class="text-gray-700">
-                                            {{ \Carbon\Carbon::parse($batch->expiry_date)->format('d M Y') }}
-                                        </span>
-                                        @else
-                                        <span class="text-gray-400">—</span>
-                                        @endif
-                                    </td>
-                                    <td class="px-3 py-2 text-center text-sm">
-                                        <span
-                                            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                            {{ $batch->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
-                                            {{ ucfirst($batch->status) }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                @if($batch->is_promotional && $batch->promotional_price)
-                                <tr class="bg-orange-50/10">
-                                    <td colspan="9" class="px-3 py-2 text-sm">
-                                        <div class="flex items-center justify-between">
-                                            <span class="text-orange-700 font-medium">
-                                                Promotional Price: ₨ {{ number_format($batch->promotional_price, 2) }}
-                                            </span>
-                                            @if($batch->stockBatch->promotional_discount_percent)
-                                            <span class="text-orange-600">
-                                                {{ number_format($batch->stockBatch->promotional_discount_percent, 2)
-                                                }}%
-                                                discount
-                                            </span>
-                                            @endif
-                                        </div>
-                                    </td>
-                                </tr>
+                    <x-data-table :items="$batches" :headers="[
+                            ['label' => 'Batch Code', 'align' => 'text-left'],
+                            ['label' => 'Receipt Date', 'align' => 'text-center'],
+                            ['label' => 'Quantity', 'align' => 'text-right'],
+                            ['label' => 'Unit Cost', 'align' => 'text-right'],
+                            ['label' => 'Selling Price', 'align' => 'text-right'],
+                            ['label' => 'Total Value', 'align' => 'text-right'],
+                            ['label' => 'Priority', 'align' => 'text-center'],
+                            ['label' => 'Status', 'align' => 'text-center'],
+                        ]" emptyMessage="No stock batches found." emptyLinkText="">
+
+                        @foreach($batches as $batch)
+                        <tr class="text-sm">
+                            <td class="py-1 px-2">
+                                <div class="font-semibold text-gray-900">
+                                    {{ $batch->stockBatch->batch_code }}
+                                </div>
+                                @if($batch->is_promotional)
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 mt-1 text-xs font-semibold rounded-full bg-orange-100 text-orange-700">
+                                    Promotional
+                                </span>
+                                @if($batch->promotional_price)
+                                <div class="text-xs text-orange-600 mt-1">
+                                    Promo: ₨ {{ number_format($batch->promotional_price, 2) }}
+                                </div>
                                 @endif
-                                @empty
-                                <tr>
-                                    <td colspan="9" class="px-3 py-8 text-center text-gray-500">
-                                        No stock batches found
-                                    </td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                                @endif
+                                @if($batch->must_sell_before)
+                                <div class="text-xs text-red-600 mt-1">
+                                    Sell by: {{ \Carbon\Carbon::parse($batch->must_sell_before)->format('d M Y') }}
+                                </div>
+                                @endif
+                            </td>
+                            <td class="py-1 px-2 text-center text-gray-700">
+                                {{ \Carbon\Carbon::parse($batch->stockBatch->receipt_date)->format('d M Y') }}
+                            </td>
+                            <td class="py-1 px-2 text-right">
+                                <span class="font-semibold text-gray-900">{{ number_format($batch->quantity_on_hand, 2)
+                                    }}</span>
+                            </td>
+                            <td class="py-1 px-2 text-right text-gray-700">
+                                ₨ {{ number_format($batch->unit_cost, 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right text-gray-700">
+                                @if($batch->stockBatch->selling_price)
+                                ₨ {{ number_format($batch->stockBatch->selling_price, 2) }}
+                                @else
+                                <span class="text-gray-400">—</span>
+                                @endif
+                            </td>
+                            <td class="py-1 px-2 text-right">
+                                <span class="font-semibold text-gray-900">₨ {{ number_format($batch->total_value, 2)
+                                    }}</span>
+                            </td>
+                            <td class="py-1 px-2 text-center">
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    {{ $batch->priority_order < 50 ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800' }}">
+                                    {{ $batch->priority_order }}
+                                </span>
+                            </td>
+                            <td class="py-1 px-2 text-center">
+                                <span
+                                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                    {{ $batch->status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800' }}">
+                                    {{ ucfirst($batch->status) }}
+                                </span>
+                            </td>
+                        </tr>
+                        @endforeach
+                    </x-data-table>
                 </div>
             </div>
         </div>

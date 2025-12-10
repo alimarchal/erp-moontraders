@@ -19,6 +19,7 @@ class GoodsIssueItemFactory extends Factory
         return [
             'quantity_issued' => 0,
             'unit_cost' => 0,
+            'selling_price' => 0,
         ];
     }
 }

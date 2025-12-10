@@ -562,6 +562,9 @@ class InventoryService
 
         $stockByBatch->quantity_on_hand = ($stockByBatch->quantity_on_hand ?? 0) + $item->quantity_accepted;
         $stockByBatch->unit_cost = $item->unit_cost;
+        $stockByBatch->selling_price = $item->is_promotional
+            ? ($item->promotional_price ?? $item->selling_price)
+            : $item->selling_price;
         $stockByBatch->total_value = $stockByBatch->quantity_on_hand * $stockByBatch->unit_cost;
         $stockByBatch->is_promotional = $item->is_promotional;
         $stockByBatch->promotional_price = $item->promotional_price;

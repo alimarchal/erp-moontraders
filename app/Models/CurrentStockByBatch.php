@@ -20,6 +20,7 @@ class CurrentStockByBatch extends Model
         'stock_batch_id',
         'quantity_on_hand',
         'unit_cost',
+        'selling_price',
         'is_promotional',
         'promotional_price',
         'priority_order',
@@ -32,6 +33,7 @@ class CurrentStockByBatch extends Model
     protected $casts = [
         'quantity_on_hand' => 'decimal:2',
         'unit_cost' => 'decimal:2',
+        'selling_price' => 'decimal:2',
         'promotional_price' => 'decimal:2',
         'is_promotional' => 'boolean',
         'must_sell_before' => 'date',

@@ -48,6 +48,7 @@ class StoreGoodsIssueRequest extends FormRequest
                 },
             ],
             'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.selling_price' => 'required|numeric|min:0',
             'items.*.uom_id' => 'required|exists:uoms,id',
         ];
     }

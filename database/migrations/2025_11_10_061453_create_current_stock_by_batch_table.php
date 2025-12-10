@@ -21,6 +21,7 @@ return new class extends Migration
             // Quantities
             $table->decimal('quantity_on_hand', 15, 2)->default(0);
             $table->decimal('unit_cost', 15, 2);
+            $table->decimal('selling_price', 15, 2)->nullable();
             $table->decimal('total_value', 15, 2)->default(0);
 
             // Promotional Info

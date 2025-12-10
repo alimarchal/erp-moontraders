@@ -16,6 +16,7 @@ class GoodsIssueItem extends Model
         'product_id',
         'quantity_issued',
         'unit_cost',
+        'selling_price',
         'total_value',
         'uom_id',
     ];
@@ -23,6 +24,7 @@ class GoodsIssueItem extends Model
     protected $casts = [
         'quantity_issued' => 'decimal:3',
         'unit_cost' => 'decimal:2',
+        'selling_price' => 'decimal:2',
         'total_value' => 'decimal:2',
     ];
 

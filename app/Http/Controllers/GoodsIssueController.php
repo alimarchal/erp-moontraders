@@ -184,6 +184,7 @@ class GoodsIssueController extends Controller
                     'product_id' => $item['product_id'],
                     'quantity_issued' => $item['quantity_issued'],
                     'unit_cost' => $item['unit_cost'],
+                    'selling_price' => $item['selling_price'],
                     'uom_id' => $item['uom_id'],
                     'total_value' => $item['quantity_issued'] * $item['unit_cost'],
                 ]);
@@ -388,6 +389,7 @@ class GoodsIssueController extends Controller
                     'product_id' => $item['product_id'],
                     'quantity_issued' => $item['quantity_issued'],
                     'unit_cost' => $item['unit_cost'],
+                    'selling_price' => $item['selling_price'],
                     'uom_id' => $item['uom_id'],
                     'total_value' => $item['quantity_issued'] * $item['unit_cost'],
                 ]);

@@ -4,6 +4,13 @@
 ])
 
 <style>
+    .form-table-scroll {
+        /* Force scrollbar to always be visible on macOS */
+        overflow-x: scroll !important;
+        scrollbar-width: thin;
+        scrollbar-color: #10b981 #f1f5f9;
+    }
+
     .form-table-scroll::-webkit-scrollbar {
         height: 10px;
     }
@@ -17,15 +24,12 @@
         background: linear-gradient(to right, #10b981, #059669);
         border-radius: 10px;
         transition: background 0.3s ease;
+        /* Force scrollbar thumb to always be visible */
+        min-height: 40px;
     }
 
     .form-table-scroll::-webkit-scrollbar-thumb:hover {
         background: linear-gradient(to right, #059669, #047857);
-    }
-
-    .form-table-scroll {
-        scrollbar-width: thin;
-        scrollbar-color: #10b981 #f1f5f9;
     }
 </style>
 
@@ -34,7 +38,7 @@
     <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $title }}</h3>
     @endif
 
-    <div class="form-table-scroll relative overflow-x-auto rounded-lg">
+    <div class="form-table-scroll relative rounded-lg">
         <table class="min-w-full table-auto text-sm">
             <thead>
                 <tr class="bg-green-800 text-white uppercase text-xs">

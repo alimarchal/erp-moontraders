@@ -304,11 +304,17 @@ class LedgerService
     }
 
     /**
-     * Get customer's current balance
+     * Get customer's current balance (excluding draft settlements)
      */
     public function getCustomerBalance(int $customerId): float
     {
         $latestEntry = CustomerLedger::where('customer_id', $customerId)
+            ->where(function ($query) {
+                $query->whereNull('sales_settlement_id')
+                    ->orWhereHas('salesSettlement', function ($q) {
+                        $q->where('status', 'posted');
+                    });
+            })
             ->orderBy('transaction_date', 'desc')
             ->orderBy('id', 'desc')
             ->first();

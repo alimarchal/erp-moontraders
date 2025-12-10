@@ -6,7 +6,7 @@
 'emptyLinkText' => 'Add a new record',
 ])
 
-<div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 pb-16">
+<div class="max-w-7xl mx-auto sm:px-6 lg:px-2 mt-2 pb-16">
     <x-status-message />
     <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
 

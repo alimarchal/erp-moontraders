@@ -126,7 +126,7 @@ class SalesSettlementController extends Controller
             ->map(function ($gi) {
                 return [
                     'id' => $gi->id,
-                    'text' => $gi->issue_number.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
+                    'text' => $gi->issue_number . ' - ' . $gi->employee->full_name . ' (' . $gi->issue_date->format('d M Y') . ')',
                 ];
             });
 
@@ -395,17 +395,48 @@ class SalesSettlementController extends Controller
                 ]);
 
                 if (isset($item['batches']) && is_array($item['batches'])) {
+                    // Auto-distribute item-level quantities to batches if batch-level values are all zero
+                    $batchSoldSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_sold'] ?? 0));
+                    $batchReturnedSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_returned'] ?? 0));
+                    $batchShortageSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_shortage'] ?? 0));
+
+                    $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
+
+                    $itemQtySold = (float) ($item['quantity_sold'] ?? 0);
+                    $itemQtyReturned = (float) ($item['quantity_returned'] ?? 0);
+                    $itemQtyShortage = (float) ($item['quantity_shortage'] ?? 0);
+
+                    $remainingSold = $itemQtySold;
+                    $remainingReturned = $itemQtyReturned;
+                    $remainingShortage = $itemQtyShortage;
+
                     foreach ($item['batches'] as $batchIndex => $batch) {
                         $batchFinancial = $financials['batch_financials'][$batchIndex] ?? null;
+                        $batchQtyIssued = (float) ($batch['quantity_issued'] ?? 0);
+
+                        // If auto-distributing, allocate quantities proportionally based on issued qty
+                        if ($autoDistribute && $batchQtyIssued > 0) {
+                            $batchQtySold = min($batchQtyIssued, $remainingSold);
+                            $batchQtyReturned = min($batchQtyIssued - $batchQtySold, $remainingReturned);
+                            $batchQtyShortage = min($batchQtyIssued - $batchQtySold - $batchQtyReturned, $remainingShortage);
+
+                            $remainingSold -= $batchQtySold;
+                            $remainingReturned -= $batchQtyReturned;
+                            $remainingShortage -= $batchQtyShortage;
+                        } else {
+                            $batchQtySold = (float) ($batch['quantity_sold'] ?? 0);
+                            $batchQtyReturned = (float) ($batch['quantity_returned'] ?? 0);
+                            $batchQtyShortage = (float) ($batch['quantity_shortage'] ?? 0);
+                        }
 
                         SalesSettlementItemBatch::create([
                             'sales_settlement_item_id' => $settlementItem->id,
                             'stock_batch_id' => $batch['stock_batch_id'],
                             'batch_code' => $batch['batch_code'],
-                            'quantity_issued' => $batch['quantity_issued'] ?? 0,
-                            'quantity_sold' => $batch['quantity_sold'] ?? 0,
-                            'quantity_returned' => $batch['quantity_returned'] ?? 0,
-                            'quantity_shortage' => $batch['quantity_shortage'] ?? 0,
+                            'quantity_issued' => $batchQtyIssued,
+                            'quantity_sold' => $batchQtySold,
+                            'quantity_returned' => $batchQtyReturned,
+                            'quantity_shortage' => $batchQtyShortage,
                             'unit_cost' => $batchFinancial['unit_cost'] ?? $batch['unit_cost'] ?? $item['unit_cost'],
                             'selling_price' => $batchFinancial['selling_price'] ?? $batch['selling_price'] ?? $item['unit_cost'],
                             'is_promotional' => $batch['is_promotional'] ?? false,
@@ -415,7 +446,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (! empty($request->sales)) {
+            if (!empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -428,7 +459,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
+            if (!empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -443,7 +474,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create advance tax breakdown records if any
-            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
+            if (!empty($request->advance_taxes) && is_array($request->advance_taxes)) {
                 foreach ($request->advance_taxes as $advanceTax) {
                     SalesSettlementAdvanceTax::create([
                         'sales_settlement_id' => $settlement->id,
@@ -458,6 +489,9 @@ class SalesSettlementController extends Controller
             }
 
             // NOTE: Ledger entries are created when the settlement is POSTED
+            // Recalculate financials from the persisted batch data to avoid zeroed profit
+            $this->recalcSettlementFinancials($settlement);
+
             // via DistributionService::postSalesSettlement() to avoid duplicates
 
             DB::commit();
@@ -477,7 +511,7 @@ class SalesSettlementController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Sales Settlement: '.$e->getMessage());
+                ->with('error', 'Unable to create Sales Settlement: ' . $e->getMessage());
         }
     }
 
@@ -645,16 +679,48 @@ class SalesSettlementController extends Controller
 
                 // Store batch breakdown if available
                 if (isset($item['batches']) && is_array($item['batches'])) {
+                    // Auto-distribute item-level quantities to batches if batch-level values are all zero
+                    $batchSoldSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_sold'] ?? 0));
+                    $batchReturnedSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_returned'] ?? 0));
+                    $batchShortageSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_shortage'] ?? 0));
+
+                    $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
+
+                    $itemQtySold = (float) ($item['quantity_sold'] ?? 0);
+                    $itemQtyReturned = (float) ($item['quantity_returned'] ?? 0);
+                    $itemQtyShortage = (float) ($item['quantity_shortage'] ?? 0);
+
+                    $remainingSold = $itemQtySold;
+                    $remainingReturned = $itemQtyReturned;
+                    $remainingShortage = $itemQtyShortage;
+
                     foreach ($item['batches'] as $batchIndex => $batch) {
                         $batchFinancial = $financials['batch_financials'][$batchIndex] ?? null;
+                        $batchQtyIssued = (float) ($batch['quantity_issued'] ?? 0);
+
+                        // If auto-distributing, allocate quantities proportionally based on issued qty
+                        if ($autoDistribute && $batchQtyIssued > 0) {
+                            $batchQtySold = min($batchQtyIssued, $remainingSold);
+                            $batchQtyReturned = min($batchQtyIssued - $batchQtySold, $remainingReturned);
+                            $batchQtyShortage = min($batchQtyIssued - $batchQtySold - $batchQtyReturned, $remainingShortage);
+
+                            $remainingSold -= $batchQtySold;
+                            $remainingReturned -= $batchQtyReturned;
+                            $remainingShortage -= $batchQtyShortage;
+                        } else {
+                            $batchQtySold = (float) ($batch['quantity_sold'] ?? 0);
+                            $batchQtyReturned = (float) ($batch['quantity_returned'] ?? 0);
+                            $batchQtyShortage = (float) ($batch['quantity_shortage'] ?? 0);
+                        }
+
                         SalesSettlementItemBatch::create([
                             'sales_settlement_item_id' => $settlementItem->id,
                             'stock_batch_id' => $batch['stock_batch_id'],
                             'batch_code' => $batch['batch_code'],
-                            'quantity_issued' => $batch['quantity_issued'] ?? 0,
-                            'quantity_sold' => $batch['quantity_sold'] ?? 0,
-                            'quantity_returned' => $batch['quantity_returned'] ?? 0,
-                            'quantity_shortage' => $batch['quantity_shortage'] ?? 0,
+                            'quantity_issued' => $batchQtyIssued,
+                            'quantity_sold' => $batchQtySold,
+                            'quantity_returned' => $batchQtyReturned,
+                            'quantity_shortage' => $batchQtyShortage,
                             'unit_cost' => $batchFinancial['unit_cost'] ?? $batch['unit_cost'] ?? $item['unit_cost'],
                             'selling_price' => $batchFinancial['selling_price'] ?? $batch['selling_price'] ?? $item['unit_cost'],
                             'is_promotional' => $batch['is_promotional'] ?? false,
@@ -664,7 +730,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (! empty($request->sales)) {
+            if (!empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -677,7 +743,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
+            if (!empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -690,6 +756,9 @@ class SalesSettlementController extends Controller
                     ]);
                 }
             }
+
+            // Recalculate financials from persisted batches to keep profit in sync
+            $this->recalcSettlementFinancials($salesSettlement);
 
             DB::commit();
 
@@ -807,6 +876,51 @@ class SalesSettlementController extends Controller
             'unit_cost' => $unitCost,
             'batch_financials' => $batchFinancials,
         ];
+    }
+
+    /**
+     * Recalculate item and settlement totals from persisted batch data.
+     */
+    private function recalcSettlementFinancials(SalesSettlement $settlement): void
+    {
+        // Force refresh items and batches from database to get newly created records
+        $settlement->load(['items.batches']);
+
+        foreach ($settlement->items as $item) {
+            $quantitySold = (float) $item->batches->sum('quantity_sold');
+            $quantityReturned = (float) $item->batches->sum('quantity_returned');
+
+            $totalSalesValue = $item->batches->sum(function ($batch) {
+                return (float) $batch->quantity_sold * (float) $batch->selling_price;
+            });
+
+            $totalCogs = $item->batches->sum(function ($batch) {
+                return (float) $batch->quantity_sold * (float) $batch->unit_cost;
+            });
+
+            if ($quantitySold > 0 || $quantityReturned > 0 || $totalSalesValue > 0 || $totalCogs > 0) {
+                $item->quantity_sold = $quantitySold;
+                $item->quantity_returned = $quantityReturned;
+                $item->total_sales_value = $totalSalesValue;
+                $item->total_cogs = $totalCogs;
+                $item->unit_selling_price = $quantitySold > 0 ? $totalSalesValue / $quantitySold : $item->unit_selling_price;
+                $item->unit_cost = $quantitySold > 0 ? $totalCogs / $quantitySold : $item->unit_cost;
+                $item->save();
+            }
+        }
+
+        // Refresh settlement items to get the updated totals
+        $settlement->refresh();
+
+        $totalSalesValueAll = (float) $settlement->items->sum('total_sales_value');
+
+        $settlement->total_quantity_sold = $settlement->items->sum('quantity_sold');
+        $settlement->total_quantity_returned = $settlement->items->sum('quantity_returned');
+        // @phpstan-ignore-next-line decimal columns accept floats
+        $settlement->total_cogs = round($settlement->items->sum('total_cogs'), 2);
+        // @phpstan-ignore-next-line decimal columns accept floats
+        $settlement->gross_profit = round($totalSalesValueAll - (float) $settlement->total_cogs, 2);
+        $settlement->save();
     }
 
     /**

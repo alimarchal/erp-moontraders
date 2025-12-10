@@ -18,10 +18,16 @@
                     Post Settlement
                 </button>
             </form>
-            <a href="{{ route('sales-settlements.edit', $settlement->id) }}"
-                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                Edit
-            </a>
+            <form action="{{ route('sales-settlements.destroy', $settlement->id) }}" method="POST"
+                onsubmit="return confirm('Are you sure you want to delete this draft settlement?');"
+                class="inline-block">
+                @csrf
+                @method('DELETE')
+                <button type="submit"
+                    class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                    Delete Draft
+                </button>
+            </form>
             @endif
             <a href="{{ route('sales-settlements.index') }}"
                 class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">

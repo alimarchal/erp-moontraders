@@ -240,6 +240,25 @@ class SalesSettlementController extends Controller
             // Get goods issue
             $goodsIssue = GoodsIssue::with('items')->findOrFail($request->goods_issue_id);
 
+            // Check if a settlement already exists for this goods issue
+            $existingSettlement = SalesSettlement::where('goods_issue_id', $request->goods_issue_id)
+                ->whereIn('status', ['draft', 'posted'])
+                ->first();
+
+            if ($existingSettlement) {
+                // If it's posted, prevent creating another one
+                if ($existingSettlement->status === 'posted') {
+                    return back()
+                        ->withInput()
+                        ->with('error', "A posted settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. Cannot create another settlement.");
+                }
+
+                // If it's draft, redirect to show page with message to edit
+                return redirect()
+                    ->route('sales-settlements.show', $existingSettlement)
+                    ->with('info', "A draft settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. You can view and edit it here.");
+            }
+
             // Debug: Log the incoming request data
             Log::info('Sales Settlement Request Data', [
                 'goods_issue_id' => $request->goods_issue_id,
@@ -546,30 +565,10 @@ class SalesSettlementController extends Controller
      */
     public function edit(SalesSettlement $salesSettlement)
     {
-        if ($salesSettlement->status !== 'draft') {
-            return redirect()
-                ->route('sales-settlements.show', $salesSettlement)
-                ->with('error', 'Only draft Sales Settlements can be edited.');
-        }
-
-        $salesSettlement->load('items', 'sales', 'creditSales');
-
-        // Get issued goods issues
-        $goodsIssues = GoodsIssue::where('status', 'issued')
-            ->where(function ($query) use ($salesSettlement) {
-                $query->whereDoesntHave('settlement', function ($q) {
-                    $q->where('status', 'posted');
-                })->orWhere('id', $salesSettlement->goods_issue_id);
-            })
-            ->with(['warehouse', 'vehicle', 'employee', 'items.product'])
-            ->orderBy('issue_date', 'desc')
-            ->get();
-
-        return view('sales-settlements.edit', [
-            'settlement' => $salesSettlement,
-            'goodsIssues' => $goodsIssues,
-            'customers' => Customer::where('is_active', true)->orderBy('customer_name')->get(['id', 'customer_code', 'customer_name']),
-        ]);
+        // Redirect to show page - editing is done by deleting draft and recreating
+        return redirect()
+            ->route('sales-settlements.show', $salesSettlement)
+            ->with('info', 'To modify this draft settlement, please delete it and create a new one.');
     }
 
     /**
@@ -588,6 +587,19 @@ class SalesSettlementController extends Controller
         try {
             // Get goods issue
             $goodsIssue = GoodsIssue::with('items')->findOrFail($request->goods_issue_id);
+
+            // Check if another settlement exists for this goods issue (excluding current one)
+            $existingSettlement = SalesSettlement::where('goods_issue_id', $request->goods_issue_id)
+                ->where('id', '!=', $salesSettlement->id)
+                ->whereIn('status', ['draft', 'posted'])
+                ->first();
+
+            if ($existingSettlement) {
+                DB::rollBack();
+                return back()
+                    ->withInput()
+                    ->with('error', "Another settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. Cannot change to a Goods Issue that already has a settlement.");
+            }
 
             // Calculate totals
             $totalQuantityIssued = 0;
@@ -794,10 +806,15 @@ class SalesSettlementController extends Controller
 
         try {
             $settlementNumber = $salesSettlement->settlement_number;
-            $salesSettlement->items()->delete();
-            $salesSettlement->sales()->delete();
-            $salesSettlement->creditSales()->delete();
-            $salesSettlement->delete();
+
+            // Force delete all related records to allow settlement_number reuse
+            foreach ($salesSettlement->items as $item) {
+                $item->batches()->forceDelete();
+                $item->forceDelete();
+            }
+            $salesSettlement->sales()->forceDelete();
+            $salesSettlement->creditSales()->forceDelete();
+            $salesSettlement->forceDelete();
 
             DB::commit();
 

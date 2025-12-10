@@ -21,6 +21,7 @@ class GoodsIssue extends Model
         'supplier_id',
         'issued_by',
         'status',
+        'total_quantity',
         'total_value',
         'notes',
         'posted_at',

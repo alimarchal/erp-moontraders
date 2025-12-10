@@ -153,10 +153,12 @@ class GoodsIssueController extends Controller
             // Generate issue number
             $issueNumber = $this->generateIssueNumber();
 
-            // Calculate total value
+            // Calculate totals
             $totalValue = 0;
+            $totalQuantity = 0;
             foreach ($request->items as $item) {
-                $totalValue += $item['quantity_issued'] * $item['unit_cost'];
+                $totalValue += $item['quantity_issued'] * $item['selling_price'];
+                $totalQuantity += $item['quantity_issued'];
             }
 
             // Get supplier_id from employee
@@ -172,6 +174,7 @@ class GoodsIssueController extends Controller
                 'supplier_id' => $employee->supplier_id,
                 'issued_by' => auth()->id(),
                 'status' => 'draft',
+                'total_quantity' => $totalQuantity,
                 'total_value' => $totalValue,
                 'notes' => $request->notes,
             ]);
@@ -186,7 +189,7 @@ class GoodsIssueController extends Controller
                     'unit_cost' => $item['unit_cost'],
                     'selling_price' => $item['selling_price'],
                     'uom_id' => $item['uom_id'],
-                    'total_value' => $item['quantity_issued'] * $item['unit_cost'],
+                    'total_value' => $item['quantity_issued'] * $item['selling_price'],
                 ]);
             }
 
@@ -359,10 +362,12 @@ class GoodsIssueController extends Controller
         DB::beginTransaction();
 
         try {
-            // Calculate total value
+            // Calculate totals
             $totalValue = 0;
+            $totalQuantity = 0;
             foreach ($request->items as $item) {
-                $totalValue += $item['quantity_issued'] * $item['unit_cost'];
+                $totalValue += $item['quantity_issued'] * $item['selling_price'];
+                $totalQuantity += $item['quantity_issued'];
             }
 
             // Get supplier_id from employee
@@ -375,6 +380,7 @@ class GoodsIssueController extends Controller
                 'vehicle_id' => $request->vehicle_id,
                 'employee_id' => $request->employee_id,
                 'supplier_id' => $employee->supplier_id,
+                'total_quantity' => $totalQuantity,
                 'total_value' => $totalValue,
                 'notes' => $request->notes,
             ]);
@@ -391,7 +397,7 @@ class GoodsIssueController extends Controller
                     'unit_cost' => $item['unit_cost'],
                     'selling_price' => $item['selling_price'],
                     'uom_id' => $item['uom_id'],
-                    'total_value' => $item['quantity_issued'] * $item['unit_cost'],
+                    'total_value' => $item['quantity_issued'] * $item['selling_price'],
                 ]);
             }
 

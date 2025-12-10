@@ -352,6 +352,7 @@
                     const batches = productBatches[productId];
                     let remainingQty = quantity;
                     let totalValue = 0;
+                    let totalCost = 0;
                     let batchesUsed = [];
 
                     // Calculate which batches will be used
@@ -360,7 +361,9 @@
 
                         const qtyFromBatch = Math.min(remainingQty, batch.quantity);
                         const batchValue = qtyFromBatch * batch.selling_price;
+                        const batchCost = qtyFromBatch * batch.unit_cost;
                         totalValue += batchValue;
+                        totalCost += batchCost;
                         remainingQty -= qtyFromBatch;
 
                         if (qtyFromBatch > 0) {
@@ -368,6 +371,7 @@
                                 code: batch.batch_code,
                                 qty: qtyFromBatch,
                                 price: batch.selling_price,
+                                cost: batch.unit_cost,
                                 value: batchValue,
                                 is_promotional: batch.is_promotional
                             });
@@ -418,9 +422,9 @@
                         priceBreakdownDiv.innerHTML = html;
                     }
 
-                    // Set total value and average cost
+                    // Set total value (selling) and unit_cost (purchase cost)
                     item.total_value = totalValue;
-                    item.unit_cost = quantity > 0 ? totalValue / quantity : 0;
+                    item.unit_cost = quantity > 0 ? totalCost / quantity : 0;
                 },
 
                 get grandTotal() {

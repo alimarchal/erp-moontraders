@@ -347,7 +347,7 @@
                         if (remainingQty <= 0) break;
 
                         const qtyFromBatch = Math.min(remainingQty, batch.quantity);
-                        const batchValue = qtyFromBatch * batch.unit_cost;
+                        const batchValue = qtyFromBatch * batch.selling_price;
                         totalValue += batchValue;
                         remainingQty -= qtyFromBatch;
 
@@ -355,7 +355,7 @@
                             batchesUsed.push({
                                 code: batch.batch_code,
                                 qty: qtyFromBatch,
-                                price: batch.unit_cost,
+                                price: batch.selling_price,
                                 value: batchValue,
                                 is_promotional: batch.is_promotional
                             });
@@ -391,19 +391,22 @@
                     if (batchesUsed.length === 1) {
                         const b = batchesUsed[0];
                         priceBreakdownDiv.innerHTML = `
-                            <div class="font-semibold text-green-700 mt-1">= ₨${b.value.toFixed(2)}</div>
+                            <div class="text-sm font-semibold text-green-700 mt-1">
+                                ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)} = ₨${b.value.toFixed(2)}
+                            </div>
                         `;
                     } else {
                         let html = '<div class="mt-1 border-t border-gray-200 pt-1">';
                         batchesUsed.forEach((b, bIndex) => {
-                            html += `<div>Batch ${bIndex + 1}: = ₨${b.value.toFixed(2)}</div>`;
+                            const promo = b.is_promotional ? ' 🎁' : '';
+                            html += `<div class="text-sm">Batch ${bIndex + 1}: ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)} = ₨${b.value.toFixed(2)}${promo}</div>`;
                         });
                         html += `<div class="font-bold text-green-700 border-t border-gray-300 pt-1 mt-1">Total: ₨${totalValue.toFixed(2)}</div>`;
                         html += '</div>';
                         priceBreakdownDiv.innerHTML = html;
                     }
 
-                    // Set total value and average cost
+                    // Set total value and unit_cost stays as is (for database storage)
                     item.total_value = totalValue;
                     item.unit_cost = quantity > 0 ? totalValue / quantity : 0;
                 },

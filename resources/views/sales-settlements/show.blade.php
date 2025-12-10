@@ -93,11 +93,13 @@
                     <x-detail-table title="Product-wise Settlement" :headers="[
                         ['label' => '#', 'align' => 'text-center'],
                         ['label' => 'Product', 'align' => 'text-left'],
+                        ['label' => 'BF In', 'align' => 'text-right'],
                         ['label' => 'Issued', 'align' => 'text-right'],
                         ['label' => 'Batch Breakdown', 'align' => 'text-left'],
                         ['label' => 'Sold', 'align' => 'text-right'],
                         ['label' => 'Returned', 'align' => 'text-right'],
                         ['label' => 'Shortage', 'align' => 'text-right'],
+                        ['label' => 'BF Out', 'align' => 'text-right'],
                         ['label' => 'Sales Value', 'align' => 'text-right'],
                     ]">
                         @foreach ($settlement->items as $item)
@@ -106,6 +108,14 @@
                             <td class="py-1 px-2">
                                 <div class="font-semibold text-gray-900">{{ $item->product->product_code }}</div>
                                 <div class="text-xs text-gray-500">{{ $item->product->product_name }}</div>
+                            </td>
+                            <td class="py-1 px-2 text-right">
+                                @php
+                                // BF In = Total balance forward from previous period for this product
+                                // This would be calculated from previous settlement balance or initial stock
+                                $bfIn = 0; // You may want to link this from a balance forward calculation
+                                @endphp
+                                {{ number_format($bfIn, 2) }}
                             </td>
                             <td class="py-1 px-2 text-right">{{ number_format($item->quantity_issued, 2) }}</td>
                             <td class="py-1 px-2">
@@ -167,6 +177,14 @@
                             <td class="py-1 px-2 text-right text-red-700">
                                 {{ number_format($item->quantity_shortage, 2) }}
                             </td>
+                            <td class="py-1 px-2 text-right text-orange-700">
+                                @php
+                                // BF Out = BF In + Issued - Sold - Returned - Shortage
+                                $bfOut = $bfIn + $item->quantity_issued - $item->quantity_sold -
+                                $item->quantity_returned - $item->quantity_shortage;
+                                @endphp
+                                {{ number_format($bfOut, 2) }}
+                            </td>
                             <td class="py-1 px-2 text-right font-bold text-emerald-600">
                                 ₨ {{ number_format($item->total_sales_value, 2) }}
                             </td>
@@ -175,7 +193,12 @@
 
                         <x-slot name="footer">
                             <tr class="border-t-2 border-gray-300">
-                                <td colspan="4" class="py-1 px-2 text-right font-bold text-lg">Totals:</td>
+                                <td colspan="2" class="py-1 px-2 text-right font-bold text-lg">Totals:</td>
+                                <td class="py-1 px-2 text-right font-bold text-lg text-purple-700">-</td>
+                                <td class="py-1 px-2 text-right font-bold text-lg text-purple-700">
+                                    {{ number_format($settlement->items->sum('quantity_issued'), 2) }}
+                                </td>
+                                <td class="py-1 px-2"></td>
                                 <td class="py-1 px-2 text-right font-bold text-lg text-green-700">
                                     {{ number_format($settlement->total_quantity_sold, 2) }}
                                 </td>
@@ -185,6 +208,7 @@
                                 <td class="py-1 px-2 text-right font-bold text-lg text-red-700">
                                     {{ number_format($settlement->total_quantity_shortage, 2) }}
                                 </td>
+                                <td class="py-1 px-2 text-right font-bold text-lg text-orange-700">-</td>
                                 <td class="py-1 px-2 text-right font-bold text-lg text-emerald-600">
                                     ₨ {{ number_format($settlement->items->sum('total_sales_value'), 2) }}
                                 </td>
@@ -815,7 +839,7 @@
                     <div
                         class="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-indigo-300 rounded-lg p-4 mb-6">
                         <h4 class="text-base font-bold text-indigo-900 mb-3">Cash Reconciliation Summary</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div class="bg-white rounded p-3 border border-gray-200">
                                 <div class="text-xs text-gray-600 mb-1">Cash Collected (Sales)</div>
                                 <div class="text-lg font-bold text-green-700">₨ {{
@@ -831,12 +855,37 @@
                                 <div class="text-lg font-bold text-red-700">₨ {{
                                     number_format($settlement->expenses_claimed, 2) }}</div>
                             </div>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div
                                 class="bg-gradient-to-r from-green-100 to-emerald-100 rounded p-3 border-2 border-green-500">
                                 <div class="text-xs text-gray-700 font-semibold mb-1">Net Cash to Deposit</div>
                                 <div class="text-2xl font-bold text-green-900">₨ {{
                                     number_format($settlement->cash_to_deposit, 2) }}</div>
                                 <div class="text-xs text-gray-600 mt-1">Cash + Cheques + Recoveries - Expenses</div>
+                            </div>
+                            <div
+                                class="bg-gradient-to-r from-yellow-100 to-amber-100 rounded p-3 border-2 border-yellow-500">
+                                <div class="text-xs text-gray-700 font-semibold mb-1">Total Sales Value</div>
+                                <div class="text-2xl font-bold text-yellow-900">₨ {{
+                                    number_format($settlement->items->sum('total_sales_value'), 2) }}</div>
+                            </div>
+                            <div
+                                class="bg-gradient-to-r from-purple-100 to-indigo-100 rounded p-3 border-2 border-purple-500">
+                                <div class="text-xs text-gray-700 font-semibold mb-1">Gross Profit</div>
+                                @php
+                                $totalCOGS = $settlement->items->sum('total_cogs');
+                                $totalSalesValue = $settlement->items->sum('total_sales_value');
+                                $grossProfit = $totalSalesValue - $totalCOGS;
+                                $profitMargin = $totalSalesValue > 0 ? ($grossProfit / $totalSalesValue) * 100 : 0;
+                                @endphp
+                                <div
+                                    class="text-2xl font-bold {{ $grossProfit >= 0 ? 'text-green-900' : 'text-red-900' }}">
+                                    ₨ {{
+                                    number_format($grossProfit, 2) }}</div>
+                                <div class="text-xs {{ $profitMargin >= 0 ? 'text-green-700' : 'text-red-700' }} mt-1">
+                                    Margin: {{ number_format($profitMargin, 2) }}%
+                                </div>
                             </div>
                         </div>
                     </div>

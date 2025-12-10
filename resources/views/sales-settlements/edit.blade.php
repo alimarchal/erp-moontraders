@@ -1,10 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            Create Sales Settlement
+            Edit Sales Settlement: {{ $settlement->settlement_number }}
         </h2>
         <div class="flex justify-center items-center float-right space-x-2">
-            <a href="{{ route('sales-settlements.index') }}"
+            <a href="{{ route('sales-settlements.show', $settlement) }}"
                 class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -22,31 +22,40 @@
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="pt-6 pl-6 pr-6">
-                    <form method="POST" action="{{ route('sales-settlements.store') }}" id="settlementForm">
+                    <form method="POST" action="{{ route('sales-settlements.update', $settlement) }}"
+                        id="settlementForm">
                         @csrf
+                        @method('PUT')
 
                         {{-- Section 1: Date & Goods Issue Selection --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2" x-data="goodsIssueSelector()">
                             <div>
                                 <x-label for="settlement_date" value="Settlement Date" class="required" />
                                 <x-input id="settlement_date" name="settlement_date" type="date"
-                                    class="mt-1 block w-full" :value="old('settlement_date', date('Y-m-d'))" required />
+                                    class="mt-1 block w-full"
+                                    :value="old('settlement_date', $settlement->settlement_date->format('Y-m-d'))"
+                                    required />
                                 <x-input-error for="settlement_date" class="mt-2" />
                             </div>
 
                             <div>
-                                <x-label for="goods_issue_id" value="Select Goods Issue" class="required" />
+                                <x-label for="goods_issue_id" value="Goods Issue" class="required" />
                                 <select id="goods_issue_id" name="goods_issue_id"
                                     class="select2-goods-issue border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
-                                    required>
-                                    <option value="">Select Goods Issue</option>
+                                    required disabled>
+                                    <option value="{{ $settlement->goods_issue_id }}" selected>
+                                        {{ $settlement->goodsIssue->issue_number }} - {{
+                                        $settlement->goodsIssue->employee->full_name }} ({{
+                                        $settlement->goodsIssue->issue_date->format('d M Y') }})
+                                    </option>
                                 </select>
+                                <input type="hidden" name="goods_issue_id" value="{{ $settlement->goods_issue_id }}" />
                                 <x-input-error for="goods_issue_id" class="mt-2" />
                             </div>
 
                         </div>
-                        <p class="text-sm text-gray-500 " id="noItemsMessage">
-                            Select a Goods Issue to load product details
+                        <p class="text-sm text-blue-600" id="noItemsMessage" style="display: none;">
+                            Loading settlement items...
                         </p>
 
 
@@ -613,17 +622,17 @@
                     <x-label for="notes" value="Notes" />
                     <textarea id="notes" name="notes" rows="3"
                         class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
-                        placeholder="Add any additional notes or remarks here...">{{ old('notes') }}</textarea>
+                        placeholder="Add any additional notes or remarks here...">{{ old('notes', $settlement->notes) }}</textarea>
                     <x-input-error for="notes" class="mt-2" />
                 </div>
 
                 <div class="flex justify-end space-x-3 mb-4 mr-4">
-                    <a href="{{ route('sales-settlements.index') }}"
+                    <a href="{{ route('sales-settlements.show', $settlement) }}"
                         class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
                         Cancel
                     </a>
                     <x-button type="submit">
-                        Create Settlement
+                        Update Settlement
                     </x-button>
                 </div>
                 </form>
@@ -639,69 +648,240 @@
         // Alpine.js component for Goods Issue selector
         function goodsIssueSelector() {
             return {
-                selectedGoodsIssue: null,
+                selectedGoodsIssue: {{ $settlement->goods_issue_id }},
                 loading: false,
             }
         }
 
-        // Initialize Select2 with AJAX on-demand loading
-        $(document).ready(function() {
-            console.log('Initializing Select2 for goods issue dropdown');
+        // Pre-loaded settlement data for edit mode
+        const settlementData = @json([
+            'settlement' => $settlement,
+            'items' => $settlement->items->map(function($item) {
+                return [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'product' => $item->product,
+                    'quantity_issued' => $item->quantity_issued,
+                    'quantity_sold' => $item->quantity_sold,
+                    'quantity_returned' => $item->quantity_returned,
+                    'quantity_shortage' => $item->quantity_shortage,
+                    'unit_cost' => $item->unit_cost,
+                    'unit_selling_price' => $item->unit_selling_price,
+                    'batches' => $item->batches->map(function($batch) {
+                        return [
+                            'stock_batch_id' => $batch->stock_batch_id,
+                            'batch_code' => $batch->batch_code,
+                            'quantity_issued' => $batch->quantity_issued,
+                            'quantity_sold' => $batch->quantity_sold,
+                            'quantity_returned' => $batch->quantity_returned,
+                            'quantity_shortage' => $batch->quantity_shortage,
+                            'unit_cost' => $batch->unit_cost,
+                            'selling_price' => $batch->selling_price,
+                            'is_promotional' => $batch->is_promotional,
+                            'bf_quantity' => 0,
+                        ];
+                    }),
+                ];
+            }),
+            'expenses' => [
+                'toll_tax' => $settlement->expense_toll_tax ?? 0,
+                'amr_powder_claim' => $settlement->expense_amr_powder_claim ?? 0,
+                'amr_liquid_claim' => $settlement->expense_amr_liquid_claim ?? 0,
+                'scheme' => $settlement->expense_scheme ?? 0,
+                'advance_tax' => $settlement->expense_advance_tax ?? 0,
+                'food_charges' => $settlement->expense_food_charges ?? 0,
+                'salesman_charges' => $settlement->expense_salesman_charges ?? 0,
+                'loader_charges' => $settlement->expense_loader_charges ?? 0,
+                'percentage' => $settlement->expense_percentage ?? 0,
+                'miscellaneous_amount' => $settlement->expense_miscellaneous_amount ?? 0,
+            ],
+            'denominations' => [
+                'denom_5000' => $settlement->denom_5000 ?? 0,
+                'denom_1000' => $settlement->denom_1000 ?? 0,
+                'denom_500' => $settlement->denom_500 ?? 0,
+                'denom_100' => $settlement->denom_100 ?? 0,
+                'denom_50' => $settlement->denom_50 ?? 0,
+                'denom_20' => $settlement->denom_20 ?? 0,
+                'denom_10' => $settlement->denom_10 ?? 0,
+                'denom_coins' => $settlement->denom_coins ?? 0,
+            ],
+            'credit_sales' => $settlement->creditSales ?? [],
+            'bank_transfers' => $settlement->bankTransfers ?? [],
+            'cheque_payments' => $settlement->chequePayments ?? [],
+            'advance_taxes' => $settlement->advanceTaxes ?? [],
+        ]);
 
-            $('.select2-goods-issue').select2({
-                width: '100%',
-                placeholder: 'Select a Goods Issue',
-                allowClear: true,
-                ajax: {
-                    url: '{{ route('api.sales-settlements.goods-issues') }}',
-                    dataType: 'json',
-                    delay: 250,
-                    processResults: function (data) {
-                        console.log('Select2 data loaded:', data);
-                        return {
-                            results: data
-                        };
-                    },
-                    cache: true
+        // Initialize on page load
+        $(document).ready(function() {
+            console.log('Edit mode - Loading settlement data');
+            loadSettlementItems();
+            loadExpenseData();
+            loadCashDenominations();
+        });
+
+        // Load settlement items into the form
+        function loadSettlementItems() {
+            const items = settlementData.items;
+            const settlementItemsBody = document.getElementById('settlementItemsBody');
+            settlementItemsBody.innerHTML = '';
+
+            items.forEach((item, index) => {
+                const batches = item.batches || [];
+
+                if (batches.length > 0) {
+                    batches.forEach((batch, batchIdx) => {
+                        const batchValue = parseFloat(batch.quantity_issued) * parseFloat(batch.selling_price);
+                        const batchBfQuantity = parseFloat(batch.bf_quantity) || 0;
+
+                        const productName = item.product?.name || 'Unknown Product';
+                        const productCode = item.product?.product_code || 'N/A';
+
+                        const settlementRow = `
+                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
+                                    <div class="font-semibold text-gray-900 break-words">${productName}</div>
+                                    <div class="text-xs text-gray-500 break-words">
+                                        ${productCode}<br>Batch: ${batch.batch_code}
+                                        ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
+                                    </div>
+                                </td>
+                                <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
+                                    <div class="text-xs text-gray-600">
+                                        ${parseFloat(batch.quantity_issued).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)}
+                                    </div>
+                                </td>
+                                <td class="py-1 px-1 text-right">
+                                    <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
+                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
+                                </td>
+                                <td class="py-1 px-1 text-right">
+                                    <div class="font-semibold text-gray-900">${parseFloat(batch.quantity_issued).toFixed(0)}</div>
+                                </td>
+                                <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
+                                <td class="py-1 px-1 text-right">
+                                    <input type="number"
+                                        name="items[${index}][batches][${batchIdx}][quantity_sold]"
+                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                        data-item-index="${index}"
+                                        data-batch-index="${batchIdx}"
+                                        data-type="sold"
+                                        data-bf-quantity="${batchBfQuantity}"
+                                        min="0"
+                                        max="${parseFloat(batch.quantity_issued) + batchBfQuantity}"
+                                        step="1"
+                                        value="${batch.quantity_sold}"
+                                        oninput="autoFillShortage(${index}, ${batchIdx})">
+                                </td>
+                                <td class="py-1 px-1 text-right">
+                                    <input type="number"
+                                        name="items[${index}][batches][${batchIdx}][quantity_returned]"
+                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                        data-item-index="${index}"
+                                        data-batch-index="${batchIdx}"
+                                        data-type="returned"
+                                        min="0"
+                                        max="${parseFloat(batch.quantity_issued) + batchBfQuantity}"
+                                        step="1"
+                                        value="${batch.quantity_returned}"
+                                        oninput="autoFillShortage(${index}, ${batchIdx})">
+                                </td>
+                                <td class="py-1 px-1 text-right">
+                                    <input type="number"
+                                        name="items[${index}][batches][${batchIdx}][quantity_shortage]"
+                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                        data-item-index="${index}"
+                                        data-batch-index="${batchIdx}"
+                                        data-type="shortage"
+                                        min="0"
+                                        max="${parseFloat(batch.quantity_issued) + batchBfQuantity}"
+                                        step="1"
+                                        value="${batch.quantity_shortage}"
+                                        oninput="autoFillShortage(${index}, ${batchIdx}, 'shortage')">
+                                </td>
+                                <td class="py-1 px-1 text-right">
+                                    <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">0</span>
+                                </td>
+                            </tr>
+                        `;
+                        settlementItemsBody.innerHTML += settlementRow;
+
+                        // Create batch-level hidden fields
+                        const batchHiddenFields = document.createElement('div');
+                        batchHiddenFields.className = 'batch-hidden-fields';
+                        batchHiddenFields.innerHTML = `
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity_issued}">
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
+                            <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
+                        `;
+                        document.getElementById('settlementForm').appendChild(batchHiddenFields);
+
+                        // Add product-level hidden fields only once (on first batch)
+                        if (batchIdx === 0) {
+                            const hiddenFieldsContainer = document.createElement('div');
+                            hiddenFieldsContainer.className = 'hidden-fields-container';
+                            hiddenFieldsContainer.innerHTML = `
+                                <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
+                                <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
+                                <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
+                                <input type="hidden" name="items[${index}][selling_price]" value="${item.unit_selling_price}">
+                                <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="${item.quantity_sold}">
+                                <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="${item.quantity_returned}">
+                                <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="${item.quantity_shortage}">
+                            `;
+                            document.getElementById('settlementForm').appendChild(hiddenFieldsContainer);
+                        }
+                    });
                 }
             });
 
-            console.log('Select2 initialized successfully');
+            // Show relevant sections
+            document.getElementById('noItemsMessage').style.display = 'none';
+            document.getElementById('settlementTableContainer').style.display = 'block';
+            document.getElementById('settlementHelpText').style.display = 'block';
+            document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
 
-            // Restore old value if validation failed and redirected back
-            @if(old('goods_issue_id'))
-            const oldGoodsIssueId = '{{ old('goods_issue_id') }}';
-            console.log('Restoring old goods_issue_id:', oldGoodsIssueId);
-
-            // Fetch the goods issue details to populate the Select2
-            fetch('{{ url('api/sales-settlements/goods-issues') }}/' + oldGoodsIssueId + '/items')
-                .then(response => response.json())
-                .then(data => {
-                    // Create a new option and append to the Select2
-                    const option = new Option(
-                        data.issue_number + ' - ' + data.employee + ' (' + data.issue_date + ')',
-                        oldGoodsIssueId,
-                        true,
-                        true
-                    );
-                    $('#goods_issue_id').append(option).trigger('change');
-
-                    // Trigger the select2:select event to load the items
-                    $('#goods_issue_id').trigger({
-                        type: 'select2:select',
-                        params: {
-                            data: {
-                                id: oldGoodsIssueId,
-                                text: data.issue_number + ' - ' + data.employee + ' (' + data.issue_date + ')'
-                            }
-                        }
-                    });
-                })
-                .catch(error => {
-                    console.error('Error restoring old goods issue selection:', error);
+            // Calculate balances for all batch rows
+            items.forEach((item, index) => {
+                const batches = item.batches || [];
+                batches.forEach((batch, batchIdx) => {
+                    calculateBatchBalance(index, batchIdx);
                 });
-            @endif
-        });
+            });
+
+            updateGrandTotals();
+        }
+
+        // Load expense data
+        function loadExpenseData() {
+            const expenses = settlementData.expenses;
+            document.getElementById('expense_toll_tax').value = expenses.toll_tax;
+            document.getElementById('expense_amr_powder_claim').value = expenses.amr_powder_claim;
+            document.getElementById('expense_amr_liquid_claim').value = expenses.amr_liquid_claim;
+            document.getElementById('expense_scheme').value = expenses.scheme;
+            document.getElementById('expense_advance_tax').value = expenses.advance_tax;
+            document.getElementById('expense_food_charges').value = expenses.food_charges;
+            document.getElementById('expense_percentage').value = expenses.percentage;
+            document.getElementById('expense_miscellaneous_amount').value = expenses.miscellaneous_amount;
+            updateExpensesTotal();
+        }
+
+        // Load cash denominations
+        function loadCashDenominations() {
+            const denoms = settlementData.denominations;
+            document.getElementById('denom_5000').value = denoms.denom_5000;
+            document.getElementById('denom_1000').value = denoms.denom_1000;
+            document.getElementById('denom_500').value = denoms.denom_500;
+            document.getElementById('denom_100').value = denoms.denom_100;
+            document.getElementById('denom_50').value = denoms.denom_50;
+            document.getElementById('denom_20').value = denoms.denom_20;
+            document.getElementById('denom_10').value = denoms.denom_10;
+            document.getElementById('denom_coins').value = denoms.denom_coins;
+            updateCashTotal();
+        }
 
 
         // Function to calculate balance for a batch row
@@ -1145,216 +1325,7 @@
             updateSalesSummary();
         }
 
-        // Handle Goods Issue selection with AJAX data loading
-        // Use Select2 specific event instead of standard change
-        $('#goods_issue_id').on('select2:select', function(e) {
-            const goodsIssueId = e.params.data.id;
-            console.log('Selected Goods Issue ID:', goodsIssueId);
-
-            if (!goodsIssueId) {
-                clearSettlementForm();
-                return;
-            }
-
-            // Show loading state
-            document.getElementById('noItemsMessage').innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner fa-spin"></i> Loading goods issue data...</span>';
-            document.getElementById('noItemsMessage').style.display = 'block';
-
-            // Fetch goods issue items via AJAX
-            const apiUrl = `{{ url('api/sales-settlements/goods-issues') }}/${goodsIssueId}/items`;
-            console.log('Fetching from:', apiUrl);
-
-            fetch(apiUrl)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Received data:', data);
-                    const items = data.items || [];
-                    console.log('Number of items:', items.length);
-
-                    const settlementItemsBody = document.getElementById('settlementItemsBody');
-                    settlementItemsBody.innerHTML = '';
-
-                    let grandTotal = 0;
-
-                    items.forEach((item, index) => {
-                const batchBreakdown = item.batch_breakdown || [];
-                const itemTotal = item.calculated_total || item.total_value;
-                grandTotal += parseFloat(itemTotal);
-
-                // Calculate weighted average selling price from batch breakdown
-                let avgSellingPrice = 0;
-                if (batchBreakdown.length > 0) {
-                    const totalQty = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.quantity), 0);
-                    const totalValue = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.value), 0);
-                    avgSellingPrice = totalQty > 0 ? (totalValue / totalQty) : parseFloat(item.unit_cost);
-                } else {
-                    avgSellingPrice = parseFloat(item.unit_cost);
-                }
-
-
-                // Container div for product-level hidden fields (will be placed outside the table)
-                let hiddenFieldsContainer = document.createElement('div');
-                hiddenFieldsContainer.className = 'hidden-fields-container';
-                hiddenFieldsContainer.innerHTML = `
-                    <input type="hidden" name="items[${index}][goods_issue_item_id]" value="${item.id}">
-                    <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
-                    <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
-                    <input type="hidden" name="items[${index}][bf_quantity]" value="${item.bf_quantity || 0}">
-                    <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
-                    <input type="hidden" name="items[${index}][selling_price]" value="${avgSellingPrice}">
-                    <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="0">
-                    <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="0">
-                    <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="0">
-                `;
-
-                // Get B/F quantity for this item (from van stock)
-                const itemBfQuantity = parseFloat(item.bf_quantity) || 0;
-
-                // Settlement rows (one per batch)
-                if (batchBreakdown.length > 0) {
-                    batchBreakdown.forEach((batch, batchIdx) => {
-                        const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
-                        // For B/F, distribute proportionally across batches or show on first batch only
-                        const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
-
-                        // Debug: log the item data
-                        console.log('Item data:', item);
-                        console.log('Product:', item.product);
-                        console.log('Product name:', item.product?.name);
-
-                        const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
-                        const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
-                        const uomSymbol = (item.uom && item.uom.symbol) ? item.uom.symbol : 'N/A';
-
-                        const settlementRow = `
-                            <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
-                                    <div class="font-semibold text-gray-900 break-words">${productName}</div>
-                                    <div class="text-xs text-gray-500 break-words">
-                                        ${productCode}<br>Batch: ${batch.batch_code}
-                                        ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
-                                    </div>
-                                </td>
-                                <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
-                                    <div class="text-xs text-gray-600">
-                                        ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
-                                    </div>
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
-                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
-                                    <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
-                                </td>
-                                <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
-                                <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
-                                <td class="py-1 px-1 text-right">
-                                    <input type="number"
-                                        name="items[${index}][batches][${batchIdx}][quantity_sold]"
-                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                        data-item-index="${index}"
-                                        data-batch-index="${batchIdx}"
-                                        data-type="sold"
-                                        data-bf-quantity="${batchBfQuantity}"
-                                        min="0"
-                                        max="${parseFloat(batch.quantity) + batchBfQuantity}"
-                                        step="1"
-                                        value="0"
-                                        oninput="autoFillShortage(${index}, ${batchIdx})">
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <input type="number"
-                                        name="items[${index}][batches][${batchIdx}][quantity_returned]"
-                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                        data-item-index="${index}"
-                                        data-batch-index="${batchIdx}"
-                                        data-type="returned"
-                                        min="0"
-                                        max="${parseFloat(batch.quantity) + batchBfQuantity}"
-                                        step="1"
-                                        value="0"
-                                        oninput="autoFillShortage(${index}, ${batchIdx})">
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <input type="number"
-                                        name="items[${index}][batches][${batchIdx}][quantity_shortage]"
-                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                        data-item-index="${index}"
-                                        data-batch-index="${batchIdx}"
-                                        data-type="shortage"
-                                        min="0"
-                                        max="${parseFloat(batch.quantity) + batchBfQuantity}"
-                                        step="1"
-                                        value="0"
-                                        oninput="autoFillShortage(${index}, ${batchIdx}, 'shortage')">
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${parseFloat(batch.quantity) + batchBfQuantity}</span>
-                                </td>
-                            </tr>
-                        `;
-                        settlementItemsBody.innerHTML += settlementRow;
-
-                        // Create batch-level hidden fields container (outside table)
-                        const batchHiddenFields = document.createElement('div');
-                        batchHiddenFields.className = 'batch-hidden-fields';
-                        batchHiddenFields.innerHTML = `
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
-                        `;
-                        document.getElementById('settlementForm').appendChild(batchHiddenFields);
-
-                        // Add product-level hidden fields only once (on first batch)
-                        if (batchIdx === 0) {
-                            // Append hidden fields container to the form (outside the table)
-                            document.getElementById('settlementForm').appendChild(hiddenFieldsContainer);
-                        }
-                    });
-                }
-            });
-
-                    // Show relevant sections
-                    console.log('Displaying settlement table and sections');
-                    document.getElementById('noItemsMessage').style.display = 'none';
-                    document.getElementById('settlementTableContainer').style.display = 'block';
-                    document.getElementById('settlementHelpText').style.display = 'block';
-                    document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
-                    const salesSummarySection = document.getElementById('salesSummarySection');
-                    if (salesSummarySection) salesSummarySection.style.display = 'block';
-
-                    // Initialize balances for all batch rows
-                    items.forEach((item, index) => {
-                        const batchBreakdown = item.batch_breakdown || [];
-                        batchBreakdown.forEach((batch, batchIdx) => {
-                            calculateBatchBalance(index, batchIdx);
-                        });
-                    });
-                    console.log('Settlement form loaded successfully');
-                })
-                .catch(error => {
-                    console.error('Error fetching goods issue items:', error);
-                    document.getElementById('noItemsMessage').innerHTML = '<span class="text-red-600">Error loading goods issue data. Please try again.</span>';
-                    document.getElementById('noItemsMessage').style.display = 'block';
-                    document.getElementById('settlementTableContainer').style.display = 'none';
-                });
-        });
-
-        // Handle clearing the select2 dropdown
-        $('#goods_issue_id').on('select2:clear', function() {
-            console.log('Goods Issue selection cleared');
-            clearSettlementForm();
-        });
+        // Edit mode - no need for Select2 event handlers since goods issue is fixed
     </script>
     @endpush
 </x-app-layout>

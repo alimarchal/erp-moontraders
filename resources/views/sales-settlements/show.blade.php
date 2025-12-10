@@ -5,6 +5,15 @@
         </h2>
         <div class="flex justify-center items-center float-right space-x-2">
             @if ($settlement->status === 'draft')
+            <a href="{{ route('sales-settlements.edit', $settlement) }}"
+                class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition">
+                <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                Edit
+            </a>
             <form action="{{ route('sales-settlements.post', $settlement->id) }}" method="POST"
                 onsubmit="return confirm('Are you sure you want to post this Sales Settlement? This will record sales and update inventory.');"
                 class="inline-block">
@@ -883,14 +892,43 @@
                                 $totalCOGS = $settlement->items->sum('total_cogs');
                                 $totalSalesValue = $settlement->items->sum('total_sales_value');
                                 $grossProfit = $totalSalesValue - $totalCOGS;
-                                $profitMargin = $totalSalesValue > 0 ? ($grossProfit / $totalSalesValue) * 100 : 0;
+                                $grossProfitMargin = $totalSalesValue > 0 ? ($grossProfit / $totalSalesValue) * 100 : 0;
                                 @endphp
                                 <div
                                     class="text-2xl font-bold {{ $grossProfit >= 0 ? 'text-green-900' : 'text-red-900' }}">
-                                    ₨ {{
-                                    number_format($grossProfit, 2) }}</div>
-                                <div class="text-xs {{ $profitMargin >= 0 ? 'text-green-700' : 'text-red-700' }} mt-1">
-                                    Margin: {{ number_format($profitMargin, 2) }}%
+                                    ₨ {{ number_format($grossProfit, 2) }}</div>
+                                <div
+                                    class="text-xs {{ $grossProfitMargin >= 0 ? 'text-green-700' : 'text-red-700' }} mt-1">
+                                    Margin: {{ number_format($grossProfitMargin, 2) }}%
+                                </div>
+                            </div>
+                        </div>
+                        {{-- Net Profit Row --}}
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                            <div class="bg-white rounded p-3 border border-gray-200">
+                                <div class="text-xs text-gray-600 mb-1">Gross Profit</div>
+                                <div
+                                    class="text-lg font-bold {{ $grossProfit >= 0 ? 'text-green-700' : 'text-red-700' }}">
+                                    ₨ {{ number_format($grossProfit, 2) }}</div>
+                            </div>
+                            <div class="bg-white rounded p-3 border border-gray-200">
+                                <div class="text-xs text-gray-600 mb-1">Less: Expenses</div>
+                                <div class="text-lg font-bold text-red-700">
+                                    ₨ {{ number_format($settlement->expenses_claimed, 2) }}</div>
+                            </div>
+                            @php
+                            $netProfit = $grossProfit - $settlement->expenses_claimed;
+                            $netProfitMargin = $totalSalesValue > 0 ? ($netProfit / $totalSalesValue) * 100 : 0;
+                            @endphp
+                            <div
+                                class="bg-gradient-to-r {{ $netProfit >= 0 ? 'from-green-100 to-emerald-100 border-green-500' : 'from-red-100 to-rose-100 border-red-500' }} rounded p-3 border-2">
+                                <div class="text-xs text-gray-700 font-semibold mb-1">Net Profit (After Expenses)</div>
+                                <div
+                                    class="text-2xl font-bold {{ $netProfit >= 0 ? 'text-green-900' : 'text-red-900' }}">
+                                    ₨ {{ number_format($netProfit, 2) }}</div>
+                                <div
+                                    class="text-xs {{ $netProfitMargin >= 0 ? 'text-green-700' : 'text-red-700' }} mt-1">
+                                    Net Margin: {{ number_format($netProfitMargin, 2) }}%
                                 </div>
                             </div>
                         </div>

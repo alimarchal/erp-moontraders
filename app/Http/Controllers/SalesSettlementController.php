@@ -126,7 +126,7 @@ class SalesSettlementController extends Controller
             ->map(function ($gi) {
                 return [
                     'id' => $gi->id,
-                    'text' => $gi->issue_number . ' - ' . $gi->employee->full_name . ' (' . $gi->issue_date->format('d M Y') . ')',
+                    'text' => $gi->issue_number.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
                 ];
             });
 
@@ -415,9 +415,9 @@ class SalesSettlementController extends Controller
 
                 if (isset($item['batches']) && is_array($item['batches'])) {
                     // Auto-distribute item-level quantities to batches if batch-level values are all zero
-                    $batchSoldSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_sold'] ?? 0));
-                    $batchReturnedSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_returned'] ?? 0));
-                    $batchShortageSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_shortage'] ?? 0));
+                    $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
+                    $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
+                    $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
 
                     $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
 
@@ -465,7 +465,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (!empty($request->sales)) {
+            if (! empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -478,7 +478,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (!empty($request->credit_sales) && is_array($request->credit_sales)) {
+            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -493,7 +493,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create advance tax breakdown records if any
-            if (!empty($request->advance_taxes) && is_array($request->advance_taxes)) {
+            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
                 foreach ($request->advance_taxes as $advanceTax) {
                     SalesSettlementAdvanceTax::create([
                         'sales_settlement_id' => $settlement->id,
@@ -530,7 +530,7 @@ class SalesSettlementController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Sales Settlement: ' . $e->getMessage());
+                ->with('error', 'Unable to create Sales Settlement: '.$e->getMessage());
         }
     }
 
@@ -565,10 +565,30 @@ class SalesSettlementController extends Controller
      */
     public function edit(SalesSettlement $salesSettlement)
     {
-        // Redirect to show page - editing is done by deleting draft and recreating
-        return redirect()
-            ->route('sales-settlements.show', $salesSettlement)
-            ->with('info', 'To modify this draft settlement, please delete it and create a new one.');
+        if ($salesSettlement->status !== 'draft') {
+            return redirect()
+                ->route('sales-settlements.show', $salesSettlement)
+                ->with('error', 'Only draft Sales Settlements can be edited.');
+        }
+
+        $salesSettlement->load([
+            'goodsIssue.items.product',
+            'goodsIssue.items.uom',
+            'goodsIssue.employee',
+            'goodsIssue.vehicle',
+            'goodsIssue.warehouse',
+            'items.product',
+            'items.batches',
+            'creditSales.customer',
+            'sales.customer',
+            'bankTransfers',
+            'chequePayments',
+            'advanceTaxes',
+        ]);
+
+        return view('sales-settlements.edit', [
+            'settlement' => $salesSettlement,
+        ]);
     }
 
     /**
@@ -596,6 +616,7 @@ class SalesSettlementController extends Controller
 
             if ($existingSettlement) {
                 DB::rollBack();
+
                 return back()
                     ->withInput()
                     ->with('error', "Another settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. Cannot change to a Goods Issue that already has a settlement.");
@@ -692,9 +713,9 @@ class SalesSettlementController extends Controller
                 // Store batch breakdown if available
                 if (isset($item['batches']) && is_array($item['batches'])) {
                     // Auto-distribute item-level quantities to batches if batch-level values are all zero
-                    $batchSoldSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_sold'] ?? 0));
-                    $batchReturnedSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_returned'] ?? 0));
-                    $batchShortageSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_shortage'] ?? 0));
+                    $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
+                    $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
+                    $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
 
                     $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
 
@@ -742,7 +763,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (!empty($request->sales)) {
+            if (! empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -755,7 +776,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (!empty($request->credit_sales) && is_array($request->credit_sales)) {
+            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $salesSettlement->id,

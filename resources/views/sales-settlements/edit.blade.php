@@ -670,62 +670,65 @@
         }
 
         // Pre-loaded settlement data for edit mode
-        const settlementData = @json([
-            'settlement' => $settlement,
-            'items' => $settlement->items->map(function($item) {
-                return [
-                    'id' => $item->id,
-                    'product_id' => $item->product_id,
-                    'product' => $item->product,
-                    'quantity_issued' => $item->quantity_issued,
-                    'quantity_sold' => $item->quantity_sold,
-                    'quantity_returned' => $item->quantity_returned,
-                    'quantity_shortage' => $item->quantity_shortage,
-                    'unit_cost' => $item->unit_cost,
-                    'unit_selling_price' => $item->unit_selling_price,
-                    'batches' => $item->batches->map(function($batch) {
-                        return [
-                            'stock_batch_id' => $batch->stock_batch_id,
-                            'batch_code' => $batch->batch_code,
-                            'quantity_issued' => $batch->quantity_issued,
-                            'quantity_sold' => $batch->quantity_sold,
-                            'quantity_returned' => $batch->quantity_returned,
-                            'quantity_shortage' => $batch->quantity_shortage,
-                            'unit_cost' => $batch->unit_cost,
-                            'selling_price' => $batch->selling_price,
-                            'is_promotional' => $batch->is_promotional,
-                            'bf_quantity' => 0,
-                        ];
-                    }),
-                ];
-            }),
-            'expenses' => [
-                'toll_tax' => $settlement->expense_toll_tax ?? 0,
-                'amr_powder_claim' => $settlement->expense_amr_powder_claim ?? 0,
-                'amr_liquid_claim' => $settlement->expense_amr_liquid_claim ?? 0,
-                'scheme' => $settlement->expense_scheme ?? 0,
-                'advance_tax' => $settlement->expense_advance_tax ?? 0,
-                'food_charges' => $settlement->expense_food_charges ?? 0,
-                'salesman_charges' => $settlement->expense_salesman_charges ?? 0,
-                'loader_charges' => $settlement->expense_loader_charges ?? 0,
-                'percentage' => $settlement->expense_percentage ?? 0,
-                'miscellaneous_amount' => $settlement->expense_miscellaneous_amount ?? 0,
-            ],
-            'denominations' => [
-                'denom_5000' => $settlement->denom_5000 ?? 0,
-                'denom_1000' => $settlement->denom_1000 ?? 0,
-                'denom_500' => $settlement->denom_500 ?? 0,
-                'denom_100' => $settlement->denom_100 ?? 0,
-                'denom_50' => $settlement->denom_50 ?? 0,
-                'denom_20' => $settlement->denom_20 ?? 0,
-                'denom_10' => $settlement->denom_10 ?? 0,
-                'denom_coins' => $settlement->denom_coins ?? 0,
-            ],
-            'credit_sales' => $settlement->creditSales ?? [],
-            'bank_transfers' => $settlement->bankTransfers ?? [],
-            'cheque_payments' => $settlement->chequePayments ?? [],
-            'advance_taxes' => $settlement->advanceTaxes ?? [],
-        ]);
+        @php
+            $settlementDataArray = [
+                'settlement' => $settlement,
+                'items' => $settlement->items->map(function($item) {
+                    return [
+                        'id' => $item->id,
+                        'product_id' => $item->product_id,
+                        'product' => $item->product,
+                        'quantity_issued' => $item->quantity_issued,
+                        'quantity_sold' => $item->quantity_sold,
+                        'quantity_returned' => $item->quantity_returned,
+                        'quantity_shortage' => $item->quantity_shortage,
+                        'unit_cost' => $item->unit_cost,
+                        'unit_selling_price' => $item->unit_selling_price,
+                        'batches' => $item->batches->map(function($batch) {
+                            return [
+                                'stock_batch_id' => $batch->stock_batch_id,
+                                'batch_code' => $batch->batch_code,
+                                'quantity_issued' => $batch->quantity_issued,
+                                'quantity_sold' => $batch->quantity_sold,
+                                'quantity_returned' => $batch->quantity_returned,
+                                'quantity_shortage' => $batch->quantity_shortage,
+                                'unit_cost' => $batch->unit_cost,
+                                'selling_price' => $batch->selling_price,
+                                'is_promotional' => $batch->is_promotional,
+                                'bf_quantity' => 0,
+                            ];
+                        }),
+                    ];
+                }),
+                'expenses' => [
+                    'toll_tax' => $settlement->expense_toll_tax ?? 0,
+                    'amr_powder_claim' => $settlement->expense_amr_powder_claim ?? 0,
+                    'amr_liquid_claim' => $settlement->expense_amr_liquid_claim ?? 0,
+                    'scheme' => $settlement->expense_scheme ?? 0,
+                    'advance_tax' => $settlement->expense_advance_tax ?? 0,
+                    'food_charges' => $settlement->expense_food_charges ?? 0,
+                    'salesman_charges' => $settlement->expense_salesman_charges ?? 0,
+                    'loader_charges' => $settlement->expense_loader_charges ?? 0,
+                    'percentage' => $settlement->expense_percentage ?? 0,
+                    'miscellaneous_amount' => $settlement->expense_miscellaneous_amount ?? 0,
+                ],
+                'denominations' => [
+                    'denom_5000' => $settlement->denom_5000 ?? 0,
+                    'denom_1000' => $settlement->denom_1000 ?? 0,
+                    'denom_500' => $settlement->denom_500 ?? 0,
+                    'denom_100' => $settlement->denom_100 ?? 0,
+                    'denom_50' => $settlement->denom_50 ?? 0,
+                    'denom_20' => $settlement->denom_20 ?? 0,
+                    'denom_10' => $settlement->denom_10 ?? 0,
+                    'denom_coins' => $settlement->denom_coins ?? 0,
+                ],
+                'credit_sales' => $settlement->creditSales ?? [],
+                'bank_transfers' => $settlement->bank_transfers ?? [],
+                'cheque_payments' => $settlement->cheque_details ?? [],
+                'advance_taxes' => $settlement->advanceTaxes ?? [],
+            ];
+        @endphp
+        const settlementData = @json($settlementDataArray);
 
         // Initialize on page load
         $(document).ready(function() {

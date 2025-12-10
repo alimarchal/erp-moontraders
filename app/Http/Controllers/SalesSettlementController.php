@@ -266,6 +266,22 @@ class SalesSettlementController extends Controller
                 'items_data' => $request->items,
             ]);
 
+            // Debug: Log batch-level details specifically
+            foreach ($request->items as $itemIdx => $item) {
+                if (isset($item['batches']) && is_array($item['batches'])) {
+                    foreach ($item['batches'] as $batchIdx => $batch) {
+                        Log::info("Batch Detail [Item {$itemIdx}][Batch {$batchIdx}]", [
+                            'stock_batch_id' => $batch['stock_batch_id'] ?? 'N/A',
+                            'batch_code' => $batch['batch_code'] ?? 'N/A',
+                            'is_promotional' => $batch['is_promotional'] ?? 'N/A',
+                            'quantity_sold' => $batch['quantity_sold'] ?? 'NOT_SET',
+                            'quantity_returned' => $batch['quantity_returned'] ?? 'NOT_SET',
+                            'quantity_shortage' => $batch['quantity_shortage'] ?? 'NOT_SET',
+                        ]);
+                    }
+                }
+            }
+
             // Generate settlement number
             $settlementNumber = $this->generateSettlementNumber();
 

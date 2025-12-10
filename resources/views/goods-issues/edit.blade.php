@@ -221,6 +221,7 @@
                     uom_id: item.uom_id || '',
                     quantity_issued: parseFloat(item.quantity_issued) || 0,
                     unit_cost: parseFloat(item.unit_cost) || 0,
+                    selling_price: parseFloat(item.selling_price) || 0,
                     total_value: parseFloat(item.total_value) || 0,
                     available_qty: 0,
                 })) : existingItems.map(item => ({
@@ -228,9 +229,10 @@
                     uom_id: item.uom_id || '',
                     quantity_issued: parseFloat(item.quantity_issued) || 0,
                     unit_cost: parseFloat(item.unit_cost) || 0,
+                    selling_price: parseFloat(item.selling_price) || 0,
                     total_value: parseFloat(item.total_value) || 0,
                     available_qty: 0,
-                })),
+                }),
 
                 validateAndSubmit() {
                     // Filter out items with 0 or invalid quantity before submitting
@@ -266,6 +268,7 @@
                         uom_id: '',
                         quantity_issued: 0,
                         unit_cost: 0,
+                        selling_price: 0,
                         total_value: 0,
                         available_qty: 0,
                     });
@@ -509,6 +512,13 @@
                 // Update Alpine.js data
                 alpineComponent.items[index].available_qty = parseFloat(data.available_quantity || 0).toFixed(2);
                 alpineComponent.items[index].uom_id = data.stock_uom_id || '';
+                
+                // Set selling_price from first batch's selling_price
+                if (data.batches && data.batches.length > 0) {
+                    alpineComponent.items[index].selling_price = parseFloat(data.batches[0].selling_price || 0);
+                } else {
+                    alpineComponent.items[index].selling_price = 0;
+                }
 
                 // Show batch info
                 displayBatchInfo(index, data.batches, data.has_multiple_prices);

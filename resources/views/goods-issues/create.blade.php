@@ -138,6 +138,8 @@
                                                 class="text-xs text-gray-700 max-w-xs"></div>
                                             <input type="hidden" :name="`items[${index}][unit_cost]`"
                                                 x-model="item.unit_cost">
+                                            <input type="hidden" :name="`items[${index}][selling_price]`"
+                                                x-model="item.selling_price">
                                         </td>
                                         <td class="px-2 py-2 text-right text-sm font-semibold align-middle"
                                             x-text="formatNumber(item.total_value)"></td>
@@ -209,6 +211,7 @@
                     uom_id: item.uom_id || '',
                     quantity_issued: parseFloat(item.quantity_issued) || 0,
                     unit_cost: parseFloat(item.unit_cost) || 0,
+                    selling_price: parseFloat(item.selling_price) || 0,
                     total_value: parseFloat(item.total_value) || 0,
                     available_qty: 0,
                 })) : [{
@@ -216,6 +219,7 @@
                     uom_id: '',
                     quantity_issued: 0,
                     unit_cost: 0,
+                    selling_price: 0,
                     total_value: 0,
                     available_qty: 0,
                 }],
@@ -254,6 +258,7 @@
                         uom_id: '',
                         quantity_issued: 0,
                         unit_cost: 0,
+                        selling_price: 0,
                         total_value: 0,
                         available_qty: 0,
                     });
@@ -497,6 +502,13 @@
                 // Update Alpine.js data
                 alpineComponent.items[index].available_qty = parseFloat(data.available_quantity || 0).toFixed(2);
                 alpineComponent.items[index].uom_id = data.stock_uom_id || '';
+                
+                // Set selling_price from first batch's selling_price
+                if (data.batches && data.batches.length > 0) {
+                    alpineComponent.items[index].selling_price = parseFloat(data.batches[0].selling_price || 0);
+                } else {
+                    alpineComponent.items[index].selling_price = 0;
+                }
 
                 // Show batch info
                 displayBatchInfo(index, data.batches, data.has_multiple_prices);

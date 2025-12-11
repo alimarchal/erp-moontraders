@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -45,17 +46,8 @@ return new class extends Migration {
             // Credit Recoveries
             $table->decimal('credit_recoveries', 15, 2)->default(0);
 
-            // Detailed Expense Fields
-            $table->decimal('expense_toll_tax', 12, 2)->default(0);
-            $table->decimal('expense_amr_powder_claim', 12, 2)->default(0);
-            $table->decimal('expense_amr_liquid_claim', 12, 2)->default(0);
-            $table->decimal('expense_scheme', 12, 2)->default(0);
-            $table->decimal('expense_advance_tax', 12, 2)->default(0);
-            $table->decimal('expense_food_charges', 12, 2)->default(0);
-            $table->decimal('expense_salesman_charges', 12, 2)->default(0);
-            $table->decimal('expense_loader_charges', 12, 2)->default(0);
-            $table->decimal('expense_percentage', 12, 2)->default(0);
-            $table->decimal('expense_miscellaneous_amount', 12, 2)->default(0);
+            // Note: Individual expense fields removed - now stored in sales_settlement_expenses table
+            // This provides scalability for unlimited expense types without schema changes
 
             $table->enum('status', ['draft', 'verified', 'posted'])->default('draft');
             $table->foreignId('verified_by')->nullable()->constrained('users')->nullOnDelete();

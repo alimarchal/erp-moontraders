@@ -354,10 +354,16 @@
                                     </div>
                                 </div>
 
-                                {{-- RIGHT SIDE: Expense Detail Table --}}
-                                <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
-                                    <div class="bg-gradient-to-r from-red-500 to-red-600 px-3 py-2">
+                                {{-- RIGHT SIDE: Expense Detail Table (Dynamic) --}}
+                                <div class="bg-white rounded-lg border border-gray-300 overflow-hidden"
+                                    x-data="expenseManager()">
+                                    <div
+                                        class="bg-gradient-to-r from-red-500 to-red-600 px-3 py-2 flex justify-between items-center">
                                         <h4 class="text-sm font-bold text-white">Expense Detail</h4>
+                                        <button type="button" @click="addExpense()"
+                                            class="text-xs bg-white text-red-600 px-2 py-0.5 rounded font-semibold hover:bg-red-50">
+                                            + Add More
+                                        </button>
                                     </div>
                                     <div class="p-3">
                                         <table class="w-full text-xs">
@@ -365,91 +371,79 @@
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1.5 px-2 text-left text-gray-700">Description</th>
                                                     <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
+                                                    <th class="py-1.5 px-1 w-6"></th>
                                                 </tr>
                                             </thead>
                                             <tbody class="divide-y divide-gray-200">
-                                                <tr>
-                                                    <td class="py-1 px-2">Toll Tax (52250)</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_toll_tax"
-                                                            name="expense_toll_tax" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">AMR Powder (52230)</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_amr_powder_claim"
-                                                            name="expense_amr_powder_claim" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">AMR Liquid (52240)</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_amr_liquid_claim"
-                                                            name="expense_amr_liquid_claim" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Scheme Discount Expense (52270)</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_scheme" name="expense_scheme"
-                                                            step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">
-                                                        <button type="button"
-                                                            class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
-                                                            onclick="window.dispatchEvent(new CustomEvent('open-advance-tax-modal'))">
-                                                            Advance Tax (1171)
-                                                        </button>
-                                                    </td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_advance_tax"
-                                                            name="expense_advance_tax" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5 bg-gray-100"
-                                                            value="0.00" readonly />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Food/Salesman/Loader Charges (52260)</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_food_charges"
-                                                            name="expense_food_charges" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Percentage Expense (52280)</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_percentage"
-                                                            name="expense_percentage" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Miscellaneous Expenses (52110)</td>
-                                                    <td class="py-1 px-2 text-right">
-                                                        <input type="number" id="expense_miscellaneous_amount"
-                                                            name="expense_miscellaneous_amount" step="0.01" min="0"
-                                                            class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateExpensesTotal()" value="0.00" />
-                                                    </td>
-                                                </tr>
+                                                <template x-for="(expense, index) in expenses" :key="expense.id">
+                                                    <tr>
+                                                        <td class="py-1 px-2">
+                                                            <template
+                                                                x-if="expense.is_predefined && expense.expense_account_id !== 18">
+                                                                <span
+                                                                    x-text="expense.label + ' (' + expense.account_code + ')'"></span>
+                                                            </template>
+                                                            <template
+                                                                x-if="expense.is_predefined && expense.expense_account_id === 18">
+                                                                <button type="button"
+                                                                    class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
+                                                                    @click="window.dispatchEvent(new CustomEvent('open-advance-tax-modal'))">
+                                                                    <span
+                                                                        x-text="expense.label + ' (' + expense.account_code + ')'"></span>
+                                                                </button>
+                                                            </template>
+                                                            <template x-if="!expense.is_predefined">
+                                                                <div class="flex flex-col gap-1">
+                                                                    <select :id="'expense_account_select_' + expense.id"
+                                                                        class="expense-account-select text-xs border-gray-300 rounded w-full"
+                                                                        @change="onAccountSelect($event, index)">
+                                                                        <option value="">Search expense account...
+                                                                        </option>
+                                                                    </select>
+                                                                    <input type="text" x-model="expense.description"
+                                                                        placeholder="Description (optional)"
+                                                                        class="text-xs border-gray-300 rounded px-1 py-0.5 w-full" />
+                                                                </div>
+                                                            </template>
+                                                            {{-- Hidden inputs for form submission --}}
+                                                            <input type="hidden"
+                                                                :name="'expenses[' + index + '][expense_account_id]'"
+                                                                :value="expense.expense_account_id" />
+                                                            <input type="hidden"
+                                                                :name="'expenses[' + index + '][description]'"
+                                                                :value="expense.description || expense.label" />
+                                                        </td>
+                                                        <td class="py-1 px-2 text-right">
+                                                            <input type="number" :id="'expense_amount_' + expense.id"
+                                                                :name="'expenses[' + index + '][amount]'" step="0.01"
+                                                                min="0" x-model.number="expense.amount"
+                                                                @input="calculateTotal()"
+                                                                :readonly="expense.expense_account_id === 18"
+                                                                :class="expense.expense_account_id === 18 ? 'bg-gray-100' : ''"
+                                                                class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5" />
+                                                        </td>
+                                                        <td class="py-1 px-1 text-center">
+                                                            <template x-if="!expense.is_predefined">
+                                                                <button type="button" @click="removeExpense(index)"
+                                                                    class="text-red-500 hover:text-red-700">
+                                                                    <svg class="w-4 h-4" fill="none"
+                                                                        stroke="currentColor" viewBox="0 0 24 24">
+                                                                        <path stroke-linecap="round"
+                                                                            stroke-linejoin="round" stroke-width="2"
+                                                                            d="M6 18L18 6M6 6l12 12"></path>
+                                                                    </svg>
+                                                                </button>
+                                                            </template>
+                                                        </td>
+                                                    </tr>
+                                                </template>
                                                 <tr class="bg-red-100 border-t-2 border-red-300">
-                                                    <td class="py-1.5 px-2 font-bold text-red-900">Total Expenses</td>
+                                                    <td class="py-1.5 px-2 font-bold text-red-900" colspan="2">Total
+                                                        Expenses</td>
                                                     <td class="py-1.5 px-2 text-right font-bold text-red-900"
-                                                        id="totalExpensesDisplay">₨ 0.00</td>
+                                                        id="totalExpensesDisplay"
+                                                        x-text="'₨ ' + totalExpenses.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})">
+                                                        ₨ 0.00</td>
                                                 </tr>
                                             </tbody>
                                         </table>
@@ -669,6 +663,155 @@
             }
         }
 
+        // Alpine.js component for dynamic expense management (Edit mode)
+        function expenseManager() {
+            return {
+                // Predefined expense accounts shown by default
+                predefinedExpenses: [
+                    { id: 1, label: 'Toll Tax', account_code: '52250', expense_account_id: 70, is_predefined: true, amount: 0 },
+                    { id: 2, label: 'AMR Powder', account_code: '52230', expense_account_id: 68, is_predefined: true, amount: 0 },
+                    { id: 3, label: 'AMR Liquid', account_code: '52240', expense_account_id: 69, is_predefined: true, amount: 0 },
+                    { id: 4, label: 'Scheme Discount Expense', account_code: '52270', expense_account_id: 72, is_predefined: true, amount: 0 },
+                    { id: 5, label: 'Advance Tax', account_code: '1171', expense_account_id: 18, is_predefined: true, amount: 0 },
+                    { id: 6, label: 'Food/Salesman/Loader Charges', account_code: '52260', expense_account_id: 71, is_predefined: true, amount: 0 },
+                    { id: 7, label: 'Percentage Expense', account_code: '52280', expense_account_id: 73, is_predefined: true, amount: 0 },
+                    { id: 8, label: 'Miscellaneous Expenses', account_code: '52110', expense_account_id: 56, is_predefined: true, amount: 0 },
+                ],
+                expenses: [],
+                totalExpenses: 0,
+                nextId: 100, // For dynamically added expenses
+                
+                init() {
+                    // Load existing expenses from settlementData or use predefined defaults
+                    const savedExpenses = settlementData.expenses || [];
+                    
+                    // Start with predefined expenses
+                    this.expenses = JSON.parse(JSON.stringify(this.predefinedExpenses));
+                    
+                    if (savedExpenses.length > 0) {
+                        // Update predefined expenses with saved amounts
+                        savedExpenses.forEach(savedExp => {
+                            const predefined = this.expenses.find(exp => exp.expense_account_id === savedExp.expense_account_id);
+                            if (predefined) {
+                                predefined.amount = savedExp.amount || 0;
+                            } else {
+                                // This is a custom/additional expense - add it
+                                const newId = this.nextId++;
+                                this.expenses.push({
+                                    id: newId,
+                                    label: savedExp.description || 'Custom Expense',
+                                    account_code: '',
+                                    expense_account_id: savedExp.expense_account_id,
+                                    is_predefined: false,
+                                    amount: savedExp.amount || 0,
+                                    description: savedExp.description || ''
+                                });
+                            }
+                        });
+                    }
+                    
+                    this.calculateTotal();
+                    
+                    // Listen for advance tax updates from modal
+                    window.addEventListener('advance-tax-updated', (e) => {
+                        const advanceTaxExpense = this.expenses.find(exp => exp.expense_account_id === 18);
+                        if (advanceTaxExpense) {
+                            advanceTaxExpense.amount = e.detail.total || 0;
+                            this.calculateTotal();
+                        }
+                    });
+                },
+                
+                addExpense() {
+                    const newId = this.nextId++;
+                    this.expenses.push({
+                        id: newId,
+                        label: '',
+                        account_code: '',
+                        expense_account_id: null,
+                        is_predefined: false,
+                        amount: 0,
+                        description: ''
+                    });
+                    
+                    // Initialize Select2 for the new expense after DOM update
+                    this.$nextTick(() => {
+                        this.initExpenseSelect2(newId);
+                    });
+                },
+                
+                initExpenseSelect2(expenseId) {
+                    const selectEl = document.getElementById('expense_account_select_' + expenseId);
+                    if (!selectEl) return;
+                    
+                    const self = this;
+                    $(selectEl).select2({
+                        width: '100%',
+                        placeholder: 'Search expense account...',
+                        allowClear: true,
+                        ajax: {
+                            url: '{{ route("api.chart-of-accounts.expenses") }}',
+                            dataType: 'json',
+                            delay: 250,
+                            data: function(params) {
+                                return { q: params.term };
+                            },
+                            processResults: function(data) {
+                                return {
+                                    results: data.map(account => ({
+                                        id: account.id,
+                                        text: account.account_code + ' - ' + account.account_name,
+                                        account_code: account.account_code,
+                                        account_name: account.account_name
+                                    }))
+                                };
+                            },
+                            cache: true
+                        }
+                    }).on('select2:select', function(e) {
+                        const expenseIndex = self.expenses.findIndex(exp => exp.id === expenseId);
+                        if (expenseIndex !== -1) {
+                            self.expenses[expenseIndex].expense_account_id = e.params.data.id;
+                            self.expenses[expenseIndex].account_code = e.params.data.account_code;
+                            self.expenses[expenseIndex].label = e.params.data.account_name;
+                        }
+                    });
+                },
+                
+                onAccountSelect(event, index) {
+                    // Handled by Select2 event
+                },
+                
+                removeExpense(index) {
+                    if (!this.expenses[index].is_predefined) {
+                        const expenseId = this.expenses[index].id;
+                        // Destroy Select2 before removing
+                        const selectEl = document.getElementById('expense_account_select_' + expenseId);
+                        if (selectEl && $(selectEl).data('select2')) {
+                            $(selectEl).select2('destroy');
+                        }
+                        this.expenses.splice(index, 1);
+                        this.calculateTotal();
+                    }
+                },
+                
+                calculateTotal() {
+                    this.totalExpenses = this.expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
+                    
+                    // Update the hidden summary_expenses field for sales summary calculation
+                    const summaryExpensesEl = document.getElementById('summary_expenses');
+                    if (summaryExpensesEl) {
+                        summaryExpensesEl.value = this.totalExpenses.toFixed(2);
+                    }
+                    
+                    // Trigger sales summary update
+                    if (typeof updateSalesSummary === 'function') {
+                        updateSalesSummary();
+                    }
+                }
+            }
+        }
+
         // Pre-loaded settlement data for edit mode
         @php
             $settlementDataArray = [
@@ -700,18 +843,13 @@
                         }),
                     ];
                 }),
-                'expenses' => [
-                    'toll_tax' => $settlement->expense_toll_tax ?? 0,
-                    'amr_powder_claim' => $settlement->expense_amr_powder_claim ?? 0,
-                    'amr_liquid_claim' => $settlement->expense_amr_liquid_claim ?? 0,
-                    'scheme' => $settlement->expense_scheme ?? 0,
-                    'advance_tax' => $settlement->expense_advance_tax ?? 0,
-                    'food_charges' => $settlement->expense_food_charges ?? 0,
-                    'salesman_charges' => $settlement->expense_salesman_charges ?? 0,
-                    'loader_charges' => $settlement->expense_loader_charges ?? 0,
-                    'percentage' => $settlement->expense_percentage ?? 0,
-                    'miscellaneous_amount' => $settlement->expense_miscellaneous_amount ?? 0,
-                ],
+                'expenses' => $settlement->expenses->map(function($expense) {
+                    return [
+                        'amount' => (float) $expense->amount,
+                        'expense_account_id' => $expense->expense_account_id,
+                        'description' => $expense->description,
+                    ];
+                })->values(),
                 'denominations' => [
                     'denom_5000' => $settlement->denom_5000 ?? 0,
                     'denom_1000' => $settlement->denom_1000 ?? 0,
@@ -874,18 +1012,11 @@
             updateGrandTotals();
         }
 
-        // Load expense data
+        // Load expense data - Now handled by Alpine.js expenseManager
         function loadExpenseData() {
-            const expenses = settlementData.expenses;
-            document.getElementById('expense_toll_tax').value = expenses.toll_tax;
-            document.getElementById('expense_amr_powder_claim').value = expenses.amr_powder_claim;
-            document.getElementById('expense_amr_liquid_claim').value = expenses.amr_liquid_claim;
-            document.getElementById('expense_scheme').value = expenses.scheme;
-            document.getElementById('expense_advance_tax').value = expenses.advance_tax;
-            document.getElementById('expense_food_charges').value = expenses.food_charges;
-            document.getElementById('expense_percentage').value = expenses.percentage;
-            document.getElementById('expense_miscellaneous_amount').value = expenses.miscellaneous_amount;
-            updateExpensesTotal();
+            // Expenses are now loaded directly by Alpine.js component from settlementData.expenses
+            // This function is kept for backward compatibility but does nothing
+            console.log('Expenses loaded via Alpine.js expenseManager');
         }
 
         // Load cash denominations
@@ -1263,27 +1394,14 @@
             }
         }
 
-        // Expenses Detail calculations (UPDATED with new fields)
+        // Expenses Detail calculations - Now handled by Alpine.js expenseManager
+        // This function is kept for backward compatibility but no longer directly used
         function updateExpensesTotal() {
-            const tollTax = parseFloat(document.getElementById('expense_toll_tax').value) || 0;
-            const amrPowder = parseFloat(document.getElementById('expense_amr_powder_claim').value) || 0;
-            const amrLiquid = parseFloat(document.getElementById('expense_amr_liquid_claim').value) || 0;
-            const scheme = parseFloat(document.getElementById('expense_scheme').value) || 0;
-            const advanceTax = parseFloat(document.getElementById('expense_advance_tax').value) || 0;
-            const foodCharges = parseFloat(document.getElementById('expense_food_charges').value) || 0;
-            const percentage = parseFloat(document.getElementById('expense_percentage').value) || 0;
-            const miscellaneousAmount = parseFloat(document.getElementById('expense_miscellaneous_amount').value) || 0;
-
-            const totalExpenses = tollTax + amrPowder + amrLiquid + scheme + advanceTax +
-                                 foodCharges + percentage + miscellaneousAmount;
-
-            document.getElementById('totalExpensesDisplay').textContent = '₨ ' + totalExpenses.toLocaleString('en-PK', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-
-            document.getElementById('summary_expenses').value = totalExpenses.toFixed(2);
-            updateSalesSummary();
+            // Alpine.js now manages expenses dynamically
+            // This function can be called but won't affect the new dynamic expense system
+            if (typeof updateSalesSummary === 'function') {
+                updateSalesSummary();
+            }
         }
 
 

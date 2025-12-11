@@ -11,20 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sales_settlement_expenses', function (Blueprint $table) {
+        Schema::create('sales_settlement_bank_transfers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sales_settlement_id')->constrained('sales_settlements')->cascadeOnDelete();
-            $table->date('expense_date')->nullable();
-            $table->foreignId('expense_account_id')->constrained('chart_of_accounts')->cascadeOnDelete();
+            $table->foreignId('bank_account_id')->constrained('bank_accounts')->cascadeOnDelete();
             $table->decimal('amount', 15, 2);
-            $table->string('receipt_number')->nullable();
-            $table->text('description')->nullable();
-            $table->foreignId('attachment_id')->nullable()->constrained('attachments')->nullOnDelete();
+            $table->string('reference_number')->nullable();
+            $table->date('transfer_date')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
 
             $table->index('sales_settlement_id');
-            $table->index('expense_account_id');
-            $table->index('expense_date');
+            $table->index('bank_account_id');
+            $table->index('transfer_date');
         });
     }
 
@@ -33,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('sales_settlement_expenses');
+        Schema::dropIfExists('sales_settlement_bank_transfers');
     }
 };

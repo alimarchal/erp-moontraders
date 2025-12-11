@@ -221,6 +221,11 @@
                     entriesInput.value = JSON.stringify(this.entries);
                 }
 
+                // Dispatch event for Alpine.js expense manager
+                window.dispatchEvent(new CustomEvent('advance-tax-updated', {
+                    detail: { total: total }
+                }));
+
                 if (typeof updateExpensesTotal === 'function') {
                     updateExpensesTotal();
                 }

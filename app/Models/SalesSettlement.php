@@ -34,17 +34,8 @@ class SalesSettlement extends Model
         'expenses_claimed',
         'gross_profit',
         'total_cogs',
-        'expense_toll_tax',
-        'expense_amr_powder_claim',
-        'expense_amr_liquid_claim',
-        'expense_scheme',
-        'expense_advance_tax',
-        'expense_food_charges',
-        'expense_salesman_charges',
-        'expense_loader_charges',
-        'expense_percentage',
-        'expense_miscellaneous_amount',
         'cash_to_deposit',
+        // Cash denominations
         'denom_5000',
         'denom_1000',
         'denom_500',
@@ -53,11 +44,9 @@ class SalesSettlement extends Model
         'denom_20',
         'denom_10',
         'denom_coins',
-        'bank_transfer_amount',
-        'bank_account_id',
-        'bank_transfers', // JSON array for multiple bank transfers
-        'cheque_count',
-        'cheque_details', // JSON array for multiple cheques
+        // Note: Individual expense fields removed - now in sales_settlement_expenses table
+        // Note: bank_transfers JSON removed - now in sales_settlement_bank_transfers table
+        // Note: cheque_details JSON removed - now in sales_settlement_cheques table
         'status',
         'verified_by',
         'journal_entry_id',
@@ -82,21 +71,8 @@ class SalesSettlement extends Model
         'expenses_claimed' => 'decimal:2',
         'gross_profit' => 'decimal:2',
         'total_cogs' => 'decimal:2',
-        'expense_toll_tax' => 'decimal:2',
-        'expense_amr_powder_claim' => 'decimal:2',
-        'expense_amr_liquid_claim' => 'decimal:2',
-        'expense_scheme' => 'decimal:2',
-        'expense_advance_tax' => 'decimal:2',
-        'expense_food_charges' => 'decimal:2',
-        'expense_salesman_charges' => 'decimal:2',
-        'expense_loader_charges' => 'decimal:2',
-        'expense_percentage' => 'decimal:2',
-        'expense_miscellaneous_amount' => 'decimal:2',
         'cash_to_deposit' => 'decimal:2',
         'denom_coins' => 'decimal:2',
-        'bank_transfer_amount' => 'decimal:2',
-        'bank_transfers' => 'array', // JSON array for multiple bank transfers
-        'cheque_details' => 'array', // JSON array for multiple cheques
         'posted_at' => 'datetime',
     ];
 
@@ -150,9 +126,43 @@ class SalesSettlement extends Model
         return $this->hasMany(SalesSettlementAdvanceTax::class);
     }
 
-    public function bankAccount(): BelongsTo
+    public function expenses(): HasMany
     {
-        return $this->belongsTo(BankAccount::class);
+        return $this->hasMany(SalesSettlementExpense::class);
+    }
+
+    public function bankTransfers(): HasMany
+    {
+        return $this->hasMany(SalesSettlementBankTransfer::class);
+    }
+
+    public function cheques(): HasMany
+    {
+        return $this->hasMany(SalesSettlementCheque::class);
+    }
+
+    /**
+     * Get total bank transfer amount (calculated from relationship)
+     */
+    public function getTotalBankTransferAmountAttribute(): float
+    {
+        return (float) $this->bankTransfers()->sum('amount');
+    }
+
+    /**
+     * Get total cheque amount (calculated from relationship)
+     */
+    public function getTotalChequeAmountAttribute(): float
+    {
+        return (float) $this->cheques()->sum('amount');
+    }
+
+    /**
+     * Get cheque count (calculated from relationship)
+     */
+    public function getChequeCountAttribute(): int
+    {
+        return $this->cheques()->count();
     }
 
     public function isDraft(): bool

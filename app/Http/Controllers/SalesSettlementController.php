@@ -9,6 +9,9 @@ use App\Models\Customer;
 use App\Models\GoodsIssue;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementAdvanceTax;
+use App\Models\SalesSettlementBankTransfer;
+use App\Models\SalesSettlementCheque;
+use App\Models\SalesSettlementExpense;
 use App\Models\SalesSettlementItem;
 use App\Models\SalesSettlementItemBatch;
 use App\Models\SalesSettlementSale;
@@ -104,10 +107,18 @@ class SalesSettlementController extends Controller
             }
         }
 
+        // Get expense posting accounts (accounts starting with 5, non-group, active)
+        $expenseAccounts = \App\Models\ChartOfAccount::where('account_code', 'LIKE', '5%')
+            ->where('is_group', false)
+            ->where('is_active', true)
+            ->orderBy('account_code')
+            ->get(['id', 'account_code', 'account_name']);
+
         return view('sales-settlements.create', [
             'customers' => Customer::where('is_active', true)
                 ->orderBy('customer_name')
                 ->get(['id', 'customer_code', 'customer_name', 'receivable_balance']),
+            'expenseAccounts' => $expenseAccounts,
         ]);
     }
 
@@ -126,7 +137,7 @@ class SalesSettlementController extends Controller
             ->map(function ($gi) {
                 return [
                     'id' => $gi->id,
-                    'text' => $gi->issue_number . ' - ' . $gi->employee->full_name . ' (' . $gi->issue_date->format('d M Y') . ')',
+                    'text' => $gi->issue_number.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
                 ];
             });
 
@@ -319,35 +330,35 @@ class SalesSettlementController extends Controller
 
             $cashToDeposit = ($request->cash_collected ?? 0) + ($request->credit_recoveries ?? 0) - ($request->expenses_claimed ?? 0);
 
-            // Calculate total expenses from individual fields
-            $totalExpenses = ($request->expense_toll_tax ?? 0) +
-                ($request->expense_amr_powder_claim ?? 0) +
-                ($request->expense_amr_liquid_claim ?? 0) +
-                ($request->expense_scheme ?? 0) +
-                ($request->expense_advance_tax ?? 0) +
-                ($request->expense_food_charges ?? 0) +
-                ($request->expense_salesman_charges ?? 0) +
-                ($request->expense_loader_charges ?? 0) +
-                ($request->expense_percentage ?? 0) +
-                ($request->expense_miscellaneous_amount ?? 0);
-
-            // Prepare bank transfer details as JSON array
-            $bankTransfers = null;
-            $totalBankTransfers = 0;
-            if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
-                $bankTransfers = $request->bank_transfers;
-                foreach ($bankTransfers as $transfer) {
-                    $totalBankTransfers += floatval($transfer['amount'] ?? 0);
+            // Calculate total expenses from the expenses array (dynamic from Alpine.js)
+            $totalExpenses = 0;
+            if (! empty($request->expenses) && is_array($request->expenses)) {
+                foreach ($request->expenses as $expense) {
+                    $totalExpenses += floatval($expense['amount'] ?? 0);
                 }
             }
 
-            // Prepare cheque details as JSON
-            $chequeDetails = null;
+            // Prepare bank transfer totals
+            $bankTransfersData = [];
+            $totalBankTransfers = 0;
+            if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
+                foreach ($request->bank_transfers as $transfer) {
+                    if (! empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
+                        $bankTransfersData[] = $transfer;
+                        $totalBankTransfers += floatval($transfer['amount'] ?? 0);
+                    }
+                }
+            }
+
+            // Prepare cheque details
+            $chequesData = [];
             $totalCheques = 0;
             if ($request->has('cheques') && is_array($request->cheques)) {
-                $chequeDetails = $request->cheques;
-                foreach ($chequeDetails as $cheque) {
-                    $totalCheques += floatval($cheque['amount'] ?? 0);
+                foreach ($request->cheques as $cheque) {
+                    if (! empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
+                        $chequesData[] = $cheque;
+                        $totalCheques += floatval($cheque['amount'] ?? 0);
+                    }
                 }
             }
 
@@ -374,16 +385,6 @@ class SalesSettlementController extends Controller
                 'expenses_claimed' => $totalExpenses,
                 'gross_profit' => $grossProfit,
                 'total_cogs' => $totalCogs,
-                'expense_toll_tax' => $request->expense_toll_tax ?? 0,
-                'expense_amr_powder_claim' => $request->expense_amr_powder_claim ?? 0,
-                'expense_amr_liquid_claim' => $request->expense_amr_liquid_claim ?? 0,
-                'expense_scheme' => $request->expense_scheme ?? 0,
-                'expense_advance_tax' => $request->expense_advance_tax ?? 0,
-                'expense_food_charges' => $request->expense_food_charges ?? 0,
-                'expense_salesman_charges' => $request->expense_salesman_charges ?? 0,
-                'expense_loader_charges' => $request->expense_loader_charges ?? 0,
-                'expense_percentage' => $request->expense_percentage ?? 0,
-                'expense_miscellaneous_amount' => $request->expense_miscellaneous_amount ?? 0,
                 'cash_to_deposit' => $cashToDeposit,
                 // Cash denomination breakdown
                 'denom_5000' => $request->denom_5000 ?? 0,
@@ -394,16 +395,36 @@ class SalesSettlementController extends Controller
                 'denom_20' => $request->denom_20 ?? 0,
                 'denom_10' => $request->denom_10 ?? 0,
                 'denom_coins' => $request->denom_coins ?? 0,
-                // Bank transfer details - Store as JSON array for multiple transfers
-                'bank_transfer_amount' => $totalBankTransfers,
-                'bank_account_id' => null, // Deprecated - now using bank_transfers array
-                'bank_transfers' => $bankTransfers,
-                // Cheque details
-                'cheque_count' => is_array($chequeDetails) ? count($chequeDetails) : 0,
-                'cheque_details' => $chequeDetails,
+                // Note: expenses, bank_transfers, cheques now stored in normalized tables
                 'status' => 'draft',
                 'notes' => $request->notes,
             ]);
+
+            // Create bank transfer records in sales_settlement_bank_transfers table
+            foreach ($bankTransfersData as $transfer) {
+                SalesSettlementBankTransfer::create([
+                    'sales_settlement_id' => $settlement->id,
+                    'bank_account_id' => $transfer['bank_account_id'],
+                    'amount' => floatval($transfer['amount'] ?? 0),
+                    'reference_number' => $transfer['reference_number'] ?? null,
+                    'transfer_date' => $request->settlement_date,
+                    'notes' => $transfer['notes'] ?? null,
+                ]);
+            }
+
+            // Create cheque records in sales_settlement_cheques table
+            foreach ($chequesData as $cheque) {
+                SalesSettlementCheque::create([
+                    'sales_settlement_id' => $settlement->id,
+                    'cheque_number' => $cheque['cheque_number'],
+                    'amount' => floatval($cheque['amount'] ?? 0),
+                    'bank_name' => $cheque['bank_name'] ?? '',
+                    'cheque_date' => $cheque['cheque_date'] ?? $request->settlement_date,
+                    'account_holder_name' => $cheque['account_holder_name'] ?? null,
+                    'status' => 'pending',
+                    'notes' => $cheque['notes'] ?? null,
+                ]);
+            }
 
             // Create settlement items with batch breakdown
             foreach ($request->items as $index => $item) {
@@ -431,9 +452,9 @@ class SalesSettlementController extends Controller
 
                 if (isset($item['batches']) && is_array($item['batches'])) {
                     // Auto-distribute item-level quantities to batches if batch-level values are all zero
-                    $batchSoldSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_sold'] ?? 0));
-                    $batchReturnedSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_returned'] ?? 0));
-                    $batchShortageSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_shortage'] ?? 0));
+                    $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
+                    $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
+                    $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
 
                     $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
 
@@ -481,7 +502,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (!empty($request->sales)) {
+            if (! empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -494,7 +515,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (!empty($request->credit_sales) && is_array($request->credit_sales)) {
+            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -509,7 +530,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create advance tax breakdown records if any
-            if (!empty($request->advance_taxes) && is_array($request->advance_taxes)) {
+            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
                 foreach ($request->advance_taxes as $advanceTax) {
                     SalesSettlementAdvanceTax::create([
                         'sales_settlement_id' => $settlement->id,
@@ -520,6 +541,22 @@ class SalesSettlementController extends Controller
                         'invoice_number' => $advanceTax['invoice_number'] ?? null,
                         'notes' => $advanceTax['notes'] ?? null,
                     ]);
+                }
+            }
+
+            // Create expense records in sales_settlement_expenses table (store ALL expenses including zero amounts)
+            if (! empty($request->expenses) && is_array($request->expenses)) {
+                foreach ($request->expenses as $expense) {
+                    if (! empty($expense['expense_account_id'])) {
+                        SalesSettlementExpense::create([
+                            'sales_settlement_id' => $settlement->id,
+                            'expense_date' => $request->settlement_date,
+                            'expense_account_id' => $expense['expense_account_id'],
+                            'amount' => floatval($expense['amount'] ?? 0),
+                            'receipt_number' => $expense['receipt_number'] ?? null,
+                            'description' => $expense['description'] ?? null,
+                        ]);
+                    }
                 }
             }
 
@@ -546,7 +583,7 @@ class SalesSettlementController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Sales Settlement: ' . $e->getMessage());
+                ->with('error', 'Unable to create Sales Settlement: '.$e->getMessage());
         }
     }
 
@@ -569,6 +606,7 @@ class SalesSettlementController extends Controller
             'creditSales.employee',
             'creditSales.supplier',
             'advanceTaxes.customer',
+            'expenses.expenseAccount',
         ]);
 
         return view('sales-settlements.show', [
@@ -598,6 +636,7 @@ class SalesSettlementController extends Controller
             'creditSales.customer',
             'sales.customer',
             'advanceTaxes',
+            'expenses',
         ]);
 
         return view('sales-settlements.edit', [
@@ -727,9 +766,9 @@ class SalesSettlementController extends Controller
                 // Store batch breakdown if available
                 if (isset($item['batches']) && is_array($item['batches'])) {
                     // Auto-distribute item-level quantities to batches if batch-level values are all zero
-                    $batchSoldSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_sold'] ?? 0));
-                    $batchReturnedSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_returned'] ?? 0));
-                    $batchShortageSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_shortage'] ?? 0));
+                    $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
+                    $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
+                    $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
 
                     $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
 
@@ -777,7 +816,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (!empty($request->sales)) {
+            if (! empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -790,7 +829,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales breakdown records if any
-            if (!empty($request->credit_sales) && is_array($request->credit_sales)) {
+            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CreditSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -801,6 +840,63 @@ class SalesSettlementController extends Controller
                         'sale_amount' => $creditSale['sale_amount'],
                         'notes' => $creditSale['notes'] ?? null,
                     ]);
+                }
+            }
+
+            // Delete old expenses and create new ones
+            $salesSettlement->expenses()->delete();
+
+            // Create expense records in sales_settlement_expenses table (store ALL expenses including zero amounts)
+            if (! empty($request->expenses) && is_array($request->expenses)) {
+                foreach ($request->expenses as $expense) {
+                    if (! empty($expense['expense_account_id'])) {
+                        SalesSettlementExpense::create([
+                            'sales_settlement_id' => $salesSettlement->id,
+                            'expense_date' => $request->settlement_date,
+                            'expense_account_id' => $expense['expense_account_id'],
+                            'amount' => floatval($expense['amount'] ?? 0),
+                            'receipt_number' => $expense['receipt_number'] ?? null,
+                            'description' => $expense['description'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // Delete old bank transfers and create new ones
+            $salesSettlement->bankTransfers()->delete();
+
+            if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
+                foreach ($request->bank_transfers as $transfer) {
+                    if (! empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
+                        SalesSettlementBankTransfer::create([
+                            'sales_settlement_id' => $salesSettlement->id,
+                            'bank_account_id' => $transfer['bank_account_id'],
+                            'amount' => floatval($transfer['amount'] ?? 0),
+                            'reference_number' => $transfer['reference_number'] ?? null,
+                            'transfer_date' => $request->settlement_date,
+                            'notes' => $transfer['notes'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // Delete old cheques and create new ones
+            $salesSettlement->cheques()->delete();
+
+            if ($request->has('cheques') && is_array($request->cheques)) {
+                foreach ($request->cheques as $cheque) {
+                    if (! empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
+                        SalesSettlementCheque::create([
+                            'sales_settlement_id' => $salesSettlement->id,
+                            'cheque_number' => $cheque['cheque_number'],
+                            'amount' => floatval($cheque['amount'] ?? 0),
+                            'bank_name' => $cheque['bank_name'] ?? '',
+                            'cheque_date' => $cheque['cheque_date'] ?? $request->settlement_date,
+                            'account_holder_name' => $cheque['account_holder_name'] ?? null,
+                            'status' => 'pending',
+                            'notes' => $cheque['notes'] ?? null,
+                        ]);
+                    }
                 }
             }
 
@@ -849,6 +945,9 @@ class SalesSettlementController extends Controller
             }
             $salesSettlement->sales()->forceDelete();
             $salesSettlement->creditSales()->forceDelete();
+            $salesSettlement->expenses()->forceDelete();
+            $salesSettlement->bankTransfers()->forceDelete();
+            $salesSettlement->cheques()->forceDelete();
             $salesSettlement->forceDelete();
 
             DB::commit();

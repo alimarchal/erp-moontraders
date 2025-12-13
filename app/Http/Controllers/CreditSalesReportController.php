@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\CreditSale;
 use App\Models\Customer;
+use App\Models\CustomerCreditSale;
 use App\Models\Employee;
 use Illuminate\Http\Request;
 
@@ -36,7 +36,7 @@ class CreditSalesReportController extends Controller
 
     public function salesmanCreditDetails(Employee $employee)
     {
-        $creditSales = CreditSale::where('employee_id', $employee->id)
+        $creditSales = CustomerCreditSale::where('employee_id', $employee->id)
             ->with(['customer', 'supplier', 'salesSettlement'])
             ->orderBy('created_at', 'desc')
             ->paginate(50);
@@ -74,12 +74,12 @@ class CreditSalesReportController extends Controller
 
     public function customerCreditDetails(Customer $customer)
     {
-        $creditSales = CreditSale::where('customer_id', $customer->id)
+        $creditSales = CustomerCreditSale::where('customer_id', $customer->id)
             ->with(['employee', 'supplier', 'salesSettlement'])
             ->orderBy('created_at', 'desc')
             ->paginate(50);
 
-        $salesmenBreakdown = CreditSale::where('customer_id', $customer->id)
+        $salesmenBreakdown = CustomerCreditSale::where('customer_id', $customer->id)
             ->select('employee_id', 'supplier_id')
             ->selectRaw('COUNT(*) as sales_count')
             ->selectRaw('SUM(sale_amount) as total_amount')

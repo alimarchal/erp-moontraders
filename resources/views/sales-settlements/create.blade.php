@@ -657,9 +657,10 @@
                                         <x-advance-tax-modal
                                             :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
                                             entriesInputId="advance_taxes" />
-                                        <x-bank-transfer-modal :customers="[]" entriesInputId="bank_transfers" />
-                                        <x-cheque-payment-modal :customers="[]" entriesInputId="cheques" />
-                                        <x-credit-sales-modal :customers="[]" entriesInputId="credit_sales" />
+                                        <x-bank-transfer-modal :customers="$customers"
+                                            entriesInputId="bank_transfers" />
+                                        <x-cheque-payment-modal :customers="$customers" entriesInputId="cheques" />
+                                        <x-credit-sales-modal :customers="$customers" entriesInputId="credit_sales" />
                                     </div>
                                 </div>
                             </div>

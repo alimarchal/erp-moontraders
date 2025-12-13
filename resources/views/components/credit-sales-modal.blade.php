@@ -49,7 +49,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                     <div class="md:col-span-4">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Customer Name</label>
-                        <select id="credit_sales_customer_select"
+                        <select id="credit_sales_customer_select" x-model="form.customer_id"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500"
                             @change="onCustomerChange()">
                             <option value="">Select Customer</option>
@@ -294,12 +294,16 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 
                 // Handle select2 change event
                 $('#credit_sales_customer_select').on('change', function() {
-                    self.form.customer_id = $(this).val();
+                    const customerId = $(this).val();
+                    self.form.customer_id = customerId;
+                    console.log('Customer selected:', customerId);
                     self.onCustomerChange();
                 });
             },
 
             async onCustomerChange() {
+                console.log('onCustomerChange called, customer_id:', this.form.customer_id);
+                
                 if (!this.form.customer_id) {
                     this.form.previous_balance = 0;
                     return;
@@ -307,11 +311,15 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 
                 try {
                     const response = await fetch(`/api/customers/${this.form.customer_id}/balance`);
+                    console.log('API response status:', response.status);
+                    
                     if (response.ok) {
                         const data = await response.json();
+                        console.log('Balance data received:', data);
                         this.form.previous_balance = parseFloat(data.balance || 0);
+                        console.log('Updated previous_balance to:', this.form.previous_balance);
                     } else {
-                        console.error('Failed to fetch customer balance');
+                        console.error('Failed to fetch customer balance, status:', response.status);
                         this.form.previous_balance = 0;
                     }
                 } catch (error) {

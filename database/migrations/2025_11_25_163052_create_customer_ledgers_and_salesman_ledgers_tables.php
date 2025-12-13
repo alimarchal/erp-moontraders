@@ -30,7 +30,7 @@ return new class extends Migration
             // Related Records (Polymorphic for flexibility)
             $table->foreignId('sales_settlement_id')->nullable()->constrained('sales_settlements')->nullOnDelete();
             $table->foreignId('employee_id')->nullable()->constrained('employees')->nullOnDelete()->comment('Salesman who made the transaction');
-            $table->foreignId('credit_sale_id')->nullable()->constrained('credit_sales')->nullOnDelete();
+            $table->foreignId('credit_sale_id')->nullable()->constrained('customer_credit_sales')->nullOnDelete();
 
             // Additional tracking
             $table->string('payment_method')->nullable()->comment('cash, cheque, bank_transfer');

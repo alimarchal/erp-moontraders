@@ -118,7 +118,7 @@ class SalesSettlement extends Model
 
     public function creditSales(): HasMany
     {
-        return $this->hasMany(CreditSale::class);
+        return $this->hasMany(CustomerCreditSale::class);
     }
 
     public function advanceTaxes(): HasMany

@@ -58,7 +58,7 @@ class CustomerLedger extends Model
 
     public function creditSale(): BelongsTo
     {
-        return $this->belongsTo(CreditSale::class);
+        return $this->belongsTo(CustomerCreditSale::class);
     }
 
     public function bankAccount(): BelongsTo

@@ -5,8 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class CreditSale extends Model
+class CustomerCreditSale extends Model
 {
+    protected $table = 'customer_credit_sales';
+
     protected $fillable = [
         'sales_settlement_id',
         'employee_id',
@@ -17,9 +19,12 @@ class CreditSale extends Model
         'notes',
     ];
 
-    protected $casts = [
-        'sale_amount' => 'decimal:2',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'sale_amount' => 'decimal:2',
+        ];
+    }
 
     public function salesSettlement(): BelongsTo
     {
@@ -39,5 +44,10 @@ class CreditSale extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function customerLedger(): BelongsTo
+    {
+        return $this->belongsTo(CustomerLedger::class, 'id', 'credit_sale_id');
     }
 }

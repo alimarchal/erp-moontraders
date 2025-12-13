@@ -95,14 +95,9 @@ class Customer extends Model
         return $this->hasMany(Sale::class);
     }
 
-    public function employees()
-    {
-        return $this->belongsToMany(Employee::class, 'customer_employee');
-    }
-
     public function creditSales(): HasMany
     {
-        return $this->hasMany(CreditSale::class);
+        return $this->hasMany(CustomerCreditSale::class);
     }
 
     public function ledgerEntries(): HasMany

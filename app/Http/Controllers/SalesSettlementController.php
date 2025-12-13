@@ -622,7 +622,6 @@ class SalesSettlementController extends Controller
                     CustomerCreditSale::create([
                         'sales_settlement_id' => $settlement->id,
                         'employee_id' => $goodsIssue->employee_id,
-                        'supplier_id' => $goodsIssue->employee->supplier_id,
                         'customer_id' => $creditSale['customer_id'],
                         'invoice_number' => $creditSale['invoice_number'] ?? null,
                         'sale_amount' => $creditSale['sale_amount'],
@@ -676,7 +675,6 @@ class SalesSettlementController extends Controller
             'sales.customer',
             'creditSales.customer',
             'creditSales.employee',
-            'creditSales.supplier',
             'advanceTaxes.customer',
             'expenses.expenseAccount',
         ]);
@@ -924,7 +922,6 @@ class SalesSettlementController extends Controller
                     CustomerCreditSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
                         'employee_id' => $goodsIssue->employee_id,
-                        'supplier_id' => $goodsIssue->employee->supplier_id,
                         'customer_id' => $creditSale['customer_id'],
                         'invoice_number' => $creditSale['invoice_number'] ?? null,
                         'sale_amount' => $creditSale['sale_amount'],

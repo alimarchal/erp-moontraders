@@ -25,7 +25,8 @@
       "Bash(curl:*)",
       "Bash(python3:*)",
       "mcp__laravel-boost__list-routes",
-      "mcp__laravel-boost__get-absolute-url"
+      "mcp__laravel-boost__get-absolute-url",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

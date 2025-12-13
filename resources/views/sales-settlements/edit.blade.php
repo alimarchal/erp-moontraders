@@ -722,10 +722,10 @@
                                             :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
                                             entriesInputId="advance_taxes" />
                                         <x-bank-transfer-modal
-                                            :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
+                                            :customers="$customers"
                                             entriesInputId="bank_transfers" />
                                         <x-cheque-payment-modal
-                                            :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
+                                            :customers="$customers"
                                             entriesInputId="cheques" />
                                     </div>
                                 </div>
@@ -888,6 +888,8 @@
         function creditSalesManager(customers, existingCreditSales) {
             return {
                 customers: customers || [],
+                employeeId: {{ $settlement->employee_id ?? 'null' }},
+                loadingCustomers: false,
                 entries: [],
                 showAddForm: false,
                 form: {
@@ -898,6 +900,11 @@
                 },
 
                 init() {
+                    // Load customers by employee if employee_id is available
+                    if (this.employeeId) {
+                        this.loadCustomersByEmployee();
+                    }
+
                     // Load existing credit sales entries
                     if (existingCreditSales && existingCreditSales.length > 0) {
                         this.entries = existingCreditSales.map(cs => {
@@ -918,6 +925,27 @@
                     this.syncTotals();
                 },
 
+                async loadCustomersByEmployee() {
+                    if (!this.employeeId) return;
+
+                    this.loadingCustomers = true;
+                    try {
+                        const response = await fetch(`/api/v1/customers/by-employee/${this.employeeId}`);
+                        if (response.ok) {
+                            const data = await response.json();
+                            this.customers = data.map(c => ({
+                                id: c.id,
+                                customer_name: c.name,
+                                receivable_balance: c.balance
+                            }));
+                        }
+                    } catch (error) {
+                        console.error('Error loading customers by employee:', error);
+                    } finally {
+                        this.loadingCustomers = false;
+                    }
+                },
+
                 onCustomerChange() {
                     const customerId = this.form.customer_id;
                     if (!customerId) {
@@ -930,8 +958,8 @@
                     if (customer) {
                         this.form.previous_balance = parseFloat(customer.receivable_balance) || 0;
                     } else {
-                        // Fallback to API call
-                        fetch(`/api/customers/${customerId}/balance`)
+                        // Fallback to API call (using v1 endpoint)
+                        fetch(`/api/v1/customers/${customerId}/balance`)
                             .then(response => response.json())
                             .then(data => {
                                 this.form.previous_balance = parseFloat(data.balance) || 0;
@@ -1141,10 +1169,9 @@
                                         data-type="sold"
                                         data-bf-quantity="${batchBfQuantity}"
                                         min="0"
-                                        max="${parseFloat(batch.quantity_issued) + batchBfQuantity}"
                                         step="1"
                                         value="${batch.quantity_sold}"
-                                        oninput="autoFillShortage(${index}, ${batchIdx})">
+                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'sold')">
                                 </td>
                                 <td class="py-1 px-1 text-right">
                                     <input type="number"
@@ -1154,10 +1181,9 @@
                                         data-batch-index="${batchIdx}"
                                         data-type="returned"
                                         min="0"
-                                        max="${parseFloat(batch.quantity_issued) + batchBfQuantity}"
                                         step="1"
                                         value="${batch.quantity_returned}"
-                                        oninput="autoFillShortage(${index}, ${batchIdx})">
+                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'returned')">
                                 </td>
                                 <td class="py-1 px-1 text-right">
                                     <input type="number"
@@ -1167,10 +1193,9 @@
                                         data-batch-index="${batchIdx}"
                                         data-type="shortage"
                                         min="0"
-                                        max="${parseFloat(batch.quantity_issued) + batchBfQuantity}"
                                         step="1"
                                         value="${batch.quantity_shortage}"
-                                        oninput="autoFillShortage(${index}, ${batchIdx}, 'shortage')">
+                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
                                 </td>
                                 <td class="py-1 px-1 text-right">
                                     <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">0</span>
@@ -1250,9 +1275,12 @@
         }
 
 
+        // Track which field was last changed for smart auto-adjustment
+        let lastChangedField = {};
+
         // Function to calculate balance for a batch row
         // B/F (Out) = B/F (In) + Qty Issued - Sold - Returned - Shortage
-        function calculateBatchBalance(itemIndex, batchIndex) {
+        function calculateBatchBalance(itemIndex, batchIndex, changedField = null) {
             const issuedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_issued]"]`);
             const bfInInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][bf_quantity]"]`);
             const soldInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_sold]"]`);
@@ -1261,34 +1289,101 @@
 
             if (!issuedInput || !soldInput || !returnedInput || !shortageInput) return;
 
+            // Track which field was changed
+            if (changedField) {
+                lastChangedField[`${itemIndex}-${batchIndex}`] = changedField;
+            }
+
             const issued = Math.round(parseFloat(issuedInput.value) || 0);
             const bfIn = Math.round(parseFloat(bfInInput?.value) || 0);
-            const sold = Math.round(parseFloat(soldInput.value) || 0);
-            const returned = Math.round(parseFloat(returnedInput.value) || 0);
-            const shortage = Math.round(parseFloat(shortageInput.value) || 0);
+            let sold = Math.round(parseFloat(soldInput.value) || 0);
+            let returned = Math.round(parseFloat(returnedInput.value) || 0);
+            let shortage = Math.round(parseFloat(shortageInput.value) || 0);
 
             // Total available = B/F (In) + Issued
             const totalAvailable = bfIn + issued;
-            // B/F (Out) = Total Available - Sold - Returned - Shortage
+
+            // Auto-adjust: Sold + Returned + Shortage cannot exceed Total Available
+            const totalUsed = sold + returned + shortage;
+            if (totalUsed > totalAvailable) {
+                const excess = totalUsed - totalAvailable;
+                const lastField = lastChangedField[`${itemIndex}-${batchIndex}`] || 'shortage';
+
+                // Auto-adjust the LAST changed field to fit within available
+                if (lastField === 'sold') {
+                    // User changed sold, so adjust sold
+                    const maxSold = totalAvailable - returned - shortage;
+                    sold = Math.max(0, maxSold);
+                    soldInput.value = sold;
+                } else if (lastField === 'returned') {
+                    // User changed returned, so adjust returned
+                    const maxReturned = totalAvailable - sold - shortage;
+                    returned = Math.max(0, maxReturned);
+                    returnedInput.value = returned;
+                } else {
+                    // User changed shortage (or default), so adjust shortage
+                    const maxShortage = totalAvailable - sold - returned;
+                    shortage = Math.max(0, maxShortage);
+                    shortageInput.value = shortage;
+                }
+
+                // Show max available hint
+                showQuantityWarning(itemIndex, batchIndex, totalAvailable, sold, returned, shortage);
+            } else {
+                hideQuantityWarning(itemIndex, batchIndex);
+            }
+
+            // B/F (Out) = Total Available - Sold - Returned - Shortage (should always be >= 0 now)
             const bfOut = totalAvailable - sold - returned - shortage;
-            
+
             const bfOutSpan = document.getElementById(`bf-out-${itemIndex}-${batchIndex}`);
 
             if (bfOutSpan) {
                 bfOutSpan.textContent = bfOut;
 
-                // Color coding: green if zero (fully settled), orange if positive (stock remaining on van), red if negative (error)
+                // Color coding: green if zero (fully settled), orange if positive (stock remaining on van)
                 if (bfOut === 0) {
                     bfOutSpan.className = 'font-bold text-green-600';
                 } else if (bfOut > 0) {
                     bfOutSpan.className = 'font-bold text-orange-600';
                 } else {
+                    // This should not happen anymore, but keep for safety
                     bfOutSpan.className = 'font-bold text-red-600';
                 }
             }
 
             // Update product totals
             updateProductTotals(itemIndex);
+        }
+
+        // Show warning when quantity was auto-adjusted
+        function showQuantityWarning(itemIndex, batchIndex, maxAvailable, sold, returned, shortage) {
+            let warningEl = document.getElementById(`qty-warning-${itemIndex}-${batchIndex}`);
+            if (!warningEl) {
+                const row = document.querySelector(`#bf-out-${itemIndex}-${batchIndex}`)?.closest('tr');
+                if (row) {
+                    warningEl = document.createElement('div');
+                    warningEl.id = `qty-warning-${itemIndex}-${batchIndex}`;
+                    warningEl.className = 'text-xs text-orange-600 font-semibold mt-1';
+
+                    const shortageCell = row.querySelector('td:nth-last-child(2)');
+                    if (shortageCell) {
+                        shortageCell.appendChild(warningEl);
+                    }
+                }
+            }
+            if (warningEl) {
+                warningEl.innerHTML = `<i class="fas fa-info-circle mr-1"></i>Auto-adjusted (Max: ${maxAvailable})`;
+                warningEl.style.display = 'block';
+            }
+        }
+
+        // Hide quantity warning
+        function hideQuantityWarning(itemIndex, batchIndex) {
+            const warningEl = document.getElementById(`qty-warning-${itemIndex}-${batchIndex}`);
+            if (warningEl) {
+                warningEl.style.display = 'none';
+            }
         }
 
         // Auto-fill B/F (Out) when sold + returned is entered (no longer auto-fill shortage)

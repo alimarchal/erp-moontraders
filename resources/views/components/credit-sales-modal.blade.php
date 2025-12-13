@@ -1,5 +1,6 @@
 @props([
 'customers' => collect(),
+'employeeId' => null,
 'triggerEvent' => 'open-credit-sales-modal',
 'creditInputId' => 'credit_sales_amount',
 'recoveryInputId' => 'credit_recoveries_total',
@@ -15,6 +16,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
             'id' => $customer->id,
             'name' => $customer->customer_name,
         ])->values()),
+        employeeId: {{ $employeeId ?? 'null' }},
         creditInputId: '{{ $creditInputId }}',
         recoveryInputId: '{{ $recoveryInputId }}',
         entriesInputId: '{{ $entriesInputId }}',
@@ -24,7 +26,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
     <div x-show="show" class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0">
         <div class="absolute inset-0 bg-gray-900 bg-opacity-70" @click="closeModal()"></div>
 
-        <div class="relative w-full max-w-6xl bg-white rounded-lg shadow-xl overflow-hidden transform transition-all"
+        <div class="relative w-full max-w-4xl bg-white rounded-lg shadow-xl overflow-hidden transform transition-all"
             x-transition:enter="ease-out duration-200"
             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-150"
@@ -253,10 +255,12 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 @once
 @push('scripts')
 <script>
-    function creditSalesModal({ customers, creditInputId, recoveryInputId, entriesInputId }) {
+    function creditSalesModal({ customers, employeeId, creditInputId, recoveryInputId, entriesInputId }) {
         return {
             show: false,
             customers,
+            employeeId,
+            loadingCustomers: false,
             form: {
                 customer_id: '',
                 previous_balance: 0,
@@ -276,7 +280,55 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                         this.initializeSelect2();
                         this.select2Initialized = true;
                     }
+
+                    // Load customers by employee if employeeId is set
+                    if (this.employeeId) {
+                        this.loadCustomersByEmployee();
+                    }
                 });
+            },
+
+            async loadCustomersByEmployee() {
+                if (!this.employeeId) return;
+
+                this.loadingCustomers = true;
+                try {
+                    const response = await fetch(`/api/v1/customers/by-employee/${this.employeeId}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.customers = data.map(c => ({
+                            id: c.id,
+                            name: c.name,
+                            balance: c.balance
+                        }));
+                        this.rebuildSelect2Options();
+                    }
+                } catch (error) {
+                    console.error('Error loading customers by employee:', error);
+                } finally {
+                    this.loadingCustomers = false;
+                }
+            },
+
+            rebuildSelect2Options() {
+                if (!this.select2Initialized) return;
+
+                const select = $('#credit_sales_customer_select');
+                select.empty();
+                select.append('<option value="">Select Customer</option>');
+
+                this.customers.forEach(customer => {
+                    select.append(`<option value="${customer.id}">${customer.name}</option>`);
+                });
+
+                select.trigger('change');
+            },
+
+            setEmployeeId(id) {
+                this.employeeId = id;
+                if (this.show && this.employeeId) {
+                    this.loadCustomersByEmployee();
+                }
             },
 
             closeModal() {
@@ -303,21 +355,33 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 
             async onCustomerChange() {
                 console.log('onCustomerChange called, customer_id:', this.form.customer_id);
-                
+                console.log('Available customers in modal:', this.customers);
+
                 if (!this.form.customer_id) {
                     this.form.previous_balance = 0;
                     return;
                 }
 
+                // First check if balance is available in customers array (loaded via /by-employee API)
+                const customer = this.customers.find(c => Number(c.id) === Number(this.form.customer_id));
+                console.log('Found customer in array:', customer);
+
+                if (customer && customer.balance !== undefined) {
+                    this.form.previous_balance = parseFloat(customer.balance || 0);
+                    console.log('✓ Using balance from customers array (no API call):', this.form.previous_balance);
+                    return;
+                }
+
+                // Fallback to API call using v1 endpoint (only if customer not in array)
+                console.log('Customer not in array, falling back to API call...');
                 try {
-                    const response = await fetch(`/api/customers/${this.form.customer_id}/balance`);
-                    console.log('API response status:', response.status);
-                    
+                    const response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance`);
+                    console.log('API /balance response status:', response.status);
+
                     if (response.ok) {
                         const data = await response.json();
-                        console.log('Balance data received:', data);
                         this.form.previous_balance = parseFloat(data.balance || 0);
-                        console.log('Updated previous_balance to:', this.form.previous_balance);
+                        console.log('Balance from API:', this.form.previous_balance);
                     } else {
                         console.error('Failed to fetch customer balance, status:', response.status);
                         this.form.previous_balance = 0;
@@ -462,20 +526,25 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 
             init() {
                 // Listen for customer updates from goods issue selection
+                // The API /api/v1/customers/by-employee returns: {id, name, business_name, balance}
                 window.addEventListener('update-modal-customers', (event) => {
-                    this.customers = event.detail.customers || [];
-                    
-                    // Rebuild select2 options if initialized
-                    if (this.select2Initialized) {
-                        const select = $('#credit_sales_customer_select');
-                        select.empty();
-                        select.append('<option value="">Select Customer</option>');
-                        
-                        this.customers.forEach(customer => {
-                            select.append(`<option value="${customer.id}">${customer.name}</option>`);
-                        });
-                        
-                        select.trigger('change');
+                    const rawCustomers = event.detail.customers || [];
+                    // Map to ensure consistent structure with balance
+                    this.customers = rawCustomers.map(c => ({
+                        id: c.id,
+                        name: c.name || c.customer_name,
+                        balance: c.balance ?? c.receivable_balance ?? 0
+                    }));
+                    console.log('Credit sales modal - customers updated with balance:', this.customers);
+                    this.rebuildSelect2Options();
+                });
+
+                // Listen for employee change (stores employee ID for future use)
+                window.addEventListener('update-credit-sales-employee', (event) => {
+                    const newEmployeeId = event.detail.employeeId;
+                    if (newEmployeeId) {
+                        this.employeeId = newEmployeeId;
+                        // Don't call loadCustomersByEmployee here - customers already loaded via update-modal-customers
                     }
                 });
             },

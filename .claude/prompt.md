@@ -39,3 +39,13 @@ and remove supplier_id from customer_credit_sales this does not we need
 and use max-w-4xl modal for all modals specially for Credit Sales Detail do not run any test as it will wash all my data from database 
 also create, form make sure it should work and same should be made for edit 
 /Users/alirazamarchal/Herd/moontrader/resources/views/sales-settlements/edit.blade.php /Users/alirazamarchal/Herd/moontrader/resources/views/sales-settlements/create.blade.php
+  
+as in future we also need the report of month wise of particular salesman 
+what it sold and how much we earn profit via date wise 
+credit sheet all report what recieved and what remaining salesman wise (employee) which is our salesman recoveries 
+one report we need like this 
+S.No.	Product (SKU)	B/F (Brought Forward)	Load (Which is stock issue to van and salesman )	Total (stock toal )	Return (return)	Sale (sales)	T.P trade price man selling price	Amount (amount) deep think make sure all should work and also in the 
+Sold	
+Returned	
+Shortage
+it should not exceed of total including B/F (In), B/F (Out)

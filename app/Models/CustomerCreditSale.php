@@ -12,7 +12,6 @@ class CustomerCreditSale extends Model
     protected $fillable = [
         'sales_settlement_id',
         'employee_id',
-        'supplier_id',
         'customer_id',
         'invoice_number',
         'sale_amount',
@@ -35,11 +34,6 @@ class CustomerCreditSale extends Model
     public function employee(): BelongsTo
     {
         return $this->belongsTo(Employee::class);
-    }
-
-    public function supplier(): BelongsTo
-    {
-        return $this->belongsTo(Supplier::class);
     }
 
     public function customer(): BelongsTo

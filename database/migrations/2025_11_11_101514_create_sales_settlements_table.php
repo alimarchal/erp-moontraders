@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -61,6 +60,23 @@ return new class extends Migration
             $table->index('employee_id');
             $table->index('vehicle_id');
         });
+
+        // Create sales settlement cash denominations table
+        Schema::create('sales_settlement_cash_denominations', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('sales_settlement_id')->constrained('sales_settlements')->cascadeOnDelete();
+            $table->integer('denom_5000')->default(0);
+            $table->integer('denom_1000')->default(0);
+            $table->integer('denom_500')->default(0);
+            $table->integer('denom_100')->default(0);
+            $table->integer('denom_50')->default(0);
+            $table->integer('denom_20')->default(0);
+            $table->integer('denom_10')->default(0);
+            $table->decimal('denom_coins', 10, 2)->default(0);
+            $table->timestamps();
+
+            $table->index('sales_settlement_id');
+        });
     }
 
     /**
@@ -68,6 +84,7 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::dropIfExists('sales_settlement_cash_denominations');
         Schema::dropIfExists('sales_settlements');
     }
 };

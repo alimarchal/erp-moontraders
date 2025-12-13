@@ -35,16 +35,8 @@ class SalesSettlement extends Model
         'gross_profit',
         'total_cogs',
         'cash_to_deposit',
-        // Cash denominations
-        'denom_5000',
-        'denom_1000',
-        'denom_500',
-        'denom_100',
-        'denom_50',
-        'denom_20',
-        'denom_10',
-        'denom_coins',
         // Note: Individual expense fields removed - now in sales_settlement_expenses table
+        // Note: Cash denomination fields removed - now in sales_settlement_cash_denominations table
         // Note: bank_transfers JSON removed - now in sales_settlement_bank_transfers table
         // Note: cheque_details JSON removed - now in sales_settlement_cheques table
         'status',
@@ -72,7 +64,6 @@ class SalesSettlement extends Model
         'gross_profit' => 'decimal:2',
         'total_cogs' => 'decimal:2',
         'cash_to_deposit' => 'decimal:2',
-        'denom_coins' => 'decimal:2',
         'posted_at' => 'datetime',
     ];
 
@@ -141,6 +132,11 @@ class SalesSettlement extends Model
         return $this->hasMany(SalesSettlementCheque::class);
     }
 
+    public function cashDenominations(): HasMany
+    {
+        return $this->hasMany(SalesSettlementCashDenomination::class);
+    }
+
     /**
      * Get total bank transfer amount (calculated from relationship)
      */
@@ -163,6 +159,15 @@ class SalesSettlement extends Model
     public function getChequeCountAttribute(): int
     {
         return $this->cheques()->count();
+    }
+
+    /**
+     * Get total cash denomination amount (calculated from relationship)
+     */
+    public function getTotalCashDenominationAmountAttribute(): float
+    {
+        $denominations = $this->cashDenominations->first();
+        return $denominations ? $denominations->total_amount : 0.00;
     }
 
     public function isDraft(): bool

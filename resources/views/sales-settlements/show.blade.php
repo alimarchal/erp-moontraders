@@ -497,20 +497,21 @@
                                     </thead>
                                     <tbody class="divide-y divide-gray-200">
                                         @php
+                                        $denomData = $settlement->cashDenominations->first();
                                         $denominations = [
-                                        ['label' => '₨ 5,000 Notes', 'qty' => $settlement->denom_5000 ?? 0, 'value' =>
+                                        ['label' => '₨ 5,000 Notes', 'qty' => $denomData?->denom_5000 ?? 0, 'value' =>
                                         5000],
-                                        ['label' => '₨ 1,000 Notes', 'qty' => $settlement->denom_1000 ?? 0, 'value' =>
+                                        ['label' => '₨ 1,000 Notes', 'qty' => $denomData?->denom_1000 ?? 0, 'value' =>
                                         1000],
-                                        ['label' => '₨ 500 Notes', 'qty' => $settlement->denom_500 ?? 0, 'value' =>
+                                        ['label' => '₨ 500 Notes', 'qty' => $denomData?->denom_500 ?? 0, 'value' =>
                                         500],
-                                        ['label' => '₨ 100 Notes', 'qty' => $settlement->denom_100 ?? 0, 'value' =>
+                                        ['label' => '₨ 100 Notes', 'qty' => $denomData?->denom_100 ?? 0, 'value' =>
                                         100],
-                                        ['label' => '₨ 50 Notes', 'qty' => $settlement->denom_50 ?? 0, 'value' => 50],
-                                        ['label' => '₨ 20 Notes', 'qty' => $settlement->denom_20 ?? 0, 'value' => 20],
-                                        ['label' => '₨ 10 Notes', 'qty' => $settlement->denom_10 ?? 0, 'value' => 10],
+                                        ['label' => '₨ 50 Notes', 'qty' => $denomData?->denom_50 ?? 0, 'value' => 50],
+                                        ['label' => '₨ 20 Notes', 'qty' => $denomData?->denom_20 ?? 0, 'value' => 20],
+                                        ['label' => '₨ 10 Notes', 'qty' => $denomData?->denom_10 ?? 0, 'value' => 10],
                                         ['label' => 'Loose Cash/Coins', 'qty' => '-', 'value' =>
-                                        $settlement->denom_coins ?? 0, 'is_coins' => true],
+                                        $denomData?->denom_coins ?? 0, 'is_coins' => true],
                                         ];
                                         $totalCash = 0;
                                         @endphp

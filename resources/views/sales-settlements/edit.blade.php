@@ -258,8 +258,10 @@
                                             {{-- Credit Sales Inline Table --}}
                                             <div class="border border-orange-300 rounded-lg overflow-hidden bg-orange-50"
                                                 x-data="creditSalesManager(@js($customers), @js($settlement->creditSales))">
-                                                <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-3 py-2 flex justify-between items-center">
-                                                    <h4 class="text-sm font-bold text-white">Creditors / Credit Sales</h4>
+                                                <div
+                                                    class="bg-gradient-to-r from-orange-600 to-orange-700 px-3 py-2 flex justify-between items-center">
+                                                    <h4 class="text-sm font-bold text-white">Creditors / Credit Sales
+                                                    </h4>
                                                     <button type="button" @click="showAddForm = !showAddForm"
                                                         class="text-xs bg-white text-orange-600 px-2 py-0.5 rounded font-semibold hover:bg-orange-50">
                                                         + Add More
@@ -267,31 +269,43 @@
                                                 </div>
                                                 <div class="p-2">
                                                     {{-- Add Form (collapsible) --}}
-                                                    <div x-show="showAddForm" x-collapse class="mb-2 p-2 bg-white rounded border border-orange-200">
+                                                    <div x-show="showAddForm" x-collapse
+                                                        class="mb-2 p-2 bg-white rounded border border-orange-200">
                                                         <div class="grid grid-cols-12 gap-1 text-xs">
                                                             <div class="col-span-4">
-                                                                <label class="text-[10px] text-gray-600">Customer</label>
-                                                                <select x-model="form.customer_id" @change="onCustomerChange()"
+                                                                <label
+                                                                    class="text-[10px] text-gray-600">Customer</label>
+                                                                <select x-model="form.customer_id"
+                                                                    @change="onCustomerChange()"
                                                                     class="w-full text-xs border-gray-300 rounded py-0.5 px-1">
                                                                     <option value="">Select Customer...</option>
-                                                                    <template x-for="customer in customers" :key="customer.id">
-                                                                        <option :value="customer.id" x-text="customer.customer_name"></option>
+                                                                    <template x-for="customer in customers"
+                                                                        :key="customer.id">
+                                                                        <option :value="customer.id"
+                                                                            x-text="customer.customer_name"></option>
                                                                     </template>
                                                                 </select>
                                                             </div>
                                                             <div class="col-span-2">
-                                                                <label class="text-[10px] text-gray-600">Prev Balance</label>
-                                                                <input type="text" x-model="form.previous_balance" readonly
+                                                                <label class="text-[10px] text-gray-600">Prev
+                                                                    Balance</label>
+                                                                <input type="text" x-model="form.previous_balance"
+                                                                    readonly
                                                                     class="w-full text-xs border-gray-300 rounded py-0.5 px-1 bg-gray-100 text-right" />
                                                             </div>
                                                             <div class="col-span-2">
-                                                                <label class="text-[10px] text-gray-600">Credit Sale</label>
-                                                                <input type="number" x-model.number="form.sale_amount" min="0" step="0.01"
+                                                                <label class="text-[10px] text-gray-600">Credit
+                                                                    Sale</label>
+                                                                <input type="number" x-model.number="form.sale_amount"
+                                                                    min="0" step="0.01"
                                                                     class="w-full text-xs border-gray-300 rounded py-0.5 px-1 text-right" />
                                                             </div>
                                                             <div class="col-span-2">
-                                                                <label class="text-[10px] text-gray-600">Recovery</label>
-                                                                <input type="number" x-model.number="form.payment_received" min="0" step="0.01"
+                                                                <label
+                                                                    class="text-[10px] text-gray-600">Recovery</label>
+                                                                <input type="number"
+                                                                    x-model.number="form.payment_received" min="0"
+                                                                    step="0.01"
                                                                     class="w-full text-xs border-gray-300 rounded py-0.5 px-1 text-right" />
                                                             </div>
                                                             <div class="col-span-2 flex items-end">
@@ -306,53 +320,79 @@
                                                     <table class="w-full text-xs">
                                                         <thead>
                                                             <tr class="border-b border-gray-300 bg-gray-50">
-                                                                <th class="py-1 px-1 text-left text-gray-700">Customer</th>
-                                                                <th class="py-1 px-1 text-right text-gray-700">Prev Bal</th>
-                                                                <th class="py-1 px-1 text-right text-gray-700">Credit</th>
-                                                                <th class="py-1 px-1 text-right text-gray-700">Recovery</th>
-                                                                <th class="py-1 px-1 text-right text-gray-700">New Bal</th>
+                                                                <th class="py-1 px-1 text-left text-gray-700">Customer
+                                                                </th>
+                                                                <th class="py-1 px-1 text-right text-gray-700">Prev Bal
+                                                                </th>
+                                                                <th class="py-1 px-1 text-right text-gray-700">Credit
+                                                                </th>
+                                                                <th class="py-1 px-1 text-right text-gray-700">Recovery
+                                                                </th>
+                                                                <th class="py-1 px-1 text-right text-gray-700">New Bal
+                                                                </th>
                                                                 <th class="py-1 px-1 w-6"></th>
                                                             </tr>
                                                         </thead>
                                                         <tbody class="divide-y divide-gray-200">
                                                             <template x-if="entries.length === 0">
                                                                 <tr>
-                                                                    <td colspan="6" class="py-2 px-1 text-center text-gray-400 italic">
+                                                                    <td colspan="6"
+                                                                        class="py-2 px-1 text-center text-gray-400 italic">
                                                                         No credit sales entries yet
                                                                     </td>
                                                                 </tr>
                                                             </template>
                                                             <template x-for="(entry, index) in entries" :key="index">
                                                                 <tr>
-                                                                    <td class="py-1 px-1 truncate max-w-[100px]" x-text="entry.customer_name"></td>
-                                                                    <td class="py-1 px-1 text-right" x-text="formatNumber(entry.previous_balance)"></td>
-                                                                    <td class="py-1 px-1 text-right text-orange-700 font-semibold" x-text="formatNumber(entry.sale_amount)"></td>
-                                                                    <td class="py-1 px-1 text-right text-green-700 font-semibold" x-text="formatNumber(entry.payment_received)"></td>
-                                                                    <td class="py-1 px-1 text-right text-blue-700 font-bold" x-text="formatNumber(entry.new_balance)"></td>
+                                                                    <td class="py-1 px-1 truncate max-w-[100px]"
+                                                                        x-text="entry.customer_name"></td>
+                                                                    <td class="py-1 px-1 text-right"
+                                                                        x-text="formatNumber(entry.previous_balance)">
+                                                                    </td>
+                                                                    <td class="py-1 px-1 text-right text-orange-700 font-semibold"
+                                                                        x-text="formatNumber(entry.sale_amount)"></td>
+                                                                    <td class="py-1 px-1 text-right text-green-700 font-semibold"
+                                                                        x-text="formatNumber(entry.payment_received)">
+                                                                    </td>
+                                                                    <td class="py-1 px-1 text-right text-blue-700 font-bold"
+                                                                        x-text="formatNumber(entry.new_balance)"></td>
                                                                     <td class="py-1 px-1 text-center">
-                                                                        <button type="button" @click="removeEntry(index)"
+                                                                        <button type="button"
+                                                                            @click="removeEntry(index)"
                                                                             class="text-red-500 hover:text-red-700">×</button>
                                                                     </td>
                                                                     {{-- Hidden inputs --}}
-                                                                    <input type="hidden" :name="'credit_sales[' + index + '][customer_id]'" :value="entry.customer_id" />
-                                                                    <input type="hidden" :name="'credit_sales[' + index + '][sale_amount]'" :value="entry.sale_amount" />
-                                                                    <input type="hidden" :name="'credit_sales[' + index + '][payment_received]'" :value="entry.payment_received" />
+                                                                    <input type="hidden"
+                                                                        :name="'credit_sales[' + index + '][customer_id]'"
+                                                                        :value="entry.customer_id" />
+                                                                    <input type="hidden"
+                                                                        :name="'credit_sales[' + index + '][sale_amount]'"
+                                                                        :value="entry.sale_amount" />
+                                                                    <input type="hidden"
+                                                                        :name="'credit_sales[' + index + '][payment_received]'"
+                                                                        :value="entry.payment_received" />
                                                                 </tr>
                                                             </template>
                                                         </tbody>
                                                         <tfoot>
                                                             <tr class="bg-orange-100 border-t-2 border-orange-300">
-                                                                <td colspan="2" class="py-1 px-1 font-bold text-orange-900">Total</td>
-                                                                <td class="py-1 px-1 text-right font-bold text-orange-900" x-text="formatNumber(creditTotal)"></td>
-                                                                <td class="py-1 px-1 text-right font-bold text-green-900" x-text="formatNumber(recoveryTotal)"></td>
+                                                                <td colspan="2"
+                                                                    class="py-1 px-1 font-bold text-orange-900">Total
+                                                                </td>
+                                                                <td class="py-1 px-1 text-right font-bold text-orange-900"
+                                                                    x-text="formatNumber(creditTotal)"></td>
+                                                                <td class="py-1 px-1 text-right font-bold text-green-900"
+                                                                    x-text="formatNumber(recoveryTotal)"></td>
                                                                 <td colspan="2"></td>
                                                             </tr>
                                                         </tfoot>
                                                     </table>
                                                 </div>
                                                 {{-- Hidden inputs for totals --}}
-                                                <input type="hidden" id="credit_sales_amount" name="credit_sales_amount" :value="creditTotal" />
-                                                <input type="hidden" id="credit_recoveries_total" name="credit_recoveries_total" :value="recoveryTotal" />
+                                                <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
+                                                    :value="creditTotal" />
+                                                <input type="hidden" id="credit_recoveries_total"
+                                                    name="credit_recoveries_total" :value="recoveryTotal" />
                                             </div>
 
                                             {{-- Bank Transfer --}}
@@ -1027,14 +1067,14 @@
                     ];
                 })->values(),
                 'denominations' => [
-                    'denom_5000' => $settlement->denom_5000 ?? 0,
-                    'denom_1000' => $settlement->denom_1000 ?? 0,
-                    'denom_500' => $settlement->denom_500 ?? 0,
-                    'denom_100' => $settlement->denom_100 ?? 0,
-                    'denom_50' => $settlement->denom_50 ?? 0,
-                    'denom_20' => $settlement->denom_20 ?? 0,
-                    'denom_10' => $settlement->denom_10 ?? 0,
-                    'denom_coins' => $settlement->denom_coins ?? 0,
+                    'denom_5000' => $settlement->cashDenominations->first()?->denom_5000 ?? 0,
+                    'denom_1000' => $settlement->cashDenominations->first()?->denom_1000 ?? 0,
+                    'denom_500' => $settlement->cashDenominations->first()?->denom_500 ?? 0,
+                    'denom_100' => $settlement->cashDenominations->first()?->denom_100 ?? 0,
+                    'denom_50' => $settlement->cashDenominations->first()?->denom_50 ?? 0,
+                    'denom_20' => $settlement->cashDenominations->first()?->denom_20 ?? 0,
+                    'denom_10' => $settlement->cashDenominations->first()?->denom_10 ?? 0,
+                    'denom_coins' => $settlement->cashDenominations->first()?->denom_coins ?? 0,
                 ],
                 'credit_sales' => $settlement->creditSales ?? [],
                 'bank_transfers' => $settlement->bank_transfers ?? [],

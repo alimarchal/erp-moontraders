@@ -57,7 +57,7 @@ class LedgerService
             return [
                 'success' => false,
                 'data' => null,
-                'message' => 'Failed to record credit sale: ' . $e->getMessage(),
+                'message' => 'Failed to record credit sale: '.$e->getMessage(),
             ];
         }
     }
@@ -76,7 +76,7 @@ class LedgerService
             $ledgerEntry = CustomerLedger::create([
                 'transaction_date' => $data['transaction_date'],
                 'customer_id' => $customer->id,
-                'transaction_type' => $data['payment_method'] . '_recovery',
+                'transaction_type' => $data['payment_method'].'_recovery',
                 'reference_number' => $data['reference_number'] ?? null,
                 'description' => $data['description'] ?? 'Payment received',
                 'debit' => 0,
@@ -109,7 +109,7 @@ class LedgerService
             return [
                 'success' => false,
                 'data' => null,
-                'message' => 'Failed to record payment: ' . $e->getMessage(),
+                'message' => 'Failed to record payment: '.$e->getMessage(),
             ];
         }
     }
@@ -161,7 +161,7 @@ class LedgerService
             return [
                 'success' => false,
                 'data' => null,
-                'message' => 'Failed to record credit sale: ' . $e->getMessage(),
+                'message' => 'Failed to record credit sale: '.$e->getMessage(),
             ];
         }
     }
@@ -215,7 +215,7 @@ class LedgerService
             return [
                 'success' => false,
                 'data' => null,
-                'message' => 'Failed to record collection: ' . $e->getMessage(),
+                'message' => 'Failed to record collection: '.$e->getMessage(),
             ];
         }
     }
@@ -231,49 +231,22 @@ class LedgerService
             $results = [
                 'customer_entries' => [],
                 'salesman_entries' => [],
-                'credit_sales_created' => [],
+                'credit_sales_posted' => [],
             ];
 
-            // First, create CustomerCreditSale records from draft data
-            if ($settlement->credit_sales_data && is_array($settlement->credit_sales_data)) {
-                foreach ($settlement->credit_sales_data as $creditSaleData) {
-                    $customerCreditSale = CustomerCreditSale::create([
-                        'sales_settlement_id' => $settlement->id,
-                        'employee_id' => $settlement->employee_id,
-                        'supplier_id' => $settlement->employee->supplier_id ?? null,
-                        'customer_id' => $creditSaleData['customer_id'],
-                        'invoice_number' => $creditSaleData['invoice_number'] ?? null,
-                        'sale_amount' => $creditSaleData['sale_amount'],
-                        'notes' => $creditSaleData['notes'] ?? null,
-                    ]);
+            // Update status of existing draft CustomerCreditSale records to 'posted'
+            $draftCreditSales = CustomerCreditSale::where('sales_settlement_id', $settlement->id)
+                ->where('status', 'draft')
+                ->get();
 
-                    $results['credit_sales_created'][] = $customerCreditSale;
-
-                    // Handle individual recovery payment if any
-                    if (floatval($creditSaleData['payment_received'] ?? 0) > 0) {
-                        $customer = Customer::find($creditSaleData['customer_id']);
-                        if ($customer) {
-                            $recoveryResult = $this->recordCustomerPayment([
-                                'transaction_date' => $settlement->settlement_date,
-                                'customer_id' => $customer->id,
-                                'amount' => $creditSaleData['payment_received'],
-                                'payment_method' => 'cash',
-                                'reference_number' => $settlement->settlement_number,
-                                'description' => 'Recovery payment - ' . ($creditSaleData['notes'] ?? 'Settlement ' . $settlement->settlement_number),
-                                'sales_settlement_id' => $settlement->id,
-                                'employee_id' => $settlement->employee_id,
-                                'credit_sale_id' => $customerCreditSale->id,
-                                'notes' => 'Recovery: ' . ($creditSaleData['notes'] ?? null),
-                            ]);
-
-                            $results['customer_entries'][] = $recoveryResult;
-                        }
-                    }
-                }
-
-                // Reload the settlement to get the newly created creditSales
-                $settlement->load('creditSales');
+            foreach ($draftCreditSales as $creditSale) {
+                // Update status to posted
+                $creditSale->update(['status' => 'posted']);
+                $results['credit_sales_posted'][] = $creditSale;
             }
+
+            // Reload the settlement to get the updated creditSales
+            $settlement->load('creditSales');
 
             // Process credit sales (both customer and salesman ledgers)
             foreach ($settlement->creditSales as $creditSale) {
@@ -341,7 +314,7 @@ class LedgerService
             return [
                 'success' => false,
                 'data' => null,
-                'message' => 'Failed to process settlement: ' . $e->getMessage(),
+                'message' => 'Failed to process settlement: '.$e->getMessage(),
             ];
         }
     }

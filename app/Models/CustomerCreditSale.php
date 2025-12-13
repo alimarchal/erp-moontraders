@@ -17,6 +17,7 @@ class CustomerCreditSale extends Model
         'invoice_number',
         'sale_amount',
         'notes',
+        'status',
     ];
 
     protected function casts(): array
@@ -49,5 +50,20 @@ class CustomerCreditSale extends Model
     public function customerLedger(): BelongsTo
     {
         return $this->belongsTo(CustomerLedger::class, 'id', 'credit_sale_id');
+    }
+
+    public function isDraft(): bool
+    {
+        return $this->status === 'draft';
+    }
+
+    public function isPosted(): bool
+    {
+        return $this->status === 'posted';
+    }
+
+    public function isCancelled(): bool
+    {
+        return $this->status === 'cancelled';
     }
 }

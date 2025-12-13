@@ -25,7 +25,6 @@ class SalesSettlement extends Model
         'cash_sales_amount',
         'cheque_sales_amount',
         'credit_sales_amount',
-        'credit_sales_data',
         'credit_recoveries',
         'total_quantity_sold',
         'total_quantity_returned',
@@ -63,7 +62,6 @@ class SalesSettlement extends Model
         'cash_sales_amount' => 'decimal:2',
         'cheque_sales_amount' => 'decimal:2',
         'credit_sales_amount' => 'decimal:2',
-        'credit_sales_data' => 'array',
         'credit_recoveries' => 'decimal:2',
         'total_quantity_sold' => 'decimal:3',
         'total_quantity_returned' => 'decimal:3',
@@ -180,5 +178,16 @@ class SalesSettlement extends Model
     public function canBeEdited(): bool
     {
         return $this->status === 'draft';
+    }
+
+    // Relationship scopes for credit sales by status
+    public function draftCreditSales(): HasMany
+    {
+        return $this->creditSales()->where('status', 'draft');
+    }
+
+    public function postedCreditSales(): HasMany
+    {
+        return $this->creditSales()->where('status', 'posted');
     }
 }

@@ -410,7 +410,7 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         {{-- Left Column: Cash Denomination Breakdown --}}
-                        <div class="bg-white rounded-lg overflow-hidden">
+                        <div class="bg-white overflow-hidden">
                             <div class="bg-gradient-to-r from-green-500 to-green-600 px-4 py-2">
                                 <h4 class="text-sm font-bold text-white">Cash Detail (Denomination Breakdown)</h4>
                             </div>
@@ -551,7 +551,7 @@
                         </div>
 
                         {{-- Middle Column: Expense Detail --}}
-                        <div class="bg-white rounded-lg overflow-hidden">
+                        <div class="bg-white overflow-hidden">
                             <div class="bg-gradient-to-r from-red-500 to-red-600 px-4 py-2">
                                 <h4 class="text-sm font-bold text-white">Expense Detail</h4>
                             </div>
@@ -629,7 +629,7 @@
                         </div>
 
                         {{-- Third Column: Sales Summary --}}
-                        <div class="bg-white rounded-lg overflow-hidden">
+                        <div class="bg-white overflow-hidden">
                             <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2">
                                 <h4 class="text-sm font-bold text-white">Sales Summary</h4>
                             </div>
@@ -916,7 +916,7 @@
                                     <h4 class="text-sm font-bold text-white">Sales Performance</h4>
                                 </div>
                                 <table
-                                    style="border-collapse: collapse; width: 100%; border: 1px solid #000; font-size: 11px;">
+                                    style="border-collapse: collapse; width: 100%; font-size: 11px;">
                                     <thead>
                                         <tr style="background-color: #f8fafc;">
                                             <th
@@ -961,7 +961,7 @@
                                     <h4 class="text-sm font-bold text-white">Profitability Analysis</h4>
                                 </div>
                                 <table
-                                    style="border-collapse: collapse; width: 100%; border: 1px solid #000; font-size: 11px;">
+                                    style="border-collapse: collapse; width: 100%; font-size: 11px;">
                                     <thead>
                                         <tr style="background-color: #f8fafc;">
                                             <th
@@ -1028,7 +1028,7 @@
                                     <h4 class="text-sm font-bold text-white">Final Summary</h4>
                                 </div>
                                 <table
-                                    style="border-collapse: collapse; width: 100%; border: 1px solid #000; font-size: 11px;">
+                                    style="border-collapse: collapse; width: 100%; font-size: 11px;">
                                     <thead>
                                         <tr style="background-color: #f8fafc;">
                                             <th

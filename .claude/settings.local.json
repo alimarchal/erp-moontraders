@@ -23,7 +23,9 @@
       "mcp__laravel-boost__read-log-entries",
       "mcp__laravel-boost__browser-logs",
       "Bash(curl:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "mcp__laravel-boost__list-routes",
+      "mcp__laravel-boost__get-absolute-url"
     ],
     "deny": [],
     "ask": []

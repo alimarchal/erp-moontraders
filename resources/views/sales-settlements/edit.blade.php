@@ -255,34 +255,104 @@
 
                                         {{-- Credit Sales, Bank Transfer and Cheque Payment Links with Totals --}}
                                         <div class="mt-3 space-y-3">
-                                            {{-- Credit Sales --}}
-                                            <div
-                                                class="border border-orange-300 rounded-lg overflow-hidden bg-orange-50">
-                                                <button type="button"
-                                                    class="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
-                                                    onclick="window.dispatchEvent(new CustomEvent('open-credit-sales-modal'))">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                    </svg>
-                                                    Creditors / Credit Sales Breakdown
-                                                </button>
-                                                <div class="px-4 py-2 bg-white border-t border-orange-200">
-                                                    <div class="flex justify-between items-center mb-1">
-                                                        <span class="text-xs font-semibold text-orange-900">Total Credit
-                                                            Sales:</span>
-                                                        <span class="text-sm font-bold text-orange-700"
-                                                            id="creditSalesTotalDisplay">₨ 0.00</span>
-                                                    </div>
-                                                    <div class="flex justify-between items-center">
-                                                        <span class="text-xs font-semibold text-green-900">Total
-                                                            Recovery:</span>
-                                                        <span class="text-sm font-bold text-green-700"
-                                                            id="creditRecoveryTotalDisplay">₨ 0.00</span>
-                                                    </div>
+                                            {{-- Credit Sales Inline Table --}}
+                                            <div class="border border-orange-300 rounded-lg overflow-hidden bg-orange-50"
+                                                x-data="creditSalesManager(@js($customers), @js($settlement->creditSales))">
+                                                <div class="bg-gradient-to-r from-orange-600 to-orange-700 px-3 py-2 flex justify-between items-center">
+                                                    <h4 class="text-sm font-bold text-white">Creditors / Credit Sales</h4>
+                                                    <button type="button" @click="showAddForm = !showAddForm"
+                                                        class="text-xs bg-white text-orange-600 px-2 py-0.5 rounded font-semibold hover:bg-orange-50">
+                                                        + Add More
+                                                    </button>
                                                 </div>
+                                                <div class="p-2">
+                                                    {{-- Add Form (collapsible) --}}
+                                                    <div x-show="showAddForm" x-collapse class="mb-2 p-2 bg-white rounded border border-orange-200">
+                                                        <div class="grid grid-cols-12 gap-1 text-xs">
+                                                            <div class="col-span-4">
+                                                                <label class="text-[10px] text-gray-600">Customer</label>
+                                                                <select x-model="form.customer_id" @change="onCustomerChange()"
+                                                                    class="w-full text-xs border-gray-300 rounded py-0.5 px-1">
+                                                                    <option value="">Select Customer...</option>
+                                                                    <template x-for="customer in customers" :key="customer.id">
+                                                                        <option :value="customer.id" x-text="customer.customer_name"></option>
+                                                                    </template>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-span-2">
+                                                                <label class="text-[10px] text-gray-600">Prev Balance</label>
+                                                                <input type="text" x-model="form.previous_balance" readonly
+                                                                    class="w-full text-xs border-gray-300 rounded py-0.5 px-1 bg-gray-100 text-right" />
+                                                            </div>
+                                                            <div class="col-span-2">
+                                                                <label class="text-[10px] text-gray-600">Credit Sale</label>
+                                                                <input type="number" x-model.number="form.sale_amount" min="0" step="0.01"
+                                                                    class="w-full text-xs border-gray-300 rounded py-0.5 px-1 text-right" />
+                                                            </div>
+                                                            <div class="col-span-2">
+                                                                <label class="text-[10px] text-gray-600">Recovery</label>
+                                                                <input type="number" x-model.number="form.payment_received" min="0" step="0.01"
+                                                                    class="w-full text-xs border-gray-300 rounded py-0.5 px-1 text-right" />
+                                                            </div>
+                                                            <div class="col-span-2 flex items-end">
+                                                                <button type="button" @click="addEntry()"
+                                                                    class="w-full text-xs bg-orange-600 text-white px-2 py-1 rounded font-semibold hover:bg-orange-700">
+                                                                    Add
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    {{-- Entries Table --}}
+                                                    <table class="w-full text-xs">
+                                                        <thead>
+                                                            <tr class="border-b border-gray-300 bg-gray-50">
+                                                                <th class="py-1 px-1 text-left text-gray-700">Customer</th>
+                                                                <th class="py-1 px-1 text-right text-gray-700">Prev Bal</th>
+                                                                <th class="py-1 px-1 text-right text-gray-700">Credit</th>
+                                                                <th class="py-1 px-1 text-right text-gray-700">Recovery</th>
+                                                                <th class="py-1 px-1 text-right text-gray-700">New Bal</th>
+                                                                <th class="py-1 px-1 w-6"></th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody class="divide-y divide-gray-200">
+                                                            <template x-if="entries.length === 0">
+                                                                <tr>
+                                                                    <td colspan="6" class="py-2 px-1 text-center text-gray-400 italic">
+                                                                        No credit sales entries yet
+                                                                    </td>
+                                                                </tr>
+                                                            </template>
+                                                            <template x-for="(entry, index) in entries" :key="index">
+                                                                <tr>
+                                                                    <td class="py-1 px-1 truncate max-w-[100px]" x-text="entry.customer_name"></td>
+                                                                    <td class="py-1 px-1 text-right" x-text="formatNumber(entry.previous_balance)"></td>
+                                                                    <td class="py-1 px-1 text-right text-orange-700 font-semibold" x-text="formatNumber(entry.sale_amount)"></td>
+                                                                    <td class="py-1 px-1 text-right text-green-700 font-semibold" x-text="formatNumber(entry.payment_received)"></td>
+                                                                    <td class="py-1 px-1 text-right text-blue-700 font-bold" x-text="formatNumber(entry.new_balance)"></td>
+                                                                    <td class="py-1 px-1 text-center">
+                                                                        <button type="button" @click="removeEntry(index)"
+                                                                            class="text-red-500 hover:text-red-700">×</button>
+                                                                    </td>
+                                                                    {{-- Hidden inputs --}}
+                                                                    <input type="hidden" :name="'credit_sales[' + index + '][customer_id]'" :value="entry.customer_id" />
+                                                                    <input type="hidden" :name="'credit_sales[' + index + '][sale_amount]'" :value="entry.sale_amount" />
+                                                                    <input type="hidden" :name="'credit_sales[' + index + '][payment_received]'" :value="entry.payment_received" />
+                                                                </tr>
+                                                            </template>
+                                                        </tbody>
+                                                        <tfoot>
+                                                            <tr class="bg-orange-100 border-t-2 border-orange-300">
+                                                                <td colspan="2" class="py-1 px-1 font-bold text-orange-900">Total</td>
+                                                                <td class="py-1 px-1 text-right font-bold text-orange-900" x-text="formatNumber(creditTotal)"></td>
+                                                                <td class="py-1 px-1 text-right font-bold text-green-900" x-text="formatNumber(recoveryTotal)"></td>
+                                                                <td colspan="2"></td>
+                                                            </tr>
+                                                        </tfoot>
+                                                    </table>
+                                                </div>
+                                                {{-- Hidden inputs for totals --}}
+                                                <input type="hidden" id="credit_sales_amount" name="credit_sales_amount" :value="creditTotal" />
+                                                <input type="hidden" id="credit_recoveries_total" name="credit_recoveries_total" :value="recoveryTotal" />
                                             </div>
 
                                             {{-- Bank Transfer --}}
@@ -356,7 +426,7 @@
 
                                 {{-- RIGHT SIDE: Expense Detail Table (Dynamic) --}}
                                 <div class="bg-white rounded-lg border border-gray-300 overflow-hidden"
-                                    x-data="expenseManager()">
+                                    x-data="expenseManager(@js($expenseAccounts))">
                                     <div
                                         class="bg-gradient-to-r from-red-500 to-red-600 px-3 py-2 flex justify-between items-center">
                                         <h4 class="text-sm font-bold text-white">Expense Detail</h4>
@@ -393,17 +463,17 @@
                                                                 </button>
                                                             </template>
                                                             <template x-if="!expense.is_predefined">
-                                                                <div class="flex flex-col gap-1">
-                                                                    <select :id="'expense_account_select_' + expense.id"
-                                                                        class="expense-account-select text-xs border-gray-300 rounded w-full"
-                                                                        @change="onAccountSelect($event, index)">
-                                                                        <option value="">Search expense account...
+                                                                <select @change="onAccountSelect($event, index)"
+                                                                    class="text-xs border-gray-300 rounded w-full py-0.5 px-1">
+                                                                    <option value="">Select expense account...</option>
+                                                                    <template x-for="account in availableAccounts"
+                                                                        :key="account.id">
+                                                                        <option :value="account.id"
+                                                                            :selected="expense.expense_account_id == account.id"
+                                                                            x-text="account.account_code + ' - ' + account.account_name">
                                                                         </option>
-                                                                    </select>
-                                                                    <input type="text" x-model="expense.description"
-                                                                        placeholder="Description (optional)"
-                                                                        class="text-xs border-gray-300 rounded px-1 py-0.5 w-full" />
-                                                                </div>
+                                                                    </template>
+                                                                </select>
                                                             </template>
                                                             {{-- Hidden inputs for form submission --}}
                                                             <input type="hidden"
@@ -617,9 +687,6 @@
                                         <x-cheque-payment-modal
                                             :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
                                             entriesInputId="cheques" />
-                                        <x-credit-sales-modal
-                                            :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
-                                            entriesInputId="credit_sales" />
                                     </div>
                                 </div>
                             </div>
@@ -664,8 +731,10 @@
         }
 
         // Alpine.js component for dynamic expense management (Edit mode)
-        function expenseManager() {
+        function expenseManager(expenseAccounts) {
             return {
+                // Available expense accounts from server
+                availableAccounts: expenseAccounts || [],
                 // Predefined expense accounts shown by default
                 predefinedExpenses: [
                     { id: 1, label: 'Toll Tax', account_code: '52250', expense_account_id: 70, is_predefined: true, amount: 0 },
@@ -680,14 +749,14 @@
                 expenses: [],
                 totalExpenses: 0,
                 nextId: 100, // For dynamically added expenses
-                
+
                 init() {
                     // Load existing expenses from settlementData or use predefined defaults
                     const savedExpenses = settlementData.expenses || [];
-                    
+
                     // Start with predefined expenses
                     this.expenses = JSON.parse(JSON.stringify(this.predefinedExpenses));
-                    
+
                     if (savedExpenses.length > 0) {
                         // Update predefined expenses with saved amounts
                         savedExpenses.forEach(savedExp => {
@@ -709,9 +778,9 @@
                             }
                         });
                     }
-                    
+
                     this.calculateTotal();
-                    
+
                     // Listen for advance tax updates from modal
                     window.addEventListener('advance-tax-updated', (e) => {
                         const advanceTaxExpense = this.expenses.find(exp => exp.expense_account_id === 18);
@@ -721,7 +790,7 @@
                         }
                     });
                 },
-                
+
                 addExpense() {
                     const newId = this.nextId++;
                     this.expenses.push({
@@ -733,63 +802,26 @@
                         amount: 0,
                         description: ''
                     });
-                    
-                    // Initialize Select2 for the new expense after DOM update
-                    this.$nextTick(() => {
-                        this.initExpenseSelect2(newId);
-                    });
                 },
-                
-                initExpenseSelect2(expenseId) {
-                    const selectEl = document.getElementById('expense_account_select_' + expenseId);
-                    if (!selectEl) return;
-                    
-                    const self = this;
-                    $(selectEl).select2({
-                        width: '100%',
-                        placeholder: 'Search expense account...',
-                        allowClear: true,
-                        ajax: {
-                            url: '{{ route("api.chart-of-accounts.expenses") }}',
-                            dataType: 'json',
-                            delay: 250,
-                            data: function(params) {
-                                return { q: params.term };
-                            },
-                            processResults: function(data) {
-                                return {
-                                    results: data.map(account => ({
-                                        id: account.id,
-                                        text: account.account_code + ' - ' + account.account_name,
-                                        account_code: account.account_code,
-                                        account_name: account.account_name
-                                    }))
-                                };
-                            },
-                            cache: true
-                        }
-                    }).on('select2:select', function(e) {
-                        const expenseIndex = self.expenses.findIndex(exp => exp.id === expenseId);
-                        if (expenseIndex !== -1) {
-                            self.expenses[expenseIndex].expense_account_id = e.params.data.id;
-                            self.expenses[expenseIndex].account_code = e.params.data.account_code;
-                            self.expenses[expenseIndex].label = e.params.data.account_name;
-                        }
-                    });
-                },
-                
+
                 onAccountSelect(event, index) {
-                    // Handled by Select2 event
+                    const selectedId = parseInt(event.target.value);
+                    if (selectedId) {
+                        const account = this.availableAccounts.find(a => a.id === selectedId);
+                        if (account) {
+                            this.expenses[index].expense_account_id = account.id;
+                            this.expenses[index].account_code = account.account_code;
+                            this.expenses[index].label = account.account_name;
+                        }
+                    } else {
+                        this.expenses[index].expense_account_id = null;
+                        this.expenses[index].account_code = '';
+                        this.expenses[index].label = '';
+                    }
                 },
-                
+
                 removeExpense(index) {
                     if (!this.expenses[index].is_predefined) {
-                        const expenseId = this.expenses[index].id;
-                        // Destroy Select2 before removing
-                        const selectEl = document.getElementById('expense_account_select_' + expenseId);
-                        if (selectEl && $(selectEl).data('select2')) {
-                            $(selectEl).select2('destroy');
-                        }
                         this.expenses.splice(index, 1);
                         this.calculateTotal();
                     }
@@ -808,6 +840,150 @@
                     if (typeof updateSalesSummary === 'function') {
                         updateSalesSummary();
                     }
+                }
+            }
+        }
+
+        // Alpine.js component for credit sales management (Edit mode)
+        function creditSalesManager(customers, existingCreditSales) {
+            return {
+                customers: customers || [],
+                entries: [],
+                showAddForm: false,
+                form: {
+                    customer_id: '',
+                    previous_balance: 0,
+                    sale_amount: '',
+                    payment_received: ''
+                },
+
+                init() {
+                    // Load existing credit sales entries
+                    if (existingCreditSales && existingCreditSales.length > 0) {
+                        this.entries = existingCreditSales.map(cs => {
+                            const customer = this.customers.find(c => c.id == cs.customer_id);
+                            const previousBalance = parseFloat(cs.previous_balance) || 0;
+                            const saleAmount = parseFloat(cs.sale_amount) || 0;
+                            const paymentReceived = parseFloat(cs.payment_received) || 0;
+                            return {
+                                customer_id: cs.customer_id,
+                                customer_name: customer ? customer.customer_name : 'Unknown',
+                                previous_balance: previousBalance,
+                                sale_amount: saleAmount,
+                                payment_received: paymentReceived,
+                                new_balance: previousBalance + saleAmount - paymentReceived
+                            };
+                        });
+                    }
+                    this.syncTotals();
+                },
+
+                onCustomerChange() {
+                    const customerId = this.form.customer_id;
+                    if (!customerId) {
+                        this.form.previous_balance = 0;
+                        return;
+                    }
+
+                    // Find customer and get receivable_balance from customers array
+                    const customer = this.customers.find(c => c.id == customerId);
+                    if (customer) {
+                        this.form.previous_balance = parseFloat(customer.receivable_balance) || 0;
+                    } else {
+                        // Fallback to API call
+                        fetch(`/api/customers/${customerId}/balance`)
+                            .then(response => response.json())
+                            .then(data => {
+                                this.form.previous_balance = parseFloat(data.balance) || 0;
+                            })
+                            .catch(() => {
+                                this.form.previous_balance = 0;
+                            });
+                    }
+                },
+
+                addEntry() {
+                    const customerId = this.form.customer_id;
+                    const saleAmount = parseFloat(this.form.sale_amount) || 0;
+                    const paymentReceived = parseFloat(this.form.payment_received) || 0;
+
+                    if (!customerId) {
+                        alert('Please select a customer.');
+                        return;
+                    }
+
+                    if (saleAmount === 0 && paymentReceived === 0) {
+                        alert('Please enter either a credit sale amount or recovery amount.');
+                        return;
+                    }
+
+                    const customer = this.customers.find(c => c.id == customerId);
+                    const customerName = customer ? customer.customer_name : 'Unknown';
+                    const previousBalance = parseFloat(this.form.previous_balance) || 0;
+                    const newBalance = previousBalance + saleAmount - paymentReceived;
+
+                    this.entries.push({
+                        customer_id: customerId,
+                        customer_name: customerName,
+                        previous_balance: previousBalance,
+                        sale_amount: saleAmount,
+                        payment_received: paymentReceived,
+                        new_balance: newBalance
+                    });
+
+                    // Reset form
+                    this.form.customer_id = '';
+                    this.form.previous_balance = 0;
+                    this.form.sale_amount = '';
+                    this.form.payment_received = '';
+
+                    // Trigger summary update
+                    this.syncTotals();
+                },
+
+                removeEntry(index) {
+                    this.entries.splice(index, 1);
+                    this.syncTotals();
+                },
+
+                syncTotals() {
+                    // Update displays
+                    const creditDisplay = document.getElementById('creditSalesTotalDisplay');
+                    if (creditDisplay) {
+                        creditDisplay.textContent = '₨ ' + this.creditTotal.toLocaleString('en-PK', {minimumFractionDigits: 2});
+                    }
+
+                    const recoveryDisplay = document.getElementById('creditRecoveryTotalDisplay');
+                    if (recoveryDisplay) {
+                        recoveryDisplay.textContent = '₨ ' + this.recoveryTotal.toLocaleString('en-PK', {minimumFractionDigits: 2});
+                    }
+
+                    // Update summary fields
+                    const summaryCredit = document.getElementById('summary_credit');
+                    if (summaryCredit) {
+                        summaryCredit.value = this.creditTotal.toFixed(2);
+                    }
+
+                    const summaryRecovery = document.getElementById('summary_recovery');
+                    if (summaryRecovery) {
+                        summaryRecovery.value = this.recoveryTotal.toFixed(2);
+                    }
+
+                    if (typeof updateSalesSummary === 'function') {
+                        updateSalesSummary();
+                    }
+                },
+
+                formatNumber(value) {
+                    return parseFloat(value || 0).toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                },
+
+                get creditTotal() {
+                    return this.entries.reduce((sum, entry) => sum + (parseFloat(entry.sale_amount) || 0), 0);
+                },
+
+                get recoveryTotal() {
+                    return this.entries.reduce((sum, entry) => sum + (parseFloat(entry.payment_received) || 0), 0);
                 }
             }
         }

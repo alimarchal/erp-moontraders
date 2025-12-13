@@ -639,8 +639,22 @@ class SalesSettlementController extends Controller
             'expenses',
         ]);
 
+        // Get expense posting accounts (accounts starting with 5, non-group, active)
+        $expenseAccounts = \App\Models\ChartOfAccount::where('account_code', 'LIKE', '5%')
+            ->where('is_group', false)
+            ->where('is_active', true)
+            ->orderBy('account_code')
+            ->get(['id', 'account_code', 'account_name']);
+
+        // Get customers for credit sales
+        $customers = Customer::where('is_active', true)
+            ->orderBy('customer_name')
+            ->get(['id', 'customer_code', 'customer_name', 'receivable_balance']);
+
         return view('sales-settlements.edit', [
             'settlement' => $salesSettlement,
+            'expenseAccounts' => $expenseAccounts,
+            'customers' => $customers,
         ]);
     }
 

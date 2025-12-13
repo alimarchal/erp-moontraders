@@ -131,7 +131,83 @@
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {{-- LEFT SIDE: Cash Detail (Denomination Breakdown) --}}
                                 <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
-                                    <div class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2">
+
+                                    {{-- Credit Sales, Bank Transfer and Cheque Payment Links with Totals --}}
+                                    <div class=" space-y-3">
+                                        {{-- Credit Sales --}}
+                                        <div class="border border-orange-300 rounded-lg overflow-hidden bg-orange-50">
+                                            <button type="button"
+                                                class="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
+                                                onclick="window.dispatchEvent(new CustomEvent('open-credit-sales-modal'))">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                                                </svg>
+                                                Creditors / Credit Sales Breakdown
+                                            </button>
+                                            <div class="px-4 py-2 bg-white border-t border-orange-200">
+                                                <div class="flex justify-between items-center mb-1">
+                                                    <span class="text-xs font-semibold text-orange-900">Total Credit
+                                                        Sales:</span>
+                                                    <span class="text-sm font-bold text-orange-700"
+                                                        id="creditSalesTotalDisplay">₨ 0.00</span>
+                                                </div>
+                                                <div class="flex justify-between items-center">
+                                                    <span class="text-xs font-semibold text-green-900">Total
+                                                        Recovery:</span>
+                                                    <span class="text-sm font-bold text-green-700"
+                                                        id="creditRecoveryTotalDisplay">₨ 0.00</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Bank Transfer --}}
+                                        <div class="border border-blue-300 rounded-lg overflow-hidden bg-blue-50">
+                                            <button type="button"
+                                                class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
+                                                onclick="window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'))">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                                                </svg>
+                                                Bank Transfer / Online Payment
+                                            </button>
+                                            <div
+                                                class="px-4 py-2 bg-white border-t border-blue-200 flex justify-between items-center">
+                                                <span class="text-xs font-semibold text-blue-900">Total Bank
+                                                    Transfers:</span>
+                                                <span class="text-sm font-bold text-blue-700"
+                                                    id="bankTransferTotalDisplay">₨ 0.00</span>
+                                            </div>
+                                        </div>
+
+                                        {{-- Cheque Payment --}}
+                                        <div class="border border-purple-300 rounded-lg overflow-hidden bg-purple-50">
+                                            <button type="button"
+                                                class="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
+                                                onclick="window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'))">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                </svg>
+                                                Cheque Payments
+                                            </button>
+                                            <div
+                                                class="px-4 py-2 bg-white border-t border-purple-200 flex justify-between items-center">
+                                                <span class="text-xs font-semibold text-purple-900">Total
+                                                    Cheques:</span>
+                                                <span class="text-sm font-bold text-purple-700"
+                                                    id="chequeTotalDisplay">₨ 0.00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2 mt-3">
                                         <h4 class="text-sm font-bold text-white">Cash Detail (Denomination Breakdown)
                                         </h4>
                                     </div>
@@ -245,83 +321,7 @@
                                             </tbody>
                                         </table>
 
-                                        {{-- Credit Sales, Bank Transfer and Cheque Payment Links with Totals --}}
-                                        <div class="mt-3 space-y-3">
-                                            {{-- Credit Sales --}}
-                                            <div
-                                                class="border border-orange-300 rounded-lg overflow-hidden bg-orange-50">
-                                                <button type="button"
-                                                    class="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
-                                                    onclick="window.dispatchEvent(new CustomEvent('open-credit-sales-modal'))">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                    </svg>
-                                                    Creditors / Credit Sales Breakdown
-                                                </button>
-                                                <div class="px-4 py-2 bg-white border-t border-orange-200">
-                                                    <div class="flex justify-between items-center mb-1">
-                                                        <span class="text-xs font-semibold text-orange-900">Total Credit
-                                                            Sales:</span>
-                                                        <span class="text-sm font-bold text-orange-700"
-                                                            id="creditSalesTotalDisplay">₨ 0.00</span>
-                                                    </div>
-                                                    <div class="flex justify-between items-center">
-                                                        <span class="text-xs font-semibold text-green-900">Total
-                                                            Recovery:</span>
-                                                        <span class="text-sm font-bold text-green-700"
-                                                            id="creditRecoveryTotalDisplay">₨ 0.00</span>
-                                                    </div>
-                                                </div>
-                                            </div>
 
-                                            {{-- Bank Transfer --}}
-                                            <div class="border border-blue-300 rounded-lg overflow-hidden bg-blue-50">
-                                                <button type="button"
-                                                    class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
-                                                    onclick="window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'))">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                    </svg>
-                                                    Bank Transfer / Online Payment
-                                                </button>
-                                                <div
-                                                    class="px-4 py-2 bg-white border-t border-blue-200 flex justify-between items-center">
-                                                    <span class="text-xs font-semibold text-blue-900">Total Bank
-                                                        Transfers:</span>
-                                                    <span class="text-sm font-bold text-blue-700"
-                                                        id="bankTransferTotalDisplay">₨ 0.00</span>
-                                                </div>
-                                            </div>
-
-                                            {{-- Cheque Payment --}}
-                                            <div
-                                                class="border border-purple-300 rounded-lg overflow-hidden bg-purple-50">
-                                                <button type="button"
-                                                    class="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
-                                                    onclick="window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'))">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                    Cheque Payments
-                                                </button>
-                                                <div
-                                                    class="px-4 py-2 bg-white border-t border-purple-200 flex justify-between items-center">
-                                                    <span class="text-xs font-semibold text-purple-900">Total
-                                                        Cheques:</span>
-                                                    <span class="text-sm font-bold text-purple-700"
-                                                        id="chequeTotalDisplay">₨ 0.00</span>
-                                                </div>
-                                            </div>
-                                        </div>
 
                                         {{-- Hidden inputs for totals (will be populated by modals) --}}
                                         <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"

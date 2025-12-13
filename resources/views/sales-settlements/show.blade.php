@@ -61,28 +61,24 @@
                         <thead>
                             <tr style="background-color: #1e3a5f;">
                                 <th colspan="6"
-                                    style="border: 1px solid #000; padding: 12px; text-align: center; color: white; font-size: 18px; font-weight: bold; letter-spacing: 1px;">
+                                    style=" padding: 12px; text-align: center; color: white; font-size: 18px; font-weight: bold; letter-spacing: 1px;">
                                     SALES SETTLEMENT
                                 </th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td
-                                    style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6; font-weight: bold; width: 15%;">
+                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold; width: 15%;">
                                     Settlement No.</td>
-                                <td
-                                    style="border: 1px solid #000; padding: 8px; width: 18%; font-weight: bold; color: #1e3a5f;">
+                                <td style=" padding: 8px; width: 18%; font-weight: bold; color: #1e3a5f;">
                                     {{ $settlement->settlement_number }}</td>
-                                <td
-                                    style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6; font-weight: bold; width: 15%;">
+                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold; width: 15%;">
                                     Settlement Date</td>
-                                <td style="border: 1px solid #000; padding: 8px; width: 18%;">{{
+                                <td style=" padding: 8px; width: 18%;">{{
                                     \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y') }}</td>
-                                <td
-                                    style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6; font-weight: bold; width: 15%;">
+                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold; width: 15%;">
                                     Status</td>
-                                <td style="border: 1px solid #000; padding: 8px; width: 19%;">
+                                <td style=" padding: 8px; width: 19%;">
                                     <span
                                         style="padding: 4px 12px; border-radius: 4px; font-weight: bold; 
                                         {{ $settlement->status === 'draft' ? 'background-color: #fef3c7; color: #92400e;' : '' }}
@@ -92,27 +88,23 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td
-                                    style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6; font-weight: bold;">
+                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold;">
                                     Goods Issue</td>
-                                <td style="border: 1px solid #000; padding: 8px; font-weight: bold; color: #1e3a5f;">{{
+                                <td style=" padding: 8px; font-weight: bold; color: #1e3a5f;">{{
                                     $settlement->goodsIssue->issue_number }}</td>
-                                <td
-                                    style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6; font-weight: bold;">
+                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold;">
                                     Salesman</td>
-                                <td style="border: 1px solid #000; padding: 8px;">{{ $settlement->employee->full_name }}
+                                <td style=" padding: 8px;">{{ $settlement->employee->full_name }}
                                 </td>
-                                <td
-                                    style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6; font-weight: bold;">
+                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold;">
                                     Vehicle</td>
-                                <td style="border: 1px solid #000; padding: 8px;">{{
+                                <td style=" padding: 8px;">{{
                                     $settlement->vehicle->vehicle_number }}</td>
                             </tr>
                             <tr>
-                                <td
-                                    style="border: 1px solid #000; padding: 8px; background-color: #f3f4f6; font-weight: bold;">
+                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold;">
                                     Warehouse</td>
-                                <td style="border: 1px solid #000; padding: 8px;" colspan="5">{{
+                                <td style=" padding: 8px;" colspan="5">{{
                                     $settlement->warehouse->warehouse_name }}</td>
                             </tr>
                         </tbody>
@@ -254,7 +246,7 @@
                             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
                                 <h4 class="text-sm font-bold text-white">Credit Sales Detail</h4>
                             </div>
-                            <div class="p-3">
+                            <div class="p-1">
                                 <table class="w-full text-xs">
                                     <thead>
                                         <tr class="border-b-2 border-gray-300">
@@ -314,7 +306,7 @@
                             <div class="bg-gradient-to-r from-purple-500 to-purple-600 px-3 py-2">
                                 <h4 class="text-sm font-bold text-white">Cheque Payments</h4>
                             </div>
-                            <div class="p-3">
+                            <div class="p-1">
                                 <table class="w-full text-xs">
                                     <thead>
                                         <tr class="border-b-2 border-gray-300">
@@ -356,7 +348,7 @@
                             <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2">
                                 <h4 class="text-sm font-bold text-white">Bank Transfers</h4>
                             </div>
-                            <div class="p-3">
+                            <div class="p-1">
                                 <table class="w-full text-xs">
                                     <thead>
                                         <tr class="border-b-2 border-gray-300">
@@ -411,21 +403,21 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                         {{-- Left Column: Cash Denomination Breakdown --}}
                         <div class="bg-white overflow-hidden">
-                            <div class="bg-gradient-to-r from-green-500 to-green-600 px-4 py-2">
-                                <h4 class="text-sm font-bold text-white">Cash Detail (Denomination Breakdown)</h4>
+                            <div class="bg-black px-4 py-2">
+                                <h4 class="text-sm font-bold text-white text-center">Cash Detail (Denomination
+                                    Breakdown)</h4>
                             </div>
-                            <table
-                                style="border-collapse: collapse; width: 100%; border: 1px solid #000; font-size: 11px;">
+                            <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
                                 <thead>
                                     <tr style="background-color: #f8fafc;">
                                         <th
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
+                                            style=" padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
                                             Denomination</th>
                                         <th
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
+                                            style=" padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
                                             Quantity</th>
                                         <th
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
+                                            style=" padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
                                             Amount</th>
                                     </tr>
                                 </thead>
@@ -459,8 +451,8 @@
                                     $totalCash += $amount;
                                     @endphp
                                     <tr>
-                                        <td style="border: 1px solid #000; padding: 3px 6px;">{{ $denom['label'] }}</td>
-                                        <td style="border: 1px solid #000; padding: 3px 6px; text-align: right;">
+                                        <td style="padding: 3px 6px; border: none;">{{ $denom['label'] }}</td>
+                                        <td style="padding: 3px 6px; text-align: right; border: none;">
                                             @if(isset($denom['is_coins']) && $denom['is_coins'])
                                             -
                                             @else
@@ -468,17 +460,16 @@
                                             @endif
                                         </td>
                                         <td
-                                            style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600;">
+                                            style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;">
                                             {{ number_format($amount, 2) }}
                                         </td>
                                     </tr>
                                     @endforeach
                                     <tr style="background-color: #f0fdf4; border-top: 2px solid #059669;">
-                                        <td colspan="2"
-                                            style="border: 1px solid #000; padding: 4px 6px; font-weight: bold; color: #047857;">
+                                        <td colspan="2" style="padding: 4px 6px; font-weight: bold; color: #047857;">
                                             Total Physical Cash</td>
                                         <td
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #047857;">
+                                            style="padding: 4px 6px; text-align: right; font-weight: bold; color: #047857;">
                                             {{ number_format($totalCash, 2) }}
                                         </td>
                                     </tr>
@@ -486,7 +477,7 @@
                                     {{-- Bank Transfer --}}
                                     @if($settlement->bank_transfer_amount > 0)
                                     <tr style="background-color: #eff6ff;">
-                                        <td colspan="2" style="border: 1px solid #000; padding: 3px 6px;">
+                                        <td colspan="2" style="padding: 3px 6px;">
                                             <span style="font-weight: 600; color: #1e40af;">Bank Transfer / Online
                                                 Payment</span>
                                             @if($settlement->bankAccount)
@@ -497,7 +488,7 @@
                                             @endif
                                         </td>
                                         <td
-                                            style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: #1e40af;">
+                                            style="padding: 3px 6px; text-align: right; font-weight: 600; color: #1e40af; border: none;">
                                             {{ number_format($settlement->bank_transfer_amount, 2) }}
                                         </td>
                                     </tr>
@@ -506,7 +497,7 @@
                                     {{-- Cheques --}}
                                     @if($settlement->cheque_count > 0 && $settlement->cheque_details)
                                     <tr style="background-color: #faf5ff;">
-                                        <td colspan="3" style="border: 1px solid #000; padding: 4px 6px;">
+                                        <td colspan="3" style="padding: 4px 6px;">
                                             <div style="font-weight: 600; color: #7c3aed; margin-bottom: 4px;">Cheque
                                                 Details
                                                 ({{
@@ -537,11 +528,10 @@
                                         </td>
                                     </tr>
                                     <tr style="background-color: #e9d5ff;">
-                                        <td colspan="2"
-                                            style="border: 1px solid #000; padding: 4px 6px; font-weight: 600; color: #7c3aed;">
+                                        <td colspan="2" style="padding: 4px 6px; font-weight: 600; color: #7c3aed;">
                                             Total Cheques</td>
                                         <td
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: 600; color: #7c3aed;">
+                                            style="padding: 4px 6px; text-align: right; font-weight: 600; color: #7c3aed;">
                                             {{ number_format($settlement->cheques_collected, 2) }}
                                         </td>
                                     </tr>
@@ -552,18 +542,17 @@
 
                         {{-- Middle Column: Expense Detail --}}
                         <div class="bg-white overflow-hidden">
-                            <div class="bg-gradient-to-r from-red-500 to-red-600 px-4 py-2">
-                                <h4 class="text-sm font-bold text-white">Expense Detail</h4>
+                            <div class="bg-black px-4 py-2">
+                                <h4 class="text-sm font-bold text-white text-center">Expense Detail</h4>
                             </div>
-                            <table
-                                style="border-collapse: collapse; width: 100%; border: 1px solid #000; font-size: 11px;">
+                            <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
                                 <thead>
                                     <tr style="background-color: #f8fafc;">
                                         <th
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
+                                            style=" padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
                                             Expense Account</th>
                                         <th
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
+                                            style=" padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
                                             Amount</th>
                                     </tr>
                                 </thead>
@@ -572,7 +561,7 @@
                                     @forelse($settlement->expenses as $expense)
                                     @php $totalExpenses += $expense->amount; @endphp
                                     <tr>
-                                        <td style="border: 1px solid #000; padding: 3px 6px;">
+                                        <td style="padding: 3px 6px; border: none;">
                                             @if($expense->expenseAccount)
                                             {{ $expense->expenseAccount->account_name }}
                                             <span style="color: #374151;">({{
@@ -582,13 +571,13 @@
                                             @endif
                                         </td>
                                         <td
-                                            style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600;">
+                                            style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;">
                                             {{ number_format($expense->amount, 2) }}
                                         </td>
                                     </tr>
                                     @empty
                                     <tr style="background-color: #f9fafb;">
-                                        <td style="border: 1px solid #000; padding: 3px 6px;" colspan="2">No expenses
+                                        <td style="padding: 3px 6px;" colspan="2">No expenses
                                             recorded</td>
                                     </tr>
                                     @endforelse
@@ -598,7 +587,7 @@
                                     @foreach($settlement->advanceTaxes as $tax)
                                     @php $totalExpenses += $tax->tax_amount; @endphp
                                     <tr style="background-color: #fefce8;">
-                                        <td style="border: 1px solid #000; padding: 3px 6px;">
+                                        <td style="padding: 3px 6px;">
                                             Advance Tax - {{ $tax->customer->customer_name ?? 'N/A' }}
                                             @if($tax->invoice_number)
                                             <span style="color: #374151;">(Inv: {{ $tax->invoice_number
@@ -607,7 +596,7 @@
                                             <span style="color: #374151;">(A/C 1171)</span>
                                         </td>
                                         <td
-                                            style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600;">
+                                            style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;">
                                             {{ number_format($tax->tax_amount, 0) }}
                                         </td>
                                     </tr>
@@ -615,12 +604,11 @@
                                     @endif
 
                                     <tr style="background-color: #fef2f2; border-top: 2px solid #dc2626;">
-                                        <td
-                                            style="border: 1px solid #000; padding: 4px 6px; font-weight: bold; color: #991b1b;">
+                                        <td style="padding: 4px 6px; font-weight: bold; color: #991b1b;">
                                             Total
                                             Expenses</td>
                                         <td
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #991b1b;">
+                                            style="padding: 4px 6px; text-align: right; font-weight: bold; color: #991b1b;">
                                             {{ number_format($totalExpenses, 2) }}
                                         </td>
                                     </tr>
@@ -630,70 +618,67 @@
 
                         {{-- Third Column: Sales Summary --}}
                         <div class="bg-white overflow-hidden">
-                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2">
-                                <h4 class="text-sm font-bold text-white">Sales Summary</h4>
+                            <div class="bg-black px-4 py-2">
+                                <h4 class="text-sm font-bold text-white text-center">Sales Summary</h4>
                             </div>
-                            <table
-                                style="border-collapse: collapse; width: 100%; border: 1px solid #000; font-size: 11px;">
+                            <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
                                 <thead>
                                     <tr style="background-color: #f8fafc;">
                                         <th
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
+                                            style=" padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
                                             Description</th>
                                         <th
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
+                                            style=" padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
                                             Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td style="border: 1px solid #000; padding: 3px 6px;">Net Sale (Sold Items
+                                        <td style="padding: 3px 6px; border: none;">Net Sale (Sold Items
                                             Value)</td>
                                         <td
-                                            style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600;">
+                                            style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;">
                                             {{
                                             number_format($settlement->items->sum('total_sales_value'), 2) }}</td>
                                     </tr>
                                     <tr>
-                                        <td style="border: 1px solid #000; padding: 3px 6px;">Recovery (From
+                                        <td style="padding: 3px 6px; border: none;">Recovery (From
                                             Customers)</td>
                                         <td
-                                            style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: #0f766e;">
+                                            style="padding: 3px 6px; text-align: right; font-weight: 600; color: #0f766e; border: none;">
                                             {{
                                             number_format($settlement->credit_recoveries ?? 0, 2) }}</td>
                                     </tr>
                                     <tr style="background-color: #eff6ff;">
-                                        <td
-                                            style="border: 1px solid #000; padding: 4px 6px; font-weight: bold; color: #1e40af;">
+                                        <td style="padding: 4px 6px; font-weight: bold; color: #1e40af;">
                                             Total Sale</td>
                                         <td
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #1e40af;">
+                                            style="padding: 4px 6px; text-align: right; font-weight: bold; color: #1e40af;">
                                             {{
                                             number_format($settlement->items->sum('total_sales_value') +
                                             ($settlement->credit_recoveries ?? 0), 2) }}</td>
                                     </tr>
                                     <tr>
-                                        <td style="border: 1px solid #000; padding: 3px 6px;">Credit Extended</td>
+                                        <td style="padding: 3px 6px; border: none;">Credit Extended</td>
                                         <td
-                                            style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: #ea580c;">
+                                            style="padding: 3px 6px; text-align: right; font-weight: 600; color: #ea580c; border: none;">
                                             {{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}
                                         </td>
                                     </tr>
                                     <tr style="background-color: #f9fafb;">
-                                        <td style="border: 1px solid #000; padding: 4px 6px; font-weight: 600;">
+                                        <td style="padding: 4px 6px; font-weight: 600;">
                                             Balance</td>
-                                        <td
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold;">
+                                        <td style="padding: 4px 6px; text-align: right; font-weight: bold;">
                                             {{
                                             number_format(($settlement->items->sum('total_sales_value') +
                                             ($settlement->credit_recoveries ?? 0)) -
                                             $settlement->creditSales->sum('sale_amount'), 2) }}</td>
                                     </tr>
                                     <tr>
-                                        <td style="border: 1px solid #000; padding: 3px 6px; color: #dc2626;">Less:
+                                        <td style="padding: 3px 6px; color: #dc2626; border: none;">Less:
                                             Expenses</td>
                                         <td
-                                            style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
+                                            style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626; border: none;">
                                             {{
                                             number_format($settlement->expenses->sum('amount') ?? 0, 2) }}</td>
                                     </tr>
@@ -704,16 +689,15 @@
                                     ($settlement->expenses->sum('amount') ?? 0);
                                     @endphp
                                     <tr style="background-color: #eef2ff;">
-                                        <td
-                                            style="border: 1px solid #000; padding: 4px 6px; font-weight: bold; color: #3730a3;">
+                                        <td style="padding: 4px 6px; font-weight: bold; color: #3730a3;">
                                             Net Balance</td>
                                         <td
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #3730a3;">
+                                            style="padding: 4px 6px; text-align: right; font-weight: bold; color: #3730a3;">
                                             {{
                                             number_format($netBalance, 2) }}</td>
                                     </tr>
                                     <tr>
-                                        <td style="border: 1px solid #000; padding: 3px 6px;">
+                                        <td style="padding: 3px 6px; border: none;">
                                             Cash Received (counted)
                                             <div style="font-size: 10px; color: #374151; font-style: italic;">
                                                 Physical + Bank + Cheques
@@ -737,16 +721,15 @@
                                         0) + ($settlement->cheques_collected ?? 0);
                                         @endphp
                                         <td
-                                            style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: #059669;">
+                                            style="padding: 3px 6px; text-align: right; font-weight: 600; color: #059669; border: none;">
                                             {{
                                             number_format($totalCashReceived, 2) }}</td>
                                     </tr>
                                     <tr style="background-color: #f3e8ff; border-top: 2px solid #7c3aed;">
-                                        <td
-                                            style="border: 1px solid #000; padding: 4px 6px; font-weight: bold; color: #6b21a8;">
+                                        <td style="padding: 4px 6px; font-weight: bold; color: #6b21a8;">
                                             Short/Excess</td>
                                         <td
-                                            style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #6b21a8;">
+                                            style="padding: 4px 6px; text-align: right; font-weight: bold; color: #6b21a8;">
                                             {{
                                             number_format($totalCashReceived - $netBalance, 2) }}</td>
                                     </tr>
@@ -819,87 +802,10 @@
                             <h4 class="text-lg font-bold text-black">Cash Reconciliation Summary</h4>
                         </div>
 
-                        {{-- Cash Reconciliation Table - Horizontal Layout --}}
-                        <table style="border-collapse: collapse; width: 100%; border: 1px solid #000;" class="mb-6">
-                            <thead>
-                                <tr style="background-color: #f8fafc;">
-                                    <th
-                                        style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: #166534; background-color: #f0fdf4;">
-                                        <span class="flex items-center justify-center">
-                                            <svg class="w-4 h-4 mr-2 text-green-600" fill="currentColor"
-                                                viewBox="0 0 20 20">
-                                                <path
-                                                    d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zM18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z">
-                                                </path>
-                                            </svg>
-                                            Cash Collected
-                                        </span>
-                                    </th>
-                                    <th
-                                        style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: #1e40af; background-color: #eff6ff;">
-                                        <span class="flex items-center justify-center">
-                                            <svg class="w-4 h-4 mr-2 text-blue-600" fill="currentColor"
-                                                viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd"
-                                                    d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-                                                    clip-rule="evenodd"></path>
-                                            </svg>
-                                            Credit Recovery
-                                        </span>
-                                    </th>
-                                    <th
-                                        style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: #dc2626; background-color: #fef2f2;">
-                                        <span class="flex items-center justify-center">
-                                            <svg class="w-4 h-4 mr-2 text-red-600" fill="currentColor"
-                                                viewBox="0 0 20 20">
-                                                <path fill-rule="evenodd"
-                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                                                    clip-rule="evenodd"></path>
-                                            </svg>
-                                            Total Expenses
-                                        </span>
-                                    </th>
-                                    <th
-                                        style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: #047857; background-color: #ecfdf5; border-top: 2px solid #059669;">
-                                        <span class="flex items-center justify-center">
-                                            <svg class="w-5 h-5 mr-2 text-emerald-600" fill="currentColor"
-                                                viewBox="0 0 20 20">
-                                                <path
-                                                    d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z">
-                                                </path>
-                                                <path fill-rule="evenodd"
-                                                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z"
-                                                    clip-rule="evenodd"></path>
-                                            </svg>
-                                            Net Cash to Deposit
-                                        </span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td
-                                        style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: #166534; background-color: #f0fdf4; font-size: 16px;">
-                                        {{ number_format($settlement->cash_collected ?? 0, 0) }}
-                                    </td>
-                                    <td
-                                        style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: #1e40af; background-color: #eff6ff; font-size: 16px;">
-                                        {{ number_format($settlement->credit_recoveries ?? 0, 0) }}
-                                    </td>
-                                    <td
-                                        style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: #dc2626; background-color: #fef2f2; font-size: 16px;">
-                                        {{ number_format($settlement->expenses->sum('amount') ?? 0, 0) }}
-                                    </td>
-                                    <td
-                                        style="border: 1px solid #000; padding: 4px; text-align: center; font-weight: bold; color: #047857; background-color: #ecfdf5; font-size: 18px;">
-                                        {{ number_format($settlement->cash_to_deposit ?? 0, 0) }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+
 
                         {{-- Financial Performance Cards --}}
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
                             @php
                             $totalSalesValue = $settlement->items->sum('total_sales_value');
                             $totalCOGS = $settlement->items->sum('total_cogs') ?? 0;
@@ -912,33 +818,31 @@
 
                             {{-- Sales Performance Card --}}
                             <div class="bg-white rounded-lg border border-blue-300 overflow-hidden">
-                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2">
-                                    <h4 class="text-sm font-bold text-white">Sales Performance</h4>
+                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2 text-center">
+                                    <h4 class="text-base font-bold text-black">Sales Performance</h4>
                                 </div>
-                                <table
-                                    style="border-collapse: collapse; width: 100%; font-size: 11px;">
+                                <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
                                     <thead>
-                                        <tr style="background-color: #f8fafc;">
+                                        <tr style="background-color: #f8fafc; color: #000;">
                                             <th
-                                                style="border: 1px solid #000; padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
+                                                style="padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
                                                 Description</th>
                                             <th
-                                                style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
+                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
                                                 Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td style="border: 1px solid #000; padding: 3px 6px;">Total Sales Value</td>
-                                            <td
-                                                style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600;">
+                                        <tr style="color: #000;">
+                                            <td style="padding: 3px 6px;">Total Sales Value</td>
+                                            <td style="padding: 3px 6px; text-align: right; font-weight: 600;">
                                                 {{
                                                 number_format($totalSalesValue, 0) }}</td>
                                         </tr>
-                                        <tr>
-                                            <td style="border: 1px solid #000; padding: 3px 6px;">Credit Extended</td>
+                                        <tr style="color: #000;">
+                                            <td style="padding: 3px 6px;">Credit Extended</td>
                                             <td
-                                                style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: #ea580c;">
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #ea580c;">
                                                 {{ number_format($settlement->creditSales->sum('sale_amount'), 0) }}
                                             </td>
                                         </tr>
@@ -957,63 +861,62 @@
 
                             {{-- Profitability Card --}}
                             <div class="bg-white rounded-lg border border-green-300 overflow-hidden">
-                                <div class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2">
-                                    <h4 class="text-sm font-bold text-white">Profitability Analysis</h4>
+                                <div class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2 text-center">
+                                    <h4 class="text-base font-bold text-black">Profitability Analysis</h4>
                                 </div>
-                                <table
-                                    style="border-collapse: collapse; width: 100%; font-size: 11px;">
+                                <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
                                     <thead>
-                                        <tr style="background-color: #f8fafc;">
+                                        <tr style="background-color: #f8fafc; color: #000;">
                                             <th
-                                                style="border: 1px solid #000; padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
+                                                style="padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
                                                 Metric</th>
                                             <th
-                                                style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
+                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
                                                 Value</th>
                                             <th
-                                                style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
+                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
                                                 %</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td style="border: 1px solid #000; padding: 3px 6px;">Total COGS</td>
+                                        <tr style="color: #000;">
+                                            <td style="padding: 3px 6px;">Total COGS</td>
                                             <td
-                                                style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
                                                 {{
                                                 number_format($totalCOGS, 0) }}</td>
-                                            <td style="border: 1px solid #000; padding: 3px 6px; text-align: right;">-
+                                            <td style="padding: 3px 6px; text-align: right;">-
                                             </td>
                                         </tr>
-                                        <tr>
-                                            <td style="border: 1px solid #000; padding: 3px 6px;">Gross Profit</td>
+                                        <tr style="color: #000;">
+                                            <td style="padding: 3px 6px;">Gross Profit</td>
                                             <td
-                                                style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $grossProfit >= 0 ? '#059669' : '#dc2626' }};">
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $grossProfit >= 0 ? '#059669' : '#dc2626' }};">
                                                 {{ number_format($grossProfit, 0) }}</td>
                                             <td
-                                                style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $grossProfitMargin >= 0 ? '#059669' : '#dc2626' }};">
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $grossProfitMargin >= 0 ? '#059669' : '#dc2626' }};">
                                                 {{ number_format($grossProfitMargin, 1) }}%</td>
                                         </tr>
                                         <tr>
-                                            <td style="border: 1px solid #000; padding: 3px 6px;">Total Expenses</td>
+                                            <td style="padding: 3px 6px;">Total Expenses</td>
                                             <td
-                                                style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
                                                 {{
                                                 number_format($totalExpenses, 0) }}</td>
-                                            <td style="border: 1px solid #000; padding: 3px 6px; text-align: right;">-
+                                            <td style="padding: 3px 6px; text-align: right;">-
                                             </td>
                                         </tr>
                                     </tbody>
                                     <tfoot>
-                                        <tr style="background-color: #f0fdf4; border-top: 2px solid #059669;">
-                                            <td
-                                                style="border: 1px solid #000; padding: 4px 6px; font-weight: bold; color: #047857;">
+                                        <tr
+                                            style="background-color: #f0fdf4; border-top: 2px solid #059669; color: #000;">
+                                            <td style="padding: 4px 6px; font-weight: bold; color: #047857;">
                                                 Net Profit:</td>
                                             <td
-                                                style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: {{ $netProfit >= 0 ? '#047857' : '#dc2626' }};">
+                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: {{ $netProfit >= 0 ? '#047857' : '#dc2626' }};">
                                                 {{ number_format($netProfit, 0) }}</td>
                                             <td
-                                                style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: {{ $netProfitMargin >= 0 ? '#047857' : '#dc2626' }};">
+                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: {{ $netProfitMargin >= 0 ? '#047857' : '#dc2626' }};">
                                                 {{ number_format($netProfitMargin, 1) }}%</td>
                                         </tr>
                                     </tfoot>
@@ -1024,58 +927,107 @@
                             <div
                                 class="bg-white rounded-lg border {{ $netProfit >= 0 ? 'border-emerald-300' : 'border-red-300' }} overflow-hidden">
                                 <div
-                                    class="bg-gradient-to-r {{ $netProfit >= 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600' }} px-3 py-2">
-                                    <h4 class="text-sm font-bold text-white">Final Summary</h4>
+                                    class="bg-gradient-to-r {{ $netProfit >= 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600' }} px-3 py-2 text-center">
+                                    <h4 class="text-base font-bold text-black">Final Summary</h4>
                                 </div>
-                                <table
-                                    style="border-collapse: collapse; width: 100%; font-size: 11px;">
+                                <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
                                     <thead>
-                                        <tr style="background-color: #f8fafc;">
+                                        <tr style="background-color: #f8fafc; color: #000;">
                                             <th
-                                                style="border: 1px solid #000; padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
+                                                style="padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
                                                 Summary Item</th>
                                             <th
-                                                style="border: 1px solid #000; padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
+                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
                                                 Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr>
-                                            <td style="border: 1px solid #000; padding: 3px 6px;">Gross Profit</td>
+                                        <tr style="color: #000;">
+                                            <td style="padding: 3px 6px;">Gross Profit</td>
                                             <td
-                                                style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $grossProfit >= 0 ? '#059669' : '#dc2626' }};">
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $grossProfit >= 0 ? '#059669' : '#dc2626' }};">
                                                 {{ number_format($grossProfit, 0) }}</td>
                                         </tr>
-                                        <tr>
-                                            <td style="border: 1px solid #000; padding: 3px 6px;">Less: Expenses
+                                        <tr style="color: #000;">
+                                            <td style="padding: 3px 6px;">Less: Expenses
                                             </td>
                                             <td
-                                                style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
                                                 {{
                                                 number_format($totalExpenses, 0) }}</td>
                                         </tr>
                                     </tbody>
                                     <tfoot>
                                         <tr
-                                            style="background-color: {{ $netProfit >= 0 ? '#ecfdf5' : '#fef2f2' }}; border-top: 2px solid {{ $netProfit >= 0 ? '#059669' : '#dc2626' }};">
+                                            style="background-color: {{ $netProfit >= 0 ? '#ecfdf5' : '#fef2f2' }}; border-top: 2px solid {{ $netProfit >= 0 ? '#059669' : '#dc2626' }}; color: #000;">
                                             <td
-                                                style="border: 1px solid #000; padding: 5px 6px; font-weight: bold; color: {{ $netProfit >= 0 ? '#047857' : '#991b1b' }};">
+                                                style="padding: 5px 6px; font-weight: bold; color: {{ $netProfit >= 0 ? '#047857' : '#991b1b' }};">
                                                 Net Profit After Expenses:
                                             </td>
                                             <td
-                                                style="border: 1px solid #000; padding: 5px 6px; text-align: right; font-weight: bold; color: {{ $netProfit >= 0 ? '#047857' : '#991b1b' }}; font-size: 12px;">
+                                                style="padding: 5px 6px; text-align: right; font-weight: bold; color: {{ $netProfit >= 0 ? '#047857' : '#991b1b' }}; font-size: 12px;">
                                                 {{ number_format($netProfit, 0) }}
                                             </td>
                                         </tr>
-                                        <tr style="background-color: {{ $netProfit >= 0 ? '#f0fdf4' : '#fee2e2' }};">
+                                        <tr
+                                            style="background-color: {{ $netProfit >= 0 ? '#f0fdf4' : '#fee2e2' }}; color: #000;">
                                             <td
-                                                style="border: 1px solid #000; padding: 3px 6px; font-weight: 600; color: {{ $netProfit >= 0 ? '#065f46' : '#7f1d1d' }};">
+                                                style="padding: 3px 6px; font-weight: 600; color: {{ $netProfit >= 0 ? '#065f46' : '#7f1d1d' }};">
                                                 Net Margin:
                                             </td>
                                             <td
-                                                style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $netProfitMargin >= 0 ? '#065f46' : '#7f1d1d' }};">
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $netProfitMargin >= 0 ? '#065f46' : '#7f1d1d' }};">
                                                 {{ number_format($netProfitMargin, 1) }}%
                                             </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            {{-- Cash Summary Card --}}
+                            <div class="bg-white rounded-lg border border-emerald-300 overflow-hidden">
+                                <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-center">
+                                    <h4 class="text-base font-bold text-black">Cash Summary</h4>
+                                </div>
+                                <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
+                                    <thead>
+                                        <tr style="background-color: #f8fafc; color: #000;">
+                                            <th
+                                                style="padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
+                                                Item</th>
+                                            <th
+                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
+                                                Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr style="color: #000;">
+                                            <td style="padding: 3px 6px;">Cash Collected</td>
+                                            <td
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #059669;">
+                                                {{ number_format($settlement->cash_collected ?? 0, 0) }}</td>
+                                        </tr>
+                                        <tr style="color: #000;">
+                                            <td style="padding: 3px 6px;">Credit Recovery</td>
+                                            <td
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #1e40af;">
+                                                {{ number_format($settlement->credit_recoveries ?? 0, 0) }}</td>
+                                        </tr>
+                                        <tr style="color: #000;">
+                                            <td style="padding: 3px 6px;">Total Expenses</td>
+                                            <td
+                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
+                                                {{ number_format($settlement->expenses->sum('amount') ?? 0, 0) }}</td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr
+                                            style="background-color: #ecfdf5; border-top: 2px solid #059669; color: #000;">
+                                            <td style="padding: 4px 6px; font-weight: bold; color: #047857;">
+                                                Net Cash to Deposit:</td>
+                                            <td
+                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #047857; font-size: 12px;">
+                                                {{ number_format($settlement->cash_to_deposit ?? 0, 0) }}</td>
                                         </tr>
                                     </tfoot>
                                 </table>

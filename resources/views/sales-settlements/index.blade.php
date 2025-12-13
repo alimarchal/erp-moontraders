@@ -85,15 +85,22 @@
                     Credit: Rs {{ number_format($settlement->credit_sales_amount, 2) }}
                 </div>
             </td>
+            @php
+                $netProfit = ($settlement->gross_profit ?? 0) - ($settlement->expenses_claimed ?? 0);
+            @endphp
             <td class="py-1 px-2 text-right">
-                <div class="font-semibold {{ $settlement->gross_profit > 0 ? 'text-green-700' : 'text-red-700' }}">
-                    Rs {{ number_format($settlement->gross_profit ?? 0, 2) }}
+                <div class="text-xs text-blue-700">
+                    GP: Rs {{ number_format($settlement->gross_profit ?? 0, 2) }}
                 </div>
-                @if($settlement->total_cogs > 0)
+                <div class="text-xs text-orange-600">
+                    Exp: Rs {{ number_format($settlement->expenses_claimed ?? 0, 2) }}
+                </div>
+                <div class="font-semibold {{ $netProfit > 0 ? 'text-green-700' : 'text-red-700' }}">
+                    Net: Rs {{ number_format($netProfit, 2) }}
+                </div>
                 <div class="text-xs text-gray-500">
-                    COGS: Rs {{ number_format($settlement->total_cogs, 2) }}
+                    COGS: Rs {{ number_format($settlement->total_cogs ?? 0, 2) }}
                 </div>
-                @endif
             </td>
             <td class="py-1 px-2 text-center">
                 <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full

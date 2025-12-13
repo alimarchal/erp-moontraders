@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('sales_settlement_cheques', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sales_settlement_id')->constrained('sales_settlements')->cascadeOnDelete();
+            $table->foreignId('customer_id')->nullable()->constrained('customers')->onDelete('set null');
             $table->string('cheque_number');
             $table->decimal('amount', 15, 2);
             $table->string('bank_name');
@@ -25,6 +26,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index('sales_settlement_id');
+            $table->index('customer_id');
             $table->index('cheque_number');
             $table->index('cheque_date');
             $table->index('status');

@@ -13,6 +13,7 @@ class SalesSettlementBankTransfer extends Model
     protected $fillable = [
         'sales_settlement_id',
         'bank_account_id',
+        'customer_id',
         'amount',
         'reference_number',
         'transfer_date',
@@ -35,5 +36,10 @@ class SalesSettlementBankTransfer extends Model
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class);
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class);
     }
 }

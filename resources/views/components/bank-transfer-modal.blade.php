@@ -8,6 +8,7 @@
 
 @php
 $bankAccounts = $bankAccounts ?? \App\Models\BankAccount::where('is_active', true)->orderBy('bank_name')->get();
+$bankAccounts = $bankAccounts instanceof \Illuminate\Support\Collection ? $bankAccounts : collect($bankAccounts);
 @endphp
 
 <div x-data="bankTransferModal({
@@ -342,6 +343,26 @@ $bankAccounts = $bankAccounts ?? \App\Models\BankAccount::where('is_active', tru
                     const amount = parseFloat(entry.amount);
                     return sum + (isNaN(amount) ? 0 : amount);
                 }, 0);
+            },
+
+            init() {
+                // Listen for customer updates from goods issue selection
+                window.addEventListener('update-modal-customers', (event) => {
+                    this.customers = event.detail.customers || [];
+                    
+                    // Rebuild select2 options if initialized
+                    if (this.select2Initialized) {
+                        const select = $('#bank_transfer_customer_select');
+                        select.empty();
+                        select.append('<option value="">Select Customer</option>');
+                        
+                        this.customers.forEach(customer => {
+                            select.append(`<option value="${customer.id}">${customer.name}</option>`);
+                        });
+                        
+                        select.trigger('change');
+                    }
+                });
             },
         };
     }

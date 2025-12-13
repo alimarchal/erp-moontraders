@@ -400,30 +400,95 @@ class SalesSettlementController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            // Create bank transfer records in sales_settlement_bank_transfers table
+            // Process bank transfers through customer_ledgers
             foreach ($bankTransfersData as $transfer) {
-                SalesSettlementBankTransfer::create([
-                    'sales_settlement_id' => $settlement->id,
-                    'bank_account_id' => $transfer['bank_account_id'],
-                    'amount' => floatval($transfer['amount'] ?? 0),
-                    'reference_number' => $transfer['reference_number'] ?? null,
-                    'transfer_date' => $request->settlement_date,
-                    'notes' => $transfer['notes'] ?? null,
-                ]);
+                if (floatval($transfer['amount'] ?? 0) > 0) {
+                    // If customer is specified for this transfer
+                    if (! empty($transfer['customer_id'])) {
+                        $customer = Customer::find($transfer['customer_id']);
+                        if ($customer) {
+                            // Create credit entry in customer ledger for bank transfer payment
+                            CustomerLedger::create([
+                                'transaction_date' => $transfer['transfer_date'] ?? $request->settlement_date,
+                                'customer_id' => $customer->id,
+                                'transaction_type' => 'bank_transfer',
+                                'reference_number' => $transfer['reference_number'] ?? $settlement->settlement_number,
+                                'description' => 'Bank Transfer Payment - '.($transfer['notes'] ?? 'Settlement '.$settlement->settlement_number),
+                                'debit' => 0,
+                                'credit' => $transfer['amount'],
+                                'balance' => $customer->receivable_balance - $transfer['amount'],
+                                'sales_settlement_id' => $settlement->id,
+                                'employee_id' => $goodsIssue->employee_id,
+                                'payment_method' => 'bank_transfer',
+                                'bank_account_id' => $transfer['bank_account_id'] ?? null,
+                                'notes' => $transfer['notes'] ?? null,
+                                'created_by' => auth()->id(),
+                            ]);
+
+                            // Update customer receivable balance
+                            $customer->decrement('receivable_balance', $transfer['amount']);
+                            $customer->decrement('credit_used', $transfer['amount']);
+                        }
+                    }
+
+                    // Also create the bank transfer record for accounting purposes
+                    SalesSettlementBankTransfer::create([
+                        'sales_settlement_id' => $settlement->id,
+                        'bank_account_id' => $transfer['bank_account_id'],
+                        'customer_id' => $transfer['customer_id'] ?? null,
+                        'amount' => floatval($transfer['amount'] ?? 0),
+                        'reference_number' => $transfer['reference_number'] ?? null,
+                        'transfer_date' => $transfer['transfer_date'] ?? $request->settlement_date,
+                        'notes' => $transfer['notes'] ?? null,
+                    ]);
+                }
             }
 
-            // Create cheque records in sales_settlement_cheques table
+            // Process cheques through customer_ledgers
             foreach ($chequesData as $cheque) {
-                SalesSettlementCheque::create([
-                    'sales_settlement_id' => $settlement->id,
-                    'cheque_number' => $cheque['cheque_number'],
-                    'amount' => floatval($cheque['amount'] ?? 0),
-                    'bank_name' => $cheque['bank_name'] ?? '',
-                    'cheque_date' => $cheque['cheque_date'] ?? $request->settlement_date,
-                    'account_holder_name' => $cheque['account_holder_name'] ?? null,
-                    'status' => 'pending',
-                    'notes' => $cheque['notes'] ?? null,
-                ]);
+                if (floatval($cheque['amount'] ?? 0) > 0) {
+                    // If customer is specified for this cheque
+                    if (! empty($cheque['customer_id'])) {
+                        $customer = Customer::find($cheque['customer_id']);
+                        if ($customer) {
+                            // Create credit entry in customer ledger for cheque payment
+                            CustomerLedger::create([
+                                'transaction_date' => $cheque['cheque_date'] ?? $request->settlement_date,
+                                'customer_id' => $customer->id,
+                                'transaction_type' => 'cheque_payment',
+                                'reference_number' => $cheque['cheque_number'] ?? $settlement->settlement_number,
+                                'description' => 'Cheque Payment - '.($cheque['notes'] ?? 'Cheque #'.$cheque['cheque_number']),
+                                'debit' => 0,
+                                'credit' => $cheque['amount'],
+                                'balance' => $customer->receivable_balance - $cheque['amount'],
+                                'sales_settlement_id' => $settlement->id,
+                                'employee_id' => $goodsIssue->employee_id,
+                                'payment_method' => 'cheque',
+                                'cheque_number' => $cheque['cheque_number'],
+                                'cheque_date' => $cheque['cheque_date'] ?? $request->settlement_date,
+                                'notes' => $cheque['notes'] ?? null,
+                                'created_by' => auth()->id(),
+                            ]);
+
+                            // Update customer receivable balance
+                            $customer->decrement('receivable_balance', $cheque['amount']);
+                            $customer->decrement('credit_used', $cheque['amount']);
+                        }
+                    }
+
+                    // Also create the cheque record for tracking
+                    SalesSettlementCheque::create([
+                        'sales_settlement_id' => $settlement->id,
+                        'customer_id' => $cheque['customer_id'] ?? null,
+                        'cheque_number' => $cheque['cheque_number'],
+                        'amount' => floatval($cheque['amount'] ?? 0),
+                        'bank_name' => $cheque['bank_name'] ?? '',
+                        'cheque_date' => $cheque['cheque_date'] ?? $request->settlement_date,
+                        'account_holder_name' => $cheque['account_holder_name'] ?? null,
+                        'status' => 'pending',
+                        'notes' => $cheque['notes'] ?? null,
+                    ]);
+                }
             }
 
             // Create settlement items with batch breakdown
@@ -514,18 +579,62 @@ class SalesSettlementController extends Controller
                 }
             }
 
-            // Create credit sales breakdown records if any
+            // Process credit sales through customer_ledgers
             if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
-                    CreditSale::create([
-                        'sales_settlement_id' => $settlement->id,
-                        'employee_id' => $goodsIssue->employee_id,
-                        'supplier_id' => $goodsIssue->employee->supplier_id,
-                        'customer_id' => $creditSale['customer_id'],
-                        'invoice_number' => $creditSale['invoice_number'] ?? null,
-                        'sale_amount' => $creditSale['sale_amount'],
-                        'notes' => $creditSale['notes'] ?? null,
-                    ]);
+                    if (floatval($creditSale['sale_amount'] ?? 0) > 0) {
+                        $customer = Customer::find($creditSale['customer_id']);
+                        if ($customer) {
+                            // Create debit entry in customer ledger for credit sale
+                            CustomerLedger::create([
+                                'transaction_date' => $request->settlement_date,
+                                'customer_id' => $customer->id,
+                                'transaction_type' => 'credit_sale',
+                                'reference_number' => $settlement->settlement_number,
+                                'description' => 'Credit Sale - '.($creditSale['notes'] ?? 'Settlement '.$settlement->settlement_number),
+                                'debit' => $creditSale['sale_amount'],
+                                'credit' => 0,
+                                'balance' => $customer->receivable_balance + $creditSale['sale_amount'],
+                                'sales_settlement_id' => $settlement->id,
+                                'employee_id' => $goodsIssue->employee_id,
+                                'payment_method' => 'credit',
+                                'notes' => $creditSale['notes'] ?? null,
+                                'created_by' => auth()->id(),
+                            ]);
+
+                            // Update customer receivable balance
+                            $customer->increment('receivable_balance', $creditSale['sale_amount']);
+                            $customer->increment('credit_used', $creditSale['sale_amount']);
+                            $customer->update(['last_sale_date' => $request->settlement_date]);
+                        }
+                    }
+
+                    // Process recovery payment if any
+                    if (floatval($creditSale['payment_received'] ?? 0) > 0) {
+                        $customer = Customer::find($creditSale['customer_id']);
+                        if ($customer) {
+                            // Create credit entry in customer ledger for payment received
+                            CustomerLedger::create([
+                                'transaction_date' => $request->settlement_date,
+                                'customer_id' => $customer->id,
+                                'transaction_type' => 'cash_payment',
+                                'reference_number' => $settlement->settlement_number,
+                                'description' => 'Recovery Payment - '.($creditSale['notes'] ?? 'Settlement '.$settlement->settlement_number),
+                                'debit' => 0,
+                                'credit' => $creditSale['payment_received'],
+                                'balance' => $customer->receivable_balance - $creditSale['payment_received'],
+                                'sales_settlement_id' => $settlement->id,
+                                'employee_id' => $goodsIssue->employee_id,
+                                'payment_method' => 'cash',
+                                'notes' => 'Recovery: '.($creditSale['notes'] ?? null),
+                                'created_by' => auth()->id(),
+                            ]);
+
+                            // Update customer receivable balance
+                            $customer->decrement('receivable_balance', $creditSale['payment_received']);
+                            $customer->decrement('credit_used', $creditSale['payment_received']);
+                        }
+                    }
                 }
             }
 

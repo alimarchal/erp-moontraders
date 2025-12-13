@@ -657,15 +657,9 @@
                                         <x-advance-tax-modal
                                             :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
                                             entriesInputId="advance_taxes" />
-                                        <x-bank-transfer-modal
-                                            :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
-                                            entriesInputId="bank_transfers" />
-                                        <x-cheque-payment-modal
-                                            :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
-                                            entriesInputId="cheques" />
-                                        <x-credit-sales-modal
-                                            :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
-                                            entriesInputId="credit_sales" />
+                                        <x-bank-transfer-modal :customers="[]" entriesInputId="bank_transfers" />
+                                        <x-cheque-payment-modal :customers="[]" entriesInputId="cheques" />
+                                        <x-credit-sales-modal :customers="[]" entriesInputId="credit_sales" />
                                     </div>
                                 </div>
                             </div>
@@ -1345,6 +1339,11 @@
                     const items = data.items || [];
                     console.log('Number of items:', items.length);
 
+                    // Load customers for this employee
+                    if (data.employee_id) {
+                        loadCustomersForEmployee(data.employee_id);
+                    }
+
                     const settlementItemsBody = document.getElementById('settlementItemsBody');
                     settlementItemsBody.innerHTML = '';
 
@@ -1523,7 +1522,38 @@
         $('#goods_issue_id').on('select2:clear', function() {
             console.log('Goods Issue selection cleared');
             clearSettlementForm();
+            // Clear customer lists in modals
+            loadCustomersForEmployee(null);
         });
+
+        // Function to load customers for a specific employee
+        function loadCustomersForEmployee(employeeId) {
+            if (!employeeId) {
+                // Clear all customer dropdowns
+                updateModalCustomers([]);
+                return;
+            }
+
+            // Fetch customers for this employee via API
+            fetch(`{{ url('api/customers/by-employee') }}/${employeeId}`)
+                .then(response => response.json())
+                .then(customers => {
+                    console.log('Loaded customers for employee:', customers);
+                    updateModalCustomers(customers);
+                })
+                .catch(error => {
+                    console.error('Error loading customers for employee:', error);
+                    updateModalCustomers([]);
+                });
+        }
+
+        // Function to update customer lists in all modals
+        function updateModalCustomers(customers) {
+            // Update Alpine.js components with new customer data
+            window.dispatchEvent(new CustomEvent('update-modal-customers', {
+                detail: { customers: customers }
+            }));
+        }
 
         // Alpine.js component for Credit Sales Display
         function creditSalesDisplay() {

@@ -6,6 +6,10 @@
 'entriesInputId' => 'credit_sales_entries',
 ])
 
+@php
+$customers = $customers instanceof \Illuminate\Support\Collection ? $customers : collect($customers);
+@endphp
+
 <div x-data="creditSalesModal({
         customers: @js($customers->map(fn ($customer) => [
             'id' => $customer->id,
@@ -446,6 +450,26 @@
                     const amount = parseFloat(entry.payment_received);
                     return sum + (isNaN(amount) ? 0 : amount);
                 }, 0);
+            },
+
+            init() {
+                // Listen for customer updates from goods issue selection
+                window.addEventListener('update-modal-customers', (event) => {
+                    this.customers = event.detail.customers || [];
+                    
+                    // Rebuild select2 options if initialized
+                    if (this.select2Initialized) {
+                        const select = $('#credit_sales_customer_select');
+                        select.empty();
+                        select.append('<option value="">Select Customer</option>');
+                        
+                        this.customers.forEach(customer => {
+                            select.append(`<option value="${customer.id}">${customer.name}</option>`);
+                        });
+                        
+                        select.trigger('change');
+                    }
+                });
             },
         };
     }

@@ -630,9 +630,6 @@
                                                 @else
                                                 {{ $expense->description ?? 'Unknown Account' }}
                                                 @endif
-                                                @if($expense->description)
-                                                <div class="text-xs text-gray-500">{{ $expense->description }}</div>
-                                                @endif
                                             </td>
                                             <td class="py-1.5 px-2 text-right font-semibold">
                                                 ₨ {{ number_format($expense->amount, 2) }}

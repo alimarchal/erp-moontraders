@@ -280,6 +280,9 @@
                 if (typeof updateCashTotal === 'function') {
                     updateCashTotal();
                 }
+
+                // Dispatch update event for the display table
+                window.dispatchEvent(new CustomEvent('cheque-payments-updated'));
             },
 
             customerName(id) {

@@ -302,6 +302,9 @@ $bankAccounts = $bankAccounts ?? \App\Models\BankAccount::where('is_active', tru
                 if (typeof updateCashTotal === 'function') {
                     updateCashTotal();
                 }
+
+                // Dispatch update event for the display table
+                window.dispatchEvent(new CustomEvent('bank-transfers-updated'));
             },
 
             customerName(id) {

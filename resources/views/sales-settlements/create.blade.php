@@ -135,75 +135,130 @@
                                     {{-- Credit Sales, Bank Transfer and Cheque Payment Links with Totals --}}
                                     <div class=" space-y-3">
                                         {{-- Credit Sales --}}
-                                        <div class="border border-orange-300 rounded-lg overflow-hidden bg-orange-50">
-                                            <button type="button"
-                                                class="w-full bg-gradient-to-r from-orange-600 to-orange-700 hover:from-orange-700 hover:to-orange-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
-                                                onclick="window.dispatchEvent(new CustomEvent('open-credit-sales-modal'))">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-                                                </svg>
-                                                Creditors / Credit Sales Breakdown
-                                            </button>
-                                            <div class="px-4 py-2 bg-white border-t border-orange-200">
-                                                <div class="flex justify-between items-center mb-1">
-                                                    <span class="text-xs font-semibold text-orange-900">Total Credit
-                                                        Sales:</span>
-                                                    <span class="text-sm font-bold text-orange-700"
-                                                        id="creditSalesTotalDisplay">₨ 0.00</span>
-                                                </div>
-                                                <div class="flex justify-between items-center">
-                                                    <span class="text-xs font-semibold text-green-900">Total
-                                                        Recovery:</span>
-                                                    <span class="text-sm font-bold text-green-700"
-                                                        id="creditRecoveryTotalDisplay">₨ 0.00</span>
-                                                </div>
+                                        <div class="bg-white rounded-lg border border-orange-300 overflow-hidden"
+                                            x-data="creditSalesDisplay()">
+                                            <div
+                                                class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2 flex justify-between items-center">
+                                                <h4 class="text-sm font-bold text-white">Credit Sales Detail</h4>
+                                                <button type="button" @click="openModal()"
+                                                    class="text-xs bg-white text-orange-600 px-2 py-0.5 rounded font-semibold hover:bg-orange-50">
+                                                    + Add More
+                                                </button>
+                                            </div>
+                                            <div class="p-3">
+                                                <table class="w-full text-xs">
+                                                    <thead>
+                                                        <tr class="border-b-2 border-gray-300">
+                                                            <th class="py-1.5 px-2 text-left text-gray-700">Customer
+                                                            </th>
+                                                            <th class="py-1.5 px-2 text-right text-gray-700">Credit Sale
+                                                            </th>
+                                                            <th class="py-1.5 px-2 text-right text-gray-700">Recovery
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="creditSalesTableBody">
+                                                        <tr>
+                                                            <td colspan="3"
+                                                                class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                No credit sales entries added yet
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                    <tfoot class="border-t-2 border-gray-300">
+                                                        <tr>
+                                                            <td
+                                                                class="py-1.5 px-2 text-right font-semibold text-orange-900 text-xs">
+                                                                Totals:</td>
+                                                            <td class="py-1.5 px-2 text-right font-bold text-orange-700 text-xs"
+                                                                id="creditSalesTotalDisplay">₨ 0.00</td>
+                                                            <td class="py-1.5 px-2 text-right font-bold text-green-700 text-xs"
+                                                                id="creditRecoveryTotalDisplay">₨ 0.00</td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
                                             </div>
                                         </div>
 
                                         {{-- Bank Transfer --}}
-                                        <div class="border border-blue-300 rounded-lg overflow-hidden bg-blue-50">
-                                            <button type="button"
-                                                class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
-                                                onclick="window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'))">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                </svg>
-                                                Bank Transfer / Online Payment
-                                            </button>
+                                        <div class="bg-white rounded-lg border border-blue-300 overflow-hidden"
+                                            x-data="bankTransferDisplay()">
                                             <div
-                                                class="px-4 py-2 bg-white border-t border-blue-200 flex justify-between items-center">
-                                                <span class="text-xs font-semibold text-blue-900">Total Bank
-                                                    Transfers:</span>
-                                                <span class="text-sm font-bold text-blue-700"
-                                                    id="bankTransferTotalDisplay">₨ 0.00</span>
+                                                class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2 flex justify-between items-center">
+                                                <h4 class="text-sm font-bold text-white">Bank Transfer Detail</h4>
+                                                <button type="button" @click="openModal()"
+                                                    class="text-xs bg-white text-blue-600 px-2 py-0.5 rounded font-semibold hover:bg-blue-50">
+                                                    + Add More
+                                                </button>
+                                            </div>
+                                            <div class="p-3">
+                                                <table class="w-full text-xs">
+                                                    <thead>
+                                                        <tr class="border-b-2 border-gray-300">
+                                                            <th class="py-1.5 px-2 text-left text-gray-700">Account /
+                                                                Reference</th>
+                                                            <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="bankTransferTableBody">
+                                                        <tr>
+                                                            <td colspan="2"
+                                                                class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                No bank transfer entries added yet
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                    <tfoot class="border-t-2 border-gray-300">
+                                                        <tr>
+                                                            <td
+                                                                class="py-1.5 px-2 text-right font-semibold text-blue-900 text-xs">
+                                                                Total:</td>
+                                                            <td class="py-1.5 px-2 text-right font-bold text-blue-700 text-xs"
+                                                                id="bankTransferTotalDisplay">₨ 0.00</td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
                                             </div>
                                         </div>
 
                                         {{-- Cheque Payment --}}
-                                        <div class="border border-purple-300 rounded-lg overflow-hidden bg-purple-50">
-                                            <button type="button"
-                                                class="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
-                                                onclick="window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'))">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                </svg>
-                                                Cheque Payments
-                                            </button>
+                                        <div class="bg-white rounded-lg border border-purple-300 overflow-hidden"
+                                            x-data="chequePaymentDisplay()">
                                             <div
-                                                class="px-4 py-2 bg-white border-t border-purple-200 flex justify-between items-center">
-                                                <span class="text-xs font-semibold text-purple-900">Total
-                                                    Cheques:</span>
-                                                <span class="text-sm font-bold text-purple-700"
-                                                    id="chequeTotalDisplay">₨ 0.00</span>
+                                                class="bg-gradient-to-r from-purple-500 to-purple-600 px-3 py-2 flex justify-between items-center">
+                                                <h4 class="text-sm font-bold text-white">Cheque Payment Detail</h4>
+                                                <button type="button" @click="openModal()"
+                                                    class="text-xs bg-white text-purple-600 px-2 py-0.5 rounded font-semibold hover:bg-purple-50">
+                                                    + Add More
+                                                </button>
+                                            </div>
+                                            <div class="p-3">
+                                                <table class="w-full text-xs">
+                                                    <thead>
+                                                        <tr class="border-b-2 border-gray-300">
+                                                            <th class="py-1.5 px-2 text-left text-gray-700">Cheque
+                                                                Details</th>
+                                                            <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="chequePaymentTableBody">
+                                                        <tr>
+                                                            <td colspan="2"
+                                                                class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                No cheque payment entries added yet
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                    <tfoot class="border-t-2 border-gray-300">
+                                                        <tr>
+                                                            <td
+                                                                class="py-1.5 px-2 text-right font-semibold text-purple-900 text-xs">
+                                                                Total:</td>
+                                                            <td class="py-1.5 px-2 text-right font-bold text-purple-700 text-xs"
+                                                                id="chequeTotalDisplay">₨ 0.00</td>
+                                                        </tr>
+                                                    </tfoot>
+                                                </table>
                                             </div>
                                         </div>
                                     </div>
@@ -386,7 +441,7 @@
                                                             <template x-if="!expense.is_predefined">
                                                                 <div class="flex items-center gap-0.5">
                                                                     <select @change="onAccountSelect($event, index)"
-                                                                        class="text-[10px] border-gray-300 rounded flex-1 py-0 px-1 h-5">
+                                                                        class="text-[10px] border-gray-300 rounded flex-1 py-0 px-1 h-6">
                                                                         <option value="">Select...</option>
                                                                         <template x-for="account in availableAccounts"
                                                                             :key="account.id">
@@ -1469,6 +1524,212 @@
             console.log('Goods Issue selection cleared');
             clearSettlementForm();
         });
+
+        // Alpine.js component for Credit Sales Display
+        function creditSalesDisplay() {
+            return {
+                entries: [],
+                
+                openModal() {
+                    window.dispatchEvent(new CustomEvent('open-credit-sales-modal'));
+                },
+
+                updateDisplay() {
+                    const tbody = document.getElementById('creditSalesTableBody');
+                    if (!tbody) return;
+
+                    // Get entries from hidden input
+                    const entriesInput = document.getElementById('credit_sales');
+                    
+                    if (entriesInput && entriesInput.value) {
+                        try {
+                            this.entries = JSON.parse(entriesInput.value);
+                        } catch (e) {
+                            this.entries = [];
+                        }
+                    } else {
+                        this.entries = [];
+                    }
+
+                    // Clear and rebuild table
+                    tbody.innerHTML = '';
+
+                    if (this.entries.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="3" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                    No credit sales entries added yet
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        this.entries.forEach((entry, index) => {
+                            const row = document.createElement('tr');
+                            row.className = 'border-b border-gray-200';
+                            row.innerHTML = `
+                                <td class="py-1 px-2 text-xs">
+                                    <div class="font-semibold text-gray-800">${entry.customer_name}</div>
+                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                </td>
+                                <td class="py-1 px-2 text-right text-xs font-semibold text-orange-700">
+                                    ₨ ${parseFloat(entry.sale_amount).toLocaleString('en-PK', {minimumFractionDigits: 2})}
+                                </td>
+                                <td class="py-1 px-2 text-right text-xs font-semibold text-green-700">
+                                    ₨ ${parseFloat(entry.payment_received).toLocaleString('en-PK', {minimumFractionDigits: 2})}
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                },
+
+                init() {
+                    // Listen for updates from the modal
+                    window.addEventListener('credit-sales-updated', () => {
+                        this.updateDisplay();
+                    });
+                    
+                    // Initial load
+                    this.updateDisplay();
+                }
+            }
+        }
+
+        // Alpine.js component for Bank Transfer Display
+        function bankTransferDisplay() {
+            return {
+                entries: [],
+                
+                openModal() {
+                    window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'));
+                },
+
+                updateDisplay() {
+                    const tbody = document.getElementById('bankTransferTableBody');
+                    if (!tbody) return;
+
+                    // Get entries from hidden input
+                    const entriesInput = document.getElementById('bank_transfers');
+                    
+                    if (entriesInput && entriesInput.value) {
+                        try {
+                            this.entries = JSON.parse(entriesInput.value);
+                        } catch (e) {
+                            this.entries = [];
+                        }
+                    } else {
+                        this.entries = [];
+                    }
+
+                    // Clear and rebuild table
+                    tbody.innerHTML = '';
+
+                    if (this.entries.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                    No bank transfer entries added yet
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        this.entries.forEach((entry, index) => {
+                            const row = document.createElement('tr');
+                            row.className = 'border-b border-gray-200';
+                            row.innerHTML = `
+                                <td class="py-1 px-2 text-xs">
+                                    <div class="font-semibold text-gray-800">${entry.account_number || 'N/A'}</div>
+                                    <div class="text-xs text-gray-500">${entry.reference_number || ''}</div>
+                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                </td>
+                                <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
+                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', {minimumFractionDigits: 2})}
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                },
+
+                init() {
+                    // Listen for updates from the modal
+                    window.addEventListener('bank-transfers-updated', () => {
+                        this.updateDisplay();
+                    });
+                    
+                    // Initial load
+                    this.updateDisplay();
+                }
+            }
+        }
+
+        // Alpine.js component for Cheque Payment Display
+        function chequePaymentDisplay() {
+            return {
+                entries: [],
+                
+                openModal() {
+                    window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'));
+                },
+
+                updateDisplay() {
+                    const tbody = document.getElementById('chequePaymentTableBody');
+                    if (!tbody) return;
+
+                    // Get entries from hidden input
+                    const entriesInput = document.getElementById('cheques');
+                    
+                    if (entriesInput && entriesInput.value) {
+                        try {
+                            this.entries = JSON.parse(entriesInput.value);
+                        } catch (e) {
+                            this.entries = [];
+                        }
+                    } else {
+                        this.entries = [];
+                    }
+
+                    // Clear and rebuild table
+                    tbody.innerHTML = '';
+
+                    if (this.entries.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                    No cheque payment entries added yet
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        this.entries.forEach((entry, index) => {
+                            const row = document.createElement('tr');
+                            row.className = 'border-b border-gray-200';
+                            row.innerHTML = `
+                                <td class="py-1 px-2 text-xs">
+                                    <div class="font-semibold text-gray-800">Cheque #${entry.cheque_number || 'N/A'}</div>
+                                    <div class="text-xs text-gray-500">${entry.bank_name || ''} - ${entry.cheque_date || ''}</div>
+                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                </td>
+                                <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
+                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', {minimumFractionDigits: 2})}
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                },
+
+                init() {
+                    // Listen for updates from the modal
+                    window.addEventListener('cheque-payments-updated', () => {
+                        this.updateDisplay();
+                    });
+                    
+                    // Initial load
+                    this.updateDisplay();
+                }
+            }
+        }
     </script>
     @endpush
 </x-app-layout>

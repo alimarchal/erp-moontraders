@@ -94,62 +94,141 @@
                     </div>
                 </div>
 
-                <div class="overflow-x-auto border border-gray-200 rounded-lg">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-gray-100">
-                            <tr>
-                                <th class="px-3 py-2 text-left text-gray-700">S.No</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Customer Name</th>
-                                <th class="px-3 py-2 text-right text-gray-700">Previous Balance (₨)</th>
-                                <th class="px-3 py-2 text-right text-gray-700">Credit Sale (₨)</th>
-                                <th class="px-3 py-2 text-right text-gray-700">Recovery (₨)</th>
-                                <th class="px-3 py-2 text-right text-gray-700">New Balance (₨)</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Notes</th>
-                                <th class="px-3 py-2 text-center text-gray-700">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <template x-if="entries.length === 0">
-                                <tr>
-                                    <td colspan="8" class="px-3 py-4 text-center text-gray-500 italic">
-                                        No credit sales entries added yet.
-                                    </td>
-                                </tr>
-                            </template>
-                            <template x-for="(entry, index) in entries" :key="index">
-                                <tr class="border-t border-gray-200">
-                                    <td class="px-3 py-2 font-semibold text-gray-700" x-text="index + 1"></td>
-                                    <td class="px-3 py-2 text-gray-800" x-text="entry.customer_name"></td>
-                                    <td class="px-3 py-2 text-right font-semibold text-gray-600"
-                                        x-text="formatCurrency(entry.previous_balance)"></td>
-                                    <td class="px-3 py-2 text-right font-semibold text-orange-700"
-                                        x-text="formatCurrency(entry.sale_amount)"></td>
-                                    <td class="px-3 py-2 text-right font-semibold text-green-700"
-                                        x-text="formatCurrency(entry.payment_received)"></td>
-                                    <td class="px-3 py-2 text-right font-bold text-blue-700"
-                                        x-text="formatCurrency(entry.new_balance)"></td>
-                                    <td class="px-3 py-2 text-gray-600 text-xs" x-text="entry.notes || '-'"></td>
-                                    <td class="px-3 py-2 text-center">
-                                        <button type="button" @click="removeEntry(index)"
-                                            class="text-red-600 hover:text-red-800 text-xs font-semibold">
-                                            Delete
-                                        </button>
-                                    </td>
-                                </tr>
-                            </template>
-                        </tbody>
-                        <tfoot class="bg-orange-50 border-t-2 border-orange-200">
-                            <tr>
-                                <td colspan="3" class="px-3 py-2 text-right font-bold text-orange-900">Total Credit Sales:</td>
-                                <td class="px-3 py-2 text-right font-bold text-orange-900"
-                                    x-text="formatCurrency(creditTotal)"></td>
-                                <td colspan="1" class="px-3 py-2 text-right font-bold text-green-900">Total Recovery:</td>
-                                <td class="px-3 py-2 text-right font-bold text-green-900"
-                                    x-text="formatCurrency(recoveryTotal)"></td>
-                                <td colspan="2"></td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                <div class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
+                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 border-b border-orange-300">
+                        <h4 class="text-sm font-bold text-white flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
+                            </svg>
+                            Credit Sales Entries
+                            <span class="bg-white bg-opacity-20 text-xs px-2 py-1 rounded-full"
+                                x-text="entries.length + ' entries'"></span>
+                        </h4>
+                    </div>
+
+                    <template x-if="entries.length === 0">
+                        <div class="px-6 py-8 text-center">
+                            <svg class="w-16 h-16 mx-auto text-gray-300 mb-3" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                                </path>
+                            </svg>
+                            <p class="text-gray-500 text-sm font-medium mb-1">No Credit Sales Entries</p>
+                            <p class="text-gray-400 text-xs">Add customers and their credit sales above</p>
+                        </div>
+                    </template>
+
+                    <template x-if="entries.length > 0">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-gray-100 border-b border-gray-200">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left text-gray-700 font-semibold">#</th>
+                                        <th class="px-3 py-2 text-left text-gray-700 font-semibold">Customer</th>
+                                        <th class="px-3 py-2 text-right text-gray-700 font-semibold">Prev. Balance</th>
+                                        <th class="px-3 py-2 text-right text-gray-700 font-semibold">Credit Sale</th>
+                                        <th class="px-3 py-2 text-right text-gray-700 font-semibold">Recovery</th>
+                                        <th class="px-3 py-2 text-right text-gray-700 font-semibold">New Balance</th>
+                                        <th class="px-3 py-2 text-left text-gray-700 font-semibold">Notes</th>
+                                        <th class="px-3 py-2 text-center text-gray-700 font-semibold">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="bg-white divide-y divide-gray-200">
+                                    <template x-for="(entry, index) in entries" :key="index">
+                                        <tr class="hover:bg-gray-50 transition-colors">
+                                            <td class="px-3 py-3">
+                                                <span
+                                                    class="inline-flex items-center justify-center w-6 h-6 bg-orange-100 text-orange-800 text-xs font-bold rounded-full"
+                                                    x-text="index + 1"></span>
+                                            </td>
+                                            <td class="px-3 py-3">
+                                                <div class="font-semibold text-gray-900" x-text="entry.customer_name">
+                                                </div>
+                                                <div class="text-xs text-gray-500">Customer ID: #<span
+                                                        x-text="entry.customer_id"></span></div>
+                                            </td>
+                                            <td class="px-3 py-3 text-right">
+                                                <span class="font-semibold text-gray-700"
+                                                    x-text="formatCurrency(entry.previous_balance)"></span>
+                                            </td>
+                                            <td class="px-3 py-3 text-right">
+                                                <span class="font-bold text-orange-700 bg-orange-50 px-2 py-1 rounded"
+                                                    x-text="formatCurrency(entry.sale_amount)"></span>
+                                            </td>
+                                            <td class="px-3 py-3 text-right">
+                                                <span class="font-bold text-green-700 bg-green-50 px-2 py-1 rounded"
+                                                    x-text="formatCurrency(entry.payment_received)"></span>
+                                            </td>
+                                            <td class="px-3 py-3 text-right">
+                                                <span class="font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded"
+                                                    x-text="formatCurrency(entry.new_balance)"></span>
+                                            </td>
+                                            <td class="px-3 py-3">
+                                                <span class="text-gray-600 text-xs" x-text="entry.notes || '-'"></span>
+                                            </td>
+                                            <td class="px-3 py-3 text-center">
+                                                <button type="button" @click="removeEntry(index)"
+                                                    class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors">
+                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                        viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                                            stroke-width="2"
+                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                                        </path>
+                                                    </svg>
+                                                    Delete
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                                <tfoot
+                                    class="bg-gradient-to-r from-orange-50 to-orange-100 border-t-2 border-orange-200">
+                                    <tr>
+                                        <td colspan="3" class="px-3 py-3 text-right">
+                                            <span
+                                                class="text-sm font-bold text-orange-900 flex items-center justify-end gap-2">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1">
+                                                    </path>
+                                                </svg>
+                                                Total Credit Sales:
+                                            </span>
+                                        </td>
+                                        <td class="px-3 py-3 text-right">
+                                            <span
+                                                class="text-lg font-bold text-orange-800 bg-orange-200 px-3 py-1 rounded"
+                                                x-text="formatCurrency(creditTotal)"></span>
+                                        </td>
+                                        <td class="px-3 py-3 text-right">
+                                            <span
+                                                class="text-sm font-bold text-green-900 flex items-center justify-end gap-2">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                                Total Recovery:
+                                            </span>
+                                        </td>
+                                        <td class="px-3 py-3 text-right">
+                                            <span
+                                                class="text-lg font-bold text-green-800 bg-green-200 px-3 py-1 rounded"
+                                                x-text="formatCurrency(recoveryTotal)"></span>
+                                        </td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </template>
                 </div>
             </div>
 
@@ -337,6 +416,9 @@
                 if (typeof updateSalesSummary === 'function') {
                     updateSalesSummary();
                 }
+
+                // Dispatch update event for the display table
+                window.dispatchEvent(new CustomEvent('credit-sales-updated'));
             },
 
             customerName(id) {

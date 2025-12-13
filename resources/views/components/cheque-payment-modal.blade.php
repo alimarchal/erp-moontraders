@@ -41,6 +41,18 @@
 
             <div class="p-6 space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Cheque Date</label>
+                        <input type="date" x-model="form.cheque_date"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500"
+                            @keydown.enter.prevent="addEntry()" />
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Cheque Number</label>
+                        <input type="text" x-model="form.cheque_number"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500"
+                            placeholder="e.g., 123456" @keydown.enter.prevent="addEntry()" />
+                    </div>
                     <div class="md:col-span-3">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Customer Name</label>
                         <select id="cheque_payment_customer_select"
@@ -51,23 +63,40 @@
                             </template>
                         </select>
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Cheque Number</label>
-                        <input type="text" x-model="form.cheque_number"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500"
-                            placeholder="e.g., 123456" @keydown.enter.prevent="addEntry()" />
-                    </div>
-                    <div class="md:col-span-2">
+                    <div class="md:col-span-3">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Bank Name</label>
-                        <input type="text" x-model="form.bank_name"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500"
-                            placeholder="e.g., HBL, MCB" @keydown.enter.prevent="addEntry()" />
-                    </div>
-                    <div class="md:col-span-2">
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Cheque Date</label>
-                        <input type="date" x-model="form.cheque_date"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500"
-                            @keydown.enter.prevent="addEntry()" />
+                        <select x-model="form.bank_name"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500">
+                            <option value="">Select Bank</option>
+                            <option value="Allied Bank Limited (ABL)">Allied Bank Limited (ABL)</option>
+                            <option value="Askari Bank Limited">Askari Bank Limited</option>
+                            <option value="Bank Alfalah Limited">Bank Alfalah Limited</option>
+                            <option value="Bank Al-Habib Limited">Bank Al-Habib Limited</option>
+                            <option value="BankIslami Pakistan Limited">BankIslami Pakistan Limited</option>
+                            <option value="Dubai Islamic Bank Pakistan Limited">Dubai Islamic Bank Pakistan Limited
+                            </option>
+                            <option value="Faysal Bank Limited">Faysal Bank Limited</option>
+                            <option value="First Women Bank Limited">First Women Bank Limited</option>
+                            <option value="Habib Bank Limited (HBL)">Habib Bank Limited (HBL)</option>
+                            <option value="Habib Metropolitan Bank Limited">Habib Metropolitan Bank Limited</option>
+                            <option value="Industrial Development Bank of Pakistan">Industrial Development Bank of
+                                Pakistan</option>
+                            <option value="JS Bank Limited">JS Bank Limited</option>
+                            <option value="MCB Bank Limited">MCB Bank Limited</option>
+                            <option value="Meezan Bank Limited">Meezan Bank Limited</option>
+                            <option value="National Bank of Pakistan (NBP)">National Bank of Pakistan (NBP)</option>
+                            <option value="Punjab Provincial Cooperative Bank Limited">Punjab Provincial Cooperative
+                                Bank Limited</option>
+                            <option value="Samba Bank Limited">Samba Bank Limited</option>
+                            <option value="Silk Bank Limited">Silk Bank Limited</option>
+                            <option value="Standard Chartered Bank (Pakistan) Limited">Standard Chartered Bank
+                                (Pakistan) Limited</option>
+                            <option value="Summit Bank Limited">Summit Bank Limited</option>
+                            <option value="Sindh Bank Limited">Sindh Bank Limited</option>
+                            <option value="The Bank of Khyber">The Bank of Khyber</option>
+                            <option value="The Bank of Punjab">The Bank of Punjab</option>
+                            <option value="United Bank Limited (UBL)">United Bank Limited (UBL)</option>
+                        </select>
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Amount (₨)</label>

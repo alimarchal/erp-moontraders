@@ -1638,9 +1638,10 @@
                             row.className = 'border-b border-gray-200';
                             row.innerHTML = `
                                 <td class="py-1 px-2 text-xs">
-                                    <div class="font-semibold text-gray-800">${entry.account_number || 'N/A'}</div>
-                                    <div class="text-xs text-gray-500">${entry.reference_number || ''}</div>
-                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                    <div class="font-semibold text-gray-800">${entry.bank_account_name || 'Unknown Account'}</div>
+                                    <div class="text-xs text-gray-500">Date: ${entry.transfer_date || 'N/A'}</div>
+                                    ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
+                                    ${entry.reference_number ? `<div class="text-xs text-gray-500">Ref: ${entry.reference_number}</div>` : ''}
                                 </td>
                                 <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
                                     ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', {minimumFractionDigits: 2})}

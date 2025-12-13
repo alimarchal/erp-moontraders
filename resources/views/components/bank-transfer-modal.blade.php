@@ -9,6 +9,7 @@
 @php
 $bankAccounts = $bankAccounts ?? \App\Models\BankAccount::where('is_active', true)->orderBy('bank_name')->get();
 $bankAccounts = $bankAccounts instanceof \Illuminate\Support\Collection ? $bankAccounts : collect($bankAccounts);
+$customers = $customers instanceof \Illuminate\Support\Collection ? $customers : collect($customers);
 @endphp
 
 <div x-data="bankTransferModal({

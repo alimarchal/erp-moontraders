@@ -173,59 +173,41 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
                     {{-- Professional Settlement Header --}}
-                    <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 20px;"
-                        border="1">
-                        <thead>
-                            <tr style="background-color: #1e3a5f;">
-                                <th colspan="6"
-                                    style=" padding: 12px; text-align: center; color: white; font-size: 18px; font-weight: bold; letter-spacing: 1px;">
-                                    SALES SETTLEMENT
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold; width: 15%;">
-                                    Settlement No.</td>
-                                <td style=" padding: 8px; width: 18%; font-weight: bold; color: #1e3a5f;">
-                                    {{ $settlement->settlement_number }}</td>
-                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold; width: 15%;">
-                                    Settlement Date</td>
-                                <td style=" padding: 8px; width: 18%;">{{
-                                    \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y') }}</td>
-                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold; width: 15%;">
-                                    Status</td>
-                                <td style=" padding: 8px; width: 19%;">
-                                    <span
-                                        style="padding: 4px 12px; border-radius: 4px; font-weight: bold; 
-                                        {{ $settlement->status === 'draft' ? 'background-color: #fef3c7; color: #92400e;' : '' }}
-                                        {{ $settlement->status === 'posted' ? 'background-color: #d1fae5; color: #065f46;' : '' }}">
-                                        {{ strtoupper($settlement->status) }}
-                                    </span>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold;">
-                                    Goods Issue</td>
-                                <td style=" padding: 8px; font-weight: bold; color: #1e3a5f;">{{
-                                    $settlement->goodsIssue->issue_number }}</td>
-                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold;">
-                                    Salesman</td>
-                                <td style=" padding: 8px;">{{ $settlement->employee->full_name }}
-                                </td>
-                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold;">
-                                    Vehicle</td>
-                                <td style=" padding: 8px;">{{
-                                    $settlement->vehicle->vehicle_number }}</td>
-                            </tr>
-                            <tr>
-                                <td style=" padding: 8px; background-color: #f3f4f6; font-weight: bold;">
-                                    Warehouse</td>
-                                <td style=" padding: 8px;" colspan="5">{{
-                                    $settlement->warehouse->warehouse_name }}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <x-detail-table title="SALES SETTLEMENT" :headers="[
+                        ['label' => 'Field', 'align' => 'text-left'],
+                        ['label' => 'Value', 'align' => 'text-left'],
+                        ['label' => 'Field', 'align' => 'text-left'],
+                        ['label' => 'Value', 'align' => 'text-left'],
+                        ['label' => 'Field', 'align' => 'text-left'],
+                        ['label' => 'Value', 'align' => 'text-left'],
+                    ]">
+                        <tr class="border-b border-gray-200 text-sm">
+                            <td class="py-1 px-2 font-semibold bg-gray-50">Settlement No.</td>
+                            <td class="py-1 px-2 font-semibold text-blue-800">{{ $settlement->settlement_number }}</td>
+                            <td class="py-1 px-2 font-semibold bg-gray-50">Settlement Date</td>
+                            <td class="py-1 px-2">{{ \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y') }}</td>
+                            <td class="py-1 px-2 font-semibold bg-gray-50">Status</td>
+                            <td class="py-1 px-2">
+                                <span class="px-3 py-1 rounded text-xs font-semibold
+                                    {{ $settlement->status === 'draft' ? 'bg-yellow-100 text-yellow-800' : '' }}
+                                    {{ $settlement->status === 'posted' ? 'bg-green-100 text-green-800' : '' }}">
+                                    {{ strtoupper($settlement->status) }}
+                                </span>
+                            </td>
+                        </tr>
+                        <tr class="border-b border-gray-200 text-sm">
+                            <td class="py-1 px-2 font-semibold bg-gray-50">Goods Issue</td>
+                            <td class="py-1 px-2 font-semibold text-blue-800">{{ $settlement->goodsIssue->issue_number }}</td>
+                            <td class="py-1 px-2 font-semibold bg-gray-50">Salesman</td>
+                            <td class="py-1 px-2">{{ $settlement->employee->full_name }}</td>
+                            <td class="py-1 px-2 font-semibold bg-gray-50">Vehicle</td>
+                            <td class="py-1 px-2">{{ $settlement->vehicle->vehicle_number }}</td>
+                        </tr>
+                        <tr class="border-b border-gray-200 text-sm">
+                            <td class="py-1 px-2 font-semibold bg-gray-50">Warehouse</td>
+                            <td class="py-1 px-2" colspan="5">{{ $settlement->warehouse->warehouse_name }}</td>
+                        </tr>
+                    </x-detail-table>
 
                     <x-detail-table title="Product-wise Settlement" :headers="[
                         ['label' => '#', 'align' => 'text-center'],

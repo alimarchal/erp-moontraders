@@ -1,3 +1,302 @@
+<style>
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 0.5in;
+    }
+    
+    body {
+        font-size: 10px !important;
+        line-height: 1.1 !important;
+    }
+    
+    /* Remove all background colors and gradients */
+    * {
+        background: white !important;
+        color: black !important;
+        background-image: none !important;
+        background-gradient: none !important;
+        box-shadow: none !important;
+        text-shadow: none !important;
+    }
+    
+    /* Ensure proper table borders for printing */
+    table {
+        border-collapse: collapse !important;
+        border: 1px solid #000 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        table-layout: fixed !important;
+        font-size: 9px !important;
+        margin-bottom: 0.5rem !important;
+        box-sizing: border-box !important;
+    }
+    
+    table td, table th {
+        border: 1px solid #000 !important;
+        padding: 1px 2px !important;
+        color: black !important;
+        background: white !important;
+        font-size: 9px !important;
+        line-height: 1.1 !important;
+        word-wrap: break-word !important;
+        word-break: break-word !important;
+        overflow-wrap: break-word !important;
+        hyphens: auto !important;
+        white-space: normal !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
+        min-width: 0 !important;
+    }
+    
+    /* Product-wise Settlement table specific adjustments */
+    .detail-table-scroll table {
+        font-size: 8px !important;
+        table-layout: fixed !important;
+    }
+    
+    .detail-table-scroll table td,
+    .detail-table-scroll table th {
+        font-size: 8px !important;
+        padding: 1px !important;
+        line-height: 1.0 !important;
+    }
+    
+    /* Column width adjustments for Product-wise Settlement */
+    .detail-table-scroll table th:nth-child(1) { width: 3% !important; }  /* # */
+    .detail-table-scroll table th:nth-child(2) { width: 20% !important; } /* Product */
+    .detail-table-scroll table th:nth-child(3) { width: 6% !important; }  /* BF In */
+    .detail-table-scroll table th:nth-child(4) { width: 6% !important; }  /* Issued */
+    .detail-table-scroll table th:nth-child(5) { width: 25% !important; } /* Batch Breakdown */
+    .detail-table-scroll table th:nth-child(6) { width: 6% !important; }  /* Sold */
+    .detail-table-scroll table th:nth-child(7) { width: 6% !important; }  /* Returned */
+    .detail-table-scroll table th:nth-child(8) { width: 6% !important; }  /* Shortage */
+    .detail-table-scroll table th:nth-child(9) { width: 6% !important; }  /* BF Out */
+    .detail-table-scroll table th:nth-child(10) { width: 10% !important; } /* Sales Value */
+    
+    .detail-table-scroll table td:nth-child(1) { width: 3% !important; }
+    .detail-table-scroll table td:nth-child(2) { width: 18% !important; white-space: normal !important; }
+    .detail-table-scroll table td:nth-child(3) { width: 5% !important; }
+    .detail-table-scroll table td:nth-child(4) { width: 5% !important; }
+    .detail-table-scroll table td:nth-child(5) { width: 28% !important; white-space: normal !important; }
+    .detail-table-scroll table td:nth-child(6) { width: 5% !important; }
+    .detail-table-scroll table td:nth-child(7) { width: 5% !important; }
+    .detail-table-scroll table td:nth-child(8) { width: 5% !important; }
+    .detail-table-scroll table td:nth-child(9) { width: 5% !important; }
+    .detail-table-scroll table td:nth-child(10) { width: 12% !important; }
+    
+    /* Ensure container doesn't overflow */
+    .detail-table-scroll {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
+    }
+    
+    /* Main container adjustments */
+    .max-w-7xl {
+        max-width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    .p-6 {
+        padding: 0.25rem !important;
+    }
+    
+    /* Remove rounded corners and shadows */
+    .rounded-lg, .rounded, .border-blue-300, .border-green-300, .border-emerald-300, .border-orange-300, .border-purple-300 {
+        border-radius: 0 !important;
+        border: 1px solid #000 !important;
+    }
+    
+    /* Ensure headers are visible */
+    .bg-black, .bg-gradient-to-r, .bg-blue-500, .bg-green-500, .bg-emerald-500, .bg-orange-500, .bg-purple-500, .bg-red-500 {
+        background: white !important;
+        color: black !important;
+        border-bottom: 2px solid #000 !important;
+    }
+    
+    /* Force all colored text to black */
+    .text-blue-600, .text-blue-700, .text-blue-900,
+    .text-green-600, .text-green-700, .text-green-800, .text-green-900,
+    .text-emerald-600, .text-emerald-700, .text-emerald-800, .text-emerald-900,
+    .text-orange-600, .text-orange-700, .text-orange-800, .text-orange-900,
+    .text-purple-600, .text-purple-700, .text-purple-800, .text-purple-900,
+    .text-red-600, .text-red-700, .text-red-800, .text-red-900,
+    .text-indigo-600, .text-indigo-700, .text-indigo-800, .text-indigo-900,
+    .text-yellow-600, .text-yellow-700, .text-yellow-800, .text-yellow-900 {
+        color: black !important;
+    }
+    
+    /* Remove all background colors from elements */
+    .bg-blue-50, .bg-green-50, .bg-emerald-50, .bg-orange-50, .bg-purple-50, .bg-red-50,
+    .bg-gray-50, .bg-gray-100, .bg-gray-200, .bg-indigo-50,
+    .bg-blue-100, .bg-green-100, .bg-emerald-100, .bg-orange-100, .bg-purple-100, .bg-red-100 {
+        background: white !important;
+        color: black !important;
+    }
+    
+    /* Make sure all text is black with auto-adjusted size */
+    h1, h2, h3, h4, h5, h6 {
+        color: black !important;
+        font-size: 11px !important;
+        font-weight: bold !important;
+        margin: 0.2rem 0 !important;
+    }
+    
+    p, span, div, a, strong, em, i, b {
+        color: black !important;
+        font-size: 9px !important;
+    }
+    
+    /* Force all inline styles with colors to black */
+    [style*="color"] {
+        color: black !important;
+    }
+    
+    /* Remove all background styles */
+    [style*="background"] {
+        background: white !important;
+    }
+    
+    /* Page breaks */
+    .page-break {
+        page-break-before: always;
+    }
+    
+    /* Responsive layout adjustments for print */
+    .grid {
+        display: block !important;
+    }
+    
+    .grid > div {
+        width: 100% !important;
+        margin-bottom: 0.3rem !important;
+        page-break-inside: avoid;
+    }
+    
+    /* 4-column grid becomes 2x2 for better fit */
+    .grid-cols-1.lg\\:grid-cols-4 {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 0.2rem !important;
+    }
+    
+    .grid-cols-1.lg\\:grid-cols-4 > div {
+        width: auto !important;
+        margin: 0 !important;
+    }
+    
+    /* 3-column grid stays as single column */
+    .grid-cols-1.md\\:grid-cols-3 {
+        display: block !important;
+    }
+    
+    .grid-cols-1.md\\:grid-cols-3 > div {
+        width: 100% !important;
+        margin-bottom: 0.3rem !important;
+    }
+    
+    /* Compact spacing for better fit */
+    .mb-6, .mb-4 {
+        margin-bottom: 0.3rem !important;
+    }
+    
+    .px-4, .px-3 {
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+    }
+    
+    .py-2 {
+        padding-top: 1px !important;
+        padding-bottom: 1px !important;
+    }
+    
+    /* Product name and code adjustments */
+    .font-semibold {
+        font-size: 8px !important;
+        font-weight: bold !important;
+    }
+    
+    .text-xs {
+        font-size: 7px !important;
+    }
+    
+    /* Ensure no overflow */
+    .overflow-x-auto {
+        overflow: visible !important;
+    }
+    
+    /* Hide scrollbars in print */
+    ::-webkit-scrollbar {
+        display: none !important;
+    }
+    
+    /* Ensure proper spacing */
+    .mb-6, .mb-4 {
+        margin-bottom: 1rem !important;
+    }
+    
+    /* Hide print button and other UI elements */
+    .no-print {
+        display: none !important;
+    }
+}
+
+/* Screen responsiveness - prevent overflow */
+table {
+    width: 100% !important;
+    max-width: 100% !important;
+    table-layout: fixed !important;
+    word-wrap: break-word !important;
+}
+
+table td, table th {
+    word-wrap: break-word !important;
+    word-break: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+    min-width: 0 !important;
+}
+
+.overflow-x-auto {
+    overflow-x: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.detail-table-scroll {
+    overflow-x: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+@media screen and (max-width: 768px) {
+    .grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    table {
+        font-size: 12px !important;
+    }
+    
+    table td, table th {
+        padding: 2px 4px !important;
+        font-size: 12px !important;
+    }
+    
+    .detail-table-scroll table {
+        font-size: 11px !important;
+    }
+    
+    .detail-table-scroll table td,
+    .detail-table-scroll table th {
+        font-size: 11px !important;
+        padding: 2px !important;
+    }
+}
+</style>
+
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-black leading-tight inline-block">

@@ -476,7 +476,7 @@
 
 
 
-                        {{-- Credit Sales Detail Card --}}
+                        {{-- Expense Detail Card --}}
                         <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
                             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
                                 <h4 class="text-sm font-bold text-white">Expense Detail
@@ -491,32 +491,57 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @forelse($settlement->creditSales as $creditSale)
-                                        @php
-                                        $saleAmount = $creditSale->sale_amount ?? 0;
-                                        $recoveryAmount = $creditSale->recovery_amount ?? 0;
-                                        $salesmanBalance = $saleAmount - $recoveryAmount;
-                                        @endphp
+                                        @php $totalExpenses = 0; @endphp
+                                        @forelse($settlement->expenses as $expense)
+                                        @php $totalExpenses += $expense->amount; @endphp
                                         <tr class="hover:bg-gray-50">
-                                            <td class="py-1 px-1 text-xs">{{ $creditSale->customer->customer_name ??
-                                                'N/A' }}</td>
-                                            <td class="py-1 px-1 text-right font-semibold text-xs"> {{
-                                                number_format($saleAmount, 0) }}</td>
-
+                                            <td class="py-1 px-1 text-xs">
+                                                @if($expense->expenseAccount)
+                                                {{ $expense->expenseAccount->account_name }}
+                                                <span class="text-gray-500">({{ $expense->expenseAccount->account_code
+                                                    }})</span>
+                                                @else
+                                                {{ $expense->description ?? 'Unknown Account' }}
+                                                @endif
+                                            </td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs">
+                                                {{ number_format($expense->amount, 2) }}
+                                            </td>
                                         </tr>
                                         @empty
                                         <tr>
-                                            <td colspan="4" class="py-2 px-1 text-center text-black text-xs italic">
-                                                No credit sales entries</td>
+                                            <td colspan="2" class="py-2 px-1 text-center text-black text-xs italic">
+                                                No expenses recorded
+                                            </td>
                                         </tr>
                                         @endforelse
+
+                                        {{-- Advance Tax Details --}}
+                                        @if($settlement->advanceTaxes->count() > 0)
+                                        @foreach($settlement->advanceTaxes as $tax)
+                                        @php $totalExpenses += $tax->tax_amount; @endphp
+                                        <tr class="hover:bg-gray-50 bg-yellow-50">
+                                            <td class="py-1 px-1 text-xs">
+                                                Advance Tax - {{ $tax->customer->customer_name ?? 'N/A' }}
+                                                @if($tax->invoice_number)
+                                                <span class="text-gray-500">(Inv: {{ $tax->invoice_number }})</span>
+                                                @endif
+                                                <span class="text-gray-500">(A/C 1171)</span>
+                                            </td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs">
+                                                {{ number_format($tax->tax_amount, 0) }}
+                                            </td>
+                                        </tr>
+                                        @endforeach
+                                        @endif
                                     </tbody>
                                     <tfoot class="border-t-2 border-gray-300">
                                         <tr class="bg-orange-50">
                                             <td class="py-1.5 px-1 text-right font-semibold text-orange-900 text-xs">
                                                 Total:</td>
-                                            <td class="py-1.5 px-1 text-right font-bold text-orange-700 text-xs"> {{
-                                                number_format($settlement->creditSales->sum('sale_amount'), 0) }}</td>
+                                            <td class="py-1.5 px-1 text-right font-bold text-orange-700 text-xs">
+                                                {{ number_format($totalExpenses, 2) }}
+                                            </td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -531,82 +556,6 @@
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
-
-                        {{-- Middle Column: Expense Detail --}}
-                        <div class="bg-white overflow-hidden">
-                            <div class="bg-black px-4 py-2">
-                                <h4 class="text-sm font-bold text-white text-center">Expense Detail</h4>
-                            </div>
-                            <table
-                                style="border-collapse: collapse; width: 100%; font-size: 14px; border: 1px solid black;">
-                                <thead>
-                                    <tr style="background-color: #f8fafc;">
-                                        <th
-                                            style=" padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
-                                            Expense Account</th>
-                                        <th
-                                            style=" padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
-                                            Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php $totalExpenses = 0; @endphp
-                                    @forelse($settlement->expenses as $expense)
-                                    @php $totalExpenses += $expense->amount; @endphp
-                                    <tr style="border-top: 1px solid #000;">
-                                        <td style="padding: 3px 6px; border: none;">
-                                            @if($expense->expenseAccount)
-                                            {{ $expense->expenseAccount->account_name }}
-                                            <span style="color: #374151;">({{
-                                                $expense->expenseAccount->account_code }})</span>
-                                            @else
-                                            {{ $expense->description ?? 'Unknown Account' }}
-                                            @endif
-                                        </td>
-                                        <td
-                                            style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;">
-                                            {{ number_format($expense->amount, 2) }}
-                                        </td>
-                                    </tr>
-                                    @empty
-                                    <tr style="background-color: #f9fafb;">
-                                        <td style="padding: 3px 6px;" colspan="2">No expenses
-                                            recorded</td>
-                                    </tr>
-                                    @endforelse
-
-                                    {{-- Advance Tax Details moved here --}}
-                                    @if($settlement->advanceTaxes->count() > 0)
-                                    @foreach($settlement->advanceTaxes as $tax)
-                                    @php $totalExpenses += $tax->tax_amount; @endphp
-                                    <tr style="background-color: #fefce8;">
-                                        <td style="padding: 3px 6px;">
-                                            Advance Tax - {{ $tax->customer->customer_name ?? 'N/A' }}
-                                            @if($tax->invoice_number)
-                                            <span style="color: #374151;">(Inv: {{ $tax->invoice_number
-                                                }})</span>
-                                            @endif
-                                            <span style="color: #374151;">(A/C 1171)</span>
-                                        </td>
-                                        <td
-                                            style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;">
-                                            {{ number_format($tax->tax_amount, 0) }}
-                                        </td>
-                                    </tr>
-                                    @endforeach
-                                    @endif
-
-                                    <tr style="background-color: #fef2f2; border-top: 2px solid #dc2626;">
-                                        <td style="padding: 4px 6px; font-weight: bold; color: #991b1b;">
-                                            Total Expenses</td>
-                                        <td
-                                            style="padding: 4px 6px; text-align: right; font-weight: bold; color: #991b1b;">
-                                            {{ number_format($totalExpenses, 2) }}
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
 
                         {{-- Third Column: Sales Summary --}}
                         <div class="bg-white overflow-hidden">

@@ -341,9 +341,10 @@
                             </div>
                         </div>
 
+                    </div>
 
-                        {{-- Bank Transfer Detail Card --}}
-
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                        {{-- Cash Detail Card --}}
                         <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
                             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
                                 <h4 class="text-sm font-bold text-white text-center">Cash Detail (Denomination
@@ -474,8 +475,6 @@
                             </div>
                         </div>
 
-
-
                         {{-- Expense Detail Card --}}
                         <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
                             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
@@ -548,183 +547,155 @@
                             </div>
                         </div>
 
-
-
-                    </div>
-
-
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-
-
-                        {{-- Third Column: Sales Summary --}}
-                        <div class="bg-white overflow-hidden">
-                            <div class="bg-black px-4 py-2">
-                                <h4 class="text-sm font-bold text-white text-center">Sales Summary</h4>
+                        {{-- Sales Summary --}}
+                        <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
+                            <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
+                                <h4 class="text-sm font-bold text-white">Sales Summary</h4>
                             </div>
-                            <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
-                                <thead>
-                                    <tr style="background-color: #f8fafc;">
-                                        <th
-                                            style=" padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
-                                            Description</th>
-                                        <th
-                                            style=" padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
-                                            Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr style="border-top: 1px solid #000;">
-                                        <td style="padding: 3px 6px; border: none;">Net Sale (Sold Items
-                                            Value)</td>
-                                        <td
-                                            style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;">
-                                            {{
-                                            number_format($settlement->items->sum('total_sales_value'), 2) }}</td>
-                                    </tr>
-                                    <tr style="border-top: 1px solid #000;">
-                                        <td style="padding: 3px 6px; border: none;">Recovery (From
-                                            Customers)</td>
-                                        <td
-                                            style="padding: 3px 6px; text-align: right; font-weight: 600; color: #0f766e; border: none;">
-                                            {{
-                                            number_format($settlement->credit_recoveries ?? 0, 2) }}</td>
-                                    </tr>
-                                    <tr style="background-color: #eff6ff;">
-                                        <td style="padding: 4px 6px; font-weight: bold; color: #1e40af;">
-                                            Total Sale</td>
-                                        <td
-                                            style="padding: 4px 6px; text-align: right; font-weight: bold; color: #1e40af;">
-                                            {{
-                                            number_format($settlement->items->sum('total_sales_value') +
-                                            ($settlement->credit_recoveries ?? 0), 2) }}</td>
-                                    </tr>
-                                    <tr style="border-top: 1px solid #000;">
-                                        <td style="padding: 3px 6px; border: none;">Credit Extended</td>
-                                        <td
-                                            style="padding: 3px 6px; text-align: right; font-weight: 600; color: #ea580c; border: none;">
-                                            {{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}
-                                        </td>
-                                    </tr>
-                                    <tr style="background-color: #f9fafb;">
-                                        <td style="padding: 4px 6px; font-weight: 600;">
-                                            Balance</td>
-                                        <td style="padding: 4px 6px; text-align: right; font-weight: bold;">
-                                            {{
-                                            number_format(($settlement->items->sum('total_sales_value') +
-                                            ($settlement->credit_recoveries ?? 0)) -
-                                            $settlement->creditSales->sum('sale_amount'), 2) }}</td>
-                                    </tr>
-                                    <tr style="border-top: 1px solid #000;">
-                                        <td style="padding: 3px 6px; color: #dc2626; border: none;">Less:
-                                            Expenses</td>
-                                        <td
-                                            style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626; border: none;">
-                                            {{
-                                            number_format($settlement->expenses->sum('amount') ?? 0, 2) }}</td>
-                                    </tr>
-                                    @php
-                                    $netBalance = (($settlement->items->sum('total_sales_value') +
-                                    ($settlement->credit_recoveries ?? 0)) -
-                                    $settlement->creditSales->sum('sale_amount')) -
-                                    ($settlement->expenses->sum('amount') ?? 0);
-                                    @endphp
-                                    <tr style="background-color: #eef2ff;">
-                                        <td style="padding: 4px 6px; font-weight: bold; color: #3730a3;">
-                                            Net Balance</td>
-                                        <td
-                                            style="padding: 4px 6px; text-align: right; font-weight: bold; color: #3730a3;">
-                                            {{
-                                            number_format($netBalance, 2) }}</td>
-                                    </tr>
-                                    <tr style="border-top: 1px solid #000;">
-                                        <td style="padding: 3px 6px; border: none;">
-                                            Cash Received (counted)
-                                            <div style="font-size: 10px; color: #374151; font-style: italic;">
-                                                Physical + Bank + Cheques
-                                            </div>
-                                        </td>
+                            <div class="p-1">
+                                <table class="w-full text-xs">
+                                    <thead>
+                                        <tr class="border-b-2 border-gray-300">
+                                            <th class="py-1 px-1 text-left text-black">Description</th>
+                                            <th class="py-1 px-1 text-right text-black">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">Net Sale (Sold Items Value)</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-black">
+                                                {{ number_format($settlement->items->sum('total_sales_value'), 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">Recovery (From Customers)</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-teal-700">
+                                                {{ number_format($settlement->credit_recoveries ?? 0, 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="bg-blue-50 border-y-2 border-blue-200">
+                                            <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Sale</td>
+                                            <td class="py-1 px-1 text-right font-bold text-xs text-blue-800">
+                                                {{ number_format($settlement->items->sum('total_sales_value') + ($settlement->credit_recoveries ?? 0), 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">Credit Extended</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-orange-700">
+                                                {{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="bg-gray-50 border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs font-semibold text-gray-800">Balance</td>
+                                            <td class="py-1 px-1 text-right font-bold text-xs text-gray-900">
+                                                {{ number_format(($settlement->items->sum('total_sales_value') + ($settlement->credit_recoveries ?? 0)) - $settlement->creditSales->sum('sale_amount'), 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-red-700">Less: Expenses</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-red-700">
+                                                {{ number_format($settlement->expenses->sum('amount') ?? 0, 2) }}
+                                            </td>
+                                        </tr>
                                         @php
-                                        // Calculate total physical cash from denominations
+                                        $netBalance = (($settlement->items->sum('total_sales_value') +
+                                            ($settlement->credit_recoveries ?? 0)) -
+                                            $settlement->creditSales->sum('sale_amount')) -
+                                            ($settlement->expenses->sum('amount') ?? 0);
+                                        @endphp
+                                        <tr class="bg-indigo-50 border-y-2 border-indigo-200">
+                                            <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Net Balance
+                                            </td>
+                                            <td class="py-1 px-1 text-right font-bold text-xs text-indigo-900">
+                                                {{ number_format($netBalance, 2) }}
+                                            </td>
+                                        </tr>
+                                        @php
                                         $denomData = $settlement->cashDenominations->first();
                                         $physicalCash = 0;
                                         if($denomData) {
-                                        $physicalCash = ($denomData->denom_5000 * 5000) +
-                                        ($denomData->denom_1000 * 1000) +
-                                        ($denomData->denom_500 * 500) +
-                                        ($denomData->denom_100 * 100) +
-                                        ($denomData->denom_50 * 50) +
-                                        ($denomData->denom_20 * 20) +
-                                        ($denomData->denom_10 * 10) +
-                                        ($denomData->denom_coins ?? 0);
+                                            $physicalCash = ($denomData->denom_5000 * 5000) +
+                                            ($denomData->denom_1000 * 1000) +
+                                            ($denomData->denom_500 * 500) +
+                                            ($denomData->denom_100 * 100) +
+                                            ($denomData->denom_50 * 50) +
+                                            ($denomData->denom_20 * 20) +
+                                            ($denomData->denom_10 * 10) +
+                                            ($denomData->denom_coins ?? 0);
                                         }
-                                        $totalCashReceived = $physicalCash + ($settlement->bank_transfer_amount ??
-                                        0) + ($settlement->cheques_collected ?? 0);
+                                        $totalCashReceived = $physicalCash + ($settlement->bank_transfer_amount ?? 0)
+                                        + ($settlement->cheques_collected ?? 0);
                                         @endphp
-                                        <td
-                                            style="padding: 3px 6px; text-align: right; font-weight: 600; color: #059669; border: none;">
-                                            {{
-                                            number_format($totalCashReceived, 2) }}</td>
-                                    </tr>
-                                    <tr style="background-color: #f3e8ff; border-top: 2px solid #7c3aed;">
-                                        <td style="padding: 4px 6px; font-weight: bold; color: #6b21a8;">
-                                            Short/Excess</td>
-                                        <td
-                                            style="padding: 4px 6px; text-align: right; font-weight: bold; color: #6b21a8;">
-                                            {{
-                                            number_format($totalCashReceived - $netBalance, 2) }}</td>
-                                    </tr>
-                                    {{-- Profit Analysis --}}
-                                    <tr class="bg-gray-100 border-t-2 border-gray-400">
-                                        <td colspan="2"
-                                            class="py-1 px-2 text-center font-bold text-black text-xs uppercase tracking-wide">
-                                            Profit Analysis</td>
-                                    </tr>
-                                    @php
-                                    $totalCOGS = $settlement->items->sum('total_cogs') ?? 0;
-                                    $totalSalesValue = $settlement->items->sum('total_sales_value');
-                                    $grossProfit = $totalSalesValue - $totalCOGS;
-                                    $grossMargin = $totalSalesValue > 0 ? ($grossProfit / $totalSalesValue) * 100 :
-                                    0;
-                                    $totalExpenses = $settlement->expenses->sum('amount') ?? 0;
-                                    $netProfit = $grossProfit - $totalExpenses;
-                                    $netMargin = $totalSalesValue > 0 ? ($netProfit / $totalSalesValue) * 100 : 0;
-                                    @endphp
-                                    <tr>
-                                        <td class="py-0.5 px-2 text-xs text-gray-700">Total COGS</td>
-                                        <td class="py-0.5 px-2 text-right font-semibold text-xs text-black"> {{
-                                            number_format($totalCOGS, 2) }}</td>
-                                    </tr>
-                                    <tr class="bg-green-50">
-                                        <td class="py-0.5 px-2 font-semibold text-xs text-green-800">Gross Profit
-                                            (Sales - COGS)</td>
-                                        <td class="py-0.5 px-2 text-right font-bold text-xs text-green-700"> {{
-                                            number_format($grossProfit, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-0.5 px-2 text-xs text-gray-500 pl-4">Gross Margin</td>
-                                        <td class="py-0.5 px-2 text-right text-xs font-semibold">{{
-                                            number_format($grossMargin, 2) }}%</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-0.5 px-2 text-xs text-red-700">Less: Expenses</td>
-                                        <td class="py-0.5 px-2 text-right font-semibold text-xs text-red-700"> {{
-                                            number_format($totalExpenses, 2) }}</td>
-                                    </tr>
-                                    <tr
-                                        class="bg-gradient-to-r from-emerald-100 to-teal-100 border-t-2 border-emerald-400">
-                                        <td class="py-1 px-2 font-bold text-xs text-emerald-900">Net Profit (After
-                                            Expenses)</td>
-                                        <td class="py-1 px-2 text-right font-bold text-xs text-emerald-900"> {{
-                                            number_format($netProfit, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="py-0.5 px-2 text-xs text-gray-500 pl-4">Net Margin</td>
-                                        <td class="py-0.5 px-2 text-right text-xs font-semibold">{{
-                                            number_format($netMargin, 2) }}%</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">
+                                                Cash Received (counted)
+                                                <div class="text-[10px] text-gray-600 italic">
+                                                    Physical + Bank + Cheques
+                                                </div>
+                                            </td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-emerald-700">
+                                                {{ number_format($totalCashReceived, 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="bg-purple-50 border-y-2 border-purple-200">
+                                            <td class="py-1 px-1 text-xs font-semibold text-purple-900">
+                                                Short/Excess</td>
+                                            <td class="py-1 px-1 text-right font-bold text-xs text-purple-900">
+                                                {{ number_format($totalCashReceived - $netBalance, 2) }}
+                                            </td>
+                                        </tr>
+                                        {{-- Profit Analysis --}}
+                                        <tr class="bg-gray-100 border-t-2 border-gray-300">
+                                            <td colspan="2"
+                                                class="py-1 px-1 text-center font-bold text-black text-xs uppercase tracking-wide">
+                                                Profit Analysis</td>
+                                        </tr>
+                                        @php
+                                        $totalCOGS = $settlement->items->sum('total_cogs') ?? 0;
+                                        $totalSalesValue = $settlement->items->sum('total_sales_value');
+                                        $grossProfit = $totalSalesValue - $totalCOGS;
+                                        $grossMargin = $totalSalesValue > 0 ? ($grossProfit / $totalSalesValue) * 100 :
+                                        0;
+                                        $totalExpenses = $settlement->expenses->sum('amount') ?? 0;
+                                        $netProfit = $grossProfit - $totalExpenses;
+                                        $netMargin = $totalSalesValue > 0 ? ($netProfit / $totalSalesValue) * 100 : 0;
+                                        @endphp
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-0.5 px-1 text-xs text-gray-700">Total COGS</td>
+                                            <td class="py-0.5 px-1 text-right font-semibold text-xs text-black">
+                                                {{ number_format($totalCOGS, 2) }}</td>
+                                        </tr>
+                                        <tr class="bg-green-50 border-t border-green-200">
+                                            <td class="py-0.5 px-1 font-semibold text-xs text-green-800">Gross Profit
+                                                (Sales - COGS)</td>
+                                            <td class="py-0.5 px-1 text-right font-bold text-xs text-green-700">
+                                                {{ number_format($grossProfit, 2) }}</td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-0.5 px-1 text-xs text-gray-500 pl-2">Gross Margin</td>
+                                            <td class="py-0.5 px-1 text-right text-xs font-semibold">
+                                                {{ number_format($grossMargin, 2) }}%</td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-0.5 px-1 text-xs text-red-700">Less: Expenses</td>
+                                            <td class="py-0.5 px-1 text-right font-semibold text-xs text-red-700">
+                                                {{ number_format($totalExpenses, 2) }}</td>
+                                        </tr>
+                                        <tr
+                                            class="bg-gradient-to-r from-emerald-100 to-teal-100 border-t-2 border-emerald-400">
+                                            <td class="py-1 px-1 font-bold text-xs text-emerald-900">Net Profit (After
+                                                Expenses)</td>
+                                            <td class="py-1 px-1 text-right font-bold text-xs text-emerald-900">
+                                                {{ number_format($netProfit, 2) }}</td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-0.5 px-1 text-xs text-gray-500 pl-2">Net Margin</td>
+                                            <td class="py-0.5 px-1 text-right text-xs font-semibold">
+                                                {{ number_format($netMargin, 2) }}%</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 

@@ -407,7 +407,8 @@
                                 <h4 class="text-sm font-bold text-white text-center">Cash Detail (Denomination
                                     Breakdown)</h4>
                             </div>
-                            <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
+                            <table
+                                style="border-collapse: collapse; width: 100%; font-size: 14px;  border: 1px solid black;">
                                 <thead>
                                     <tr style="background-color: #f8fafc;">
                                         <th
@@ -450,7 +451,7 @@
                                     }
                                     $totalCash += $amount;
                                     @endphp
-                                    <tr>
+                                    <tr style="border-top: 1px solid #000;">
                                         <td style="padding: 3px 6px; border: none;">{{ $denom['label'] }}</td>
                                         <td style="padding: 3px 6px; text-align: right; border: none;">
                                             @if(isset($denom['is_coins']) && $denom['is_coins'])
@@ -545,7 +546,8 @@
                             <div class="bg-black px-4 py-2">
                                 <h4 class="text-sm font-bold text-white text-center">Expense Detail</h4>
                             </div>
-                            <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
+                            <table
+                                style="border-collapse: collapse; width: 100%; font-size: 14px; border: 1px solid black;">
                                 <thead>
                                     <tr style="background-color: #f8fafc;">
                                         <th
@@ -560,7 +562,7 @@
                                     @php $totalExpenses = 0; @endphp
                                     @forelse($settlement->expenses as $expense)
                                     @php $totalExpenses += $expense->amount; @endphp
-                                    <tr>
+                                    <tr style="border-top: 1px solid #000;">
                                         <td style="padding: 3px 6px; border: none;">
                                             @if($expense->expenseAccount)
                                             {{ $expense->expenseAccount->account_name }}

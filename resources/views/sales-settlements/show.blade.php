@@ -200,7 +200,7 @@
                             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
                                 <h4 class="text-sm font-bold text-white">Credit Sales Detail</h4>
                             </div>
-                            <div class="p-1">
+                            <div class="p-0">
                                 <table class="w-full text-xs">
                                     <thead>
                                         <tr class="border-b-2 border-gray-300">
@@ -260,7 +260,7 @@
                             <div class="bg-gradient-to-r from-purple-500 to-purple-600 px-3 py-2">
                                 <h4 class="text-sm font-bold text-white">Cheque Payments</h4>
                             </div>
-                            <div class="p-1">
+                            <div class="p-0">
                                 <table class="w-full text-xs">
                                     <thead>
                                         <tr class="border-b-2 border-gray-300">
@@ -302,7 +302,7 @@
                             <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2">
                                 <h4 class="text-sm font-bold text-white">Bank Transfers</h4>
                             </div>
-                            <div class="p-1">
+                            <div class="p-0">
                                 <table class="w-full text-xs">
                                     <thead>
                                         <tr class="border-b-2 border-gray-300">
@@ -351,7 +351,7 @@
                                     Breakdown)
                                 </h4>
                             </div>
-                            <div class="p-1">
+                            <div class="p-0">
                                 <table class="w-full text-xs">
                                     <thead>
                                         <tr class="border-b-2 border-gray-300">
@@ -481,7 +481,7 @@
                                 <h4 class="text-sm font-bold text-white">Expense Detail
                                 </h4>
                             </div>
-                            <div class="p-1">
+                            <div class="p-0">
                                 <table class="w-full text-xs">
                                     <thead>
                                         <tr class="border-b-2 border-gray-300">
@@ -552,7 +552,7 @@
                             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
                                 <h4 class="text-sm font-bold text-white">Sales Summary</h4>
                             </div>
-                            <div class="p-1">
+                            <div class="p-0">
                                 <table class="w-full text-xs">
                                     <thead>
                                         <tr class="border-b-2 border-gray-300">

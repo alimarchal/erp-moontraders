@@ -194,7 +194,7 @@
 
 
                     {{-- Payment Details Cards - Moved here after Product-wise Settlement --}}
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 items-start">
                         {{-- Credit Sales Detail Card --}}
                         <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
                             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
@@ -343,7 +343,7 @@
 
                     </div>
 
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 items-start">
                         {{-- Cash Detail Card --}}
                         <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
                             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
@@ -576,7 +576,8 @@
                                         <tr class="bg-blue-50 border-y-2 border-blue-200">
                                             <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Sale</td>
                                             <td class="py-1 px-1 text-right font-bold text-xs text-blue-800">
-                                                {{ number_format($settlement->items->sum('total_sales_value') + ($settlement->credit_recoveries ?? 0), 2) }}
+                                                {{ number_format($settlement->items->sum('total_sales_value') +
+                                                ($settlement->credit_recoveries ?? 0), 2) }}
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
@@ -588,7 +589,9 @@
                                         <tr class="bg-gray-50 border-t border-gray-200">
                                             <td class="py-1 px-1 text-xs font-semibold text-gray-800">Balance</td>
                                             <td class="py-1 px-1 text-right font-bold text-xs text-gray-900">
-                                                {{ number_format(($settlement->items->sum('total_sales_value') + ($settlement->credit_recoveries ?? 0)) - $settlement->creditSales->sum('sale_amount'), 2) }}
+                                                {{ number_format(($settlement->items->sum('total_sales_value') +
+                                                ($settlement->credit_recoveries ?? 0)) -
+                                                $settlement->creditSales->sum('sale_amount'), 2) }}
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
@@ -599,9 +602,9 @@
                                         </tr>
                                         @php
                                         $netBalance = (($settlement->items->sum('total_sales_value') +
-                                            ($settlement->credit_recoveries ?? 0)) -
-                                            $settlement->creditSales->sum('sale_amount')) -
-                                            ($settlement->expenses->sum('amount') ?? 0);
+                                        ($settlement->credit_recoveries ?? 0)) -
+                                        $settlement->creditSales->sum('sale_amount')) -
+                                        ($settlement->expenses->sum('amount') ?? 0);
                                         @endphp
                                         <tr class="bg-indigo-50 border-y-2 border-indigo-200">
                                             <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Net Balance
@@ -614,14 +617,14 @@
                                         $denomData = $settlement->cashDenominations->first();
                                         $physicalCash = 0;
                                         if($denomData) {
-                                            $physicalCash = ($denomData->denom_5000 * 5000) +
-                                            ($denomData->denom_1000 * 1000) +
-                                            ($denomData->denom_500 * 500) +
-                                            ($denomData->denom_100 * 100) +
-                                            ($denomData->denom_50 * 50) +
-                                            ($denomData->denom_20 * 20) +
-                                            ($denomData->denom_10 * 10) +
-                                            ($denomData->denom_coins ?? 0);
+                                        $physicalCash = ($denomData->denom_5000 * 5000) +
+                                        ($denomData->denom_1000 * 1000) +
+                                        ($denomData->denom_500 * 500) +
+                                        ($denomData->denom_100 * 100) +
+                                        ($denomData->denom_50 * 50) +
+                                        ($denomData->denom_20 * 20) +
+                                        ($denomData->denom_10 * 10) +
+                                        ($denomData->denom_coins ?? 0);
                                         }
                                         $totalCashReceived = $physicalCash + ($settlement->bank_transfer_amount ?? 0)
                                         + ($settlement->cheques_collected ?? 0);

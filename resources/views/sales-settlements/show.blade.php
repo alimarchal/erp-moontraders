@@ -635,7 +635,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
+                                    <tr style="border-top: 1px solid #000;">
                                         <td style="padding: 3px 6px; border: none;">Net Sale (Sold Items
                                             Value)</td>
                                         <td
@@ -643,7 +643,7 @@
                                             {{
                                             number_format($settlement->items->sum('total_sales_value'), 2) }}</td>
                                     </tr>
-                                    <tr>
+                                    <tr style="border-top: 1px solid #000;">
                                         <td style="padding: 3px 6px; border: none;">Recovery (From
                                             Customers)</td>
                                         <td
@@ -660,7 +660,7 @@
                                             number_format($settlement->items->sum('total_sales_value') +
                                             ($settlement->credit_recoveries ?? 0), 2) }}</td>
                                     </tr>
-                                    <tr>
+                                    <tr style="border-top: 1px solid #000;">
                                         <td style="padding: 3px 6px; border: none;">Credit Extended</td>
                                         <td
                                             style="padding: 3px 6px; text-align: right; font-weight: 600; color: #ea580c; border: none;">
@@ -676,7 +676,7 @@
                                             ($settlement->credit_recoveries ?? 0)) -
                                             $settlement->creditSales->sum('sale_amount'), 2) }}</td>
                                     </tr>
-                                    <tr>
+                                    <tr style="border-top: 1px solid #000;">
                                         <td style="padding: 3px 6px; color: #dc2626; border: none;">Less:
                                             Expenses</td>
                                         <td
@@ -698,7 +698,7 @@
                                             {{
                                             number_format($netBalance, 2) }}</td>
                                     </tr>
-                                    <tr>
+                                    <tr style="border-top: 1px solid #000;">
                                         <td style="padding: 3px 6px; border: none;">
                                             Cash Received (counted)
                                             <div style="font-size: 10px; color: #374151; font-style: italic;">

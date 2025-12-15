@@ -1532,8 +1532,14 @@
             loadCustomersForEmployee(null);
         });
 
+        // Global variable to store current employee ID for settlement
+        window.currentSettlementEmployeeId = null;
+
         // Function to load customers for a specific employee
         function loadCustomersForEmployee(employeeId) {
+            // Store globally for modals to access
+            window.currentSettlementEmployeeId = employeeId;
+
             if (!employeeId) {
                 // Clear all customer dropdowns
                 updateModalCustomers([]);

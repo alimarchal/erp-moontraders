@@ -139,7 +139,7 @@ class SalesSettlementController extends Controller
             ->map(function ($gi) {
                 return [
                     'id' => $gi->id,
-                    'text' => $gi->issue_number . ' - ' . $gi->employee->full_name . ' (' . $gi->issue_date->format('d M Y') . ')',
+                    'text' => $gi->issue_number.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
                 ];
             });
 
@@ -334,7 +334,7 @@ class SalesSettlementController extends Controller
 
             // Calculate total expenses from the expenses array (dynamic from Alpine.js)
             $totalExpenses = 0;
-            if (!empty($request->expenses) && is_array($request->expenses)) {
+            if (! empty($request->expenses) && is_array($request->expenses)) {
                 foreach ($request->expenses as $expense) {
                     $totalExpenses += floatval($expense['amount'] ?? 0);
                 }
@@ -345,7 +345,7 @@ class SalesSettlementController extends Controller
             $totalBankTransfers = 0;
             if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
                 foreach ($request->bank_transfers as $transfer) {
-                    if (!empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
+                    if (! empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
                         $bankTransfersData[] = $transfer;
                         $totalBankTransfers += floatval($transfer['amount'] ?? 0);
                     }
@@ -357,7 +357,7 @@ class SalesSettlementController extends Controller
             $totalCheques = 0;
             if ($request->has('cheques') && is_array($request->cheques)) {
                 foreach ($request->cheques as $cheque) {
-                    if (!empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
+                    if (! empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
                         $chequesData[] = $cheque;
                         $totalCheques += floatval($cheque['amount'] ?? 0);
                     }
@@ -410,7 +410,7 @@ class SalesSettlementController extends Controller
             foreach ($bankTransfersData as $transfer) {
                 if (floatval($transfer['amount'] ?? 0) > 0) {
                     // If customer is specified for this transfer
-                    if (!empty($transfer['customer_id'])) {
+                    if (! empty($transfer['customer_id'])) {
                         $customer = Customer::find($transfer['customer_id']);
                         if ($customer) {
                             // Create credit entry in customer ledger for bank transfer payment
@@ -419,7 +419,7 @@ class SalesSettlementController extends Controller
                                 'customer_id' => $customer->id,
                                 'transaction_type' => 'bank_transfer',
                                 'reference_number' => $transfer['reference_number'] ?? $settlement->settlement_number,
-                                'description' => 'Bank Transfer Payment - ' . ($transfer['notes'] ?? 'Settlement ' . $settlement->settlement_number),
+                                'description' => 'Bank Transfer Payment - '.($transfer['notes'] ?? 'Settlement '.$settlement->settlement_number),
                                 'debit' => 0,
                                 'credit' => $transfer['amount'],
                                 'balance' => $customer->receivable_balance - $transfer['amount'],
@@ -454,7 +454,7 @@ class SalesSettlementController extends Controller
             foreach ($chequesData as $cheque) {
                 if (floatval($cheque['amount'] ?? 0) > 0) {
                     // If customer is specified for this cheque
-                    if (!empty($cheque['customer_id'])) {
+                    if (! empty($cheque['customer_id'])) {
                         $customer = Customer::find($cheque['customer_id']);
                         if ($customer) {
                             // Create credit entry in customer ledger for cheque payment
@@ -463,7 +463,7 @@ class SalesSettlementController extends Controller
                                 'customer_id' => $customer->id,
                                 'transaction_type' => 'cheque_payment',
                                 'reference_number' => $cheque['cheque_number'] ?? $settlement->settlement_number,
-                                'description' => 'Cheque Payment - ' . ($cheque['notes'] ?? 'Cheque #' . $cheque['cheque_number']),
+                                'description' => 'Cheque Payment - '.($cheque['notes'] ?? 'Cheque #'.$cheque['cheque_number']),
                                 'debit' => 0,
                                 'credit' => $cheque['amount'],
                                 'balance' => $customer->receivable_balance - $cheque['amount'],
@@ -523,9 +523,9 @@ class SalesSettlementController extends Controller
 
                 if (isset($item['batches']) && is_array($item['batches'])) {
                     // Auto-distribute item-level quantities to batches if batch-level values are all zero
-                    $batchSoldSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_sold'] ?? 0));
-                    $batchReturnedSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_returned'] ?? 0));
-                    $batchShortageSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_shortage'] ?? 0));
+                    $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
+                    $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
+                    $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
 
                     $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
 
@@ -573,7 +573,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (!empty($request->sales)) {
+            if (! empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $settlement->id,
@@ -586,7 +586,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create advance tax breakdown records if any
-            if (!empty($request->advance_taxes) && is_array($request->advance_taxes)) {
+            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
                 foreach ($request->advance_taxes as $advanceTax) {
                     SalesSettlementAdvanceTax::create([
                         'sales_settlement_id' => $settlement->id,
@@ -601,9 +601,9 @@ class SalesSettlementController extends Controller
             }
 
             // Create expense records in sales_settlement_expenses table (store ALL expenses including zero amounts)
-            if (!empty($request->expenses) && is_array($request->expenses)) {
+            if (! empty($request->expenses) && is_array($request->expenses)) {
                 foreach ($request->expenses as $expense) {
-                    if (!empty($expense['expense_account_id'])) {
+                    if (! empty($expense['expense_account_id'])) {
                         SalesSettlementExpense::create([
                             'sales_settlement_id' => $settlement->id,
                             'expense_date' => $request->settlement_date,
@@ -617,14 +617,17 @@ class SalesSettlementController extends Controller
             }
 
             // Create customer credit sales records with draft status
-            if (!empty($request->credit_sales) && is_array($request->credit_sales)) {
+            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CustomerCreditSale::create([
                         'sales_settlement_id' => $settlement->id,
                         'employee_id' => $goodsIssue->employee_id,
                         'customer_id' => $creditSale['customer_id'],
                         'invoice_number' => $creditSale['invoice_number'] ?? null,
-                        'sale_amount' => $creditSale['sale_amount'],
+                        'sale_amount' => $creditSale['sale_amount'] ?? 0,
+                        'recovery_amount' => $creditSale['payment_received'] ?? 0,
+                        'previous_balance' => $creditSale['previous_balance'] ?? 0,
+                        'new_balance' => $creditSale['new_balance'] ?? 0,
                         'notes' => $creditSale['notes'] ?? null,
                         'status' => 'draft',
                     ]);
@@ -654,7 +657,7 @@ class SalesSettlementController extends Controller
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Sales Settlement: ' . $e->getMessage());
+                ->with('error', 'Unable to create Sales Settlement: '.$e->getMessage());
         }
     }
 
@@ -851,9 +854,9 @@ class SalesSettlementController extends Controller
                 // Store batch breakdown if available
                 if (isset($item['batches']) && is_array($item['batches'])) {
                     // Auto-distribute item-level quantities to batches if batch-level values are all zero
-                    $batchSoldSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_sold'] ?? 0));
-                    $batchReturnedSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_returned'] ?? 0));
-                    $batchShortageSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_shortage'] ?? 0));
+                    $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
+                    $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
+                    $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
 
                     $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
 
@@ -901,7 +904,7 @@ class SalesSettlementController extends Controller
             }
 
             // Create credit sales records if any
-            if (!empty($request->sales)) {
+            if (! empty($request->sales)) {
                 foreach ($request->sales as $sale) {
                     SalesSettlementSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -917,14 +920,17 @@ class SalesSettlementController extends Controller
             $salesSettlement->creditSales()->delete();
 
             // Create customer credit sales records with draft status
-            if (!empty($request->credit_sales) && is_array($request->credit_sales)) {
+            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
                     CustomerCreditSale::create([
                         'sales_settlement_id' => $salesSettlement->id,
                         'employee_id' => $goodsIssue->employee_id,
                         'customer_id' => $creditSale['customer_id'],
                         'invoice_number' => $creditSale['invoice_number'] ?? null,
-                        'sale_amount' => $creditSale['sale_amount'],
+                        'sale_amount' => $creditSale['sale_amount'] ?? 0,
+                        'recovery_amount' => $creditSale['payment_received'] ?? 0,
+                        'previous_balance' => $creditSale['previous_balance'] ?? 0,
+                        'new_balance' => $creditSale['new_balance'] ?? 0,
                         'notes' => $creditSale['notes'] ?? null,
                         'status' => 'draft',
                     ]);
@@ -948,9 +954,9 @@ class SalesSettlementController extends Controller
             $salesSettlement->expenses()->delete();
 
             // Create expense records in sales_settlement_expenses table (store ALL expenses including zero amounts)
-            if (!empty($request->expenses) && is_array($request->expenses)) {
+            if (! empty($request->expenses) && is_array($request->expenses)) {
                 foreach ($request->expenses as $expense) {
-                    if (!empty($expense['expense_account_id'])) {
+                    if (! empty($expense['expense_account_id'])) {
                         SalesSettlementExpense::create([
                             'sales_settlement_id' => $salesSettlement->id,
                             'expense_date' => $request->settlement_date,
@@ -968,7 +974,7 @@ class SalesSettlementController extends Controller
 
             if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
                 foreach ($request->bank_transfers as $transfer) {
-                    if (!empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
+                    if (! empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
                         SalesSettlementBankTransfer::create([
                             'sales_settlement_id' => $salesSettlement->id,
                             'bank_account_id' => $transfer['bank_account_id'],
@@ -986,7 +992,7 @@ class SalesSettlementController extends Controller
 
             if ($request->has('cheques') && is_array($request->cheques)) {
                 foreach ($request->cheques as $cheque) {
-                    if (!empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
+                    if (! empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
                         SalesSettlementCheque::create([
                             'sales_settlement_id' => $salesSettlement->id,
                             'cheque_number' => $cheque['cheque_number'],

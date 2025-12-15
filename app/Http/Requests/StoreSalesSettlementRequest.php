@@ -98,6 +98,9 @@ class StoreSalesSettlementRequest extends FormRequest
             'credit_sales.*.customer_id' => 'required_with:credit_sales|exists:customers,id',
             'credit_sales.*.invoice_number' => 'nullable|string|max:100',
             'credit_sales.*.sale_amount' => 'required_with:credit_sales|numeric|min:0',
+            'credit_sales.*.payment_received' => 'nullable|numeric|min:0',
+            'credit_sales.*.previous_balance' => 'nullable|numeric',
+            'credit_sales.*.new_balance' => 'nullable|numeric',
             'credit_sales.*.notes' => 'nullable|string',
 
             // Advance tax breakdown

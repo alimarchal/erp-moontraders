@@ -356,7 +356,12 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
             async onCustomerChange() {
                 console.log('onCustomerChange called, customer_id:', this.form.customer_id);
                 console.log('Available customers in modal:', this.customers);
-                console.log('Employee ID:', this.employeeId);
+
+                // Get employeeId from component state or global variable
+                const effectiveEmployeeId = this.employeeId || window.currentSettlementEmployeeId;
+                console.log('Employee ID (component):', this.employeeId);
+                console.log('Employee ID (global):', window.currentSettlementEmployeeId);
+                console.log('Effective Employee ID:', effectiveEmployeeId);
 
                 if (!this.form.customer_id) {
                     this.form.previous_balance = 0;
@@ -374,16 +379,17 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                     return;
                 }
 
-                // Fallback to API call - use employee-specific balance endpoint if employeeId is available
+                // Fallback to API call - use employee-specific balance endpoint
                 console.log('Customer not in array, falling back to API call...');
                 try {
                     let response;
-                    if (this.employeeId) {
+                    if (effectiveEmployeeId) {
                         // Use new employee-specific balance endpoint
-                        response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance-by-employee/${this.employeeId}`);
+                        response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance-by-employee/${effectiveEmployeeId}`);
                         console.log('API /balance-by-employee response status:', response.status);
                     } else {
                         // Fallback to overall balance if no employeeId (shouldn't happen normally)
+                        console.warn('No employeeId available - using overall balance API');
                         response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance`);
                         console.log('API /balance response status:', response.status);
                     }

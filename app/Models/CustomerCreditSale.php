@@ -15,6 +15,9 @@ class CustomerCreditSale extends Model
         'customer_id',
         'invoice_number',
         'sale_amount',
+        'recovery_amount',
+        'previous_balance',
+        'new_balance',
         'notes',
         'status',
     ];
@@ -23,6 +26,9 @@ class CustomerCreditSale extends Model
     {
         return [
             'sale_amount' => 'decimal:2',
+            'recovery_amount' => 'decimal:2',
+            'previous_balance' => 'decimal:2',
+            'new_balance' => 'decimal:2',
         ];
     }
 

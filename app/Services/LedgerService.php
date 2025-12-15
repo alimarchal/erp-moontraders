@@ -339,6 +339,52 @@ class LedgerService
     }
 
     /**
+     * Get customer's outstanding balance for a specific employee/salesman
+     * This is the correct balance to show when a salesman is settling with a customer
+     *
+     * Formula: SUM(debit) - SUM(credit) = Outstanding Balance
+     * - Debit = Credit sales (customer owes us)
+     * - Credit = Payments/Recovery (customer paid)
+     */
+    public function getCustomerBalanceByEmployee(int $customerId, int $employeeId): float
+    {
+        $result = CustomerLedger::where('customer_id', $customerId)
+            ->where('employee_id', $employeeId)
+            ->whereNull('deleted_at')
+            ->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as outstanding_balance')
+            ->first();
+
+        return $result ? (float) $result->outstanding_balance : 0.0;
+    }
+
+    /**
+     * Get all customers with their outstanding balances for a specific employee
+     * Returns only customers who have ledger entries with this employee
+     */
+    public function getCustomersWithBalancesByEmployee(int $employeeId): array
+    {
+        $results = CustomerLedger::where('employee_id', $employeeId)
+            ->whereNull('deleted_at')
+            ->select('customer_id')
+            ->selectRaw('COALESCE(SUM(debit), 0) as total_debit')
+            ->selectRaw('COALESCE(SUM(credit), 0) as total_credit')
+            ->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as outstanding_balance')
+            ->groupBy('customer_id')
+            ->get();
+
+        $balances = [];
+        foreach ($results as $result) {
+            $balances[$result->customer_id] = [
+                'total_debit' => (float) $result->total_debit,
+                'total_credit' => (float) $result->total_credit,
+                'outstanding_balance' => (float) $result->outstanding_balance,
+            ];
+        }
+
+        return $balances;
+    }
+
+    /**
      * Get salesman's current balance
      */
     public function getSalesmanBalance(int $employeeId): float

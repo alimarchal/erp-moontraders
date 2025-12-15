@@ -15,12 +15,16 @@ Route::prefix('v1')->group(function () {
     Route::prefix('customers')->group(function () {
         Route::get('/{customer}/balance', [CustomerController::class, 'balance']);
         Route::get('/by-employee/{employee}', [CustomerController::class, 'byEmployee']);
+        // New: Get customer balance for a specific employee (employee-specific ledger balance)
+        Route::get('/{customer}/balance-by-employee/{employee}', [CustomerController::class, 'balanceByEmployee']);
     });
 });
 
 // Legacy Customer API Routes (for backward compatibility)
 Route::get('/customers/{customer}/balance', [CustomerController::class, 'balance']);
 Route::get('/customers/by-employee/{employee}', [CustomerController::class, 'byEmployee']);
+// New: Get customer balance for a specific employee
+Route::get('/customers/{customer}/balance-by-employee/{employee}', [CustomerController::class, 'balanceByEmployee']);
 
 // Accounting Transactions API Routes
 Route::prefix('transactions')->group(function () {

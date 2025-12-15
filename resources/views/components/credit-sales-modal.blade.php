@@ -356,6 +356,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
             async onCustomerChange() {
                 console.log('onCustomerChange called, customer_id:', this.form.customer_id);
                 console.log('Available customers in modal:', this.customers);
+                console.log('Employee ID:', this.employeeId);
 
                 if (!this.form.customer_id) {
                     this.form.previous_balance = 0;
@@ -363,20 +364,29 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                 }
 
                 // First check if balance is available in customers array (loaded via /by-employee API)
+                // This balance is already employee-specific from the updated API
                 const customer = this.customers.find(c => Number(c.id) === Number(this.form.customer_id));
                 console.log('Found customer in array:', customer);
 
                 if (customer && customer.balance !== undefined) {
                     this.form.previous_balance = parseFloat(customer.balance || 0);
-                    console.log('✓ Using balance from customers array (no API call):', this.form.previous_balance);
+                    console.log('✓ Using employee-specific balance from customers array:', this.form.previous_balance);
                     return;
                 }
 
-                // Fallback to API call using v1 endpoint (only if customer not in array)
+                // Fallback to API call - use employee-specific balance endpoint if employeeId is available
                 console.log('Customer not in array, falling back to API call...');
                 try {
-                    const response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance`);
-                    console.log('API /balance response status:', response.status);
+                    let response;
+                    if (this.employeeId) {
+                        // Use new employee-specific balance endpoint
+                        response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance-by-employee/${this.employeeId}`);
+                        console.log('API /balance-by-employee response status:', response.status);
+                    } else {
+                        // Fallback to overall balance if no employeeId (shouldn't happen normally)
+                        response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance`);
+                        console.log('API /balance response status:', response.status);
+                    }
 
                     if (response.ok) {
                         const data = await response.json();

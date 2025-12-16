@@ -811,6 +811,10 @@ class SalesSettlementController extends Controller
             $salesSettlement->items()->delete();
             $salesSettlement->creditSales()->delete();
             $salesSettlement->cashDenominations()->delete();
+            $salesSettlement->expenses()->delete();
+            $salesSettlement->bankTransfers()->delete();
+            $salesSettlement->cheques()->delete();
+            $salesSettlement->advanceTaxes()->delete();
 
             foreach ($request->items as $index => $item) {
                 $financials = $itemFinancials[$index] ?? [
@@ -904,6 +908,21 @@ class SalesSettlementController extends Controller
                         'new_balance' => $creditSale['new_balance'] ?? 0,
                         'notes' => $creditSale['notes'] ?? null,
                         'status' => 'draft',
+                    ]);
+                }
+            }
+
+            // Create advance tax breakdown records if any
+            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
+                foreach ($request->advance_taxes as $advanceTax) {
+                    SalesSettlementAdvanceTax::create([
+                        'sales_settlement_id' => $salesSettlement->id,
+                        'customer_id' => $advanceTax['customer_id'],
+                        'sale_amount' => $advanceTax['sale_amount'] ?? 0,
+                        'tax_rate' => $advanceTax['tax_rate'] ?? 0.25,
+                        'tax_amount' => $advanceTax['tax_amount'],
+                        'invoice_number' => $advanceTax['invoice_number'] ?? null,
+                        'notes' => $advanceTax['notes'] ?? null,
                     ]);
                 }
             }
@@ -1022,6 +1041,7 @@ class SalesSettlementController extends Controller
                 $item->forceDelete();
             }
             $salesSettlement->creditSales()->forceDelete();
+            $salesSettlement->advanceTaxes()->forceDelete();
             $salesSettlement->expenses()->forceDelete();
             $salesSettlement->bankTransfers()->forceDelete();
             $salesSettlement->cheques()->forceDelete();

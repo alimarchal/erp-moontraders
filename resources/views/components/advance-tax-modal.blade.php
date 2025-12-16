@@ -3,6 +3,7 @@
 'triggerEvent' => 'open-advance-tax-modal',
 'inputId' => 'expense_advance_tax',
 'entriesInputId' => 'advance_tax_entries',
+'initialEntries' => [],
 ])
 
 <div x-data="advanceTaxModal({
@@ -12,6 +13,7 @@
         ])->values()),
         inputId: '{{ $inputId }}',
         entriesInputId: '{{ $entriesInputId }}',
+        initialEntries: @js($initialEntries),
     })" x-on:{{ $triggerEvent }}.window="openModal()" x-cloak>
     <input type="hidden" name="{{ $entriesInputId }}" id="{{ $entriesInputId }}" :value="JSON.stringify(entries)">
 
@@ -128,7 +130,7 @@
 @once
 @push('scripts')
 <script>
-    function advanceTaxModal({ customers, inputId, entriesInputId }) {
+    function advanceTaxModal({ customers, inputId, entriesInputId, initialEntries }) {
         return {
             show: false,
             customers,
@@ -136,7 +138,7 @@
                 customer_id: '',
                 tax_amount: '',
             },
-            entries: [],
+            entries: initialEntries || [],
             select2Initialized: false,
 
             openModal() {

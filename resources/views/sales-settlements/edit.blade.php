@@ -4,7 +4,7 @@
             Edit Sales Settlement: {{ $settlement->settlement_number }}
         </h2>
         <div class="flex justify-center items-center float-right space-x-2">
-            <a href="{{ route('sales-settlements.show', $settlement) }}"
+            <a href="{{ route('sales-settlements.index') }}"
                 class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -15,45 +15,120 @@
         </div>
     </x-slot>
 
+    @php
+        // Prepare Batch Data Map
+        $savedBatchesData = [];
+        foreach($settlement->items as $item) {
+            foreach($item->batches as $batch) {
+                $savedBatchesData[$batch->stock_batch_id] = [
+                    'sold' => (float)$batch->quantity_sold,
+                    'returned' => (float)$batch->quantity_returned,
+                    'shortage' => (float)$batch->quantity_shortage,
+                ];
+            }
+        }
+
+        // Prepare Credit Sales JSON
+        $creditSalesData = $settlement->creditSales->map(function($sale) {
+            return [
+                'customer_id' => $sale->customer_id,
+                'customer_name' => $sale->customer->customer_name ?? 'Unknown',
+                'invoice_number' => $sale->invoice_number,
+                'sale_amount' => $sale->sale_amount,
+                'payment_received' => $sale->recovery_amount,
+                'notes' => $sale->notes
+            ];
+        });
+
+        // Prepare Bank Transfers JSON
+        $bankTransfersData = $settlement->bankTransfers->map(function($bt) {
+            return [
+                'bank_account_id' => $bt->bank_account_id,
+                'bank_account_name' => $bt->bankAccount->account_name ?? 'Unknown',
+                'amount' => $bt->amount,
+                'reference_number' => $bt->reference_number,
+                'transfer_date' => $bt->transfer_date ? \Carbon\Carbon::parse($bt->transfer_date)->format('Y-m-d') : null,
+                'customer_id' => $bt->customer_id,
+                'customer_name' => $bt->customer->customer_name ?? null,
+                'notes' => $bt->notes
+            ];
+        });
+
+        // Prepare Cheques JSON
+        $chequesData = $settlement->cheques->map(function($ch) {
+            return [
+                'cheque_number' => $ch->cheque_number,
+                'amount' => $ch->amount,
+                'bank_name' => $ch->bank_name,
+                'cheque_date' => $ch->cheque_date ? \Carbon\Carbon::parse($ch->cheque_date)->format('Y-m-d') : null,
+                'customer_id' => $ch->customer_id,
+                'notes' => $ch->notes
+            ];
+        });
+        
+        // Prepare Cash Denomination
+        $cashDenom = $settlement->cashDenominations->first();
+        
+        // Prepare Expenses for JS
+        $savedExpensesData = $settlement->expenses->map(function($exp) {
+            return [
+                'id' => 'saved_' . $exp->id,
+                'expense_account_id' => $exp->expense_account_id,
+                'amount' => (float)$exp->amount,
+                'description' => $exp->description,
+                'label' => $exp->expenseAccount->account_name ?? '',
+                'account_code' => $exp->expenseAccount->account_code ?? '',
+            ];
+        });
+
+        // Prepare Advance Taxes JSON
+        $advanceTaxesData = $settlement->advanceTaxes->map(function($tax) {
+            return [
+                'customer_id' => $tax->customer_id,
+                'customer_name' => $tax->customer->customer_name ?? 'Unknown',
+                'tax_amount' => (float)$tax->tax_amount,
+            ];
+        });
+    @endphp
+
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md" />
             <x-validation-errors class="mb-4" />
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <form method="POST" action="{{ route('sales-settlements.update', $settlement) }}" id="settlementForm">
+                <form method="POST" action="{{ route('sales-settlements.update', $settlement->id) }}" id="settlementForm">
                     @csrf
                     @method('PUT')
+                    {{-- Hidden input to store current employee ID for credit sales modal --}}
+                    <input type="hidden" id="current_settlement_employee_id" value="{{ $settlement->employee_id }}">
+
                     <div class="pt-6 pl-6 pr-6">
                         {{-- Section 1: Date & Goods Issue Selection --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2" x-data="goodsIssueSelector()">
                             <div>
                                 <x-label for="settlement_date" value="Settlement Date" class="required" />
                                 <x-input id="settlement_date" name="settlement_date" type="date"
-                                    class="mt-1 block w-full"
-                                    :value="old('settlement_date', $settlement->settlement_date->format('Y-m-d'))"
-                                    required />
+                                    class="mt-1 block w-full" :value="old('settlement_date', $settlement->settlement_date->format('Y-m-d'))" required />
                                 <x-input-error for="settlement_date" class="mt-2" />
                             </div>
 
                             <div>
-                                <x-label for="goods_issue_id" value="Goods Issue" class="required" />
+                                <x-label for="goods_issue_id" value="Select Goods Issue" class="required" />
                                 <select id="goods_issue_id" name="goods_issue_id"
                                     class="select2-goods-issue border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
-                                    required disabled>
+                                    required>
+                                    {{-- Pre-populate with the existing goods issue --}}
                                     <option value="{{ $settlement->goods_issue_id }}" selected>
-                                        {{ $settlement->goodsIssue->issue_number }} - {{
-                                        $settlement->goodsIssue->employee->full_name }} ({{
-                                        $settlement->goodsIssue->issue_date->format('d M Y') }})
+                                        {{ $settlement->goodsIssue->issue_number }} - {{ $settlement->goodsIssue->employee->full_name ?? 'Unknown' }} ({{ $settlement->goodsIssue->issue_date->format('d M Y') }})
                                     </option>
                                 </select>
-                                <input type="hidden" name="goods_issue_id" value="{{ $settlement->goods_issue_id }}" />
                                 <x-input-error for="goods_issue_id" class="mt-2" />
                             </div>
 
                         </div>
-                        <p class="text-sm text-blue-600" id="noItemsMessage" style="display: none;">
-                            Loading settlement items...
+                        <p class="text-sm text-gray-500 " id="noItemsMessage" style="display: none;">
+                            Select a Goods Issue to load product details
                         </p>
                     </div>
 
@@ -61,7 +136,7 @@
 
                         {{-- Section 2: Combined Batch-wise Settlement Table --}}
                         <div id="settlementTableContainer"
-                            style="display: none; text-align: center; margin: 0px; padding: 0px">
+                            style="text-align: center; margin: 10px; padding: 0px">
                             <x-detail-table
                                 title="Batch-wise Settlement (B/F + Issued = Total Available | Sold + Returned + Shortage + Balance = Total)"
                                 :headers="[
@@ -117,7 +192,7 @@
                                 </x-slot>
                             </x-detail-table>
                         </div>
-                        <p class="text-sm text-blue-600 mt-2 p-2" style="display: none;" id="settlementHelpText">
+                        <p class="text-sm text-blue-600 mt-2 p-2" id="settlementHelpText">
                             💡 Tip: When you enter Sold quantity, the remaining will auto-calculate. You can then adjust
                             Returned and Shortage as needed.
                         </p>
@@ -126,7 +201,7 @@
 
                     <div class="pr-6 pl-6 pt-2">
                         {{-- Section 3: Side-by-Side Cash Detail, Expense Detail, and Sales Summary --}}
-                        <div id="expenseAndSalesSummarySection" style="display: none;" class="mb-4">
+                        <div id="expenseAndSalesSummarySection" class="mb-4">
                             <h3 class="text-lg font-semibold mb-4 text-gray-800 flex items-center">
                                 <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor"
                                     viewBox="0 0 24 24">
@@ -136,358 +211,292 @@
                                 Cash Reconciliation & Settlement
                             </h3>
 
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {{-- LEFT SIDE: Cash Detail (Denomination Breakdown) --}}
-                                <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
-                                    <div class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2">
-                                        <h4 class="text-sm font-bold text-white">Cash Detail (Denomination Breakdown)
-                                        </h4>
+                            {{-- ROW 1: Credit Sales Detail | Cheque Payments | Bank Transfers --}}
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 items-start">
+                                {{-- Credit Sales Detail Card --}}
+                                <div class="bg-white rounded-lg border border-orange-300 overflow-hidden"
+                                    x-data="creditSalesDisplay()">
+                                    <div
+                                        class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2 flex justify-between items-center">
+                                        <h4 class="text-sm font-bold text-white">Credit Sales Detail</h4>
+                                        <button type="button" @click="openModal()"
+                                            class="text-xs bg-white text-orange-600 px-2 py-0.5 rounded font-semibold hover:bg-orange-50">
+                                            + Add More
+                                        </button>
                                     </div>
-                                    <div class="p-3">
+                                    <div class="p-0">
                                         <table class="w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
-                                                    <th class="py-1.5 px-2 text-left text-gray-700">Denomination</th>
-                                                    <th class="py-1.5 px-2 text-right text-gray-700">Qty</th>
-                                                    <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
+                                                    <th class="py-1 px-1 text-left text-black">Customer</th>
+                                                    <th class="py-1 px-1 text-right text-black">Sale</th>
+                                                    <th class="py-1 px-1 text-right text-black" title="Recovery">REC
+                                                    </th>
+                                                    <th class="py-1 px-1 text-right text-black"
+                                                        title="Balance with this Salesman">BAL</th>
                                                 </tr>
                                             </thead>
-                                            <tbody class="divide-y divide-gray-200">
+                                            <tbody id="creditSalesTableBody">
                                                 <tr>
-                                                    <td class="py-1 px-2">₨ 5,000 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
+                                                    <td colspan="4"
+                                                        class="py-2 px-1 text-center text-black text-xs italic">
+                                                        No credit sales entries
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot class="border-t-2 border-gray-300">
+                                                <tr class="bg-orange-50">
+                                                    <td
+                                                        class="py-1.5 px-1 text-right font-semibold text-orange-900 text-xs">
+                                                        Total:</td>
+                                                    <td class="py-1.5 px-1 text-right font-bold text-orange-700 text-xs"
+                                                        id="creditSalesTotalDisplay">0</td>
+                                                    <td class="py-1.5 px-1 text-right font-bold text-green-700 text-xs"
+                                                        id="creditRecoveryTotalDisplay">0</td>
+                                                    <td class="py-1.5 px-1 text-right font-bold text-blue-700 text-xs"
+                                                        id="creditBalanceTotalDisplay">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {{-- Cheque Payments Card --}}
+                                <div class="bg-white rounded-lg border border-purple-300 overflow-hidden"
+                                    x-data="chequePaymentDisplay()">
+                                    <div
+                                        class="bg-gradient-to-r from-purple-500 to-purple-600 px-3 py-2 flex justify-between items-center">
+                                        <h4 class="text-sm font-bold text-white">Cheque Payments</h4>
+                                        <button type="button" @click="openModal()"
+                                            class="text-xs bg-white text-purple-600 px-2 py-0.5 rounded font-semibold hover:bg-purple-50">
+                                            + Add More
+                                        </button>
+                                    </div>
+                                    <div class="p-0">
+                                        <table class="w-full text-xs">
+                                            <thead>
+                                                <tr class="border-b-2 border-gray-300">
+                                                    <th class="py-1 px-1 text-left text-black">Cheque #</th>
+                                                    <th class="py-1 px-1 text-left text-black">Bank</th>
+                                                    <th class="py-1 px-1 text-right text-black">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="chequePaymentTableBody">
+                                                <tr>
+                                                    <td colspan="3"
+                                                        class="py-2 px-1 text-center text-black text-xs italic">
+                                                        No cheque payments
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot class="border-t-2 border-gray-300">
+                                                <tr class="bg-purple-50">
+                                                    <td colspan="2"
+                                                        class="py-1.5 px-1 text-right font-semibold text-purple-900 text-xs">
+                                                        Total:</td>
+                                                    <td class="py-1.5 px-1 text-right font-bold text-purple-700 text-xs"
+                                                        id="chequeTotalDisplay">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {{-- Bank Transfers Card --}}
+                                <div class="bg-white rounded-lg border border-blue-300 overflow-hidden"
+                                    x-data="bankTransferDisplay()">
+                                    <div
+                                        class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2 flex justify-between items-center">
+                                        <h4 class="text-sm font-bold text-white">Bank Transfers</h4>
+                                        <button type="button" @click="openModal()"
+                                            class="text-xs bg-white text-blue-600 px-2 py-0.5 rounded font-semibold hover:bg-blue-50">
+                                            + Add More
+                                        </button>
+                                    </div>
+                                    <div class="p-0">
+                                        <table class="w-full text-xs">
+                                            <thead>
+                                                <tr class="border-b-2 border-gray-300">
+                                                    <th class="py-1 px-1 text-left text-black">Bank</th>
+                                                    <th class="py-1 px-1 text-left text-black">Ref #</th>
+                                                    <th class="py-1 px-1 text-right text-black">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="bankTransferTableBody">
+                                                <tr>
+                                                    <td colspan="3"
+                                                        class="py-2 px-1 text-center text-black text-xs italic">
+                                                        No bank transfers
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot class="border-t-2 border-gray-300">
+                                                <tr class="bg-blue-50">
+                                                    <td colspan="2"
+                                                        class="py-1.5 px-1 text-right font-semibold text-blue-900 text-xs">
+                                                        Total:</td>
+                                                    <td class="py-1.5 px-1 text-right font-bold text-blue-700 text-xs"
+                                                        id="bankTransferTotalDisplay">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- ROW 2: Cash Detail | Expense Detail | Sales Summary --}}
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+                                {{-- Cash Detail (Denomination Breakdown) Card --}}
+                                <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
+                                        <h4 class="text-sm font-bold text-white text-center">Cash Detail (Denomination
+                                            Breakdown)</h4>
+                                    </div>
+                                    <div class="p-0">
+                                        <table class="w-full text-xs">
+                                            <thead>
+                                                <tr class="border-b-2 border-gray-300">
+                                                    <th class="py-1 px-1 text-left text-black">Denomination</th>
+                                                    <th class="py-1 px-1 text-right text-black">Quantity</th>
+                                                    <th class="py-1 px-1 text-right text-black">Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr style="border-top: 1px solid #000;">
+                                                    <td style="padding: 3px 6px; border: none;">5,000 Notes</td>
+                                                    <td style="padding: 3px 6px; text-align: right; border: none;">
                                                         <input type="number" id="denom_5000" name="denom_5000" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
+                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_5000 ?? 0 }}" />
                                                     </td>
-                                                    <td class="py-1 px-2 text-right font-semibold"
-                                                        id="denom_5000_total">₨
-                                                        0.00</td>
+                                                    <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
+                                                        id="denom_5000_total">0.00</td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 1,000 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
+                                                <tr style="border-top: 1px solid #000;">
+                                                    <td style="padding: 3px 6px; border: none;">1,000 Notes</td>
+                                                    <td style="padding: 3px 6px; text-align: right; border: none;">
                                                         <input type="number" id="denom_1000" name="denom_1000" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
+                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_1000 ?? 0 }}" />
                                                     </td>
-                                                    <td class="py-1 px-2 text-right font-semibold"
-                                                        id="denom_1000_total">₨
-                                                        0.00</td>
+                                                    <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
+                                                        id="denom_1000_total">0.00</td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 500 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
+                                                <tr style="border-top: 1px solid #000;">
+                                                    <td style="padding: 3px 6px; border: none;">500 Notes</td>
+                                                    <td style="padding: 3px 6px; text-align: right; border: none;">
                                                         <input type="number" id="denom_500" name="denom_500" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
+                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_500 ?? 0 }}" />
                                                     </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_500_total">
-                                                        ₨
-                                                        0.00</td>
+                                                    <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
+                                                        id="denom_500_total">0.00</td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 100 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
+                                                <tr style="border-top: 1px solid #000;">
+                                                    <td style="padding: 3px 6px; border: none;">100 Notes</td>
+                                                    <td style="padding: 3px 6px; text-align: right; border: none;">
                                                         <input type="number" id="denom_100" name="denom_100" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
+                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_100 ?? 0 }}" />
                                                     </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_100_total">
-                                                        ₨
-                                                        0.00</td>
+                                                    <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
+                                                        id="denom_100_total">0.00</td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 50 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
+                                                <tr style="border-top: 1px solid #000;">
+                                                    <td style="padding: 3px 6px; border: none;">50 Notes</td>
+                                                    <td style="padding: 3px 6px; text-align: right; border: none;">
                                                         <input type="number" id="denom_50" name="denom_50" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
+                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_50 ?? 0 }}" />
                                                     </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_50_total">₨
-                                                        0.00</td>
+                                                    <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
+                                                        id="denom_50_total">0.00</td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 20 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
+                                                <tr style="border-top: 1px solid #000;">
+                                                    <td style="padding: 3px 6px; border: none;">20 Notes</td>
+                                                    <td style="padding: 3px 6px; text-align: right; border: none;">
                                                         <input type="number" id="denom_20" name="denom_20" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
+                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_20 ?? 0 }}" />
                                                     </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_20_total">₨
-                                                        0.00</td>
+                                                    <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
+                                                        id="denom_20_total">0.00</td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">₨ 10 Notes</td>
-                                                    <td class="py-1 px-2 text-right">
+                                                <tr style="border-top: 1px solid #000;">
+                                                    <td style="padding: 3px 6px; border: none;">10 Notes</td>
+                                                    <td style="padding: 3px 6px; text-align: right; border: none;">
                                                         <input type="number" id="denom_10" name="denom_10" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
+                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_10 ?? 0 }}" />
                                                     </td>
-                                                    <td class="py-1 px-2 text-right font-semibold" id="denom_10_total">₨
-                                                        0.00</td>
+                                                    <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
+                                                        id="denom_10_total">0.00</td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Loose Cash/Coins</td>
-                                                    <td class="py-1 px-2 text-right">-</td>
-                                                    <td class="py-1 px-2 text-right">
+                                                <tr style="border-top: 1px solid #000;">
+                                                    <td style="padding: 3px 6px; border: none;">Loose Cash/Coins</td>
+                                                    <td style="padding: 3px 6px; text-align: right; border: none;">-
+                                                    </td>
+                                                    <td style="padding: 3px 6px; text-align: right; border: none;">
                                                         <input type="number" id="denom_coins" name="denom_coins" min="0"
                                                             step="0.01"
                                                             class="w-20 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="0" />
+                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_coins ?? 0 }}" />
                                                     </td>
                                                 </tr>
-                                                <tr class="bg-green-100 border-t-2 border-green-300">
-                                                    <td colspan="2" class="py-1.5 px-2 font-bold text-green-900">Total
-                                                        Physical Cash</td>
-                                                    <td class="py-1.5 px-2 text-right font-bold text-green-900"
-                                                        id="totalCashDisplay">₨ 0.00</td>
+                                                <tr style="background-color: #f0fdf4; border-top: 2px solid #059669;">
+                                                    <td colspan="2"
+                                                        style="padding: 4px 6px; font-weight: bold; color: #047857;">
+                                                        Total Physical Cash
+                                                    </td>
+                                                    <td style="padding: 4px 6px; text-align: right; font-weight: bold; color: #047857;"
+                                                        id="totalCashDisplay">0.00</td>
                                                 </tr>
                                             </tbody>
                                         </table>
 
-                                        {{-- Credit Sales, Bank Transfer and Cheque Payment Links with Totals --}}
-                                        <div class="mt-3 space-y-3">
-                                            {{-- Credit Sales Inline Table --}}
-                                            <div class="border border-orange-300 rounded-lg overflow-hidden bg-orange-50"
-                                                x-data="creditSalesManager(@js($customers), @js($settlement->creditSales))">
-                                                <div
-                                                    class="bg-gradient-to-r from-orange-600 to-orange-700 px-3 py-2 flex justify-between items-center">
-                                                    <h4 class="text-sm font-bold text-white">Creditors / Credit Sales
-                                                    </h4>
-                                                    <button type="button" @click="showAddForm = !showAddForm"
-                                                        class="text-xs bg-white text-orange-600 px-2 py-0.5 rounded font-semibold hover:bg-orange-50">
-                                                        + Add More
-                                                    </button>
-                                                </div>
-                                                <div class="p-2">
-                                                    {{-- Add Form (collapsible) --}}
-                                                    <div x-show="showAddForm" x-collapse
-                                                        class="mb-2 p-2 bg-white rounded border border-orange-200">
-                                                        <div class="grid grid-cols-12 gap-1 text-xs">
-                                                            <div class="col-span-4">
-                                                                <label
-                                                                    class="text-[10px] text-gray-600">Customer</label>
-                                                                <select x-model="form.customer_id"
-                                                                    @change="onCustomerChange()"
-                                                                    class="w-full text-xs border-gray-300 rounded py-0.5 px-1">
-                                                                    <option value="">Select Customer...</option>
-                                                                    <template x-for="customer in customers"
-                                                                        :key="customer.id">
-                                                                        <option :value="customer.id"
-                                                                            x-text="customer.customer_name"></option>
-                                                                    </template>
-                                                                </select>
-                                                            </div>
-                                                            <div class="col-span-2">
-                                                                <label class="text-[10px] text-gray-600">Prev
-                                                                    Balance</label>
-                                                                <input type="text" x-model="form.previous_balance"
-                                                                    readonly
-                                                                    class="w-full text-xs border-gray-300 rounded py-0.5 px-1 bg-gray-100 text-right" />
-                                                            </div>
-                                                            <div class="col-span-2">
-                                                                <label class="text-[10px] text-gray-600">Credit
-                                                                    Sale</label>
-                                                                <input type="number" x-model.number="form.sale_amount"
-                                                                    min="0" step="0.01"
-                                                                    class="w-full text-xs border-gray-300 rounded py-0.5 px-1 text-right" />
-                                                            </div>
-                                                            <div class="col-span-2">
-                                                                <label
-                                                                    class="text-[10px] text-gray-600">Recovery</label>
-                                                                <input type="number"
-                                                                    x-model.number="form.payment_received" min="0"
-                                                                    step="0.01"
-                                                                    class="w-full text-xs border-gray-300 rounded py-0.5 px-1 text-right" />
-                                                            </div>
-                                                            <div class="col-span-2 flex items-end">
-                                                                <button type="button" @click="addEntry()"
-                                                                    class="w-full text-xs bg-orange-600 text-white px-2 py-1 rounded font-semibold hover:bg-orange-700">
-                                                                    Add
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    {{-- Entries Table --}}
-                                                    <table class="w-full text-xs">
-                                                        <thead>
-                                                            <tr class="border-b border-gray-300 bg-gray-50">
-                                                                <th class="py-1 px-1 text-left text-gray-700">Customer
-                                                                </th>
-                                                                <th class="py-1 px-1 text-right text-gray-700">Prev Bal
-                                                                </th>
-                                                                <th class="py-1 px-1 text-right text-gray-700">Credit
-                                                                </th>
-                                                                <th class="py-1 px-1 text-right text-gray-700">Recovery
-                                                                </th>
-                                                                <th class="py-1 px-1 text-right text-gray-700">New Bal
-                                                                </th>
-                                                                <th class="py-1 px-1 w-6"></th>
-                                                            </tr>
-                                                        </thead>
-                                                        <tbody class="divide-y divide-gray-200">
-                                                            <template x-if="entries.length === 0">
-                                                                <tr>
-                                                                    <td colspan="6"
-                                                                        class="py-2 px-1 text-center text-gray-400 italic">
-                                                                        No credit sales entries yet
-                                                                    </td>
-                                                                </tr>
-                                                            </template>
-                                                            <template x-for="(entry, index) in entries" :key="index">
-                                                                <tr>
-                                                                    <td class="py-1 px-1 truncate max-w-[100px]"
-                                                                        x-text="entry.customer_name"></td>
-                                                                    <td class="py-1 px-1 text-right"
-                                                                        x-text="formatNumber(entry.previous_balance)">
-                                                                    </td>
-                                                                    <td class="py-1 px-1 text-right text-orange-700 font-semibold"
-                                                                        x-text="formatNumber(entry.sale_amount)"></td>
-                                                                    <td class="py-1 px-1 text-right text-green-700 font-semibold"
-                                                                        x-text="formatNumber(entry.payment_received)">
-                                                                    </td>
-                                                                    <td class="py-1 px-1 text-right text-blue-700 font-bold"
-                                                                        x-text="formatNumber(entry.new_balance)"></td>
-                                                                    <td class="py-1 px-1 text-center">
-                                                                        <button type="button"
-                                                                            @click="removeEntry(index)"
-                                                                            class="text-red-500 hover:text-red-700">×</button>
-                                                                    </td>
-                                                                    {{-- Hidden inputs --}}
-                                                                    <input type="hidden"
-                                                                        :name="'credit_sales[' + index + '][customer_id]'"
-                                                                        :value="entry.customer_id" />
-                                                                    <input type="hidden"
-                                                                        :name="'credit_sales[' + index + '][sale_amount]'"
-                                                                        :value="entry.sale_amount" />
-                                                                    <input type="hidden"
-                                                                        :name="'credit_sales[' + index + '][payment_received]'"
-                                                                        :value="entry.payment_received" />
-                                                                </tr>
-                                                            </template>
-                                                        </tbody>
-                                                        <tfoot>
-                                                            <tr class="bg-orange-100 border-t-2 border-orange-300">
-                                                                <td colspan="2"
-                                                                    class="py-1 px-1 font-bold text-orange-900">Total
-                                                                </td>
-                                                                <td class="py-1 px-1 text-right font-bold text-orange-900"
-                                                                    x-text="formatNumber(creditTotal)"></td>
-                                                                <td class="py-1 px-1 text-right font-bold text-green-900"
-                                                                    x-text="formatNumber(recoveryTotal)"></td>
-                                                                <td colspan="2"></td>
-                                                            </tr>
-                                                        </tfoot>
-                                                    </table>
-                                                </div>
-                                                {{-- Hidden inputs for totals --}}
-                                                <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
-                                                    :value="creditTotal" />
-                                                <input type="hidden" id="credit_recoveries_total"
-                                                    name="credit_recoveries_total" :value="recoveryTotal" />
-                                            </div>
-
-                                            {{-- Bank Transfer --}}
-                                            <div class="border border-blue-300 rounded-lg overflow-hidden bg-blue-50">
-                                                <button type="button"
-                                                    class="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
-                                                    onclick="window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'))">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                                                    </svg>
-                                                    Bank Transfer / Online Payment
-                                                </button>
-                                                <div
-                                                    class="px-4 py-2 bg-white border-t border-blue-200 flex justify-between items-center">
-                                                    <span class="text-xs font-semibold text-blue-900">Total Bank
-                                                        Transfers:</span>
-                                                    <span class="text-sm font-bold text-blue-700"
-                                                        id="bankTransferTotalDisplay">₨ 0.00</span>
-                                                </div>
-                                            </div>
-
-                                            {{-- Cheque Payment --}}
-                                            <div
-                                                class="border border-purple-300 rounded-lg overflow-hidden bg-purple-50">
-                                                <button type="button"
-                                                    class="w-full bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2.5 font-semibold text-sm shadow-md transition flex items-center justify-center gap-2"
-                                                    onclick="window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'))">
-                                                    <svg class="w-5 h-5" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                                    </svg>
-                                                    Cheque Payments
-                                                </button>
-                                                <div
-                                                    class="px-4 py-2 bg-white border-t border-purple-200 flex justify-between items-center">
-                                                    <span class="text-xs font-semibold text-purple-900">Total
-                                                        Cheques:</span>
-                                                    <span class="text-sm font-bold text-purple-700"
-                                                        id="chequeTotalDisplay">₨ 0.00</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
                                         {{-- Hidden inputs for totals (will be populated by modals) --}}
+                                        {{-- Populated with initial values --}}
                                         <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
-                                            value="0.00" />
+                                            value="{{ $settlement->credit_sales_amount }}" />
                                         <input type="hidden" id="credit_recoveries_total" name="credit_recoveries_total"
-                                            value="0.00" />
+                                            value="{{ $settlement->credit_recoveries }}" />
                                         <input type="hidden" id="total_bank_transfers" name="total_bank_transfers"
-                                            value="0.00" />
-                                        <input type="hidden" id="total_cheques" name="total_cheques" value="0.00" />
-
-                                        {{-- Grand Total --}}
-                                        <div
-                                            class="mt-3 p-2 bg-gradient-to-r from-emerald-100 to-emerald-50 border-2 border-emerald-400 rounded">
-                                            <div class="flex justify-between items-center">
-                                                <span class="text-sm font-bold text-emerald-900">💰 Total Cash
-                                                    Received</span>
-                                                <span class="text-lg font-bold text-emerald-900"
-                                                    id="grandTotalCashDisplay">₨
-                                                    0.00</span>
-                                            </div>
-                                        </div>
+                                            value="{{ $settlement->bankTransfers->sum('amount') }}" />
+                                        <input type="hidden" id="total_cheques" name="total_cheques" 
+                                            value="{{ $settlement->cheque_sales_amount }}" />
                                     </div>
                                 </div>
 
-                                {{-- RIGHT SIDE: Expense Detail Table (Dynamic) --}}
-                                <div class="bg-white rounded-lg border border-gray-300 overflow-hidden"
+                                {{-- Expense Detail Card --}}
+                                <div class="bg-white rounded-lg border border-orange-300 overflow-hidden"
                                     x-data="expenseManager(@js($expenseAccounts))">
                                     <div
-                                        class="bg-gradient-to-r from-red-500 to-red-600 px-3 py-2 flex justify-between items-center">
+                                        class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2 flex justify-between items-center">
                                         <h4 class="text-sm font-bold text-white">Expense Detail</h4>
                                         <button type="button" @click="addExpense()"
-                                            class="text-xs bg-white text-red-600 px-2 py-0.5 rounded font-semibold hover:bg-red-50">
+                                            class="text-xs bg-white text-orange-600 px-2 py-0.5 rounded font-semibold hover:bg-orange-50">
                                             + Add More
                                         </button>
                                     </div>
-                                    <div class="p-3">
+                                    <div class="p-0">
                                         <table class="w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
-                                                    <th class="py-1.5 px-2 text-left text-gray-700">Description</th>
-                                                    <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
-                                                    <th class="py-1.5 px-1 w-6"></th>
+                                                    <th class="py-1 px-1 text-left text-black">Expense Account</th>
+                                                    <th class="py-1 px-1 text-right text-black">Amount</th>
                                                 </tr>
                                             </thead>
-                                            <tbody class="divide-y divide-gray-200">
+                                            <tbody>
                                                 <template x-for="(expense, index) in expenses" :key="expense.id">
-                                                    <tr>
-                                                        <td class="py-1 px-2">
+                                                    <tr class="hover:bg-gray-50">
+                                                        <td class="py-1 px-1 text-xs">
                                                             <template
                                                                 x-if="expense.is_predefined && expense.expense_account_id !== 18">
                                                                 <span
@@ -503,17 +512,22 @@
                                                                 </button>
                                                             </template>
                                                             <template x-if="!expense.is_predefined">
-                                                                <select @change="onAccountSelect($event, index)"
-                                                                    class="text-xs border-gray-300 rounded w-full py-0.5 px-1">
-                                                                    <option value="">Select expense account...</option>
-                                                                    <template x-for="account in availableAccounts"
-                                                                        :key="account.id">
-                                                                        <option :value="account.id"
-                                                                            :selected="expense.expense_account_id == account.id"
-                                                                            x-text="account.account_code + ' - ' + account.account_name">
-                                                                        </option>
-                                                                    </template>
-                                                                </select>
+                                                                <div class="flex items-center gap-0.5">
+                                                                    <select @change="onAccountSelect($event, index)"
+                                                                        class="text-[10px] border-gray-300 rounded flex-1 py-0 px-1 h-6">
+                                                                        <option value="">Select...</option>
+                                                                        <template x-for="account in availableAccounts"
+                                                                            :key="account.id">
+                                                                            <option :value="account.id"
+                                                                                :selected="expense.expense_account_id == account.id"
+                                                                                x-text="account.account_code + '-' + account.account_name">
+                                                                            </option>
+                                                                        </template>
+                                                                    </select>
+                                                                    <button type="button" @click="removeExpense(index)"
+                                                                        class="text-red-500 hover:text-red-700 text-sm leading-none px-0.5"
+                                                                        title="Remove">×</button>
+                                                                </div>
                                                             </template>
                                                             {{-- Hidden inputs for form submission --}}
                                                             <input type="hidden"
@@ -523,7 +537,7 @@
                                                                 :name="'expenses[' + index + '][description]'"
                                                                 :value="expense.description || expense.label" />
                                                         </td>
-                                                        <td class="py-1 px-2 text-right">
+                                                        <td class="py-1 px-1 text-right">
                                                             <input type="number" :id="'expense_amount_' + expense.id"
                                                                 :name="'expenses[' + index + '][amount]'" step="0.01"
                                                                 min="0" x-model.number="expense.amount"
@@ -532,176 +546,136 @@
                                                                 :class="expense.expense_account_id === 18 ? 'bg-gray-100' : ''"
                                                                 class="w-24 text-right border-gray-300 rounded text-xs px-1 py-0.5" />
                                                         </td>
-                                                        <td class="py-1 px-1 text-center">
-                                                            <template x-if="!expense.is_predefined">
-                                                                <button type="button" @click="removeExpense(index)"
-                                                                    class="text-red-500 hover:text-red-700">
-                                                                    <svg class="w-4 h-4" fill="none"
-                                                                        stroke="currentColor" viewBox="0 0 24 24">
-                                                                        <path stroke-linecap="round"
-                                                                            stroke-linejoin="round" stroke-width="2"
-                                                                            d="M6 18L18 6M6 6l12 12"></path>
-                                                                    </svg>
-                                                                </button>
-                                                            </template>
-                                                        </td>
                                                     </tr>
                                                 </template>
-                                                <tr class="bg-red-100 border-t-2 border-red-300">
-                                                    <td class="py-1.5 px-2 font-bold text-red-900" colspan="2">Total
-                                                        Expenses</td>
-                                                    <td class="py-1.5 px-2 text-right font-bold text-red-900"
-                                                        id="totalExpensesDisplay"
-                                                        x-text="'₨ ' + totalExpenses.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})">
-                                                        ₨ 0.00</td>
-                                                </tr>
                                             </tbody>
+                                            <tfoot class="border-t-2 border-gray-300">
+                                                <tr class="bg-orange-50">
+                                                    <td
+                                                        class="py-1.5 px-1 text-right font-semibold text-orange-900 text-xs">
+                                                        Total:</td>
+                                                    <td class="py-1.5 px-1 text-right font-bold text-orange-700 text-xs"
+                                                        id="totalExpensesDisplay"
+                                                        x-text="totalExpenses.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})">
+                                                        0.00</td>
+                                                </tr>
+                                            </tfoot>
                                         </table>
                                     </div>
                                 </div>
 
-                                {{-- THIRD COLUMN: Sales Summary (Auto-Calculating) --}}
-                                <div class="bg-white rounded-lg border border-gray-300 overflow-hidden">
-                                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2">
+                                {{-- Sales Summary Card --}}
+                                <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
+                                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
                                         <h4 class="text-sm font-bold text-white">Sales Summary</h4>
                                     </div>
-                                    <div class="p-3">
+                                    <div class="p-0">
                                         <table class="w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
-                                                    <th class="py-1.5 px-2 text-left text-gray-700">Description</th>
-                                                    <th class="py-1.5 px-2 text-right text-gray-700">Amount</th>
+                                                    <th class="py-1 px-1 text-left text-black">Description</th>
+                                                    <th class="py-1 px-1 text-right text-black">Amount</th>
                                                 </tr>
                                             </thead>
-                                            <tbody class="divide-y divide-gray-200">
-                                                <tr>
-                                                    <td class="py-1 px-2">Net Sale (Sold Items)</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-green-700"
-                                                        id="summary_net_sale_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Recovery (from customers)</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-teal-700"
-                                                        id="summary_recovery_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr class="bg-blue-100 border-t-2 border-blue-300">
-                                                    <td class="py-1.5 px-2 font-bold text-blue-900">Total Sale</td>
-                                                    <td class="py-1.5 px-2 text-right font-bold text-blue-900"
-                                                        id="summary_total_sale_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2">Credit (to customers)</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-orange-700"
-                                                        id="summary_credit_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr class="bg-gray-50">
-                                                    <td class="py-1 px-2 font-semibold">Balance</td>
-                                                    <td class="py-1 px-2 text-right font-semibold"
-                                                        id="summary_balance_display">
-                                                        ₨ 0.00</td>
-                                                </tr>
+                                            <tbody>
                                                 <tr class="border-t border-gray-200">
-                                                    <td class="py-1 px-2 text-red-700">Expenses</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-red-700"
-                                                        id="summary_expenses_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr class="bg-indigo-50">
-                                                    <td class="py-1.5 px-2 font-bold text-indigo-900">Net Balance</td>
-                                                    <td class="py-1.5 px-2 text-right font-bold text-indigo-900"
-                                                        id="summary_net_balance_display">₨ 0.00</td>
-                                                </tr>
-                                                <tr class="border-t border-gray-200">
-                                                    <td class="py-1 px-2">
-                                                        <div>Cash Received (counted)</div>
-                                                        <div class="text-xs text-gray-500 italic">Physical Cash + Bank
-                                                            Transfer + Cheques</div>
+                                                    <td class="py-1 px-1 text-xs text-black">Net Sale (Sold Items Value)
                                                     </td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-green-700"
-                                                        id="summary_cash_received_display">₨ 0.00</td>
+                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-black"
+                                                        id="summary_net_sale_display">0.00</td>
                                                 </tr>
-                                                <tr
-                                                    class="bg-gradient-to-r from-purple-100 to-purple-50 border-t-2 border-purple-300">
-                                                    <td class="py-2 px-2 font-bold text-purple-900">Short/Excess</td>
-                                                    <td class="py-2 px-2 text-right font-bold text-purple-900 text-base"
-                                                        id="summary_short_excess_display">₨ 0.00</td>
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-1 px-1 text-xs text-black">Recovery (From Customers)
+                                                    </td>
+                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-teal-700"
+                                                        id="summary_recovery_display">0.00</td>
                                                 </tr>
-                                                {{-- Profit Summary Section --}}
-                                                <tr class="bg-gray-100 border-t-2 border-gray-400">
+                                                <tr class="bg-blue-50 border-y-2 border-blue-200">
+                                                    <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Sale
+                                                    </td>
+                                                    <td class="py-1 px-1 text-right font-bold text-xs text-blue-800"
+                                                        id="summary_total_sale_display">0.00</td>
+                                                </tr>
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-1 px-1 text-xs text-black">Credit Extended</td>
+                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-orange-700"
+                                                        id="summary_credit_display">0.00</td>
+                                                </tr>
+                                                <tr class="bg-gray-50 border-t border-gray-200">
+                                                    <td class="py-1 px-1 text-xs font-semibold text-gray-800">Balance
+                                                    </td>
+                                                    <td class="py-1 px-1 text-right font-bold text-xs text-gray-900"
+                                                        id="summary_balance_display">0.00</td>
+                                                </tr>
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-1 px-1 text-xs text-red-700">Less: Expenses</td>
+                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-red-700"
+                                                        id="summary_expenses_display">0.00</td>
+                                                </tr>
+                                                <tr class="bg-indigo-50 border-y-2 border-indigo-200">
+                                                    <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Net
+                                                        Balance</td>
+                                                    <td class="py-1 px-1 text-right font-bold text-xs text-indigo-900"
+                                                        id="summary_net_balance_display">0.00</td>
+                                                </tr>
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-1 px-1 text-xs text-black">
+                                                        Cash Received (counted)
+                                                        <div class="text-[10px] text-gray-600 italic">
+                                                            Physical + Bank + Cheques
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-emerald-700"
+                                                        id="summary_cash_received_display">0.00</td>
+                                                </tr>
+                                                <tr class="bg-purple-50 border-y-2 border-purple-200">
+                                                    <td class="py-1 px-1 text-xs font-semibold text-purple-900">
+                                                        Short/Excess</td>
+                                                    <td class="py-1 px-1 text-right font-bold text-xs text-purple-900"
+                                                        id="summary_short_excess_display">0.00</td>
+                                                </tr>
+                                                {{-- Profit Analysis Section --}}
+                                                <tr class="bg-gray-100 border-t-2 border-gray-300">
                                                     <td colspan="2"
-                                                        class="py-1.5 px-2 text-center font-bold text-gray-700 text-xs uppercase tracking-wide">
+                                                        class="py-1 px-1 text-center font-bold text-black text-xs uppercase tracking-wide">
                                                         Profit Analysis
                                                     </td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2 text-gray-700">Total COGS</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-gray-700"
-                                                        id="summary_cogs_display">₨ 0.00</td>
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-0.5 px-1 text-xs text-gray-700">Total COGS</td>
+                                                    <td class="py-0.5 px-1 text-right font-semibold text-xs text-black"
+                                                        id="summary_cogs_display">0.00</td>
                                                 </tr>
-                                                <tr class="bg-green-50">
-                                                    <td class="py-1 px-2 font-semibold text-green-800">Gross Profit
-                                                        (Sales -
-                                                        COGS)</td>
-                                                    <td class="py-1 px-2 text-right font-bold text-green-700"
-                                                        id="summary_gross_profit_display">₨ 0.00</td>
+                                                <tr class="bg-green-50 border-t border-green-200">
+                                                    <td class="py-0.5 px-1 font-semibold text-xs text-green-800">Gross
+                                                        Profit (Sales - COGS)</td>
+                                                    <td class="py-0.5 px-1 text-right font-bold text-xs text-green-700"
+                                                        id="summary_gross_profit_display">0.00</td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2 text-xs text-gray-500 pl-4">Gross Margin</td>
-                                                    <td class="py-1 px-2 text-right text-xs font-semibold"
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-0.5 px-1 text-xs text-gray-500 pl-2">Gross Margin</td>
+                                                    <td class="py-0.5 px-1 text-right text-xs font-semibold"
                                                         id="summary_gross_margin_display">0.00%</td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2 text-red-700">Less: Expenses</td>
-                                                    <td class="py-1 px-2 text-right font-semibold text-red-700"
-                                                        id="summary_profit_expenses_display">₨ 0.00</td>
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-0.5 px-1 text-xs text-red-700">Less: Expenses</td>
+                                                    <td class="py-0.5 px-1 text-right font-semibold text-xs text-red-700"
+                                                        id="summary_profit_expenses_display">0.00</td>
                                                 </tr>
                                                 <tr
                                                     class="bg-gradient-to-r from-emerald-100 to-teal-100 border-t-2 border-emerald-400">
-                                                    <td class="py-2 px-2 font-bold text-emerald-900">Net Profit (After
-                                                        Expenses)</td>
-                                                    <td class="py-2 px-2 text-right font-bold text-emerald-900 text-base"
-                                                        id="summary_net_profit_display">₨ 0.00</td>
+                                                    <td class="py-1 px-1 font-bold text-xs text-emerald-900">Net Profit
+                                                        (After Expenses)</td>
+                                                    <td class="py-1 px-1 text-right font-bold text-xs text-emerald-900"
+                                                        id="summary_net_profit_display">0.00</td>
                                                 </tr>
-                                                <tr>
-                                                    <td class="py-1 px-2 text-xs text-gray-500 pl-4">Net Margin</td>
-                                                    <td class="py-1 px-2 text-right text-xs font-semibold"
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-0.5 px-1 text-xs text-gray-500 pl-2">Net Margin</td>
+                                                    <td class="py-0.5 px-1 text-right text-xs font-semibold"
                                                         id="summary_net_margin_display">0.00%</td>
                                                 </tr>
                                             </tbody>
                                         </table>
-                                        <div
-                                            class="mt-2 p-3 bg-gradient-to-r from-gray-50 to-blue-50 rounded-lg border border-gray-200 text-xs text-gray-700 leading-relaxed">
-                                            <strong
-                                                class="block mb-2 text-sm text-gray-900 border-b border-gray-300 pb-1">Settlement
-                                                Calculation Formula:</strong>
-                                            <div class="space-y-1">
-                                                <div><span class="font-semibold text-gray-800">Net Sale:</span> Value of
-                                                    sold items</div>
-                                                <div><span class="font-semibold text-gray-800">Recovery:</span> Payments
-                                                    received from customers</div>
-                                                <div class="pl-2"><span class="font-bold text-blue-700">Total
-                                                        Sale</span> =
-                                                    Net Sale + Recovery</div>
-                                                <div class="border-t border-gray-200 pt-1 mt-1"><span
-                                                        class="font-semibold text-gray-800">Credit:</span> Grand total
-                                                    of
-                                                    credit extended to customers</div>
-                                                <div class="pl-2"><span class="font-bold text-gray-700">Balance</span> =
-                                                    Total Sale - Credit</div>
-                                                <div class="border-t border-gray-200 pt-1 mt-1"><span
-                                                        class="font-semibold text-gray-800">Expenses:</span> Sum of all
-                                                    expenses incurred</div>
-                                                <div class="pl-2"><span class="font-bold text-indigo-700">Net
-                                                        Balance</span>
-                                                    = Balance - Expenses</div>
-                                                <div class="border-t border-gray-200 pt-1 mt-1"><span
-                                                        class="font-semibold text-gray-800">Cash Received:</span> Total
-                                                    from
-                                                    cash denomination breakdown</div>
-                                                <div class="pl-2"><span
-                                                        class="font-bold text-purple-700">Short/Excess</span> = Cash
-                                                    Received - Net Balance</div>
-                                            </div>
-                                        </div>
 
                                         {{-- Hidden input fields for calculations --}}
                                         <input type="hidden" id="summary_net_sale" name="summary_net_sale"
@@ -720,13 +694,12 @@
 
                                         <x-advance-tax-modal
                                             :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
-                                            entriesInputId="advance_taxes" />
-                                        <x-bank-transfer-modal
-                                            :customers="$customers"
+                                            entriesInputId="advance_taxes" 
+                                            :initialEntries="$advanceTaxesData" />
+                                        <x-bank-transfer-modal :customers="$customers"
                                             entriesInputId="bank_transfers" />
-                                        <x-cheque-payment-modal
-                                            :customers="$customers"
-                                            entriesInputId="cheques" />
+                                        <x-cheque-payment-modal :customers="$customers" entriesInputId="cheques" />
+                                        <x-credit-sales-modal :customers="$customers" entriesInputId="credit_sales" />
                                     </div>
                                 </div>
                             </div>
@@ -744,7 +717,7 @@
                     </div>
 
                     <div class="flex justify-end space-x-3 mb-4 mr-4">
-                        <a href="{{ route('sales-settlements.show', $settlement) }}"
+                        <a href="{{ route('sales-settlements.index') }}"
                             class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
                             Cancel
                         </a>
@@ -761,16 +734,242 @@
     @push('scripts')
     <script>
         let invoiceCounter = 1;
+        
+        // Load saved data from PHP
+        const savedBatchesMap = @json($savedBatchesData);
+        const savedCreditSales = @json($creditSalesData);
+        const savedBankTransfers = @json($bankTransfersData);
+        const savedCheques = @json($chequesData);
+        const savedExpenses = @json($savedExpensesData);
+
+        // Pre-fill hidden inputs that rely on JSON strings
+        document.getElementById('credit_sales').value = JSON.stringify(savedCreditSales);
+        document.getElementById('bank_transfers').value = JSON.stringify(savedBankTransfers);
+        document.getElementById('cheques').value = JSON.stringify(savedCheques);
+
 
         // Alpine.js component for Goods Issue selector
         function goodsIssueSelector() {
             return {
-                selectedGoodsIssue: {{ $settlement->goods_issue_id }},
+                selectedGoodsIssue: null,
                 loading: false,
+                
+                init() {
+                    // Load the initial goods issue data automatically
+                    const initialId = document.getElementById('goods_issue_id').value;
+                    if (initialId) {
+                        this.loadGoodsIssue(initialId, true);
+                    }
+                },
+                
+                loadGoodsIssue(goodsIssueId, isInitialLoad = false) {
+                    if (!goodsIssueId) {
+                        clearSettlementForm();
+                        return;
+                    }
+
+                    // Show loading state
+                    document.getElementById('noItemsMessage').innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner fa-spin"></i> Loading goods issue data...</span>';
+                    document.getElementById('noItemsMessage').style.display = 'block';
+
+                    // Fetch goods issue items via AJAX
+                    const apiUrl = `{{ url('api/sales-settlements/goods-issues') }}/${goodsIssueId}/items`;
+
+                    fetch(apiUrl)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const items = data.items || [];
+
+                            // Load customers for this employee
+                            if (data.employee_id) {
+                                loadCustomersForEmployee(data.employee_id);
+                            }
+
+                            const settlementItemsBody = document.getElementById('settlementItemsBody');
+                            settlementItemsBody.innerHTML = '';
+
+                            let grandTotal = 0;
+
+                            items.forEach((item, index) => {
+                                const batchBreakdown = item.batch_breakdown || [];
+                                const itemTotal = item.calculated_total || item.total_value;
+                                grandTotal += parseFloat(itemTotal);
+
+                                // Calculate weighted average selling price from batch breakdown
+                                let avgSellingPrice = 0;
+                                if (batchBreakdown.length > 0) {
+                                    const totalQty = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.quantity), 0);
+                                    const totalValue = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.value), 0);
+                                    avgSellingPrice = totalQty > 0 ? (totalValue / totalQty) : parseFloat(item.unit_cost);
+                                } else {
+                                    avgSellingPrice = parseFloat(item.unit_cost);
+                                }
+
+
+                                // Container div for product-level hidden fields (will be placed outside the table)
+                                let hiddenFieldsContainer = document.createElement('div');
+                                hiddenFieldsContainer.className = 'hidden-fields-container';
+                                hiddenFieldsContainer.innerHTML = `
+                                    <input type="hidden" name="items[${index}][goods_issue_item_id]" value="${item.id}">
+                                    <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
+                                    <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
+                                    <input type="hidden" name="items[${index}][bf_quantity]" value="${item.bf_quantity || 0}">
+                                    <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
+                                    <input type="hidden" name="items[${index}][selling_price]" value="${avgSellingPrice}">
+                                    <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="0">
+                                    <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="0">
+                                    <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="0">
+                                `;
+
+                                // Get B/F quantity for this item (from van stock)
+                                const itemBfQuantity = parseFloat(item.bf_quantity) || 0;
+
+                                // Settlement rows (one per batch)
+                                if (batchBreakdown.length > 0) {
+                                    batchBreakdown.forEach((batch, batchIdx) => {
+                                        const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
+                                        // For B/F, distribute proportionally across batches or show on first batch only
+                                        const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
+
+                                        const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
+                                        const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
+                                        const uomSymbol = (item.uom && item.uom.symbol) ? item.uom.symbol : 'N/A';
+                                        
+                                        // Determine initial values (either 0 or saved values)
+                                        let initialSold = 0;
+                                        let initialReturned = 0;
+                                        let initialShortage = 0;
+                                        
+                                        if (isInitialLoad && savedBatchesMap[batch.stock_batch_id]) {
+                                            const saved = savedBatchesMap[batch.stock_batch_id];
+                                            initialSold = saved.sold;
+                                            initialReturned = saved.returned;
+                                            initialShortage = saved.shortage;
+                                        }
+
+                                        const settlementRow = `
+                                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                                <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
+                                                    <div class="font-semibold text-gray-900 break-words">${productName}</div>
+                                                    <div class="text-xs text-gray-500 break-words">
+                                                        ${productCode}<br>Batch: ${batch.batch_code}
+                                                        ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
+                                                    </div>
+                                                </td>
+                                                <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
+                                                    <div class="text-xs text-gray-600">
+                                                        ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
+                                                    </div>
+                                                </td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
+                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
+                                                </td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
+                                                    <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
+                                                </td>
+                                                <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                                <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number"
+                                                        name="items[${index}][batches][${batchIdx}][quantity_sold]"
+                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                        data-item-index="${index}"
+                                                        data-batch-index="${batchIdx}"
+                                                        data-type="sold"
+                                                        data-bf-quantity="${batchBfQuantity}"
+                                                        min="0"
+                                                        step="1"
+                                                        value="${initialSold}"
+                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'sold')">
+                                                </td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number"
+                                                        name="items[${index}][batches][${batchIdx}][quantity_returned]"
+                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                        data-item-index="${index}"
+                                                        data-batch-index="${batchIdx}"
+                                                        data-type="returned"
+                                                        min="0"
+                                                        step="1"
+                                                        value="${initialReturned}"
+                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'returned')">
+                                                </td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <input type="number"
+                                                        name="items[${index}][batches][${batchIdx}][quantity_shortage]"
+                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                        data-item-index="${index}"
+                                                        data-batch-index="${batchIdx}"
+                                                        data-type="shortage"
+                                                        min="0"
+                                                        step="1"
+                                                        value="${initialShortage}"
+                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
+                                                </td>
+                                                <td class="py-1 px-1 text-right">
+                                                    <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${parseFloat(batch.quantity) + batchBfQuantity}</span>
+                                                </td>
+                                            </tr>
+                                        `;
+                                        settlementItemsBody.innerHTML += settlementRow;
+
+                                        // Create batch-level hidden fields container (outside table)
+                                        const batchHiddenFields = document.createElement('div');
+                                        batchHiddenFields.className = 'batch-hidden-fields';
+                                        batchHiddenFields.innerHTML = `
+                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
+                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
+                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
+                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
+                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
+                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
+                                        `;
+                                        document.getElementById('settlementForm').appendChild(batchHiddenFields);
+
+                                        // Add product-level hidden fields only once (on first batch)
+                                        if (batchIdx === 0) {
+                                            // Append hidden fields container to the form (outside the table)
+                                            document.getElementById('settlementForm').appendChild(hiddenFieldsContainer);
+                                        }
+                                    });
+                                }
+                            });
+
+                            // Show relevant sections
+                            document.getElementById('noItemsMessage').style.display = 'none';
+                            document.getElementById('settlementTableContainer').style.display = 'block';
+                            document.getElementById('settlementHelpText').style.display = 'block';
+                            document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
+
+                            // Initialize balances for all batch rows
+                            items.forEach((item, index) => {
+                                const batchBreakdown = item.batch_breakdown || [];
+                                batchBreakdown.forEach((batch, batchIdx) => {
+                                    calculateBatchBalance(index, batchIdx);
+                                });
+                            });
+                            
+                            // Trigger cash total update to reflect initial loaded values
+                            updateCashTotal();
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            document.getElementById('noItemsMessage').innerHTML = '<span class="text-red-600">Error loading goods issue data. Please try again.</span>';
+                            document.getElementById('noItemsMessage').style.display = 'block';
+                            document.getElementById('settlementTableContainer').style.display = 'none';
+                        });
+                }
             }
         }
 
-        // Alpine.js component for dynamic expense management (Edit mode)
+        // Alpine.js component for dynamic expense management
         function expenseManager(expenseAccounts) {
             return {
                 // Available expense accounts from server
@@ -788,39 +987,36 @@
                 ],
                 expenses: [],
                 totalExpenses: 0,
-                nextId: 100, // For dynamically added expenses
-
+                nextId: 2000,
+                
                 init() {
-                    // Load existing expenses from settlementData or use predefined defaults
-                    const savedExpenses = settlementData.expenses || [];
-
-                    // Start with predefined expenses
+                    // Initialize expenses by merging predefined with saved
                     this.expenses = JSON.parse(JSON.stringify(this.predefinedExpenses));
-
-                    if (savedExpenses.length > 0) {
-                        // Update predefined expenses with saved amounts
+                    
+                    if (savedExpenses && savedExpenses.length > 0) {
                         savedExpenses.forEach(savedExp => {
-                            const predefined = this.expenses.find(exp => exp.expense_account_id === savedExp.expense_account_id);
-                            if (predefined) {
-                                predefined.amount = savedExp.amount || 0;
+                            // Try to find a matching predefined expense
+                            const predefinedIndex = this.expenses.findIndex(p => p.expense_account_id == savedExp.expense_account_id && p.is_predefined);
+                            
+                            if (predefinedIndex >= 0) {
+                                // Update predefined expense
+                                this.expenses[predefinedIndex].amount = savedExp.amount;
+                                this.expenses[predefinedIndex].description = savedExp.description;
                             } else {
-                                // This is a custom/additional expense - add it
-                                const newId = this.nextId++;
+                                // Add as custom expense
                                 this.expenses.push({
-                                    id: newId,
-                                    label: savedExp.description || 'Custom Expense',
-                                    account_code: '',
+                                    id: savedExp.id,
+                                    label: savedExp.label,
+                                    account_code: savedExp.account_code,
                                     expense_account_id: savedExp.expense_account_id,
                                     is_predefined: false,
-                                    amount: savedExp.amount || 0,
-                                    description: savedExp.description || ''
+                                    amount: savedExp.amount,
+                                    description: savedExp.description
                                 });
                             }
                         });
                     }
-
-                    this.calculateTotal();
-
+                    
                     // Listen for advance tax updates from modal
                     window.addEventListener('advance-tax-updated', (e) => {
                         const advanceTaxExpense = this.expenses.find(exp => exp.expense_account_id === 18);
@@ -829,8 +1025,11 @@
                             this.calculateTotal();
                         }
                     });
+                    
+                    // Initial calculation
+                    this.calculateTotal();
                 },
-
+                
                 addExpense() {
                     const newId = this.nextId++;
                     this.expenses.push({
@@ -843,7 +1042,7 @@
                         description: ''
                     });
                 },
-
+                
                 onAccountSelect(event, index) {
                     const selectedId = parseInt(event.target.value);
                     if (selectedId) {
@@ -859,7 +1058,7 @@
                         this.expenses[index].label = '';
                     }
                 },
-
+                
                 removeExpense(index) {
                     if (!this.expenses[index].is_predefined) {
                         this.expenses.splice(index, 1);
@@ -884,395 +1083,27 @@
             }
         }
 
-        // Alpine.js component for credit sales management (Edit mode)
-        function creditSalesManager(customers, existingCreditSales) {
-            return {
-                customers: customers || [],
-                employeeId: {{ $settlement->employee_id ?? 'null' }},
-                loadingCustomers: false,
-                entries: [],
-                showAddForm: false,
-                form: {
-                    customer_id: '',
-                    previous_balance: 0,
-                    sale_amount: '',
-                    payment_received: ''
-                },
-
-                init() {
-                    // Load customers by employee if employee_id is available
-                    if (this.employeeId) {
-                        this.loadCustomersByEmployee();
-                    }
-
-                    // Load existing credit sales entries
-                    if (existingCreditSales && existingCreditSales.length > 0) {
-                        this.entries = existingCreditSales.map(cs => {
-                            const customer = this.customers.find(c => c.id == cs.customer_id);
-                            const previousBalance = parseFloat(cs.previous_balance) || 0;
-                            const saleAmount = parseFloat(cs.sale_amount) || 0;
-                            const paymentReceived = parseFloat(cs.payment_received) || 0;
-                            return {
-                                customer_id: cs.customer_id,
-                                customer_name: customer ? customer.customer_name : 'Unknown',
-                                previous_balance: previousBalance,
-                                sale_amount: saleAmount,
-                                payment_received: paymentReceived,
-                                new_balance: previousBalance + saleAmount - paymentReceived
-                            };
-                        });
-                    }
-                    this.syncTotals();
-                },
-
-                async loadCustomersByEmployee() {
-                    if (!this.employeeId) return;
-
-                    this.loadingCustomers = true;
-                    try {
-                        const response = await fetch(`/api/v1/customers/by-employee/${this.employeeId}`);
-                        if (response.ok) {
-                            const data = await response.json();
-                            this.customers = data.map(c => ({
-                                id: c.id,
-                                customer_name: c.name,
-                                receivable_balance: c.balance
-                            }));
-                        }
-                    } catch (error) {
-                        console.error('Error loading customers by employee:', error);
-                    } finally {
-                        this.loadingCustomers = false;
-                    }
-                },
-
-                onCustomerChange() {
-                    const customerId = this.form.customer_id;
-                    if (!customerId) {
-                        this.form.previous_balance = 0;
-                        return;
-                    }
-
-                    // Find customer and get receivable_balance from customers array
-                    const customer = this.customers.find(c => c.id == customerId);
-                    if (customer) {
-                        this.form.previous_balance = parseFloat(customer.receivable_balance) || 0;
-                    } else {
-                        // Fallback to API call (using v1 endpoint)
-                        fetch(`/api/v1/customers/${customerId}/balance`)
-                            .then(response => response.json())
-                            .then(data => {
-                                this.form.previous_balance = parseFloat(data.balance) || 0;
-                            })
-                            .catch(() => {
-                                this.form.previous_balance = 0;
-                            });
-                    }
-                },
-
-                addEntry() {
-                    const customerId = this.form.customer_id;
-                    const saleAmount = parseFloat(this.form.sale_amount) || 0;
-                    const paymentReceived = parseFloat(this.form.payment_received) || 0;
-
-                    if (!customerId) {
-                        alert('Please select a customer.');
-                        return;
-                    }
-
-                    if (saleAmount === 0 && paymentReceived === 0) {
-                        alert('Please enter either a credit sale amount or recovery amount.');
-                        return;
-                    }
-
-                    const customer = this.customers.find(c => c.id == customerId);
-                    const customerName = customer ? customer.customer_name : 'Unknown';
-                    const previousBalance = parseFloat(this.form.previous_balance) || 0;
-                    const newBalance = previousBalance + saleAmount - paymentReceived;
-
-                    this.entries.push({
-                        customer_id: customerId,
-                        customer_name: customerName,
-                        previous_balance: previousBalance,
-                        sale_amount: saleAmount,
-                        payment_received: paymentReceived,
-                        new_balance: newBalance
-                    });
-
-                    // Reset form
-                    this.form.customer_id = '';
-                    this.form.previous_balance = 0;
-                    this.form.sale_amount = '';
-                    this.form.payment_received = '';
-
-                    // Trigger summary update
-                    this.syncTotals();
-                },
-
-                removeEntry(index) {
-                    this.entries.splice(index, 1);
-                    this.syncTotals();
-                },
-
-                syncTotals() {
-                    // Update displays
-                    const creditDisplay = document.getElementById('creditSalesTotalDisplay');
-                    if (creditDisplay) {
-                        creditDisplay.textContent = '₨ ' + this.creditTotal.toLocaleString('en-PK', {minimumFractionDigits: 2});
-                    }
-
-                    const recoveryDisplay = document.getElementById('creditRecoveryTotalDisplay');
-                    if (recoveryDisplay) {
-                        recoveryDisplay.textContent = '₨ ' + this.recoveryTotal.toLocaleString('en-PK', {minimumFractionDigits: 2});
-                    }
-
-                    // Update summary fields
-                    const summaryCredit = document.getElementById('summary_credit');
-                    if (summaryCredit) {
-                        summaryCredit.value = this.creditTotal.toFixed(2);
-                    }
-
-                    const summaryRecovery = document.getElementById('summary_recovery');
-                    if (summaryRecovery) {
-                        summaryRecovery.value = this.recoveryTotal.toFixed(2);
-                    }
-
-                    if (typeof updateSalesSummary === 'function') {
-                        updateSalesSummary();
-                    }
-                },
-
-                formatNumber(value) {
-                    return parseFloat(value || 0).toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                },
-
-                get creditTotal() {
-                    return this.entries.reduce((sum, entry) => sum + (parseFloat(entry.sale_amount) || 0), 0);
-                },
-
-                get recoveryTotal() {
-                    return this.entries.reduce((sum, entry) => sum + (parseFloat(entry.payment_received) || 0), 0);
-                }
-            }
-        }
-
-        // Pre-loaded settlement data for edit mode
-        @php
-            $settlementDataArray = [
-                'settlement' => $settlement,
-                'items' => $settlement->items->map(function($item) {
-                    return [
-                        'id' => $item->id,
-                        'product_id' => $item->product_id,
-                        'product' => $item->product,
-                        'quantity_issued' => $item->quantity_issued,
-                        'quantity_sold' => $item->quantity_sold,
-                        'quantity_returned' => $item->quantity_returned,
-                        'quantity_shortage' => $item->quantity_shortage,
-                        'unit_cost' => $item->unit_cost,
-                        'unit_selling_price' => $item->unit_selling_price,
-                        'batches' => $item->batches->map(function($batch) {
-                            return [
-                                'stock_batch_id' => $batch->stock_batch_id,
-                                'batch_code' => $batch->batch_code,
-                                'quantity_issued' => $batch->quantity_issued,
-                                'quantity_sold' => $batch->quantity_sold,
-                                'quantity_returned' => $batch->quantity_returned,
-                                'quantity_shortage' => $batch->quantity_shortage,
-                                'unit_cost' => $batch->unit_cost,
-                                'selling_price' => $batch->selling_price,
-                                'is_promotional' => $batch->is_promotional,
-                                'bf_quantity' => 0,
-                            ];
-                        }),
-                    ];
-                }),
-                'expenses' => $settlement->expenses->map(function($expense) {
-                    return [
-                        'amount' => (float) $expense->amount,
-                        'expense_account_id' => $expense->expense_account_id,
-                        'description' => $expense->description,
-                    ];
-                })->values(),
-                'denominations' => [
-                    'denom_5000' => $settlement->cashDenominations->first()?->denom_5000 ?? 0,
-                    'denom_1000' => $settlement->cashDenominations->first()?->denom_1000 ?? 0,
-                    'denom_500' => $settlement->cashDenominations->first()?->denom_500 ?? 0,
-                    'denom_100' => $settlement->cashDenominations->first()?->denom_100 ?? 0,
-                    'denom_50' => $settlement->cashDenominations->first()?->denom_50 ?? 0,
-                    'denom_20' => $settlement->cashDenominations->first()?->denom_20 ?? 0,
-                    'denom_10' => $settlement->cashDenominations->first()?->denom_10 ?? 0,
-                    'denom_coins' => $settlement->cashDenominations->first()?->denom_coins ?? 0,
-                ],
-                'credit_sales' => $settlement->creditSales ?? [],
-                'bank_transfers' => $settlement->bank_transfers ?? [],
-                'cheque_payments' => $settlement->cheque_details ?? [],
-                'advance_taxes' => $settlement->advanceTaxes ?? [],
-            ];
-        @endphp
-        const settlementData = @json($settlementDataArray);
-
-        // Initialize on page load
+        // Initialize Select2 with AJAX on-demand loading
         $(document).ready(function() {
-            console.log('Edit mode - Loading settlement data');
-            loadSettlementItems();
-            loadExpenseData();
-            loadCashDenominations();
-        });
-
-        // Load settlement items into the form
-        function loadSettlementItems() {
-            const items = settlementData.items;
-            const settlementItemsBody = document.getElementById('settlementItemsBody');
-            settlementItemsBody.innerHTML = '';
-
-            items.forEach((item, index) => {
-                const batches = item.batches || [];
-
-                if (batches.length > 0) {
-                    batches.forEach((batch, batchIdx) => {
-                        const batchValue = parseFloat(batch.quantity_issued) * parseFloat(batch.selling_price);
-                        const batchBfQuantity = parseFloat(batch.bf_quantity) || 0;
-
-                        const productName = item.product?.name || 'Unknown Product';
-                        const productCode = item.product?.product_code || 'N/A';
-
-                        const settlementRow = `
-                            <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
-                                    <div class="font-semibold text-gray-900 break-words">${productName}</div>
-                                    <div class="text-xs text-gray-500 break-words">
-                                        ${productCode}<br>Batch: ${batch.batch_code}
-                                        ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
-                                    </div>
-                                </td>
-                                <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
-                                    <div class="text-xs text-gray-600">
-                                        ${parseFloat(batch.quantity_issued).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)}
-                                    </div>
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
-                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <div class="font-semibold text-gray-900">${parseFloat(batch.quantity_issued).toFixed(0)}</div>
-                                </td>
-                                <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
-                                <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
-                                <td class="py-1 px-1 text-right">
-                                    <input type="number"
-                                        name="items[${index}][batches][${batchIdx}][quantity_sold]"
-                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                        data-item-index="${index}"
-                                        data-batch-index="${batchIdx}"
-                                        data-type="sold"
-                                        data-bf-quantity="${batchBfQuantity}"
-                                        min="0"
-                                        step="1"
-                                        value="${batch.quantity_sold}"
-                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'sold')">
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <input type="number"
-                                        name="items[${index}][batches][${batchIdx}][quantity_returned]"
-                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                        data-item-index="${index}"
-                                        data-batch-index="${batchIdx}"
-                                        data-type="returned"
-                                        min="0"
-                                        step="1"
-                                        value="${batch.quantity_returned}"
-                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'returned')">
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <input type="number"
-                                        name="items[${index}][batches][${batchIdx}][quantity_shortage]"
-                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                        data-item-index="${index}"
-                                        data-batch-index="${batchIdx}"
-                                        data-type="shortage"
-                                        min="0"
-                                        step="1"
-                                        value="${batch.quantity_shortage}"
-                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
-                                </td>
-                                <td class="py-1 px-1 text-right">
-                                    <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">0</span>
-                                </td>
-                            </tr>
-                        `;
-                        settlementItemsBody.innerHTML += settlementRow;
-
-                        // Create batch-level hidden fields
-                        const batchHiddenFields = document.createElement('div');
-                        batchHiddenFields.className = 'batch-hidden-fields';
-                        batchHiddenFields.innerHTML = `
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity_issued}">
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
-                            <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
-                        `;
-                        document.getElementById('settlementForm').appendChild(batchHiddenFields);
-
-                        // Add product-level hidden fields only once (on first batch)
-                        if (batchIdx === 0) {
-                            const hiddenFieldsContainer = document.createElement('div');
-                            hiddenFieldsContainer.className = 'hidden-fields-container';
-                            hiddenFieldsContainer.innerHTML = `
-                                <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
-                                <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
-                                <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
-                                <input type="hidden" name="items[${index}][selling_price]" value="${item.unit_selling_price}">
-                                <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="${item.quantity_sold}">
-                                <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="${item.quantity_returned}">
-                                <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="${item.quantity_shortage}">
-                            `;
-                            document.getElementById('settlementForm').appendChild(hiddenFieldsContainer);
-                        }
-                    });
+            $('.select2-goods-issue').select2({
+                width: '100%',
+                placeholder: 'Select a Goods Issue',
+                allowClear: true,
+                ajax: {
+                    url: '{{ route('api.sales-settlements.goods-issues') }}',
+                    dataType: 'json',
+                    delay: 250,
+                    processResults: function (data) {
+                        return {
+                            results: data
+                        };
+                    },
+                    cache: true
                 }
             });
-
-            // Show relevant sections
-            document.getElementById('noItemsMessage').style.display = 'none';
-            document.getElementById('settlementTableContainer').style.display = 'block';
-            document.getElementById('settlementHelpText').style.display = 'block';
-            document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
-
-            // Calculate balances for all batch rows
-            items.forEach((item, index) => {
-                const batches = item.batches || [];
-                batches.forEach((batch, batchIdx) => {
-                    calculateBatchBalance(index, batchIdx);
-                });
-            });
-
-            updateGrandTotals();
-        }
-
-        // Load expense data - Now handled by Alpine.js expenseManager
-        function loadExpenseData() {
-            // Expenses are now loaded directly by Alpine.js component from settlementData.expenses
-            // This function is kept for backward compatibility but does nothing
-            console.log('Expenses loaded via Alpine.js expenseManager');
-        }
-
-        // Load cash denominations
-        function loadCashDenominations() {
-            const denoms = settlementData.denominations;
-            document.getElementById('denom_5000').value = denoms.denom_5000;
-            document.getElementById('denom_1000').value = denoms.denom_1000;
-            document.getElementById('denom_500').value = denoms.denom_500;
-            document.getElementById('denom_100').value = denoms.denom_100;
-            document.getElementById('denom_50').value = denoms.denom_50;
-            document.getElementById('denom_20').value = denoms.denom_20;
-            document.getElementById('denom_10').value = denoms.denom_10;
-            document.getElementById('denom_coins').value = denoms.denom_coins;
-            updateCashTotal();
-        }
+            
+            // Note: We don't need the if(old) block here because we handle initialization via Alpine init() and pre-rendered option
+        });
 
 
         // Track which field was last changed for smart auto-adjustment
@@ -1384,30 +1215,6 @@
             if (warningEl) {
                 warningEl.style.display = 'none';
             }
-        }
-
-        // Auto-fill B/F (Out) when sold + returned is entered (no longer auto-fill shortage)
-        function autoFillShortage(itemIndex, batchIndex, skipField = null) {
-            const issuedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_issued]"]`);
-            const bfInInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][bf_quantity]"]`);
-            const soldInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_sold]"]`);
-            const returnedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_returned]"]`);
-            const shortageInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_shortage]"]`);
-
-            if (!issuedInput || !soldInput || !returnedInput || !shortageInput) return;
-
-            const issued = Math.round(parseFloat(issuedInput.value) || 0);
-            const bfIn = Math.round(parseFloat(bfInInput?.value) || 0);
-            const sold = Math.round(parseFloat(soldInput.value) || 0);
-            const returned = Math.round(parseFloat(returnedInput.value) || 0);
-            const shortage = Math.round(parseFloat(shortageInput.value) || 0);
-
-            // Total available = B/F (In) + Issued
-            const totalAvailable = bfIn + issued;
-
-            // No longer auto-fill shortage - user must enter it manually
-            // B/F (Out) is calculated automatically
-            calculateBatchBalance(itemIndex, batchIndex);
         }
 
         // Function to update product-level totals from batch inputs
@@ -1705,17 +1512,6 @@
             }
         }
 
-        // Expenses Detail calculations - Now handled by Alpine.js expenseManager
-        // This function is kept for backward compatibility but no longer directly used
-        function updateExpensesTotal() {
-            // Alpine.js now manages expenses dynamically
-            // This function can be called but won't affect the new dynamic expense system
-            if (typeof updateSalesSummary === 'function') {
-                updateSalesSummary();
-            }
-        }
-
-
         // Helper function to clear settlement form
         function clearSettlementForm() {
             document.getElementById('settlementItemsBody').innerHTML = '';
@@ -1724,8 +1520,6 @@
             document.getElementById('noItemsMessage').style.display = 'block';
             document.getElementById('noItemsMessage').innerHTML = 'Select a Goods Issue to load product details';
             document.getElementById('expenseAndSalesSummarySection').style.display = 'none';
-            const salesSummarySection = document.getElementById('salesSummarySection');
-            if (salesSummarySection) salesSummarySection.style.display = 'none';
         }
 
         // Cash Detail denomination breakdown
@@ -1759,7 +1553,7 @@
                 maximumFractionDigits: 2
             });
 
-            // Update grand total cash display
+            // Update grand total cash display (if exists)
             const grandTotalDisplay = document.getElementById('grandTotalCashDisplay');
             if (grandTotalDisplay) {
                 grandTotalDisplay.textContent = '₨ ' + totalCash.toLocaleString('en-PK', {
@@ -1773,7 +1567,273 @@
             updateSalesSummary();
         }
 
-        // Edit mode - no need for Select2 event handlers since goods issue is fixed
+        // Handle Goods Issue selection with AJAX data loading
+        // Use Select2 specific event instead of standard change
+        $('#goods_issue_id').on('select2:select', function(e) {
+            const goodsIssueId = e.params.data.id;
+            // Get alpine component scope
+            const scope = document.querySelector('[x-data="goodsIssueSelector()"]');
+            if (scope) {
+                // Call the load function in Alpine component
+                // We access the __x object to call the method properly
+                scope.__x.$data.loadGoodsIssue(goodsIssueId);
+            }
+        });
+
+        // Handle clearing the select2 dropdown
+        $('#goods_issue_id').on('select2:clear', function() {
+            clearSettlementForm();
+            // Clear customer lists in modals
+            loadCustomersForEmployee(null);
+        });
+
+        // Global variable to store current employee ID for settlement
+        window.currentSettlementEmployeeId = null;
+
+        // Function to load customers for a specific employee
+        function loadCustomersForEmployee(employeeId) {
+            // Store globally for modals to access
+            window.currentSettlementEmployeeId = employeeId;
+            
+            // Also store in hidden input for reliable access
+            const hiddenInput = document.getElementById('current_settlement_employee_id');
+            if (hiddenInput) {
+                hiddenInput.value = employeeId || '';
+            }
+
+            if (!employeeId) {
+                // Clear all customer dropdowns
+                updateModalCustomers([]);
+                return;
+            }
+
+            // Fetch customers for this employee via API (using v1 endpoint)
+            fetch(`{{ url('api/v1/customers/by-employee') }}/${employeeId}`)
+                .then(response => response.json())
+                .then(customers => {
+                    // Pass both customers AND employeeId in the same event
+                    updateModalCustomers(customers, employeeId);
+                })
+                .catch(() => {
+                    updateModalCustomers([]);
+                });
+        }
+
+        // Function to update customer lists in all modals
+        function updateModalCustomers(customers, employeeId = null) {
+            // Update Alpine.js components with new customer data AND employeeId
+            window.dispatchEvent(new CustomEvent('update-modal-customers', {
+                detail: { customers: customers, employeeId: employeeId }
+            }));
+        }
+
+        // Alpine.js component for Credit Sales Display
+        function creditSalesDisplay() {
+            return {
+                entries: [],
+                
+                openModal() {
+                    window.dispatchEvent(new CustomEvent('open-credit-sales-modal'));
+                },
+
+                updateDisplay() {
+                    const tbody = document.getElementById('creditSalesTableBody');
+                    if (!tbody) return;
+
+                    // Get entries from hidden input
+                    const entriesInput = document.getElementById('credit_sales');
+                    
+                    if (entriesInput && entriesInput.value) {
+                        try {
+                            this.entries = JSON.parse(entriesInput.value);
+                        } catch (e) {
+                            this.entries = [];
+                        }
+                    } else {
+                        this.entries = [];
+                    }
+
+                    // Clear and rebuild table
+                    tbody.innerHTML = '';
+
+                    if (this.entries.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="3" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                    No credit sales entries added yet
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        this.entries.forEach((entry, index) => {
+                            const row = document.createElement('tr');
+                            row.className = 'border-b border-gray-200';
+                            row.innerHTML = `
+                                <td class="py-1 px-2 text-xs">
+                                    <div class="font-semibold text-gray-800">${entry.customer_name}</div>
+                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                </td>
+                                <td class="py-1 px-2 text-right text-xs font-semibold text-orange-700">
+                                    ₨ ${parseFloat(entry.sale_amount).toLocaleString('en-PK', {minimumFractionDigits: 2})}
+                                </td>
+                                <td class="py-1 px-2 text-right text-xs font-semibold text-green-700">
+                                    ₨ ${parseFloat(entry.payment_received).toLocaleString('en-PK', {minimumFractionDigits: 2})}
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                },
+
+                init() {
+                    // Listen for updates from the modal
+                    window.addEventListener('credit-sales-updated', () => {
+                        this.updateDisplay();
+                    });
+                    
+                    // Initial load
+                    this.updateDisplay();
+                }
+            }
+        }
+
+        // Alpine.js component for Bank Transfer Display
+        function bankTransferDisplay() {
+            return {
+                entries: [],
+                
+                openModal() {
+                    window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'));
+                },
+
+                updateDisplay() {
+                    const tbody = document.getElementById('bankTransferTableBody');
+                    if (!tbody) return;
+
+                    // Get entries from hidden input
+                    const entriesInput = document.getElementById('bank_transfers');
+                    
+                    if (entriesInput && entriesInput.value) {
+                        try {
+                            this.entries = JSON.parse(entriesInput.value);
+                        } catch (e) {
+                            this.entries = [];
+                        }
+                    } else {
+                        this.entries = [];
+                    }
+
+                    // Clear and rebuild table
+                    tbody.innerHTML = '';
+
+                    if (this.entries.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                    No bank transfer entries added yet
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        this.entries.forEach((entry, index) => {
+                            const row = document.createElement('tr');
+                            row.className = 'border-b border-gray-200';
+                            row.innerHTML = `
+                                <td class="py-1 px-2 text-xs">
+                                    <div class="font-semibold text-gray-800">${entry.bank_account_name || 'Unknown Account'}</div>
+                                    <div class="text-xs text-gray-500">Date: ${entry.transfer_date || 'N/A'}</div>
+                                    ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
+                                    ${entry.reference_number ? `<div class="text-xs text-gray-500">Ref: ${entry.reference_number}</div>` : ''}
+                                </td>
+                                <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
+                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', {minimumFractionDigits: 2})}
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                },
+
+                init() {
+                    // Listen for updates from the modal
+                    window.addEventListener('bank-transfers-updated', () => {
+                        this.updateDisplay();
+                    });
+                    
+                    // Initial load
+                    this.updateDisplay();
+                }
+            }
+        }
+
+        // Alpine.js component for Cheque Payment Display
+        function chequePaymentDisplay() {
+            return {
+                entries: [],
+                
+                openModal() {
+                    window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'));
+                },
+
+                updateDisplay() {
+                    const tbody = document.getElementById('chequePaymentTableBody');
+                    if (!tbody) return;
+
+                    // Get entries from hidden input
+                    const entriesInput = document.getElementById('cheques');
+                    
+                    if (entriesInput && entriesInput.value) {
+                        try {
+                            this.entries = JSON.parse(entriesInput.value);
+                        } catch (e) {
+                            this.entries = [];
+                        }
+                    } else {
+                        this.entries = [];
+                    }
+
+                    // Clear and rebuild table
+                    tbody.innerHTML = '';
+
+                    if (this.entries.length === 0) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                    No cheque payment entries added yet
+                                </td>
+                            </tr>
+                        `;
+                    } else {
+                        this.entries.forEach((entry, index) => {
+                            const row = document.createElement('tr');
+                            row.className = 'border-b border-gray-200';
+                            row.innerHTML = `
+                                <td class="py-1 px-2 text-xs">
+                                    <div class="font-semibold text-gray-800">Cheque #${entry.cheque_number || 'N/A'}</div>
+                                    <div class="text-xs text-gray-500">${entry.bank_name || ''} - ${entry.cheque_date || ''}</div>
+                                    ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
+                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                </td>
+                                <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
+                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', {minimumFractionDigits: 2})}
+                                </td>
+                            `;
+                            tbody.appendChild(row);
+                        });
+                    }
+                },
+
+                init() {
+                    // Listen for updates from the modal
+                    window.addEventListener('cheque-payments-updated', () => {
+                        this.updateDisplay();
+                    });
+                    
+                    // Initial load
+                    this.updateDisplay();
+                }
+            }
+        }
     </script>
     @endpush
 </x-app-layout>

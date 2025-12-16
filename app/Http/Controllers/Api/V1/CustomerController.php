@@ -33,6 +33,12 @@ class CustomerController extends Controller
     public function balanceByEmployee(int $customerId, int $employeeId): JsonResponse
     {
         $balance = $this->ledgerService->getCustomerBalanceByEmployee($customerId, $employeeId);
+
+        return response()->json([
+            'balance' => $balance,
+        ]);
+    }
+
     /**
      * Get customers by employee (salesman) with their employee-specific balances.
      * This returns the correct balance for each customer with the specified employee.
@@ -57,4 +63,7 @@ class CustomerController extends Controller
                     'balance' => $balanceData['outstanding_balance'],
                 ];
             });
+
+        return response()->json($customers);
+    }
 }

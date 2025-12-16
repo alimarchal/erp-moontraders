@@ -676,7 +676,6 @@ class SalesSettlementController extends Controller
             'journalEntry',
             'items.product',
             'items.batches.stockBatch',
-            'sales.customer',
             'creditSales.customer',
             'creditSales.employee',
             'advanceTaxes.customer',

@@ -120,7 +120,9 @@ class GeneralLedgerController extends Controller
                 'credit',
                 'status',
             ])
-            ->defaultSort('-entry_date', 'journal_entry_id', 'line_no')
+            ->orderBy('entry_date', 'asc')
+            ->orderBy('journal_entry_id', 'asc')
+            ->orderBy('line_no', 'asc')
             ->paginate($perPage)
             ->withQueryString();
 

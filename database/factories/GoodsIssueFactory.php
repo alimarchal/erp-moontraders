@@ -17,11 +17,14 @@ class GoodsIssueFactory extends Factory
     public function definition(): array
     {
         return [
-            'issue_number' => 'GI-TEST-'.fake()->unique()->numberBetween(1000, 9999),
+            'issue_number' => 'GI-TEST-' . fake()->unique()->numberBetween(1000, 9999),
             'issue_date' => now(),
             'status' => 'draft',
             'total_quantity' => 0,
             'total_value' => 0,
+            'employee_id' => \App\Models\Employee::factory(),
+            'vehicle_id' => \App\Models\Vehicle::factory(),
+            'warehouse_id' => \App\Models\Warehouse::factory(),
             'issued_by' => \App\Models\User::factory(),
         ];
     }

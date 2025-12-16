@@ -43,7 +43,7 @@
 
             <div class="p-6 space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <div class="md:col-span-6">
+                    <div class="md:col-span-4">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Customer Name</label>
                         <select id="advance_tax_customer_select"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-indigo-500 focus:ring-indigo-500">
@@ -52,6 +52,12 @@
                                 <option :value="customer.id" x-text="customer.name"></option>
                             </template>
                         </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Invoice #</label>
+                        <input type="text" x-model="form.invoice_number" readonly
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-gray-100 text-center font-mono font-semibold"
+                            placeholder="Auto" />
                     </div>
                     <div class="md:col-span-5">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Advance Tax Deduction Amount
@@ -74,6 +80,7 @@
                             <tr>
                                 <th class="px-3 py-2 text-left text-gray-700">S.No</th>
                                 <th class="px-3 py-2 text-left text-gray-700">Customer Name</th>
+                                <th class="px-3 py-2 text-center text-gray-700">Invoice #</th>
                                 <th class="px-3 py-2 text-right text-gray-700">Advance Tax Deduction Amount (₨)</th>
                                 <th class="px-3 py-2 text-center text-gray-700">Action</th>
                             </tr>
@@ -90,6 +97,10 @@
                                 <tr class="border-t border-gray-200">
                                     <td class="px-3 py-2 font-semibold text-gray-700" x-text="index + 1"></td>
                                     <td class="px-3 py-2 text-gray-800" x-text="entry.customer_name"></td>
+                                    <td class="px-3 py-2 text-center">
+                                        <span class="font-mono text-sm font-semibold text-indigo-700"
+                                            x-text="entry.invoice_number"></span>
+                                    </td>
                                     <td class="px-3 py-2 text-right font-semibold text-indigo-700"
                                         x-text="formatCurrency(entry.tax_amount)"></td>
                                     <td class="px-3 py-2 text-center">
@@ -136,13 +147,16 @@
             customers,
             form: {
                 customer_id: '',
+                invoice_number: '',
                 tax_amount: '',
             },
             entries: initialEntries || [],
+            invoiceCounter: 1,
             select2Initialized: false,
 
             openModal() {
                 this.show = true;
+                this.form.invoice_number = 'ATI-' + String(this.invoiceCounter).padStart(5, '0');
 
                 // Initialize select2 after the modal is fully rendered
                 this.$nextTick(() => {
@@ -187,15 +201,20 @@
                 }
 
                 const customerName = this.customerName(customerId);
+                const invoiceNumber = this.form.invoice_number;
 
                 this.entries.push({
                     customer_id: customerId,
                     customer_name: customerName,
+                    invoice_number: invoiceNumber,
                     tax_amount: parseFloat(taxAmount.toFixed(2)),
                 });
 
+                this.invoiceCounter++;
+
                 // Reset form
                 this.form.customer_id = '';
+                this.form.invoice_number = 'ATI-' + String(this.invoiceCounter).padStart(5, '0');
                 this.form.tax_amount = '';
 
                 // Reset select2 dropdown

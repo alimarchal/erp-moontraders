@@ -49,7 +49,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 
             <div class="p-6 space-y-4">
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <div class="md:col-span-4">
+                    <div class="md:col-span-3">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Customer Name</label>
                         <select id="credit_sales_customer_select" x-model="form.customer_id"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500"
@@ -59,6 +59,12 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                                 <option :value="customer.id" x-text="customer.name"></option>
                             </template>
                         </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Invoice #</label>
+                        <input type="text" x-model="form.invoice_number" readonly
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-gray-100 text-center font-mono font-semibold"
+                            placeholder="Auto" />
                     </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Previous Balance (₨)</label>
@@ -78,10 +84,10 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500 text-right"
                             placeholder="0.00" @keydown.enter.prevent="addEntry()" />
                     </div>
-                    <div class="md:col-span-2">
+                    <div class="md:col-span-1">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">New Balance (₨)</label>
                         <input type="number" :value="calculateCurrentBalance()" readonly
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-blue-50 text-right font-bold text-blue-700"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-blue-50 text-right font-bold text-blue-700 text-xs"
                             placeholder="0.00" />
                     </div>
                 </div>
@@ -134,6 +140,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                                     <tr>
                                         <th class="px-3 py-2 text-left text-gray-700 font-semibold">#</th>
                                         <th class="px-3 py-2 text-left text-gray-700 font-semibold">Customer</th>
+                                        <th class="px-3 py-2 text-center text-gray-700 font-semibold">Invoice #</th>
                                         <th class="px-3 py-2 text-right text-gray-700 font-semibold">Prev. Balance</th>
                                         <th class="px-3 py-2 text-right text-gray-700 font-semibold">Credit Sale</th>
                                         <th class="px-3 py-2 text-right text-gray-700 font-semibold">Recovery</th>
@@ -155,6 +162,10 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                                                 </div>
                                                 <div class="text-xs text-gray-500">Customer ID: #<span
                                                         x-text="entry.customer_id"></span></div>
+                                            </td>
+                                            <td class="px-3 py-3 text-center">
+                                                <span class="font-mono text-sm font-semibold text-orange-700"
+                                                    x-text="entry.invoice_number"></span>
                                             </td>
                                             <td class="px-3 py-3 text-right">
                                                 <span class="font-semibold text-gray-700"
@@ -263,16 +274,19 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
             loadingCustomers: false,
             form: {
                 customer_id: '',
+                invoice_number: '',
                 previous_balance: 0,
                 sale_amount: '',
                 payment_received: '',
                 notes: '',
             },
             entries: [],
+            invoiceCounter: 1,
             select2Initialized: false,
 
             openModal() {
                 this.show = true;
+                this.form.invoice_number = 'CSI-' + String(this.invoiceCounter).padStart(5, '0');
 
                 // Initialize select2 after the modal is fully rendered
                 this.$nextTick(() => {
@@ -414,10 +428,12 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                 const customerName = this.customerName(customerId);
                 const previousBalance = parseFloat(this.form.previous_balance) || 0;
                 const newBalance = previousBalance + saleAmount - paymentReceived;
+                const invoiceNumber = this.form.invoice_number;
 
                 this.entries.push({
                     customer_id: customerId,
                     customer_name: customerName,
+                    invoice_number: invoiceNumber,
                     previous_balance: parseFloat(previousBalance.toFixed(2)),
                     sale_amount: parseFloat(saleAmount.toFixed(2)),
                     payment_received: parseFloat(paymentReceived.toFixed(2)),
@@ -425,8 +441,11 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                     notes: this.form.notes.trim(),
                 });
 
+                this.invoiceCounter++;
+
                 // Reset form
                 this.form.customer_id = '';
+                this.form.invoice_number = 'CSI-' + String(this.invoiceCounter).padStart(5, '0');
                 this.form.previous_balance = 0;
                 this.form.sale_amount = '';
                 this.form.payment_received = '';

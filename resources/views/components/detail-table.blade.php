@@ -36,7 +36,7 @@
     @endif
 
     <div class="detail-table-scroll relative overflow-x-auto border border-gray-300 rounded-lg">
-        <table class="min-w-max w-full table-auto text-sm border-collapse">
+        <table class="w-full max-w-7xl table-auto text-sm border-collapse">
             <thead>
                 <tr class="bg-green-800 text-white uppercase text-sm">
                     @foreach($headers as $header)

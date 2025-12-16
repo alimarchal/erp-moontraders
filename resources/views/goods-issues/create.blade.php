@@ -125,7 +125,7 @@
                                                 :required="parseFloat(item.available_qty) > 0"
                                                 :class="parseFloat(item.available_qty) <= 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
-                                                <option value="">Select UOM</option>
+                                                <option value="">UOM</option>
                                                 @foreach ($uoms as $uom)
                                                 <option value="{{ $uom->id }}">{{ $uom->uom_name }}</option>
                                                 @endforeach

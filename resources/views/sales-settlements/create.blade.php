@@ -56,7 +56,7 @@
 
                         {{-- Section 2: Combined Batch-wise Settlement Table --}}
                         <div id="settlementTableContainer"
-                            style="display: none; text-align: center; margin: 0px; padding: 0px">
+                            style="display: none; text-align: center; margin: 10px; padding: 0px">
                             <x-detail-table
                                 title="Batch-wise Settlement (B/F + Issued = Total Available | Sold + Returned + Shortage + Balance = Total)"
                                 :headers="[

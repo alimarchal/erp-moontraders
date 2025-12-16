@@ -23,6 +23,9 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <form method="POST" action="{{ route('sales-settlements.store') }}" id="settlementForm">
                     @csrf
+                    {{-- Hidden input to store current employee ID for credit sales modal --}}
+                    <input type="hidden" id="current_settlement_employee_id" value="">
+
                     <div class="pt-6 pl-6 pr-6">
                         {{-- Section 1: Date & Goods Issue Selection --}}
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2" x-data="goodsIssueSelector()">
@@ -147,8 +150,10 @@
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1 px-1 text-left text-black">Customer</th>
                                                     <th class="py-1 px-1 text-right text-black">Sale</th>
-                                                    <th class="py-1 px-1 text-right text-black" title="Recovery">REC</th>
-                                                    <th class="py-1 px-1 text-right text-black" title="Balance with this Salesman">BAL</th>
+                                                    <th class="py-1 px-1 text-right text-black" title="Recovery">REC
+                                                    </th>
+                                                    <th class="py-1 px-1 text-right text-black"
+                                                        title="Balance with this Salesman">BAL</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="creditSalesTableBody">
@@ -161,7 +166,8 @@
                                             </tbody>
                                             <tfoot class="border-t-2 border-gray-300">
                                                 <tr class="bg-orange-50">
-                                                    <td class="py-1.5 px-1 text-right font-semibold text-orange-900 text-xs">
+                                                    <td
+                                                        class="py-1.5 px-1 text-right font-semibold text-orange-900 text-xs">
                                                         Total:</td>
                                                     <td class="py-1.5 px-1 text-right font-bold text-orange-700 text-xs"
                                                         id="creditSalesTotalDisplay">0</td>
@@ -263,7 +269,8 @@
                                 {{-- Cash Detail (Denomination Breakdown) Card --}}
                                 <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
                                     <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
-                                        <h4 class="text-sm font-bold text-white text-center">Cash Detail (Denomination Breakdown)</h4>
+                                        <h4 class="text-sm font-bold text-white text-center">Cash Detail (Denomination
+                                            Breakdown)</h4>
                                     </div>
                                     <div class="p-0">
                                         <table class="w-full text-xs">
@@ -354,7 +361,8 @@
                                                 </tr>
                                                 <tr style="border-top: 1px solid #000;">
                                                     <td style="padding: 3px 6px; border: none;">Loose Cash/Coins</td>
-                                                    <td style="padding: 3px 6px; text-align: right; border: none;">-</td>
+                                                    <td style="padding: 3px 6px; text-align: right; border: none;">-
+                                                    </td>
                                                     <td style="padding: 3px 6px; text-align: right; border: none;">
                                                         <input type="number" id="denom_coins" name="denom_coins" min="0"
                                                             step="0.01"
@@ -461,7 +469,8 @@
                                             </tbody>
                                             <tfoot class="border-t-2 border-gray-300">
                                                 <tr class="bg-orange-50">
-                                                    <td class="py-1.5 px-1 text-right font-semibold text-orange-900 text-xs">
+                                                    <td
+                                                        class="py-1.5 px-1 text-right font-semibold text-orange-900 text-xs">
                                                         Total:</td>
                                                     <td class="py-1.5 px-1 text-right font-bold text-orange-700 text-xs"
                                                         id="totalExpensesDisplay"
@@ -488,17 +497,20 @@
                                             </thead>
                                             <tbody>
                                                 <tr class="border-t border-gray-200">
-                                                    <td class="py-1 px-1 text-xs text-black">Net Sale (Sold Items Value)</td>
+                                                    <td class="py-1 px-1 text-xs text-black">Net Sale (Sold Items Value)
+                                                    </td>
                                                     <td class="py-1 px-1 text-right font-semibold text-xs text-black"
                                                         id="summary_net_sale_display">0.00</td>
                                                 </tr>
                                                 <tr class="border-t border-gray-200">
-                                                    <td class="py-1 px-1 text-xs text-black">Recovery (From Customers)</td>
+                                                    <td class="py-1 px-1 text-xs text-black">Recovery (From Customers)
+                                                    </td>
                                                     <td class="py-1 px-1 text-right font-semibold text-xs text-teal-700"
                                                         id="summary_recovery_display">0.00</td>
                                                 </tr>
                                                 <tr class="bg-blue-50 border-y-2 border-blue-200">
-                                                    <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Sale</td>
+                                                    <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Sale
+                                                    </td>
                                                     <td class="py-1 px-1 text-right font-bold text-xs text-blue-800"
                                                         id="summary_total_sale_display">0.00</td>
                                                 </tr>
@@ -508,7 +520,8 @@
                                                         id="summary_credit_display">0.00</td>
                                                 </tr>
                                                 <tr class="bg-gray-50 border-t border-gray-200">
-                                                    <td class="py-1 px-1 text-xs font-semibold text-gray-800">Balance</td>
+                                                    <td class="py-1 px-1 text-xs font-semibold text-gray-800">Balance
+                                                    </td>
                                                     <td class="py-1 px-1 text-right font-bold text-xs text-gray-900"
                                                         id="summary_balance_display">0.00</td>
                                                 </tr>
@@ -518,7 +531,8 @@
                                                         id="summary_expenses_display">0.00</td>
                                                 </tr>
                                                 <tr class="bg-indigo-50 border-y-2 border-indigo-200">
-                                                    <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Net Balance</td>
+                                                    <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Net
+                                                        Balance</td>
                                                     <td class="py-1 px-1 text-right font-bold text-xs text-indigo-900"
                                                         id="summary_net_balance_display">0.00</td>
                                                 </tr>
@@ -533,7 +547,8 @@
                                                         id="summary_cash_received_display">0.00</td>
                                                 </tr>
                                                 <tr class="bg-purple-50 border-y-2 border-purple-200">
-                                                    <td class="py-1 px-1 text-xs font-semibold text-purple-900">Short/Excess</td>
+                                                    <td class="py-1 px-1 text-xs font-semibold text-purple-900">
+                                                        Short/Excess</td>
                                                     <td class="py-1 px-1 text-right font-bold text-xs text-purple-900"
                                                         id="summary_short_excess_display">0.00</td>
                                                 </tr>
@@ -550,7 +565,8 @@
                                                         id="summary_cogs_display">0.00</td>
                                                 </tr>
                                                 <tr class="bg-green-50 border-t border-green-200">
-                                                    <td class="py-0.5 px-1 font-semibold text-xs text-green-800">Gross Profit (Sales - COGS)</td>
+                                                    <td class="py-0.5 px-1 font-semibold text-xs text-green-800">Gross
+                                                        Profit (Sales - COGS)</td>
                                                     <td class="py-0.5 px-1 text-right font-bold text-xs text-green-700"
                                                         id="summary_gross_profit_display">0.00</td>
                                                 </tr>
@@ -564,8 +580,10 @@
                                                     <td class="py-0.5 px-1 text-right font-semibold text-xs text-red-700"
                                                         id="summary_profit_expenses_display">0.00</td>
                                                 </tr>
-                                                <tr class="bg-gradient-to-r from-emerald-100 to-teal-100 border-t-2 border-emerald-400">
-                                                    <td class="py-1 px-1 font-bold text-xs text-emerald-900">Net Profit (After Expenses)</td>
+                                                <tr
+                                                    class="bg-gradient-to-r from-emerald-100 to-teal-100 border-t-2 border-emerald-400">
+                                                    <td class="py-1 px-1 font-bold text-xs text-emerald-900">Net Profit
+                                                        (After Expenses)</td>
                                                     <td class="py-1 px-1 text-right font-bold text-xs text-emerald-900"
                                                         id="summary_net_profit_display">0.00</td>
                                                 </tr>
@@ -732,8 +750,6 @@
 
         // Initialize Select2 with AJAX on-demand loading
         $(document).ready(function() {
-            console.log('Initializing Select2 for goods issue dropdown');
-
             $('.select2-goods-issue').select2({
                 width: '100%',
                 placeholder: 'Select a Goods Issue',
@@ -743,7 +759,6 @@
                     dataType: 'json',
                     delay: 250,
                     processResults: function (data) {
-                        console.log('Select2 data loaded:', data);
                         return {
                             results: data
                         };
@@ -752,41 +767,9 @@
                 }
             });
 
-            console.log('Select2 initialized successfully');
-
-            // DEBUG: Log form data on submit
-            document.getElementById('settlementForm').addEventListener('submit', function(e) {
-                const formData = new FormData(this);
-                console.log('=== FORM SUBMISSION DEBUG ===');
-                console.log('Total form entries:', [...formData.entries()].length);
-                
-                // Log all batch-related fields
-                let batchFields = [];
-                for (let [key, value] of formData.entries()) {
-                    if (key.includes('batch')) {
-                        batchFields.push({key, value});
-                        console.log(`BATCH DATA: ${key} = ${value}`);
-                    }
-                }
-                console.log('Total batch fields:', batchFields.length);
-                
-                // Check specifically for quantity_sold in batches
-                const soldFields = batchFields.filter(f => f.key.includes('quantity_sold'));
-                console.log('quantity_sold fields found:', soldFields.length, soldFields);
-                
-                const returnedFields = batchFields.filter(f => f.key.includes('quantity_returned'));
-                console.log('quantity_returned fields found:', returnedFields.length, returnedFields);
-                
-                const shortageFields = batchFields.filter(f => f.key.includes('quantity_shortage'));
-                console.log('quantity_shortage fields found:', shortageFields.length, shortageFields);
-                
-                console.log('=== END FORM DEBUG ===');
-            });
-
             // Restore old value if validation failed and redirected back
             @if(old('goods_issue_id'))
             const oldGoodsIssueId = '{{ old('goods_issue_id') }}';
-            console.log('Restoring old goods_issue_id:', oldGoodsIssueId);
 
             // Fetch the goods issue details to populate the Select2
             fetch('{{ url('api/sales-settlements/goods-issues') }}/' + oldGoodsIssueId + '/items')
@@ -812,8 +795,8 @@
                         }
                     });
                 })
-                .catch(error => {
-                    console.error('Error restoring old goods issue selection:', error);
+                .catch(() => {
+                    // Silently handle error
                 });
             @endif
         });
@@ -1321,7 +1304,6 @@
         // Use Select2 specific event instead of standard change
         $('#goods_issue_id').on('select2:select', function(e) {
             const goodsIssueId = e.params.data.id;
-            console.log('Selected Goods Issue ID:', goodsIssueId);
 
             if (!goodsIssueId) {
                 clearSettlementForm();
@@ -1334,7 +1316,6 @@
 
             // Fetch goods issue items via AJAX
             const apiUrl = `{{ url('api/sales-settlements/goods-issues') }}/${goodsIssueId}/items`;
-            console.log('Fetching from:', apiUrl);
 
             fetch(apiUrl)
                 .then(response => {
@@ -1344,9 +1325,7 @@
                     return response.json();
                 })
                 .then(data => {
-                    console.log('Received data:', data);
                     const items = data.items || [];
-                    console.log('Number of items:', items.length);
 
                     // Load customers for this employee
                     if (data.employee_id) {
@@ -1398,11 +1377,6 @@
                         const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
                         // For B/F, distribute proportionally across batches or show on first batch only
                         const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
-
-                        // Debug: log the item data
-                        console.log('Item data:', item);
-                        console.log('Product:', item.product);
-                        console.log('Product name:', item.product?.name);
 
                         const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
                         const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
@@ -1499,7 +1473,6 @@
             });
 
                     // Show relevant sections
-                    console.log('Displaying settlement table and sections');
                     document.getElementById('noItemsMessage').style.display = 'none';
                     document.getElementById('settlementTableContainer').style.display = 'block';
                     document.getElementById('settlementHelpText').style.display = 'block';
@@ -1514,10 +1487,8 @@
                             calculateBatchBalance(index, batchIdx);
                         });
                     });
-                    console.log('Settlement form loaded successfully');
                 })
-                .catch(error => {
-                    console.error('Error fetching goods issue items:', error);
+                .catch(() => {
                     document.getElementById('noItemsMessage').innerHTML = '<span class="text-red-600">Error loading goods issue data. Please try again.</span>';
                     document.getElementById('noItemsMessage').style.display = 'block';
                     document.getElementById('settlementTableContainer').style.display = 'none';
@@ -1526,7 +1497,6 @@
 
         // Handle clearing the select2 dropdown
         $('#goods_issue_id').on('select2:clear', function() {
-            console.log('Goods Issue selection cleared');
             clearSettlementForm();
             // Clear customer lists in modals
             loadCustomersForEmployee(null);
@@ -1539,6 +1509,12 @@
         function loadCustomersForEmployee(employeeId) {
             // Store globally for modals to access
             window.currentSettlementEmployeeId = employeeId;
+            
+            // Also store in hidden input for reliable access
+            const hiddenInput = document.getElementById('current_settlement_employee_id');
+            if (hiddenInput) {
+                hiddenInput.value = employeeId || '';
+            }
 
             if (!employeeId) {
                 // Clear all customer dropdowns
@@ -1550,25 +1526,19 @@
             fetch(`{{ url('api/v1/customers/by-employee') }}/${employeeId}`)
                 .then(response => response.json())
                 .then(customers => {
-                    console.log('Loaded customers for employee:', customers);
-                    updateModalCustomers(customers);
-
-                    // Also dispatch employee ID for credit sales modal
-                    window.dispatchEvent(new CustomEvent('update-credit-sales-employee', {
-                        detail: { employeeId: employeeId }
-                    }));
+                    // Pass both customers AND employeeId in the same event
+                    updateModalCustomers(customers, employeeId);
                 })
-                .catch(error => {
-                    console.error('Error loading customers for employee:', error);
+                .catch(() => {
                     updateModalCustomers([]);
                 });
         }
 
         // Function to update customer lists in all modals
-        function updateModalCustomers(customers) {
-            // Update Alpine.js components with new customer data
+        function updateModalCustomers(customers, employeeId = null) {
+            // Update Alpine.js components with new customer data AND employeeId
             window.dispatchEvent(new CustomEvent('update-modal-customers', {
-                detail: { customers: customers }
+                detail: { customers: customers, employeeId: employeeId }
             }));
         }
 

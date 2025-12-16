@@ -304,7 +304,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                         this.rebuildSelect2Options();
                     }
                 } catch (error) {
-                    console.error('Error loading customers by employee:', error);
+                    // Silently handle error
                 } finally {
                     this.loadingCustomers = false;
                 }
@@ -348,62 +348,43 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                 $('#credit_sales_customer_select').on('change', function() {
                     const customerId = $(this).val();
                     self.form.customer_id = customerId;
-                    console.log('Customer selected:', customerId);
                     self.onCustomerChange();
                 });
             },
 
             async onCustomerChange() {
-                console.log('onCustomerChange called, customer_id:', this.form.customer_id);
-                console.log('Available customers in modal:', this.customers);
-
-                // Get employeeId from component state or global variable
-                const effectiveEmployeeId = this.employeeId || window.currentSettlementEmployeeId;
-                console.log('Employee ID (component):', this.employeeId);
-                console.log('Employee ID (global):', window.currentSettlementEmployeeId);
-                console.log('Effective Employee ID:', effectiveEmployeeId);
+                // Get employeeId - check hidden input FIRST as it's most reliable
+                const hiddenInput = document.getElementById('current_settlement_employee_id');
+                const hiddenValue = hiddenInput ? hiddenInput.value : null;
+                const effectiveEmployeeId = hiddenValue || this.employeeId || window.currentSettlementEmployeeId;
 
                 if (!this.form.customer_id) {
                     this.form.previous_balance = 0;
                     return;
                 }
 
-                // First check if balance is available in customers array (loaded via /by-employee API)
-                // This balance is already employee-specific from the updated API
-                const customer = this.customers.find(c => Number(c.id) === Number(this.form.customer_id));
-                console.log('Found customer in array:', customer);
-
-                if (customer && customer.balance !== undefined) {
-                    this.form.previous_balance = parseFloat(customer.balance || 0);
-                    console.log('✓ Using employee-specific balance from customers array:', this.form.previous_balance);
-                    return;
-                }
-
-                // Fallback to API call - use employee-specific balance endpoint
-                console.log('Customer not in array, falling back to API call...');
+                // Always call employee-specific API to get accurate balance
                 try {
                     let response;
-                    if (effectiveEmployeeId) {
-                        // Use new employee-specific balance endpoint
+                    if (effectiveEmployeeId && effectiveEmployeeId !== '') {
                         response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance-by-employee/${effectiveEmployeeId}`);
-                        console.log('API /balance-by-employee response status:', response.status);
                     } else {
-                        // Fallback to overall balance if no employeeId (shouldn't happen normally)
-                        console.warn('No employeeId available - using overall balance API');
+                        // Fallback: check customers array first
+                        const customer = this.customers.find(c => Number(c.id) === Number(this.form.customer_id));
+                        if (customer && customer.balance !== undefined) {
+                            this.form.previous_balance = parseFloat(customer.balance || 0);
+                            return;
+                        }
                         response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance`);
-                        console.log('API /balance response status:', response.status);
                     }
 
                     if (response.ok) {
                         const data = await response.json();
                         this.form.previous_balance = parseFloat(data.balance || 0);
-                        console.log('Balance from API:', this.form.previous_balance);
                     } else {
-                        console.error('Failed to fetch customer balance, status:', response.status);
                         this.form.previous_balance = 0;
                     }
                 } catch (error) {
-                    console.error('Error fetching customer balance:', error);
                     this.form.previous_balance = 0;
                 }
             },
@@ -545,23 +526,17 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                 // The API /api/v1/customers/by-employee returns: {id, name, business_name, balance}
                 window.addEventListener('update-modal-customers', (event) => {
                     const rawCustomers = event.detail.customers || [];
+                    // Also get employeeId from the same event
+                    if (event.detail.employeeId) {
+                        this.employeeId = event.detail.employeeId;
+                    }
                     // Map to ensure consistent structure with balance
                     this.customers = rawCustomers.map(c => ({
                         id: c.id,
                         name: c.name || c.customer_name,
                         balance: c.balance ?? c.receivable_balance ?? 0
                     }));
-                    console.log('Credit sales modal - customers updated with balance:', this.customers);
                     this.rebuildSelect2Options();
-                });
-
-                // Listen for employee change (stores employee ID for future use)
-                window.addEventListener('update-credit-sales-employee', (event) => {
-                    const newEmployeeId = event.detail.employeeId;
-                    if (newEmployeeId) {
-                        this.employeeId = newEmployeeId;
-                        // Don't call loadCustomersByEmployee here - customers already loaded via update-modal-customers
-                    }
                 });
             },
         };

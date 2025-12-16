@@ -10,7 +10,9 @@ use Illuminate\Http\JsonResponse;
 
 class CustomerController extends Controller
 {
-    public function __construct(protected LedgerService $ledgerService) {}
+    public function __construct(protected LedgerService $ledgerService)
+    {
+    }
 
     /**
      * Get customer balance (overall balance - used as fallback).
@@ -31,14 +33,6 @@ class CustomerController extends Controller
     public function balanceByEmployee(int $customerId, int $employeeId): JsonResponse
     {
         $balance = $this->ledgerService->getCustomerBalanceByEmployee($customerId, $employeeId);
-
-        return response()->json([
-            'customer_id' => $customerId,
-            'employee_id' => $employeeId,
-            'balance' => $balance,
-        ]);
-    }
-
     /**
      * Get customers by employee (salesman) with their employee-specific balances.
      * This returns the correct balance for each customer with the specified employee.
@@ -48,18 +42,12 @@ class CustomerController extends Controller
         // Get employee-specific balances from customer_ledgers
         $employeeBalances = $this->ledgerService->getCustomersWithBalancesByEmployee($employeeId);
 
-        // Get customers who have credit transactions with this specific employee
-        $customerIds = CustomerLedger::where('employee_id', $employeeId)
-            ->whereIn('transaction_type', ['credit_sale', 'recovery', 'bank_transfer', 'cheque_payment'])
-            ->distinct('customer_id')
-            ->pluck('customer_id')
-            ->toArray();
-
-        $customers = Customer::whereIn('id', $customerIds)
+        // Get ALL active customers (salesman can create credit with any customer)
+        $customers = Customer::where('is_active', true)
             ->orderBy('customer_name')
             ->get(['id', 'customer_name', 'business_name'])
             ->map(function ($customer) use ($employeeBalances) {
-                // Use employee-specific balance from ledger, not the overall receivable_balance
+                // Use employee-specific balance from ledger (0 if no existing transactions)
                 $balanceData = $employeeBalances[$customer->id] ?? ['outstanding_balance' => 0];
 
                 return [
@@ -69,7 +57,4 @@ class CustomerController extends Controller
                     'balance' => $balanceData['outstanding_balance'],
                 ];
             });
-
-        return response()->json($customers);
-    }
 }

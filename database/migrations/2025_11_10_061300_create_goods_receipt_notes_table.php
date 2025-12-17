@@ -2,10 +2,10 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
 
             // GRN Identity
-            $table->string('grn_number', 50)->unique()->comment('Auto-generated: GRN-2025-0001');
+            $table->string('grn_number', 50)->comment('Auto-generated: GRN-2025-0001');
             $table->date('receipt_date');
 
             // Source
@@ -56,6 +56,20 @@ return new class extends Migration
             $table->index('receipt_date');
             $table->index('supplier_invoice_number');
         });
+
+        // Create soft-delete-aware unique constraint for grn_number
+        $driver = DB::getDriverName();
+
+        if ($driver === 'pgsql') {
+            // PostgreSQL: Use partial unique index
+            DB::statement('CREATE UNIQUE INDEX goods_receipt_notes_grn_number_unique ON goods_receipt_notes (grn_number) WHERE deleted_at IS NULL');
+        } else {
+            // MySQL/MariaDB: Create unique index on (grn_number, deleted_at)
+            // NULL values are not considered equal in MySQL unique indexes
+            Schema::table('goods_receipt_notes', function (Blueprint $table) {
+                $table->unique(['grn_number', 'deleted_at'], 'goods_receipt_notes_grn_number_unique');
+            });
+        }
     }
 
     /**

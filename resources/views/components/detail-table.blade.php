@@ -2,6 +2,7 @@
 'headers' => [],
 'title' => null,
 'footerSlot' => null,
+'customWidth' => null,
 ])
 
 <style>
@@ -32,11 +33,11 @@
 
 <div>
     @if($title)
-    <h3 class="text-lg font-semibold text-gray-900 mb-2">{{ $title }}</h3>
+    <h3 class="text-lg font-semibold text-gray-900 mb-2 text-center">{{ $title }}</h3>
     @endif
 
     <div class="detail-table-scroll relative overflow-x-auto border border-gray-300 rounded-lg">
-        <table class="min-w-max w-full table-auto text-sm border-collapse">
+        <table class="{{ $customWidth ?? 'min-w-max w-full' }} table-auto text-sm border-collapse">
             <thead>
                 <tr class="bg-green-800 text-white uppercase text-sm">
                     @foreach($headers as $header)

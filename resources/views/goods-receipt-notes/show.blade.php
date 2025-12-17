@@ -1,58 +1,67 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            GRN: {{ $grn->grn_number }}
-        </h2>
-        <div class="flex justify-center items-center float-right space-x-2">
-            @if ($grn->status === 'draft')
-            <form action="{{ route('goods-receipt-notes.post', $grn->id) }}" method="POST"
-                onsubmit="return confirm('Are you sure you want to post this GRN to inventory? This action cannot be undone.');"
-                class="inline-block">
-                @csrf
-                <button type="submit"
-                    class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
-                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                        stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Post to Inventory
-                </button>
-            </form>
-            <a href="{{ route('goods-receipt-notes.edit', $grn->id) }}"
-                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                Edit
-            </a>
+        <h3 class="font-semibold text-sm text-black leading-tight inline-block">
+            GRN: {{ $grn->grn_number }} ({{ $grn->warehouse->warehouse_name }}) from
+            {{ $grn->supplier->supplier_name }} - Invoice: {{ $grn->supplier_invoice_number }} ({{
+            \Carbon\Carbon::parse($grn->supplier_invoice_date)->format('d M Y') }})
             @endif
-            @if ($grn->status === 'posted')
-            @php
-            $hasPostedPayments = $grn->payments()->where('status', 'posted')->exists();
-            @endphp
-            @if (!$hasPostedPayments)
-            <form id="reverseGrnForm" action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
-                onsubmit="return confirmReverseGrn();" class="inline-block">
-                @csrf
-                <input type="hidden" id="password" name="password" value="">
-                <button type="submit"
-                    class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+            <br>
+
+            @if ($grn->supplier_invoice_date)
+            Date: {{ \Carbon\Carbon::parse($grn->receipt_date)->format('d M Y') }} by {{ $grn->receivedBy->name
+            ?? 'N/A' }}
+            :: {{ ucfirst($grn->status) }}
+            </h2>
+            <div class="flex justify-center items-center float-right space-x-2">
+                @if ($grn->status === 'draft')
+                <form action="{{ route('goods-receipt-notes.post', $grn->id) }}" method="POST"
+                    onsubmit="return confirm('Are you sure you want to post this GRN to inventory? This action cannot be undone.');"
+                    class="inline-block">
+                    @csrf
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
+                        <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Post to Inventory
+                    </button>
+                </form>
+                <a href="{{ route('goods-receipt-notes.edit', $grn->id) }}"
+                    class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                    Edit
+                </a>
+                @endif
+                @if ($grn->status === 'posted')
+                @php
+                $hasPostedPayments = $grn->payments()->where('status', 'posted')->exists();
+                @endphp
+                @if (!$hasPostedPayments)
+                <form id="reverseGrnForm" action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
+                    onsubmit="return confirmReverseGrn();" class="inline-block">
+                    @csrf
+                    <input type="hidden" id="password" name="password" value="">
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                        <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                            stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                        Reverse Entry
+                    </button>
+                </form>
+                @endif
+                @endif
+                <a href="{{ route('goods-receipt-notes.index') }}"
+                    class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                     </svg>
-                    Reverse Entry
-                </button>
-            </form>
-            @endif
-            @endif
-            <a href="{{ route('goods-receipt-notes.index') }}"
-                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
-        </div>
+                </a>
+            </div>
     </x-slot>
 
     <div class="py-6">
@@ -60,161 +69,100 @@
             <x-status-message class="mb-4 shadow-md" />
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase">GRN Number</h3>
-                            <p class="text-lg font-bold text-gray-900">{{ $grn->grn_number }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Receipt Date
-                            </h3>
-                            <p class="text-lg text-gray-900">
-                                {{ \Carbon\Carbon::parse($grn->receipt_date)->format('d M Y') }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase">Status</h3>
-                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
-                                {{ $grn->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                {{ $grn->status === 'received' ? 'bg-blue-100 text-blue-700' : '' }}
-                                {{ $grn->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
-                                {{ ucfirst($grn->status) }}
-                            </span>
-                        </div>
-                    </div>
-
-                    <hr class="my-6 border-gray-200">
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Supplier
-                            </h3>
-                            <p class="text-base font-semibold text-gray-900">
-                                {{ $grn->supplier->supplier_name }}</p>
-                            @if ($grn->supplier_invoice_number)
-                            <p class="text-sm text-gray-600">
-                                Invoice: {{ $grn->supplier_invoice_number }}
-                                @if ($grn->supplier_invoice_date)
-                                ({{ \Carbon\Carbon::parse($grn->supplier_invoice_date)->format('d M Y') }})
-                                @endif
-                            </p>
-                            @endif
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Warehouse
-                            </h3>
-                            <p class="text-base font-semibold text-gray-900">
-                                {{ $grn->warehouse->warehouse_name }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Received
-                                By
-                            </h3>
-                            <p class="text-base text-gray-900">{{ $grn->receivedBy->name ?? 'N/A' }}
-                            </p>
-                        </div>
-                        @if ($grn->verified_by)
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Verified
-                                By</h3>
-                            <p class="text-base text-gray-900">{{ $grn->verifiedBy->name ?? 'N/A' }}
-                            </p>
-                        </div>
-                        @endif
-                    </div>
-
-
-
-                    <hr class="my-6 border-gray-200">
-
-                    <x-detail-table title="Line Items" :headers="[
+                <x-detail-table :customWidth="'min-w-max w-full'" :headers="[
                         ['label' => '#', 'align' => 'text-center'],
                         ['label' => 'Product', 'align' => 'text-left'],
-                        ['label' => 'Qty Purchase UOM', 'align' => 'text-right'],
-                        ['label' => 'Unit Price/Case', 'align' => 'text-right'],
+                        ['label' => 'Qty', 'align' => 'text-right'],
+                        ['label' => 'UP/Case', 'align' => 'text-right'],
                         ['label' => 'Extended Value', 'align' => 'text-right'],
                         ['label' => 'Discount', 'align' => 'text-right'],
-                        ['label' => 'FMR Allowance', 'align' => 'text-right'],
+                        ['label' => 'FMR', 'align' => 'text-right'],
                         ['label' => 'Value Before Tax', 'align' => 'text-right'],
                         ['label' => 'Excise Duty', 'align' => 'text-right'],
                         ['label' => 'Sales Tax', 'align' => 'text-right'],
-                        ['label' => 'Adv. Income Tax', 'align' => 'text-right'],
-                        ['label' => 'Qty Received', 'align' => 'text-right'],
+                        ['label' => 'Adv. IT', 'align' => 'text-right'],
+                        ['label' => 'Qty Rec', 'align' => 'text-right'],
                         ['label' => 'Unit Cost', 'align' => 'text-right'],
-                        ['label' => 'Selling Price', 'align' => 'text-right'],
-                        ['label' => 'Total Value w/Taxes', 'align' => 'text-right'],
+                        ['label' => 'Sell Price', 'align' => 'text-right'],
+                        ['label' => 'TV W/Taxes', 'align' => 'text-right'],
                     ]">
-                        @foreach ($grn->items as $item)
-                        <tr class="border-b border-gray-200 text-sm">
-                            <td class="py-1 px-2 text-center">{{ $item->line_no }}</td>
-                            <td class="py-1 px-2">
-                                <div class="font-semibold text-gray-900">{{ $item->product->product_code }}</div>
-                                <div class="text-xs text-gray-500">{{ $item->product->product_name }}</div>
-                                @if ($item->is_promotional)
-                                <span
-                                    class="px-2 py-1 mt-1 text-xs font-semibold rounded bg-orange-100 text-orange-800">
-                                    Promotional
-                                </span>
+                    @foreach ($grn->items as $item)
+                    <tr class="border-b border-gray-200 text-sm">
+                        <td class="py-1 px-2 text-center">{{ $item->line_no }}</td>
+                        <td class="py-1 px-2">
+                            <div class="font-semibold text-gray-900">{{ $item->product->product_code }}</div>
+                            <div class="text-xs text-gray-500">{{ $item->product->product_name }}</div>
+                            @if ($item->is_promotional)
+                            <span class="px-2 py-1 mt-1 text-xs font-semibold rounded bg-orange-100 text-orange-800">
+                                Promotional
+                            </span>
+                            @endif
+                            @if ($item->batch_number || $item->lot_number)
+                            <div class="text-xs text-gray-500 mt-1">
+                                @if ($item->batch_number)
+                                Batch: {{ $item->batch_number }}
                                 @endif
-                                @if ($item->batch_number || $item->lot_number)
-                                <div class="text-xs text-gray-500 mt-1">
-                                    @if ($item->batch_number)
-                                    Batch: {{ $item->batch_number }}
-                                    @endif
-                                    @if ($item->lot_number)
-                                    | Lot: {{ $item->lot_number }}
-                                    @endif
-                                </div>
+                                @if ($item->lot_number)
+                                | Lot: {{ $item->lot_number }}
                                 @endif
-                                @if ($item->expiry_date)
-                                <div class="text-xs text-gray-500">
-                                    Exp: {{ \Carbon\Carbon::parse($item->expiry_date)->format('d M Y') }}
-                                </div>
-                                @endif
-                            </td>
-                            <td class="py-1 px-2 text-right">{{ number_format($item->qty_in_purchase_uom ?? 0, 2) }}
-                            </td>
-                            <td class="py-1 px-2 text-right">{{ number_format($item->unit_price_per_case ?? 0, 2) }}
-                            </td>
-                            <td class="py-1 px-2 text-right">{{ number_format($item->extended_value ?? 0, 2) }}</td>
-                            <td class="py-1 px-2 text-right">{{ number_format($item->discount_value ?? 0, 2) }}</td>
-                            <td class="py-1 px-2 text-right">{{ number_format($item->fmr_allowance ?? 0, 2) }}</td>
-                            <td class="py-1 px-2 text-right font-semibold">{{
-                                number_format($item->discounted_value_before_tax ?? 0, 2) }}</td>
-                            <td class="py-1 px-2 text-right">{{ number_format($item->excise_duty ?? 0, 2) }}</td>
-                            <td class="py-1 px-2 text-right">{{ number_format($item->sales_tax_value ?? 0, 2) }}</td>
-                            <td class="py-1 px-2 text-right">{{ number_format($item->advance_income_tax ?? 0, 2) }}</td>
-                            <td class="py-1 px-2 text-right">
-                                {{ number_format($item->quantity_received, 2) }}
-                                @if ($item->quantity_rejected > 0)
-                                <div class="text-xs text-red-600">
-                                    (Rej: {{ number_format($item->quantity_rejected, 2) }})
-                                </div>
-                                @endif
-                            </td>
-                            <td class="py-1 px-2 text-right">{{ number_format($item->unit_cost, 2) }}</td>
-                            <td class="py-1 px-2 text-right">
-                                @if ($item->selling_price)
-                                {{ number_format($item->selling_price, 2) }}
-                                @else
-                                <span class="text-gray-400">—</span>
-                                @endif
-                            </td>
-                            <td class="py-1 px-2 text-right font-bold text-emerald-600">{{
-                                number_format($item->total_value_with_taxes ?? $item->total_cost, 2) }}</td>
-                        </tr>
-                        @endforeach
+                            </div>
+                            @endif
+                            @if ($item->expiry_date)
+                            <div class="text-xs text-gray-500">
+                                Exp: {{ \Carbon\Carbon::parse($item->expiry_date)->format('d M Y') }}
+                            </div>
+                            @endif
+                        </td>
+                        <td class="py-1 px-2 text-right">{{ number_format($item->qty_in_purchase_uom ?? 0, 2) }}
+                        </td>
+                        <td class="py-1 px-2 text-right">{{ number_format($item->unit_price_per_case ?? 0, 2) }}
+                        </td>
+                        <td class="py-1 px-2 text-right">{{ number_format($item->extended_value ?? 0, 2) }}</td>
+                        <td class="py-1 px-2 text-right">{{ number_format($item->discount_value ?? 0, 2) }}</td>
+                        <td class="py-1 px-2 text-right">{{ number_format($item->fmr_allowance ?? 0, 2) }}</td>
+                        <td class="py-1 px-2 text-right font-semibold">{{
+                            number_format($item->discounted_value_before_tax ?? 0, 2) }}</td>
+                        <td class="py-1 px-2 text-right">{{ number_format($item->excise_duty ?? 0, 2) }}</td>
+                        <td class="py-1 px-2 text-right">{{ number_format($item->sales_tax_value ?? 0, 2) }}</td>
+                        <td class="py-1 px-2 text-right">{{ number_format($item->advance_income_tax ?? 0, 2) }}</td>
+                        <td class="py-1 px-2 text-right">
+                            {{ number_format($item->quantity_received, 2) }}
+                            @if ($item->quantity_rejected > 0)
+                            <div class="text-xs text-red-600">
+                                (Rej: {{ number_format($item->quantity_rejected, 2) }})
+                            </div>
+                            @endif
+                        </td>
+                        <td class="py-1 px-2 text-right">{{ number_format($item->unit_cost, 2) }}</td>
+                        <td class="py-1 px-2 text-right">
+                            @if ($item->selling_price)
+                            {{ number_format($item->selling_price, 2) }}
+                            @else
+                            <span class="text-gray-400">—</span>
+                            @endif
+                        </td>
+                        <td class="py-1 px-2 text-right font-bold text-emerald-600">{{
+                            number_format($item->total_value_with_taxes ?? $item->total_cost, 2) }}</td>
+                    </tr>
+                    @endforeach
 
-                        <x-slot name="footer">
-                            <tr class="border-t-2 border-gray-300">
-                                <td colspan="14" class="py-1 px-2 text-right font-bold text-lg">Grand Total:</td>
-                                <td class="py-1 px-2 text-right font-bold text-lg text-emerald-600">
-                                    ₨ {{ number_format($grn->items->sum('total_value_with_taxes') ?: $grn->grand_total,
-                                    2) }}
-                                </td>
-                            </tr>
-                        </x-slot>
-                    </x-detail-table>
+                    <x-slot name="footer">
+                        <tr class="border-t-2 border-gray-300">
+                            <td colspan="14" class="py-1 px-2 text-right font-bold text-lg">Grand Total:</td>
+                            <td class="py-1 px-2 text-right font-bold text-lg text-emerald-600">
+                                ₨ {{ number_format($grn->items->sum('total_value_with_taxes') ?: $grn->grand_total,
+                                2) }}
+                            </td>
+                        </tr>
+                    </x-slot>
+                </x-detail-table>
+
+                <hr class="my-2 border-gray-200">
+
+                <div class="p-2">
+
+
+
 
                     @if ($grn->notes)
                     <div class="mt-6">
@@ -223,42 +171,6 @@
                     </div>
                     @endif
 
-
-
-                    <hr class="my-6 border-gray-200">
-
-                    @if ($grn->status === 'posted')
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Payment
-                                Status</h3>
-                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
-                                {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
-                                {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
-                                {{ ucfirst($grn->payment_status) }}
-                            </span>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total
-                                Amount</h3>
-                            <p class="text-lg font-bold text-gray-900">₨ {{
-                                number_format($grn->grand_total, 2) }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total Paid
-                            </h3>
-                            <p class="text-lg font-bold text-emerald-600">₨ {{
-                                number_format($grn->total_paid, 2) }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Balance
-                                Due</h3>
-                            <p class="text-lg font-bold {{ $grn->balance > 0 ? 'text-red-600' : 'text-gray-900' }}">
-                                ₨ {{ number_format($grn->balance, 2) }}
-                            </p>
-                        </div>
-                    </div>
 
                     @if ($grn->payments()->count() > 0)
                     <div class="mb-6">
@@ -305,6 +217,43 @@
                     </div>
                     @endif
                     @endif
+
+                    <hr class="my-6 border-gray-200">
+
+                    @if ($grn->status === 'posted')
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Payment
+                                Status</h3>
+                            <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
+                                {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
+                                {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                {{ ucfirst($grn->payment_status) }}
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total
+                                Amount</h3>
+                            <p class="text-lg font-bold text-gray-900">₨ {{
+                                number_format($grn->grand_total, 2) }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Total Paid
+                            </h3>
+                            <p class="text-lg font-bold text-emerald-600">₨ {{
+                                number_format($grn->total_paid, 2) }}</p>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Balance
+                                Due</h3>
+                            <p class="text-lg font-bold {{ $grn->balance > 0 ? 'text-red-600' : 'text-gray-900' }}">
+                                ₨ {{ number_format($grn->balance, 2) }}
+                            </p>
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
         </div>

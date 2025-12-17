@@ -39,15 +39,15 @@
     <div class="detail-table-scroll relative overflow-x-auto border border-gray-300 rounded-lg">
         <table class="{{ $customWidth ?? 'min-w-max w-full' }} table-auto text-sm border-collapse">
             <thead>
-                <tr class="bg-green-800 text-white uppercase text-sm">
+                <tr class="bg-green-800 text-white text-sm">
                     @foreach($headers as $header)
-                    <th class="py-2 px-2 border-b border-green-700 {{ $header['align'] ?? 'text-left' }}">
+                    <th class="py-1 px-1 border-b border-green-700 {{ $header['align'] ?? 'text-left' }}">
                         {{ $header['label'] }}
                     </th>
                     @endforeach
                 </tr>
             </thead>
-            <tbody class="text-black text-md leading-normal font-extrabold">
+            <tbody class="text-black text-sm leading-normal font-extrabold">
                 {{ $slot }}
             </tbody>
             @if(isset($footer))

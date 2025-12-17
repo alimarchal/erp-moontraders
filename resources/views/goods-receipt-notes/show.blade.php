@@ -69,7 +69,7 @@
             <x-status-message class="mb-4 shadow-md" />
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <x-detail-table :customWidth="'max-w-7xl w-full'" :headers="[
+                <x-detail-table :headers="[
                         ['label' => '#', 'align' => 'text-center'],
                         ['label' => 'Product', 'align' => 'text-left'],
                         ['label' => 'Qty', 'align' => 'text-right'],
@@ -84,7 +84,7 @@
                         ['label' => 'Qty Rec', 'align' => 'text-right'],
                         ['label' => 'Unit Cost', 'align' => 'text-right'],
                         ['label' => 'Sell Price', 'align' => 'text-right'],
-                        ['label' => 'TV W/Taxes', 'align' => 'text-right'],
+                        ['label' => 'Total Value W/Taxes', 'align' => 'text-right'],
                     ]">
                     @foreach ($grn->items as $item)
                     <tr class="border-b border-gray-200 text-sm">
@@ -148,8 +148,8 @@
 
                     <x-slot name="footer">
                         <tr class="border-t-2 border-gray-300">
-                            <td colspan="14" class="py-1 px-2 text-right font-bold text-lg">Grand Total:</td>
-                            <td class="py-1 px-2 text-right font-bold text-lg text-emerald-600">
+                            <td colspan="14" class="py-1 px-2 text-right font-bold text-md">Grand Total:</td>
+                            <td class="py-1 px-2 text-right font-bold text-md text-emerald-600">
                                 ₨ {{ number_format($grn->items->sum('total_value_with_taxes') ?: $grn->grand_total,
                                 2) }}
                             </td>

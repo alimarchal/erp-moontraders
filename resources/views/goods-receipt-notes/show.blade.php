@@ -69,7 +69,7 @@
             <x-status-message class="mb-4 shadow-md" />
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <x-detail-table :customWidth="'min-w-max w-full'" :headers="[
+                <x-detail-table :customWidth="'max-w-7xl w-full'" :headers="[
                         ['label' => '#', 'align' => 'text-center'],
                         ['label' => 'Product', 'align' => 'text-left'],
                         ['label' => 'Qty', 'align' => 'text-right'],

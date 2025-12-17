@@ -2,70 +2,72 @@
     <x-slot name="header">
         <h3 class="font-semibold text-sm text-black leading-tight inline-block">
             GRN: {{ $grn->grn_number }} ({{ $grn->warehouse->warehouse_name }}) from
-            {{ $grn->supplier->supplier_name }} - Invoice: {{ $grn->supplier_invoice_number }} ({{
-            \Carbon\Carbon::parse($grn->supplier_invoice_date)->format('d M Y') }})
+            {{ $grn->supplier->supplier_name }}
+            @if($grn->supplier_invoice_number)
+            - Invoice: {{ $grn->supplier_invoice_number }}
+            @if($grn->supplier_invoice_date)
+            ({{ \Carbon\Carbon::parse($grn->supplier_invoice_date)->format('d M Y') }})
+            @endif
             @endif
             <br>
-
-            @if ($grn->supplier_invoice_date)
-            Date: {{ \Carbon\Carbon::parse($grn->receipt_date)->format('d M Y') }} by {{ $grn->receivedBy->name
-            ?? 'N/A' }}
+            Date: {{ \Carbon\Carbon::parse($grn->receipt_date)->format('d M Y') }} by {{ $grn->receivedBy->name ?? 'N/A'
+            }}
             :: {{ ucfirst($grn->status) }}
-            </h2>
-            <div class="flex justify-center items-center float-right space-x-2">
-                @if ($grn->status === 'draft')
-                <form action="{{ route('goods-receipt-notes.post', $grn->id) }}" method="POST"
-                    onsubmit="return confirm('Are you sure you want to post this GRN to inventory? This action cannot be undone.');"
-                    class="inline-block">
-                    @csrf
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
-                        <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Post to Inventory
-                    </button>
-                </form>
-                <a href="{{ route('goods-receipt-notes.edit', $grn->id) }}"
-                    class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    Edit
-                </a>
-                @endif
-                @if ($grn->status === 'posted')
-                @php
-                $hasPostedPayments = $grn->payments()->where('status', 'posted')->exists();
-                @endphp
-                @if (!$hasPostedPayments)
-                <form id="reverseGrnForm" action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
-                    onsubmit="return confirmReverseGrn();" class="inline-block">
-                    @csrf
-                    <input type="hidden" id="password" name="password" value="">
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                        <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                        </svg>
-                        Reverse Entry
-                    </button>
-                </form>
-                @endif
-                @endif
-                <a href="{{ route('goods-receipt-notes.index') }}"
-                    class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
-                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+        </h3>
+        <div class="flex justify-center items-center float-right space-x-2">
+            @if ($grn->status === 'draft')
+            <form action="{{ route('goods-receipt-notes.post', $grn->id) }}" method="POST"
+                onsubmit="return confirm('Are you sure you want to post this GRN to inventory? This action cannot be undone.');"
+                class="inline-block">
+                @csrf
+                <button type="submit"
+                    class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
+                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Post to Inventory
+                </button>
+            </form>
+            <a href="{{ route('goods-receipt-notes.edit', $grn->id) }}"
+                class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                Edit
+            </a>
+            @endif
+            @if ($grn->status === 'posted')
+            @php
+            $hasPostedPayments = $grn->payments()->where('status', 'posted')->exists();
+            @endphp
+            @if (!$hasPostedPayments)
+            <form id="reverseGrnForm" action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
+                onsubmit="return confirmReverseGrn();" class="inline-block">
+                @csrf
+                <input type="hidden" id="password" name="password" value="">
+                <button type="submit"
+                    class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                            d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                     </svg>
-                </a>
-            </div>
+                    Reverse Entry
+                </button>
+            </form>
+            @endif
+            @endif
+            <a href="{{ route('goods-receipt-notes.index') }}"
+                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </a>
+        </div>
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md" />
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
@@ -216,7 +218,6 @@
                         </x-detail-table>
                     </div>
                     @endif
-                    @endif
 
                     <hr class="my-6 border-gray-200">
 
@@ -252,7 +253,7 @@
                             </p>
                         </div>
                     </div>
-
+                    @endif
 
                 </div>
             </div>

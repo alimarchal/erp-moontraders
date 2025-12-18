@@ -1,3 +1,0 @@
-/Users/alirazamarchal/Herd/moontrader/resources/views/sales-settlements/create.blade.php /Users/alirazamarchal/Herd/moontrader/resources/views/sales-settlements/index.blade.php /Users/alirazamarchal/Herd/moontrader/resources/views/sales-settlements/show.blade.php /Users/alirazamarchal/Herd/moontrader/resources/views/sales-settlements/edit.blade.php
-
-in create and edit, generate auto invoice numbsers for customer_credit_sales invoice_number, in sales_settlement_advance_taxes also invoice_number

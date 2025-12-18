@@ -2,12 +2,15 @@
     "agents": [
         "claude_code",
         "codex",
-        "copilot"
+        "copilot",
+        "gemini"
     ],
     "editors": [
         "claude_code",
         "codex",
+        "gemini",
         "vscode"
     ],
-    "guidelines": []
+    "guidelines": [],
+    "herd_mcp": true
 }

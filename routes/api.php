@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\CustomerController;
+use App\Http\Controllers\Api\V1\CustomerEmployeeAccountController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -11,11 +12,17 @@ Route::get('/user', function (Request $request) {
 
 // API V1 Routes
 Route::prefix('v1')->group(function () {
-    // Customer API Routes
+    // Customer-Employee Account API Routes (NEW SYSTEM)
+    Route::prefix('customer-employee-accounts')->group(function () {
+        Route::get('/{customer}/balance/{employee}', [CustomerEmployeeAccountController::class, 'balance']);
+        Route::get('/by-employee/{employee}', [CustomerEmployeeAccountController::class, 'byEmployee']);
+        Route::get('/{customer}/ledger/{employee}', [CustomerEmployeeAccountController::class, 'ledger']);
+    });
+
+    // Customer API Routes (OLD SYSTEM - kept for backward compatibility)
     Route::prefix('customers')->group(function () {
         Route::get('/{customer}/balance', [CustomerController::class, 'balance']);
         Route::get('/by-employee/{employee}', [CustomerController::class, 'byEmployee']);
-        // New: Get customer balance for a specific employee (employee-specific ledger balance)
         Route::get('/{customer}/balance-by-employee/{employee}', [CustomerController::class, 'balanceByEmployee']);
     });
 });
@@ -23,7 +30,6 @@ Route::prefix('v1')->group(function () {
 // Legacy Customer API Routes (for backward compatibility)
 Route::get('/customers/{customer}/balance', [CustomerController::class, 'balance']);
 Route::get('/customers/by-employee/{employee}', [CustomerController::class, 'byEmployee']);
-// New: Get customer balance for a specific employee
 Route::get('/customers/{customer}/balance-by-employee/{employee}', [CustomerController::class, 'balanceByEmployee']);
 
 // Accounting Transactions API Routes

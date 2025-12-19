@@ -75,6 +75,19 @@ class Employee extends Model
         return $this->hasMany(SalesmanLedger::class);
     }
 
+    public function customerAccounts(): HasMany
+    {
+        return $this->hasMany(CustomerEmployeeAccount::class);
+    }
+
+    public function accountTransactions(): HasMany
+    {
+        return $this->hasManyThrough(
+            CustomerEmployeeAccountTransaction::class,
+            CustomerEmployeeAccount::class
+        );
+    }
+
     public function getFullNameAttribute(): string
     {
         return $this->name;

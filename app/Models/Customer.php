@@ -52,9 +52,7 @@ class Customer extends Model
         'credit_limit',
         'payment_terms',
         'credit_used',
-        'receivable_balance',
-        'payable_balance',
-        'lifetime_value',
+        // receivable_balance, payable_balance, lifetime_value - calculated dynamically
         'receivable_account_id',
         'payable_account_id',
         'notes',
@@ -66,9 +64,7 @@ class Customer extends Model
     protected $casts = [
         'credit_limit' => 'decimal:2',
         'credit_used' => 'decimal:2',
-        'receivable_balance' => 'decimal:2',
-        'payable_balance' => 'decimal:2',
-        'lifetime_value' => 'decimal:2',
+        // receivable_balance, payable_balance, lifetime_value - removed (calculated dynamically)
         'last_sale_date' => 'date',
         'is_active' => 'boolean',
         'payment_terms' => 'integer',
@@ -105,6 +101,19 @@ class Customer extends Model
         return $this->hasMany(CustomerLedger::class);
     }
 
+    public function employeeAccounts(): HasMany
+    {
+        return $this->hasMany(CustomerEmployeeAccount::class);
+    }
+
+    public function accountTransactions(): HasMany
+    {
+        return $this->hasManyThrough(
+            CustomerEmployeeAccountTransaction::class,
+            CustomerEmployeeAccount::class
+        );
+    }
+
     // Scopes
     public function scopeActive($query)
     {
@@ -139,7 +148,27 @@ class Customer extends Model
 
     public function getNetBalance(): float
     {
-        return $this->receivable_balance - $this->payable_balance;
+        return $this->getReceivableBalanceAttribute();
+    }
+
+    /**
+     * Get total receivable balance from all employee accounts
+     */
+    public function getReceivableBalanceAttribute(): float
+    {
+        return CustomerEmployeeAccountTransaction::whereHas('account', function ($query) {
+            $query->where('customer_id', $this->id);
+        })
+            ->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as balance')
+            ->value('balance') ?? 0.0;
+    }
+
+    /**
+     * Get balance with specific employee
+     */
+    public function getBalanceWithEmployee(int $employeeId): float
+    {
+        return CustomerEmployeeAccount::getBalance($this->id, $employeeId);
     }
 
     public function updateCreditUsed(): void

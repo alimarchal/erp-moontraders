@@ -1,18 +1,18 @@
 @props([
-'customers' => collect(),
-'employeeId' => null,
-'triggerEvent' => 'open-credit-sales-modal',
-'creditInputId' => 'credit_sales_amount',
-'recoveryInputId' => 'credit_recoveries_total',
-'entriesInputId' => 'credit_sales_entries',
+    'customers' => collect(),
+    'employeeId' => null,
+    'triggerEvent' => 'open-credit-sales-modal',
+    'creditInputId' => 'credit_sales_amount',
+    'recoveryInputId' => 'credit_recoveries_total',
+    'entriesInputId' => 'credit_sales_entries',
 ])
 
 @php
-$customers = $customers instanceof \Illuminate\Support\Collection ? $customers : collect($customers);
+    $customers = $customers instanceof \Illuminate\Support\Collection ? $customers : collect($customers);
 @endphp
 
 <div x-data="creditSalesModal({
-        customers: @js($customers->map(fn ($customer) => [
+        customers: @js($customers->map(fn($customer) => [
             'id' => $customer->id,
             'name' => $customer->customer_name,
         ])->values()),
@@ -264,302 +264,303 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 </div>
 
 @once
-@push('scripts')
-<script>
-    function creditSalesModal({ customers, employeeId, creditInputId, recoveryInputId, entriesInputId }) {
-        return {
-            show: false,
-            customers,
-            employeeId,
-            loadingCustomers: false,
-            form: {
-                customer_id: '',
-                invoice_number: '',
-                previous_balance: 0,
-                sale_amount: '',
-                payment_received: '',
-                notes: '',
-            },
-            entries: [],
-            invoiceCounter: 1,
-            select2Initialized: false,
+    @push('scripts')
+        <script>
+            function creditSalesModal({ customers, employeeId, creditInputId, recoveryInputId, entriesInputId }) {
+                return {
+                    show: false,
+                    customers,
+                    employeeId,
+                    loadingCustomers: false,
+                    form: {
+                        customer_id: '',
+                        invoice_number: '',
+                        previous_balance: 0,
+                        sale_amount: '',
+                        payment_received: '',
+                        notes: '',
+                    },
+                    entries: [],
+                    invoiceCounter: 1,
+                    select2Initialized: false,
 
-            openModal() {
-                this.show = true;
-                this.form.invoice_number = 'CSI-' + String(this.invoiceCounter).padStart(5, '0');
+                    openModal() {
+                        this.show = true;
+                        this.form.invoice_number = 'CSI-' + String(this.invoiceCounter).padStart(5, '0');
 
-                // Initialize select2 after the modal is fully rendered
-                this.$nextTick(() => {
-                    if (!this.select2Initialized) {
-                        this.initializeSelect2();
-                        this.select2Initialized = true;
-                    }
+                        // Initialize select2 after the modal is fully rendered
+                        this.$nextTick(() => {
+                            if (!this.select2Initialized) {
+                                this.initializeSelect2();
+                                this.select2Initialized = true;
+                            }
 
-                    // Load customers by employee if employeeId is set
-                    if (this.employeeId) {
-                        this.loadCustomersByEmployee();
-                    }
-                });
-            },
+                            // Load customers by employee if employeeId is set
+                            if (this.employeeId) {
+                                this.loadCustomersByEmployee();
+                            }
+                        });
+                    },
 
-            async loadCustomersByEmployee() {
-                if (!this.employeeId) return;
+                    async loadCustomersByEmployee() {
+                        if (!this.employeeId) return;
 
-                this.loadingCustomers = true;
-                try {
-                    const response = await fetch(`/api/v1/customers/by-employee/${this.employeeId}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.customers = data.map(c => ({
-                            id: c.id,
-                            name: c.name,
-                            balance: c.balance
-                        }));
-                        this.rebuildSelect2Options();
-                    }
-                } catch (error) {
-                    // Silently handle error
-                } finally {
-                    this.loadingCustomers = false;
-                }
-            },
+                        this.loadingCustomers = true;
+                        try {
+                            const response = await fetch(`/api/v1/customers/by-employee/${this.employeeId}`);
+                            if (response.ok) {
+                                const data = await response.json();
+                                this.customers = data.map(c => ({
+                                    id: c.id,
+                                    name: c.name,
+                                    balance: c.balance
+                                }));
+                                this.rebuildSelect2Options();
+                            }
+                        } catch (error) {
+                            // Silently handle error
+                        } finally {
+                            this.loadingCustomers = false;
+                        }
+                    },
 
-            rebuildSelect2Options() {
-                if (!this.select2Initialized) return;
+                    rebuildSelect2Options() {
+                        if (!this.select2Initialized) return;
 
-                const select = $('#credit_sales_customer_select');
-                select.empty();
-                select.append('<option value="">Select Customer</option>');
+                        const select = $('#credit_sales_customer_select');
+                        select.empty();
+                        select.append('<option value="">Select Customer</option>');
 
-                this.customers.forEach(customer => {
-                    select.append(`<option value="${customer.id}">${customer.name}</option>`);
-                });
+                        this.customers.forEach(customer => {
+                            select.append(`<option value="${customer.id}">${customer.name}</option>`);
+                        });
 
-                select.trigger('change');
-            },
+                        select.trigger('change');
+                    },
 
-            setEmployeeId(id) {
-                this.employeeId = id;
-                if (this.show && this.employeeId) {
-                    this.loadCustomersByEmployee();
-                }
-            },
+                    setEmployeeId(id) {
+                        this.employeeId = id;
+                        if (this.show && this.employeeId) {
+                            this.loadCustomersByEmployee();
+                        }
+                    },
 
-            closeModal() {
-                this.show = false;
-            },
+                    closeModal() {
+                        this.show = false;
+                    },
 
-            initializeSelect2() {
-                const self = this;
-                $('#credit_sales_customer_select').select2({
-                    width: '100%',
-                    placeholder: 'Select Customer',
-                    allowClear: true,
-                    dropdownParent: $('#credit_sales_customer_select').parent()
-                });
+                    initializeSelect2() {
+                        const self = this;
+                        $('#credit_sales_customer_select').select2({
+                            width: '100%',
+                             placeholder: 'Select Customer',
+                            allowClear: true,
+                            dropdownParent: $('#credit_sales_customer_select').parent()
+                        });
 
-                // Handle select2 change event
-                $('#credit_sales_customer_select').on('change', function() {
-                    const customerId = $(this).val();
-                    self.form.customer_id = customerId;
-                    self.onCustomerChange();
-                });
-            },
+                        // Handle select2 change event
+                        $('#credit_sales_customer_select').on('change', function() {
+                            const customerId = $(this).val();
+                            self.form.customer_id = customerId;
+                            self.onCustomerChange();
+                        });
+                    },
 
-            async onCustomerChange() {
-                // Get employeeId - check hidden input FIRST as it's most reliable
-                const hiddenInput = document.getElementById('current_settlement_employee_id');
-                const hiddenValue = hiddenInput ? hiddenInput.value : null;
-                const effectiveEmployeeId = hiddenValue || this.employeeId || window.currentSettlementEmployeeId;
+                    async onCustomerChange() {
+                        // Get employeeId - check hidden input FIRST as it's most reliable
+                        const hiddenInput = document.getElementById('current_settlement_employee_id');
+                        const hiddenValue = hiddenInput ? hiddenInput.value : null;
+                        const effectiveEmployeeId = hiddenValue || this.employeeId || window.currentSettlementEmployeeId;
 
-                if (!this.form.customer_id) {
-                    this.form.previous_balance = 0;
-                    return;
-                }
-
-                // Always call employee-specific API to get accurate balance
-                try {
-                    let response;
-                    if (effectiveEmployeeId && effectiveEmployeeId !== '') {
-                        response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance-by-employee/${effectiveEmployeeId}`);
-                    } else {
-                        // Fallback: check customers array first
-                        const customer = this.customers.find(c => Number(c.id) === Number(this.form.customer_id));
-                        if (customer && customer.balance !== undefined) {
-                            this.form.previous_balance = parseFloat(customer.balance || 0);
+                        if (!this.form.customer_id) {
+                            this.form.previous_balance = 0;
                             return;
                         }
-                        response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance`);
-                    }
 
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.form.previous_balance = parseFloat(data.balance || 0);
-                    } else {
+                        // Always call employee-specific API to get accurate balance using NEW SYSTEM
+                        try {
+                            let response;
+                            if (effectiveEmployeeId && effectiveEmployeeId !== '') {
+                                // NEW API ENDPOINT: customer-employee-accounts
+                                response = await fetch(`/api/v1/customer-employee-accounts/${this.form.customer_id}/balance/${effectiveEmployeeId}`);
+                            } else {
+                                // Fallback: check customers array first
+                                const customer = this.customers.find(c => Number(c.id) === Number(this.form.customer_id));
+                                if (customer && customer.balance !== undefined) {
+                                    this.form.previous_balance = parseFloat(customer.balance || 0);
+                                    return;
+                                }
+                                response = await fetch(`/api/v1/customers/${this.form.customer_id}/balance`);
+                            }
+
+                            if (response.ok) {
+                                const data = await response.json();
+                                this.form.previous_balance = parseFloat(data.balance || 0);
+                            } else {
+                                this.form.previous_balance = 0;
+                            }
+                        } catch (error) {
+                            this.form.previous_balance = 0;
+                        }
+                    },
+
+                    calculateCurrentBalance() {
+                        const previous = parseFloat(this.form.previous_balance) || 0;
+                        const credit = parseFloat(this.form.sale_amount) || 0;
+                        const recovery = parseFloat(this.form.payment_received) || 0;
+                        return (previous + credit - recovery).toFixed(2);
+                    },
+
+                    addEntry() {
+                        const customerId = this.form.customer_id;
+                        const saleAmount = parseFloat(this.form.sale_amount) || 0;
+                        const paymentReceived = parseFloat(this.form.payment_received) || 0;
+
+                        if (!customerId) {
+                            alert('Please select a customer.');
+                            return;
+                        }
+
+                        if (saleAmount === 0 && paymentReceived === 0) {
+                            alert('Please enter either a credit sale amount or recovery amount.');
+                            return;
+                        }
+
+                        const customerName = this.customerName(customerId);
+                        const previousBalance = parseFloat(this.form.previous_balance) || 0;
+                        const newBalance = previousBalance + saleAmount - paymentReceived;
+                        const invoiceNumber = this.form.invoice_number;
+
+                        this.entries.push({
+                            customer_id: customerId,
+                            customer_name: customerName,
+                            invoice_number: invoiceNumber,
+                            previous_balance: parseFloat(previousBalance.toFixed(2)),
+                            sale_amount: parseFloat(saleAmount.toFixed(2)),
+                            payment_received: parseFloat(paymentReceived.toFixed(2)),
+                            new_balance: parseFloat(newBalance.toFixed(2)),
+                            notes: this.form.notes.trim(),
+                        });
+
+                        this.invoiceCounter++;
+
+                        // Reset form
+                        this.form.customer_id = '';
+                        this.form.invoice_number = 'CSI-' + String(this.invoiceCounter).padStart(5, '0');
                         this.form.previous_balance = 0;
-                    }
-                } catch (error) {
-                    this.form.previous_balance = 0;
-                }
-            },
+                        this.form.sale_amount = '';
+                        this.form.payment_received = '';
+                        this.form.notes = '';
 
-            calculateCurrentBalance() {
-                const previous = parseFloat(this.form.previous_balance) || 0;
-                const credit = parseFloat(this.form.sale_amount) || 0;
-                const recovery = parseFloat(this.form.payment_received) || 0;
-                return (previous + credit - recovery).toFixed(2);
-            },
+                        // Reset select2 dropdown
+                        $('#credit_sales_customer_select').val(null).trigger('change');
+                    },
 
-            addEntry() {
-                const customerId = this.form.customer_id;
-                const saleAmount = parseFloat(this.form.sale_amount) || 0;
-                const paymentReceived = parseFloat(this.form.payment_received) || 0;
+                    removeEntry(index) {
+                        this.entries.splice(index, 1);
+                    },
 
-                if (!customerId) {
-                    alert('Please select a customer.');
-                    return;
-                }
+                    saveEntries() {
+                        this.syncTotals();
+                        this.closeModal();
+                    },
 
-                if (saleAmount === 0 && paymentReceived === 0) {
-                    alert('Please enter either a credit sale amount or recovery amount.');
-                    return;
-                }
+                    syncTotals() {
+                        const creditTotal = this.creditTotal;
+                        const recoveryTotal = this.recoveryTotal;
 
-                const customerName = this.customerName(customerId);
-                const previousBalance = parseFloat(this.form.previous_balance) || 0;
-                const newBalance = previousBalance + saleAmount - paymentReceived;
-                const invoiceNumber = this.form.invoice_number;
+                        const creditInput = document.getElementById(creditInputId);
+                        if (creditInput) {
+                            creditInput.value = creditTotal.toFixed(2);
+                        }
 
-                this.entries.push({
-                    customer_id: customerId,
-                    customer_name: customerName,
-                    invoice_number: invoiceNumber,
-                    previous_balance: parseFloat(previousBalance.toFixed(2)),
-                    sale_amount: parseFloat(saleAmount.toFixed(2)),
-                    payment_received: parseFloat(paymentReceived.toFixed(2)),
-                    new_balance: parseFloat(newBalance.toFixed(2)),
-                    notes: this.form.notes.trim(),
-                });
+                        const recoveryInput = document.getElementById(recoveryInputId);
+                        if (recoveryInput) {
+                            recoveryInput.value = recoveryTotal.toFixed(2);
+                        }
 
-                this.invoiceCounter++;
+                        const entriesInput = document.getElementById(entriesInputId);
+                        if (entriesInput) {
+                            entriesInput.value = JSON.stringify(this.entries);
+                        }
 
-                // Reset form
-                this.form.customer_id = '';
-                this.form.invoice_number = 'CSI-' + String(this.invoiceCounter).padStart(5, '0');
-                this.form.previous_balance = 0;
-                this.form.sale_amount = '';
-                this.form.payment_received = '';
-                this.form.notes = '';
+                        // Update display totals
+                        const creditDisplay = document.getElementById('creditSalesTotalDisplay');
+                        if (creditDisplay) {
+                            creditDisplay.textContent = this.formatCurrency(creditTotal);
+                        }
 
-                // Reset select2 dropdown
-                $('#credit_sales_customer_select').val(null).trigger('change');
-            },
+                        const recoveryDisplay = document.getElementById('creditRecoveryTotalDisplay');
+                        if (recoveryDisplay) {
+                            recoveryDisplay.textContent = this.formatCurrency(recoveryTotal);
+                        }
 
-            removeEntry(index) {
-                this.entries.splice(index, 1);
-            },
+                        // Update summary fields
+                        const summaryCredit = document.getElementById('summary_credit');
+                        if (summaryCredit) {
+                            summaryCredit.value = creditTotal.toFixed(2);
+                        }
 
-            saveEntries() {
-                this.syncTotals();
-                this.closeModal();
-            },
+                        const summaryRecovery = document.getElementById('summary_recovery');
+                        if (summaryRecovery) {
+                            summaryRecovery.value = recoveryTotal.toFixed(2);
+                        }
 
-            syncTotals() {
-                const creditTotal = this.creditTotal;
-                const recoveryTotal = this.recoveryTotal;
+                        if (typeof updateSalesSummary === 'function') {
+                            updateSalesSummary();
+                        }
 
-                const creditInput = document.getElementById(creditInputId);
-                if (creditInput) {
-                    creditInput.value = creditTotal.toFixed(2);
-                }
+                        // Dispatch update event for the display table
+                        window.dispatchEvent(new CustomEvent('credit-sales-updated'));
+                    },
 
-                const recoveryInput = document.getElementById(recoveryInputId);
-                if (recoveryInput) {
-                    recoveryInput.value = recoveryTotal.toFixed(2);
-                }
+                    customerName(id) {
+                        const found = this.customers.find(customer => Number(customer.id) === Number(id));
+                        return found ? found.name : 'Unknown Customer';
+                    },
 
-                const entriesInput = document.getElementById(entriesInputId);
-                if (entriesInput) {
-                    entriesInput.value = JSON.stringify(this.entries);
-                }
+                    formatCurrency(value) {
+                        const numericValue = parseFloat(value) || 0;
+                        return '₨ ' + numericValue.toLocaleString('en-PK', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        });
+                    },
 
-                // Update display totals
-                const creditDisplay = document.getElementById('creditSalesTotalDisplay');
-                if (creditDisplay) {
-                    creditDisplay.textContent = this.formatCurrency(creditTotal);
-                }
+                    get creditTotal() {
+                        return this.entries.reduce((sum, entry) => {
+                            const amount = parseFloat(entry.sale_amount);
+                            return sum + (isNaN(amount) ? 0 : amount);
+                        }, 0);
+                    },
 
-                const recoveryDisplay = document.getElementById('creditRecoveryTotalDisplay');
-                if (recoveryDisplay) {
-                    recoveryDisplay.textContent = this.formatCurrency(recoveryTotal);
-                }
+                    get recoveryTotal() {
+                        return this.entries.reduce((sum, entry) => {
+                            const amount = parseFloat(entry.payment_received);
+                            return sum + (isNaN(amount) ? 0 : amount);
+                        }, 0);
+                    },
 
-                // Update summary fields
-                const summaryCredit = document.getElementById('summary_credit');
-                if (summaryCredit) {
-                    summaryCredit.value = creditTotal.toFixed(2);
-                }
-
-                const summaryRecovery = document.getElementById('summary_recovery');
-                if (summaryRecovery) {
-                    summaryRecovery.value = recoveryTotal.toFixed(2);
-                }
-
-                if (typeof updateSalesSummary === 'function') {
-                    updateSalesSummary();
-                }
-
-                // Dispatch update event for the display table
-                window.dispatchEvent(new CustomEvent('credit-sales-updated'));
-            },
-
-            customerName(id) {
-                const found = this.customers.find(customer => Number(customer.id) === Number(id));
-                return found ? found.name : 'Unknown Customer';
-            },
-
-            formatCurrency(value) {
-                const numericValue = parseFloat(value) || 0;
-                return '₨ ' + numericValue.toLocaleString('en-PK', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                });
-            },
-
-            get creditTotal() {
-                return this.entries.reduce((sum, entry) => {
-                    const amount = parseFloat(entry.sale_amount);
-                    return sum + (isNaN(amount) ? 0 : amount);
-                }, 0);
-            },
-
-            get recoveryTotal() {
-                return this.entries.reduce((sum, entry) => {
-                    const amount = parseFloat(entry.payment_received);
-                    return sum + (isNaN(amount) ? 0 : amount);
-                }, 0);
-            },
-
-            init() {
-                // Listen for customer updates from goods issue selection
-                // The API /api/v1/customers/by-employee returns: {id, name, business_name, balance}
-                window.addEventListener('update-modal-customers', (event) => {
-                    const rawCustomers = event.detail.customers || [];
-                    // Also get employeeId from the same event
-                    if (event.detail.employeeId) {
-                        this.employeeId = event.detail.employeeId;
-                    }
-                    // Map to ensure consistent structure with balance
-                    this.customers = rawCustomers.map(c => ({
-                        id: c.id,
-                        name: c.name || c.customer_name,
-                        balance: c.balance ?? c.receivable_balance ?? 0
-                    }));
-                    this.rebuildSelect2Options();
-                });
-            },
-        };
-    }
-</script>
-@endpush
+                    init() {
+                        // Listen for customer updates from goods issue selection
+                        // The API /api/v1/customers/by-employee returns: {id, name, business_name, balance}
+                        window.addEventListener('update-modal-customers', (event) => {
+                            const rawCustomers = event.detail.customers || [];
+                            // Also get employeeId from the same event
+                            if (event.detail.employeeId) {
+                                this.employeeId = event.detail.employeeId;
+                            }
+                            // Map to ensure consistent structure with balance
+                            this.customers = rawCustomers.map(c => ({
+                                id: c.id,
+                                name: c.name || c.customer_name,
+                                balance: c.balance ?? c.receivable_balance ?? 0
+                            }));
+                            this.rebuildSelect2Options();
+                        });
+                    },
+                };
+            }
+        </script>
+    @endpush
 @endonce

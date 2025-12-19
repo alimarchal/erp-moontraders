@@ -45,10 +45,8 @@ return new class extends Migration
             $table->integer('payment_terms')->default(30)->comment('Payment terms in days');
             $table->decimal('credit_used', 15, 2)->default(0)->comment('Current credit utilized');
 
-            // Balance tracking
-            $table->decimal('receivable_balance', 15, 2)->default(0)->comment('Amount customer owes us (DR balance)');
-            $table->decimal('payable_balance', 15, 2)->default(0)->comment('Amount we owe customer (CR balance)');
-            $table->decimal('lifetime_value', 15, 2)->default(0)->comment('Total lifetime sales value');
+            // Balance tracking - REMOVED: Now calculated dynamically from customer_employee_account_transactions
+            // receivable_balance, payable_balance, lifetime_value - calculated on demand
 
             // Double-entry COA links
             $table->foreignId('receivable_account_id')->nullable()->constrained('chart_of_accounts')->nullOnDelete()->comment('AR account (1201-XXX)');

@@ -33,7 +33,7 @@ class ChartOfAccountSeeder extends Seeder
             ['name' => 'Current Assets', 'parent' => 'Application of Funds (Assets)', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Accounts Receivable', 'parent' => 'Current Assets', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Debtors', 'parent' => 'Accounts Receivable', 'type' => 'Receivable', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
-            ['name' => 'Bank Accounts', 'parent' => 'Current Assets', 'type' => 'Bank', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
+
             ['name' => 'Cash In Hand', 'parent' => 'Current Assets', 'type' => 'Cash', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Cash', 'parent' => 'Cash In Hand', 'type' => 'Cash', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Loans and Advances (Assets)', 'parent' => 'Current Assets', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
@@ -46,6 +46,7 @@ class ChartOfAccountSeeder extends Seeder
             ['name' => 'Inventory - Tax Component', 'parent' => 'Stock Assets', 'type' => 'Stock', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Inventory - Excise Duty', 'parent' => 'Stock Assets', 'type' => 'Stock', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Tax Assets', 'parent' => 'Current Assets', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
+            ['name' => 'Bank Accounts', 'parent' => 'Current Assets', 'type' => 'Bank', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Advance Tax', 'parent' => 'Tax Assets', 'type' => 'Tax', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Fixed Assets', 'parent' => 'Application of Funds (Assets)', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Accumulated Depreciation', 'parent' => 'Fixed Assets', 'type' => 'Accumulated Depreciation', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
@@ -175,9 +176,13 @@ class ChartOfAccountSeeder extends Seeder
                     $base = substr($parentCode, 0, 1); // "1"
                     $newCode = $base.$childIndex.'00'; // "1" + "1" + "00" = "1100"
                 } elseif ($level == 2) {
-                    // Child of Level 1 (e.g., Accounts Receivable) -> 1110
-                    $base = substr($parentCode, 0, 2); // "11"
-                    $newCode = $base.$childIndex.'0'; // "11" + "1" + "0" = "1110"
+                    // Child of Level 1 (e.g., children under 5200) — always 4 digits
+                    // Pattern keeps first 9 as XY10, XY20, ... XY90, then XY11, XY21, ...
+                    // This ensures codes never exceed 4 digits even when childIndex >= 10
+                    $base2 = substr($parentCode, 0, 2);
+                    $a = (($childIndex - 1) % 9) + 1; // 1..9 cycles
+                    $b = intdiv(($childIndex - 1), 9); // 0,1,2,... increments every 9 children
+                    $newCode = $base2.$a.$b; // "52" . 1 . 0 => 5210, then 5220... then 5211, 5221, etc.
                 } elseif ($level == 3) {
                     // Child of Level 2 (e.g., Debtors) -> 1111
                     $base = substr($parentCode, 0, 3); // "111"

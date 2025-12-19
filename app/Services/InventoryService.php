@@ -111,11 +111,10 @@ class InventoryService
      * Create Journal Entry for GRN posting
      *
      * Accounting Entries:
-     * Dr. Inventory - Main (Asset) - Account 1161 Stock In Hand (includes GST capitalized into inventory cost)
-     * Dr. Inventory - Tax Component (Asset) - Account 1163 (Advance Tax, if any)
-     * Dr. Inventory - Excise Duty (Asset) - Account 1164 (if any)
+     * Dr. Inventory - Main (Asset) - Account 1151 Stock In Hand (actual cost; taxes included in cost)
+     * Dr/Cr. Round Off - Account 5271 (rounding difference between invoice and actual cost)
      * Cr. FMR Allowance - Account 4210 (income/contra-cost, if any)
-     * Cr. Accounts Payable (Liability) - Account 2111 Creditors (amount payable to supplier)
+     * Cr. Accounts Payable (Liability) - Account 2110 Accounts Payable (amount payable to supplier)
      */
     protected function createGrnJournalEntry(GoodsReceiptNote $grn)
     {
@@ -124,20 +123,19 @@ class InventoryService
             $grn->loadMissing('supplier', 'items');
 
             // Find required accounts from Chart of Accounts
-            $inventoryAccount = ChartOfAccount::where('account_code', '1161')->first();
-            $apAccount = ChartOfAccount::where('account_code', '2111')->first();
+            $inventoryAccount = ChartOfAccount::where('account_code', '1151')->first();
+            $apAccount = ChartOfAccount::where('account_code', '2110')->first();
             $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
-            $gstAccount = ChartOfAccount::where('account_code', '2121')->first();
-            $advanceTaxAccount = ChartOfAccount::where('account_code', '1171')->first();
+            $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
 
             if (! $inventoryAccount) {
-                Log::warning('Inventory account (1161 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
+                Log::warning('Inventory account (1151 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
 
             if (! $apAccount) {
-                Log::warning('Accounts Payable account (2111 - Creditors) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
+                Log::warning('Accounts Payable account (2110 - Accounts Payable) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
@@ -154,20 +152,23 @@ class InventoryService
             // This is the true cost that should be recorded in Stock In Hand
             $actualInventoryValue = $grn->items->sum('total_cost');
 
-            // Calculate accounting-based inventory value (invoice calculation)
-            // Net inventory = Extended value - Discounts + GST (GST is part of inventory cost)
-            $accountingInventoryValue = $extendedValue - $totalDiscounts + $totalGst;
+            // Calculate invoice value (extended - discounts + GST + advance tax + excise)
+            $invoiceValue = $extendedValue - $totalDiscounts + $totalGst + $totalAdvanceTax + $totalExciseDuty;
 
-            // Calculate rounding difference (accounting value - actual inventory value)
-            // This difference will be posted to Round Off expense account
-            $roundingDifference = $accountingInventoryValue - $actualInventoryValue;
+            // Rounding difference between invoice math and actual inventory cost
+            $roundingDifference = $invoiceValue - $actualInventoryValue;
 
-            // Total debits = Actual inventory + Rounding + Advance Tax + Excise
-            $totalDebits = $accountingInventoryValue + $totalAdvanceTax + $totalExciseDuty;
+            // Amount payable to supplier (invoice less FMR allowance)
+            $creditorAmount = $invoiceValue - $totalFmrAllowance;
+            if ($creditorAmount < 0) {
+                $creditorAmount = 0;
+            }
 
-            // Calculate amount payable to supplier (what we actually pay)
-            // Creditors = Total accounting value - FMR Allowance
-            $creditorAmount = $totalDebits - $totalFmrAllowance;
+            if (abs($roundingDifference) > 0.001 && ! $roundOffAccount) {
+                Log::warning('Rounding difference detected but Round Off account (5271) not found. Skipping journal entry for GRN: '.$grn->id);
+
+                return null;
+            }
 
             if ($actualInventoryValue <= 0) {
                 Log::warning('GRN actual inventory value is zero or negative. Skipping journal entry for GRN: '.$grn->id);
@@ -190,7 +191,6 @@ class InventoryService
             ];
 
             // Dr. Round Off (if there's a rounding difference)
-            $roundOffAccount = ChartOfAccount::where('account_code', '52160')->first();
             if (abs($roundingDifference) > 0.001 && $roundOffAccount) {
                 $journalLines[] = [
                     'line_no' => $lineNo++,
@@ -200,33 +200,6 @@ class InventoryService
                     'description' => 'Rounding adjustment on GRN',
                     'cost_center_id' => null,
                 ];
-            }
-
-            // Dr. Advance Tax (if any)
-            if ($totalAdvanceTax > 0 && $advanceTaxAccount) {
-                $journalLines[] = [
-                    'line_no' => $lineNo++,
-                    'account_id' => $advanceTaxAccount->id,
-                    'debit' => $totalAdvanceTax,
-                    'credit' => 0,
-                    'description' => 'Advance Income Tax',
-                    'cost_center_id' => null,
-                ];
-            }
-
-            // Dr. Excise Duty (if any)
-            if ($totalExciseDuty > 0) {
-                $exciseAccount = ChartOfAccount::where('account_code', '1164')->first();
-                if ($exciseAccount) {
-                    $journalLines[] = [
-                        'line_no' => $lineNo++,
-                        'account_id' => $exciseAccount->id,
-                        'debit' => $totalExciseDuty,
-                        'credit' => 0,
-                        'description' => 'Excise Duty on Imports',
-                        'cost_center_id' => null,
-                    ];
-                }
             }
 
             // Cr. FMR Allowance (if any) - Income/contra-cost
@@ -265,7 +238,7 @@ class InventoryService
             $result = $accountingService->createJournalEntry($journalEntryData);
 
             if ($result['success']) {
-                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Inventory: {$actualInventoryValue} | Rounding: {$roundingDifference} | GST capitalized: {$totalGst} | Advance Tax: {$totalAdvanceTax} | Excise: {$totalExciseDuty} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
+                Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Inventory: {$actualInventoryValue} | Rounding: {$roundingDifference} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | Excise: {$totalExciseDuty} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
 
                 return $result['data'];
             } else {
@@ -285,10 +258,10 @@ class InventoryService
      * Create Reversing Journal Entry for GRN reversal
      *
      * Reversal Entries (opposite of posting entries):
-     * Dr. Accounts Payable (Liability) - Account 2111 Creditors
+     * Dr. Accounts Payable (Liability) - Account 2110 Accounts Payable
      * Dr. FMR Allowance - Account 4210 (reverse the credit, if any)
-     * Cr. Inventory (Asset) - Account 1161 Stock In Hand (including capitalized GST)
-     * Cr. Advance Tax - Account 1171 (reverse the debit, if any)
+     * Cr. Inventory (Asset) - Account 1151 Stock In Hand
+     * Dr/Cr. Round Off - Account 5271 (reverse rounding from posting)
      */
     protected function createGrnReversingJournalEntry(GoodsReceiptNote $grn)
     {
@@ -297,11 +270,10 @@ class InventoryService
             $grn->loadMissing('supplier', 'items');
 
             // Find required accounts from Chart of Accounts
-            $inventoryAccount = ChartOfAccount::where('account_code', '1161')->first();
-            $apAccount = ChartOfAccount::where('account_code', '2111')->first();
+            $inventoryAccount = ChartOfAccount::where('account_code', '1151')->first();
+            $apAccount = ChartOfAccount::where('account_code', '2110')->first();
             $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
-            $gstAccount = ChartOfAccount::where('account_code', '2121')->first();
-            $advanceTaxAccount = ChartOfAccount::where('account_code', '1171')->first();
+            $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
 
             if (! $inventoryAccount || ! $apAccount) {
                 Log::warning('Required accounts not found in Chart of Accounts. Skipping reversing journal entry for GRN: '.$grn->id);
@@ -320,15 +292,23 @@ class InventoryService
             // Calculate ACTUAL inventory value from items (quantity_accepted × unit_cost)
             $actualInventoryValue = $grn->items->sum('total_cost');
 
-            // Calculate accounting-based inventory value (for rounding calculation)
-            $accountingInventoryValue = $extendedValue - $totalDiscounts + $totalGst;
+            // Invoice value (extended - discounts + GST + advance tax + excise)
+            $invoiceValue = $extendedValue - $totalDiscounts + $totalGst + $totalAdvanceTax + $totalExciseDuty;
 
-            // Calculate rounding difference (same as posting)
-            $roundingDifference = $accountingInventoryValue - $actualInventoryValue;
+            // Rounding difference (same orientation as posting: invoice minus actual)
+            $roundingDifference = $invoiceValue - $actualInventoryValue;
 
-            // Calculate inventory components (same as posting)
-            $totalDebits = $accountingInventoryValue + $totalAdvanceTax + $totalExciseDuty;
-            $creditorAmount = $totalDebits - $totalFmrAllowance;
+            // Payable amount
+            $creditorAmount = $invoiceValue - $totalFmrAllowance;
+            if ($creditorAmount < 0) {
+                $creditorAmount = 0;
+            }
+
+            if (abs($roundingDifference) > 0.001 && ! $roundOffAccount) {
+                Log::warning('Rounding difference detected but Round Off account (5271) not found. Skipping reversing journal entry for GRN: '.$grn->id);
+
+                return null;
+            }
 
             if ($actualInventoryValue <= 0) {
                 Log::warning('GRN actual inventory value is zero or negative. Skipping reversing journal entry for GRN: '.$grn->id);
@@ -378,8 +358,7 @@ class InventoryService
                 'cost_center_id' => null,
             ];
 
-            // Cr. Round Off (if there was a rounding difference) - reverse the debit/credit
-            $roundOffAccount = ChartOfAccount::where('account_code', '52160')->first();
+            // Cr/Dr. Round Off (if there was a rounding difference) - reverse the posting
             if (abs($roundingDifference) > 0.001 && $roundOffAccount) {
                 $journalLines[] = [
                     'line_no' => $lineNo++,
@@ -389,33 +368,6 @@ class InventoryService
                     'description' => 'Reversal - Rounding adjustment',
                     'cost_center_id' => null,
                 ];
-            }
-
-            // Cr. Advance Tax (if any) - reverse the debit
-            if ($totalAdvanceTax > 0 && $advanceTaxAccount) {
-                $journalLines[] = [
-                    'line_no' => $lineNo++,
-                    'account_id' => $advanceTaxAccount->id,
-                    'debit' => 0,
-                    'credit' => $totalAdvanceTax,
-                    'description' => 'Reversal - Advance Income Tax',
-                    'cost_center_id' => null,
-                ];
-            }
-
-            // Cr. Excise Duty (if any) - reverse the debit
-            if ($totalExciseDuty > 0) {
-                $exciseAccount = ChartOfAccount::where('account_code', '1164')->first();
-                if ($exciseAccount) {
-                    $journalLines[] = [
-                        'line_no' => $lineNo++,
-                        'account_id' => $exciseAccount->id,
-                        'debit' => 0,
-                        'credit' => $totalExciseDuty,
-                        'description' => 'Reversal - Excise Duty on Imports',
-                        'cost_center_id' => null,
-                    ];
-                }
             }
 
             // Prepare reversing journal entry data
@@ -432,7 +384,7 @@ class InventoryService
             $result = $accountingService->createJournalEntry($journalEntryData);
 
             if ($result['success']) {
-                Log::info("Reversing journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->id} | Inventory: {$actualInventoryValue} | Rounding: {$roundingDifference} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
+                Log::info("Reversing journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->id} | Inventory: {$actualInventoryValue} | Rounding: {$roundingDifference} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | Excise: {$totalExciseDuty} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
 
                 return $result['data'];
             } else {

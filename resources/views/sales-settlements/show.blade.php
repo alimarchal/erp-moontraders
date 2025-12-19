@@ -641,8 +641,9 @@
                                                     ($denomData->denom_10 * 10) +
                                                     ($denomData->denom_coins ?? 0);
                                             }
-                                            $totalCashReceived = $physicalCash + ($settlement->bank_transfer_amount ?? 0)
-                                                + ($settlement->cheques_collected ?? 0);
+                                            $totalBankTransfers = $settlement->bankTransfers->sum('amount') ?? 0;
+                                            $totalCheques = $settlement->cheques->sum('amount') ?? 0;
+                                            $totalCashReceived = $physicalCash + $totalBankTransfers + $totalCheques;
                                         @endphp
                                         <tr class="border-t border-gray-200">
                                             <td class="py-1 px-1 text-xs text-black">

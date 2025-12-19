@@ -3,8 +3,6 @@
 namespace App\Services;
 
 use App\Models\Customer;
-use App\Models\CustomerCreditSale;
-use App\Models\CustomerLedger;
 use App\Models\Employee;
 use App\Models\SalesmanLedger;
 use App\Models\SalesSettlement;
@@ -13,55 +11,6 @@ use Illuminate\Support\Facades\Log;
 
 class LedgerService
 {
-    /**
-     * Record customer credit sale in ledger
-     */
-    public function recordCustomerCreditSale(array $data): array
-    {
-        try {
-            DB::beginTransaction();
-
-            $customer = Customer::findOrFail($data['customer_id']);
-            $previousBalance = $this->getCustomerBalance($customer->id);
-
-            $ledgerEntry = CustomerLedger::create([
-                'transaction_date' => $data['transaction_date'],
-                'customer_id' => $customer->id,
-                'transaction_type' => 'credit_sale',
-                'reference_number' => $data['reference_number'] ?? null,
-                'description' => $data['description'] ?? 'Credit sale',
-                'debit' => $data['amount'], // Debit increases receivable
-                'credit' => 0,
-                'balance' => $previousBalance + $data['amount'],
-                'sales_settlement_id' => $data['sales_settlement_id'] ?? null,
-                'employee_id' => $data['employee_id'] ?? null,
-                'credit_sale_id' => $data['credit_sale_id'] ?? null,
-                'notes' => $data['notes'] ?? null,
-                'created_by' => auth()->id(),
-            ]);
-
-            DB::commit();
-
-            return [
-                'success' => true,
-                'data' => $ledgerEntry,
-                'message' => 'Credit sale recorded in customer ledger',
-            ];
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error recording customer credit sale', [
-                'error' => $e->getMessage(),
-                'data' => $data,
-            ]);
-
-            return [
-                'success' => false,
-                'data' => null,
-                'message' => 'Failed to record credit sale: '.$e->getMessage(),
-            ];
-        }
-    }
-
     /**
      * Record customer payment/recovery in ledger
      */
@@ -232,22 +181,10 @@ class LedgerService
                 'customer_employee_transactions' => [],
                 'customer_entries' => [],
                 'salesman_entries' => [],
-                'credit_sales_posted' => [],
             ];
 
-            // Update status of existing draft CustomerCreditSale records to 'posted'
-            $draftCreditSales = CustomerCreditSale::where('sales_settlement_id', $settlement->id)
-                ->where('status', 'draft')
-                ->get();
-
-            foreach ($draftCreditSales as $creditSale) {
-                // Update status to posted
-                $creditSale->update(['status' => 'posted']);
-                $results['credit_sales_posted'][] = $creditSale;
-            }
-
-            // Reload the settlement to get the updated creditSales
-            $settlement->load(['creditSales', 'employee', 'bankTransfers', 'cheques']);
+            // Reload the settlement to get updated data
+            $settlement->load(['employee', 'bankTransfers', 'cheques']);
 
             // Process credit sales - NEW SYSTEM: customer_employee_account_transactions
             foreach ($settlement->creditSales as $creditSale) {

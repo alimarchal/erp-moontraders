@@ -107,11 +107,6 @@ class SalesSettlement extends Model
         return $this->hasMany(SalesSettlementSale::class);
     }
 
-    public function creditSales(): HasMany
-    {
-        return $this->hasMany(CustomerCreditSale::class);
-    }
-
     public function advanceTaxes(): HasMany
     {
         return $this->hasMany(SalesSettlementAdvanceTax::class);
@@ -167,6 +162,7 @@ class SalesSettlement extends Model
     public function getTotalCashDenominationAmountAttribute(): float
     {
         $denominations = $this->cashDenominations->first();
+
         return $denominations ? $denominations->total_amount : 0.00;
     }
 
@@ -183,16 +179,5 @@ class SalesSettlement extends Model
     public function canBeEdited(): bool
     {
         return $this->status === 'draft';
-    }
-
-    // Relationship scopes for credit sales by status
-    public function draftCreditSales(): HasMany
-    {
-        return $this->creditSales()->where('status', 'draft');
-    }
-
-    public function postedCreditSales(): HasMany
-    {
-        return $this->creditSales()->where('status', 'posted');
     }
 }

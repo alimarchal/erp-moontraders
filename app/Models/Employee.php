@@ -65,11 +65,6 @@ class Employee extends Model
         return $this->hasMany(EmployeeSalary::class);
     }
 
-    public function creditSales(): HasMany
-    {
-        return $this->hasMany(CustomerCreditSale::class);
-    }
-
     public function ledgerEntries(): HasMany
     {
         return $this->hasMany(SalesmanLedger::class);

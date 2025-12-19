@@ -169,31 +169,39 @@ class CreditorsLedgerController extends Controller
         $perPage = $request->input('per_page', 50);
         $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 50;
 
-        $creditSalesQuery = $customer->creditSales()
-            ->with(['employee', 'salesSettlement', 'supplier']);
+        // Query credit sales from customer_employee_account_transactions
+        $creditSalesQuery = \App\Models\CustomerEmployeeAccountTransaction::query()
+            ->select('ceat.*', 'cea.employee_id', 'ss.settlement_number', 'ss.settlement_date')
+            ->from('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->leftJoin('sales_settlements as ss', 'ceat.sales_settlement_id', '=', 'ss.id')
+            ->where('cea.customer_id', $customer->id)
+            ->where('ceat.transaction_type', 'credit_sale')
+            ->with(['account.employee', 'salesSettlement']);
 
         if ($request->filled('filter.date_from')) {
-            $creditSalesQuery->whereHas('salesSettlement', function ($q) use ($request) {
-                $q->whereDate('settlement_date', '>=', $request->input('filter.date_from'));
-            });
+            $creditSalesQuery->whereDate('ceat.transaction_date', '>=', $request->input('filter.date_from'));
         }
 
         if ($request->filled('filter.date_to')) {
-            $creditSalesQuery->whereHas('salesSettlement', function ($q) use ($request) {
-                $q->whereDate('settlement_date', '<=', $request->input('filter.date_to'));
-            });
+            $creditSalesQuery->whereDate('ceat.transaction_date', '<=', $request->input('filter.date_to'));
         }
 
-        $creditSales = $creditSalesQuery->orderByDesc('created_at')
+        $creditSales = $creditSalesQuery->orderByDesc('ceat.transaction_date')
             ->paginate($perPage)
             ->withQueryString();
 
-        $salesmenBreakdown = $customer->creditSales()
-            ->select('employee_id')
+        // Get salesman breakdown
+        $salesmenBreakdown = \Illuminate\Support\Facades\DB::table('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->join('employees as e', 'cea.employee_id', '=', 'e.id')
+            ->where('cea.customer_id', $customer->id)
+            ->where('ceat.transaction_type', 'credit_sale')
+            ->whereNull('ceat.deleted_at')
+            ->select('cea.employee_id', 'e.name as employee_name')
             ->selectRaw('COUNT(*) as sales_count')
-            ->selectRaw('SUM(sale_amount) as total_amount')
-            ->with('employee')
-            ->groupBy('employee_id')
+            ->selectRaw('SUM(ceat.debit) as total_amount')
+            ->groupBy('cea.employee_id', 'e.name')
             ->orderByDesc('total_amount')
             ->get();
 

@@ -3,24 +3,40 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Models\CustomerCreditSale;
+use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CreditSalesReportController extends Controller
 {
     public function salesmanCreditHistory(Request $request)
     {
-        $query = Employee::whereHas('creditSales')
-            ->withCount('creditSales')
-            ->withSum('creditSales', 'sale_amount')
-            ->with('supplier');
+        $query = Employee::query()
+            ->select('employees.*')
+            ->selectSub(function ($query) {
+                $query->from('customer_employee_account_transactions as ceat')
+                    ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                    ->whereColumn('cea.employee_id', 'employees.id')
+                    ->where('ceat.transaction_type', 'credit_sale')
+                    ->whereNull('ceat.deleted_at')
+                    ->selectRaw('COUNT(*)');
+            }, 'credit_sales_count')
+            ->selectSub(function ($query) {
+                $query->from('customer_employee_account_transactions as ceat')
+                    ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                    ->whereColumn('cea.employee_id', 'employees.id')
+                    ->where('ceat.transaction_type', 'credit_sale')
+                    ->whereNull('ceat.deleted_at')
+                    ->selectRaw('COALESCE(SUM(ceat.debit), 0)');
+            }, 'credit_sales_sum_sale_amount')
+            ->with('supplier')
+            ->havingRaw('credit_sales_count > 0');
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
+                $q->where('name', 'like', "%{$search}%")
                     ->orWhere('employee_code', 'like', "%{$search}%");
             });
         }
@@ -36,9 +52,15 @@ class CreditSalesReportController extends Controller
 
     public function salesmanCreditDetails(Employee $employee)
     {
-        $creditSales = CustomerCreditSale::where('employee_id', $employee->id)
-            ->with(['customer', 'supplier', 'salesSettlement'])
-            ->orderBy('created_at', 'desc')
+        $creditSales = CustomerEmployeeAccountTransaction::query()
+            ->select('ceat.*', 'cea.customer_id', 'ss.settlement_number')
+            ->from('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->leftJoin('sales_settlements as ss', 'ceat.sales_settlement_id', '=', 'ss.id')
+            ->where('cea.employee_id', $employee->id)
+            ->where('ceat.transaction_type', 'credit_sale')
+            ->with(['account.customer', 'salesSettlement'])
+            ->orderBy('ceat.transaction_date', 'desc')
             ->paginate(50);
 
         return view('reports.credit-sales.salesman-details', [
@@ -49,9 +71,25 @@ class CreditSalesReportController extends Controller
 
     public function customerCreditHistory(Request $request)
     {
-        $query = Customer::whereHas('creditSales')
-            ->withCount('creditSales')
-            ->withSum('creditSales', 'sale_amount');
+        $query = Customer::query()
+            ->select('customers.*')
+            ->selectSub(function ($query) {
+                $query->from('customer_employee_account_transactions as ceat')
+                    ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                    ->whereColumn('cea.customer_id', 'customers.id')
+                    ->where('ceat.transaction_type', 'credit_sale')
+                    ->whereNull('ceat.deleted_at')
+                    ->selectRaw('COUNT(*)');
+            }, 'credit_sales_count')
+            ->selectSub(function ($query) {
+                $query->from('customer_employee_account_transactions as ceat')
+                    ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                    ->whereColumn('cea.customer_id', 'customers.id')
+                    ->where('ceat.transaction_type', 'credit_sale')
+                    ->whereNull('ceat.deleted_at')
+                    ->selectRaw('COALESCE(SUM(ceat.debit), 0)');
+            }, 'credit_sales_sum_sale_amount')
+            ->havingRaw('credit_sales_count > 0');
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -74,17 +112,28 @@ class CreditSalesReportController extends Controller
 
     public function customerCreditDetails(Customer $customer)
     {
-        $creditSales = CustomerCreditSale::where('customer_id', $customer->id)
-            ->with(['employee', 'supplier', 'salesSettlement'])
-            ->orderBy('created_at', 'desc')
+        $creditSales = CustomerEmployeeAccountTransaction::query()
+            ->select('ceat.*', 'cea.employee_id', 'ss.settlement_number')
+            ->from('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->leftJoin('sales_settlements as ss', 'ceat.sales_settlement_id', '=', 'ss.id')
+            ->where('cea.customer_id', $customer->id)
+            ->where('ceat.transaction_type', 'credit_sale')
+            ->with(['account.employee', 'salesSettlement'])
+            ->orderBy('ceat.transaction_date', 'desc')
             ->paginate(50);
 
-        $salesmenBreakdown = CustomerCreditSale::where('customer_id', $customer->id)
-            ->select('employee_id', 'supplier_id')
+        $salesmenBreakdown = DB::table('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->join('employees as e', 'cea.employee_id', '=', 'e.id')
+            ->leftJoin('suppliers as s', 'e.supplier_id', '=', 's.id')
+            ->where('cea.customer_id', $customer->id)
+            ->where('ceat.transaction_type', 'credit_sale')
+            ->whereNull('ceat.deleted_at')
+            ->select('cea.employee_id', 'e.name as employee_name', 's.id as supplier_id', 's.name as supplier_name')
             ->selectRaw('COUNT(*) as sales_count')
-            ->selectRaw('SUM(sale_amount) as total_amount')
-            ->with(['employee', 'supplier'])
-            ->groupBy('employee_id', 'supplier_id')
+            ->selectRaw('SUM(ceat.debit) as total_amount')
+            ->groupBy('cea.employee_id', 'e.name', 's.id', 's.name')
             ->orderByDesc('total_amount')
             ->get();
 

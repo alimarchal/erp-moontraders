@@ -33,11 +33,6 @@ return new class extends Migration
                 ->constrained('sales_settlements')
                 ->nullOnDelete()
                 ->name('fk_ceat_settlement_id');
-            $table->foreignId('credit_sale_id')
-                ->nullable()
-                ->constrained('customer_credit_sales')
-                ->nullOnDelete()
-                ->name('fk_ceat_credit_sale_id');
             $table->string('invoice_number')->nullable();
             $table->text('description');
 
@@ -68,13 +63,9 @@ return new class extends Migration
             $table->index(['customer_employee_account_id', 'transaction_date'], 'idx_account_date');
             $table->index(['transaction_type', 'transaction_date'], 'idx_type_date');
             $table->index('sales_settlement_id', 'idx_settlement_id');
-            $table->index('credit_sale_id', 'idx_credit_sale_id');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('customer_employee_account_transactions');

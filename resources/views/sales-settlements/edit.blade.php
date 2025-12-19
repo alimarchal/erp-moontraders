@@ -18,18 +18,18 @@
     @php
         // Prepare Batch Data Map
         $savedBatchesData = [];
-        foreach($settlement->items as $item) {
-            foreach($item->batches as $batch) {
+        foreach ($settlement->items as $item) {
+            foreach ($item->batches as $batch) {
                 $savedBatchesData[$batch->stock_batch_id] = [
-                    'sold' => (float)$batch->quantity_sold,
-                    'returned' => (float)$batch->quantity_returned,
-                    'shortage' => (float)$batch->quantity_shortage,
+                    'sold' => (float) $batch->quantity_sold,
+                    'returned' => (float) $batch->quantity_returned,
+                    'shortage' => (float) $batch->quantity_shortage,
                 ];
             }
         }
 
         // Prepare Credit Sales JSON
-        $creditSalesData = $settlement->creditSales->map(function($sale) {
+        $creditSalesData = $settlement->creditSales->map(function ($sale) {
             return [
                 'customer_id' => $sale->customer_id,
                 'customer_name' => $sale->customer->customer_name ?? 'Unknown',
@@ -41,7 +41,7 @@
         });
 
         // Prepare Bank Transfers JSON
-        $bankTransfersData = $settlement->bankTransfers->map(function($bt) {
+        $bankTransfersData = $settlement->bankTransfers->map(function ($bt) {
             return [
                 'bank_account_id' => $bt->bank_account_id,
                 'bank_account_name' => $bt->bankAccount->account_name ?? 'Unknown',
@@ -55,7 +55,7 @@
         });
 
         // Prepare Cheques JSON
-        $chequesData = $settlement->cheques->map(function($ch) {
+        $chequesData = $settlement->cheques->map(function ($ch) {
             return [
                 'cheque_number' => $ch->cheque_number,
                 'amount' => $ch->amount,
@@ -65,16 +65,16 @@
                 'notes' => $ch->notes
             ];
         });
-        
+
         // Prepare Cash Denomination
         $cashDenom = $settlement->cashDenominations->first();
-        
+
         // Prepare Expenses for JS
-        $savedExpensesData = $settlement->expenses->map(function($exp) {
+        $savedExpensesData = $settlement->expenses->map(function ($exp) {
             return [
                 'id' => 'saved_' . $exp->id,
                 'expense_account_id' => $exp->expense_account_id,
-                'amount' => (float)$exp->amount,
+                'amount' => (float) $exp->amount,
                 'description' => $exp->description,
                 'label' => $exp->expenseAccount->account_name ?? '',
                 'account_code' => $exp->expenseAccount->account_code ?? '',
@@ -82,11 +82,11 @@
         });
 
         // Prepare Advance Taxes JSON
-        $advanceTaxesData = $settlement->advanceTaxes->map(function($tax) {
+        $advanceTaxesData = $settlement->advanceTaxes->map(function ($tax) {
             return [
                 'customer_id' => $tax->customer_id,
                 'customer_name' => $tax->customer->customer_name ?? 'Unknown',
-                'tax_amount' => (float)$tax->tax_amount,
+                'tax_amount' => (float) $tax->tax_amount,
             ];
         });
     @endphp
@@ -97,7 +97,8 @@
             <x-validation-errors class="mb-4" />
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <form method="POST" action="{{ route('sales-settlements.update', $settlement->id) }}" id="settlementForm">
+                <form method="POST" action="{{ route('sales-settlements.update', $settlement->id) }}"
+                    id="settlementForm">
                     @csrf
                     @method('PUT')
                     {{-- Hidden input to store current employee ID for credit sales modal --}}
@@ -120,7 +121,9 @@
                                     required>
                                     {{-- Pre-populate with the existing goods issue --}}
                                     <option value="{{ $settlement->goods_issue_id }}" selected>
-                                        {{ $settlement->goodsIssue->issue_number }} - {{ $settlement->goodsIssue->employee->full_name ?? 'Unknown' }} ({{ $settlement->goodsIssue->issue_date->format('d M Y') }})
+                                        {{ $settlement->goodsIssue->issue_number }} -
+                                        {{ $settlement->goodsIssue->employee->full_name ?? 'Unknown' }}
+                                        ({{ $settlement->goodsIssue->issue_date->format('d M Y') }})
                                     </option>
                                 </select>
                                 <x-input-error for="goods_issue_id" class="mt-2" />
@@ -135,22 +138,21 @@
                     <div class="mb-2">
 
                         {{-- Section 2: Combined Batch-wise Settlement Table --}}
-                        <div id="settlementTableContainer"
-                            style="text-align: center; margin: 10px; padding: 0px">
+                        <div id="settlementTableContainer" style="text-align: center; margin: 10px; padding: 0px">
                             <x-detail-table
                                 title="Batch-wise Settlement (B/F + Issued = Total Available | Sold + Returned + Shortage + Balance = Total)"
                                 :headers="[
-                                ['label' => 'Product / Batch', 'align' => 'text-left'],
-                                ['label' => 'Batch Breakdown', 'align' => 'text-left'],
-                                ['label' => 'B/F (In)', 'align' => 'text-right'],
-                                ['label' => 'Qty Issued', 'align' => 'text-right'],
-                                ['label' => 'Price', 'align' => 'text-right'],
-                                ['label' => 'Value', 'align' => 'text-right'],
-                                ['label' => 'Sold', 'align' => 'text-right'],
-                                ['label' => 'Returned', 'align' => 'text-right'],
-                                ['label' => 'Shortage', 'align' => 'text-right'],
-                                ['label' => 'B/F (Out)', 'align' => 'text-right'],
-                            ]">
+        ['label' => 'Product / Batch', 'align' => 'text-left'],
+        ['label' => 'Batch Breakdown', 'align' => 'text-left'],
+        ['label' => 'B/F (In)', 'align' => 'text-right'],
+        ['label' => 'Qty Issued', 'align' => 'text-right'],
+        ['label' => 'Price', 'align' => 'text-right'],
+        ['label' => 'Value', 'align' => 'text-right'],
+        ['label' => 'Sold', 'align' => 'text-right'],
+        ['label' => 'Returned', 'align' => 'text-right'],
+        ['label' => 'Shortage', 'align' => 'text-right'],
+        ['label' => 'B/F (Out)', 'align' => 'text-right'],
+    ]">
                                 <tbody id="settlementItemsBody">
                                     <!-- Settlement items will be populated here -->
                                 </tbody>
@@ -368,7 +370,8 @@
                                                         <input type="number" id="denom_5000" name="denom_5000" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_5000 ?? 0 }}" />
+                                                            oninput="updateCashTotal()"
+                                                            value="{{ $cashDenom->denom_5000 ?? 0 }}" />
                                                     </td>
                                                     <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
                                                         id="denom_5000_total">0.00</td>
@@ -379,7 +382,8 @@
                                                         <input type="number" id="denom_1000" name="denom_1000" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_1000 ?? 0 }}" />
+                                                            oninput="updateCashTotal()"
+                                                            value="{{ $cashDenom->denom_1000 ?? 0 }}" />
                                                     </td>
                                                     <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
                                                         id="denom_1000_total">0.00</td>
@@ -390,7 +394,8 @@
                                                         <input type="number" id="denom_500" name="denom_500" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_500 ?? 0 }}" />
+                                                            oninput="updateCashTotal()"
+                                                            value="{{ $cashDenom->denom_500 ?? 0 }}" />
                                                     </td>
                                                     <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
                                                         id="denom_500_total">0.00</td>
@@ -401,7 +406,8 @@
                                                         <input type="number" id="denom_100" name="denom_100" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_100 ?? 0 }}" />
+                                                            oninput="updateCashTotal()"
+                                                            value="{{ $cashDenom->denom_100 ?? 0 }}" />
                                                     </td>
                                                     <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
                                                         id="denom_100_total">0.00</td>
@@ -412,7 +418,8 @@
                                                         <input type="number" id="denom_50" name="denom_50" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_50 ?? 0 }}" />
+                                                            oninput="updateCashTotal()"
+                                                            value="{{ $cashDenom->denom_50 ?? 0 }}" />
                                                     </td>
                                                     <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
                                                         id="denom_50_total">0.00</td>
@@ -423,7 +430,8 @@
                                                         <input type="number" id="denom_20" name="denom_20" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_20 ?? 0 }}" />
+                                                            oninput="updateCashTotal()"
+                                                            value="{{ $cashDenom->denom_20 ?? 0 }}" />
                                                     </td>
                                                     <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
                                                         id="denom_20_total">0.00</td>
@@ -434,7 +442,8 @@
                                                         <input type="number" id="denom_10" name="denom_10" min="0"
                                                             step="1"
                                                             class="w-16 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_10 ?? 0 }}" />
+                                                            oninput="updateCashTotal()"
+                                                            value="{{ $cashDenom->denom_10 ?? 0 }}" />
                                                     </td>
                                                     <td style="padding: 3px 6px; text-align: right; font-weight: 600; border: none;"
                                                         id="denom_10_total">0.00</td>
@@ -447,7 +456,8 @@
                                                         <input type="number" id="denom_coins" name="denom_coins" min="0"
                                                             step="0.01"
                                                             class="w-20 text-right border-gray-300 rounded text-xs px-1 py-0.5"
-                                                            oninput="updateCashTotal()" value="{{ $cashDenom->denom_coins ?? 0 }}" />
+                                                            oninput="updateCashTotal()"
+                                                            value="{{ $cashDenom->denom_coins ?? 0 }}" />
                                                     </td>
                                                 </tr>
                                                 <tr style="background-color: #f0fdf4; border-top: 2px solid #059669;">
@@ -469,7 +479,7 @@
                                             value="{{ $settlement->credit_recoveries }}" />
                                         <input type="hidden" id="total_bank_transfers" name="total_bank_transfers"
                                             value="{{ $settlement->bankTransfers->sum('amount') }}" />
-                                        <input type="hidden" id="total_cheques" name="total_cheques" 
+                                        <input type="hidden" id="total_cheques" name="total_cheques"
                                             value="{{ $settlement->cheque_sales_amount }}" />
                                     </div>
                                 </div>
@@ -693,8 +703,7 @@
                                         <input type="hidden" id="summary_short_excess" value="0.00" />
 
                                         <x-advance-tax-modal
-                                            :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])"
-                                            entriesInputId="advance_taxes" 
+                                            :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name'])" entriesInputId="advance_taxes"
                                             :initialEntries="$advanceTaxesData" />
                                         <x-bank-transfer-modal :customers="$customers"
                                             entriesInputId="bank_transfers" />
@@ -732,1108 +741,1108 @@
     </div>
 
     @push('scripts')
-    <script>
-        let invoiceCounter = 1;
-        
-        // Load saved data from PHP
-        const savedBatchesMap = @json($savedBatchesData);
-        const savedCreditSales = @json($creditSalesData);
-        const savedBankTransfers = @json($bankTransfersData);
-        const savedCheques = @json($chequesData);
-        const savedExpenses = @json($savedExpensesData);
+        <script>
+            let invoiceCounter = 1;
 
-        // Pre-fill hidden inputs that rely on JSON strings
-        document.getElementById('credit_sales').value = JSON.stringify(savedCreditSales);
-        document.getElementById('bank_transfers').value = JSON.stringify(savedBankTransfers);
-        document.getElementById('cheques').value = JSON.stringify(savedCheques);
+            // Load saved data from PHP
+            const savedBatchesMap = @json($savedBatchesData);
+            const savedCreditSales = @json($creditSalesData);
+            const savedBankTransfers = @json($bankTransfersData);
+            const savedCheques = @json($chequesData);
+            const savedExpenses = @json($savedExpensesData);
+
+            // Pre-fill hidden inputs that rely on JSON strings
+            document.getElementById('credit_sales').value = JSON.stringify(savedCreditSales);
+            document.getElementById('bank_transfers').value = JSON.stringify(savedBankTransfers);
+            document.getElementById('cheques').value = JSON.stringify(savedCheques);
 
 
-        // Alpine.js component for Goods Issue selector
-        function goodsIssueSelector() {
-            return {
-                selectedGoodsIssue: null,
-                loading: false,
-                
-                init() {
-                    // Load the initial goods issue data automatically
-                    const initialId = document.getElementById('goods_issue_id').value;
-                    if (initialId) {
-                        this.loadGoodsIssue(initialId, true);
-                    }
-                },
-                
-                loadGoodsIssue(goodsIssueId, isInitialLoad = false) {
-                    if (!goodsIssueId) {
-                        clearSettlementForm();
-                        return;
-                    }
+            // Alpine.js component for Goods Issue selector
+            function goodsIssueSelector() {
+                return {
+                    selectedGoodsIssue: null,
+                    loading: false,
 
-                    // Show loading state
-                    document.getElementById('noItemsMessage').innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner fa-spin"></i> Loading goods issue data...</span>';
-                    document.getElementById('noItemsMessage').style.display = 'block';
+                    init() {
+                        // Load the initial goods issue data automatically
+                        const initialId = document.getElementById('goods_issue_id').value;
+                        if (initialId) {
+                            this.loadGoodsIssue(initialId, true);
+                        }
+                    },
 
-                    // Fetch goods issue items via AJAX
-                    const apiUrl = `{{ url('api/sales-settlements/goods-issues') }}/${goodsIssueId}/items`;
+                    loadGoodsIssue(goodsIssueId, isInitialLoad = false) {
+                        if (!goodsIssueId) {
+                            clearSettlementForm();
+                            return;
+                        }
 
-                    fetch(apiUrl)
-                        .then(response => {
-                            if (!response.ok) {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                            return response.json();
-                        })
-                        .then(data => {
-                            const items = data.items || [];
+                        // Show loading state
+                        document.getElementById('noItemsMessage').innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner fa-spin"></i> Loading goods issue data...</span>';
+                        document.getElementById('noItemsMessage').style.display = 'block';
 
-                            // Load customers for this employee
-                            if (data.employee_id) {
-                                loadCustomersForEmployee(data.employee_id);
-                            }
+                        // Fetch goods issue items via AJAX
+                        const apiUrl = `{{ url('api/sales-settlements/goods-issues') }}/${goodsIssueId}/items`;
 
-                            const settlementItemsBody = document.getElementById('settlementItemsBody');
-                            settlementItemsBody.innerHTML = '';
+                        fetch(apiUrl)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`HTTP error! status: ${response.status}`);
+                                }
+                                return response.json();
+                            })
+                            .then(data => {
+                                const items = data.items || [];
 
-                            let grandTotal = 0;
-
-                            items.forEach((item, index) => {
-                                const batchBreakdown = item.batch_breakdown || [];
-                                const itemTotal = item.calculated_total || item.total_value;
-                                grandTotal += parseFloat(itemTotal);
-
-                                // Calculate weighted average selling price from batch breakdown
-                                let avgSellingPrice = 0;
-                                if (batchBreakdown.length > 0) {
-                                    const totalQty = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.quantity), 0);
-                                    const totalValue = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.value), 0);
-                                    avgSellingPrice = totalQty > 0 ? (totalValue / totalQty) : parseFloat(item.unit_cost);
-                                } else {
-                                    avgSellingPrice = parseFloat(item.unit_cost);
+                                // Load customers for this employee
+                                if (data.employee_id) {
+                                    loadCustomersForEmployee(data.employee_id);
                                 }
 
+                                const settlementItemsBody = document.getElementById('settlementItemsBody');
+                                settlementItemsBody.innerHTML = '';
 
-                                // Container div for product-level hidden fields (will be placed outside the table)
-                                let hiddenFieldsContainer = document.createElement('div');
-                                hiddenFieldsContainer.className = 'hidden-fields-container';
-                                hiddenFieldsContainer.innerHTML = `
-                                    <input type="hidden" name="items[${index}][goods_issue_item_id]" value="${item.id}">
-                                    <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
-                                    <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
-                                    <input type="hidden" name="items[${index}][bf_quantity]" value="${item.bf_quantity || 0}">
-                                    <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
-                                    <input type="hidden" name="items[${index}][selling_price]" value="${avgSellingPrice}">
-                                    <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="0">
-                                    <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="0">
-                                    <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="0">
-                                `;
+                                let grandTotal = 0;
 
-                                // Get B/F quantity for this item (from van stock)
-                                const itemBfQuantity = parseFloat(item.bf_quantity) || 0;
+                                items.forEach((item, index) => {
+                                    const batchBreakdown = item.batch_breakdown || [];
+                                    const itemTotal = item.calculated_total || item.total_value;
+                                    grandTotal += parseFloat(itemTotal);
 
-                                // Settlement rows (one per batch)
-                                if (batchBreakdown.length > 0) {
+                                    // Calculate weighted average selling price from batch breakdown
+                                    let avgSellingPrice = 0;
+                                    if (batchBreakdown.length > 0) {
+                                        const totalQty = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.quantity), 0);
+                                        const totalValue = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.value), 0);
+                                        avgSellingPrice = totalQty > 0 ? (totalValue / totalQty) : parseFloat(item.unit_cost);
+                                    } else {
+                                        avgSellingPrice = parseFloat(item.unit_cost);
+                                    }
+
+
+                                    // Container div for product-level hidden fields (will be placed outside the table)
+                                    let hiddenFieldsContainer = document.createElement('div');
+                                    hiddenFieldsContainer.className = 'hidden-fields-container';
+                                    hiddenFieldsContainer.innerHTML = `
+                                        <input type="hidden" name="items[${index}][goods_issue_item_id]" value="${item.id}">
+                                        <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
+                                        <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
+                                        <input type="hidden" name="items[${index}][bf_quantity]" value="${item.bf_quantity || 0}">
+                                        <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
+                                        <input type="hidden" name="items[${index}][selling_price]" value="${avgSellingPrice}">
+                                        <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="0">
+                                        <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="0">
+                                        <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="0">
+                                    `;
+
+                                    // Get B/F quantity for this item (from van stock)
+                                    const itemBfQuantity = parseFloat(item.bf_quantity) || 0;
+
+                                    // Settlement rows (one per batch)
+                                    if (batchBreakdown.length > 0) {
+                                        batchBreakdown.forEach((batch, batchIdx) => {
+                                            const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
+                                            // For B/F, distribute proportionally across batches or show on first batch only
+                                            const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
+
+                                            const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
+                                            const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
+                                            const uomSymbol = (item.uom && item.uom.symbol) ? item.uom.symbol : 'N/A';
+
+                                            // Determine initial values (either 0 or saved values)
+                                            let initialSold = 0;
+                                            let initialReturned = 0;
+                                            let initialShortage = 0;
+
+                                            if (isInitialLoad && savedBatchesMap[batch.stock_batch_id]) {
+                                                const saved = savedBatchesMap[batch.stock_batch_id];
+                                                initialSold = saved.sold;
+                                                initialReturned = saved.returned;
+                                                initialShortage = saved.shortage;
+                                            }
+
+                                            const settlementRow = `
+                                                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                                    <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
+                                                        <div class="font-semibold text-gray-900 break-words">${productName}</div>
+                                                        <div class="text-xs text-gray-500 break-words">
+                                                            ${productCode}<br>Batch: ${batch.batch_code}
+                                                            ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
+                                                        <div class="text-xs text-gray-600">
+                                                            ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
+                                                        </div>
+                                                    </td>
+                                                    <td class="py-1 px-1 text-right">
+                                                        <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
+                                                        <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
+                                                    </td>
+                                                    <td class="py-1 px-1 text-right">
+                                                        <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
+                                                        <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
+                                                    </td>
+                                                    <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                                    <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', { minimumFractionDigits: 2 })}</td>
+                                                    <td class="py-1 px-1 text-right">
+                                                        <input type="number"
+                                                            name="items[${index}][batches][${batchIdx}][quantity_sold]"
+                                                            class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                            data-item-index="${index}"
+                                                            data-batch-index="${batchIdx}"
+                                                            data-type="sold"
+                                                            data-bf-quantity="${batchBfQuantity}"
+                                                            min="0"
+                                                            step="1"
+                                                            value="${initialSold}"
+                                                            oninput="calculateBatchBalance(${index}, ${batchIdx}, 'sold')">
+                                                    </td>
+                                                    <td class="py-1 px-1 text-right">
+                                                        <input type="number"
+                                                            name="items[${index}][batches][${batchIdx}][quantity_returned]"
+                                                            class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                            data-item-index="${index}"
+                                                            data-batch-index="${batchIdx}"
+                                                            data-type="returned"
+                                                            min="0"
+                                                            step="1"
+                                                            value="${initialReturned}"
+                                                            oninput="calculateBatchBalance(${index}, ${batchIdx}, 'returned')">
+                                                    </td>
+                                                    <td class="py-1 px-1 text-right">
+                                                        <input type="number"
+                                                            name="items[${index}][batches][${batchIdx}][quantity_shortage]"
+                                                            class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                            data-item-index="${index}"
+                                                            data-batch-index="${batchIdx}"
+                                                            data-type="shortage"
+                                                            min="0"
+                                                            step="1"
+                                                            value="${initialShortage}"
+                                                            oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
+                                                    </td>
+                                                    <td class="py-1 px-1 text-right">
+                                                        <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${parseFloat(batch.quantity) + batchBfQuantity}</span>
+                                                    </td>
+                                                </tr>
+                                            `;
+                                            settlementItemsBody.innerHTML += settlementRow;
+
+                                            // Create batch-level hidden fields container (outside table)
+                                            const batchHiddenFields = document.createElement('div');
+                                            batchHiddenFields.className = 'batch-hidden-fields';
+                                            batchHiddenFields.innerHTML = `
+                                                <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
+                                                <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
+                                                <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
+                                                <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
+                                                <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
+                                                <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
+                                            `;
+                                            document.getElementById('settlementForm').appendChild(batchHiddenFields);
+
+                                            // Add product-level hidden fields only once (on first batch)
+                                            if (batchIdx === 0) {
+                                                // Append hidden fields container to the form (outside the table)
+                                                document.getElementById('settlementForm').appendChild(hiddenFieldsContainer);
+                                            }
+                                        });
+                                    }
+                                });
+
+                                // Show relevant sections
+                                document.getElementById('noItemsMessage').style.display = 'none';
+                                document.getElementById('settlementTableContainer').style.display = 'block';
+                                document.getElementById('settlementHelpText').style.display = 'block';
+                                document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
+
+                                // Initialize balances for all batch rows
+                                items.forEach((item, index) => {
+                                    const batchBreakdown = item.batch_breakdown || [];
                                     batchBreakdown.forEach((batch, batchIdx) => {
-                                        const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
-                                        // For B/F, distribute proportionally across batches or show on first batch only
-                                        const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
+                                        calculateBatchBalance(index, batchIdx);
+                                    });
+                                });
 
-                                        const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
-                                        const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
-                                        const uomSymbol = (item.uom && item.uom.symbol) ? item.uom.symbol : 'N/A';
-                                        
-                                        // Determine initial values (either 0 or saved values)
-                                        let initialSold = 0;
-                                        let initialReturned = 0;
-                                        let initialShortage = 0;
-                                        
-                                        if (isInitialLoad && savedBatchesMap[batch.stock_batch_id]) {
-                                            const saved = savedBatchesMap[batch.stock_batch_id];
-                                            initialSold = saved.sold;
-                                            initialReturned = saved.returned;
-                                            initialShortage = saved.shortage;
-                                        }
+                                // Trigger cash total update to reflect initial loaded values
+                                updateCashTotal();
+                            })
+                            .catch(err => {
+                                console.error(err);
+                                document.getElementById('noItemsMessage').innerHTML = '<span class="text-red-600">Error loading goods issue data. Please try again.</span>';
+                                document.getElementById('noItemsMessage').style.display = 'block';
+                                document.getElementById('settlementTableContainer').style.display = 'none';
+                            });
+                    }
+                }
+            }
 
-                                        const settlementRow = `
-                                            <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                                <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
-                                                    <div class="font-semibold text-gray-900 break-words">${productName}</div>
-                                                    <div class="text-xs text-gray-500 break-words">
-                                                        ${productCode}<br>Batch: ${batch.batch_code}
-                                                        ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
-                                                    </div>
-                                                </td>
-                                                <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
-                                                    <div class="text-xs text-gray-600">
-                                                        ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
-                                                    </div>
-                                                </td>
-                                                <td class="py-1 px-1 text-right">
-                                                    <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
-                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
-                                                </td>
-                                                <td class="py-1 px-1 text-right">
-                                                    <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
-                                                    <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
-                                                </td>
-                                                <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
-                                                <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', {minimumFractionDigits: 2})}</td>
-                                                <td class="py-1 px-1 text-right">
-                                                    <input type="number"
-                                                        name="items[${index}][batches][${batchIdx}][quantity_sold]"
-                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                                        data-item-index="${index}"
-                                                        data-batch-index="${batchIdx}"
-                                                        data-type="sold"
-                                                        data-bf-quantity="${batchBfQuantity}"
-                                                        min="0"
-                                                        step="1"
-                                                        value="${initialSold}"
-                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'sold')">
-                                                </td>
-                                                <td class="py-1 px-1 text-right">
-                                                    <input type="number"
-                                                        name="items[${index}][batches][${batchIdx}][quantity_returned]"
-                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                                        data-item-index="${index}"
-                                                        data-batch-index="${batchIdx}"
-                                                        data-type="returned"
-                                                        min="0"
-                                                        step="1"
-                                                        value="${initialReturned}"
-                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'returned')">
-                                                </td>
-                                                <td class="py-1 px-1 text-right">
-                                                    <input type="number"
-                                                        name="items[${index}][batches][${batchIdx}][quantity_shortage]"
-                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                                        data-item-index="${index}"
-                                                        data-batch-index="${batchIdx}"
-                                                        data-type="shortage"
-                                                        min="0"
-                                                        step="1"
-                                                        value="${initialShortage}"
-                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
-                                                </td>
-                                                <td class="py-1 px-1 text-right">
-                                                    <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${parseFloat(batch.quantity) + batchBfQuantity}</span>
-                                                </td>
-                                            </tr>
-                                        `;
-                                        settlementItemsBody.innerHTML += settlementRow;
+            // Alpine.js component for dynamic expense management
+            function expenseManager(expenseAccounts) {
+                return {
+                    // Available expense accounts from server
+                    availableAccounts: expenseAccounts || [],
+                    // Predefined expense accounts shown by default
+                    predefinedExpenses: [
+                        { id: 1, label: 'Toll Tax', account_code: '52250', expense_account_id: 70, is_predefined: true, amount: 0 },
+                        { id: 2, label: 'AMR Powder', account_code: '52230', expense_account_id: 68, is_predefined: true, amount: 0 },
+                        { id: 3, label: 'AMR Liquid', account_code: '52240', expense_account_id: 69, is_predefined: true, amount: 0 },
+                        { id: 4, label: 'Scheme Discount Expense', account_code: '52270', expense_account_id: 72, is_predefined: true, amount: 0 },
+                        { id: 5, label: 'Advance Tax', account_code: '1171', expense_account_id: 18, is_predefined: true, amount: 0 },
+                        { id: 6, label: 'Food/Salesman/Loader Charges', account_code: '52260', expense_account_id: 71, is_predefined: true, amount: 0 },
+                        { id: 7, label: 'Percentage Expense', account_code: '52280', expense_account_id: 73, is_predefined: true, amount: 0 },
+                        { id: 8, label: 'Miscellaneous Expenses', account_code: '52110', expense_account_id: 56, is_predefined: true, amount: 0 },
+                    ],
+                    expenses: [],
+                    totalExpenses: 0,
+                    nextId: 2000,
 
-                                        // Create batch-level hidden fields container (outside table)
-                                        const batchHiddenFields = document.createElement('div');
-                                        batchHiddenFields.className = 'batch-hidden-fields';
-                                        batchHiddenFields.innerHTML = `
-                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
-                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
-                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
-                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
-                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
-                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
-                                        `;
-                                        document.getElementById('settlementForm').appendChild(batchHiddenFields);
+                    init() {
+                        // Initialize expenses by merging predefined with saved
+                        this.expenses = JSON.parse(JSON.stringify(this.predefinedExpenses));
 
-                                        // Add product-level hidden fields only once (on first batch)
-                                        if (batchIdx === 0) {
-                                            // Append hidden fields container to the form (outside the table)
-                                            document.getElementById('settlementForm').appendChild(hiddenFieldsContainer);
-                                        }
+                        if (savedExpenses && savedExpenses.length > 0) {
+                            savedExpenses.forEach(savedExp => {
+                                // Try to find a matching predefined expense
+                                const predefinedIndex = this.expenses.findIndex(p => p.expense_account_id == savedExp.expense_account_id && p.is_predefined);
+
+                                if (predefinedIndex >= 0) {
+                                    // Update predefined expense
+                                    this.expenses[predefinedIndex].amount = savedExp.amount;
+                                    this.expenses[predefinedIndex].description = savedExp.description;
+                                } else {
+                                    // Add as custom expense
+                                    this.expenses.push({
+                                        id: savedExp.id,
+                                        label: savedExp.label,
+                                        account_code: savedExp.account_code,
+                                        expense_account_id: savedExp.expense_account_id,
+                                        is_predefined: false,
+                                        amount: savedExp.amount,
+                                        description: savedExp.description
                                     });
                                 }
                             });
+                        }
 
-                            // Show relevant sections
-                            document.getElementById('noItemsMessage').style.display = 'none';
-                            document.getElementById('settlementTableContainer').style.display = 'block';
-                            document.getElementById('settlementHelpText').style.display = 'block';
-                            document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
-
-                            // Initialize balances for all batch rows
-                            items.forEach((item, index) => {
-                                const batchBreakdown = item.batch_breakdown || [];
-                                batchBreakdown.forEach((batch, batchIdx) => {
-                                    calculateBatchBalance(index, batchIdx);
-                                });
-                            });
-                            
-                            // Trigger cash total update to reflect initial loaded values
-                            updateCashTotal();
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            document.getElementById('noItemsMessage').innerHTML = '<span class="text-red-600">Error loading goods issue data. Please try again.</span>';
-                            document.getElementById('noItemsMessage').style.display = 'block';
-                            document.getElementById('settlementTableContainer').style.display = 'none';
-                        });
-                }
-            }
-        }
-
-        // Alpine.js component for dynamic expense management
-        function expenseManager(expenseAccounts) {
-            return {
-                // Available expense accounts from server
-                availableAccounts: expenseAccounts || [],
-                // Predefined expense accounts shown by default
-                predefinedExpenses: [
-                    { id: 1, label: 'Toll Tax', account_code: '52250', expense_account_id: 70, is_predefined: true, amount: 0 },
-                    { id: 2, label: 'AMR Powder', account_code: '52230', expense_account_id: 68, is_predefined: true, amount: 0 },
-                    { id: 3, label: 'AMR Liquid', account_code: '52240', expense_account_id: 69, is_predefined: true, amount: 0 },
-                    { id: 4, label: 'Scheme Discount Expense', account_code: '52270', expense_account_id: 72, is_predefined: true, amount: 0 },
-                    { id: 5, label: 'Advance Tax', account_code: '1171', expense_account_id: 18, is_predefined: true, amount: 0 },
-                    { id: 6, label: 'Food/Salesman/Loader Charges', account_code: '52260', expense_account_id: 71, is_predefined: true, amount: 0 },
-                    { id: 7, label: 'Percentage Expense', account_code: '52280', expense_account_id: 73, is_predefined: true, amount: 0 },
-                    { id: 8, label: 'Miscellaneous Expenses', account_code: '52110', expense_account_id: 56, is_predefined: true, amount: 0 },
-                ],
-                expenses: [],
-                totalExpenses: 0,
-                nextId: 2000,
-                
-                init() {
-                    // Initialize expenses by merging predefined with saved
-                    this.expenses = JSON.parse(JSON.stringify(this.predefinedExpenses));
-                    
-                    if (savedExpenses && savedExpenses.length > 0) {
-                        savedExpenses.forEach(savedExp => {
-                            // Try to find a matching predefined expense
-                            const predefinedIndex = this.expenses.findIndex(p => p.expense_account_id == savedExp.expense_account_id && p.is_predefined);
-                            
-                            if (predefinedIndex >= 0) {
-                                // Update predefined expense
-                                this.expenses[predefinedIndex].amount = savedExp.amount;
-                                this.expenses[predefinedIndex].description = savedExp.description;
-                            } else {
-                                // Add as custom expense
-                                this.expenses.push({
-                                    id: savedExp.id,
-                                    label: savedExp.label,
-                                    account_code: savedExp.account_code,
-                                    expense_account_id: savedExp.expense_account_id,
-                                    is_predefined: false,
-                                    amount: savedExp.amount,
-                                    description: savedExp.description
-                                });
+                        // Listen for advance tax updates from modal
+                        window.addEventListener('advance-tax-updated', (e) => {
+                            const advanceTaxExpense = this.expenses.find(exp => exp.expense_account_id === 18);
+                            if (advanceTaxExpense) {
+                                advanceTaxExpense.amount = e.detail.total || 0;
+                                this.calculateTotal();
                             }
                         });
-                    }
-                    
-                    // Listen for advance tax updates from modal
-                    window.addEventListener('advance-tax-updated', (e) => {
-                        const advanceTaxExpense = this.expenses.find(exp => exp.expense_account_id === 18);
-                        if (advanceTaxExpense) {
-                            advanceTaxExpense.amount = e.detail.total || 0;
+
+                        // Initial calculation
+                        this.calculateTotal();
+                    },
+
+                    addExpense() {
+                        const newId = this.nextId++;
+                        this.expenses.push({
+                            id: newId,
+                            label: '',
+                            account_code: '',
+                            expense_account_id: null,
+                            is_predefined: false,
+                            amount: 0,
+                            description: ''
+                        });
+                    },
+
+                    onAccountSelect(event, index) {
+                        const selectedId = parseInt(event.target.value);
+                        if (selectedId) {
+                            const account = this.availableAccounts.find(a => a.id === selectedId);
+                            if (account) {
+                                this.expenses[index].expense_account_id = account.id;
+                                this.expenses[index].account_code = account.account_code;
+                                this.expenses[index].label = account.account_name;
+                            }
+                        } else {
+                            this.expenses[index].expense_account_id = null;
+                            this.expenses[index].account_code = '';
+                            this.expenses[index].label = '';
+                        }
+                    },
+
+                    removeExpense(index) {
+                        if (!this.expenses[index].is_predefined) {
+                            this.expenses.splice(index, 1);
                             this.calculateTotal();
                         }
-                    });
-                    
-                    // Initial calculation
-                    this.calculateTotal();
-                },
-                
-                addExpense() {
-                    const newId = this.nextId++;
-                    this.expenses.push({
-                        id: newId,
-                        label: '',
-                        account_code: '',
-                        expense_account_id: null,
-                        is_predefined: false,
-                        amount: 0,
-                        description: ''
-                    });
-                },
-                
-                onAccountSelect(event, index) {
-                    const selectedId = parseInt(event.target.value);
-                    if (selectedId) {
-                        const account = this.availableAccounts.find(a => a.id === selectedId);
-                        if (account) {
-                            this.expenses[index].expense_account_id = account.id;
-                            this.expenses[index].account_code = account.account_code;
-                            this.expenses[index].label = account.account_name;
-                        }
-                    } else {
-                        this.expenses[index].expense_account_id = null;
-                        this.expenses[index].account_code = '';
-                        this.expenses[index].label = '';
-                    }
-                },
-                
-                removeExpense(index) {
-                    if (!this.expenses[index].is_predefined) {
-                        this.expenses.splice(index, 1);
-                        this.calculateTotal();
-                    }
-                },
-                
-                calculateTotal() {
-                    this.totalExpenses = this.expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
-                    
-                    // Update the hidden summary_expenses field for sales summary calculation
-                    const summaryExpensesEl = document.getElementById('summary_expenses');
-                    if (summaryExpensesEl) {
-                        summaryExpensesEl.value = this.totalExpenses.toFixed(2);
-                    }
-                    
-                    // Trigger sales summary update
-                    if (typeof updateSalesSummary === 'function') {
-                        updateSalesSummary();
-                    }
-                }
-            }
-        }
-
-        // Initialize Select2 with AJAX on-demand loading
-        $(document).ready(function() {
-            $('.select2-goods-issue').select2({
-                width: '100%',
-                placeholder: 'Select a Goods Issue',
-                allowClear: true,
-                ajax: {
-                    url: '{{ route('api.sales-settlements.goods-issues') }}',
-                    dataType: 'json',
-                    delay: 250,
-                    processResults: function (data) {
-                        return {
-                            results: data
-                        };
                     },
-                    cache: true
-                }
-            });
-            
-            // Note: We don't need the if(old) block here because we handle initialization via Alpine init() and pre-rendered option
-        });
 
+                    calculateTotal() {
+                        this.totalExpenses = this.expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
 
-        // Track which field was last changed for smart auto-adjustment
-        let lastChangedField = {};
+                        // Update the hidden summary_expenses field for sales summary calculation
+                        const summaryExpensesEl = document.getElementById('summary_expenses');
+                        if (summaryExpensesEl) {
+                            summaryExpensesEl.value = this.totalExpenses.toFixed(2);
+                        }
 
-        // Function to calculate balance for a batch row
-        // B/F (Out) = B/F (In) + Qty Issued - Sold - Returned - Shortage
-        function calculateBatchBalance(itemIndex, batchIndex, changedField = null) {
-            const issuedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_issued]"]`);
-            const bfInInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][bf_quantity]"]`);
-            const soldInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_sold]"]`);
-            const returnedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_returned]"]`);
-            const shortageInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_shortage]"]`);
-
-            if (!issuedInput || !soldInput || !returnedInput || !shortageInput) return;
-
-            // Track which field was changed
-            if (changedField) {
-                lastChangedField[`${itemIndex}-${batchIndex}`] = changedField;
-            }
-
-            const issued = Math.round(parseFloat(issuedInput.value) || 0);
-            const bfIn = Math.round(parseFloat(bfInInput?.value) || 0);
-            let sold = Math.round(parseFloat(soldInput.value) || 0);
-            let returned = Math.round(parseFloat(returnedInput.value) || 0);
-            let shortage = Math.round(parseFloat(shortageInput.value) || 0);
-
-            // Total available = B/F (In) + Issued
-            const totalAvailable = bfIn + issued;
-
-            // Auto-adjust: Sold + Returned + Shortage cannot exceed Total Available
-            const totalUsed = sold + returned + shortage;
-            if (totalUsed > totalAvailable) {
-                const excess = totalUsed - totalAvailable;
-                const lastField = lastChangedField[`${itemIndex}-${batchIndex}`] || 'shortage';
-
-                // Auto-adjust the LAST changed field to fit within available
-                if (lastField === 'sold') {
-                    // User changed sold, so adjust sold
-                    const maxSold = totalAvailable - returned - shortage;
-                    sold = Math.max(0, maxSold);
-                    soldInput.value = sold;
-                } else if (lastField === 'returned') {
-                    // User changed returned, so adjust returned
-                    const maxReturned = totalAvailable - sold - shortage;
-                    returned = Math.max(0, maxReturned);
-                    returnedInput.value = returned;
-                } else {
-                    // User changed shortage (or default), so adjust shortage
-                    const maxShortage = totalAvailable - sold - returned;
-                    shortage = Math.max(0, maxShortage);
-                    shortageInput.value = shortage;
-                }
-
-                // Show max available hint
-                showQuantityWarning(itemIndex, batchIndex, totalAvailable, sold, returned, shortage);
-            } else {
-                hideQuantityWarning(itemIndex, batchIndex);
-            }
-
-            // B/F (Out) = Total Available - Sold - Returned - Shortage (should always be >= 0 now)
-            const bfOut = totalAvailable - sold - returned - shortage;
-
-            const bfOutSpan = document.getElementById(`bf-out-${itemIndex}-${batchIndex}`);
-
-            if (bfOutSpan) {
-                bfOutSpan.textContent = bfOut;
-
-                // Color coding: green if zero (fully settled), orange if positive (stock remaining on van)
-                if (bfOut === 0) {
-                    bfOutSpan.className = 'font-bold text-green-600';
-                } else if (bfOut > 0) {
-                    bfOutSpan.className = 'font-bold text-orange-600';
-                } else {
-                    // This should not happen anymore, but keep for safety
-                    bfOutSpan.className = 'font-bold text-red-600';
-                }
-            }
-
-            // Update product totals
-            updateProductTotals(itemIndex);
-        }
-
-        // Show warning when quantity was auto-adjusted
-        function showQuantityWarning(itemIndex, batchIndex, maxAvailable, sold, returned, shortage) {
-            let warningEl = document.getElementById(`qty-warning-${itemIndex}-${batchIndex}`);
-            if (!warningEl) {
-                const row = document.querySelector(`#bf-out-${itemIndex}-${batchIndex}`)?.closest('tr');
-                if (row) {
-                    warningEl = document.createElement('div');
-                    warningEl.id = `qty-warning-${itemIndex}-${batchIndex}`;
-                    warningEl.className = 'text-xs text-orange-600 font-semibold mt-1';
-
-                    const shortageCell = row.querySelector('td:nth-last-child(2)');
-                    if (shortageCell) {
-                        shortageCell.appendChild(warningEl);
+                        // Trigger sales summary update
+                        if (typeof updateSalesSummary === 'function') {
+                            updateSalesSummary();
+                        }
                     }
                 }
             }
-            if (warningEl) {
-                warningEl.innerHTML = `<i class="fas fa-info-circle mr-1"></i>Auto-adjusted (Max: ${maxAvailable})`;
-                warningEl.style.display = 'block';
+
+            // Initialize Select2 with AJAX on-demand loading
+            $(document).ready(function () {
+                $('.select2-goods-issue').select2({
+                    width: '100%',
+                    placeholder: 'Select a Goods Issue',
+                    allowClear: true,
+                    ajax: {
+                        url: '{{ route('api.sales-settlements.goods-issues') }}',
+                        dataType: 'json',
+                        delay: 250,
+                        processResults: function (data) {
+                            return {
+                                results: data
+                            };
+                        },
+                        cache: true
+                    }
+                });
+
+                // Note: We don't need the if(old) block here because we handle initialization via Alpine init() and pre-rendered option
+            });
+
+
+            // Track which field was last changed for smart auto-adjustment
+            let lastChangedField = {};
+
+            // Function to calculate balance for a batch row
+            // B/F (Out) = B/F (In) + Qty Issued - Sold - Returned - Shortage
+            function calculateBatchBalance(itemIndex, batchIndex, changedField = null) {
+                const issuedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_issued]"]`);
+                const bfInInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][bf_quantity]"]`);
+                const soldInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_sold]"]`);
+                const returnedInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_returned]"]`);
+                const shortageInput = document.querySelector(`input[name="items[${itemIndex}][batches][${batchIndex}][quantity_shortage]"]`);
+
+                if (!issuedInput || !soldInput || !returnedInput || !shortageInput) return;
+
+                // Track which field was changed
+                if (changedField) {
+                    lastChangedField[`${itemIndex}-${batchIndex}`] = changedField;
+                }
+
+                const issued = Math.round(parseFloat(issuedInput.value) || 0);
+                const bfIn = Math.round(parseFloat(bfInInput?.value) || 0);
+                let sold = Math.round(parseFloat(soldInput.value) || 0);
+                let returned = Math.round(parseFloat(returnedInput.value) || 0);
+                let shortage = Math.round(parseFloat(shortageInput.value) || 0);
+
+                // Total available = B/F (In) + Issued
+                const totalAvailable = bfIn + issued;
+
+                // Auto-adjust: Sold + Returned + Shortage cannot exceed Total Available
+                const totalUsed = sold + returned + shortage;
+                if (totalUsed > totalAvailable) {
+                    const excess = totalUsed - totalAvailable;
+                    const lastField = lastChangedField[`${itemIndex}-${batchIndex}`] || 'shortage';
+
+                    // Auto-adjust the LAST changed field to fit within available
+                    if (lastField === 'sold') {
+                        // User changed sold, so adjust sold
+                        const maxSold = totalAvailable - returned - shortage;
+                        sold = Math.max(0, maxSold);
+                        soldInput.value = sold;
+                    } else if (lastField === 'returned') {
+                        // User changed returned, so adjust returned
+                        const maxReturned = totalAvailable - sold - shortage;
+                        returned = Math.max(0, maxReturned);
+                        returnedInput.value = returned;
+                    } else {
+                        // User changed shortage (or default), so adjust shortage
+                        const maxShortage = totalAvailable - sold - returned;
+                        shortage = Math.max(0, maxShortage);
+                        shortageInput.value = shortage;
+                    }
+
+                    // Show max available hint
+                    showQuantityWarning(itemIndex, batchIndex, totalAvailable, sold, returned, shortage);
+                } else {
+                    hideQuantityWarning(itemIndex, batchIndex);
+                }
+
+                // B/F (Out) = Total Available - Sold - Returned - Shortage (should always be >= 0 now)
+                const bfOut = totalAvailable - sold - returned - shortage;
+
+                const bfOutSpan = document.getElementById(`bf-out-${itemIndex}-${batchIndex}`);
+
+                if (bfOutSpan) {
+                    bfOutSpan.textContent = bfOut;
+
+                    // Color coding: green if zero (fully settled), orange if positive (stock remaining on van)
+                    if (bfOut === 0) {
+                        bfOutSpan.className = 'font-bold text-green-600';
+                    } else if (bfOut > 0) {
+                        bfOutSpan.className = 'font-bold text-orange-600';
+                    } else {
+                        // This should not happen anymore, but keep for safety
+                        bfOutSpan.className = 'font-bold text-red-600';
+                    }
+                }
+
+                // Update product totals
+                updateProductTotals(itemIndex);
             }
-        }
 
-        // Hide quantity warning
-        function hideQuantityWarning(itemIndex, batchIndex) {
-            const warningEl = document.getElementById(`qty-warning-${itemIndex}-${batchIndex}`);
-            if (warningEl) {
-                warningEl.style.display = 'none';
+            // Show warning when quantity was auto-adjusted
+            function showQuantityWarning(itemIndex, batchIndex, maxAvailable, sold, returned, shortage) {
+                let warningEl = document.getElementById(`qty-warning-${itemIndex}-${batchIndex}`);
+                if (!warningEl) {
+                    const row = document.querySelector(`#bf-out-${itemIndex}-${batchIndex}`)?.closest('tr');
+                    if (row) {
+                        warningEl = document.createElement('div');
+                        warningEl.id = `qty-warning-${itemIndex}-${batchIndex}`;
+                        warningEl.className = 'text-xs text-orange-600 font-semibold mt-1';
+
+                        const shortageCell = row.querySelector('td:nth-last-child(2)');
+                        if (shortageCell) {
+                            shortageCell.appendChild(warningEl);
+                        }
+                    }
+                }
+                if (warningEl) {
+                    warningEl.innerHTML = `<i class="fas fa-info-circle mr-1"></i>Auto-adjusted (Max: ${maxAvailable})`;
+                    warningEl.style.display = 'block';
+                }
             }
-        }
 
-        // Function to update product-level totals from batch inputs
-        function updateProductTotals(itemIndex) {
-            let soldTotal = 0;
-            let returnedTotal = 0;
-            let shortageTotal = 0;
-
-            // Sum up all batch quantities for this item
-            document.querySelectorAll(`.batch-input[data-item-index="${itemIndex}"]`).forEach(input => {
-                const value = Math.round(parseFloat(input.value) || 0);
-                const type = input.dataset.type;
-
-                if (type === 'sold') soldTotal += value;
-                if (type === 'returned') returnedTotal += value;
-                if (type === 'shortage') shortageTotal += value;
-            });
-
-            // Update hidden fields
-            const soldField = document.querySelector(`.item-${itemIndex}-qty-sold`);
-            const returnedField = document.querySelector(`.item-${itemIndex}-qty-returned`);
-            const shortageField = document.querySelector(`.item-${itemIndex}-qty-shortage`);
-
-            if (soldField) soldField.value = soldTotal;
-            if (returnedField) returnedField.value = returnedTotal;
-            if (shortageField) shortageField.value = shortageTotal;
-
-            // Update grand totals
-            updateGrandTotals();
-        }
-
-        // Function to calculate total COGS (Cost of Goods Sold) based on sold quantities
-        function calculateTotalCOGS() {
-            let totalCOGS = 0;
-
-            // Sum up COGS for all sold items (quantity_sold * unit_cost)
-            document.querySelectorAll('.batch-input[data-type="sold"]').forEach(input => {
-                const qty = Math.round(parseFloat(input.value) || 0);
-                const itemIdx = input.dataset.itemIndex;
-                const batchIdx = input.dataset.batchIndex;
-
-                // Get the unit cost for this batch
-                const costInput = document.querySelector(`input[name="items[${itemIdx}][batches][${batchIdx}][unit_cost]"]`);
-                const unitCost = costInput ? parseFloat(costInput.value) || 0 : 0;
-
-                totalCOGS += qty * unitCost;
-            });
-
-            return totalCOGS;
-        }
-
-        // Function to update grand totals across all items with VALUE calculations
-        function updateGrandTotals() {
-            let grandSold = 0;
-            let grandReturned = 0;
-            let grandShortage = 0;
-            let grandIssued = 0;
-
-            let grandSoldValue = 0;
-            let grandReturnValue = 0;
-            let grandShortageValue = 0;
-            let grandIssuedValue = 0;
-
-            // Sum all batch inputs with their prices
-            document.querySelectorAll('.batch-input').forEach(input => {
-                const qty = Math.round(parseFloat(input.value) || 0);
-                const type = input.dataset.type;
-                const itemIdx = input.dataset.itemIndex;
-                const batchIdx = input.dataset.batchIndex;
-
-                // Get the selling price for this batch
-                const priceInput = document.querySelector(`input[name="items[${itemIdx}][batches][${batchIdx}][selling_price]"]`);
-                const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
-
-                if (type === 'sold') {
-                    grandSold += qty;
-                    grandSoldValue += qty * price;
+            // Hide quantity warning
+            function hideQuantityWarning(itemIndex, batchIndex) {
+                const warningEl = document.getElementById(`qty-warning-${itemIndex}-${batchIndex}`);
+                if (warningEl) {
+                    warningEl.style.display = 'none';
                 }
-                if (type === 'returned') {
-                    grandReturned += qty;
-                    grandReturnValue += qty * price;
-                }
-                if (type === 'shortage') {
-                    grandShortage += qty;
-                    grandShortageValue += qty * price;
-                }
-            });
+            }
 
-            // Get total issued and B/F (In) from hidden inputs
-            let grandBfIn = 0;
-            let grandBfInValue = 0;
+            // Function to update product-level totals from batch inputs
+            function updateProductTotals(itemIndex) {
+                let soldTotal = 0;
+                let returnedTotal = 0;
+                let shortageTotal = 0;
 
-            document.querySelectorAll('input[name*="[batches]"][name*="[quantity_issued]"]').forEach(input => {
-                const qty = Math.round(parseFloat(input.value) || 0);
-                grandIssued += qty;
+                // Sum up all batch quantities for this item
+                document.querySelectorAll(`.batch-input[data-item-index="${itemIndex}"]`).forEach(input => {
+                    const value = Math.round(parseFloat(input.value) || 0);
+                    const type = input.dataset.type;
 
-                // Extract indices from name attribute
-                const matches = input.name.match(/items\[(\d+)\]\[batches\]\[(\d+)\]/);
-                if (matches) {
-                    const itemIdx = matches[1];
-                    const batchIdx = matches[2];
+                    if (type === 'sold') soldTotal += value;
+                    if (type === 'returned') returnedTotal += value;
+                    if (type === 'shortage') shortageTotal += value;
+                });
+
+                // Update hidden fields
+                const soldField = document.querySelector(`.item-${itemIndex}-qty-sold`);
+                const returnedField = document.querySelector(`.item-${itemIndex}-qty-returned`);
+                const shortageField = document.querySelector(`.item-${itemIndex}-qty-shortage`);
+
+                if (soldField) soldField.value = soldTotal;
+                if (returnedField) returnedField.value = returnedTotal;
+                if (shortageField) shortageField.value = shortageTotal;
+
+                // Update grand totals
+                updateGrandTotals();
+            }
+
+            // Function to calculate total COGS (Cost of Goods Sold) based on sold quantities
+            function calculateTotalCOGS() {
+                let totalCOGS = 0;
+
+                // Sum up COGS for all sold items (quantity_sold * unit_cost)
+                document.querySelectorAll('.batch-input[data-type="sold"]').forEach(input => {
+                    const qty = Math.round(parseFloat(input.value) || 0);
+                    const itemIdx = input.dataset.itemIndex;
+                    const batchIdx = input.dataset.batchIndex;
+
+                    // Get the unit cost for this batch
+                    const costInput = document.querySelector(`input[name="items[${itemIdx}][batches][${batchIdx}][unit_cost]"]`);
+                    const unitCost = costInput ? parseFloat(costInput.value) || 0 : 0;
+
+                    totalCOGS += qty * unitCost;
+                });
+
+                return totalCOGS;
+            }
+
+            // Function to update grand totals across all items with VALUE calculations
+            function updateGrandTotals() {
+                let grandSold = 0;
+                let grandReturned = 0;
+                let grandShortage = 0;
+                let grandIssued = 0;
+
+                let grandSoldValue = 0;
+                let grandReturnValue = 0;
+                let grandShortageValue = 0;
+                let grandIssuedValue = 0;
+
+                // Sum all batch inputs with their prices
+                document.querySelectorAll('.batch-input').forEach(input => {
+                    const qty = Math.round(parseFloat(input.value) || 0);
+                    const type = input.dataset.type;
+                    const itemIdx = input.dataset.itemIndex;
+                    const batchIdx = input.dataset.batchIndex;
+
+                    // Get the selling price for this batch
                     const priceInput = document.querySelector(`input[name="items[${itemIdx}][batches][${batchIdx}][selling_price]"]`);
                     const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
-                    grandIssuedValue += qty * price;
 
-                    // Also get B/F (In) for this batch
-                    const bfInput = document.querySelector(`input[name="items[${itemIdx}][batches][${batchIdx}][bf_quantity]"]`);
-                    const bfQty = Math.round(parseFloat(bfInput?.value) || 0);
-                    grandBfIn += bfQty;
-                    grandBfInValue += bfQty * price;
+                    if (type === 'sold') {
+                        grandSold += qty;
+                        grandSoldValue += qty * price;
+                    }
+                    if (type === 'returned') {
+                        grandReturned += qty;
+                        grandReturnValue += qty * price;
+                    }
+                    if (type === 'shortage') {
+                        grandShortage += qty;
+                        grandShortageValue += qty * price;
+                    }
+                });
+
+                // Get total issued and B/F (In) from hidden inputs
+                let grandBfIn = 0;
+                let grandBfInValue = 0;
+
+                document.querySelectorAll('input[name*="[batches]"][name*="[quantity_issued]"]').forEach(input => {
+                    const qty = Math.round(parseFloat(input.value) || 0);
+                    grandIssued += qty;
+
+                    // Extract indices from name attribute
+                    const matches = input.name.match(/items\[(\d+)\]\[batches\]\[(\d+)\]/);
+                    if (matches) {
+                        const itemIdx = matches[1];
+                        const batchIdx = matches[2];
+                        const priceInput = document.querySelector(`input[name="items[${itemIdx}][batches][${batchIdx}][selling_price]"]`);
+                        const price = priceInput ? parseFloat(priceInput.value) || 0 : 0;
+                        grandIssuedValue += qty * price;
+
+                        // Also get B/F (In) for this batch
+                        const bfInput = document.querySelector(`input[name="items[${itemIdx}][batches][${batchIdx}][bf_quantity]"]`);
+                        const bfQty = Math.round(parseFloat(bfInput?.value) || 0);
+                        grandBfIn += bfQty;
+                        grandBfInValue += bfQty * price;
+                    }
+                });
+
+                // B/F (Out) = B/F (In) + Issued - Sold - Returned - Shortage
+                const grandTotalAvailable = grandBfIn + grandIssued;
+                const grandBfOut = grandTotalAvailable - grandSold - grandReturned - grandShortage;
+                const grandBfOutValue = (grandBfInValue + grandIssuedValue) - grandSoldValue - grandReturnValue - grandShortageValue;
+
+                // Update quantity displays with null checks
+                const soldEl = document.getElementById('grandTotalSold');
+                const returnedEl = document.getElementById('grandTotalReturned');
+                const shortageEl = document.getElementById('grandTotalShortage');
+                const balanceElement = document.getElementById('grandTotalBalance');
+                const bfInEl = document.getElementById('grandTotalBFIn');
+                const issuedEl = document.getElementById('grandTotalIssued');
+
+                if (soldEl) soldEl.textContent = grandSold;
+                if (returnedEl) returnedEl.textContent = grandReturned;
+                if (shortageEl) shortageEl.textContent = grandShortage;
+                if (issuedEl) issuedEl.textContent = grandIssued;
+                if (bfInEl) bfInEl.textContent = grandBfIn > 0 ? grandBfIn : '-';
+
+                // Update B/F (Out) display
+                if (balanceElement) {
+                    balanceElement.textContent = grandBfOut;
+                    // Color code: green if zero, orange if positive (stock left on van), red if negative
+                    if (grandBfOut === 0) {
+                        balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-green-600';
+                    } else if (grandBfOut > 0) {
+                        balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-orange-600';
+                    } else {
+                        balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-red-600';
+                    }
                 }
-            });
 
-            // B/F (Out) = B/F (In) + Issued - Sold - Returned - Shortage
-            const grandTotalAvailable = grandBfIn + grandIssued;
-            const grandBfOut = grandTotalAvailable - grandSold - grandReturned - grandShortage;
-            const grandBfOutValue = (grandBfInValue + grandIssuedValue) - grandSoldValue - grandReturnValue - grandShortageValue;
+                // Update value displays with null checks
+                const formatPKR = (val) => '₨ ' + val.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-            // Update quantity displays with null checks
-            const soldEl = document.getElementById('grandTotalSold');
-            const returnedEl = document.getElementById('grandTotalReturned');
-            const shortageEl = document.getElementById('grandTotalShortage');
-            const balanceElement = document.getElementById('grandTotalBalance');
-            const bfInEl = document.getElementById('grandTotalBFIn');
-            const issuedEl = document.getElementById('grandTotalIssued');
+                const soldValueEl = document.getElementById('grandTotalSoldValue');
+                const returnValueEl = document.getElementById('grandTotalReturnValue');
+                const shortageValueEl = document.getElementById('grandTotalShortageValue');
+                const balanceValueEl = document.getElementById('grandTotalBalanceValue');
+                const issuedValueEl = document.getElementById('grandTotalIssuedValue');
+                const bfInValueEl = document.getElementById('grandTotalBFInValue');
 
-            if (soldEl) soldEl.textContent = grandSold;
-            if (returnedEl) returnedEl.textContent = grandReturned;
-            if (shortageEl) shortageEl.textContent = grandShortage;
-            if (issuedEl) issuedEl.textContent = grandIssued;
-            if (bfInEl) bfInEl.textContent = grandBfIn > 0 ? grandBfIn : '-';
+                if (soldValueEl) soldValueEl.textContent = formatPKR(grandSoldValue);
+                if (returnValueEl) returnValueEl.textContent = formatPKR(grandReturnValue);
+                if (shortageValueEl) shortageValueEl.textContent = formatPKR(grandShortageValue);
+                if (balanceValueEl) balanceValueEl.textContent = formatPKR(grandBfOutValue);
+                if (issuedValueEl) issuedValueEl.textContent = formatPKR(grandIssuedValue);
+                if (bfInValueEl) bfInValueEl.textContent = grandBfIn > 0 ? formatPKR(grandBfInValue) : '-';
 
-            // Update B/F (Out) display
-            if (balanceElement) {
-                balanceElement.textContent = grandBfOut;
-                // Color code: green if zero, orange if positive (stock left on van), red if negative
-                if (grandBfOut === 0) {
-                    balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-green-600';
-                } else if (grandBfOut > 0) {
-                    balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-orange-600';
-                } else {
-                    balanceElement.className = 'py-1 px-1 text-right font-bold text-sm text-red-600';
+                // Update Sales Summary with sold value (Net Sale = Value of SOLD Items)
+                const netSaleEl = document.getElementById('summary_net_sale');
+                if (netSaleEl) {
+                    netSaleEl.value = grandSoldValue.toFixed(2);
+                }
+                updateSalesSummary();
+            }
+
+            // Sales Summary calculations
+            function updateSalesSummary() {
+                const netSale = parseFloat(document.getElementById('summary_net_sale').value) || 0;
+                const recovery = parseFloat(document.getElementById('summary_recovery').value) || 0;
+                const credit = parseFloat(document.getElementById('summary_credit').value) || 0;
+                const expenses = parseFloat(document.getElementById('summary_expenses').value) || 0;
+                const cashReceived = parseFloat(document.getElementById('summary_cash_received').value) || 0;
+
+                const totalSale = netSale + recovery;
+                const balance = totalSale - credit;
+                const netBalance = balance - expenses;
+                const shortExcess = cashReceived - netBalance; // CORRECTED: Cash Received - Net Balance
+
+                document.getElementById('summary_total_sale').value = totalSale.toFixed(2);
+                document.getElementById('summary_balance').value = balance.toFixed(2);
+                document.getElementById('summary_net_balance').value = netBalance.toFixed(2);
+                document.getElementById('summary_short_excess').value = shortExcess.toFixed(2);
+
+                // Calculate and populate sales breakdown for controller
+                // Credit sales and cheques are captured separately via modals
+                const creditSalesAmount = parseFloat(document.getElementById('credit_sales_amount').value) || 0;
+                const chequeSalesAmount = parseFloat(document.getElementById('total_cheques').value) || 0;
+
+                // Cash sales = Net Sale - Credit Sales - Cheque Sales
+                const cashSalesAmount = Math.max(0, netSale - creditSalesAmount - chequeSalesAmount);
+
+                // Create or update hidden input for cash_sales_amount if it doesn't exist
+                let cashSalesInput = document.getElementById('cash_sales_amount');
+                if (!cashSalesInput) {
+                    cashSalesInput = document.createElement('input');
+                    cashSalesInput.type = 'hidden';
+                    cashSalesInput.id = 'cash_sales_amount';
+                    cashSalesInput.name = 'cash_sales_amount';
+                    document.getElementById('settlementForm').appendChild(cashSalesInput);
+                }
+                cashSalesInput.value = cashSalesAmount.toFixed(2);
+
+                // Also update cheque_sales_amount in case it's not set
+                let chequeSalesInput = document.getElementById('cheque_sales_amount');
+                if (!chequeSalesInput) {
+                    chequeSalesInput = document.createElement('input');
+                    chequeSalesInput.type = 'hidden';
+                    chequeSalesInput.id = 'cheque_sales_amount';
+                    chequeSalesInput.name = 'cheque_sales_amount';
+                    document.getElementById('settlementForm').appendChild(chequeSalesInput);
+                }
+                chequeSalesInput.value = chequeSalesAmount.toFixed(2);
+
+                // Format currency for display
+                const formatPKR = (val) => '₨ ' + val.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                // Update display fields in the Sales Summary table (3rd column)
+                const netSaleDisplay = document.getElementById('summary_net_sale_display');
+                const recoveryDisplay = document.getElementById('summary_recovery_display');
+                const totalSaleDisplay = document.getElementById('summary_total_sale_display');
+                const creditDisplay = document.getElementById('summary_credit_display');
+                const balanceDisplay = document.getElementById('summary_balance_display');
+                const expensesDisplay = document.getElementById('summary_expenses_display');
+                const netBalanceDisplay = document.getElementById('summary_net_balance_display');
+                const cashReceivedDisplay = document.getElementById('summary_cash_received_display');
+                const shortExcessDisplay = document.getElementById('summary_short_excess_display');
+
+                if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);
+                if (recoveryDisplay) recoveryDisplay.textContent = formatPKR(recovery);
+                if (totalSaleDisplay) totalSaleDisplay.textContent = formatPKR(totalSale);
+                if (creditDisplay) creditDisplay.textContent = formatPKR(credit);
+                if (balanceDisplay) balanceDisplay.textContent = formatPKR(balance);
+                if (expensesDisplay) expensesDisplay.textContent = formatPKR(expenses);
+                if (netBalanceDisplay) netBalanceDisplay.textContent = formatPKR(netBalance);
+                if (cashReceivedDisplay) cashReceivedDisplay.textContent = formatPKR(cashReceived);
+                if (shortExcessDisplay) shortExcessDisplay.textContent = formatPKR(shortExcess);
+
+                // Calculate and display Profit Analysis
+                const totalCOGS = calculateTotalCOGS();
+                const grossProfit = netSale - totalCOGS;
+                const grossMargin = netSale > 0 ? (grossProfit / netSale) * 100 : 0;
+                const netProfit = grossProfit - expenses;
+                const netMargin = netSale > 0 ? (netProfit / netSale) * 100 : 0;
+
+                // Update profit display fields
+                const cogsDisplay = document.getElementById('summary_cogs_display');
+                const grossProfitDisplay = document.getElementById('summary_gross_profit_display');
+                const grossMarginDisplay = document.getElementById('summary_gross_margin_display');
+                const profitExpensesDisplay = document.getElementById('summary_profit_expenses_display');
+                const netProfitDisplay = document.getElementById('summary_net_profit_display');
+                const netMarginDisplay = document.getElementById('summary_net_margin_display');
+
+                if (cogsDisplay) cogsDisplay.textContent = formatPKR(totalCOGS);
+                if (grossProfitDisplay) {
+                    grossProfitDisplay.textContent = formatPKR(grossProfit);
+                    grossProfitDisplay.className = grossProfit >= 0
+                        ? 'py-1 px-2 text-right font-bold text-green-700'
+                        : 'py-1 px-2 text-right font-bold text-red-700';
+                }
+                if (grossMarginDisplay) {
+                    grossMarginDisplay.textContent = grossMargin.toFixed(2) + '%';
+                    grossMarginDisplay.className = grossMargin >= 0
+                        ? 'py-1 px-2 text-right text-xs font-semibold text-green-600'
+                        : 'py-1 px-2 text-right text-xs font-semibold text-red-600';
+                }
+                if (profitExpensesDisplay) profitExpensesDisplay.textContent = formatPKR(expenses);
+                if (netProfitDisplay) {
+                    netProfitDisplay.textContent = formatPKR(netProfit);
+                    netProfitDisplay.className = netProfit >= 0
+                        ? 'py-2 px-2 text-right font-bold text-emerald-900 text-base'
+                        : 'py-2 px-2 text-right font-bold text-red-900 text-base';
+                }
+                if (netMarginDisplay) {
+                    netMarginDisplay.textContent = netMargin.toFixed(2) + '%';
+                    netMarginDisplay.className = netMargin >= 0
+                        ? 'py-1 px-2 text-right text-xs font-semibold text-emerald-600'
+                        : 'py-1 px-2 text-right text-xs font-semibold text-red-600';
+                }
+
+                // Color code short/excess in the old input field
+                const shortExcessEl = document.getElementById('summary_short_excess');
+                if (shortExcessEl) {
+                    if (Math.abs(shortExcess) < 0.01) {
+                        shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-green-100 border-green-300 rounded-md text-sm px-2 py-1';
+                    } else if (shortExcess > 0) {
+                        shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-red-100 border-red-300 rounded-md text-sm px-2 py-1 text-red-700';
+                    } else {
+                        shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-blue-100 border-blue-300 rounded-md text-sm px-2 py-1 text-blue-700';
+                    }
                 }
             }
 
-            // Update value displays with null checks
-            const formatPKR = (val) => '₨ ' + val.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-            const soldValueEl = document.getElementById('grandTotalSoldValue');
-            const returnValueEl = document.getElementById('grandTotalReturnValue');
-            const shortageValueEl = document.getElementById('grandTotalShortageValue');
-            const balanceValueEl = document.getElementById('grandTotalBalanceValue');
-            const issuedValueEl = document.getElementById('grandTotalIssuedValue');
-            const bfInValueEl = document.getElementById('grandTotalBFInValue');
-
-            if (soldValueEl) soldValueEl.textContent = formatPKR(grandSoldValue);
-            if (returnValueEl) returnValueEl.textContent = formatPKR(grandReturnValue);
-            if (shortageValueEl) shortageValueEl.textContent = formatPKR(grandShortageValue);
-            if (balanceValueEl) balanceValueEl.textContent = formatPKR(grandBfOutValue);
-            if (issuedValueEl) issuedValueEl.textContent = formatPKR(grandIssuedValue);
-            if (bfInValueEl) bfInValueEl.textContent = grandBfIn > 0 ? formatPKR(grandBfInValue) : '-';
-
-            // Update Sales Summary with sold value (Net Sale = Value of SOLD Items)
-            const netSaleEl = document.getElementById('summary_net_sale');
-            if (netSaleEl) {
-                netSaleEl.value = grandSoldValue.toFixed(2);
-            }
-            updateSalesSummary();
-        }
-
-        // Sales Summary calculations
-        function updateSalesSummary() {
-            const netSale = parseFloat(document.getElementById('summary_net_sale').value) || 0;
-            const recovery = parseFloat(document.getElementById('summary_recovery').value) || 0;
-            const credit = parseFloat(document.getElementById('summary_credit').value) || 0;
-            const expenses = parseFloat(document.getElementById('summary_expenses').value) || 0;
-            const cashReceived = parseFloat(document.getElementById('summary_cash_received').value) || 0;
-
-            const totalSale = netSale + recovery;
-            const balance = totalSale - credit;
-            const netBalance = balance - expenses;
-            const shortExcess = cashReceived - netBalance; // CORRECTED: Cash Received - Net Balance
-
-            document.getElementById('summary_total_sale').value = totalSale.toFixed(2);
-            document.getElementById('summary_balance').value = balance.toFixed(2);
-            document.getElementById('summary_net_balance').value = netBalance.toFixed(2);
-            document.getElementById('summary_short_excess').value = shortExcess.toFixed(2);
-
-            // Calculate and populate sales breakdown for controller
-            // Credit sales and cheques are captured separately via modals
-            const creditSalesAmount = parseFloat(document.getElementById('credit_sales_amount').value) || 0;
-            const chequeSalesAmount = parseFloat(document.getElementById('total_cheques').value) || 0;
-
-            // Cash sales = Net Sale - Credit Sales - Cheque Sales
-            const cashSalesAmount = Math.max(0, netSale - creditSalesAmount - chequeSalesAmount);
-
-            // Create or update hidden input for cash_sales_amount if it doesn't exist
-            let cashSalesInput = document.getElementById('cash_sales_amount');
-            if (!cashSalesInput) {
-                cashSalesInput = document.createElement('input');
-                cashSalesInput.type = 'hidden';
-                cashSalesInput.id = 'cash_sales_amount';
-                cashSalesInput.name = 'cash_sales_amount';
-                document.getElementById('settlementForm').appendChild(cashSalesInput);
-            }
-            cashSalesInput.value = cashSalesAmount.toFixed(2);
-
-            // Also update cheque_sales_amount in case it's not set
-            let chequeSalesInput = document.getElementById('cheque_sales_amount');
-            if (!chequeSalesInput) {
-                chequeSalesInput = document.createElement('input');
-                chequeSalesInput.type = 'hidden';
-                chequeSalesInput.id = 'cheque_sales_amount';
-                chequeSalesInput.name = 'cheque_sales_amount';
-                document.getElementById('settlementForm').appendChild(chequeSalesInput);
-            }
-            chequeSalesInput.value = chequeSalesAmount.toFixed(2);
-
-            // Format currency for display
-            const formatPKR = (val) => '₨ ' + val.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-
-            // Update display fields in the Sales Summary table (3rd column)
-            const netSaleDisplay = document.getElementById('summary_net_sale_display');
-            const recoveryDisplay = document.getElementById('summary_recovery_display');
-            const totalSaleDisplay = document.getElementById('summary_total_sale_display');
-            const creditDisplay = document.getElementById('summary_credit_display');
-            const balanceDisplay = document.getElementById('summary_balance_display');
-            const expensesDisplay = document.getElementById('summary_expenses_display');
-            const netBalanceDisplay = document.getElementById('summary_net_balance_display');
-            const cashReceivedDisplay = document.getElementById('summary_cash_received_display');
-            const shortExcessDisplay = document.getElementById('summary_short_excess_display');
-
-            if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);
-            if (recoveryDisplay) recoveryDisplay.textContent = formatPKR(recovery);
-            if (totalSaleDisplay) totalSaleDisplay.textContent = formatPKR(totalSale);
-            if (creditDisplay) creditDisplay.textContent = formatPKR(credit);
-            if (balanceDisplay) balanceDisplay.textContent = formatPKR(balance);
-            if (expensesDisplay) expensesDisplay.textContent = formatPKR(expenses);
-            if (netBalanceDisplay) netBalanceDisplay.textContent = formatPKR(netBalance);
-            if (cashReceivedDisplay) cashReceivedDisplay.textContent = formatPKR(cashReceived);
-            if (shortExcessDisplay) shortExcessDisplay.textContent = formatPKR(shortExcess);
-
-            // Calculate and display Profit Analysis
-            const totalCOGS = calculateTotalCOGS();
-            const grossProfit = netSale - totalCOGS;
-            const grossMargin = netSale > 0 ? (grossProfit / netSale) * 100 : 0;
-            const netProfit = grossProfit - expenses;
-            const netMargin = netSale > 0 ? (netProfit / netSale) * 100 : 0;
-
-            // Update profit display fields
-            const cogsDisplay = document.getElementById('summary_cogs_display');
-            const grossProfitDisplay = document.getElementById('summary_gross_profit_display');
-            const grossMarginDisplay = document.getElementById('summary_gross_margin_display');
-            const profitExpensesDisplay = document.getElementById('summary_profit_expenses_display');
-            const netProfitDisplay = document.getElementById('summary_net_profit_display');
-            const netMarginDisplay = document.getElementById('summary_net_margin_display');
-
-            if (cogsDisplay) cogsDisplay.textContent = formatPKR(totalCOGS);
-            if (grossProfitDisplay) {
-                grossProfitDisplay.textContent = formatPKR(grossProfit);
-                grossProfitDisplay.className = grossProfit >= 0 
-                    ? 'py-1 px-2 text-right font-bold text-green-700' 
-                    : 'py-1 px-2 text-right font-bold text-red-700';
-            }
-            if (grossMarginDisplay) {
-                grossMarginDisplay.textContent = grossMargin.toFixed(2) + '%';
-                grossMarginDisplay.className = grossMargin >= 0 
-                    ? 'py-1 px-2 text-right text-xs font-semibold text-green-600' 
-                    : 'py-1 px-2 text-right text-xs font-semibold text-red-600';
-            }
-            if (profitExpensesDisplay) profitExpensesDisplay.textContent = formatPKR(expenses);
-            if (netProfitDisplay) {
-                netProfitDisplay.textContent = formatPKR(netProfit);
-                netProfitDisplay.className = netProfit >= 0 
-                    ? 'py-2 px-2 text-right font-bold text-emerald-900 text-base' 
-                    : 'py-2 px-2 text-right font-bold text-red-900 text-base';
-            }
-            if (netMarginDisplay) {
-                netMarginDisplay.textContent = netMargin.toFixed(2) + '%';
-                netMarginDisplay.className = netMargin >= 0 
-                    ? 'py-1 px-2 text-right text-xs font-semibold text-emerald-600' 
-                    : 'py-1 px-2 text-right text-xs font-semibold text-red-600';
+            // Helper function to clear settlement form
+            function clearSettlementForm() {
+                document.getElementById('settlementItemsBody').innerHTML = '';
+                document.getElementById('settlementTableContainer').style.display = 'none';
+                document.getElementById('settlementHelpText').style.display = 'none';
+                document.getElementById('noItemsMessage').style.display = 'block';
+                document.getElementById('noItemsMessage').innerHTML = 'Select a Goods Issue to load product details';
+                document.getElementById('expenseAndSalesSummarySection').style.display = 'none';
             }
 
-            // Color code short/excess in the old input field
-            const shortExcessEl = document.getElementById('summary_short_excess');
-            if (shortExcessEl) {
-                if (Math.abs(shortExcess) < 0.01) {
-                    shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-green-100 border-green-300 rounded-md text-sm px-2 py-1';
-                } else if (shortExcess > 0) {
-                    shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-red-100 border-red-300 rounded-md text-sm px-2 py-1 text-red-700';
-                } else {
-                    shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-blue-100 border-blue-300 rounded-md text-sm px-2 py-1 text-blue-700';
-                }
-            }
-        }
+            // Cash Detail denomination breakdown
+            function updateCashTotal() {
+                const denom5000 = (parseFloat(document.getElementById('denom_5000').value) || 0) * 5000;
+                const denom1000 = (parseFloat(document.getElementById('denom_1000').value) || 0) * 1000;
+                const denom500 = (parseFloat(document.getElementById('denom_500').value) || 0) * 500;
+                const denom100 = (parseFloat(document.getElementById('denom_100').value) || 0) * 100;
+                const denom50 = (parseFloat(document.getElementById('denom_50').value) || 0) * 50;
+                const denom20 = (parseFloat(document.getElementById('denom_20').value) || 0) * 20;
+                const denom10 = (parseFloat(document.getElementById('denom_10').value) || 0) * 10;
+                const coins = parseFloat(document.getElementById('denom_coins').value) || 0;
+                const bankTransferTotal = parseFloat(document.getElementById('total_bank_transfers')?.value) || 0;
+                const chequesTotal = parseFloat(document.getElementById('total_cheques')?.value) || 0;
 
-        // Helper function to clear settlement form
-        function clearSettlementForm() {
-            document.getElementById('settlementItemsBody').innerHTML = '';
-            document.getElementById('settlementTableContainer').style.display = 'none';
-            document.getElementById('settlementHelpText').style.display = 'none';
-            document.getElementById('noItemsMessage').style.display = 'block';
-            document.getElementById('noItemsMessage').innerHTML = 'Select a Goods Issue to load product details';
-            document.getElementById('expenseAndSalesSummarySection').style.display = 'none';
-        }
+                // Update individual denomination totals
+                document.getElementById('denom_5000_total').textContent = '₨ ' + denom5000.toLocaleString('en-PK');
+                document.getElementById('denom_1000_total').textContent = '₨ ' + denom1000.toLocaleString('en-PK');
+                document.getElementById('denom_500_total').textContent = '₨ ' + denom500.toLocaleString('en-PK');
+                document.getElementById('denom_100_total').textContent = '₨ ' + denom100.toLocaleString('en-PK');
+                document.getElementById('denom_50_total').textContent = '₨ ' + denom50.toLocaleString('en-PK');
+                document.getElementById('denom_20_total').textContent = '₨ ' + denom20.toLocaleString('en-PK');
+                document.getElementById('denom_10_total').textContent = '₨ ' + denom10.toLocaleString('en-PK');
 
-        // Cash Detail denomination breakdown
-        function updateCashTotal() {
-            const denom5000 = (parseFloat(document.getElementById('denom_5000').value) || 0) * 5000;
-            const denom1000 = (parseFloat(document.getElementById('denom_1000').value) || 0) * 1000;
-            const denom500 = (parseFloat(document.getElementById('denom_500').value) || 0) * 500;
-            const denom100 = (parseFloat(document.getElementById('denom_100').value) || 0) * 100;
-            const denom50 = (parseFloat(document.getElementById('denom_50').value) || 0) * 50;
-            const denom20 = (parseFloat(document.getElementById('denom_20').value) || 0) * 20;
-            const denom10 = (parseFloat(document.getElementById('denom_10').value) || 0) * 10;
-            const coins = parseFloat(document.getElementById('denom_coins').value) || 0;
-            const bankTransferTotal = parseFloat(document.getElementById('total_bank_transfers')?.value) || 0;
-            const chequesTotal = parseFloat(document.getElementById('total_cheques')?.value) || 0;
+                const physicalCashTotal = denom5000 + denom1000 + denom500 + denom100 + denom50 + denom20 + denom10 + coins;
+                const totalCash = physicalCashTotal + bankTransferTotal + chequesTotal;
 
-            // Update individual denomination totals
-            document.getElementById('denom_5000_total').textContent = '₨ ' + denom5000.toLocaleString('en-PK');
-            document.getElementById('denom_1000_total').textContent = '₨ ' + denom1000.toLocaleString('en-PK');
-            document.getElementById('denom_500_total').textContent = '₨ ' + denom500.toLocaleString('en-PK');
-            document.getElementById('denom_100_total').textContent = '₨ ' + denom100.toLocaleString('en-PK');
-            document.getElementById('denom_50_total').textContent = '₨ ' + denom50.toLocaleString('en-PK');
-            document.getElementById('denom_20_total').textContent = '₨ ' + denom20.toLocaleString('en-PK');
-            document.getElementById('denom_10_total').textContent = '₨ ' + denom10.toLocaleString('en-PK');
-
-            const physicalCashTotal = denom5000 + denom1000 + denom500 + denom100 + denom50 + denom20 + denom10 + coins;
-            const totalCash = physicalCashTotal + bankTransferTotal + chequesTotal;
-
-            // Update physical cash display
-            document.getElementById('totalCashDisplay').textContent = '₨ ' + physicalCashTotal.toLocaleString('en-PK', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-            });
-
-            // Update grand total cash display (if exists)
-            const grandTotalDisplay = document.getElementById('grandTotalCashDisplay');
-            if (grandTotalDisplay) {
-                grandTotalDisplay.textContent = '₨ ' + totalCash.toLocaleString('en-PK', {
+                // Update physical cash display
+                document.getElementById('totalCashDisplay').textContent = '₨ ' + physicalCashTotal.toLocaleString('en-PK', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2
                 });
+
+                // Update grand total cash display (if exists)
+                const grandTotalDisplay = document.getElementById('grandTotalCashDisplay');
+                if (grandTotalDisplay) {
+                    grandTotalDisplay.textContent = '₨ ' + totalCash.toLocaleString('en-PK', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2
+                    });
+                }
+
+                // Update cash received in sales summary
+                document.getElementById('summary_cash_received').value = totalCash.toFixed(2);
+                updateSalesSummary();
             }
 
-            // Update cash received in sales summary
-            document.getElementById('summary_cash_received').value = totalCash.toFixed(2);
-            updateSalesSummary();
-        }
+            // Handle Goods Issue selection with AJAX data loading
+            // Use Select2 specific event instead of standard change
+            $('#goods_issue_id').on('select2:select', function (e) {
+                const goodsIssueId = e.params.data.id;
+                // Get alpine component scope
+                const scope = document.querySelector('[x-data="goodsIssueSelector()"]');
+                if (scope) {
+                    // Call the load function in Alpine component
+                    // We access the __x object to call the method properly
+                    scope.__x.$data.loadGoodsIssue(goodsIssueId);
+                }
+            });
 
-        // Handle Goods Issue selection with AJAX data loading
-        // Use Select2 specific event instead of standard change
-        $('#goods_issue_id').on('select2:select', function(e) {
-            const goodsIssueId = e.params.data.id;
-            // Get alpine component scope
-            const scope = document.querySelector('[x-data="goodsIssueSelector()"]');
-            if (scope) {
-                // Call the load function in Alpine component
-                // We access the __x object to call the method properly
-                scope.__x.$data.loadGoodsIssue(goodsIssueId);
-            }
-        });
+            // Handle clearing the select2 dropdown
+            $('#goods_issue_id').on('select2:clear', function () {
+                clearSettlementForm();
+                // Clear customer lists in modals
+                loadCustomersForEmployee(null);
+            });
 
-        // Handle clearing the select2 dropdown
-        $('#goods_issue_id').on('select2:clear', function() {
-            clearSettlementForm();
-            // Clear customer lists in modals
-            loadCustomersForEmployee(null);
-        });
+            // Global variable to store current employee ID for settlement
+            window.currentSettlementEmployeeId = null;
 
-        // Global variable to store current employee ID for settlement
-        window.currentSettlementEmployeeId = null;
+            // Function to load customers for a specific employee
+            function loadCustomersForEmployee(employeeId) {
+                // Store globally for modals to access
+                window.currentSettlementEmployeeId = employeeId;
 
-        // Function to load customers for a specific employee
-        function loadCustomersForEmployee(employeeId) {
-            // Store globally for modals to access
-            window.currentSettlementEmployeeId = employeeId;
-            
-            // Also store in hidden input for reliable access
-            const hiddenInput = document.getElementById('current_settlement_employee_id');
-            if (hiddenInput) {
-                hiddenInput.value = employeeId || '';
-            }
+                // Also store in hidden input for reliable access
+                const hiddenInput = document.getElementById('current_settlement_employee_id');
+                if (hiddenInput) {
+                    hiddenInput.value = employeeId || '';
+                }
 
-            if (!employeeId) {
-                // Clear all customer dropdowns
-                updateModalCustomers([]);
-                return;
-            }
-
-            // Fetch customers for this employee via API (using v1 endpoint)
-            fetch(`{{ url('api/v1/customers/by-employee') }}/${employeeId}`)
-                .then(response => response.json())
-                .then(customers => {
-                    // Pass both customers AND employeeId in the same event
-                    updateModalCustomers(customers, employeeId);
-                })
-                .catch(() => {
+                if (!employeeId) {
+                    // Clear all customer dropdowns
                     updateModalCustomers([]);
-                });
-        }
+                    return;
+                }
 
-        // Function to update customer lists in all modals
-        function updateModalCustomers(customers, employeeId = null) {
-            // Update Alpine.js components with new customer data AND employeeId
-            window.dispatchEvent(new CustomEvent('update-modal-customers', {
-                detail: { customers: customers, employeeId: employeeId }
-            }));
-        }
+                // Fetch customers for this employee via API (new endpoint)
+                fetch(`{{ url('api/v1/customer-employee-accounts/by-employee') }}/${employeeId}`)
+                    .then(response => response.json())
+                    .then(customers => {
+                        // Pass both customers AND employeeId in the same event
+                        updateModalCustomers(customers, employeeId);
+                    })
+                    .catch(() => {
+                        updateModalCustomers([]);
+                    });
+            }
 
-        // Alpine.js component for Credit Sales Display
-        function creditSalesDisplay() {
-            return {
-                entries: [],
-                
-                openModal() {
-                    window.dispatchEvent(new CustomEvent('open-credit-sales-modal'));
-                },
+            // Function to update customer lists in all modals
+            function updateModalCustomers(customers, employeeId = null) {
+                // Update Alpine.js components with new customer data AND employeeId
+                window.dispatchEvent(new CustomEvent('update-modal-customers', {
+                    detail: { customers: customers, employeeId: employeeId }
+                }));
+            }
 
-                updateDisplay() {
-                    const tbody = document.getElementById('creditSalesTableBody');
-                    if (!tbody) return;
+            // Alpine.js component for Credit Sales Display
+            function creditSalesDisplay() {
+                return {
+                    entries: [],
 
-                    // Get entries from hidden input
-                    const entriesInput = document.getElementById('credit_sales');
-                    
-                    if (entriesInput && entriesInput.value) {
-                        try {
-                            this.entries = JSON.parse(entriesInput.value);
-                        } catch (e) {
+                    openModal() {
+                        window.dispatchEvent(new CustomEvent('open-credit-sales-modal'));
+                    },
+
+                    updateDisplay() {
+                        const tbody = document.getElementById('creditSalesTableBody');
+                        if (!tbody) return;
+
+                        // Get entries from hidden input
+                        const entriesInput = document.getElementById('credit_sales');
+
+                        if (entriesInput && entriesInput.value) {
+                            try {
+                                this.entries = JSON.parse(entriesInput.value);
+                            } catch (e) {
+                                this.entries = [];
+                            }
+                        } else {
                             this.entries = [];
                         }
-                    } else {
-                        this.entries = [];
-                    }
 
-                    // Clear and rebuild table
-                    tbody.innerHTML = '';
+                        // Clear and rebuild table
+                        tbody.innerHTML = '';
 
-                    if (this.entries.length === 0) {
-                        tbody.innerHTML = `
-                            <tr>
-                                <td colspan="3" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                    No credit sales entries added yet
-                                </td>
-                            </tr>
-                        `;
-                    } else {
-                        this.entries.forEach((entry, index) => {
-                            const row = document.createElement('tr');
-                            row.className = 'border-b border-gray-200';
-                            row.innerHTML = `
-                                <td class="py-1 px-2 text-xs">
-                                    <div class="font-semibold text-gray-800">${entry.customer_name}</div>
-                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
-                                </td>
-                                <td class="py-1 px-2 text-right text-xs font-semibold text-orange-700">
-                                    ₨ ${parseFloat(entry.sale_amount).toLocaleString('en-PK', {minimumFractionDigits: 2})}
-                                </td>
-                                <td class="py-1 px-2 text-right text-xs font-semibold text-green-700">
-                                    ₨ ${parseFloat(entry.payment_received).toLocaleString('en-PK', {minimumFractionDigits: 2})}
-                                </td>
+                        if (this.entries.length === 0) {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="3" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                        No credit sales entries added yet
+                                    </td>
+                                </tr>
                             `;
-                            tbody.appendChild(row);
-                        });
-                    }
-                },
+                        } else {
+                            this.entries.forEach((entry, index) => {
+                                const row = document.createElement('tr');
+                                row.className = 'border-b border-gray-200';
+                                row.innerHTML = `
+                                    <td class="py-1 px-2 text-xs">
+                                        <div class="font-semibold text-gray-800">${entry.customer_name}</div>
+                                        ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                    </td>
+                                    <td class="py-1 px-2 text-right text-xs font-semibold text-orange-700">
+                                        ₨ ${parseFloat(entry.sale_amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                    </td>
+                                    <td class="py-1 px-2 text-right text-xs font-semibold text-green-700">
+                                        ₨ ${parseFloat(entry.payment_received).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                    </td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                        }
+                    },
 
-                init() {
-                    // Listen for updates from the modal
-                    window.addEventListener('credit-sales-updated', () => {
+                    init() {
+                        // Listen for updates from the modal
+                        window.addEventListener('credit-sales-updated', () => {
+                            this.updateDisplay();
+                        });
+
+                        // Initial load
                         this.updateDisplay();
-                    });
-                    
-                    // Initial load
-                    this.updateDisplay();
+                    }
                 }
             }
-        }
 
-        // Alpine.js component for Bank Transfer Display
-        function bankTransferDisplay() {
-            return {
-                entries: [],
-                
-                openModal() {
-                    window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'));
-                },
+            // Alpine.js component for Bank Transfer Display
+            function bankTransferDisplay() {
+                return {
+                    entries: [],
 
-                updateDisplay() {
-                    const tbody = document.getElementById('bankTransferTableBody');
-                    if (!tbody) return;
+                    openModal() {
+                        window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'));
+                    },
 
-                    // Get entries from hidden input
-                    const entriesInput = document.getElementById('bank_transfers');
-                    
-                    if (entriesInput && entriesInput.value) {
-                        try {
-                            this.entries = JSON.parse(entriesInput.value);
-                        } catch (e) {
+                    updateDisplay() {
+                        const tbody = document.getElementById('bankTransferTableBody');
+                        if (!tbody) return;
+
+                        // Get entries from hidden input
+                        const entriesInput = document.getElementById('bank_transfers');
+
+                        if (entriesInput && entriesInput.value) {
+                            try {
+                                this.entries = JSON.parse(entriesInput.value);
+                            } catch (e) {
+                                this.entries = [];
+                            }
+                        } else {
                             this.entries = [];
                         }
-                    } else {
-                        this.entries = [];
-                    }
 
-                    // Clear and rebuild table
-                    tbody.innerHTML = '';
+                        // Clear and rebuild table
+                        tbody.innerHTML = '';
 
-                    if (this.entries.length === 0) {
-                        tbody.innerHTML = `
-                            <tr>
-                                <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                    No bank transfer entries added yet
-                                </td>
-                            </tr>
-                        `;
-                    } else {
-                        this.entries.forEach((entry, index) => {
-                            const row = document.createElement('tr');
-                            row.className = 'border-b border-gray-200';
-                            row.innerHTML = `
-                                <td class="py-1 px-2 text-xs">
-                                    <div class="font-semibold text-gray-800">${entry.bank_account_name || 'Unknown Account'}</div>
-                                    <div class="text-xs text-gray-500">Date: ${entry.transfer_date || 'N/A'}</div>
-                                    ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
-                                    ${entry.reference_number ? `<div class="text-xs text-gray-500">Ref: ${entry.reference_number}</div>` : ''}
-                                </td>
-                                <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
-                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', {minimumFractionDigits: 2})}
-                                </td>
+                        if (this.entries.length === 0) {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                        No bank transfer entries added yet
+                                    </td>
+                                </tr>
                             `;
-                            tbody.appendChild(row);
-                        });
-                    }
-                },
+                        } else {
+                            this.entries.forEach((entry, index) => {
+                                const row = document.createElement('tr');
+                                row.className = 'border-b border-gray-200';
+                                row.innerHTML = `
+                                    <td class="py-1 px-2 text-xs">
+                                        <div class="font-semibold text-gray-800">${entry.bank_account_name || 'Unknown Account'}</div>
+                                        <div class="text-xs text-gray-500">Date: ${entry.transfer_date || 'N/A'}</div>
+                                        ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
+                                        ${entry.reference_number ? `<div class="text-xs text-gray-500">Ref: ${entry.reference_number}</div>` : ''}
+                                    </td>
+                                    <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
+                                        ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                    </td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                        }
+                    },
 
-                init() {
-                    // Listen for updates from the modal
-                    window.addEventListener('bank-transfers-updated', () => {
+                    init() {
+                        // Listen for updates from the modal
+                        window.addEventListener('bank-transfers-updated', () => {
+                            this.updateDisplay();
+                        });
+
+                        // Initial load
                         this.updateDisplay();
-                    });
-                    
-                    // Initial load
-                    this.updateDisplay();
+                    }
                 }
             }
-        }
 
-        // Alpine.js component for Cheque Payment Display
-        function chequePaymentDisplay() {
-            return {
-                entries: [],
-                
-                openModal() {
-                    window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'));
-                },
+            // Alpine.js component for Cheque Payment Display
+            function chequePaymentDisplay() {
+                return {
+                    entries: [],
 
-                updateDisplay() {
-                    const tbody = document.getElementById('chequePaymentTableBody');
-                    if (!tbody) return;
+                    openModal() {
+                        window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'));
+                    },
 
-                    // Get entries from hidden input
-                    const entriesInput = document.getElementById('cheques');
-                    
-                    if (entriesInput && entriesInput.value) {
-                        try {
-                            this.entries = JSON.parse(entriesInput.value);
-                        } catch (e) {
+                    updateDisplay() {
+                        const tbody = document.getElementById('chequePaymentTableBody');
+                        if (!tbody) return;
+
+                        // Get entries from hidden input
+                        const entriesInput = document.getElementById('cheques');
+
+                        if (entriesInput && entriesInput.value) {
+                            try {
+                                this.entries = JSON.parse(entriesInput.value);
+                            } catch (e) {
+                                this.entries = [];
+                            }
+                        } else {
                             this.entries = [];
                         }
-                    } else {
-                        this.entries = [];
-                    }
 
-                    // Clear and rebuild table
-                    tbody.innerHTML = '';
+                        // Clear and rebuild table
+                        tbody.innerHTML = '';
 
-                    if (this.entries.length === 0) {
-                        tbody.innerHTML = `
-                            <tr>
-                                <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                    No cheque payment entries added yet
-                                </td>
-                            </tr>
-                        `;
-                    } else {
-                        this.entries.forEach((entry, index) => {
-                            const row = document.createElement('tr');
-                            row.className = 'border-b border-gray-200';
-                            row.innerHTML = `
-                                <td class="py-1 px-2 text-xs">
-                                    <div class="font-semibold text-gray-800">Cheque #${entry.cheque_number || 'N/A'}</div>
-                                    <div class="text-xs text-gray-500">${entry.bank_name || ''} - ${entry.cheque_date || ''}</div>
-                                    ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
-                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
-                                </td>
-                                <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
-                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', {minimumFractionDigits: 2})}
-                                </td>
+                        if (this.entries.length === 0) {
+                            tbody.innerHTML = `
+                                <tr>
+                                    <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                        No cheque payment entries added yet
+                                    </td>
+                                </tr>
                             `;
-                            tbody.appendChild(row);
-                        });
-                    }
-                },
+                        } else {
+                            this.entries.forEach((entry, index) => {
+                                const row = document.createElement('tr');
+                                row.className = 'border-b border-gray-200';
+                                row.innerHTML = `
+                                    <td class="py-1 px-2 text-xs">
+                                        <div class="font-semibold text-gray-800">Cheque #${entry.cheque_number || 'N/A'}</div>
+                                        <div class="text-xs text-gray-500">${entry.bank_name || ''} - ${entry.cheque_date || ''}</div>
+                                        ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
+                                        ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                    </td>
+                                    <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
+                                        ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                    </td>
+                                `;
+                                tbody.appendChild(row);
+                            });
+                        }
+                    },
 
-                init() {
-                    // Listen for updates from the modal
-                    window.addEventListener('cheque-payments-updated', () => {
+                    init() {
+                        // Listen for updates from the modal
+                        window.addEventListener('cheque-payments-updated', () => {
+                            this.updateDisplay();
+                        });
+
+                        // Initial load
                         this.updateDisplay();
-                    });
-                    
-                    // Initial load
-                    this.updateDisplay();
+                    }
                 }
             }
-        }
-    </script>
+        </script>
     @endpush
 </x-app-layout>

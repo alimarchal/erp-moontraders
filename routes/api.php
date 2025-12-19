@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\Api\V1\CustomerController;
 use App\Http\Controllers\Api\V1\CustomerEmployeeAccountController;
 use App\Http\Controllers\TransactionController;
 use Illuminate\Http\Request;
@@ -19,18 +18,10 @@ Route::prefix('v1')->group(function () {
         Route::get('/{customer}/ledger/{employee}', [CustomerEmployeeAccountController::class, 'ledger']);
     });
 
-    // Customer API Routes (OLD SYSTEM - kept for backward compatibility)
-    Route::prefix('customers')->group(function () {
-        Route::get('/{customer}/balance', [CustomerController::class, 'balance']);
-        Route::get('/by-employee/{employee}', [CustomerController::class, 'byEmployee']);
-        Route::get('/{customer}/balance-by-employee/{employee}', [CustomerController::class, 'balanceByEmployee']);
-    });
+    // Removed: legacy Customer API routes (redundant since new customer-employee endpoints exist)
 });
 
-// Legacy Customer API Routes (for backward compatibility)
-Route::get('/customers/{customer}/balance', [CustomerController::class, 'balance']);
-Route::get('/customers/by-employee/{employee}', [CustomerController::class, 'byEmployee']);
-Route::get('/customers/{customer}/balance-by-employee/{employee}', [CustomerController::class, 'balanceByEmployee']);
+// Removed: legacy Customer API routes (outside v1)
 
 // Accounting Transactions API Routes
 Route::prefix('transactions')->group(function () {

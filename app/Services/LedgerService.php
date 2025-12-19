@@ -271,22 +271,18 @@ class LedgerService
     }
 
     /**
-     * Get customer's current balance (excluding draft settlements)
+     * Get customer's current balance (sum across all employees)
      */
     public function getCustomerBalance(int $customerId): float
     {
-        $latestEntry = CustomerLedger::where('customer_id', $customerId)
-            ->where(function ($query) {
-                $query->whereNull('sales_settlement_id')
-                    ->orWhereHas('salesSettlement', function ($q) {
-                        $q->where('status', 'posted');
-                    });
-            })
-            ->orderBy('transaction_date', 'desc')
-            ->orderBy('id', 'desc')
+        $result = DB::table('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->where('cea.customer_id', $customerId)
+            ->whereNull('ceat.deleted_at')
+            ->selectRaw('COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0) as outstanding_balance')
             ->first();
 
-        return $latestEntry ? (float) $latestEntry->balance : 0.0;
+        return $result ? (float) $result->outstanding_balance : 0.0;
     }
 
     /**
@@ -299,13 +295,7 @@ class LedgerService
      */
     public function getCustomerBalanceByEmployee(int $customerId, int $employeeId): float
     {
-        $result = CustomerLedger::where('customer_id', $customerId)
-            ->where('employee_id', $employeeId)
-            ->whereNull('deleted_at')
-            ->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as outstanding_balance')
-            ->first();
-
-        return $result ? (float) $result->outstanding_balance : 0.0;
+        return \App\Models\CustomerEmployeeAccount::getBalance($customerId, $employeeId);
     }
 
     /**

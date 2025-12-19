@@ -65,7 +65,7 @@ class CustomerEmployeeAccountController extends Controller
             ->where('cea.customer_id', $customerId)
             ->where('cea.employee_id', $employeeId)
             ->whereNull('ceat.deleted_at')
-            ->with(['salesSettlement', 'creditSale'])
+            ->with(['salesSettlement'])
             ->orderBy('ceat.transaction_date', 'desc')
             ->orderBy('ceat.id', 'desc')
             ->get();

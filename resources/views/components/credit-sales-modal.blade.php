@@ -257,8 +257,8 @@
                 <button type="button" @click="saveEntries()"
                     class="px-4 py-2 text-sm font-semibold text-white bg-orange-600 rounded-md hover:bg-orange-700 shadow-sm">
                     Save
-                </button>
-            </div>
+            </button>
+    </div>
         </div>
     </div>
 </div>
@@ -307,7 +307,7 @@
 
                         this.loadingCustomers = true;
                         try {
-                            const response = await fetch(`/api/v1/customers/by-employee/${this.employeeId}`);
+                            const response = await fetch(`/api/v1/customer-employee-accounts/by-employee/${this.employeeId}`);
                             if (response.ok) {
                                 const data = await response.json();
                                 this.customers = data.map(c => ({
@@ -336,7 +336,7 @@
                         });
 
                         select.trigger('change');
-                    },
+                     },
 
                     setEmployeeId(id) {
                         this.employeeId = id;
@@ -543,7 +543,7 @@
 
                     init() {
                         // Listen for customer updates from goods issue selection
-                        // The API /api/v1/customers/by-employee returns: {id, name, business_name, balance}
+                        // The API /api/v1/customer-employee-accounts/by-employee returns: {id, name, business_name, balance}
                         window.addEventListener('update-modal-customers', (event) => {
                             const rawCustomers = event.detail.customers || [];
                             // Also get employeeId from the same event
@@ -554,8 +554,8 @@
                             this.customers = rawCustomers.map(c => ({
                                 id: c.id,
                                 name: c.name || c.customer_name,
-                                balance: c.balance ?? c.receivable_balance ?? 0
-                            }));
+                        balance: c.balance ?? c.receivable_balance ?? 0
+                        }));
                             this.rebuildSelect2Options();
                         });
                     },

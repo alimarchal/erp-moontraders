@@ -132,7 +132,7 @@ class LedgerService
             ];
 
             // Reload the settlement to get updated data
-            $settlement->load(['employee', 'bankTransfers', 'cheques']);
+            $settlement->load(['employee', 'bankTransfers', 'cheques', 'creditSales.customer']);
 
             // Process credit sales - NEW SYSTEM: customer_employee_account_transactions
             foreach ($settlement->creditSales as $creditSale) {
@@ -145,7 +145,6 @@ class LedgerService
                         'transaction_type' => 'credit_sale',
                         'reference_number' => $settlement->settlement_number,
                         'sales_settlement_id' => $settlement->id,
-                        'credit_sale_id' => $creditSale->id,
                         'invoice_number' => $creditSale->invoice_number,
                         'description' => "Credit sale - {$settlement->employee->name}",
                         'debit' => $creditSale->sale_amount, // Customer owes
@@ -156,8 +155,8 @@ class LedgerService
                     $results['customer_employee_transactions'][] = $result;
                 }
 
-                // Record recovery transaction
-                if ($creditSale->recovery_amount > 0) {
+                // Record recovery transaction (payment received with credit sale)
+                if ($creditSale->payment_received > 0) {
                     $result = $this->recordCustomerEmployeeTransaction([
                         'customer_id' => $creditSale->customer_id,
                         'employee_id' => $creditSale->employee_id,
@@ -165,10 +164,9 @@ class LedgerService
                         'transaction_type' => 'recovery_cash',
                         'reference_number' => $settlement->settlement_number,
                         'sales_settlement_id' => $settlement->id,
-                        'credit_sale_id' => $creditSale->id,
                         'description' => "Cash recovery - {$settlement->employee->name}",
                         'debit' => 0,
-                        'credit' => $creditSale->recovery_amount, // Customer pays
+                        'credit' => $creditSale->payment_received, // Customer pays
                         'payment_method' => 'cash',
                         'notes' => $creditSale->notes,
                     ]);
@@ -184,7 +182,6 @@ class LedgerService
                     'description' => "Credit sale to {$creditSale->customer->customer_name}",
                     'sales_settlement_id' => $settlement->id,
                     'customer_id' => $creditSale->customer_id,
-                    'supplier_id' => $creditSale->supplier_id ?? null,
                 ]);
 
                 $results['salesman_entries'][] = $salesmanResult;

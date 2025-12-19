@@ -132,6 +132,11 @@ class SalesSettlement extends Model
         return $this->hasMany(SalesSettlementCashDenomination::class);
     }
 
+    public function creditSales(): HasMany
+    {
+        return $this->hasMany(SalesSettlementCreditSale::class);
+    }
+
     public function customerEmployeeTransactions(): HasMany
     {
         return $this->hasMany(CustomerEmployeeAccountTransaction::class);

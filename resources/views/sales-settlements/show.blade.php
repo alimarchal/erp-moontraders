@@ -212,17 +212,14 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @php
-                                            $creditSales = $settlement->customerEmployeeTransactions->where('transaction_type', 'credit_sale');
-                                        @endphp
-                                        @forelse($creditSales as $creditSale)
+                                        @forelse($settlement->creditSales as $creditSale)
                                                                             @php
-                                                                                $saleAmount = $creditSale->debit ?? 0;
-                                                                                $recoveryAmount = $creditSale->credit ?? 0;
+                                                                                $saleAmount = $creditSale->sale_amount ?? 0;
+                                                                                $recoveryAmount = $creditSale->payment_received ?? 0;
                                                                                 $salesmanBalance = $saleAmount - $recoveryAmount;
                                                                             @endphp
                                                                             <tr class="hover:bg-gray-50">
-                                                                                <td class="py-1 px-1 text-xs">{{ $creditSale->account->customer->customer_name ??
+                                                                                <td class="py-1 px-1 text-xs">{{ $creditSale->customer->customer_name ??
                                             'N/A' }}</td>
                                                                                 <td class="py-1 px-1 text-right font-semibold text-xs"> {{
                                             number_format($saleAmount, 0) }}</td>
@@ -246,13 +243,13 @@
                                             <td class="py-1.5 px-1 text-right font-semibold text-orange-900 text-xs">
                                                 Total:</td>
                                             <td class="py-1.5 px-1 text-right font-bold text-orange-700 text-xs"> {{
-    number_format($creditSales->sum('debit'), 0) }}</td>
+    number_format($settlement->creditSales->sum('sale_amount'), 0) }}</td>
                                             <td class="py-1.5 px-1 text-right font-bold text-green-700 text-xs"> {{
-    number_format($creditSales->sum('credit'), 0) }}
+    number_format($settlement->creditSales->sum('payment_received'), 0) }}
                                             </td>
                                             <td class="py-1.5 px-1 text-right font-bold text-blue-700 text-xs"> {{
-    number_format($creditSales->sum('debit') -
-        $creditSales->sum('credit'), 0) }}</td>
+    number_format($settlement->creditSales->sum('sale_amount') -
+        $settlement->creditSales->sum('payment_received'), 0) }}</td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -320,8 +317,9 @@
                                                                             <tr class="hover:bg-gray-50">
                                                                                 <td class="py-1 px-1 text-xs">{{ $transfer->bankAccount->bank_name ??
                                             'Online' }}</td>
-                                                                                <td class="py-1 px-1 text-xs">{{ $transfer->reference_number ?? 'Transfer'
-                                                                                                                        }}</td>
+                                                                                <td class="py-1 px-1 text-xs">
+                                                                                    {{ $transfer->reference_number ?? 'Transfer'
+                                                                                                                                                            }}</td>
                                                                                 <td class="py-1 px-1 text-right font-semibold text-xs"> {{
                                             number_format($transfer->amount, 2) }}</td>
                                                                             </tr>
@@ -470,7 +468,7 @@
                                                                                                             <div><span style="font-weight: 500;">Date:</span> {{
                                                             isset($cheque['cheque_date']) ?
                                                             \Carbon\Carbon::parse($cheque['cheque_date'])->format('d
-                                                                                                                                                                M Y') : 'N/A' }}</div>
+                                                                                                                                                                                                                M Y') : 'N/A' }}</div>
                                                                                                         </div>
                                                                                                     </div>
                                                         @endforeach
@@ -515,7 +513,7 @@
                                                     @if($expense->expenseAccount)
                                                         {{ $expense->expenseAccount->account_name }}
                                                         <span class="text-gray-500">({{ $expense->expenseAccount->account_code
-                                                                    }})</span>
+                                                                            }})</span>
                                                     @else
                                                         {{ $expense->description ?? 'Unknown Account' }}
                                                     @endif
@@ -600,7 +598,7 @@
                                         <tr class="border-t border-gray-200">
                                             <td class="py-1 px-1 text-xs text-black">Credit Extended</td>
                                             <td class="py-1 px-1 text-right font-semibold text-xs text-orange-700">
-                                                {{ number_format($creditSales->sum('debit'), 2) }}
+                                                {{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}
                                             </td>
                                         </tr>
                                         <tr class="bg-gray-50 border-t border-gray-200">
@@ -608,7 +606,7 @@
                                             <td class="py-1 px-1 text-right font-bold text-xs text-gray-900">
                                                 {{ number_format(($settlement->items->sum('total_sales_value') +
     ($settlement->credit_recoveries ?? 0)) -
-    $creditSales->sum('debit'), 2) }}
+    $settlement->creditSales->sum('sale_amount'), 2) }}
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
@@ -620,7 +618,7 @@
                                         @php
                                             $netBalance = (($settlement->items->sum('total_sales_value') +
                                                 ($settlement->credit_recoveries ?? 0)) -
-                                                $creditSales->sum('debit')) -
+                                                $settlement->creditSales->sum('sale_amount')) -
                                                 ($settlement->expenses->sum('amount') ?? 0);
                                         @endphp
                                         <tr class="bg-indigo-50 border-y-2 border-indigo-200">
@@ -778,7 +776,7 @@
                                             <td style="padding: 3px 6px;">Credit Extended</td>
                                             <td
                                                 style="padding: 3px 6px; text-align: right; font-weight: 600; color: #ea580c;">
-                                                {{ number_format($creditSales->sum('debit'), 0) }}
+                                                {{ number_format($settlement->creditSales->sum('sale_amount'), 0) }}
                                             </td>
                                         </tr>
                                     </tbody>
@@ -788,7 +786,7 @@
                                                 Net Cash Sales:</td>
                                             <td class="py-1.5 px-1 text-right font-bold text-blue-700 text-xs">{{
     number_format($totalSalesValue -
-        $creditSales->sum('debit'), 0) }}</td>
+        $settlement->creditSales->sum('sale_amount'), 0) }}</td>
                                         </tr>
                                     </tfoot>
                                 </table>

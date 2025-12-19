@@ -11,6 +11,7 @@ use App\Models\SalesSettlementAdvanceTax;
 use App\Models\SalesSettlementBankTransfer;
 use App\Models\SalesSettlementCashDenomination;
 use App\Models\SalesSettlementCheque;
+use App\Models\SalesSettlementCreditSale;
 use App\Models\SalesSettlementExpense;
 use App\Models\SalesSettlementItem;
 use App\Models\SalesSettlementItemBatch;
@@ -546,6 +547,25 @@ class SalesSettlementController extends Controller
                 }
             }
 
+            // Create credit sales records in sales_settlement_credit_sales table
+            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
+                foreach ($request->credit_sales as $creditSale) {
+                    if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
+                        SalesSettlementCreditSale::create([
+                            'sales_settlement_id' => $settlement->id,
+                            'customer_id' => $creditSale['customer_id'],
+                            'employee_id' => $goodsIssue->employee_id,
+                            'invoice_number' => $creditSale['invoice_number'] ?? null,
+                            'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
+                            'payment_received' => floatval($creditSale['payment_received'] ?? 0),
+                            'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
+                            'new_balance' => floatval($creditSale['new_balance'] ?? 0),
+                            'notes' => $creditSale['notes'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
             // NOTE: Credit sales are tracked in customer_employee_account_transactions
             // Ledger entries are created when the settlement is POSTED
             // Recalculate financials from the persisted batch data to avoid zeroed profit
@@ -869,6 +889,25 @@ class SalesSettlementController extends Controller
 
             // Delete old bank transfers and create new ones
             $salesSettlement->bankTransfers()->delete();
+
+            // Create credit sales records
+            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
+                foreach ($request->credit_sales as $creditSale) {
+                    if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
+                        SalesSettlementCreditSale::create([
+                            'sales_settlement_id' => $salesSettlement->id,
+                            'customer_id' => $creditSale['customer_id'],
+                            'employee_id' => $goodsIssue->employee_id,
+                            'invoice_number' => $creditSale['invoice_number'] ?? null,
+                            'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
+                            'payment_received' => floatval($creditSale['payment_received'] ?? 0),
+                            'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
+                            'new_balance' => floatval($creditSale['new_balance'] ?? 0),
+                            'notes' => $creditSale['notes'] ?? null,
+                        ]);
+                    }
+                }
+            }
 
             if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
                 foreach ($request->bank_transfers as $transfer) {

@@ -132,6 +132,11 @@ class SalesSettlement extends Model
         return $this->hasMany(SalesSettlementCashDenomination::class);
     }
 
+    public function customerEmployeeTransactions(): HasMany
+    {
+        return $this->hasMany(CustomerEmployeeAccountTransaction::class);
+    }
+
     /**
      * Get total bank transfer amount (calculated from relationship)
      */

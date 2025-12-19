@@ -588,8 +588,8 @@ class SalesSettlementController extends Controller
             'journalEntry',
             'items.product',
             'items.batches.stockBatch',
-            'creditSales.customer',
-            'creditSales.employee',
+            'customerEmployeeTransactions.account.customer',
+            'customerEmployeeTransactions.account.employee',
             'advanceTaxes.customer',
             'expenses.expenseAccount',
         ]);

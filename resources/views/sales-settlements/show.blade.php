@@ -533,7 +533,6 @@
                                         {{-- Advance Tax Details --}}
                                         @if($settlement->advanceTaxes->count() > 0)
                                             @foreach($settlement->advanceTaxes as $tax)
-                                                @php $totalExpenses += $tax->tax_amount; @endphp
                                                 <tr class="hover:bg-gray-50 bg-yellow-50">
                                                     <td class="py-1 px-1 text-xs">
                                                         Advance Tax - {{ $tax->customer->customer_name ?? 'N/A' }}

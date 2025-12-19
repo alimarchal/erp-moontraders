@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ChartOfAccount;
+use App\Models\CostCenter;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\GoodsReceiptNote;
@@ -127,6 +128,8 @@ class InventoryService
             $apAccount = ChartOfAccount::where('account_code', '2110')->first();
             $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
             $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
+            $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
+            $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
             if (! $inventoryAccount) {
                 Log::warning('Inventory account (1151 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
@@ -136,6 +139,12 @@ class InventoryService
 
             if (! $apAccount) {
                 Log::warning('Accounts Payable account (2110 - Accounts Payable) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
+
+                return null;
+            }
+
+            if (! $warehouseCostCenter) {
+                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
@@ -187,7 +196,7 @@ class InventoryService
                 'debit' => $actualInventoryValue,
                 'credit' => 0,
                 'description' => "Inventory received - {$grn->items->count()} item(s) (qty × unit cost)",
-                'cost_center_id' => null,
+                'cost_center_id' => $warehouseCostCenter->id,
             ];
 
             // Dr. Round Off (if there's a rounding difference)
@@ -198,7 +207,7 @@ class InventoryService
                     'debit' => $roundingDifference > 0 ? $roundingDifference : 0,
                     'credit' => $roundingDifference < 0 ? abs($roundingDifference) : 0,
                     'description' => 'Rounding adjustment on GRN',
-                    'cost_center_id' => null,
+                    'cost_center_id' => $warehouseCostCenter->id,
                 ];
             }
 
@@ -210,7 +219,7 @@ class InventoryService
                     'debit' => 0,
                     'credit' => $totalFmrAllowance,
                     'description' => 'FMR allowance - income for handling returns',
-                    'cost_center_id' => null,
+                    'cost_center_id' => $warehouseCostCenter->id,
                 ];
             }
 
@@ -221,7 +230,7 @@ class InventoryService
                 'debit' => 0,
                 'credit' => $creditorAmount,
                 'description' => "Amount payable to {$grn->supplier->supplier_name}",
-                'cost_center_id' => null,
+                'cost_center_id' => $warehouseCostCenter->id,
             ];
 
             // Prepare journal entry data
@@ -281,6 +290,12 @@ class InventoryService
                 return null;
             }
 
+            if (! $warehouseCostCenter) {
+                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping reversing journal entry for GRN: '.$grn->id);
+
+                return null;
+            }
+
             // Calculate amounts from GRN items (same as posting)
             $extendedValue = $grn->items->sum('extended_value');
             $totalDiscounts = $grn->items->sum('discount_value');
@@ -333,7 +348,7 @@ class InventoryService
                 'debit' => $creditorAmount,
                 'credit' => 0,
                 'description' => "Reversal - Liability to {$grn->supplier->supplier_name} reduced ({$itemsText})",
-                'cost_center_id' => null,
+                'cost_center_id' => $warehouseCostCenter->id,
             ];
 
             // Dr. FMR Allowance (if any) - reverse the credit
@@ -344,7 +359,7 @@ class InventoryService
                     'debit' => $totalFmrAllowance,
                     'credit' => 0,
                     'description' => 'Reversal - FMR allowance',
-                    'cost_center_id' => null,
+                    'cost_center_id' => $warehouseCostCenter->id,
                 ];
             }
 
@@ -355,7 +370,7 @@ class InventoryService
                 'debit' => 0,
                 'credit' => $actualInventoryValue,
                 'description' => "Reversal - Inventory returned to supplier ({$itemsText})",
-                'cost_center_id' => null,
+                'cost_center_id' => $warehouseCostCenter->id,
             ];
 
             // Cr/Dr. Round Off (if there was a rounding difference) - reverse the posting
@@ -366,7 +381,7 @@ class InventoryService
                     'debit' => $roundingDifference < 0 ? abs($roundingDifference) : 0,
                     'credit' => $roundingDifference > 0 ? $roundingDifference : 0,
                     'description' => 'Reversal - Rounding adjustment',
-                    'cost_center_id' => null,
+                    'cost_center_id' => $warehouseCostCenter->id,
                 ];
             }
 

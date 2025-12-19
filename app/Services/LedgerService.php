@@ -119,6 +119,9 @@ class LedgerService
 
     /**
      * Process complete sales settlement and create all ledger entries
+     * Creates entries in:
+     * 1. customer_employee_account_transactions (customer sub-ledger)
+     * 2. journal_entries + journal_entry_details (General Ledger)
      */
     public function processSalesSettlement(SalesSettlement $settlement): array
     {
@@ -127,16 +130,41 @@ class LedgerService
 
             $results = [
                 'customer_employee_transactions' => [],
-                'customer_entries' => [],
                 'salesman_entries' => [],
+                'journal_entries' => [],
             ];
 
-            // Reload the settlement to get updated data
-            $settlement->load(['employee', 'bankTransfers', 'cheques', 'creditSales.customer']);
+            $accountingService = app(AccountingService::class);
 
-            // Process credit sales - NEW SYSTEM: customer_employee_account_transactions
+            // Reload the settlement to get all related data
+            $settlement->load([
+                'employee',
+                'creditSales.customer',
+                'cheques',
+                'bankTransfers.bankAccount',
+                'expenses.expenseAccount',
+                'advanceTaxes',
+            ]);
+
+            // ========================================
+            // 1. CREDIT SALES - Customer Sub-Ledger + GL
+            // ========================================
             foreach ($settlement->creditSales as $creditSale) {
-                // Record credit sale transaction
+                // Ensure customer-employee account exists before recording transaction
+                $account = \App\Models\CustomerEmployeeAccount::firstOrCreate(
+                    [
+                        'customer_id' => $creditSale->customer_id,
+                        'employee_id' => $creditSale->employee_id,
+                    ],
+                    [
+                        'account_number' => \App\Models\CustomerEmployeeAccount::generateAccountNumber(),
+                        'opened_date' => $settlement->settlement_date,
+                        'status' => 'active',
+                        'created_by' => auth()->id(),
+                    ]
+                );
+
+                // 1a. CUSTOMER SUB-LEDGER: Record debit (sale) and credit (payment)
                 if ($creditSale->sale_amount > 0) {
                     $result = $this->recordCustomerEmployeeTransaction([
                         'customer_id' => $creditSale->customer_id,
@@ -146,103 +174,231 @@ class LedgerService
                         'reference_number' => $settlement->settlement_number,
                         'sales_settlement_id' => $settlement->id,
                         'invoice_number' => $creditSale->invoice_number,
-                        'description' => "Credit sale - {$settlement->employee->name}",
-                        'debit' => $creditSale->sale_amount, // Customer owes
+                        'description' => "Accounts Receivable - {$creditSale->customer->customer_name}",
+                        'debit' => $creditSale->sale_amount,
                         'credit' => 0,
-                        'payment_method' => null,
                         'notes' => $creditSale->notes,
                     ]);
                     $results['customer_employee_transactions'][] = $result;
                 }
 
-                // Record recovery transaction (payment received with credit sale)
                 if ($creditSale->payment_received > 0) {
                     $result = $this->recordCustomerEmployeeTransaction([
                         'customer_id' => $creditSale->customer_id,
                         'employee_id' => $creditSale->employee_id,
                         'transaction_date' => $settlement->settlement_date,
-                        'transaction_type' => 'recovery_cash',
+                        'transaction_type' => 'credit_sale',
                         'reference_number' => $settlement->settlement_number,
                         'sales_settlement_id' => $settlement->id,
-                        'description' => "Cash recovery - {$settlement->employee->name}",
+                        'description' => "Cash Received - {$creditSale->customer->customer_name}",
                         'debit' => 0,
-                        'credit' => $creditSale->payment_received, // Customer pays
+                        'credit' => $creditSale->payment_received,
                         'payment_method' => 'cash',
                         'notes' => $creditSale->notes,
                     ]);
                     $results['customer_employee_transactions'][] = $result;
                 }
 
-                // Still record in salesman ledger
-                $salesmanResult = $this->recordSalesmanCreditSale([
-                    'transaction_date' => $settlement->settlement_date,
-                    'employee_id' => $creditSale->employee_id,
-                    'amount' => $creditSale->sale_amount,
-                    'reference_number' => $settlement->settlement_number,
-                    'description' => "Credit sale to {$creditSale->customer->customer_name}",
-                    'sales_settlement_id' => $settlement->id,
-                    'customer_id' => $creditSale->customer_id,
-                ]);
+                // 1b. GENERAL LEDGER: Create journal entry for credit sale
+                if ($creditSale->sale_amount > 0 || $creditSale->payment_received > 0) {
+                    $journalLines = [];
 
-                $results['salesman_entries'][] = $salesmanResult;
-            }
+                    // DR: Accounts Receivable (1110) - customer owes
+                    if ($creditSale->sale_amount > 0) {
+                        $journalLines[] = [
+                            'account_id' => 3, // 1110 Accounts Receivable
+                            'debit' => $creditSale->sale_amount,
+                            'credit' => 0,
+                            'description' => "AR - {$creditSale->customer->customer_name} - Invoice {$creditSale->invoice_number}",
+                            'cost_center_id' => null,
+                        ];
 
-            // Process bank transfers
-            foreach ($settlement->bankTransfers as $transfer) {
-                if ($transfer->customer_id && $transfer->amount > 0) {
-                    $result = $this->recordCustomerEmployeeTransaction([
-                        'customer_id' => $transfer->customer_id,
-                        'employee_id' => $settlement->employee_id,
-                        'transaction_date' => $transfer->transfer_date ?? $settlement->settlement_date,
-                        'transaction_type' => 'bank_transfer',
-                        'reference_number' => $transfer->reference_number ?? $settlement->settlement_number,
-                        'sales_settlement_id' => $settlement->id,
-                        'description' => "Bank transfer payment - {$transfer->notes}",
-                        'debit' => 0,
-                        'credit' => $transfer->amount,
-                        'payment_method' => 'bank_transfer',
-                        'bank_account_id' => $transfer->bank_account_id,
-                        'notes' => $transfer->notes,
+                        // CR: Sales Revenue (4110)
+                        $journalLines[] = [
+                            'account_id' => 76, // 4110 Sales
+                            'debit' => 0,
+                            'credit' => $creditSale->sale_amount,
+                            'description' => "Sales - {$creditSale->customer->customer_name}",
+                            'cost_center_id' => null,
+                        ];
+                    }
+
+                    // DR: Cash (1131) - payment received
+                    if ($creditSale->payment_received > 0) {
+                        $journalLines[] = [
+                            'account_id' => 7, // 1131 Cash
+                            'debit' => $creditSale->payment_received,
+                            'credit' => 0,
+                            'description' => "Cash received from {$creditSale->customer->customer_name}",
+                            'cost_center_id' => null,
+                        ];
+
+                        // CR: Accounts Receivable (1110) - reduce what customer owes
+                        $journalLines[] = [
+                            'account_id' => 3, // 1110 Accounts Receivable
+                            'debit' => 0,
+                            'credit' => $creditSale->payment_received,
+                            'description' => "Payment from {$creditSale->customer->customer_name}",
+                            'cost_center_id' => null,
+                        ];
+                    }
+
+                    $journalResult = $accountingService->createJournalEntry([
+                        'entry_date' => $settlement->settlement_date,
+                        'description' => "Credit Sale - {$creditSale->customer->customer_name} - {$settlement->settlement_number}",
+                        'reference' => $settlement->settlement_number,
+                        'lines' => $journalLines,
+                        'auto_post' => true,
                     ]);
-                    $results['customer_employee_transactions'][] = $result;
+
+                    $results['journal_entries'][] = $journalResult;
+                }
+
+                // Record in salesman ledger (separate system for salesman tracking)
+                if ($creditSale->sale_amount > 0) {
+                    $salesmanResult = $this->recordSalesmanCreditSale([
+                        'transaction_date' => $settlement->settlement_date,
+                        'employee_id' => $creditSale->employee_id,
+                        'amount' => $creditSale->sale_amount,
+                        'reference_number' => $settlement->settlement_number,
+                        'description' => "Credit sale to {$creditSale->customer->customer_name}",
+                        'sales_settlement_id' => $settlement->id,
+                        'customer_id' => $creditSale->customer_id,
+                    ]);
+
+                    $results['salesman_entries'][] = $salesmanResult;
                 }
             }
 
-            // Process cheques
+            // ========================================
+            // 2. CHEQUE PAYMENTS - GL Only
+            // ========================================
             foreach ($settlement->cheques as $cheque) {
-                if ($cheque->customer_id && $cheque->amount > 0) {
-                    $result = $this->recordCustomerEmployeeTransaction([
-                        'customer_id' => $cheque->customer_id,
-                        'employee_id' => $settlement->employee_id,
-                        'transaction_date' => $cheque->cheque_date ?? $settlement->settlement_date,
-                        'transaction_type' => 'recovery_cheque',
-                        'reference_number' => $cheque->cheque_number,
-                        'sales_settlement_id' => $settlement->id,
-                        'description' => "Cheque payment - {$cheque->bank_name}",
-                        'debit' => 0,
-                        'credit' => $cheque->amount,
-                        'payment_method' => 'cheque',
-                        'cheque_number' => $cheque->cheque_number,
-                        'cheque_date' => $cheque->cheque_date,
-                        'notes' => $cheque->notes,
+                if ($cheque->amount > 0) {
+                    $bankAccountName = $cheque->bank_name ?? 'Bank';
+                    $journalResult = $accountingService->createJournalEntry([
+                        'entry_date' => $settlement->settlement_date,
+                        'description' => "Cheque #{$cheque->cheque_number} - {$bankAccountName} - {$settlement->settlement_number}",
+                        'reference' => $settlement->settlement_number.'-CHQ-'.$cheque->cheque_number,
+                        'lines' => [
+                            [
+                                'account_id' => 5, // 1120 Bank Accounts
+                                'debit' => $cheque->amount,
+                                'credit' => 0,
+                                'description' => "Cheque received - {$bankAccountName} #{$cheque->cheque_number}",
+                                'cost_center_id' => null,
+                            ],
+                            [
+                                'account_id' => 7, // 1131 Cash (or use AR if from customer)
+                                'debit' => 0,
+                                'credit' => $cheque->amount,
+                                'description' => 'Cheque payment deposited',
+                                'cost_center_id' => null,
+                            ],
+                        ],
+                        'auto_post' => true,
                     ]);
-                    $results['customer_employee_transactions'][] = $result;
+
+                    $results['journal_entries'][] = $journalResult;
                 }
             }
 
-            // Process credit recoveries if any (general recovery not tied to specific customer)
-            if ($settlement->credit_recoveries > 0) {
-                $salesmanResult = $this->recordSalesmanCollection([
-                    'transaction_date' => $settlement->settlement_date,
-                    'employee_id' => $settlement->employee_id,
-                    'cash_amount' => $settlement->credit_recoveries,
-                    'cheque_amount' => 0,
-                    'reference_number' => $settlement->settlement_number,
-                    'description' => 'Credit recoveries collected',
-                    'sales_settlement_id' => $settlement->id,
-                ]);
+            // ========================================
+            // 3. BANK TRANSFERS - GL Only
+            // ========================================
+            foreach ($settlement->bankTransfers as $transfer) {
+                if ($transfer->amount > 0) {
+                    $bankAccountName = $transfer->bankAccount->bank_name ?? 'Bank';
+                    $journalResult = $accountingService->createJournalEntry([
+                        'entry_date' => $settlement->settlement_date,
+                        'description' => "Bank Transfer - {$bankAccountName} - {$settlement->settlement_number}",
+                        'reference' => $settlement->settlement_number.'-TRF-'.$transfer->id,
+                        'lines' => [
+                            [
+                                'account_id' => 5, // 1120 Bank Accounts
+                                'debit' => $transfer->amount,
+                                'credit' => 0,
+                                'description' => "Bank transfer to {$bankAccountName}",
+                                'cost_center_id' => null,
+                            ],
+                            [
+                                'account_id' => 7, // 1131 Cash
+                                'debit' => 0,
+                                'credit' => $transfer->amount,
+                                'description' => 'Cash transferred to bank',
+                                'cost_center_id' => null,
+                            ],
+                        ],
+                        'auto_post' => true,
+                    ]);
 
-                $results['salesman_entries'][] = $salesmanResult;
+                    $results['journal_entries'][] = $journalResult;
+                }
+            }
+
+            // ========================================
+            // 4. EXPENSES - GL Only
+            // ========================================
+            foreach ($settlement->expenses as $expense) {
+                if ($expense->amount > 0) {
+                    $expenseAccountName = $expense->expenseAccount->account_name ?? 'Expense';
+                    $journalResult = $accountingService->createJournalEntry([
+                        'entry_date' => $expense->expense_date,
+                        'description' => "{$expenseAccountName} - {$expense->description} - {$settlement->settlement_number}",
+                        'reference' => $settlement->settlement_number.'-EXP-'.$expense->id,
+                        'lines' => [
+                            [
+                                'account_id' => $expense->expense_account_id,
+                                'debit' => $expense->amount,
+                                'credit' => 0,
+                                'description' => $expense->description,
+                                'cost_center_id' => null,
+                            ],
+                            [
+                                'account_id' => 7, // 1131 Cash
+                                'debit' => 0,
+                                'credit' => $expense->amount,
+                                'description' => "Cash paid for {$expenseAccountName}",
+                                'cost_center_id' => null,
+                            ],
+                        ],
+                        'auto_post' => true,
+                    ]);
+
+                    $results['journal_entries'][] = $journalResult;
+                }
+            }
+
+            // ========================================
+            // 5. ADVANCE TAX - GL Only
+            // ========================================
+            foreach ($settlement->advanceTaxes as $advanceTax) {
+                if ($advanceTax->amount > 0) {
+                    $journalResult = $accountingService->createJournalEntry([
+                        'entry_date' => $settlement->settlement_date,
+                        'description' => "Advance Tax - {$settlement->settlement_number}",
+                        'reference' => $settlement->settlement_number.'-TAX',
+                        'lines' => [
+                            [
+                                'account_id' => 18, // 1171 Advance Tax
+                                'debit' => $advanceTax->amount,
+                                'credit' => 0,
+                                'description' => 'Advance tax collected',
+                                'cost_center_id' => null,
+                            ],
+                            [
+                                'account_id' => 7, // 1131 Cash
+                                'debit' => 0,
+                                'credit' => $advanceTax->amount,
+                                'description' => 'Cash for advance tax',
+                                'cost_center_id' => null,
+                            ],
+                        ],
+                        'auto_post' => true,
+                    ]);
+
+                    $results['journal_entries'][] = $journalResult;
+                }
             }
 
             DB::commit();
@@ -250,7 +406,7 @@ class LedgerService
             return [
                 'success' => true,
                 'data' => $results,
-                'message' => 'Sales settlement processed in ledgers',
+                'message' => 'Sales settlement processed - customer ledger and GL journal entries created',
             ];
         } catch (\Exception $e) {
             DB::rollBack();

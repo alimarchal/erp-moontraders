@@ -421,7 +421,6 @@ class LedgerService
                 'transaction_type' => $data['transaction_type'],
                 'reference_number' => $data['reference_number'] ?? null,
                 'sales_settlement_id' => $data['sales_settlement_id'] ?? null,
-                'credit_sale_id' => $data['credit_sale_id'] ?? null,
                 'invoice_number' => $data['invoice_number'] ?? null,
                 'description' => $data['description'],
                 'debit' => $data['debit'] ?? 0,

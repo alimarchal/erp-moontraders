@@ -17,7 +17,6 @@ class CustomerEmployeeAccountTransaction extends Model
         'transaction_type',
         'reference_number',
         'sales_settlement_id',
-        'credit_sale_id',
         'invoice_number',
         'description',
         'debit',

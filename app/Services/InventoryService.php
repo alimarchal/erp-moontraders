@@ -129,7 +129,6 @@ class InventoryService
             $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
             $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
             $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
-            $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
             if (! $inventoryAccount) {
                 Log::warning('Inventory account (1151 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
@@ -283,9 +282,16 @@ class InventoryService
             $apAccount = ChartOfAccount::where('account_code', '2110')->first();
             $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
             $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
+            $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
             if (! $inventoryAccount || ! $apAccount) {
                 Log::warning('Required accounts not found in Chart of Accounts. Skipping reversing journal entry for GRN: '.$grn->id);
+
+                return null;
+            }
+
+            if (! $warehouseCostCenter) {
+                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping reversing journal entry for GRN: '.$grn->id);
 
                 return null;
             }

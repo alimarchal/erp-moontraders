@@ -116,7 +116,7 @@ class SalesSettlementController extends Controller
         return view('sales-settlements.create', [
             'customers' => Customer::where('is_active', true)
                 ->orderBy('customer_name')
-                ->get(['id', 'customer_code', 'customer_name', 'receivable_balance']),
+                ->get(['id', 'customer_code', 'customer_name']),
             'expenseAccounts' => $expenseAccounts,
         ]);
     }
@@ -633,7 +633,7 @@ class SalesSettlementController extends Controller
         // Get customers for credit sales
         $customers = Customer::where('is_active', true)
             ->orderBy('customer_name')
-            ->get(['id', 'customer_code', 'customer_name', 'receivable_balance']);
+            ->get(['id', 'customer_code', 'customer_name']);
 
         return view('sales-settlements.edit', [
             'settlement' => $salesSettlement,

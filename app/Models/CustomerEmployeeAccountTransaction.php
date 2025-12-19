@@ -50,11 +50,6 @@ class CustomerEmployeeAccountTransaction extends Model
         return $this->belongsTo(SalesSettlement::class);
     }
 
-    public function creditSale(): BelongsTo
-    {
-        return $this->belongsTo(CustomerCreditSale::class);
-    }
-
     public function bankAccount(): BelongsTo
     {
         return $this->belongsTo(BankAccount::class);

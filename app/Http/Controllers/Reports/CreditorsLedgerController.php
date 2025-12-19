@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
-use App\Models\CustomerLedger;
 use App\Models\Employee;
 use App\Services\LedgerService;
 use Illuminate\Http\Request;
@@ -59,7 +58,9 @@ class CreditorsLedgerController extends Controller
 
         $customers = $customersQuery->paginate($perPage)->withQueryString();
 
-        $totals = CustomerLedger::query()
+        // Calculate totals from customer_employee_account_transactions
+        $totals = DB::table('customer_employee_account_transactions')
+            ->whereNull('deleted_at')
             ->selectRaw('SUM(debit) as total_debits, SUM(credit) as total_credits')
             ->first();
 
@@ -81,35 +82,48 @@ class CreditorsLedgerController extends Controller
         $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 100;
 
         $dateFrom = $request->input('filter.date_from');
-        $dateTo = $request->input('filter.date_to');
-
-        $entriesQuery = CustomerLedger::where('customer_id', $customer->id)
-            ->with(['employee', 'salesSettlement', 'creditSale']);
+        // Query customer_employee_account_transactions through the accounts
+        $entriesQuery = DB::table('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->leftJoin('employees as e', 'cea.employee_id', '=', 'e.id')
+            ->leftJoin('sales_settlements as ss', 'ceat.sales_settlement_id', '=', 'ss.id')
+            ->where('cea.customer_id', $customer->id)
+            ->whereNull('ceat.deleted_at')
+            ->select(
+                'ceat.*',
+                'e.name as employee_name',
+                'ss.settlement_number',
+                'cea.account_number'
+            );
 
         if ($dateFrom) {
-            $entriesQuery->whereDate('transaction_date', '>=', $dateFrom);
+            $entriesQuery->whereDate('ceat.transaction_date', '>=', $dateFrom);
         }
 
         if ($dateTo) {
-            $entriesQuery->whereDate('transaction_date', '<=', $dateTo);
+            $entriesQuery->whereDate('ceat.transaction_date', '<=', $dateTo);
         }
 
         if ($request->filled('filter.transaction_type')) {
-            $entriesQuery->where('transaction_type', $request->input('filter.transaction_type'));
+            $entriesQuery->where('ceat.transaction_type', $request->input('filter.transaction_type'));
         }
 
-        $entries = $entriesQuery->orderBy('transaction_date')
-            ->orderBy('id')
+        $entries = $entriesQuery->orderBy('ceat.transaction_date')
+            ->orderBy('ceat.id')
             ->paginate($perPage)
             ->withQueryString();
 
         $openingBalance = 0;
         if ($dateFrom) {
-            $openingBalance = CustomerLedger::where('customer_id', $customer->id)
-                ->where('transaction_date', '<', $dateFrom)
-                ->orderBy('transaction_date', 'desc')
-                ->orderBy('id', 'desc')
-                ->value('balance') ?? 0;
+            $openingBalanceResult = DB::table('customer_employee_account_transactions as ceat')
+                ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                ->where('cea.customer_id', $customer->id)
+                ->where('ceat.transaction_date', '<', $dateFrom)
+                ->whereNull('ceat.deleted_at')
+                ->selectRaw('COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0) as balance')
+                ->first();
+
+            $openingBalance = $openingBalanceResult ? (float) $openingBalanceResult->balance : 0;
         }
 
         $summary = [
@@ -119,7 +133,11 @@ class CreditorsLedgerController extends Controller
             'closing_balance' => $this->ledgerService->getCustomerBalance($customer->id),
         ];
 
-        $transactionTypes = CustomerLedger::distinct('transaction_type')->pluck('transaction_type');
+        // Get transaction types from the actual transactions
+        $transactionTypes = DB::table('customer_employee_account_transactions')
+            ->distinct()
+            ->whereNull('deleted_at')
+            ->pluck('transaction_type');
 
         return view('reports.creditors-ledger.customer-ledger', [
             'customer' => $customer,

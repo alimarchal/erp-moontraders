@@ -91,11 +91,6 @@ class Customer extends Model
         return $this->hasMany(Sale::class);
     }
 
-    public function ledgerEntries(): HasMany
-    {
-        return $this->hasMany(CustomerLedger::class);
-    }
-
     public function employeeAccounts(): HasMany
     {
         return $this->hasMany(CustomerEmployeeAccount::class);

@@ -12,58 +12,6 @@ use Illuminate\Support\Facades\Log;
 class LedgerService
 {
     /**
-     * Record customer payment/recovery in ledger
-     */
-    public function recordCustomerPayment(array $data): array
-    {
-        try {
-            DB::beginTransaction();
-
-            $customer = Customer::findOrFail($data['customer_id']);
-            $previousBalance = $this->getCustomerBalance($customer->id);
-
-            $ledgerEntry = CustomerLedger::create([
-                'transaction_date' => $data['transaction_date'],
-                'customer_id' => $customer->id,
-                'transaction_type' => $data['payment_method'].'_recovery',
-                'reference_number' => $data['reference_number'] ?? null,
-                'description' => $data['description'] ?? 'Payment received',
-                'debit' => 0,
-                'credit' => $data['amount'], // Credit decreases receivable
-                'balance' => $previousBalance - $data['amount'],
-                'sales_settlement_id' => $data['sales_settlement_id'] ?? null,
-                'employee_id' => $data['employee_id'] ?? null,
-                'payment_method' => $data['payment_method'] ?? 'cash',
-                'cheque_number' => $data['cheque_number'] ?? null,
-                'cheque_date' => $data['cheque_date'] ?? null,
-                'bank_account_id' => $data['bank_account_id'] ?? null,
-                'notes' => $data['notes'] ?? null,
-                'created_by' => auth()->id(),
-            ]);
-
-            DB::commit();
-
-            return [
-                'success' => true,
-                'data' => $ledgerEntry,
-                'message' => 'Payment recorded in customer ledger',
-            ];
-        } catch (\Exception $e) {
-            DB::rollBack();
-            Log::error('Error recording customer payment', [
-                'error' => $e->getMessage(),
-                'data' => $data,
-            ]);
-
-            return [
-                'success' => false,
-                'data' => null,
-                'message' => 'Failed to record payment: '.$e->getMessage(),
-            ];
-        }
-    }
-
-    /**
      * Record salesman credit sale in ledger
      */
     public function recordSalesmanCreditSale(array $data): array
@@ -374,30 +322,39 @@ class LedgerService
     }
 
     /**
-     * Get customer ledger statement
+     * Get customer ledger statement from customer_employee_account_transactions
      */
     public function getCustomerStatement(int $customerId, ?string $fromDate = null, ?string $toDate = null): array
     {
-        $query = CustomerLedger::where('customer_id', $customerId)
-            ->with(['employee', 'salesSettlement']);
+        $query = DB::table('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->leftJoin('employees as e', 'cea.employee_id', '=', 'e.id')
+            ->leftJoin('sales_settlements as ss', 'ceat.sales_settlement_id', '=', 'ss.id')
+            ->where('cea.customer_id', $customerId)
+            ->whereNull('ceat.deleted_at')
+            ->select(
+                'ceat.*',
+                'e.name as employee_name',
+                'ss.settlement_number'
+            );
 
         if ($fromDate) {
-            $query->where('transaction_date', '>=', $fromDate);
+            $query->where('ceat.transaction_date', '>=', $fromDate);
         }
 
         if ($toDate) {
-            $query->where('transaction_date', '<=', $toDate);
+            $query->where('ceat.transaction_date', '<=', $toDate);
         }
 
-        $entries = $query->orderBy('transaction_date')
-            ->orderBy('id')
+        $entries = $query->orderBy('ceat.transaction_date')
+            ->orderBy('ceat.id')
             ->get();
 
         $summary = [
             'opening_balance' => 0,
             'total_debits' => $entries->sum('debit'),
             'total_credits' => $entries->sum('credit'),
-            'closing_balance' => $entries->last()->balance ?? 0,
+            'closing_balance' => $entries->sum('debit') - $entries->sum('credit'),
         ];
 
         return [

@@ -4,15 +4,13 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
-use App\Models\CustomerLedger;
+// Removed legacy CustomerLedger references after migration to customer_employee_account_transactions
 use App\Services\LedgerService;
 use Illuminate\Http\JsonResponse;
 
 class CustomerController extends Controller
 {
-    public function __construct(protected LedgerService $ledgerService)
-    {
-    }
+    public function __construct(protected LedgerService $ledgerService) {}
 
     /**
      * Get customer balance (overall balance - used as fallback).
@@ -45,7 +43,7 @@ class CustomerController extends Controller
      */
     public function byEmployee(int $employeeId): JsonResponse
     {
-        // Get employee-specific balances from customer_ledgers
+        // Get employee-specific balances from customer_employee_accounts
         $employeeBalances = $this->ledgerService->getCustomersWithBalancesByEmployee($employeeId);
 
         // Get ALL active customers (salesman can create credit with any customer)

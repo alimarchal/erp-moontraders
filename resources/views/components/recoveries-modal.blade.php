@@ -19,7 +19,7 @@
         ])->values()),
         bankAccounts: @js($bankAccounts->map(fn($bank) => [
             'id' => $bank->id,
-            'name' => $bank->account_name . ' (' . $bank->bank_name . ')',
+            'name' => $bank->bank_name . ' - ' . $bank->account_name . ' (' . $bank->account_number . ')',
         ])->values()),
         employeeId: {{ $employeeId ?? 'null' }},
         recoveryInputId: '{{ $recoveryInputId }}',

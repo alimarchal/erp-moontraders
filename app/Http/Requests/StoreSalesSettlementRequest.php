@@ -43,6 +43,12 @@ class StoreSalesSettlementRequest extends FormRequest
                 'cheques' => json_decode($this->cheques, true),
             ]);
         }
+
+        if ($this->has('recoveries_entries') && is_string($this->recoveries_entries)) {
+            $this->merge([
+                'recoveries_entries' => json_decode($this->recoveries_entries, true),
+            ]);
+        }
     }
 
     /**
@@ -99,10 +105,18 @@ class StoreSalesSettlementRequest extends FormRequest
             'credit_sales.*.customer_id' => 'required_with:credit_sales|exists:customers,id',
             'credit_sales.*.invoice_number' => 'nullable|string|max:100',
             'credit_sales.*.sale_amount' => 'required_with:credit_sales|numeric|min:0',
-            'credit_sales.*.payment_received' => 'nullable|numeric|min:0',
-            'credit_sales.*.previous_balance' => 'nullable|numeric',
-            'credit_sales.*.new_balance' => 'nullable|numeric',
             'credit_sales.*.notes' => 'nullable|string',
+
+            // Recoveries breakdown
+            'recoveries_entries' => 'nullable|array',
+            'recoveries_entries.*.customer_id' => 'required_with:recoveries_entries|exists:customers,id',
+            'recoveries_entries.*.recovery_number' => 'nullable|string|max:100',
+            'recoveries_entries.*.payment_method' => 'required_with:recoveries_entries|in:cash,bank_transfer',
+            'recoveries_entries.*.bank_account_id' => 'required_if:recoveries_entries.*.payment_method,bank_transfer|nullable|exists:bank_accounts,id',
+            'recoveries_entries.*.amount' => 'required_with:recoveries_entries|numeric|min:0',
+            'recoveries_entries.*.previous_balance' => 'nullable|numeric',
+            'recoveries_entries.*.new_balance' => 'nullable|numeric',
+            'recoveries_entries.*.notes' => 'nullable|string',
 
             // Advance tax breakdown
             'advance_taxes' => 'nullable|array',

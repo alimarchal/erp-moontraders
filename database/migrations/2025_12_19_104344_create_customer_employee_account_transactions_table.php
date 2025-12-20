@@ -20,6 +20,7 @@ return new class extends Migration
             $table->date('transaction_date')->index();
             $table->enum('transaction_type', [
                 'credit_sale',
+                'recovery',
                 'recovery_cash',
                 'recovery_cheque',
                 'bank_transfer',

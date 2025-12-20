@@ -107,33 +107,33 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-100">
                             <tr>
-                                <th class="px-3 py-2 text-left text-gray-700">S.No</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Bank Account</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Customer</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Transfer Date</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Reference</th>
-                                <th class="px-3 py-2 text-right text-gray-700">Amount (₨)</th>
-                                <th class="px-3 py-2 text-center text-gray-700">Action</th>
+                                <th class="px-2 py-1 text-left text-gray-700">S.No</th>
+                                <th class="px-2 py-1 text-left text-gray-700">Bank Account</th>
+                                <th class="px-2 py-1 text-left text-gray-700">Customer</th>
+                                <th class="px-2 py-1 text-left text-gray-700">Transfer Date</th>
+                                <th class="px-2 py-1 text-left text-gray-700">Reference</th>
+                                <th class="px-2 py-1 text-right text-gray-700">Amount (₨)</th>
+                                <th class="px-2 py-1 text-center text-gray-700">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-if="entries.length === 0">
                                 <tr>
-                                    <td colspan="7" class="px-3 py-4 text-center text-gray-500 italic">
+                                    <td colspan="7" class="px-2 py-4 text-center text-gray-500 italic">
                                         No bank transfer entries added yet.
                                     </td>
                                 </tr>
                             </template>
                             <template x-for="(entry, index) in entries" :key="index">
                                 <tr class="border-t border-gray-200 hover:bg-gray-50 transition-colors">
-                                    <td class="px-3 py-2 font-semibold text-gray-700" x-text="index + 1"></td>
-                                    <td class="px-3 py-2 text-gray-800" x-text="entry.bank_account_name"></td>
-                                    <td class="px-3 py-2 text-gray-800" x-text="entry.customer_name || 'N/A'"></td>
-                                    <td class="px-3 py-2 text-gray-800" x-text="formatDate(entry.transfer_date)"></td>
-                                    <td class="px-3 py-2 text-gray-800" x-text="entry.reference_number || 'N/A'"></td>
-                                    <td class="px-3 py-2 text-right font-semibold text-blue-700"
+                                    <td class="px-2 py-1.5 font-semibold text-gray-700" x-text="index + 1"></td>
+                                    <td class="px-2 py-1.5 text-gray-800" x-text="entry.bank_account_name"></td>
+                                    <td class="px-2 py-1.5 text-gray-800" x-text="entry.customer_name || 'N/A'"></td>
+                                    <td class="px-2 py-1.5 text-gray-800" x-text="formatDate(entry.transfer_date)"></td>
+                                    <td class="px-2 py-1.5 text-gray-800" x-text="entry.reference_number || 'N/A'"></td>
+                                    <td class="px-2 py-1.5 text-right font-semibold text-blue-700"
                                         x-text="formatCurrency(entry.amount)"></td>
-                                    <td class="px-3 py-2 text-center">
+                                    <td class="px-2 py-1.5 text-center">
                                         <button type="button" @click="removeEntry(index)"
                                             class="text-red-600 hover:text-red-800 text-xs font-semibold">
                                             Delete
@@ -144,10 +144,10 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                         </tbody>
                         <tfoot class="bg-blue-50 border-t-2 border-blue-200">
                             <tr>
-                                <td colspan="5" class="px-3 py-2 text-right font-bold text-blue-900">Grand Total</td>
-                                <td class="px-3 py-2 text-right font-bold text-blue-900" x-text="formatCurrency(total)">
+                                <td colspan="5" class="px-2 py-2 text-right font-bold text-blue-900">Grand Total</td>
+                                <td class="px-2 py-2 text-right font-bold text-blue-900" x-text="formatCurrency(total)">
                                 </td>
-                                <td class="px-3 py-2"></td>
+                                <td class="px-2 py-2"></td>
                             </tr>
                         </tfoot>
                     </table>

@@ -619,6 +619,7 @@ class DistributionService
                 'employee',
                 'items',
                 'creditSales.customer',
+                'recoveries.customer',
                 'cheques',
                 'bankTransfers.bankAccount.chartOfAccount',
                 'expenses.expenseAccount',
@@ -644,34 +645,118 @@ class DistributionService
             // ====================================================================
             // 1. CREDIT SALES (Revenue) - MUST BE FIRST
             // ====================================================================
+            $totalCreditSales = 0;
+            $creditSalesDetails = [];
+            $empId = $settlement->employee_id;
             foreach ($settlement->creditSales as $creditSale) {
                 if ($creditSale->sale_amount > 0) {
-                    // Debit: Debtors
+                    $totalCreditSales += $creditSale->sale_amount;
+                    $amountFormatted = number_format($creditSale->sale_amount, 0, '.', '');
+                    $creditSalesDetails[] = "EMP:{$empId}-CUS:{$creditSale->customer_id}-AMT:{$amountFormatted}";
+                }
+            }
+
+            if ($totalCreditSales > 0) {
+                $creditDesc = 'Credit Sales: '.implode(', ', $creditSalesDetails);
+                if (strlen($creditDesc) > 250) {
+                    $creditDesc = '';
+                    $count = 0;
+                    foreach ($creditSalesDetails as $detail) {
+                        $tempDesc = $creditDesc.($creditDesc ? ', ' : 'Credit Sales: ').$detail;
+                        if (strlen($tempDesc) > 240) {
+                            $remaining = count($creditSalesDetails) - $count;
+                            $creditDesc .= " + $remaining more";
+                            break;
+                        }
+                        $creditDesc = $tempDesc;
+                        $count++;
+                    }
+                }
+
+                // Debit: Debtors
+                $lines[] = [
+                    'account_id' => $accounts['debtors']->id,
+                    'debit' => $totalCreditSales,
+                    'credit' => 0,
+                    'description' => $creditDesc,
+                    'cost_center_id' => 4,
+                ];
+
+                // Credit: Sales Revenue
+                $lines[] = [
+                    'account_id' => $accounts['sales']->id,
+                    'debit' => 0,
+                    'credit' => $totalCreditSales,
+                    'description' => $creditDesc,
+                    'cost_center_id' => 4,
+                ];
+            }
+
+
+            
+
+            // ====================================================================
+            // 2. RECOVERIES (Payments against old balances)
+            // ====================================================================
+            $totalCashRecoveries = 0;
+            $empId = $settlement->employee_id;
+
+            foreach ($settlement->recoveries as $recovery) {
+                if ($recovery->amount > 0) {
+                    $customerName = $recovery->customer->customer_name ?? 'Unknown';
+                    $methodLabel = $recovery->payment_method === 'cash' ? 'Cash' : 'Bank Transfer';
+                    $recoveryDesc = "Recovery from {$customerName} via {$methodLabel} - Ref: {$recovery->recovery_number}";
+
+                    // Credit: Debtors (Always credit debtors for recovery)
                     $lines[] = [
                         'account_id' => $accounts['debtors']->id,
-                        'debit' => $creditSale->sale_amount,
-                        'credit' => 0,
-                        'description' => "Credit Sale - {$creditSale->customer->customer_name} - Inv #{$creditSale->invoice_number}",
+                        'debit' => 0,
+                        'credit' => $recovery->amount,
+                        'description' => $recoveryDesc,
                         'cost_center_id' => 4,
                     ];
 
-                    // Credit: Sales Revenue
-                    $lines[] = [
-                        'account_id' => $accounts['sales']->id,
-                        'debit' => 0,
-                        'credit' => $creditSale->sale_amount,
-                        'description' => "Sales Revenue (Credit) - {$creditSale->customer->customer_name}",
-                        'cost_center_id' => 4,
-                    ];
+                    if ($recovery->payment_method === 'cash') {
+                        // For cash, we consolidate in Step 4
+                        $totalCashRecoveries += $recovery->amount;
+                    } else {
+                        // For bank transfer, we debit the specific bank account immediately
+                        $bankAccount = \App\Models\BankAccount::with('chartOfAccount')->find($recovery->bank_account_id);
+                        $bankAccountId = $bankAccount?->chart_of_account_id;
+
+                        if ($bankAccountId) {
+                            $lines[] = [
+                                'account_id' => $bankAccountId,
+                                'debit' => $recovery->amount,
+                                'credit' => 0,
+                                'description' => $recoveryDesc,
+                                'cost_center_id' => 4,
+                            ];
+                        } else {
+                            // Fallback to a default bank account if not found
+                            $fallbackBank = \App\Models\ChartOfAccount::where('account_code', '1171')->first();
+                            $lines[] = [
+                                'account_id' => $fallbackBank ? $fallbackBank->id : $accounts['cash']->id,
+                                'debit' => $recovery->amount,
+                                'credit' => 0,
+                                'description' => $recoveryDesc . " (Fallback Account)",
+                                'cost_center_id' => 4,
+                            ];
+                        }
+                    }
                 }
             }
 
             // ====================================================================
-            // 2. CHEQUE PAYMENTS (Recovery)
+            // 3. CHEQUE PAYMENTS (Recovery)
             // ====================================================================
+            $chequeTotalsByBank = [];
+            $chequeDetails = [];
+            $totalChequesAmount = 0;
+            $empId = $settlement->employee_id;
+
             foreach ($settlement->cheques as $cheque) {
                 if ($cheque->amount > 0) {
-                    // Use specific bank account if provided, else fallback to HBL Main (1171)
                     $bankAccountId = null;
                     if ($cheque->bank_account_id) {
                         $bankAccount = \App\Models\BankAccount::with('chartOfAccount')->find($cheque->bank_account_id);
@@ -683,24 +768,50 @@ class DistributionService
                         $bankAccountId = $fallbackAccount ? $fallbackAccount->id : $accounts['cash']->id;
                     }
 
-                    // Debit: Bank (Cheque Clearing)
+                    $chequeTotalsByBank[$bankAccountId] = ($chequeTotalsByBank[$bankAccountId] ?? 0) + $cheque->amount;
+                    $totalChequesAmount += $cheque->amount;
+
+                    $amountFormatted = number_format($cheque->amount, 0, '.', '');
+                    $chequeDetails[] = "{$empId}-{$cheque->customer_id}-{$amountFormatted}";
+                }
+            }
+
+            if ($totalChequesAmount > 0) {
+                $chequeDesc = 'Cheque Recoveries: '.implode(', ', $chequeDetails);
+                if (strlen($chequeDesc) > 250) {
+                    $chequeDesc = '';
+                    $count = 0;
+                    foreach ($chequeDetails as $detail) {
+                        $tempDesc = $chequeDesc.($chequeDesc ? ', ' : 'Cheque Recoveries: ').$detail;
+                        if (strlen($tempDesc) > 240) {
+                            $remaining = count($chequeDetails) - $count;
+                            $chequeDesc .= " + $remaining more";
+                            break;
+                        }
+                        $chequeDesc = $tempDesc;
+                        $count++;
+                    }
+                }
+
+                // Debit: Each Bank Account
+                foreach ($chequeTotalsByBank as $bankAccountId => $amount) {
                     $lines[] = [
                         'account_id' => $bankAccountId,
-                        'debit' => $cheque->amount,
+                        'debit' => $amount,
                         'credit' => 0,
-                        'description' => "Cheque Received - {$cheque->bank_name} #{$cheque->cheque_number}",
-                        'cost_center_id' => 4,
-                    ];
-
-                    // Credit: Debtors
-                    $lines[] = [
-                        'account_id' => $accounts['debtors']->id,
-                        'debit' => 0,
-                        'credit' => $cheque->amount,
-                        'description' => 'Cheque Payment - Customer Debt Reduced',
+                        'description' => $chequeDesc,
                         'cost_center_id' => 4,
                     ];
                 }
+
+                // Credit: Debtors (Total for all cheques)
+                $lines[] = [
+                    'account_id' => $accounts['debtors']->id,
+                    'debit' => 0,
+                    'credit' => $totalChequesAmount,
+                    'description' => $chequeDesc,
+                    'cost_center_id' => 4,
+                ];
             }
 
             // ====================================================================
@@ -740,7 +851,12 @@ class DistributionService
             $cashDebit = 0;
             $cashCredit = 0;
 
-            // 4a. Cash Sales Revenue
+            // 4a. Cash Recoveries (From Step 2)
+            if ($totalCashRecoveries > 0) {
+                $cashDebit += $totalCashRecoveries;
+            }
+
+            // 4b. Cash Sales Revenue
             $totalSalesRevenue = $settlement->items->sum('total_sales_value');
             $cashSaleRevenue = $totalSalesRevenue
                 - ($settlement->credit_sales_amount ?? 0)
@@ -757,21 +873,6 @@ class DistributionService
                     'description' => "Cash Sales Revenue - {$employeeName}",
                     'cost_center_id' => 4,
                 ];
-            }
-
-            // 4b. Cash Recoveries
-            foreach ($settlement->creditSales as $creditSale) {
-                if ($creditSale->payment_received > 0) {
-                    $cashDebit += $creditSale->payment_received;
-                    // Credit: Debtors
-                    $lines[] = [
-                        'account_id' => $accounts['debtors']->id,
-                        'debit' => 0,
-                        'credit' => $creditSale->payment_received,
-                        'description' => "Cash Payment from {$creditSale->customer->customer_name}",
-                        'cost_center_id' => 4,
-                    ];
-                }
             }
 
             // 4c. Expenses (Credit Cash)

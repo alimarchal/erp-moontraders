@@ -15,6 +15,7 @@ use App\Models\SalesSettlementCreditSale;
 use App\Models\SalesSettlementExpense;
 use App\Models\SalesSettlementItem;
 use App\Models\SalesSettlementItemBatch;
+use App\Models\SalesSettlementRecovery;
 use App\Models\StockBatch;
 use App\Models\VanStockBalance;
 use App\Services\DistributionService;
@@ -364,6 +365,18 @@ class SalesSettlementController extends Controller
                 }
             }
 
+            // Prepare recoveries details
+            $recoveriesData = [];
+            $totalRecoveries = 0;
+            if ($request->has('recoveries_entries') && is_array($request->recoveries_entries)) {
+                foreach ($request->recoveries_entries as $recovery) {
+                    if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
+                        $recoveriesData[] = $recovery;
+                        $totalRecoveries += floatval($recovery['amount'] ?? 0);
+                    }
+                }
+            }
+
             // Cash Sales Amount is now derived from denominations total
             $cashSalesAmount = $denomTotal;
 
@@ -375,7 +388,7 @@ class SalesSettlementController extends Controller
             // Cash collected is now strictly physical cash from denominations
             $cashCollected = $denomTotal;
 
-            $cashToDeposit = $cashCollected + ($request->credit_recoveries ?? 0) - ($request->expenses_claimed ?? 0);
+            $cashToDeposit = $cashCollected + $totalRecoveries - ($request->expenses_claimed ?? 0);
 
             // Calculate total expenses from the expenses array (dynamic from Alpine.js)
             $totalExpenses = 0;
@@ -400,7 +413,7 @@ class SalesSettlementController extends Controller
                 'cheque_sales_amount' => $totalCheques,
                 'bank_transfer_amount' => $totalBankTransfers,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
-                'credit_recoveries' => $request->credit_recoveries_total ?? 0,
+                'credit_recoveries' => $totalRecoveries,
                 'total_quantity_sold' => $totalQuantitySold,
                 'total_quantity_returned' => $totalQuantityReturned,
                 'total_quantity_shortage' => $totalQuantityShortage,
@@ -582,12 +595,27 @@ class SalesSettlementController extends Controller
                             'employee_id' => $goodsIssue->employee_id,
                             'invoice_number' => $creditSale['invoice_number'] ?? null,
                             'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
-                            'payment_received' => floatval($creditSale['payment_received'] ?? 0),
-                            'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
-                            'new_balance' => floatval($creditSale['new_balance'] ?? 0),
                             'notes' => $creditSale['notes'] ?? null,
                         ]);
                     }
+                }
+            }
+
+            // Create recovery records in sales_settlement_recoveries table
+            if (! empty($recoveriesData)) {
+                foreach ($recoveriesData as $recovery) {
+                    SalesSettlementRecovery::create([
+                        'sales_settlement_id' => $settlement->id,
+                        'customer_id' => $recovery['customer_id'],
+                        'employee_id' => $goodsIssue->employee_id,
+                        'recovery_number' => $recovery['recovery_number'] ?? null,
+                        'payment_method' => $recovery['payment_method'] ?? 'cash',
+                        'bank_account_id' => $recovery['bank_account_id'] ?? null,
+                        'amount' => floatval($recovery['amount'] ?? 0),
+                        'previous_balance' => floatval($recovery['previous_balance'] ?? 0),
+                        'new_balance' => floatval($recovery['new_balance'] ?? 0),
+                        'notes' => $recovery['notes'] ?? null,
+                    ]);
                 }
             }
 
@@ -638,6 +666,7 @@ class SalesSettlementController extends Controller
             'advanceTaxes.customer',
             'expenses.expenseAccount',
             'cheques.bankAccount',
+            'recoveries.customer',
         ]);
 
         return view('sales-settlements.show', [
@@ -665,6 +694,7 @@ class SalesSettlementController extends Controller
             'items.product',
             'items.batches',
             'creditSales.customer',
+            'recoveries.customer',
             'advanceTaxes',
             'expenses',
         ]);
@@ -778,6 +808,14 @@ class SalesSettlementController extends Controller
                 }
             }
 
+            // Prepare recovery totals
+            $totalRecoveries = 0;
+            if ($request->has('recoveries_entries') && is_array($request->recoveries_entries)) {
+                foreach ($request->recoveries_entries as $recovery) {
+                    $totalRecoveries += floatval($recovery['amount'] ?? 0);
+                }
+            }
+
             // Cash Sales Amount is now derived from denominations total
             $cashSalesAmount = $denomTotal;
 
@@ -789,7 +827,7 @@ class SalesSettlementController extends Controller
             // Cash collected is now strictly physical cash from denominations
             $cashCollected = $denomTotal;
 
-            $cashToDeposit = $cashCollected + ($request->credit_recoveries ?? 0) - ($request->expenses_claimed ?? 0);
+            $cashToDeposit = $cashCollected + $totalRecoveries - ($request->expenses_claimed ?? 0);
 
             // Update sales settlement
             $salesSettlement->update([
@@ -805,7 +843,7 @@ class SalesSettlementController extends Controller
                 'cheque_sales_amount' => $totalCheques,
                 'bank_transfer_amount' => $totalBankTransfers,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
-                'credit_recoveries' => $request->credit_recoveries ?? 0,
+                'credit_recoveries' => $totalRecoveries,
                 'total_quantity_sold' => $totalQuantitySold,
                 'total_quantity_returned' => $totalQuantityReturned,
                 'total_quantity_shortage' => $totalQuantityShortage,
@@ -818,9 +856,10 @@ class SalesSettlementController extends Controller
                 'notes' => $request->notes,
             ]);
 
-            // Delete old items and create new ones
+            // Delete old items and related records
             $salesSettlement->items()->delete();
             $salesSettlement->creditSales()->delete();
+            $salesSettlement->recoveries()->delete();
             $salesSettlement->cashDenominations()->delete();
             $salesSettlement->expenses()->delete();
             $salesSettlement->bankTransfers()->delete();
@@ -841,6 +880,7 @@ class SalesSettlementController extends Controller
                 'total_amount' => $denomTotal,
             ]);
 
+            // Create settlement items with batch breakdown
             foreach ($request->items as $index => $item) {
                 $financials = $itemFinancials[$index] ?? [
                     'total_cogs' => 0,
@@ -916,9 +956,6 @@ class SalesSettlementController extends Controller
                 }
             }
 
-            // NOTE: Credit sales are tracked in customer_employee_account_transactions
-            // created when settlement is posted via LedgerService
-
             // Create advance tax breakdown records if any
             if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
                 foreach ($request->advance_taxes as $advanceTax) {
@@ -933,22 +970,6 @@ class SalesSettlementController extends Controller
                     ]);
                 }
             }
-
-            // Create cash denomination record
-            SalesSettlementCashDenomination::create([
-                'sales_settlement_id' => $salesSettlement->id,
-                'denom_5000' => $request->denom_5000 ?? 0,
-                'denom_1000' => $request->denom_1000 ?? 0,
-                'denom_500' => $request->denom_500 ?? 0,
-                'denom_100' => $request->denom_100 ?? 0,
-                'denom_50' => $request->denom_50 ?? 0,
-                'denom_20' => $request->denom_20 ?? 0,
-                'denom_10' => $request->denom_10 ?? 0,
-                'denom_coins' => $request->denom_coins ?? 0,
-            ]);
-
-            // Delete old expenses and create new ones
-            $salesSettlement->expenses()->delete();
 
             // Create expense records in sales_settlement_expenses table (store ALL expenses including zero amounts)
             if (! empty($request->expenses) && is_array($request->expenses)) {
@@ -966,9 +987,6 @@ class SalesSettlementController extends Controller
                 }
             }
 
-            // Delete old bank transfers and create new ones
-            $salesSettlement->bankTransfers()->delete();
-
             // Create credit sales records
             if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
                 foreach ($request->credit_sales as $creditSale) {
@@ -979,10 +997,27 @@ class SalesSettlementController extends Controller
                             'employee_id' => $goodsIssue->employee_id,
                             'invoice_number' => $creditSale['invoice_number'] ?? null,
                             'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
-                            'payment_received' => floatval($creditSale['payment_received'] ?? 0),
-                            'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
-                            'new_balance' => floatval($creditSale['new_balance'] ?? 0),
                             'notes' => $creditSale['notes'] ?? null,
+                        ]);
+                    }
+                }
+            }
+
+            // Create recovery records
+            if (! empty($request->recoveries_entries) && is_array($request->recoveries_entries)) {
+                foreach ($request->recoveries_entries as $recovery) {
+                    if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
+                        SalesSettlementRecovery::create([
+                            'sales_settlement_id' => $salesSettlement->id,
+                            'customer_id' => $recovery['customer_id'],
+                            'employee_id' => $goodsIssue->employee_id,
+                            'recovery_number' => $recovery['recovery_number'] ?? null,
+                            'payment_method' => $recovery['payment_method'] ?? 'cash',
+                            'bank_account_id' => $recovery['bank_account_id'] ?? null,
+                            'amount' => floatval($recovery['amount'] ?? 0),
+                            'previous_balance' => floatval($recovery['previous_balance'] ?? 0),
+                            'new_balance' => floatval($recovery['new_balance'] ?? 0),
+                            'notes' => $recovery['notes'] ?? null,
                         ]);
                     }
                 }
@@ -994,17 +1029,15 @@ class SalesSettlementController extends Controller
                         SalesSettlementBankTransfer::create([
                             'sales_settlement_id' => $salesSettlement->id,
                             'bank_account_id' => $transfer['bank_account_id'],
+                            'customer_id' => $transfer['customer_id'] ?? null,
                             'amount' => floatval($transfer['amount'] ?? 0),
                             'reference_number' => $transfer['reference_number'] ?? null,
-                            'transfer_date' => $request->settlement_date,
+                            'transfer_date' => $transfer['transfer_date'] ?? $request->settlement_date,
                             'notes' => $transfer['notes'] ?? null,
                         ]);
                     }
                 }
             }
-
-            // Delete old cheques and create new ones
-            $salesSettlement->cheques()->delete();
 
             if ($request->has('cheques') && is_array($request->cheques)) {
                 foreach ($request->cheques as $cheque) {
@@ -1199,72 +1232,6 @@ class SalesSettlementController extends Controller
         $settlement->save();
     }
 
-    /**
-     * Post sales settlement to record sales and update inventory
-     *
-     * TODO: Chart of Accounts (COA) Integration for Complete Accounting
-     * ================================================================
-     * When posting a sales settlement, the following journal entries should be created:
-     *
-     * 1. SALES REVENUE RECOGNITION:
-     *    Dr. Cash / Accounts Receivable (Customer)  [Total Sales]
-     *        Cr. Sales Revenue                      [Total Sales Value]
-     *        Cr. Sales Tax Payable                  [If applicable]
-     *
-     * 2. COST OF GOODS SOLD (COGS):
-     *    Dr. Cost of Goods Sold                     [Total COGS]
-     *        Cr. Inventory                          [Reduce inventory at cost]
-     *
-     * 3. CASH RECONCILIATION:
-     *    Dr. Cash in Hand                           [Denomination breakdown total]
-     *    Dr. Cash at Bank                           [Bank transfer amount]
-     *    Dr. Cheques Receivable                     [Cheque details total]
-     *        Cr. Cash / AR (from sales above)       [Match against sales]
-     *
-     * 4. EXPENSE RECOGNITION:
-     *    Dr. Toll Tax Expense                       [expense_toll_tax]
-     *    Dr. AMR Powder Claim Expense               [expense_amr_powder_claim]
-     *    Dr. AMR Liquid Claim Expense               [expense_amr_liquid_claim]
-     *    Dr. Scheme Expense                         [expense_scheme]
-     *    Dr. Advance Tax Expense                    [expense_advance_tax]
-     *    Dr. Food Charges Expense                   [expense_food_charges]
-     *    Dr. Salesman Charges Expense               [expense_salesman_charges]
-     *    Dr. Loader Charges Expense                 [expense_loader_charges]
-     *    Dr. Percentage Expense                     [expense_percentage]
-     *    Dr. Miscellaneous Expense                  [expense_miscellaneous_amount]
-     *        Cr. Cash in Hand                       [Total expenses claimed]
-     *
-     * 5. CREDIT SALES (AR) TRACKING:
-     *    For each credit sale record:
-     *    Dr. Accounts Receivable - Customer         [sale_amount]
-     *        Cr. Sales Revenue                      [Already recorded above]
-     *
-     * 6. CREDIT RECOVERIES:
-     *    Dr. Cash in Hand                           [credit_recoveries]
-     *        Cr. Accounts Receivable - Customer     [Reduce AR balance]
-     *
-     * 7. BANK/CHEQUE DETAILS:
-     *    For bank transfers:
-     *    Dr. Bank Account [bank_account_id]         [bank_transfer_amount]
-     *        Cr. Cash in Hand                       [Transfer from cash]
-     *
-     *    For cheques:
-     *    Dr. Cheques in Hand                        [cheques_collected]
-     *        Cr. Cash/AR                            [From customer payments]
-     *
-     * 8. SALESMAN ANALYSIS TRACKING:
-     *    - Track per-salesman daily performance
-     *    - Record BF (Brought Forward) balances
-     *    - Maintain salesman-wise product movement
-     *    - Store data for reports/analytics
-     *
-     * IMPLEMENTATION NOTES:
-     * - Use AccountingService->createJournalEntry() for double-entry posting
-     * - Ensure all debits equal all credits (accounting equation balance)
-     * - Link journal_entry_id back to sales_settlement record
-     * - Store cost_center_id for departmental accounting if applicable
-     * - Create detailed audit trail with all COA account references
-     */
     public function post(SalesSettlement $salesSettlement)
     {
         if ($salesSettlement->status !== 'draft') {

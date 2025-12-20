@@ -141,35 +141,35 @@ $bankAccounts = $bankAccounts instanceof \Illuminate\Support\Collection ? $bankA
                     <table class="min-w-full text-sm">
                         <thead class="bg-gray-100">
                             <tr>
-                                <th class="px-3 py-2 text-left text-gray-700">S.No</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Customer Name</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Cheque Number</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Bank Name</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Deposit Bank</th>
-                                <th class="px-3 py-2 text-left text-gray-700">Cheque Date</th>
-                                <th class="px-3 py-2 text-right text-gray-700">Amount (₨)</th>
-                                <th class="px-3 py-2 text-center text-gray-700">Action</th>
+                                <th class="px-2 py-1 text-left text-gray-700">S.No</th>
+                                <th class="px-2 py-1 text-left text-gray-700">Customer Name</th>
+                                <th class="px-2 py-1 text-left text-gray-700">Cheque Number</th>
+                                <th class="px-2 py-1 text-left text-gray-700">Bank Name</th>
+                                <th class="px-2 py-1 text-left text-gray-700">Deposit Bank</th>
+                                <th class="px-2 py-1 text-left text-gray-700">Cheque Date</th>
+                                <th class="px-2 py-1 text-right text-gray-700">Amount (₨)</th>
+                                <th class="px-2 py-1 text-center text-gray-700">Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             <template x-if="entries.length === 0">
                                 <tr>
-                                    <td colspan="8" class="px-3 py-4 text-center text-gray-500 italic">
+                                    <td colspan="8" class="px-2 py-4 text-center text-gray-500 italic">
                                         No cheque payment entries added yet.
                                     </td>
                                 </tr>
                             </template>
                             <template x-for="(entry, index) in entries" :key="index">
                                 <tr class="border-t border-gray-200 hover:bg-gray-50 transition-colors">
-                                    <td class="px-3 py-2 font-semibold text-gray-700" x-text="index + 1"></td>
-                                    <td class="px-3 py-2 text-gray-800" x-text="entry.customer_name"></td>
-                                    <td class="px-3 py-2 text-gray-800" x-text="entry.cheque_number"></td>
-                                    <td class="px-3 py-2 text-gray-800" x-text="entry.bank_name"></td>
-                                    <td class="px-3 py-2 text-gray-800" x-text="entry.bank_account_name"></td>
-                                    <td class="px-3 py-2 text-gray-800" x-text="formatDate(entry.cheque_date)"></td>
-                                    <td class="px-3 py-2 text-right font-semibold text-purple-700"
+                                    <td class="px-2 py-1.5 font-semibold text-gray-700" x-text="index + 1"></td>
+                                    <td class="px-2 py-1.5 text-gray-800" x-text="entry.customer_name"></td>
+                                    <td class="px-2 py-1.5 text-gray-800" x-text="entry.cheque_number"></td>
+                                    <td class="px-2 py-1.5 text-gray-800" x-text="entry.bank_name"></td>
+                                    <td class="px-2 py-1.5 text-gray-800" x-text="entry.bank_account_name"></td>
+                                    <td class="px-2 py-1.5 text-gray-800" x-text="formatDate(entry.cheque_date)"></td>
+                                    <td class="px-2 py-1.5 text-right font-semibold text-purple-700"
                                         x-text="formatCurrency(entry.amount)"></td>
-                                    <td class="px-3 py-2 text-center">
+                                    <td class="px-2 py-1.5 text-center">
                                         <button type="button" @click="removeEntry(index)"
                                             class="text-red-600 hover:text-red-800 text-xs font-semibold">
                                             Delete
@@ -180,10 +180,10 @@ $bankAccounts = $bankAccounts instanceof \Illuminate\Support\Collection ? $bankA
                         </tbody>
                         <tfoot class="bg-purple-50 border-t-2 border-purple-200">
                             <tr>
-                                <td colspan="6" class="px-3 py-2 text-right font-bold text-purple-900">Grand Total</td>
-                                <td class="px-3 py-2 text-right font-bold text-purple-900"
+                                <td colspan="6" class="px-2 py-2 text-right font-bold text-purple-900">Grand Total</td>
+                                <td class="px-2 py-2 text-right font-bold text-purple-900"
                                     x-text="formatCurrency(total)"></td>
-                                <td class="px-3 py-2"></td>
+                                <td class="px-2 py-2"></td>
                             </tr>
                         </tfoot>
                     </table>

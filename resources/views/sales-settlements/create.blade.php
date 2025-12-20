@@ -131,8 +131,8 @@
                                 Cash Reconciliation & Settlement
                             </h3>
 
-                            {{-- ROW 1: Credit Sales Detail | Cheque Payments | Bank Transfers --}}
-                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 items-start">
+                            {{-- ROW 1: Credit Sales Detail | Recoveries Detail | Cheque Payments | Bank Transfers --}}
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6 items-start">
                                 {{-- Credit Sales Detail Card --}}
                                 <div class="bg-white rounded-lg border border-orange-300 overflow-hidden"
                                     x-data="creditSalesDisplay()">
@@ -150,15 +150,13 @@
                                                 <tr class="border-b-2 border-gray-300">
                                                     <th class="py-1 px-1 text-left text-black">Customer</th>
                                                     <th class="py-1 px-1 text-right text-black">Sale</th>
-                                                    <th class="py-1 px-1 text-right text-black" title="Recovery">REC
-                                                    </th>
                                                     <th class="py-1 px-1 text-right text-black"
                                                         title="Balance with this Salesman">BAL</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="creditSalesTableBody">
                                                 <tr>
-                                                    <td colspan="4"
+                                                    <td colspan="3"
                                                         class="py-2 px-1 text-center text-black text-xs italic">
                                                         No credit sales entries
                                                     </td>
@@ -171,10 +169,48 @@
                                                         Total:</td>
                                                     <td class="py-1.5 px-1 text-right font-bold text-orange-700 text-xs"
                                                         id="creditSalesTotalDisplay">0</td>
-                                                    <td class="py-1.5 px-1 text-right font-bold text-green-700 text-xs"
-                                                        id="creditRecoveryTotalDisplay">0</td>
                                                     <td class="py-1.5 px-1 text-right font-bold text-blue-700 text-xs"
                                                         id="creditBalanceTotalDisplay">0</td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                {{-- Recoveries Detail Card --}}
+                                <div class="bg-white rounded-lg border border-green-300 overflow-hidden"
+                                    x-data="recoveriesDisplay()">
+                                    <div
+                                        class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2 flex justify-between items-center">
+                                        <h4 class="text-sm font-bold text-white">Recoveries Detail</h4>
+                                        <button type="button" @click="openModal()"
+                                            class="text-xs bg-white text-green-600 px-2 py-0.5 rounded font-semibold hover:bg-green-50">
+                                            + Add More
+                                        </button>
+                                    </div>
+                                    <div class="p-0">
+                                        <table class="w-full text-xs">
+                                            <thead>
+                                                <tr class="border-b-2 border-gray-300">
+                                                    <th class="py-1 px-1 text-left text-black">Customer</th>
+                                                    <th class="py-1 px-1 text-right text-black">Recovery</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="recoveriesTableBody">
+                                                <tr>
+                                                    <td colspan="2"
+                                                        class="py-2 px-1 text-center text-black text-xs italic">
+                                                        No recovery entries
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot class="border-t-2 border-gray-300">
+                                                <tr class="bg-green-50">
+                                                    <td
+                                                        class="py-1.5 px-1 text-right font-semibold text-green-900 text-xs">
+                                                        Total:</td>
+                                                    <td class="py-1.5 px-1 text-right font-bold text-green-700 text-xs"
+                                                        id="creditRecoveryTotalDisplay">0</td>
                                                 </tr>
                                             </tfoot>
                                         </table>
@@ -386,6 +422,8 @@
                                             value="0.00" />
                                         <input type="hidden" id="credit_recoveries_total" name="credit_recoveries_total"
                                             value="0.00" />
+                                        <input type="hidden" id="recoveries_entries" name="recoveries_entries"
+                                            value="[]" />
                                         <input type="hidden" id="total_bank_transfers" name="total_bank_transfers"
                                             value="0.00" />
                                         <input type="hidden" id="total_cheques" name="total_cheques" value="0.00" />
@@ -627,6 +665,8 @@
                                         <x-cheque-payment-modal :customers="$customers" :bankAccounts="$bankAccounts"
                                             entriesInputId="cheques" />
                                         <x-credit-sales-modal :customers="$customers" entriesInputId="credit_sales" />
+                                        <x-recoveries-modal :customers="$customers" :bankAccounts="$bankAccounts"
+                                            entriesInputId="recoveries_entries" />
                                     </div>
                                 </div>
                             </div>
@@ -809,7 +849,7 @@
                             // Silently handle error
                         });
                 @endif
-                                                        });
+                                                                                });
 
 
             // Track which field was last changed for smart auto-adjustment
@@ -1401,16 +1441,16 @@
                             let hiddenFieldsContainer = document.createElement('div');
                             hiddenFieldsContainer.className = 'hidden-fields-container';
                             hiddenFieldsContainer.innerHTML = `
-                                                                    <input type="hidden" name="items[${index}][goods_issue_item_id]" value="${item.id}">
-                                                                    <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
-                                                                    <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
-                                                                    <input type="hidden" name="items[${index}][bf_quantity]" value="${item.bf_quantity || 0}">
-                                                                    <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
-                                                                    <input type="hidden" name="items[${index}][selling_price]" value="${avgSellingPrice}">
-                                                                    <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="0">
-                                                                    <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="0">
-                                                                    <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="0">
-                                                                `;
+                                                                                            <input type="hidden" name="items[${index}][goods_issue_item_id]" value="${item.id}">
+                                                                                            <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
+                                                                                            <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
+                                                                                            <input type="hidden" name="items[${index}][bf_quantity]" value="${item.bf_quantity || 0}">
+                                                                                            <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
+                                                                                            <input type="hidden" name="items[${index}][selling_price]" value="${avgSellingPrice}">
+                                                                                            <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="0">
+                                                                                            <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="0">
+                                                                                            <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="0">
+                                                                                        `;
 
                             // Get B/F quantity for this item (from van stock)
                             const itemBfQuantity = parseFloat(item.bf_quantity) || 0;
@@ -1427,84 +1467,84 @@
                                     const uomSymbol = (item.uom && item.uom.symbol) ? item.uom.symbol : 'N/A';
 
                                     const settlementRow = `
-                                                                            <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                                                                <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
-                                                                                    <div class="font-semibold text-gray-900 break-words">${productName}</div>
-                                                                                    <div class="text-xs text-gray-500 break-words">
-                                                                                        ${productCode}<br>Batch: ${batch.batch_code}
-                                                                                        ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
-                                                                                    </div>
-                                                                                </td>
-                                                                                <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
-                                                                                    <div class="text-xs text-gray-600">
-                                                                                        ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
-                                                                                    </div>
-                                                                                </td>
-                                                                                <td class="py-1 px-1 text-right">
-                                                                                    <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
-                                                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
-                                                                                </td>
-                                                                                <td class="py-1 px-1 text-right">
-                                                                                    <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
-                                                                                    <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
-                                                                                </td>
-                                                                                <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
-                                                                                <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', { minimumFractionDigits: 2 })}</td>
-                                                                                <td class="py-1 px-1 text-right">
-                                                                                    <input type="number"
-                                                                                        name="items[${index}][batches][${batchIdx}][quantity_sold]"
-                                                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                                                                        data-item-index="${index}"
-                                                                                        data-batch-index="${batchIdx}"
-                                                                                        data-type="sold"
-                                                                                        data-bf-quantity="${batchBfQuantity}"
-                                                                                        min="0"
-                                                                                        step="1"
-                                                                                        value="0"
-                                                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'sold')">
-                                                                                </td>
-                                                                                <td class="py-1 px-1 text-right">
-                                                                                    <input type="number"
-                                                                                        name="items[${index}][batches][${batchIdx}][quantity_returned]"
-                                                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                                                                        data-item-index="${index}"
-                                                                                        data-batch-index="${batchIdx}"
-                                                                                        data-type="returned"
-                                                                                        min="0"
-                                                                                        step="1"
-                                                                                        value="0"
-                                                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'returned')">
-                                                                                </td>
-                                                                                <td class="py-1 px-1 text-right">
-                                                                                    <input type="number"
-                                                                                        name="items[${index}][batches][${batchIdx}][quantity_shortage]"
-                                                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                                                                        data-item-index="${index}"
-                                                                                        data-batch-index="${batchIdx}"
-                                                                                        data-type="shortage"
-                                                                                        min="0"
-                                                                                        step="1"
-                                                                                        value="0"
-                                                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
-                                                                                </td>
-                                                                                <td class="py-1 px-1 text-right">
-                                                                                    <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${parseFloat(batch.quantity) + batchBfQuantity}</span>
-                                                                                </td>
-                                                                            </tr>
-                                                                        `;
+                                                                                                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                                                                                        <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
+                                                                                                            <div class="font-semibold text-gray-900 break-words">${productName}</div>
+                                                                                                            <div class="text-xs text-gray-500 break-words">
+                                                                                                                ${productCode}<br>Batch: ${batch.batch_code}
+                                                                                                                ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
+                                                                                                            </div>
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
+                                                                                                            <div class="text-xs text-gray-600">
+                                                                                                                ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
+                                                                                                            </div>
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-1 text-right">
+                                                                                                            <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
+                                                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-1 text-right">
+                                                                                                            <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
+                                                                                                            <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                                                                                        <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', { minimumFractionDigits: 2 })}</td>
+                                                                                                        <td class="py-1 px-1 text-right">
+                                                                                                            <input type="number"
+                                                                                                                name="items[${index}][batches][${batchIdx}][quantity_sold]"
+                                                                                                                class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                                                                                data-item-index="${index}"
+                                                                                                                data-batch-index="${batchIdx}"
+                                                                                                                data-type="sold"
+                                                                                                                data-bf-quantity="${batchBfQuantity}"
+                                                                                                                min="0"
+                                                                                                                step="1"
+                                                                                                                value="0"
+                                                                                                                oninput="calculateBatchBalance(${index}, ${batchIdx}, 'sold')">
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-1 text-right">
+                                                                                                            <input type="number"
+                                                                                                                name="items[${index}][batches][${batchIdx}][quantity_returned]"
+                                                                                                                class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                                                                                data-item-index="${index}"
+                                                                                                                data-batch-index="${batchIdx}"
+                                                                                                                data-type="returned"
+                                                                                                                min="0"
+                                                                                                                step="1"
+                                                                                                                value="0"
+                                                                                                                oninput="calculateBatchBalance(${index}, ${batchIdx}, 'returned')">
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-1 text-right">
+                                                                                                            <input type="number"
+                                                                                                                name="items[${index}][batches][${batchIdx}][quantity_shortage]"
+                                                                                                                class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                                                                                data-item-index="${index}"
+                                                                                                                data-batch-index="${batchIdx}"
+                                                                                                                data-type="shortage"
+                                                                                                                min="0"
+                                                                                                                step="1"
+                                                                                                                value="0"
+                                                                                                                oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-1 text-right">
+                                                                                                            <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${parseFloat(batch.quantity) + batchBfQuantity}</span>
+                                                                                                        </td>
+                                                                                                    </tr>
+                                                                                                `;
                                     settlementItemsBody.innerHTML += settlementRow;
 
                                     // Create batch-level hidden fields container (outside table)
                                     const batchHiddenFields = document.createElement('div');
                                     batchHiddenFields.className = 'batch-hidden-fields';
                                     batchHiddenFields.innerHTML = `
-                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
-                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
-                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
-                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
-                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
-                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
-                                                                        `;
+                                                                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
+                                                                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
+                                                                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
+                                                                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
+                                                                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
+                                                                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
+                                                                                                `;
                                     document.getElementById('settlementForm').appendChild(batchHiddenFields);
 
                                     // Add product-level hidden fields only once (on first batch)
@@ -1617,28 +1657,28 @@
 
                         if (this.entries.length === 0) {
                             tbody.innerHTML = `
-                                                                            <tr>
-                                                                                <td colspan="3" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                                                                    No credit sales entries added yet
-                                                                                </td>
-                                                                            </tr>
-                                                                        `;
+                                                                                                    <tr>
+                                                                                                        <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                            No credit sales entries added yet
+                                                                                                        </td>
+                                                                                                    </tr>
+                                                                                                `;
                         } else {
                             this.entries.forEach((entry, index) => {
                                 const row = document.createElement('tr');
                                 row.className = 'border-b border-gray-200';
                                 row.innerHTML = `
-                                                                                <td class="py-1 px-2 text-xs">
-                                                                                    <div class="font-semibold text-gray-800">${entry.customer_name}</div>
-                                                                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
-                                                                                </td>
-                                                                                <td class="py-1 px-2 text-right text-xs font-semibold text-orange-700">
-                                                                                    ₨ ${parseFloat(entry.sale_amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                                                                                </td>
-                                                                                <td class="py-1 px-2 text-right text-xs font-semibold text-green-700">
-                                                                                    ₨ ${parseFloat(entry.payment_received).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                                                                                </td>
-                                                                            `;
+                                                                                                        <td class="py-1 px-2 text-xs">
+                                                                                                            <div class="font-semibold text-gray-800">${entry.customer_name}</div>
+                                                                                                            ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-right text-xs font-semibold text-orange-700">
+                                                                                                            ₨ ${parseFloat(entry.sale_amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
+                                                                                                            ₨ ${parseFloat(entry.new_balance).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                        </td>
+                                                                                                    `;
                                 tbody.appendChild(row);
                             });
                         }
@@ -1647,6 +1687,73 @@
                     init() {
                         // Listen for updates from the modal
                         window.addEventListener('credit-sales-updated', () => {
+                            this.updateDisplay();
+                        });
+
+                        // Initial load
+                        this.updateDisplay();
+                    }
+                }
+            }
+
+            // Alpine.js component for Recoveries Display
+            function recoveriesDisplay() {
+                return {
+                    entries: [],
+
+                    openModal() {
+                        window.dispatchEvent(new CustomEvent('open-recoveries-modal'));
+                    },
+
+                    updateDisplay() {
+                        const tbody = document.getElementById('recoveriesTableBody');
+                        if (!tbody) return;
+
+                        // Get entries from hidden input
+                        const entriesInput = document.getElementById('recoveries_entries');
+
+                        if (entriesInput && entriesInput.value) {
+                            try {
+                                this.entries = JSON.parse(entriesInput.value);
+                            } catch (e) {
+                                this.entries = [];
+                            }
+                        } else {
+                            this.entries = [];
+                        }
+
+                        // Clear and rebuild table
+                        tbody.innerHTML = '';
+
+                        if (this.entries.length === 0) {
+                            tbody.innerHTML = `
+                                                                                                    <tr>
+                                                                                                        <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                            No recovery entries added yet
+                                                                                                        </td>
+                                                                                                    </tr>
+                                                                                                `;
+                        } else {
+                            this.entries.forEach((entry, index) => {
+                                const row = document.createElement('tr');
+                                row.className = 'border-b border-gray-200';
+                                row.innerHTML = `
+                                                                                                        <td class="py-1 px-2 text-xs">
+                                                                                                            <div class="font-semibold text-gray-800">${entry.customer_name}</div>
+                                                                                                            ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-right text-xs font-semibold text-green-700">
+                                                                                                            ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                        </td>
+                                                                                                    `;
+                                tbody.appendChild(row);
+                            });
+                        }
+                    },
+
+                    init() {
+                        // Listen for updates from the modal
+                        window.addEventListener('recoveries-updated', () => {
                             this.updateDisplay();
                         });
 
@@ -1687,27 +1794,27 @@
 
                         if (this.entries.length === 0) {
                             tbody.innerHTML = `
-                                                                            <tr>
-                                                                                <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                                                                    No bank transfer entries added yet
-                                                                                </td>
-                                                                            </tr>
-                                                                        `;
+                                                                                                    <tr>
+                                                                                                        <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                            No bank transfer entries added yet
+                                                                                                        </td>
+                                                                                                    </tr>
+                                                                                                `;
                         } else {
                             this.entries.forEach((entry, index) => {
                                 const row = document.createElement('tr');
                                 row.className = 'border-b border-gray-200';
                                 row.innerHTML = `
-                                                                                <td class="py-1 px-2 text-xs">
-                                                                                    <div class="font-semibold text-gray-800">${entry.bank_account_name || 'Unknown Account'}</div>
-                                                                                    <div class="text-xs text-gray-500">Date: ${entry.transfer_date || 'N/A'}</div>
-                                                                                    ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
-                                                                                    ${entry.reference_number ? `<div class="text-xs text-gray-500">Ref: ${entry.reference_number}</div>` : ''}
-                                                                                </td>
-                                                                                <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
-                                                                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                                                                                </td>
-                                                                            `;
+                                                                                                        <td class="py-1 px-2 text-xs">
+                                                                                                            <div class="font-semibold text-gray-800">${entry.bank_account_name || 'Unknown Account'}</div>
+                                                                                                            <div class="text-xs text-gray-500">Date: ${entry.transfer_date || 'N/A'}</div>
+                                                                                                            ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
+                                                                                                            ${entry.reference_number ? `<div class="text-xs text-gray-500">Ref: ${entry.reference_number}</div>` : ''}
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
+                                                                                                            ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                        </td>
+                                                                                                    `;
                                 tbody.appendChild(row);
                             });
                         }
@@ -1756,26 +1863,29 @@
 
                         if (this.entries.length === 0) {
                             tbody.innerHTML = `
-                                                                            <tr>
-                                                                                <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                                                                    No cheque payment entries added yet
-                                                                                </td>
-                                                                            </tr>
-                                                                        `;
+                                                                                                    <tr>
+                                                                                                        <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                            No cheque payment entries added yet
+                                                                                                        </td>
+                                                                                                    </tr>
+                                                                                                `;
                         } else {
                             this.entries.forEach((entry, index) => {
                                 const row = document.createElement('tr');
                                 row.className = 'border-b border-gray-200';
                                 row.innerHTML = `
-                                                                                <td class="py-1 px-2 text-xs">
-                                                                                    <div class="font-semibold text-gray-800">Cheque #${entry.cheque_number || 'N/A'}</div>
-                                                                                    <div class="text-xs text-gray-500">${entry.bank_name || ''} - ${entry.cheque_date || ''}</div>
-                                                                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
-                                                                                </td>
-                                                                                <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
-                                                                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                                                                                </td>
-                                                                            `;
+                                                                                                        <td class="py-1 px-2 text-xs">
+                                                                                                            <div class="font-semibold text-gray-800">Cheque #${entry.cheque_number || 'N/A'}</div>
+
+                                                                                                            ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-xs">
+                                                                                                            <div class="text-xs text-gray-500">${entry.bank_name || ''} - ${entry.cheque_date || ''}</div>
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
+                                                                                                            ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                        </td>
+                                                                                                    `;
                                 tbody.appendChild(row);
                             });
                         }

@@ -144,6 +144,7 @@ class LedgerService
                 'bankTransfers.bankAccount',
                 'expenses.expenseAccount',
                 'advanceTaxes',
+                'recoveries.customer',
             ]);
 
             // ========================================
@@ -253,6 +254,30 @@ class LedgerService
                         'debit' => 0,
                         'credit' => $transfer->amount,
                         'payment_method' => 'bank_transfer',
+                    ]);
+                    $results['customer_employee_transactions'][] = $result;
+                }
+            }
+
+            // ========================================
+            // 4. RECOVERIES (Payments against old balances) - Customer Sub-Ledger
+            // ========================================
+            foreach ($settlement->recoveries as $recovery) {
+                if ($recovery->amount > 0 && $recovery->customer_id) {
+                    $methodLabel = $recovery->payment_method === 'cash' ? 'Cash' : 'Bank Transfer';
+                    $result = $this->recordCustomerEmployeeTransaction([
+                        'customer_id' => $recovery->customer_id,
+                        'employee_id' => $recovery->employee_id ?? $settlement->employee_id,
+                        'transaction_date' => $settlement->settlement_date,
+                        'transaction_type' => 'recovery',
+                        'reference_number' => $recovery->recovery_number ?? $settlement->settlement_number,
+                        'sales_settlement_id' => $settlement->id,
+                        'description' => "Recovery via {$methodLabel} - Ref: ".($recovery->recovery_number ?? 'N/A'),
+                        'debit' => 0,
+                        'credit' => $recovery->amount,
+                        'payment_method' => $recovery->payment_method,
+                        'bank_account_id' => $recovery->bank_account_id,
+                        'notes' => $recovery->notes,
                     ]);
                     $results['customer_employee_transactions'][] = $result;
                 }

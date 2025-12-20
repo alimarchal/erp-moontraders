@@ -74,16 +74,10 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Credit Sale (₨)</label>
                         <input type="number" min="0" step="0.01" x-model="form.sale_amount"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500 text-right"
-                            placeholder="0.00" @keydown.enter.prevent="addEntry()" />
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Recovery (₨)</label>
-                        <input type="number" min="0" step="0.01" x-model="form.payment_received"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500 text-right"
                             placeholder="0.00" @keydown.enter.prevent="addEntry()" />
                     </div>
@@ -142,55 +136,50 @@
                             <table class="min-w-full text-sm">
                                 <thead class="bg-gray-100 border-b border-gray-200">
                                     <tr>
-                                        <th class="px-3 py-2 text-left text-gray-700 font-semibold">#</th>
-                                        <th class="px-3 py-2 text-left text-gray-700 font-semibold">Customer</th>
-                                        <th class="px-3 py-2 text-center text-gray-700 font-semibold">Invoice #</th>
-                                        <th class="px-3 py-2 text-right text-gray-700 font-semibold">Prev. Balance</th>
-                                        <th class="px-3 py-2 text-right text-gray-700 font-semibold">Credit Sale</th>
-                                        <th class="px-3 py-2 text-right text-gray-700 font-semibold">Recovery</th>
-                                        <th class="px-3 py-2 text-right text-gray-700 font-semibold">New Balance</th>
-                                        <th class="px-3 py-2 text-left text-gray-700 font-semibold">Notes</th>
-                                        <th class="px-3 py-2 text-center text-gray-700 font-semibold">Action</th>
+                                        <th class="px-2 py-1 text-left text-gray-700 font-semibold">#</th>
+                                        <th class="px-2 py-1 text-left text-gray-700 font-semibold">Customer</th>
+                                        <th class="px-2 py-1 text-center text-gray-700 font-semibold">Invoice #</th>
+                                        <th class="px-2 py-1 text-right text-gray-700 font-semibold">Prev. Balance</th>
+                                        <th class="px-2 py-1 text-right text-gray-700 font-semibold">Credit Sale</th>
+                                        <th class="px-2 py-1 text-right text-gray-700 font-semibold">New Balance</th>
+                                        <th class="px-2 py-1 text-left text-gray-700 font-semibold">Notes</th>
+                                        <th class="px-2 py-1 text-center text-gray-700 font-semibold">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <template x-for="(entry, index) in entries" :key="index">
                                         <tr class="hover:bg-gray-50 transition-colors">
-                                            <td class="px-3 py-3">
+                                            <td class="px-2 py-1.5">
                                                 <span
                                                     class="inline-flex items-center justify-center w-6 h-6 bg-orange-100 text-orange-800 text-xs font-bold rounded-full"
                                                     x-text="index + 1"></span>
                                             </td>
-                                            <td class="px-3 py-3">
+                                            <td class="px-2 py-1.5">
                                                 <div class="font-semibold text-gray-900" x-text="entry.customer_name">
                                                 </div>
                                                 <div class="text-xs text-gray-500">Customer ID: #<span
                                                         x-text="entry.customer_id"></span></div>
                                             </td>
-                                            <td class="px-3 py-3 text-center">
+                                            <td class="px-2 py-1.5 text-center">
                                                 <span class="font-mono text-sm font-semibold text-orange-700"
                                                     x-text="entry.invoice_number"></span>
                                             </td>
-                                            <td class="px-3 py-3 text-right">
+                                            <td class="px-2 py-1.5 text-right">
                                                 <span class="font-semibold text-gray-700"
                                                     x-text="formatCurrency(entry.previous_balance)"></span>
                                             </td>
-                                            <td class="px-3 py-3 text-right">
+                                            <td class="px-2 py-1.5 text-right">
                                                 <span class="font-bold text-orange-700 bg-orange-50 px-2 py-1 rounded"
                                                     x-text="formatCurrency(entry.sale_amount)"></span>
                                             </td>
-                                            <td class="px-3 py-3 text-right">
-                                                <span class="font-bold text-green-700 bg-green-50 px-2 py-1 rounded"
-                                                    x-text="formatCurrency(entry.payment_received)"></span>
-                                            </td>
-                                            <td class="px-3 py-3 text-right">
+                                            <td class="px-2 py-1.5 text-right">
                                                 <span class="font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded"
                                                     x-text="formatCurrency(entry.new_balance)"></span>
                                             </td>
-                                            <td class="px-3 py-3">
+                                            <td class="px-2 py-1.5">
                                                 <span class="text-gray-600 text-xs" x-text="entry.notes || '-'"></span>
                                             </td>
-                                            <td class="px-3 py-3 text-center">
+                                            <td class="px-2 py-1.5 text-center">
                                                 <button type="button" @click="removeEntry(index)"
                                                     class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors">
                                                     <svg class="w-3 h-3" fill="none" stroke="currentColor"
@@ -209,40 +198,22 @@
                                 <tfoot
                                     class="bg-gradient-to-r from-orange-50 to-orange-100 border-t-2 border-orange-200">
                                     <tr>
-                                        <td colspan="4" class="px-3 py-3 text-right">
-                                            <span
-                                                class="text-sm font-bold text-orange-900 flex items-center justify-end gap-2">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1">
-                                                    </path>
-                                                </svg>
-                                                Total Credit Sales:
+                                        <td colspan="3" class="px-2 py-2 text-right">
+                                            <span class="text-sm font-bold text-orange-900">
+                                                Grand Totals:
                                             </span>
                                         </td>
-                                        <td class="px-3 py-3 text-right">
-                                            <span
-                                                class="text-lg font-bold text-orange-800 bg-orange-200 px-3 py-1 rounded"
+                                        <td class="px-2 py-2 text-right">
+                                            <span class="text-sm font-bold text-gray-800"
+                                                x-text="formatCurrency(previousBalanceTotal)"></span>
+                                        </td>
+                                        <td class="px-2 py-2 text-right">
+                                            <span class="text-sm font-bold text-orange-800 bg-orange-200 px-2 py-1 rounded"
                                                 x-text="formatCurrency(creditTotal)"></span>
                                         </td>
-                                        <td class="px-3 py-3 text-right">
-                                            <span
-                                                class="text-sm font-bold text-green-900 flex items-center justify-end gap-2">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                                Total Recovery:
-                                            </span>
-                                        </td>
-                                        <td class="px-3 py-3 text-right">
-                                            <span
-                                                class="text-lg font-bold text-green-800 bg-green-200 px-3 py-1 rounded"
-                                                x-text="formatCurrency(recoveryTotal)"></span>
+                                        <td class="px-2 py-2 text-right">
+                                            <span class="text-sm font-bold text-blue-800 bg-blue-200 px-2 py-1 rounded"
+                                                x-text="formatCurrency(newBalanceTotal)"></span>
                                         </td>
                                         <td colspan="2"></td>
                                     </tr>
@@ -411,28 +382,26 @@
                     calculateCurrentBalance() {
                         const previous = parseFloat(this.form.previous_balance) || 0;
                         const credit = parseFloat(this.form.sale_amount) || 0;
-                        const recovery = parseFloat(this.form.payment_received) || 0;
-                        return (previous + credit - recovery).toFixed(2);
+                        return (previous + credit).toFixed(2);
                     },
 
                     addEntry() {
                         const customerId = this.form.customer_id;
                         const saleAmount = parseFloat(this.form.sale_amount) || 0;
-                        const paymentReceived = parseFloat(this.form.payment_received) || 0;
 
                         if (!customerId) {
                             alert('Please select a customer.');
                             return;
                         }
 
-                        if (saleAmount === 0 && paymentReceived === 0) {
-                            alert('Please enter either a credit sale amount or recovery amount.');
+                        if (saleAmount === 0) {
+                            alert('Please enter a credit sale amount.');
                             return;
                         }
 
                         const customerName = this.customerName(customerId);
                         const previousBalance = parseFloat(this.form.previous_balance) || 0;
-                        const newBalance = previousBalance + saleAmount - paymentReceived;
+                        const newBalance = previousBalance + saleAmount;
                         const invoiceNumber = this.form.invoice_number;
 
                         this.entries.push({
@@ -441,7 +410,6 @@
                             invoice_number: invoiceNumber,
                             previous_balance: parseFloat(previousBalance.toFixed(2)),
                             sale_amount: parseFloat(saleAmount.toFixed(2)),
-                            payment_received: parseFloat(paymentReceived.toFixed(2)),
                             new_balance: parseFloat(newBalance.toFixed(2)),
                             notes: this.form.notes.trim(),
                         });
@@ -453,7 +421,6 @@
                         this.form.invoice_number = 'CSI-' + String(this.invoiceCounter).padStart(5, '0');
                         this.form.previous_balance = 0;
                         this.form.sale_amount = '';
-                        this.form.payment_received = '';
                         this.form.notes = '';
 
                         // Reset select2 dropdown
@@ -471,16 +438,10 @@
 
                     syncTotals() {
                         const creditTotal = this.creditTotal;
-                        const recoveryTotal = this.recoveryTotal;
 
                         const creditInput = document.getElementById(creditInputId);
                         if (creditInput) {
                             creditInput.value = creditTotal.toFixed(2);
-                        }
-
-                        const recoveryInput = document.getElementById(recoveryInputId);
-                        if (recoveryInput) {
-                            recoveryInput.value = recoveryTotal.toFixed(2);
                         }
 
                         const entriesInput = document.getElementById(entriesInputId);
@@ -494,20 +455,10 @@
                             creditDisplay.textContent = this.formatCurrency(creditTotal);
                         }
 
-                        const recoveryDisplay = document.getElementById('creditRecoveryTotalDisplay');
-                        if (recoveryDisplay) {
-                            recoveryDisplay.textContent = this.formatCurrency(recoveryTotal);
-                        }
-
                         // Update summary fields
                         const summaryCredit = document.getElementById('summary_credit');
                         if (summaryCredit) {
                             summaryCredit.value = creditTotal.toFixed(2);
-                        }
-
-                        const summaryRecovery = document.getElementById('summary_recovery');
-                        if (summaryRecovery) {
-                            summaryRecovery.value = recoveryTotal.toFixed(2);
                         }
 
                         if (typeof updateSalesSummary === 'function') {
@@ -538,9 +489,16 @@
                         }, 0);
                     },
 
-                    get recoveryTotal() {
+                    get previousBalanceTotal() {
                         return this.entries.reduce((sum, entry) => {
-                            const amount = parseFloat(entry.payment_received);
+                            const amount = parseFloat(entry.previous_balance);
+                            return sum + (isNaN(amount) ? 0 : amount);
+                        }, 0);
+                    },
+
+                    get newBalanceTotal() {
+                        return this.entries.reduce((sum, entry) => {
+                            const amount = parseFloat(entry.new_balance);
                             return sum + (isNaN(amount) ? 0 : amount);
                         }, 0);
                     },

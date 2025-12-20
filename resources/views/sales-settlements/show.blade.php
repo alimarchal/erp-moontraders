@@ -194,7 +194,7 @@
 
 
                     {{-- Payment Details Cards - Moved here after Product-wise Settlement --}}
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6 items-start">
+                    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6 items-start">
                         {{-- Credit Sales Detail Card --}}
                         <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
                             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">
@@ -206,7 +206,6 @@
                                         <tr class="border-b-2 border-gray-300">
                                             <th class="py-1 px-1 text-left text-black">Customer</th>
                                             <th class="py-1 px-1 text-right text-black">Sale</th>
-                                            <th class="py-1 px-1 text-right text-black" title="Recovery">REC</th>
                                             <th class="py-1 px-1 text-right text-black"
                                                 title="Balance with this Salesman">BAL</th>
                                         </tr>
@@ -215,17 +214,13 @@
                                         @forelse($settlement->creditSales as $creditSale)
                                                                             @php
                                                                                 $saleAmount = $creditSale->sale_amount ?? 0;
-                                                                                $recoveryAmount = $creditSale->payment_received ?? 0;
-                                                                                $salesmanBalance = $saleAmount - $recoveryAmount;
+                                                                                $salesmanBalance = $saleAmount;
                                                                             @endphp
                                                                             <tr class="hover:bg-gray-50">
                                                                                 <td class="py-1 px-1 text-xs">{{ $creditSale->customer->customer_name ??
                                             'N/A' }}</td>
                                                                                 <td class="py-1 px-1 text-right font-semibold text-xs"> {{
                                             number_format($saleAmount, 0) }}</td>
-                                                                                <td class="py-1 px-1 text-right font-semibold text-xs text-green-600"
-                                                                                    title="Recovery:  {{ number_format($recoveryAmount, 2) }}"> {{
-                                            number_format($recoveryAmount, 0) }}</td>
                                                                                 <td class="py-1 px-1 text-right font-semibold text-xs text-blue-600"
                                                                                     title="Balance with Salesman:  {{ number_format($salesmanBalance, 2) }}">
                                                                                     {{ number_format($salesmanBalance, 0) }}
@@ -233,7 +228,7 @@
                                                                             </tr>
                                         @empty
                                             <tr>
-                                                <td colspan="4" class="py-2 px-1 text-center text-black text-xs italic">
+                                                <td colspan="3" class="py-2 px-1 text-center text-black text-xs italic">
                                                     No credit sales entries</td>
                                             </tr>
                                         @endforelse
@@ -244,12 +239,48 @@
                                                 Total:</td>
                                             <td class="py-1.5 px-1 text-right font-bold text-orange-700 text-xs"> {{
     number_format($settlement->creditSales->sum('sale_amount'), 0) }}</td>
-                                            <td class="py-1.5 px-1 text-right font-bold text-green-700 text-xs"> {{
-    number_format($settlement->creditSales->sum('payment_received'), 0) }}
-                                            </td>
                                             <td class="py-1.5 px-1 text-right font-bold text-blue-700 text-xs"> {{
-    number_format($settlement->creditSales->sum('sale_amount') -
-        $settlement->creditSales->sum('payment_received'), 0) }}</td>
+    number_format($settlement->creditSales->sum('sale_amount'), 0) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+
+                        {{-- Recoveries Detail Card --}}
+                        <div class="bg-white rounded-lg border border-green-300 overflow-hidden">
+                            <div class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2">
+                                <h4 class="text-sm font-bold text-white">Recoveries Detail</h4>
+                            </div>
+                            <div class="p-0">
+                                <table class="w-full text-xs">
+                                    <thead>
+                                        <tr class="border-b-2 border-gray-300">
+                                            <th class="py-1 px-1 text-left text-black">Customer</th>
+                                            <th class="py-1 px-1 text-right text-black">Recovery</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @forelse($settlement->recoveries as $recovery)
+                                                                            <tr class="hover:bg-gray-50">
+                                                                                <td class="py-1 px-1 text-xs">{{ $recovery->customer->customer_name ??
+                                            'N/A' }}</td>
+                                                                                <td class="py-1 px-1 text-right font-semibold text-xs text-green-600"> {{
+                                            number_format($recovery->amount, 0) }}</td>
+                                                                            </tr>
+                                        @empty
+                                            <tr>
+                                                <td colspan="2" class="py-2 px-1 text-center text-black text-xs italic">
+                                                    No recovery entries</td>
+                                            </tr>
+                                        @endforelse
+                                    </tbody>
+                                    <tfoot class="border-t-2 border-gray-300">
+                                        <tr class="bg-green-50">
+                                            <td class="py-1.5 px-1 text-right font-semibold text-green-900 text-xs">
+                                                Total:</td>
+                                            <td class="py-1.5 px-1 text-right font-bold text-green-700 text-xs"> {{
+    number_format($settlement->recoveries->sum('amount'), 0) }}</td>
                                         </tr>
                                     </tfoot>
                                 </table>

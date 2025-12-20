@@ -12,7 +12,7 @@ use function Pest\Laravel\actingAs;
 uses(RefreshDatabase::class);
 
 it('creates a GL transfer for goods issue (1155 Dr / 1151 Cr)', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = \App\Models\User::factory()->create(['name' => 'Creator Bravo']);
     actingAs($user);
 
     // Ensure required base entities and COA accounts exist for the test environment
@@ -43,11 +43,17 @@ it('creates a GL transfer for goods issue (1155 Dr / 1151 Cr)', function () {
         ]
     );
 
-    // Minimal goods issue context
+    $vehicle = \App\Models\Vehicle::factory()->create(['vehicle_number' => 'VH-9999']);
+    $employee = \App\Models\Employee::factory()->create(['name' => 'Salesman Alpha']);
+
+    // Minimal goods issue context with explicit relations/names
     $goodsIssue = GoodsIssue::factory()->create([
         'status' => 'draft',
         'stock_in_hand_account_id' => $stockInHand->id,
         'van_stock_account_id' => $vanStock->id,
+        'vehicle_id' => $vehicle->id,
+        'employee_id' => $employee->id,
+        'issued_by' => $user->id,
     ]);
 
     // Bind a fake accounting service to capture the payload
@@ -81,6 +87,10 @@ it('creates a GL transfer for goods issue (1155 Dr / 1151 Cr)', function () {
     expect($captured['reference'])->toBe($goodsIssue->issue_number);
     expect($captured['auto_post'])->toBeTrue();
     expect($captured['lines'])->toHaveCount(2);
+    expect($captured['description'])->toContain('Salesman Alpha');
+    expect($captured['description'])->toContain('Creator Bravo');
+    expect($captured['lines'][0]['description'])->toContain('Salesman Alpha');
+    expect($captured['lines'][1]['description'])->toContain('Creator Bravo');
 
     // Lines must balance and equal 123.45
     $debit = collect($captured['lines'])->sum('debit');

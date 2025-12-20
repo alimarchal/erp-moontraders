@@ -187,8 +187,8 @@ class DistributionService
                 return null;
             }
 
-            // Required accounts are stored per-record on goods_issues
-            $goodsIssue->loadMissing(['stockInHandAccount', 'vanStockAccount']);
+            // Required accounts and context are stored per-record on goods_issues
+            $goodsIssue->loadMissing(['stockInHandAccount', 'vanStockAccount', 'employee', 'vehicle', 'issuedBy']);
             $stockInHand = $goodsIssue->stockInHandAccount;
             $vanStock = $goodsIssue->vanStockAccount;
 
@@ -204,13 +204,17 @@ class DistributionService
 
             $costCenterId = optional($goodsIssue->employee)->cost_center_id;
 
+            $employeeName = $goodsIssue->employee->name ?? 'N/A';
+            $createdBy = $goodsIssue->issuedBy->name ?? 'System';
+            $vehicleNumber = $goodsIssue->vehicle->vehicle_number ?? 'N/A';
+
             $lines = [
                 [
                     'line_no' => 1,
                     'account_id' => $vanStock->id,
                     'debit' => $totalIssueCost,
                     'credit' => 0,
-                    'description' => 'Transfer to van stock',
+                    'description' => 'Transfer to van stock (vehicle '.$vehicleNumber.'; salesman '.$employeeName.')',
                     'cost_center_id' => $costCenterId,
                 ],
                 [
@@ -218,7 +222,7 @@ class DistributionService
                     'account_id' => $stockInHand->id,
                     'debit' => 0,
                     'credit' => $totalIssueCost,
-                    'description' => 'Transfer from warehouse stock',
+                    'description' => 'Transfer from warehouse stock (issued by '.$createdBy.')',
                     'cost_center_id' => $costCenterId,
                 ],
             ];
@@ -226,7 +230,7 @@ class DistributionService
             $journalEntryData = [
                 'entry_date' => $goodsIssue->issue_date,
                 'reference' => $goodsIssue->issue_number,
-                'description' => 'Goods Issue #'.$goodsIssue->issue_number.' - Transfer to vehicle '.$goodsIssue->vehicle->vehicle_number,
+                'description' => 'Goods Issue #'.$goodsIssue->issue_number.' - Transfer to vehicle '.$vehicleNumber.' (Salesman: '.$employeeName.'; Created by: '.$createdBy.')',
                 'lines' => $lines,
                 'auto_post' => true,
             ];

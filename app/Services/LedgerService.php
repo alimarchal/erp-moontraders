@@ -138,9 +138,8 @@ class LedgerService
 
             // Resolve frequently used accounts by code to avoid hardcoded IDs
             $accountIds = [
-                'accounts_receivable' => $this->getAccountIdByCode('1110'),
-                'cash_in_hand' => $this->getAccountIdByCode('1120'),
-                'bank_accounts' => $this->getAccountIdByCode('1170'),
+                'debtors' => $this->getAccountIdByCode('1111'),
+                'cash' => $this->getAccountIdByCode('1121'),
                 'sales_revenue' => $this->getAccountIdByCode('4110'),
                 'advance_tax' => $this->getAccountIdByCode('1161'),
             ];
@@ -209,54 +208,56 @@ class LedgerService
                 }
 
                 // 1b. GENERAL LEDGER: Create journal entry for credit sale
-                if ($creditSale->sale_amount > 0 || $creditSale->payment_received > 0) {
-                    $journalLines = [];
-
-                    // DR: Accounts Receivable (1110) - customer owes
-                    if ($creditSale->sale_amount > 0) {
-                        $journalLines[] = [
-                            'account_id' => $accountIds['accounts_receivable'],
-                            'debit' => $creditSale->sale_amount,
-                            'credit' => 0,
-                            'description' => "AR - {$creditSale->customer->customer_name} - Invoice {$creditSale->invoice_number}",
-                            'cost_center_id' => null,
-                        ];
-
-                        // CR: Sales Revenue (4110)
-                        $journalLines[] = [
-                            'account_id' => $accountIds['sales_revenue'],
-                            'debit' => 0,
-                            'credit' => $creditSale->sale_amount,
-                            'description' => "Sales - {$creditSale->customer->customer_name}",
-                            'cost_center_id' => null,
-                        ];
-                    }
-
-                    // DR: Cash (1131) - payment received
-                    if ($creditSale->payment_received > 0) {
-                        $journalLines[] = [
-                            'account_id' => $accountIds['cash_in_hand'],
-                            'debit' => $creditSale->payment_received,
-                            'credit' => 0,
-                            'description' => "Cash received from {$creditSale->customer->customer_name}",
-                            'cost_center_id' => null,
-                        ];
-
-                        // CR: Accounts Receivable (1110) - reduce what customer owes
-                        $journalLines[] = [
-                            'account_id' => $accountIds['accounts_receivable'],
-                            'debit' => 0,
-                            'credit' => $creditSale->payment_received,
-                            'description' => "Payment from {$creditSale->customer->customer_name}",
-                            'cost_center_id' => null,
-                        ];
-                    }
-
+                if ($creditSale->sale_amount > 0) {
+                    // Credit Sale: Dr 1111 Debtors / Cr 4110 Sales
                     $journalResult = $accountingService->createJournalEntry([
                         'entry_date' => $settlement->settlement_date,
                         'description' => "Credit Sale - {$creditSale->customer->customer_name} - {$settlement->settlement_number}",
                         'reference' => $settlement->settlement_number,
-                        'lines' => $journalLines,
+                        'lines' => [
+                            [
+                                'account_id' => $accountIds['debtors'],
+                                'debit' => $creditSale->sale_amount,
+                                'credit' => 0,
+                                'description' => "Credit sale to {$creditSale->customer->customer_name} - Invoice {$creditSale->invoice_number}",
+                                'cost_center_id' => null,
+                            ],
+                            [
+                                'account_id' => $accountIds['sales_revenue'],
+                                'debit' => 0,
+                                'credit' => $creditSale->sale_amount,
+                                'description' => "Sales - {$creditSale->customer->customer_name}",
+                                'cost_center_id' => null,
+                            ],
+                        ],
+                        'auto_post' => true,
+                    ]);
+
+                    $results['journal_entries'][] = $journalResult;
+                }
+
+                // Cash payment received: Dr 1121 Cash / Cr 1111 Debtors
+                if ($creditSale->payment_received > 0) {
+                    $journalResult = $accountingService->createJournalEntry([
+                        'entry_date' => $settlement->settlement_date,
+                        'description' => "Cash Receipt - {$creditSale->customer->customer_name} - {$settlement->settlement_number}",
+                        'reference' => $settlement->settlement_number.'-CASH',
+                        'lines' => [
+                            [
+                                'account_id' => $accountIds['cash'],
+                                'debit' => $creditSale->payment_received,
+                                'credit' => 0,
+                                'description' => "Cash received from {$creditSale->customer->customer_name}",
+                                'cost_center_id' => null,
+                            ],
+                            [
+                                'account_id' => $accountIds['debtors'],
+                                'debit' => 0,
+                                'credit' => $creditSale->payment_received,
+                                'description' => "Payment from {$creditSale->customer->customer_name}",
+                                'cost_center_id' => null,
+                            ],
+                        ],
                         'auto_post' => true,
                     ]);
 
@@ -281,27 +282,46 @@ class LedgerService
 
             // ========================================
             // 2. CHEQUE PAYMENTS - GL Only
+            // Dr 117X (Specific Bank Account) / Cr 1111 Debtors
             // ========================================
             foreach ($settlement->cheques as $cheque) {
                 if ($cheque->amount > 0) {
+                    // Cheques should specify which bank account (117X) they're deposited to
+                    // For now, we'll need to get this from the cheque record or use a default
+                    // The cheque model doesn't have bank_account_id, so we'll need to determine it
                     $bankAccountName = $cheque->bank_name ?? 'Bank';
+
+                    // Try to find a matching bank account by name, or use default HBL Main (1171)
+                    $bankAccountId = null;
+                    if ($cheque->bank_name) {
+                        $bankAccount = \App\Models\ChartOfAccount::where('account_name', 'like', '%'.$cheque->bank_name.'%')
+                            ->where('account_code', 'like', '117%')
+                            ->first();
+                        $bankAccountId = $bankAccount?->id;
+                    }
+
+                    // Fallback to HBL Main Account (1171) if no specific bank found
+                    if (! $bankAccountId) {
+                        $bankAccountId = $this->getAccountIdByCode('1171');
+                    }
+
                     $journalResult = $accountingService->createJournalEntry([
                         'entry_date' => $settlement->settlement_date,
                         'description' => "Cheque #{$cheque->cheque_number} - {$bankAccountName} - {$settlement->settlement_number}",
                         'reference' => $settlement->settlement_number.'-CHQ-'.$cheque->cheque_number,
                         'lines' => [
                             [
-                                'account_id' => $accountIds['bank_accounts'],
+                                'account_id' => $bankAccountId,
                                 'debit' => $cheque->amount,
                                 'credit' => 0,
                                 'description' => "Cheque received - {$bankAccountName} #{$cheque->cheque_number}",
                                 'cost_center_id' => null,
                             ],
                             [
-                                'account_id' => $accountIds['accounts_receivable'],
+                                'account_id' => $accountIds['debtors'],
                                 'debit' => 0,
                                 'credit' => $cheque->amount,
-                                'description' => 'Cheque payment applied to AR',
+                                'description' => 'Cheque payment - customer debt reduced',
                                 'cost_center_id' => null,
                             ],
                         ],
@@ -314,27 +334,41 @@ class LedgerService
 
             // ========================================
             // 3. BANK TRANSFERS - GL Only
+            // Dr 117X (Specific Bank Account from record) / Cr 1111 Debtors
             // ========================================
             foreach ($settlement->bankTransfers as $transfer) {
-                if ($transfer->amount > 0) {
-                    $bankAccountName = $transfer->bankAccount->bank_name ?? 'Bank';
+                if ($transfer->amount > 0 && $transfer->bank_account_id) {
+                    // Get the specific COA account linked to this bank account
+                    $bankAccount = \App\Models\BankAccount::with('chartOfAccount')->find($transfer->bank_account_id);
+                    $bankAccountId = $bankAccount?->chart_of_account_id;
+                    $bankAccountName = $bankAccount?->bank_name ?? 'Bank';
+
+                    if (! $bankAccountId) {
+                        Log::warning('Bank transfer missing chart of account link', [
+                            'transfer_id' => $transfer->id,
+                            'bank_account_id' => $transfer->bank_account_id,
+                        ]);
+
+                        continue;
+                    }
+
                     $journalResult = $accountingService->createJournalEntry([
                         'entry_date' => $settlement->settlement_date,
                         'description' => "Bank Transfer - {$bankAccountName} - {$settlement->settlement_number}",
                         'reference' => $settlement->settlement_number.'-TRF-'.$transfer->id,
                         'lines' => [
                             [
-                                'account_id' => $accountIds['bank_accounts'],
+                                'account_id' => $bankAccountId,
                                 'debit' => $transfer->amount,
                                 'credit' => 0,
-                                'description' => "Bank transfer to {$bankAccountName}",
+                                'description' => "Bank transfer received - {$bankAccountName}",
                                 'cost_center_id' => null,
                             ],
                             [
-                                'account_id' => $accountIds['accounts_receivable'],
+                                'account_id' => $accountIds['debtors'],
                                 'debit' => 0,
                                 'credit' => $transfer->amount,
-                                'description' => 'Bank transfer applied to AR',
+                                'description' => 'Bank transfer - customer debt reduced',
                                 'cost_center_id' => null,
                             ],
                         ],
@@ -347,9 +381,10 @@ class LedgerService
 
             // ========================================
             // 4. EXPENSES - GL Only
+            // Dr 5XXX (Specific Expense Account) / Cr 1121 Cash
             // ========================================
             foreach ($settlement->expenses as $expense) {
-                if ($expense->amount > 0) {
+                if ($expense->amount > 0 && $expense->expense_account_id) {
                     $expenseAccountName = $expense->expenseAccount->account_name ?? 'Expense';
                     $journalResult = $accountingService->createJournalEntry([
                         'entry_date' => $expense->expense_date,
@@ -364,7 +399,7 @@ class LedgerService
                                 'cost_center_id' => null,
                             ],
                             [
-                                'account_id' => $accountIds['cash_in_hand'],
+                                'account_id' => $accountIds['cash'],
                                 'debit' => 0,
                                 'credit' => $expense->amount,
                                 'description' => "Cash paid for {$expenseAccountName}",

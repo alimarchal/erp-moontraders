@@ -633,10 +633,10 @@ class DistributionService
             $employeeName = $settlement->employee->name ?? 'Unknown';
 
             // ====================================================================
-            // 1. SALES REVENUE RECOGNITION
+            // 1. CASH SALES ONLY (Credit Sales handled by LedgerService)
             // ====================================================================
 
-            // Debit: Cash in Hand (cash sales)
+            // Debit: Cash in Hand (cash sales only)
             if ($settlement->cash_sales_amount > 0) {
                 $lines[] = [
                     'account_id' => $accounts['cash']->id,
@@ -645,41 +645,29 @@ class DistributionService
                     'description' => "Cash sales - {$employeeName}",
                     'cost_center_id' => 4, // Sales & Distribution
                 ];
-            }
 
-            // Debit: Accounts Receivable (credit sales)
-            if ($settlement->credit_sales_amount > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['debtors']->id,
-                    'debit' => $settlement->credit_sales_amount,
-                    'credit' => 0,
-                    'description' => "Credit sales - {$employeeName}",
-                    'cost_center_id' => 4,
-                ];
-            }
-
-            // Debit: Cheques in Hand (if cheques collected)
-            if ($settlement->cheques_collected > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['earnest_money']->id, // Using earnest money as cheques receivable
-                    'debit' => $settlement->cheques_collected,
-                    'credit' => 0,
-                    'description' => "Cheques collected - {$employeeName} ({$settlement->cheque_count} cheques)",
-                    'cost_center_id' => 4,
-                ];
-            }
-
-            // Credit: Sales Revenue (total sales)
-            if ($settlement->total_sales_amount > 0) {
+                // Credit: Sales Revenue (cash sales only)
                 $settlementDate = \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y');
                 $lines[] = [
                     'account_id' => $accounts['sales']->id,
                     'debit' => 0,
-                    'credit' => $settlement->total_sales_amount,
-                    'description' => "Sales revenue - {$employeeName} ({$settlementDate})",
+                    'credit' => $settlement->cash_sales_amount,
+                    'description' => "Cash sales revenue - {$employeeName} ({$settlementDate})",
                     'cost_center_id' => 4,
                 ];
             }
+
+            // NOTE: Credit sales are handled by LedgerService with customer-specific entries
+            // Each credit sale creates: Dr 1111 Debtors / Cr 4110 Sales
+            //
+            // NOTE: Cheques are handled by LedgerService from sales_settlement_cheques table
+            // Each cheque creates: Dr [Specific Bank 117X] / Cr 1111 Debtors
+            //
+            // NOTE: Bank transfers are handled by LedgerService from sales_settlement_bank_transfers table
+            // Each transfer creates: Dr [Specific Bank 117X] / Cr 1111 Debtors
+            //
+            // NOTE: Expenses are handled by LedgerService from sales_settlement_expenses table
+            // Each expense creates: Dr [Expense Account 5XXX] / Cr 1121 Cash
 
             // ====================================================================
             // 2. COST OF GOODS SOLD
@@ -769,181 +757,14 @@ class DistributionService
             }
 
             // ====================================================================
-            // 5. EXPENSE RECOGNITION
+            // NOTE: Expenses, cheques, bank transfers, and advance tax are now
+            // handled by LedgerService via the sales_settlement_expenses,
+            // sales_settlement_cheques, sales_settlement_bank_transfers, and
+            // sales_settlement_advance_taxes tables.
+            //
+            // This journal entry only handles inventory-related transactions:
+            // Sales Revenue, COGS, Returns, and Shortages.
             // ====================================================================
-
-            $totalExpenses = 0;
-
-            // Toll Tax / Labor
-            if ($settlement->expense_toll_tax > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['toll_tax']->id,
-                    'debit' => $settlement->expense_toll_tax,
-                    'credit' => 0,
-                    'description' => "Toll tax expense - {$employeeName}",
-                    'cost_center_id' => 4,
-                ];
-                $totalExpenses += $settlement->expense_toll_tax;
-            }
-
-            // AMR Powder Claim
-            if ($settlement->expense_amr_powder_claim > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['amr_powder']->id,
-                    'debit' => $settlement->expense_amr_powder_claim,
-                    'credit' => 0,
-                    'description' => "AMR powder claim - {$employeeName}",
-                    'cost_center_id' => 4,
-                ];
-                $totalExpenses += $settlement->expense_amr_powder_claim;
-            }
-
-            // AMR Liquid Claim
-            if ($settlement->expense_amr_liquid_claim > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['amr_liquid']->id,
-                    'debit' => $settlement->expense_amr_liquid_claim,
-                    'credit' => 0,
-                    'description' => "AMR liquid claim - {$employeeName}",
-                    'cost_center_id' => 4,
-                ];
-                $totalExpenses += $settlement->expense_amr_liquid_claim;
-            }
-
-            // Scheme Discount
-            if ($settlement->expense_scheme > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['scheme']->id,
-                    'debit' => $settlement->expense_scheme,
-                    'credit' => 0,
-                    'description' => "Scheme discount - {$employeeName}",
-                    'cost_center_id' => 4,
-                ];
-                $totalExpenses += $settlement->expense_scheme;
-            }
-
-            // Advance Tax
-            if ($settlement->expense_advance_tax > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['advance_tax']->id,
-                    'debit' => $settlement->expense_advance_tax,
-                    'credit' => 0,
-                    'description' => "Advance tax - {$employeeName}",
-                    'cost_center_id' => 4,
-                ];
-                $totalExpenses += $settlement->expense_advance_tax;
-            }
-
-            // Food/Salesman/Loader Charges (combined)
-            $foodAndLabor = $settlement->expense_food_charges +
-                $settlement->expense_salesman_charges +
-                $settlement->expense_loader_charges;
-
-            if ($foodAndLabor > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['food_salesman_loader']->id,
-                    'debit' => $foodAndLabor,
-                    'credit' => 0,
-                    'description' => "Food/Salesman/Loader charges - {$employeeName}",
-                    'cost_center_id' => 4,
-                ];
-                $totalExpenses += $foodAndLabor;
-            }
-
-            // Percentage Expense
-            if ($settlement->expense_percentage > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['percentage']->id,
-                    'debit' => $settlement->expense_percentage,
-                    'credit' => 0,
-                    'description' => "Percentage expense - {$employeeName}",
-                    'cost_center_id' => 4,
-                ];
-                $totalExpenses += $settlement->expense_percentage;
-            }
-
-            // Miscellaneous Expense
-            if ($settlement->expense_miscellaneous_amount > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['misc_expense']->id,
-                    'debit' => $settlement->expense_miscellaneous_amount,
-                    'credit' => 0,
-                    'description' => "Miscellaneous expense - {$employeeName}",
-                    'cost_center_id' => 4,
-                ];
-                $totalExpenses += $settlement->expense_miscellaneous_amount;
-            }
-
-            // Credit: Cash in Hand (for all expenses paid)
-            if ($totalExpenses > 0) {
-                $lines[] = [
-                    'account_id' => $accounts['cash']->id,
-                    'debit' => 0,
-                    'credit' => $totalExpenses,
-                    'description' => 'Expenses paid by salesman',
-                    'cost_center_id' => 4,
-                ];
-            }
-
-            // ====================================================================
-            // 6. CREDIT RECOVERIES (AR collections by salesman)
-            // ====================================================================
-
-            if ($settlement->credit_recoveries > 0) {
-                // Debit: Cash in Hand
-                $lines[] = [
-                    'account_id' => $accounts['cash']->id,
-                    'debit' => $settlement->credit_recoveries,
-                    'credit' => 0,
-                    'description' => "Credit recoveries collected - {$employeeName}",
-                    'cost_center_id' => 4,
-                ];
-
-                // Credit: Accounts Receivable
-                $lines[] = [
-                    'account_id' => $accounts['debtors']->id,
-                    'debit' => 0,
-                    'credit' => $settlement->credit_recoveries,
-                    'description' => 'Customer payments received',
-                    'cost_center_id' => 4,
-                ];
-            }
-
-            // ====================================================================
-            // 7. BANK DEPOSITS (if bank transfers made)
-            // ====================================================================
-
-            if ($settlement->bank_transfer_amount > 0 && $settlement->bank_transfers) {
-                foreach ($settlement->bank_transfers as $transfer) {
-                    $amount = floatval($transfer['amount'] ?? 0);
-                    if ($amount > 0) {
-                        $bankAccountId = $transfer['bank_account_id'] ?? null;
-                        $bankAccount = $bankAccountId ?
-                            \App\Models\ChartOfAccount::where('id', $bankAccountId)->first() :
-                            null;
-
-                        if ($bankAccount) {
-                            // Debit: Specific Bank Account
-                            $lines[] = [
-                                'account_id' => $bankAccount->id,
-                                'debit' => $amount,
-                                'credit' => 0,
-                                'description' => "Bank deposit - {$bankAccount->account_name}",
-                                'cost_center_id' => 4,
-                            ];
-
-                            // Credit: Cash in Hand
-                            $lines[] = [
-                                'account_id' => $accounts['cash']->id,
-                                'debit' => 0,
-                                'credit' => $amount,
-                                'description' => 'Cash deposited to bank',
-                                'cost_center_id' => 4,
-                            ];
-                        }
-                    }
-                }
-            }
 
             // Create journal entry
             $settlementDateFormatted = \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y');
@@ -995,8 +816,8 @@ class DistributionService
     protected function getAccountingAccounts(): array
     {
         return [
-            'cash' => \App\Models\ChartOfAccount::where('account_code', '1120')->first(),
-            'debtors' => \App\Models\ChartOfAccount::where('account_code', '1110')->first(),
+            'cash' => \App\Models\ChartOfAccount::where('account_code', '1121')->first(),
+            'debtors' => \App\Models\ChartOfAccount::where('account_code', '1111')->first(),
             'earnest_money' => \App\Models\ChartOfAccount::where('account_code', '1170')->first(),
             'advance_tax' => \App\Models\ChartOfAccount::where('account_code', '1161')->first(),
             'inventory' => \App\Models\ChartOfAccount::where('account_code', '1155')->first(),

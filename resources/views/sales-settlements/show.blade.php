@@ -433,12 +433,6 @@
                                                 <td colspan="2" style="padding: 3px 6px;">
                                                     <span style="font-weight: 600; color: #1e40af;">Bank Transfer / Online
                                                         Payment</span>
-                                                    @if($settlement->bankAccount)
-                                                                                            <div style="font-size: 10px; color: #374151; margin-top: 2px;">
-                                                                                                {{ $settlement->bankAccount->account_name }} - {{
-                                                        $settlement->bankAccount->bank_name }}
-                                                                                            </div>
-                                                    @endif
                                                 </td>
                                                 <td
                                                     style="padding: 3px 6px; text-align: right; font-weight: 600; color: #1e40af; border: none;">
@@ -447,28 +441,29 @@
                                             </tr>
                                         @endif
 
-                                        @if($settlement->cheque_count > 0 && $settlement->cheque_details)
+                                        @if($settlement->cheque_count > 0)
                                             <tr style="background-color: #faf5ff;">
                                                 <td colspan="3" style="padding: 4px 6px;">
                                                     <div style="font-weight: 600; color: #7c3aed; margin-bottom: 4px;">
                                                         Cheque Details ({{ $settlement->cheque_count }} cheque(s))
                                                     </div>
                                                     <div style="display: flex; flex-direction: column; gap: 4px;">
-                                                        @foreach($settlement->cheque_details as $cheque)
+                                                        @foreach($settlement->cheques as $cheque)
                                                                                                     <div
                                                                                                         style="background-color: white; padding: 4px; border: 1px solid #c4b5fd; border-radius: 4px; font-size: 10px;">
                                                                                                         <div
                                                                                                             style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
                                                                                                             <div><span style="font-weight: 500;">Cheque #:</span> {{
-                                                            $cheque['cheque_number'] ?? 'N/A' }}</div>
+                                                            $cheque->cheque_number ?? 'N/A' }}</div>
                                                                                                             <div><span style="font-weight: 500;">Amount:</span> {{
-                                                            number_format($cheque['amount'] ?? 0, 0) }}</div>
+                                                            number_format($cheque->amount ?? 0, 0) }}</div>
                                                                                                             <div><span style="font-weight: 500;">Bank:</span> {{
-                                                            $cheque['bank_name'] ?? 'N/A' }}</div>
+                                                            $cheque->bank_name ?? 'N/A' }}</div>
+                                                                                                            <div><span style="font-weight: 500;">Deposit Bank:</span> {{
+                                                            $cheque->bankAccount->account_name ?? 'N/A' }}</div>
                                                                                                             <div><span style="font-weight: 500;">Date:</span> {{
-                                                            isset($cheque['cheque_date']) ?
-                                                            \Carbon\Carbon::parse($cheque['cheque_date'])->format('d
-                                                                                                                                                                                                                M Y') : 'N/A' }}</div>
+                                                            isset($cheque->cheque_date) ?
+                                                            \Carbon\Carbon::parse($cheque->cheque_date)->format('d M Y') : 'N/A' }}</div>
                                                                                                         </div>
                                                                                                     </div>
                                                         @endforeach
@@ -576,9 +571,33 @@
                                     </thead>
                                     <tbody>
                                         <tr class="border-t border-gray-200">
-                                            <td class="py-1 px-1 text-xs text-black">Net Sale (Sold Items Value)</td>
-                                            <td class="py-1 px-1 text-right font-semibold text-xs text-black">
+                                            <td class="py-1 px-1 text-xs font-bold text-black">Total Sales Value</td>
+                                            <td class="py-1 px-1 text-right font-bold text-xs text-black">
                                                 {{ number_format($settlement->items->sum('total_sales_value'), 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">Credit Sales</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-black">
+                                                {{ number_format($settlement->credit_sales_amount, 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">Cheque Sales</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-black">
+                                                {{ number_format($settlement->cheque_sales_amount, 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">Bank Transfer</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-black">
+                                                {{ number_format($settlement->bank_transfer_amount, 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">Cash Sales</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-black">
+                                                {{ number_format($settlement->cash_sales_amount, 2) }}
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
@@ -588,16 +607,11 @@
                                             </td>
                                         </tr>
                                         <tr class="bg-blue-50 border-y-2 border-blue-200">
-                                            <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Sale</td>
+                                            <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Collection</td>
                                             <td class="py-1 px-1 text-right font-bold text-xs text-blue-800">
-                                                {{ number_format($settlement->items->sum('total_sales_value') +
-    ($settlement->credit_recoveries ?? 0), 2) }}
+                                                {{ number_format($settlement->cash_sales_amount + $settlement->credit_recoveries, 2) }}
                                             </td>
                                         </tr>
-                                        <tr class="border-t border-gray-200">
-                                            <td class="py-1 px-1 text-xs text-black">Credit Extended</td>
-                                            <td class="py-1 px-1 text-right font-semibold text-xs text-orange-700">
-                                                {{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}
                                             </td>
                                         </tr>
                                         <tr class="bg-gray-50 border-t border-gray-200">

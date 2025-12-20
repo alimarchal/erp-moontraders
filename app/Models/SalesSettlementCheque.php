@@ -13,6 +13,7 @@ class SalesSettlementCheque extends Model
     protected $fillable = [
         'sales_settlement_id',
         'customer_id',
+        'bank_account_id',
         'cheque_number',
         'amount',
         'bank_name',
@@ -40,6 +41,11 @@ class SalesSettlementCheque extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function bankAccount(): BelongsTo
+    {
+        return $this->belongsTo(BankAccount::class);
     }
 
     /**

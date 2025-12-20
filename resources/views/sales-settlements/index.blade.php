@@ -46,7 +46,7 @@
         ['label' => 'Total Sales', 'align' => 'text-right'],
         ['label' => 'Credit Sale', 'align' => 'text-right'],
         ['label' => 'Cheque Sale', 'align' => 'text-right'],
-        ['label' => 'Bank Sale', 'align' => 'text-right'],
+        ['label' => 'Bank Transfer', 'align' => 'text-right'],
         ['label' => 'Cash Sale', 'align' => 'text-right'],
         ['label' => 'Profit', 'align' => 'text-right'],
         ['label' => 'Status', 'align' => 'text-center'],
@@ -93,7 +93,7 @@
                 </td>
                 <td class="py-1 px-2 text-right">
                     <div class="text-xs text-indigo-700">
-                        Rs {{ number_format($settlement->bank_sales_amount, 2) }}
+                        Rs {{ number_format($settlement->bank_transfer_amount, 2) }}
                     </div>
                 </td>
                 <td class="py-1 px-2 text-right">
@@ -120,8 +120,8 @@
                 </td>
                 <td class="py-1 px-2 text-center">
                     <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full
-                                {{ $settlement->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                {{ $settlement->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                        {{ $settlement->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                        {{ $settlement->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                         {{ ucfirst($settlement->status) }}
                     </span>
                 </td>

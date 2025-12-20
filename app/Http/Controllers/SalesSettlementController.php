@@ -119,6 +119,9 @@ class SalesSettlementController extends Controller
                 ->orderBy('customer_name')
                 ->get(['id', 'customer_code', 'customer_name']),
             'expenseAccounts' => $expenseAccounts,
+            'bankAccounts' => \App\Models\BankAccount::where('is_active', true)
+                ->orderBy('account_name')
+                ->get(['id', 'account_name', 'bank_name']),
         ]);
     }
 
@@ -395,7 +398,7 @@ class SalesSettlementController extends Controller
                 'total_sales_amount' => $totalSalesAmount,
                 'cash_sales_amount' => $cashSalesAmount,
                 'cheque_sales_amount' => $totalCheques,
-                'bank_sales_amount' => $totalBankTransfers,
+                'bank_transfer_amount' => $totalBankTransfers,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
                 'credit_recoveries' => $request->credit_recoveries_total ?? 0,
                 'total_quantity_sold' => $totalQuantitySold,
@@ -451,6 +454,7 @@ class SalesSettlementController extends Controller
                     SalesSettlementCheque::create([
                         'sales_settlement_id' => $settlement->id,
                         'customer_id' => $cheque['customer_id'] ?? null,
+                        'bank_account_id' => $cheque['bank_account_id'] ?? null,
                         'cheque_number' => $cheque['cheque_number'],
                         'amount' => floatval($cheque['amount'] ?? 0),
                         'bank_name' => $cheque['bank_name'] ?? '',
@@ -633,6 +637,7 @@ class SalesSettlementController extends Controller
             'customerEmployeeTransactions.account.employee',
             'advanceTaxes.customer',
             'expenses.expenseAccount',
+            'cheques.bankAccount',
         ]);
 
         return view('sales-settlements.show', [
@@ -680,6 +685,9 @@ class SalesSettlementController extends Controller
             'settlement' => $salesSettlement,
             'expenseAccounts' => $expenseAccounts,
             'customers' => $customers,
+            'bankAccounts' => \App\Models\BankAccount::where('is_active', true)
+                ->orderBy('account_name')
+                ->get(['id', 'account_name', 'bank_name']),
         ]);
     }
 
@@ -795,7 +803,7 @@ class SalesSettlementController extends Controller
                 'total_sales_amount' => $totalSalesAmount,
                 'cash_sales_amount' => $cashSalesAmount,
                 'cheque_sales_amount' => $totalCheques,
-                'bank_sales_amount' => $totalBankTransfers,
+                'bank_transfer_amount' => $totalBankTransfers,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
                 'credit_recoveries' => $request->credit_recoveries ?? 0,
                 'total_quantity_sold' => $totalQuantitySold,
@@ -1003,6 +1011,8 @@ class SalesSettlementController extends Controller
                     if (! empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
                         SalesSettlementCheque::create([
                             'sales_settlement_id' => $salesSettlement->id,
+                            'customer_id' => $cheque['customer_id'] ?? null,
+                            'bank_account_id' => $cheque['bank_account_id'] ?? null,
                             'cheque_number' => $cheque['cheque_number'],
                             'amount' => floatval($cheque['amount'] ?? 0),
                             'bank_name' => $cheque['bank_name'] ?? '',

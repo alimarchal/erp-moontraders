@@ -1,5 +1,6 @@
 @props([
 'customers' => collect(),
+'bankAccounts' => collect(),
 'triggerEvent' => 'open-cheque-payment-modal',
 'inputId' => 'total_cheques',
 'entriesInputId' => 'cheque_payment_entries',
@@ -7,12 +8,17 @@
 
 @php
 $customers = $customers instanceof \Illuminate\Support\Collection ? $customers : collect($customers);
+$bankAccounts = $bankAccounts instanceof \Illuminate\Support\Collection ? $bankAccounts : collect($bankAccounts);
 @endphp
 
 <div x-data="chequePaymentModal({
         customers: @js($customers->map(fn ($customer) => [
             'id' => $customer->id,
             'name' => $customer->customer_name,
+        ])->values()),
+        bankAccounts: @js($bankAccounts->map(fn ($bank) => [
+            'id' => $bank->id,
+            'name' => $bank->account_name . ' (' . $bank->bank_name . ')',
         ])->values()),
         inputId: '{{ $inputId }}',
         entriesInputId: '{{ $entriesInputId }}',
@@ -68,7 +74,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                         </select>
                     </div>
                     <div class="md:col-span-3">
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Bank Name</label>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Bank Name (Cheque's Bank)</label>
                         <select x-model="form.bank_name"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500">
                             <option value="">Select Bank</option>
@@ -102,6 +108,16 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                             <option value="United Bank Limited (UBL)">United Bank Limited (UBL)</option>
                         </select>
                     </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Deposit Bank (Our Bank)</label>
+                        <select x-model="form.bank_account_id"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500">
+                            <option value="">Select Deposit Bank</option>
+                            <template x-for="bank in bankAccounts" :key="bank.id">
+                                <option :value="bank.id" x-text="bank.name"></option>
+                            </template>
+                        </select>
+                    </div>
                     <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Amount (₨)</label>
                         <input type="number" min="0" step="0.01" x-model="form.amount"
@@ -124,6 +140,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                                 <th class="px-3 py-2 text-left text-gray-700">Customer Name</th>
                                 <th class="px-3 py-2 text-left text-gray-700">Cheque Number</th>
                                 <th class="px-3 py-2 text-left text-gray-700">Bank Name</th>
+                                <th class="px-3 py-2 text-left text-gray-700">Deposit Bank</th>
                                 <th class="px-3 py-2 text-left text-gray-700">Cheque Date</th>
                                 <th class="px-3 py-2 text-right text-gray-700">Amount (₨)</th>
                                 <th class="px-3 py-2 text-center text-gray-700">Action</th>
@@ -143,6 +160,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                                     <td class="px-3 py-2 text-gray-800" x-text="entry.customer_name"></td>
                                     <td class="px-3 py-2 text-gray-800" x-text="entry.cheque_number"></td>
                                     <td class="px-3 py-2 text-gray-800" x-text="entry.bank_name"></td>
+                                    <td class="px-3 py-2 text-gray-800" x-text="entry.bank_account_name"></td>
                                     <td class="px-3 py-2 text-gray-800" x-text="formatDate(entry.cheque_date)"></td>
                                     <td class="px-3 py-2 text-right font-semibold text-purple-700"
                                         x-text="formatCurrency(entry.amount)"></td>
@@ -184,12 +202,14 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 @once
 @push('scripts')
 <script>
-    function chequePaymentModal({ customers, inputId, entriesInputId }) {
+    function chequePaymentModal({ customers, bankAccounts, inputId, entriesInputId }) {
         return {
             show: false,
             customers,
+            bankAccounts,
             form: {
                 customer_id: '',
+                bank_account_id: '',
                 cheque_number: '',
                 bank_name: '',
                 cheque_date: new Date().toISOString().split('T')[0],
@@ -231,6 +251,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 
             addEntry() {
                 const customerId = this.form.customer_id;
+                const bankAccountId = this.form.bank_account_id;
                 const chequeNumber = this.form.cheque_number.trim();
                 const bankName = this.form.bank_name.trim();
                 const chequeDate = this.form.cheque_date;
@@ -238,6 +259,11 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 
                 if (!customerId) {
                     alert('Please select a customer.');
+                    return;
+                }
+
+                if (!bankAccountId) {
+                    alert('Please select a deposit bank.');
                     return;
                 }
 
@@ -262,10 +288,13 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
                 }
 
                 const customerName = this.customerName(customerId);
+                const bankAccountName = this.bankAccountName(bankAccountId);
 
                 this.entries.push({
                     customer_id: customerId,
                     customer_name: customerName,
+                    bank_account_id: bankAccountId,
+                    bank_account_name: bankAccountName,
                     cheque_number: chequeNumber,
                     bank_name: bankName,
                     cheque_date: chequeDate,
@@ -274,6 +303,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 
                 // Reset form
                 this.form.customer_id = '';
+                this.form.bank_account_id = '';
                 this.form.cheque_number = '';
                 this.form.bank_name = '';
                 this.form.cheque_date = new Date().toISOString().split('T')[0];
@@ -321,6 +351,11 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
             customerName(id) {
                 const found = this.customers.find(customer => Number(customer.id) === Number(id));
                 return found ? found.name : 'Unknown Customer';
+            },
+
+            bankAccountName(id) {
+                const found = this.bankAccounts.find(bank => Number(bank.id) === Number(id));
+                return found ? found.name : 'Unknown Bank';
             },
 
             formatCurrency(value) {

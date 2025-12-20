@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\ChartOfAccount;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\GoodsIssue;
@@ -191,6 +192,23 @@ class DistributionService
             $goodsIssue->loadMissing(['stockInHandAccount', 'vanStockAccount', 'employee', 'vehicle', 'issuedBy']);
             $stockInHand = $goodsIssue->stockInHandAccount;
             $vanStock = $goodsIssue->vanStockAccount;
+
+            // Fallback: resolve defaults by account_code if not already set on the record (keeps legacy data/tests working)
+            if (! $stockInHand) {
+                $stockInHand = ChartOfAccount::where('account_code', '1151')->first();
+                if ($stockInHand) {
+                    $goodsIssue->stock_in_hand_account_id = $stockInHand->id;
+                    $goodsIssue->save();
+                }
+            }
+
+            if (! $vanStock) {
+                $vanStock = ChartOfAccount::where('account_code', '1155')->first();
+                if ($vanStock) {
+                    $goodsIssue->van_stock_account_id = $vanStock->id;
+                    $goodsIssue->save();
+                }
+            }
 
             if (! $stockInHand || ! $vanStock) {
                 Log::error('Goods Issue missing configured GL accounts', [
@@ -977,20 +995,20 @@ class DistributionService
     protected function getAccountingAccounts(): array
     {
         return [
-            'cash' => \App\Models\ChartOfAccount::where('account_code', '1131')->first(),
-            'debtors' => \App\Models\ChartOfAccount::where('account_code', '1111')->first(),
-            'earnest_money' => \App\Models\ChartOfAccount::where('account_code', '1151')->first(),
-            'advance_tax' => \App\Models\ChartOfAccount::where('account_code', '1171')->first(),
-            'inventory' => \App\Models\ChartOfAccount::where('account_code', '1161')->first(),
+            'cash' => \App\Models\ChartOfAccount::where('account_code', '1120')->first(),
+            'debtors' => \App\Models\ChartOfAccount::where('account_code', '1110')->first(),
+            'earnest_money' => \App\Models\ChartOfAccount::where('account_code', '1170')->first(),
+            'advance_tax' => \App\Models\ChartOfAccount::where('account_code', '1161')->first(),
+            'inventory' => \App\Models\ChartOfAccount::where('account_code', '1155')->first(),
             'sales' => \App\Models\ChartOfAccount::where('account_code', '4110')->first(),
             'cogs' => \App\Models\ChartOfAccount::where('account_code', '5111')->first(),
-            'toll_tax' => \App\Models\ChartOfAccount::where('account_code', '52250')->first(),
-            'amr_powder' => \App\Models\ChartOfAccount::where('account_code', '52230')->first(),
-            'amr_liquid' => \App\Models\ChartOfAccount::where('account_code', '52240')->first(),
-            'scheme' => \App\Models\ChartOfAccount::where('account_code', '52270')->first(),
-            'food_salesman_loader' => \App\Models\ChartOfAccount::where('account_code', '52260')->first(),
-            'percentage' => \App\Models\ChartOfAccount::where('account_code', '52280')->first(),
-            'misc_expense' => \App\Models\ChartOfAccount::where('account_code', '52110')->first(),
+            'toll_tax' => \App\Models\ChartOfAccount::where('account_code', '5272')->first(),
+            'amr_powder' => \App\Models\ChartOfAccount::where('account_code', '5252')->first(),
+            'amr_liquid' => \App\Models\ChartOfAccount::where('account_code', '5262')->first(),
+            'scheme' => \App\Models\ChartOfAccount::where('account_code', '5292')->first(),
+            'food_salesman_loader' => \App\Models\ChartOfAccount::where('account_code', '5282')->first(),
+            'percentage' => \App\Models\ChartOfAccount::where('account_code', '5292')->first(),
+            'misc_expense' => \App\Models\ChartOfAccount::where('account_code', '5211')->first(),
         ];
     }
 

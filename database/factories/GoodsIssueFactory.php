@@ -16,8 +16,38 @@ class GoodsIssueFactory extends Factory
      */
     public function definition(): array
     {
+        $currency = \App\Models\Currency::first() ?? \App\Models\Currency::factory()->base()->create();
+        $assetType = \App\Models\AccountType::firstOrCreate(
+            ['type_name' => 'Asset', 'report_group' => 'BalanceSheet'],
+            ['description' => 'Auto-created for GoodsIssue factory']
+        );
+
+        $stockInHand = \App\Models\ChartOfAccount::firstOrCreate(
+            ['account_code' => '1151'],
+            [
+                'account_name' => 'Stock In Hand',
+                'account_type_id' => $assetType->id,
+                'currency_id' => $currency->id,
+                'normal_balance' => 'debit',
+                'is_group' => false,
+                'is_active' => true,
+            ]
+        );
+
+        $vanStock = \App\Models\ChartOfAccount::firstOrCreate(
+            ['account_code' => '1155'],
+            [
+                'account_name' => 'Van Stock',
+                'account_type_id' => $assetType->id,
+                'currency_id' => $currency->id,
+                'normal_balance' => 'debit',
+                'is_group' => false,
+                'is_active' => true,
+            ]
+        );
+
         return [
-            'issue_number' => 'GI-TEST-' . fake()->unique()->numberBetween(1000, 9999),
+            'issue_number' => 'GI-TEST-'.fake()->unique()->numberBetween(1000, 9999),
             'issue_date' => now(),
             'status' => 'draft',
             'total_quantity' => 0,
@@ -26,6 +56,8 @@ class GoodsIssueFactory extends Factory
             'vehicle_id' => \App\Models\Vehicle::factory(),
             'warehouse_id' => \App\Models\Warehouse::factory(),
             'issued_by' => \App\Models\User::factory(),
+            'stock_in_hand_account_id' => $stockInHand->id,
+            'van_stock_account_id' => $vanStock->id,
         ];
     }
 }

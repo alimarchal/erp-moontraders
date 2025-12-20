@@ -136,6 +136,15 @@ class LedgerService
 
             $accountingService = app(AccountingService::class);
 
+            // Resolve frequently used accounts by code to avoid hardcoded IDs
+            $accountIds = [
+                'accounts_receivable' => $this->getAccountIdByCode('1110'),
+                'cash_in_hand' => $this->getAccountIdByCode('1120'),
+                'bank_accounts' => $this->getAccountIdByCode('1170'),
+                'sales_revenue' => $this->getAccountIdByCode('4110'),
+                'advance_tax' => $this->getAccountIdByCode('1161'),
+            ];
+
             // Reload the settlement to get all related data
             $settlement->load([
                 'employee',
@@ -206,7 +215,7 @@ class LedgerService
                     // DR: Accounts Receivable (1110) - customer owes
                     if ($creditSale->sale_amount > 0) {
                         $journalLines[] = [
-                            'account_id' => 3, // 1110 Accounts Receivable
+                            'account_id' => $accountIds['accounts_receivable'],
                             'debit' => $creditSale->sale_amount,
                             'credit' => 0,
                             'description' => "AR - {$creditSale->customer->customer_name} - Invoice {$creditSale->invoice_number}",
@@ -215,7 +224,7 @@ class LedgerService
 
                         // CR: Sales Revenue (4110)
                         $journalLines[] = [
-                            'account_id' => 76, // 4110 Sales
+                            'account_id' => $accountIds['sales_revenue'],
                             'debit' => 0,
                             'credit' => $creditSale->sale_amount,
                             'description' => "Sales - {$creditSale->customer->customer_name}",
@@ -226,7 +235,7 @@ class LedgerService
                     // DR: Cash (1131) - payment received
                     if ($creditSale->payment_received > 0) {
                         $journalLines[] = [
-                            'account_id' => 7, // 1131 Cash
+                            'account_id' => $accountIds['cash_in_hand'],
                             'debit' => $creditSale->payment_received,
                             'credit' => 0,
                             'description' => "Cash received from {$creditSale->customer->customer_name}",
@@ -235,7 +244,7 @@ class LedgerService
 
                         // CR: Accounts Receivable (1110) - reduce what customer owes
                         $journalLines[] = [
-                            'account_id' => 3, // 1110 Accounts Receivable
+                            'account_id' => $accountIds['accounts_receivable'],
                             'debit' => 0,
                             'credit' => $creditSale->payment_received,
                             'description' => "Payment from {$creditSale->customer->customer_name}",
@@ -282,17 +291,17 @@ class LedgerService
                         'reference' => $settlement->settlement_number.'-CHQ-'.$cheque->cheque_number,
                         'lines' => [
                             [
-                                'account_id' => 5, // 1120 Bank Accounts
+                                'account_id' => $accountIds['bank_accounts'],
                                 'debit' => $cheque->amount,
                                 'credit' => 0,
                                 'description' => "Cheque received - {$bankAccountName} #{$cheque->cheque_number}",
                                 'cost_center_id' => null,
                             ],
                             [
-                                'account_id' => 7, // 1131 Cash (or use AR if from customer)
+                                'account_id' => $accountIds['accounts_receivable'],
                                 'debit' => 0,
                                 'credit' => $cheque->amount,
-                                'description' => 'Cheque payment deposited',
+                                'description' => 'Cheque payment applied to AR',
                                 'cost_center_id' => null,
                             ],
                         ],
@@ -315,17 +324,17 @@ class LedgerService
                         'reference' => $settlement->settlement_number.'-TRF-'.$transfer->id,
                         'lines' => [
                             [
-                                'account_id' => 5, // 1120 Bank Accounts
+                                'account_id' => $accountIds['bank_accounts'],
                                 'debit' => $transfer->amount,
                                 'credit' => 0,
                                 'description' => "Bank transfer to {$bankAccountName}",
                                 'cost_center_id' => null,
                             ],
                             [
-                                'account_id' => 7, // 1131 Cash
+                                'account_id' => $accountIds['accounts_receivable'],
                                 'debit' => 0,
                                 'credit' => $transfer->amount,
-                                'description' => 'Cash transferred to bank',
+                                'description' => 'Bank transfer applied to AR',
                                 'cost_center_id' => null,
                             ],
                         ],
@@ -355,7 +364,7 @@ class LedgerService
                                 'cost_center_id' => null,
                             ],
                             [
-                                'account_id' => 7, // 1131 Cash
+                                'account_id' => $accountIds['cash_in_hand'],
                                 'debit' => 0,
                                 'credit' => $expense->amount,
                                 'description' => "Cash paid for {$expenseAccountName}",
@@ -380,14 +389,14 @@ class LedgerService
                         'reference' => $settlement->settlement_number.'-TAX',
                         'lines' => [
                             [
-                                'account_id' => 18, // 1171 Advance Tax
+                                'account_id' => $accountIds['advance_tax'],
                                 'debit' => $advanceTax->amount,
                                 'credit' => 0,
                                 'description' => 'Advance tax collected',
                                 'cost_center_id' => null,
                             ],
                             [
-                                'account_id' => 7, // 1131 Cash
+                                'account_id' => $accountIds['cash_in_hand'],
                                 'debit' => 0,
                                 'credit' => $advanceTax->amount,
                                 'description' => 'Cash for advance tax',
@@ -436,6 +445,28 @@ class LedgerService
             ->first();
 
         return $result ? (float) $result->outstanding_balance : 0.0;
+    }
+
+    /**
+     * Resolve a Chart of Account ID by account_code with simple caching.
+     */
+    protected function getAccountIdByCode(string $accountCode): int
+    {
+        static $cache = [];
+
+        if (isset($cache[$accountCode])) {
+            return $cache[$accountCode];
+        }
+
+        $id = \App\Models\ChartOfAccount::where('account_code', $accountCode)->value('id');
+
+        if (! $id) {
+            throw new \Exception("Chart of Account with code {$accountCode} not found");
+        }
+
+        $cache[$accountCode] = (int) $id;
+
+        return (int) $id;
     }
 
     /**

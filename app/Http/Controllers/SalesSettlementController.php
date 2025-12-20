@@ -121,7 +121,7 @@ class SalesSettlementController extends Controller
             'expenseAccounts' => $expenseAccounts,
             'bankAccounts' => \App\Models\BankAccount::where('is_active', true)
                 ->orderBy('account_name')
-                ->get(['id', 'account_name', 'bank_name']),
+                ->get(['id', 'account_name', 'bank_name', 'account_number']),
         ]);
     }
 
@@ -687,7 +687,7 @@ class SalesSettlementController extends Controller
             'customers' => $customers,
             'bankAccounts' => \App\Models\BankAccount::where('is_active', true)
                 ->orderBy('account_name')
-                ->get(['id', 'account_name', 'bank_name']),
+                ->get(['id', 'account_name', 'bank_name', 'account_number']),
         ]);
     }
 

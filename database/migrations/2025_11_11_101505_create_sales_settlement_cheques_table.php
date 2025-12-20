@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('sales_settlement_id')->constrained('sales_settlements')->cascadeOnDelete();
             $table->foreignId('customer_id')->nullable()->constrained('customers')->onDelete('set null');
+            $table->foreignId('bank_account_id')->nullable()->constrained('bank_accounts')->onDelete('set null');
             $table->string('cheque_number');
             $table->decimal('amount', 15, 2);
             $table->string('bank_name');

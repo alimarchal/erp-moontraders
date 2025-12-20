@@ -27,6 +27,7 @@ return new class extends Migration {
             $table->decimal('total_sales_amount', 15, 2)->default(0);
             $table->decimal('cash_sales_amount', 15, 2)->default(0);
             $table->decimal('cheque_sales_amount', 15, 2)->default(0);
+            $table->decimal('bank_transfer_amount', 15, 2)->default(0);
             $table->decimal('credit_sales_amount', 15, 2)->default(0);
 
             // Stock Summary
@@ -73,6 +74,7 @@ return new class extends Migration {
             $table->integer('denom_20')->default(0);
             $table->integer('denom_10')->default(0);
             $table->decimal('denom_coins', 10, 2)->default(0);
+            $table->decimal('total_amount', 15, 2)->default(0);
             $table->timestamps();
 
             $table->index('sales_settlement_id');

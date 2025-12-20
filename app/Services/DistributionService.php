@@ -618,7 +618,6 @@ class DistributionService
             $settlement->load([
                 'employee',
                 'items',
-                'creditSales.customer',
                 'recoveries.customer',
                 'cheques',
                 'bankTransfers.bankAccount.chartOfAccount',
@@ -643,60 +642,7 @@ class DistributionService
             $settlementDateFormatted = \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y');
 
             // ====================================================================
-            // 1. CREDIT SALES (Revenue) - MUST BE FIRST
-            // ====================================================================
-            $totalCreditSales = 0;
-            $creditSalesDetails = [];
-            $empId = $settlement->employee_id;
-            foreach ($settlement->creditSales as $creditSale) {
-                if ($creditSale->sale_amount > 0) {
-                    $totalCreditSales += $creditSale->sale_amount;
-                    $amountFormatted = number_format($creditSale->sale_amount, 0, '.', '');
-                    $creditSalesDetails[] = "EMP:{$empId}-CUS:{$creditSale->customer_id}-AMT:{$amountFormatted}";
-                }
-            }
-
-            if ($totalCreditSales > 0) {
-                $creditDesc = 'Credit Sales: '.implode(', ', $creditSalesDetails);
-                if (strlen($creditDesc) > 250) {
-                    $creditDesc = '';
-                    $count = 0;
-                    foreach ($creditSalesDetails as $detail) {
-                        $tempDesc = $creditDesc.($creditDesc ? ', ' : 'Credit Sales: ').$detail;
-                        if (strlen($tempDesc) > 240) {
-                            $remaining = count($creditSalesDetails) - $count;
-                            $creditDesc .= " + $remaining more";
-                            break;
-                        }
-                        $creditDesc = $tempDesc;
-                        $count++;
-                    }
-                }
-
-                // Debit: Debtors
-                $lines[] = [
-                    'account_id' => $accounts['debtors']->id,
-                    'debit' => $totalCreditSales,
-                    'credit' => 0,
-                    'description' => $creditDesc,
-                    'cost_center_id' => 4,
-                ];
-
-                // Credit: Sales Revenue
-                $lines[] = [
-                    'account_id' => $accounts['sales']->id,
-                    'debit' => 0,
-                    'credit' => $totalCreditSales,
-                    'description' => $creditDesc,
-                    'cost_center_id' => 4,
-                ];
-            }
-
-
-            
-
-            // ====================================================================
-            // 2. RECOVERIES (Payments against old balances)
+            // 1. RECOVERIES (Payments against old balances)
             // ====================================================================
             $totalCashRecoveries = 0;
             $empId = $settlement->employee_id;

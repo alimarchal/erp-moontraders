@@ -17,6 +17,8 @@ return new class extends Migration
             $table->foreignId('customer_id')->constrained();
             $table->foreignId('employee_id')->constrained();
             $table->string('recovery_number')->nullable();
+            $table->string('payment_method')->default('cash');
+            $table->foreignId('bank_account_id')->nullable()->constrained('bank_accounts');
             $table->decimal('amount', 15, 2)->default(0);
             $table->decimal('previous_balance', 15, 2)->default(0);
             $table->decimal('new_balance', 15, 2)->default(0);

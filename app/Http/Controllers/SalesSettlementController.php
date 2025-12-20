@@ -11,7 +11,6 @@ use App\Models\SalesSettlementAdvanceTax;
 use App\Models\SalesSettlementBankTransfer;
 use App\Models\SalesSettlementCashDenomination;
 use App\Models\SalesSettlementCheque;
-use App\Models\SalesSettlementCreditSale;
 use App\Models\SalesSettlementExpense;
 use App\Models\SalesSettlementItem;
 use App\Models\SalesSettlementItemBatch;
@@ -585,22 +584,6 @@ class SalesSettlementController extends Controller
                 }
             }
 
-            // Create credit sales records in sales_settlement_credit_sales table
-            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
-                foreach ($request->credit_sales as $creditSale) {
-                    if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
-                        SalesSettlementCreditSale::create([
-                            'sales_settlement_id' => $settlement->id,
-                            'customer_id' => $creditSale['customer_id'],
-                            'employee_id' => $goodsIssue->employee_id,
-                            'invoice_number' => $creditSale['invoice_number'] ?? null,
-                            'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
-                            'notes' => $creditSale['notes'] ?? null,
-                        ]);
-                    }
-                }
-            }
-
             // Create recovery records in sales_settlement_recoveries table
             if (! empty($recoveriesData)) {
                 foreach ($recoveriesData as $recovery) {
@@ -982,22 +965,6 @@ class SalesSettlementController extends Controller
                             'amount' => floatval($expense['amount'] ?? 0),
                             'receipt_number' => $expense['receipt_number'] ?? null,
                             'description' => $expense['description'] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            // Create credit sales records
-            if (! empty($request->credit_sales) && is_array($request->credit_sales)) {
-                foreach ($request->credit_sales as $creditSale) {
-                    if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
-                        SalesSettlementCreditSale::create([
-                            'sales_settlement_id' => $salesSettlement->id,
-                            'customer_id' => $creditSale['customer_id'],
-                            'employee_id' => $goodsIssue->employee_id,
-                            'invoice_number' => $creditSale['invoice_number'] ?? null,
-                            'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
-                            'notes' => $creditSale['notes'] ?? null,
                         ]);
                     }
                 }

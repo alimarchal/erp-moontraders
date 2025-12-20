@@ -139,7 +139,6 @@ class LedgerService
             // Reload the settlement to get all related data
             $settlement->load([
                 'employee',
-                'creditSales.customer',
                 'cheques',
                 'bankTransfers.bankAccount',
                 'expenses.expenseAccount',
@@ -148,75 +147,8 @@ class LedgerService
             ]);
 
             // ========================================
-            // 1. CREDIT SALES & RECOVERIES - Customer Sub-Ledger
+            // 1. RECOVERIES - Customer Sub-Ledger
             // ========================================
-            foreach ($settlement->creditSales as $creditSale) {
-                // Ensure customer-employee account exists before recording transaction
-                $account = \App\Models\CustomerEmployeeAccount::firstOrCreate(
-                    [
-                        'customer_id' => $creditSale->customer_id,
-                        'employee_id' => $creditSale->employee_id,
-                    ],
-                    [
-                        'account_number' => \App\Models\CustomerEmployeeAccount::generateAccountNumber(),
-                        'opened_date' => $settlement->settlement_date,
-                        'status' => 'active',
-                        'created_by' => auth()->id(),
-                    ]
-                );
-
-                // 1a. CUSTOMER SUB-LEDGER: Record debit (sale)
-                if ($creditSale->sale_amount > 0) {
-                    $result = $this->recordCustomerEmployeeTransaction([
-                        'customer_id' => $creditSale->customer_id,
-                        'employee_id' => $creditSale->employee_id,
-                        'transaction_date' => $settlement->settlement_date,
-                        'transaction_type' => 'credit_sale',
-                        'reference_number' => $settlement->settlement_number,
-                        'sales_settlement_id' => $settlement->id,
-                        'invoice_number' => $creditSale->invoice_number,
-                        'description' => "Credit Sale - Inv #{$creditSale->invoice_number}",
-                        'debit' => $creditSale->sale_amount,
-                        'credit' => 0,
-                        'notes' => $creditSale->notes,
-                    ]);
-                    $results['customer_employee_transactions'][] = $result;
-                }
-
-                // 1b. CUSTOMER SUB-LEDGER: Record credit (payment/recovery)
-                if ($creditSale->payment_received > 0) {
-                    $result = $this->recordCustomerEmployeeTransaction([
-                        'customer_id' => $creditSale->customer_id,
-                        'employee_id' => $creditSale->employee_id,
-                        'transaction_date' => $settlement->settlement_date,
-                        'transaction_type' => 'recovery',
-                        'reference_number' => $settlement->settlement_number,
-                        'sales_settlement_id' => $settlement->id,
-                        'description' => 'Cash Payment Received',
-                        'debit' => 0,
-                        'credit' => $creditSale->payment_received,
-                        'payment_method' => 'cash',
-                        'notes' => $creditSale->notes,
-                    ]);
-                    $results['customer_employee_transactions'][] = $result;
-                }
-
-                // 1c. SALESMAN LEDGER: Record in salesman ledger (separate system for salesman tracking)
-                if ($creditSale->sale_amount > 0) {
-                    $salesmanResult = $this->recordSalesmanCreditSale([
-                        'transaction_date' => $settlement->settlement_date,
-                        'employee_id' => $creditSale->employee_id,
-                        'amount' => $creditSale->sale_amount,
-                        'reference_number' => $settlement->settlement_number,
-                        'description' => "Credit sale to {$creditSale->customer->customer_name}",
-                        'sales_settlement_id' => $settlement->id,
-                        'customer_id' => $creditSale->customer_id,
-                    ]);
-
-                    $results['salesman_entries'][] = $salesmanResult;
-                }
-            }
-
             // ========================================
             // 2. CHEQUE PAYMENTS - Customer Sub-Ledger
             // ========================================

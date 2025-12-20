@@ -195,6 +195,7 @@
 
                     {{-- Payment Details Cards - Moved here after Product-wise Settlement --}}
                     <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6 items-start">
+
                         {{-- Credit Sales Detail Card --}}
                         <div class="bg-white rounded-lg border border-orange-300 overflow-hidden">
                             <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-3 py-2">

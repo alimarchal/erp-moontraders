@@ -144,6 +144,7 @@ class LedgerService
                 'expenses.expenseAccount',
                 'advanceTaxes',
                 'recoveries.customer',
+                'creditSales.customer',
             ]);
 
             // ========================================
@@ -210,6 +211,27 @@ class LedgerService
                         'payment_method' => $recovery->payment_method,
                         'bank_account_id' => $recovery->bank_account_id,
                         'notes' => $recovery->notes,
+                    ]);
+                    $results['customer_employee_transactions'][] = $result;
+                }
+            }
+
+            // ========================================
+            // 5. CREDIT SALES - Customer Sub-Ledger
+            // ========================================
+            foreach ($settlement->creditSales as $creditSale) {
+                if ($creditSale->sale_amount > 0 && $creditSale->customer_id) {
+                    $result = $this->recordCustomerEmployeeTransaction([
+                        'customer_id' => $creditSale->customer_id,
+                        'employee_id' => $settlement->employee_id,
+                        'transaction_date' => $settlement->settlement_date,
+                        'transaction_type' => 'credit_sale',
+                        'reference_number' => $creditSale->invoice_number ?? $settlement->settlement_number,
+                        'sales_settlement_id' => $settlement->id,
+                        'description' => 'Credit Sale - Invoice: '.($creditSale->invoice_number ?? 'N/A'),
+                        'debit' => $creditSale->sale_amount,
+                        'credit' => 0,
+                        'payment_method' => 'credit',
                     ]);
                     $results['customer_employee_transactions'][] = $result;
                 }

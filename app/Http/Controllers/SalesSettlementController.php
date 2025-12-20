@@ -376,6 +376,16 @@ class SalesSettlementController extends Controller
                 }
             }
 
+            // Prepare credit sales details
+            $creditSalesData = [];
+            if ($request->has('credit_sales_entries') && is_array($request->credit_sales_entries)) {
+                foreach ($request->credit_sales_entries as $creditSale) {
+                    if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
+                        $creditSalesData[] = $creditSale;
+                    }
+                }
+            }
+
             // Cash Sales Amount is now derived from denominations total
             $cashSalesAmount = $denomTotal;
 
@@ -602,6 +612,23 @@ class SalesSettlementController extends Controller
                 }
             }
 
+            // Create credit sales records in sales_settlement_credit_sales table
+            if (! empty($creditSalesData)) {
+                foreach ($creditSalesData as $creditSale) {
+                    SalesSettlementCreditSale::create([
+                        'sales_settlement_id' => $settlement->id,
+                        'customer_id' => $creditSale['customer_id'],
+                        'employee_id' => $goodsIssue->employee_id,
+                        'invoice_number' => $creditSale['invoice_number'] ?? null,
+                        'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
+                        'payment_received' => floatval($creditSale['payment_received'] ?? 0),
+                        'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
+                        'new_balance' => floatval($creditSale['new_balance'] ?? 0),
+                        'notes' => $creditSale['notes'] ?? null,
+                    ]);
+                }
+            }
+
             // NOTE: Credit sales are tracked in customer_employee_account_transactions
             // Ledger entries are created when the settlement is POSTED
             // Recalculate financials from the persisted batch data to avoid zeroed profit
@@ -649,6 +676,7 @@ class SalesSettlementController extends Controller
             'advanceTaxes.customer',
             'expenses.expenseAccount',
             'cheques.bankAccount',
+            'creditSales.customer',
             'recoveries.customer',
         ]);
 

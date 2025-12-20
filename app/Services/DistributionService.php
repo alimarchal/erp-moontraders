@@ -633,26 +633,59 @@ class DistributionService
             $employeeName = $settlement->employee->name ?? 'Unknown';
 
             // ====================================================================
-            // 1. CASH SALES ONLY (Credit Sales handled by LedgerService)
+            // 1. SALES REVENUE (Cash, Bank, Cheque)
             // ====================================================================
 
-            // Debit: Cash in Hand (cash sales only)
-            if ($settlement->cash_sales_amount > 0) {
+            // Calculate True Sales Revenue from items
+            $totalSalesRevenue = $settlement->items->sum('total_sales_value');
+            
+            // Calculate Cash Sales Revenue portion
+            // Cash Sale Revenue = Total Revenue - Credit - Cheque - Bank
+            $cashSaleRevenue = $totalSalesRevenue 
+                - ($settlement->credit_sales_amount ?? 0) 
+                - ($settlement->cheque_sales_amount ?? 0) 
+                - ($settlement->bank_sales_amount ?? 0);
+
+            // 1a. CASH SALES REVENUE
+            if ($cashSaleRevenue > 0) {
+                // Debit: Cash in Hand
                 $lines[] = [
                     'account_id' => $accounts['cash']->id,
-                    'debit' => $settlement->cash_sales_amount,
+                    'debit' => $cashSaleRevenue,
                     'credit' => 0,
-                    'description' => "Cash sales - {$employeeName}",
+                    'description' => "Cash sales revenue - {$employeeName}",
                     'cost_center_id' => 4, // Sales & Distribution
                 ];
 
-                // Credit: Sales Revenue (cash sales only)
-                $settlementDate = \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y');
+                // Credit: Sales Revenue
                 $lines[] = [
                     'account_id' => $accounts['sales']->id,
                     'debit' => 0,
-                    'credit' => $settlement->cash_sales_amount,
-                    'description' => "Cash sales revenue - {$employeeName} ({$settlementDate})",
+                    'credit' => $cashSaleRevenue,
+                    'description' => "Cash sales revenue - {$employeeName}",
+                    'cost_center_id' => 4,
+                ];
+            }
+
+            // 1b. BANK & CHEQUE SALES REVENUE
+            // These are recorded as Dr Debtors here, and LedgerService will do Dr Bank / Cr Debtors
+            $bankAndChequeSales = ($settlement->bank_sales_amount ?? 0) + ($settlement->cheque_sales_amount ?? 0);
+            if ($bankAndChequeSales > 0) {
+                // Debit: Debtors (Temporary, cleared by LedgerService)
+                $lines[] = [
+                    'account_id' => $accounts['debtors']->id,
+                    'debit' => $bankAndChequeSales,
+                    'credit' => 0,
+                    'description' => "Bank/Cheque sales (via Debtors) - {$employeeName}",
+                    'cost_center_id' => 4,
+                ];
+
+                // Credit: Sales Revenue
+                $lines[] = [
+                    'account_id' => $accounts['sales']->id,
+                    'debit' => 0,
+                    'credit' => $bankAndChequeSales,
+                    'description' => "Bank/Cheque sales revenue - {$employeeName}",
                     'cost_center_id' => 4,
                 ];
             }

@@ -26,8 +26,8 @@ test('cash denomination relationship works', function () {
 
     // Test total amount calculation
     $expectedTotal = (2 * 5000) + (5 * 1000) + (10 * 500) + (20 * 100) + (5 * 50) + (10 * 20) + (5 * 10) + 125.50;
-    expect($settlement->cashDenominations->first()->total_amount)->toBe((float) $expectedTotal);
+    expect((float) $settlement->cashDenominations->first()->total_amount)->toBe((float) $expectedTotal);
 
     // Test accessor on settlement
-    expect($settlement->total_cash_denomination_amount)->toBe((float) $expectedTotal);
+    expect((float) $settlement->total_cash_denomination_amount)->toBe((float) $expectedTotal);
 });

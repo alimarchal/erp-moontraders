@@ -57,6 +57,7 @@ class StoreSalesSettlementRequest extends FormRequest
             'goods_issue_id' => 'required|exists:goods_issues,id',
             'cash_sales_amount' => 'nullable|numeric|min:0',
             'cheque_sales_amount' => 'nullable|numeric|min:0',
+            'bank_sales_amount' => 'nullable|numeric|min:0',
             'credit_sales_amount' => 'nullable|numeric|min:0',
             'cash_collected' => 'nullable|numeric|min:0',
             'cheques_collected' => 'nullable|numeric|min:0',

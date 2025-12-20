@@ -325,19 +325,17 @@ class SalesSettlementController extends Controller
             // Calculate Gross Profit = Sales Value - COGS
             $grossProfit = $totalSalesValue - $totalCogs;
 
-            $totalSalesAmount = ($request->cash_sales_amount ?? 0) +
-                ($request->cheque_sales_amount ?? 0) +
-                ($request->credit_sales_amount ?? 0);
-
-            $cashToDeposit = ($request->cash_collected ?? 0) + ($request->credit_recoveries ?? 0) - ($request->expenses_claimed ?? 0);
-
-            // Calculate total expenses from the expenses array (dynamic from Alpine.js)
-            $totalExpenses = 0;
-            if (! empty($request->expenses) && is_array($request->expenses)) {
-                foreach ($request->expenses as $expense) {
-                    $totalExpenses += floatval($expense['amount'] ?? 0);
-                }
-            }
+            // Calculate denomination total
+            $denomTotal = (float) (
+                (($request->denom_5000 ?? 0) * 5000) +
+                (($request->denom_1000 ?? 0) * 1000) +
+                (($request->denom_500 ?? 0) * 500) +
+                (($request->denom_100 ?? 0) * 100) +
+                (($request->denom_50 ?? 0) * 50) +
+                (($request->denom_20 ?? 0) * 20) +
+                (($request->denom_10 ?? 0) * 10) +
+                (float) ($request->denom_coins ?? 0)
+            );
 
             // Prepare bank transfer totals
             $bankTransfersData = [];
@@ -363,6 +361,27 @@ class SalesSettlementController extends Controller
                 }
             }
 
+            // Cash Sales Amount is now derived from denominations total
+            $cashSalesAmount = $denomTotal;
+
+            $totalSalesAmount = $cashSalesAmount +
+                $totalCheques +
+                $totalBankTransfers +
+                ($request->credit_sales_amount ?? 0);
+
+            // Cash collected is now strictly physical cash from denominations
+            $cashCollected = $denomTotal;
+
+            $cashToDeposit = $cashCollected + ($request->credit_recoveries ?? 0) - ($request->expenses_claimed ?? 0);
+
+            // Calculate total expenses from the expenses array (dynamic from Alpine.js)
+            $totalExpenses = 0;
+            if (! empty($request->expenses) && is_array($request->expenses)) {
+                foreach ($request->expenses as $expense) {
+                    $totalExpenses += floatval($expense['amount'] ?? 0);
+                }
+            }
+
             // Create sales settlement
             $settlement = SalesSettlement::create([
                 'settlement_number' => $settlementNumber,
@@ -374,14 +393,15 @@ class SalesSettlementController extends Controller
                 'total_quantity_issued' => $totalQuantityIssued,
                 'total_value_issued' => $totalValueIssued,
                 'total_sales_amount' => $totalSalesAmount,
-                'cash_sales_amount' => $request->cash_sales_amount ?? 0,
+                'cash_sales_amount' => $cashSalesAmount,
                 'cheque_sales_amount' => $totalCheques,
+                'bank_sales_amount' => $totalBankTransfers,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
                 'credit_recoveries' => $request->credit_recoveries_total ?? 0,
                 'total_quantity_sold' => $totalQuantitySold,
                 'total_quantity_returned' => $totalQuantityReturned,
                 'total_quantity_shortage' => $totalQuantityShortage,
-                'cash_collected' => $request->summary_cash_received ?? 0,
+                'cash_collected' => $cashCollected,
                 'cheques_collected' => $totalCheques,
                 'expenses_claimed' => $totalExpenses,
                 'gross_profit' => $grossProfit,
@@ -403,6 +423,7 @@ class SalesSettlementController extends Controller
                 'denom_20' => $request->denom_20 ?? 0,
                 'denom_10' => $request->denom_10 ?? 0,
                 'denom_coins' => $request->denom_coins ?? 0,
+                'total_amount' => $denomTotal,
             ]);
 
             // Process bank transfers through customer_ledgers
@@ -721,11 +742,46 @@ class SalesSettlementController extends Controller
             // Calculate gross profit
             $grossProfit = $totalSalesValue - $totalCogs;
 
-            $totalSalesAmount = ($request->cash_sales_amount ?? 0) +
-                ($request->cheque_sales_amount ?? 0) +
+            // Calculate denomination total
+            $denomTotal = (float) (
+                (($request->denom_5000 ?? 0) * 5000) +
+                (($request->denom_1000 ?? 0) * 1000) +
+                (($request->denom_500 ?? 0) * 500) +
+                (($request->denom_100 ?? 0) * 100) +
+                (($request->denom_50 ?? 0) * 50) +
+                (($request->denom_20 ?? 0) * 20) +
+                (($request->denom_10 ?? 0) * 10) +
+                (float) ($request->denom_coins ?? 0)
+            );
+
+            // Prepare bank transfer totals
+            $totalBankTransfers = 0;
+            if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
+                foreach ($request->bank_transfers as $transfer) {
+                    $totalBankTransfers += floatval($transfer['amount'] ?? 0);
+                }
+            }
+
+            // Prepare cheque totals
+            $totalCheques = 0;
+            if ($request->has('cheques') && is_array($request->cheques)) {
+                foreach ($request->cheques as $cheque) {
+                    $totalCheques += floatval($cheque['amount'] ?? 0);
+                }
+            }
+
+            // Cash Sales Amount is now derived from denominations total
+            $cashSalesAmount = $denomTotal;
+
+            $totalSalesAmount = $cashSalesAmount +
+                $totalCheques +
+                $totalBankTransfers +
                 ($request->credit_sales_amount ?? 0);
 
-            $cashToDeposit = ($request->cash_collected ?? 0) + ($request->credit_recoveries ?? 0) - ($request->expenses_claimed ?? 0);
+            // Cash collected is now strictly physical cash from denominations
+            $cashCollected = $denomTotal;
+
+            $cashToDeposit = $cashCollected + ($request->credit_recoveries ?? 0) - ($request->expenses_claimed ?? 0);
 
             // Update sales settlement
             $salesSettlement->update([
@@ -737,15 +793,16 @@ class SalesSettlementController extends Controller
                 'total_quantity_issued' => $totalQuantityIssued,
                 'total_value_issued' => $totalValueIssued,
                 'total_sales_amount' => $totalSalesAmount,
-                'cash_sales_amount' => $request->cash_sales_amount ?? 0,
-                'cheque_sales_amount' => $request->cheque_sales_amount ?? 0,
+                'cash_sales_amount' => $cashSalesAmount,
+                'cheque_sales_amount' => $totalCheques,
+                'bank_sales_amount' => $totalBankTransfers,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
                 'credit_recoveries' => $request->credit_recoveries ?? 0,
                 'total_quantity_sold' => $totalQuantitySold,
                 'total_quantity_returned' => $totalQuantityReturned,
                 'total_quantity_shortage' => $totalQuantityShortage,
-                'cash_collected' => $request->cash_collected ?? 0,
-                'cheques_collected' => $request->cheques_collected ?? 0,
+                'cash_collected' => $cashCollected,
+                'cheques_collected' => $totalCheques,
                 'expenses_claimed' => $request->expenses_claimed ?? 0,
                 'cash_to_deposit' => $cashToDeposit,
                 'gross_profit' => $grossProfit,
@@ -761,6 +818,20 @@ class SalesSettlementController extends Controller
             $salesSettlement->bankTransfers()->delete();
             $salesSettlement->cheques()->delete();
             $salesSettlement->advanceTaxes()->delete();
+
+            // Create cash denomination record
+            SalesSettlementCashDenomination::create([
+                'sales_settlement_id' => $salesSettlement->id,
+                'denom_5000' => $request->denom_5000 ?? 0,
+                'denom_1000' => $request->denom_1000 ?? 0,
+                'denom_500' => $request->denom_500 ?? 0,
+                'denom_100' => $request->denom_100 ?? 0,
+                'denom_50' => $request->denom_50 ?? 0,
+                'denom_20' => $request->denom_20 ?? 0,
+                'denom_10' => $request->denom_10 ?? 0,
+                'denom_coins' => $request->denom_coins ?? 0,
+                'total_amount' => $denomTotal,
+            ]);
 
             foreach ($request->items as $index => $item) {
                 $financials = $itemFinancials[$index] ?? [

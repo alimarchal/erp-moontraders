@@ -26,14 +26,14 @@
     <div x-show="show" class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0">
         <div class="absolute inset-0 bg-gray-900 bg-opacity-70" @click="closeModal()"></div>
 
-        <div class="relative w-full max-w-4xl bg-white rounded-lg shadow-xl overflow-hidden transform transition-all"
+        <div class="relative w-full max-w-5xl bg-white rounded-lg shadow-xl overflow-hidden transform transition-all flex flex-col max-h-[90vh]"
             x-transition:enter="ease-out duration-200"
             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100" x-transition:leave="ease-in duration-150"
             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" @click.stop>
             <div
-                class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-orange-600 to-orange-700">
+                class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-orange-600 to-orange-700 shrink-0">
                 <div>
                     <h3 class="text-lg font-semibold text-white">Creditors / Credit Sales Breakdown</h3>
                     <p class="text-xs text-orange-100">Record credit sales and customer payments.</p>
@@ -47,9 +47,9 @@
                 </button>
             </div>
 
-            <div class="p-6 space-y-4">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-                    <div class="md:col-span-3">
+            <div class="p-6 space-y-4 flex-grow overflow-y-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Customer Name</label>
                         <select id="credit_sales_customer_select" x-model="form.customer_id"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500"
@@ -60,37 +60,41 @@
                             </template>
                         </select>
                     </div>
-                    <div class="md:col-span-2">
+                    <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Invoice #</label>
                         <input type="text" x-model="form.invoice_number" readonly
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-gray-100 text-center font-mono font-semibold"
                             placeholder="Auto" />
                     </div>
-                    <div class="md:col-span-2">
+                    <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Previous Balance (₨)</label>
                         <input type="number" x-model="form.previous_balance" readonly
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-gray-100 text-right font-semibold"
                             placeholder="0.00" />
                     </div>
-                    <div class="md:col-span-2">
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Credit Sale (₨)</label>
                         <input type="number" min="0" step="0.01" x-model="form.sale_amount"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500 text-right"
                             placeholder="0.00" @keydown.enter.prevent="addEntry()" />
                     </div>
-                    <div class="md:col-span-2">
+                    <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Recovery (₨)</label>
                         <input type="number" min="0" step="0.01" x-model="form.payment_received"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500 text-right"
                             placeholder="0.00" @keydown.enter.prevent="addEntry()" />
                     </div>
-                    <div class="md:col-span-1">
+                    <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">New Balance (₨)</label>
                         <input type="number" :value="calculateCurrentBalance()" readonly
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-blue-50 text-right font-bold text-blue-700 text-xs"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-blue-50 text-right font-bold text-blue-700"
                             placeholder="0.00" />
                     </div>
                 </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                     <div class="md:col-span-11">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Notes (Optional)</label>
@@ -205,7 +209,7 @@
                                 <tfoot
                                     class="bg-gradient-to-r from-orange-50 to-orange-100 border-t-2 border-orange-200">
                                     <tr>
-                                        <td colspan="3" class="px-3 py-3 text-right">
+                                        <td colspan="4" class="px-3 py-3 text-right">
                                             <span
                                                 class="text-sm font-bold text-orange-900 flex items-center justify-end gap-2">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor"

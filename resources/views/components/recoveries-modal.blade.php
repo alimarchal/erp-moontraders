@@ -464,6 +464,19 @@
                     },
 
                     init() {
+                        // Initialize entries from the hidden input if it has a value
+                        const entriesInput = document.getElementById(entriesInputId);
+                        if (entriesInput && entriesInput.value) {
+                            try {
+                                const parsed = JSON.parse(entriesInput.value);
+                                if (Array.isArray(parsed)) {
+                                    this.entries = parsed;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing recoveries entries:', e);
+                            }
+                        }
+
                         window.addEventListener('update-modal-customers', (event) => {
                             const rawCustomers = event.detail.customers || [];
                             if (event.detail.employeeId) {

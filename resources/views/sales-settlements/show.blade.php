@@ -635,23 +635,30 @@
                                         <tr class="border-t border-gray-200">
                                             <td class="py-1 px-1 text-xs text-black">Recovery (From Customers)</td>
                                             <td class="py-1 px-1 text-right font-semibold text-xs text-teal-700">
-                                                {{ number_format($settlement->credit_recoveries ?? 0, 2) }}
+                                                @php
+                                                    $cashRecoveries = $settlement->recoveries->where('payment_method', 'cash')->sum('amount');
+                                                    $bankRecoveries = $settlement->recoveries->where('payment_method', 'bank_transfer')->sum('amount');
+                                                @endphp
+                                                <div class="flex flex-col items-end">
+                                                    <span>{{ number_format($settlement->credit_recoveries ?? 0, 2) }}</span>
+                                                    @if($bankRecoveries > 0)
+                                                        <span class="text-[10px] text-gray-500 italic">
+                                                            (Cash: {{ number_format($cashRecoveries, 2) }}, Bank: {{ number_format($bankRecoveries, 2) }})
+                                                        </span>
+                                                    @endif
+                                                </div>
                                             </td>
                                         </tr>
                                         <tr class="bg-blue-50 border-y-2 border-blue-200">
                                             <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Collection</td>
                                             <td class="py-1 px-1 text-right font-bold text-xs text-blue-800">
-                                                {{ number_format($settlement->cash_sales_amount + $settlement->credit_recoveries, 2) }}
-                                            </td>
-                                        </tr>
+                                                {{ number_format($settlement->cash_sales_amount + $cashRecoveries, 2) }}
                                             </td>
                                         </tr>
                                         <tr class="bg-gray-50 border-t border-gray-200">
                                             <td class="py-1 px-1 text-xs font-semibold text-gray-800">Balance</td>
                                             <td class="py-1 px-1 text-right font-bold text-xs text-gray-900">
-                                                {{ number_format(($settlement->items->sum('total_sales_value') +
-    ($settlement->credit_recoveries ?? 0)) -
-    $settlement->creditSales->sum('sale_amount'), 2) }}
+                                                {{ number_format(($settlement->cash_sales_amount + $cashRecoveries), 2) }}
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
@@ -661,9 +668,7 @@
                                             </td>
                                         </tr>
                                         @php
-                                            $netBalance = (($settlement->items->sum('total_sales_value') +
-                                                ($settlement->credit_recoveries ?? 0)) -
-                                                $settlement->creditSales->sum('sale_amount')) -
+                                            $netBalance = ($settlement->cash_sales_amount + $cashRecoveries) -
                                                 ($settlement->expenses->sum('amount') ?? 0);
                                         @endphp
                                         <tr class="bg-indigo-50 border-y-2 border-indigo-200">
@@ -705,7 +710,10 @@
                                             <td class="py-1 px-1 text-xs font-semibold text-purple-900">
                                                 Short/Excess</td>
                                             <td class="py-1 px-1 text-right font-bold text-xs text-purple-900">
-                                                {{ number_format($totalCashReceived - $netBalance, 2) }}
+                                                @php
+                                                    $shortExcess = $totalCashReceived - $netBalance - $bankRecoveries;
+                                                @endphp
+                                                {{ number_format($shortExcess, 2) }}
                                             </td>
                                         </tr>
                                         {{-- Profit Analysis --}}

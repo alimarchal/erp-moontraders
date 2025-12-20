@@ -1,22 +1,22 @@
 @props([
-'customers' => collect(),
-'bankAccounts' => collect(),
-'triggerEvent' => 'open-cheque-payment-modal',
-'inputId' => 'total_cheques',
-'entriesInputId' => 'cheque_payment_entries',
+    'customers' => collect(),
+    'bankAccounts' => collect(),
+    'triggerEvent' => 'open-cheque-payment-modal',
+    'inputId' => 'total_cheques',
+    'entriesInputId' => 'cheque_payment_entries',
 ])
 
 @php
-$customers = $customers instanceof \Illuminate\Support\Collection ? $customers : collect($customers);
-$bankAccounts = $bankAccounts instanceof \Illuminate\Support\Collection ? $bankAccounts : collect($bankAccounts);
+    $customers = $customers instanceof \Illuminate\Support\Collection ? $customers : collect($customers);
+    $bankAccounts = $bankAccounts instanceof \Illuminate\Support\Collection ? $bankAccounts : collect($bankAccounts);
 @endphp
 
 <div x-data="chequePaymentModal({
-        customers: @js($customers->map(fn ($customer) => [
+        customers: @js($customers->map(fn($customer) => [
             'id' => $customer->id,
             'name' => $customer->customer_name,
         ])->values()),
-        bankAccounts: @js($bankAccounts->map(fn ($bank) => [
+        bankAccounts: @js($bankAccounts->map(fn($bank) => [
             'id' => $bank->id,
             'name' => $bank->bank_name . ' - ' . $bank->account_name . ' (' . $bank->account_number . ')',
         ])->values()),
@@ -205,212 +205,224 @@ $bankAccounts = $bankAccounts instanceof \Illuminate\Support\Collection ? $bankA
 </div>
 
 @once
-@push('scripts')
-<script>
-    function chequePaymentModal({ customers, bankAccounts, inputId, entriesInputId }) {
-        return {
-            show: false,
-            customers,
-            bankAccounts,
-            form: {
-                customer_id: '',
-                bank_account_id: '',
-                cheque_number: '',
-                bank_name: '',
-                cheque_date: new Date().toISOString().split('T')[0],
-                amount: '',
-            },
-            entries: [],
-            select2Initialized: false,
+    @push('scripts')
+        <script>
+            function chequePaymentModal({ customers, bankAccounts, inputId, entriesInputId }) {
+                return {
+                    show: false,
+                    customers,
+                    bankAccounts,
+                    form: {
+                        customer_id: '',
+                        bank_account_id: '',
+                        cheque_number: '',
+                        bank_name: '',
+                        cheque_date: new Date().toISOString().split('T')[0],
+                        amount: '',
+                    },
+                    entries: [],
+                    select2Initialized: false,
 
-            openModal() {
-                this.show = true;
+                    openModal() {
+                        this.show = true;
 
-                // Initialize select2 after the modal is fully rendered
-                this.$nextTick(() => {
-                    if (!this.select2Initialized) {
-                        this.initializeSelect2();
-                        this.select2Initialized = true;
-                    }
-                });
-            },
-
-            closeModal() {
-                this.show = false;
-            },
-
-            initializeSelect2() {
-                const self = this;
-                $('#cheque_payment_customer_select').select2({
-                    width: '100%',
-                    placeholder: 'Select Customer',
-                    allowClear: true,
-                    dropdownParent: $('#cheque_payment_customer_select').parent()
-                });
-
-                // Handle select2 change event
-                $('#cheque_payment_customer_select').on('change', function() {
-                    self.form.customer_id = $(this).val();
-                });
-            },
-
-            addEntry() {
-                const customerId = this.form.customer_id;
-                const bankAccountId = this.form.bank_account_id;
-                const chequeNumber = this.form.cheque_number.trim();
-                const bankName = this.form.bank_name.trim();
-                const chequeDate = this.form.cheque_date;
-                const amount = parseFloat(this.form.amount);
-
-                if (!customerId) {
-                    alert('Please select a customer.');
-                    return;
-                }
-
-                if (!bankAccountId) {
-                    alert('Please select a deposit bank.');
-                    return;
-                }
-
-                if (!chequeNumber) {
-                    alert('Please enter a cheque number.');
-                    return;
-                }
-
-                if (!bankName) {
-                    alert('Please enter a bank name.');
-                    return;
-                }
-
-                if (!chequeDate) {
-                    alert('Please select a cheque date.');
-                    return;
-                }
-
-                if (isNaN(amount) || amount <= 0) {
-                    alert('Please enter a valid amount greater than zero.');
-                    return;
-                }
-
-                const customerName = this.customerName(customerId);
-                const bankAccountName = this.bankAccountName(bankAccountId);
-
-                this.entries.push({
-                    customer_id: customerId,
-                    customer_name: customerName,
-                    bank_account_id: bankAccountId,
-                    bank_account_name: bankAccountName,
-                    cheque_number: chequeNumber,
-                    bank_name: bankName,
-                    cheque_date: chequeDate,
-                    amount: parseFloat(amount.toFixed(2)),
-                });
-
-                // Reset form
-                this.form.customer_id = '';
-                this.form.bank_account_id = '';
-                this.form.cheque_number = '';
-                this.form.bank_name = '';
-                this.form.cheque_date = new Date().toISOString().split('T')[0];
-                this.form.amount = '';
-
-                // Reset select2 dropdown
-                $('#cheque_payment_customer_select').val(null).trigger('change');
-            },
-
-            removeEntry(index) {
-                this.entries.splice(index, 1);
-            },
-
-            saveEntries() {
-                this.syncTotals();
-                this.closeModal();
-            },
-
-            syncTotals() {
-                const total = this.total;
-                const amountInput = document.getElementById(inputId);
-                if (amountInput) {
-                    amountInput.value = total.toFixed(2);
-                }
-
-                const entriesInput = document.getElementById(entriesInputId);
-                if (entriesInput) {
-                    entriesInput.value = JSON.stringify(this.entries);
-                }
-
-                // Update the display total
-                const displayElement = document.getElementById('chequeTotalDisplay');
-                if (displayElement) {
-                    displayElement.textContent = this.formatCurrency(total);
-                }
-
-                if (typeof updateCashTotal === 'function') {
-                    updateCashTotal();
-                }
-
-                // Dispatch update event for the display table
-                window.dispatchEvent(new CustomEvent('cheque-payments-updated'));
-            },
-
-            customerName(id) {
-                const found = this.customers.find(customer => Number(customer.id) === Number(id));
-                return found ? found.name : 'Unknown Customer';
-            },
-
-            bankAccountName(id) {
-                const found = this.bankAccounts.find(bank => Number(bank.id) === Number(id));
-                return found ? found.name : 'Unknown Bank';
-            },
-
-            formatCurrency(value) {
-                const numericValue = parseFloat(value) || 0;
-                return '₨ ' + numericValue.toLocaleString('en-PK', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                });
-            },
-
-            formatDate(dateString) {
-                if (!dateString) {
-                    return 'N/A';
-                }
-                const date = new Date(dateString);
-                return date.toLocaleDateString('en-PK', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-            },
-
-            get total() {
-                return this.entries.reduce((sum, entry) => {
-                    const amount = parseFloat(entry.amount);
-                    return sum + (isNaN(amount) ? 0 : amount);
-                }, 0);
-            },
-
-            init() {
-                // Listen for customer updates from goods issue selection
-                window.addEventListener('update-modal-customers', (event) => {
-                    this.customers = event.detail.customers || [];
-                    
-                    // Rebuild select2 options if initialized
-                    if (this.select2Initialized) {
-                        const select = $('#cheque_payment_customer_select');
-                        select.empty();
-                        select.append('<option value="">Select Customer</option>');
-                        
-                        this.customers.forEach(customer => {
-                            select.append(`<option value="${customer.id}">${customer.name}</option>`);
+                        // Initialize select2 after the modal is fully rendered
+                        this.$nextTick(() => {
+                            if (!this.select2Initialized) {
+                                this.initializeSelect2();
+                                this.select2Initialized = true;
+                            }
                         });
-                        
-                        select.trigger('change');
-                    }
-                });
-            },
-        };
-    }
-</script>
-@endpush
+                    },
+
+                    closeModal() {
+                        this.show = false;
+                    },
+
+                    initializeSelect2() {
+                        const self = this;
+                        $('#cheque_payment_customer_select').select2({
+                            width: '100%',
+                            placeholder: 'Select Customer',
+                             allowClear: true,
+                            dropdownParent: $('#cheque_payment_customer_select').parent()
+                        });
+
+                        // Handle select2 change event
+                        $('#cheque_payment_customer_select').on('change', function() {
+                            self.form.customer_id = $(this).val();
+                        });
+                    },
+
+                    addEntry() {
+                        const customerId = this.form.customer_id;
+                        const bankAccountId = this.form.bank_account_id;
+                        const chequeNumber = this.form.cheque_number.trim();
+                        const bankName = this.form.bank_name.trim();
+                        const chequeDate = this.form.cheque_date;
+                        const amount = parseFloat(this.form.amount);
+
+                        if (!customerId) {
+                            alert('Please select a customer.');
+                            return;
+                        }
+
+                        if (!bankAccountId) {
+                            alert('Please select a deposit bank.');
+                            return;
+                        }
+
+                        if (!chequeNumber) {
+                            alert('Please enter a cheque number.');
+                            return;
+                        }
+
+                        if (!bankName) {
+                            alert('Please enter a bank name.');
+                            return;
+                        }
+
+                        if (!chequeDate) {
+                            alert('Please select a cheque date.');
+                            return;
+                        }
+
+                        if (isNaN(amount) || amount <= 0) {
+                            alert('Please enter a valid amount greater than zero.');
+                            return;
+                        }
+
+                        const customerName = this.customerName(customerId);
+                        const bankAccountName = this.bankAccountName(bankAccountId);
+
+                        this.entries.push({
+                            customer_id: customerId,
+                            customer_name: customerName,
+                            bank_account_id: bankAccountId,
+                            bank_account_name: bankAccountName,
+                            cheque_number: chequeNumber,
+                            bank_name: bankName,
+                            cheque_date: chequeDate,
+                            amount: parseFloat(amount.toFixed(2)),
+                        });
+
+                        // Reset form
+                        this.form.customer_id = '';
+                        this.form.bank_account_id = '';
+                        this.form.cheque_number = '';
+                        this.form.bank_name = '';
+                        this.form.cheque_date = new Date().toISOString().split('T')[0];
+                        this.form.amount = '';
+
+                        // Reset select2 dropdown
+                        $('#cheque_payment_customer_select').val(null).trigger('change');
+                    },
+
+                    removeEntry(index) {
+                        this.entries.splice(index, 1);
+                    },
+
+                    saveEntries() {
+                        this.syncTotals();
+                        this.closeModal();
+                    },
+
+                    syncTotals() {
+                        const total = this.total;
+                        const amountInput = document.getElementById(inputId);
+                        if (amountInput) {
+                            amountInput.value = total.toFixed(2);
+                        }
+
+                        const entriesInput = document.getElementById(entriesInputId);
+                        if (entriesInput) {
+                            entriesInput.value = JSON.stringify(this.entries);
+                        }
+
+                        // Update the display total
+                        const displayElement = document.getElementById('chequeTotalDisplay');
+                        if (displayElement) {
+                            displayElement.textContent = this.formatCurrency(total);
+                        }
+
+                        if (typeof updateCashTotal === 'function') {
+                            updateCashTotal();
+                        }
+
+                        // Dispatch update event for the display table
+                        window.dispatchEvent(new CustomEvent('cheque-payments-updated'));
+                    },
+
+                    customerName(id) {
+                        const found = this.customers.find(customer => Number(customer.id) === Number(id));
+                        return found ? found.name : 'Unknown Customer';
+                    },
+
+                    bankAccountName(id) {
+                        const found = this.bankAccounts.find(bank => Number(bank.id) === Number(id));
+                        return found ? found.name : 'Unknown Bank';
+                    },
+
+                    formatCurrency(value) {
+                        const numericValue = parseFloat(value) || 0;
+                        return '₨ ' + numericValue.toLocaleString('en-PK', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        });
+                    },
+
+                    formatDate(dateString) {
+                        if (!dateString) {
+                            return 'N/A';
+                        }
+                        const date = new Date(dateString);
+                        return date.toLocaleDateString('en-PK', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        });
+                    },
+
+                    get total() {
+                        return this.entries.reduce((sum, entry) => {
+                            const amount = parseFloat(entry.amount);
+                            return sum + (isNaN(amount) ? 0 : amount);
+                        }, 0);
+                    },
+
+                    init() {
+                        // Initialize entries from the hidden input if it has a value
+                        const entriesInput = document.getElementById(entriesInputId);
+                        if (entriesInput && entriesInput.value) {
+                            try {
+                                const parsed = JSON.parse(entriesInput.value);
+                                if (Array.isArray(parsed)) {
+                                    this.entries = parsed;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing cheque payment entries:', e);
+        }
+                        }
+
+                        // Listen for customer updates from goods issue selection
+                        window.addEventListener('update-modal-customers', (event) => {
+                            this.customers = event.detail.customers || [];
+                            // Rebuild select2 options if initialized
+                            if (this.select2Initialized) {
+                                const select = $('#cheque_payment_customer_select');
+        select.empty();
+                                select.append('<option value="">Select Customer</option>');
+
+                                this.customers.forEach(customer => {
+                                    select.append(`<option value="${customer.id}">${customer.name}</option>`);
+                                });
+
+                                select.trigger('change');
+                            }
+                        });
+                    },
+                };
+            }
+        </script>
+    @endpush
 @endonce

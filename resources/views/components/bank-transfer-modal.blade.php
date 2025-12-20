@@ -350,6 +350,19 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
             },
 
             init() {
+                // Initialize entries from the hidden input if it has a value
+                const entriesInput = document.getElementById(entriesInputId);
+                if (entriesInput && entriesInput.value) {
+                    try {
+                        const parsed = JSON.parse(entriesInput.value);
+                        if (Array.isArray(parsed)) {
+                            this.entries = parsed;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing bank transfer entries:', e);
+                    }
+                }
+
                 // Listen for customer updates from goods issue selection
                 window.addEventListener('update-modal-customers', (event) => {
                     this.customers = event.detail.customers || [];

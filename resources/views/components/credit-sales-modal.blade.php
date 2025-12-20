@@ -4,7 +4,7 @@
     'triggerEvent' => 'open-credit-sales-modal',
     'creditInputId' => 'credit_sales_amount',
     'recoveryInputId' => 'credit_recoveries_total',
-    'entriesInputId' => 'credit_sales_entries',
+    'entriesInputId' => 'credit_sales',
 ])
 
 @php
@@ -504,6 +504,21 @@
                     },
 
                     init() {
+                        // Initialize entries from the hidden input if it has a value
+                        const entriesInput = document.getElementById(entriesInputId);
+                        if (entriesInput && entriesInput.value) {
+                            try {
+                                const parsed = JSON.parse(entriesInput.value);
+                                if (Array.isArray(parsed)) {
+                                    this.entries = parsed;
+                                    // Update invoice counter based on existing entries
+                                    this.invoiceCounter = this.entries.length + 1;
+                                }
+                            } catch (e) {
+                                console.error('Error parsing credit sales entries:', e);
+                            }
+                        }
+
                         // Listen for customer updates from goods issue selection
                         // The API /api/v1/customer-employee-accounts/by-employee returns: {id, name, business_name, balance}
                         window.addEventListener('update-modal-customers', (event) => {

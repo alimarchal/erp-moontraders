@@ -11,6 +11,7 @@ use App\Models\SalesSettlementAdvanceTax;
 use App\Models\SalesSettlementBankTransfer;
 use App\Models\SalesSettlementCashDenomination;
 use App\Models\SalesSettlementCheque;
+use App\Models\SalesSettlementCreditSale;
 use App\Models\SalesSettlementExpense;
 use App\Models\SalesSettlementItem;
 use App\Models\SalesSettlementItemBatch;
@@ -278,7 +279,7 @@ class SalesSettlementController extends Controller
             Log::info('Sales Settlement Request Data', [
                 'goods_issue_id' => $request->goods_issue_id,
                 'items_count' => count($request->items ?? []),
-                'items_data' => $request->items,
+                'credit_sales' => $request->credit_sales,
             ]);
 
             // Debug: Log batch-level details specifically
@@ -367,21 +368,30 @@ class SalesSettlementController extends Controller
             // Prepare recoveries details
             $recoveriesData = [];
             $totalRecoveries = 0;
-            if ($request->has('recoveries_entries') && is_array($request->recoveries_entries)) {
-                foreach ($request->recoveries_entries as $recovery) {
-                    if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
-                        $recoveriesData[] = $recovery;
-                        $totalRecoveries += floatval($recovery['amount'] ?? 0);
+            if ($request->has('recoveries_entries')) {
+                $entries = is_array($request->recoveries_entries)
+                    ? $request->recoveries_entries
+                    : json_decode($request->recoveries_entries, true);
+
+                if (is_array($entries)) {
+                    foreach ($entries as $recovery) {
+                        if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
+                            $recoveriesData[] = $recovery;
+                            $totalRecoveries += floatval($recovery['amount'] ?? 0);
+                        }
                     }
                 }
             }
 
             // Prepare credit sales details
             $creditSalesData = [];
-            if ($request->has('credit_sales_entries') && is_array($request->credit_sales_entries)) {
-                foreach ($request->credit_sales_entries as $creditSale) {
-                    if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
-                        $creditSalesData[] = $creditSale;
+            if ($request->has('credit_sales')) {
+                $entries = $request->credit_sales;
+                if (is_array($entries)) {
+                    foreach ($entries as $creditSale) {
+                        if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
+                            $creditSalesData[] = $creditSale;
+                        }
                     }
                 }
             }
@@ -614,8 +624,9 @@ class SalesSettlementController extends Controller
 
             // Create credit sales records in sales_settlement_credit_sales table
             if (! empty($creditSalesData)) {
+                Log::info('Creating Credit Sales Records', ['count' => count($creditSalesData)]);
                 foreach ($creditSalesData as $creditSale) {
-                    SalesSettlementCreditSale::create([
+                    $record = SalesSettlementCreditSale::create([
                         'sales_settlement_id' => $settlement->id,
                         'customer_id' => $creditSale['customer_id'],
                         'employee_id' => $goodsIssue->employee_id,
@@ -626,6 +637,7 @@ class SalesSettlementController extends Controller
                         'new_balance' => floatval($creditSale['new_balance'] ?? 0),
                         'notes' => $creditSale['notes'] ?? null,
                     ]);
+                    Log::info('Credit Sale Record Created', ['id' => $record->id]);
                 }
             }
 
@@ -999,21 +1011,49 @@ class SalesSettlementController extends Controller
             }
 
             // Create recovery records
-            if (! empty($request->recoveries_entries) && is_array($request->recoveries_entries)) {
-                foreach ($request->recoveries_entries as $recovery) {
-                    if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
-                        SalesSettlementRecovery::create([
-                            'sales_settlement_id' => $salesSettlement->id,
-                            'customer_id' => $recovery['customer_id'],
-                            'employee_id' => $goodsIssue->employee_id,
-                            'recovery_number' => $recovery['recovery_number'] ?? null,
-                            'payment_method' => $recovery['payment_method'] ?? 'cash',
-                            'bank_account_id' => $recovery['bank_account_id'] ?? null,
-                            'amount' => floatval($recovery['amount'] ?? 0),
-                            'previous_balance' => floatval($recovery['previous_balance'] ?? 0),
-                            'new_balance' => floatval($recovery['new_balance'] ?? 0),
-                            'notes' => $recovery['notes'] ?? null,
-                        ]);
+            if ($request->has('recoveries_entries')) {
+                $entries = is_array($request->recoveries_entries)
+                    ? $request->recoveries_entries
+                    : json_decode($request->recoveries_entries, true);
+
+                if (is_array($entries)) {
+                    foreach ($entries as $recovery) {
+                        if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
+                            SalesSettlementRecovery::create([
+                                'sales_settlement_id' => $salesSettlement->id,
+                                'customer_id' => $recovery['customer_id'],
+                                'employee_id' => $goodsIssue->employee_id,
+                                'recovery_number' => $recovery['recovery_number'] ?? null,
+                                'payment_method' => $recovery['payment_method'] ?? 'cash',
+                                'bank_account_id' => $recovery['bank_account_id'] ?? null,
+                                'amount' => floatval($recovery['amount'] ?? 0),
+                                'previous_balance' => floatval($recovery['previous_balance'] ?? 0),
+                                'new_balance' => floatval($recovery['new_balance'] ?? 0),
+                                'notes' => $recovery['notes'] ?? null,
+                            ]);
+                        }
+                    }
+                }
+            }
+
+            // Create credit sales records
+            if ($request->has('credit_sales')) {
+                $entries = $request->credit_sales;
+                if (is_array($entries)) {
+                    foreach ($entries as $creditSale) {
+                        if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
+                            SalesSettlementCreditSale::create([
+                                'sales_settlement_id' => $salesSettlement->id,
+                                'customer_id' => $creditSale['customer_id'],
+                                'employee_id' => $goodsIssue->employee_id,
+                                'invoice_number' => $creditSale['invoice_number'] ?? null,
+                                'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
+                                'payment_received' => floatval($creditSale['payment_received'] ?? 0),
+                                'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
+                                'new_balance' => floatval($creditSale['new_balance'] ?? 0),
+                                'notes' => $creditSale['notes'] ?? null,
+                            ]);
+                        }
                     }
                 }
             }

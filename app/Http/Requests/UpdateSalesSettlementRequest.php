@@ -99,6 +99,11 @@ class UpdateSalesSettlementRequest extends FormRequest
             'sales.*.sale_amount' => 'required_with:sales|numeric|min:0',
             'sales.*.payment_type' => 'required_with:sales|in:cash,cheque,credit',
 
+            'credit_sales' => 'nullable|array',
+            'credit_sales.*.customer_id' => 'required_with:credit_sales|exists:customers,id',
+            'credit_sales.*.invoice_number' => 'nullable|string|max:100',
+            'credit_sales.*.sale_amount' => 'required_with:credit_sales|numeric|min:0',
+
             // Credit sales breakdown
             'credit_sales' => 'nullable|array',
             'credit_sales.*.customer_id' => 'required_with:credit_sales|exists:customers,id',

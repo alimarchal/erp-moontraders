@@ -189,33 +189,35 @@
                                         </button>
                                     </div>
                                     <div class="p-0">
-                                        <table class="w-full text-xs">
-                                            <thead>
-                                                <tr class="border-b-2 border-gray-300">
-                                                    <th class="py-1 px-1 text-left text-black">Customer</th>
-                                                    <th class="py-1 px-1 text-right text-black">Recovery</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="recoveriesTableBody">
-                                                <tr>
-                                                    <td colspan="2"
-                                                        class="py-2 px-1 text-center text-black text-xs italic">
-                                                        No recovery entries
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                            <tfoot class="border-t-2 border-gray-300">
-                                                <tr class="bg-green-50">
-                                                    <td
-                                                        class="py-1.5 px-1 text-right font-semibold text-green-900 text-xs">
-                                                        Total:</td>
-                                                    <td class="py-1.5 px-1 text-right font-bold text-green-700 text-xs"
-                                                        id="creditRecoveryTotalDisplay">0</td>
-                                                </tr>
-                                            </tfoot>
-                                        </table>
-                                    </div>
-                                </div>
+                                <table class="w-full text-xs">
+                                    <thead>
+                                        <tr class="border-b-2 border-gray-300">
+                                            <th class="py-1 px-1 text-left text-black">Customer</th>
+                                            <th class="py-1 px-1 text-center text-black">Method</th>
+                                            <th class="py-1 px-1 text-left text-black">Bank Account</th>
+                                            <th class="py-1 px-1 text-right text-black">Recovery</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recoveriesTableBody">
+                                        <tr>
+                                            <td colspan="4"
+                                                class="py-2 px-1 text-center text-black text-xs italic">
+                                                No recovery entries
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot class="border-t-2 border-gray-300">
+                                        <tr class="bg-green-50">
+                                            <td colspan="3"
+                                                class="py-1.5 px-1 text-right font-semibold text-green-900 text-xs">
+                                                Total:</td>
+                                            <td class="py-1.5 px-1 text-right font-bold text-green-700 text-xs"
+                                                id="creditRecoveryTotalDisplay">0</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
 
                                 {{-- Cheque Payments Card --}}
                                 <div class="bg-white rounded-lg border border-purple-300 overflow-hidden"
@@ -232,14 +234,17 @@
                                         <table class="w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
+                                                    <th class="py-1 px-1 text-left text-black">Customer</th>
                                                     <th class="py-1 px-1 text-left text-black">Cheque #</th>
                                                     <th class="py-1 px-1 text-left text-black">Bank</th>
+                                                    <th class="py-1 px-1 text-left text-black">Deposit Bank</th>
+                                                    <th class="py-1 px-1 text-left text-black">Cheque Date</th>
                                                     <th class="py-1 px-1 text-right text-black">Amount</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="chequePaymentTableBody">
                                                 <tr>
-                                                    <td colspan="3"
+                                                    <td colspan="6"
                                                         class="py-2 px-1 text-center text-black text-xs italic">
                                                         No cheque payments
                                                     </td>
@@ -247,7 +252,7 @@
                                             </tbody>
                                             <tfoot class="border-t-2 border-gray-300">
                                                 <tr class="bg-purple-50">
-                                                    <td colspan="2"
+                                                    <td colspan="5"
                                                         class="py-1.5 px-1 text-right font-semibold text-purple-900 text-xs">
                                                         Total:</td>
                                                     <td class="py-1.5 px-1 text-right font-bold text-purple-700 text-xs"
@@ -273,14 +278,16 @@
                                         <table class="w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
+                                                    <th class="py-1 px-1 text-left text-black">Customer</th>
                                                     <th class="py-1 px-1 text-left text-black">Bank</th>
                                                     <th class="py-1 px-1 text-left text-black">Ref #</th>
+                                                    <th class="py-1 px-1 text-left text-black">Transfer Date</th>
                                                     <th class="py-1 px-1 text-right text-black">Amount</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="bankTransferTableBody">
                                                 <tr>
-                                                    <td colspan="3"
+                                                    <td colspan="5"
                                                         class="py-2 px-1 text-center text-black text-xs italic">
                                                         No bank transfers
                                                     </td>
@@ -288,7 +295,7 @@
                                             </tbody>
                                             <tfoot class="border-t-2 border-gray-300">
                                                 <tr class="bg-blue-50">
-                                                    <td colspan="2"
+                                                    <td colspan="4"
                                                         class="py-1.5 px-1 text-right font-semibold text-blue-900 text-xs">
                                                         Total:</td>
                                                     <td class="py-1.5 px-1 text-right font-bold text-blue-700 text-xs"
@@ -573,6 +580,11 @@
                                                     <td class="py-1 px-1 text-right font-semibold text-xs text-teal-700"
                                                         id="summary_recovery_display">0.00</td>
                                                 </tr>
+                                                <tr class="border-t border-gray-200 bg-gray-50">
+                                                    <td class="py-1 px-1 text-xs text-black">Balance</td>
+                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-black"
+                                                        id="summary_balance_display">0.00</td>
+                                                </tr>
                                                 <tr class="border-t border-gray-200">
                                                     <td class="py-1 px-1 text-xs text-red-700">Less: Expenses</td>
                                                     <td class="py-1 px-1 text-right font-semibold text-xs text-red-700"
@@ -650,7 +662,7 @@
                                             value="0.00" />
                                         <input type="hidden" id="summary_total_sale" value="0.00" />
                                         <input type="hidden" id="summary_credit" name="summary_credit" value="0.00" />
-                                        <input type="hidden" id="summary_balance" value="0.00" />
+                                        <input type="hidden" id="summary_balance" name="summary_balance" value="0.00" />
                                         <input type="hidden" id="summary_expenses" name="summary_expenses"
                                             value="0.00" />
                                         <input type="hidden" id="summary_net_balance" value="0.00" />
@@ -1240,6 +1252,7 @@
 
                 const netSaleDisplay = document.getElementById('summary_net_sale_display');
                 const recoveryDisplay = document.getElementById('summary_recovery_display');
+                const balanceDisplay = document.getElementById('summary_balance_display');
                 const expensesDisplay = document.getElementById('summary_expenses_display');
                 const netBalanceDisplay = document.getElementById('summary_net_balance_display');
                 const cashReceivedDisplay = document.getElementById('summary_cash_received_display');
@@ -1253,6 +1266,7 @@
 
                 if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);
                 if (recoveryDisplay) recoveryDisplay.textContent = formatPKR(recovery);
+                if (balanceDisplay) balanceDisplay.textContent = formatPKR(balance);
                 if (expensesDisplay) expensesDisplay.textContent = formatPKR(expenses);
                 if (netBalanceDisplay) netBalanceDisplay.textContent = formatPKR(netBalance);
                 if (cashReceivedDisplay) cashReceivedDisplay.textContent = formatPKR(cashReceived);
@@ -1728,7 +1742,7 @@
                         if (this.entries.length === 0) {
                             tbody.innerHTML = `
                                                                                                     <tr>
-                                                                                                        <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                        <td colspan="4" class="py-2 px-2 text-center text-gray-500 text-xs italic">
                                                                                                             No recovery entries added yet
                                                                                                         </td>
                                                                                                     </tr>
@@ -1742,6 +1756,12 @@
                                                                                                             <div class="font-semibold text-gray-800">${entry.customer_name}</div>
                                                                                                             ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
                                                                                                         </td>
+                                                                                                        <td class="py-1 px-2 text-center text-xs">
+                                                                                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${entry.payment_method === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                                                                                                                ${entry.payment_method === 'cash' ? 'Cash' : 'Bank'}
+                                                                                                            </span>
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.payment_method === 'bank_transfer' ? (entry.bank_account_name || '—') : '—'}</td>
                                                                                                         <td class="py-1 px-2 text-right text-xs font-semibold text-green-700">
                                                                                                             ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
                                                                                                         </td>
@@ -1795,7 +1815,7 @@
                         if (this.entries.length === 0) {
                             tbody.innerHTML = `
                                                                                                     <tr>
-                                                                                                        <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                        <td colspan="5" class="py-2 px-2 text-center text-gray-500 text-xs italic">
                                                                                                             No bank transfer entries added yet
                                                                                                         </td>
                                                                                                     </tr>
@@ -1805,12 +1825,10 @@
                                 const row = document.createElement('tr');
                                 row.className = 'border-b border-gray-200';
                                 row.innerHTML = `
-                                                                                                        <td class="py-1 px-2 text-xs">
-                                                                                                            <div class="font-semibold text-gray-800">${entry.bank_account_name || 'Unknown Account'}</div>
-                                                                                                            <div class="text-xs text-gray-500">Date: ${entry.transfer_date || 'N/A'}</div>
-                                                                                                            ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
-                                                                                                            ${entry.reference_number ? `<div class="text-xs text-gray-500">Ref: ${entry.reference_number}</div>` : ''}
-                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.customer_name || 'N/A'}</td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_account_name || 'Unknown Account'}</td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-700">${entry.reference_number || 'No ref'}</td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-600">${entry.transfer_date || 'N/A'}</td>
                                                                                                         <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
                                                                                                             ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
                                                                                                         </td>
@@ -1864,7 +1882,7 @@
                         if (this.entries.length === 0) {
                             tbody.innerHTML = `
                                                                                                     <tr>
-                                                                                                        <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                        <td colspan="6" class="py-2 px-2 text-center text-gray-500 text-xs italic">
                                                                                                             No cheque payment entries added yet
                                                                                                         </td>
                                                                                                     </tr>
@@ -1874,14 +1892,14 @@
                                 const row = document.createElement('tr');
                                 row.className = 'border-b border-gray-200';
                                 row.innerHTML = `
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.customer_name || 'N/A'}</td>
                                                                                                         <td class="py-1 px-2 text-xs">
-                                                                                                            <div class="font-semibold text-gray-800">Cheque #${entry.cheque_number || 'N/A'}</div>
-
-                                                                                                            ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                                                                                            <div class="font-semibold text-gray-800">${entry.cheque_number || 'N/A'}</div>
+                                                                                                            ${entry.notes ? `<div class="text-[11px] text-gray-500">${entry.notes}</div>` : ''}
                                                                                                         </td>
-                                                                                                        <td class="py-1 px-2 text-xs">
-                                                                                                            <div class="text-xs text-gray-500">${entry.bank_name || ''} - ${entry.cheque_date || ''}</div>
-                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_name || 'N/A'}</td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_account_name || 'N/A'}</td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-600">${entry.cheque_date || 'N/A'}</td>
                                                                                                         <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
                                                                                                             ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
                                                                                                         </td>

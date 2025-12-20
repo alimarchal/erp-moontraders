@@ -15,6 +15,91 @@
         </div>
     </x-slot>
 
+    @php
+        $savedBatchesData = [];
+        foreach ($settlement->items as $item) {
+            foreach ($item->batches as $batch) {
+                $savedBatchesData[$batch->stock_batch_id] = [
+                    'sold' => (float) $batch->quantity_sold,
+                    'returned' => (float) $batch->quantity_returned,
+                    'shortage' => (float) $batch->quantity_shortage,
+                ];
+            }
+        }
+
+        $creditSalesData = $settlement->creditSales->map(function ($sale) {
+            return [
+                'customer_id' => $sale->customer_id,
+                'customer_name' => $sale->customer->customer_name ?? 'Unknown',
+                'invoice_number' => $sale->invoice_number,
+                'sale_amount' => (float) $sale->sale_amount,
+                'notes' => $sale->notes,
+                'new_balance' => (float) ($sale->balance ?? 0),
+            ];
+        });
+
+        $recoveriesData = $settlement->recoveries->map(function ($recovery) {
+            return [
+                'customer_id' => $recovery->customer_id,
+                'customer_name' => $recovery->customer->customer_name ?? 'Unknown',
+                'recovery_number' => $recovery->recovery_number,
+                'payment_method' => $recovery->payment_method,
+                'bank_account_id' => $recovery->bank_account_id,
+                'bank_account_name' => $recovery->bankAccount->account_name ?? null,
+                'previous_balance' => (float) $recovery->previous_balance,
+                'amount' => (float) $recovery->amount,
+                'new_balance' => (float) $recovery->new_balance,
+                'notes' => $recovery->notes,
+            ];
+        });
+
+        $bankTransfersData = $settlement->bankTransfers->map(function ($transfer) {
+            return [
+                'bank_account_id' => $transfer->bank_account_id,
+                'bank_account_name' => $transfer->bankAccount->account_name ?? 'Unknown',
+                'amount' => (float) $transfer->amount,
+                'reference_number' => $transfer->reference_number,
+                'transfer_date' => optional($transfer->transfer_date)->format('Y-m-d'),
+                'customer_id' => $transfer->customer_id,
+                'customer_name' => $transfer->customer->customer_name ?? null,
+                'notes' => $transfer->notes,
+            ];
+        });
+
+        $chequesData = $settlement->cheques->map(function ($cheque) {
+            return [
+                'cheque_number' => $cheque->cheque_number,
+                'amount' => (float) $cheque->amount,
+                'bank_name' => $cheque->bank_name,
+                'bank_account_id' => $cheque->bank_account_id,
+                'cheque_date' => optional($cheque->cheque_date)->format('Y-m-d'),
+                'customer_id' => $cheque->customer_id,
+                'notes' => $cheque->notes,
+            ];
+        });
+
+        $cashDenom = $settlement->cashDenominations->first();
+
+        $savedExpensesData = $settlement->expenses->map(function ($expense) {
+            return [
+                'id' => 'saved_' . $expense->id,
+                'expense_account_id' => $expense->expense_account_id,
+                'amount' => (float) $expense->amount,
+                'description' => $expense->description,
+                'label' => $expense->expenseAccount->account_name ?? '',
+                'account_code' => $expense->expenseAccount->account_code ?? '',
+            ];
+        });
+
+        $advanceTaxesData = $settlement->advanceTaxes->map(function ($tax) {
+            return [
+                'customer_id' => $tax->customer_id,
+                'customer_name' => $tax->customer->customer_name ?? 'Unknown',
+                'tax_amount' => (float) $tax->tax_amount,
+            ];
+        });
+    @endphp
+
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md" />
@@ -240,14 +325,17 @@
                                         <table class="w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
+                                                    <th class="py-1 px-1 text-left text-black">Customer</th>
                                                     <th class="py-1 px-1 text-left text-black">Cheque #</th>
                                                     <th class="py-1 px-1 text-left text-black">Bank</th>
+                                                    <th class="py-1 px-1 text-left text-black">Deposit Bank</th>
+                                                    <th class="py-1 px-1 text-left text-black">Cheque Date</th>
                                                     <th class="py-1 px-1 text-right text-black">Amount</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="chequePaymentTableBody">
                                                 <tr>
-                                                    <td colspan="3"
+                                                    <td colspan="6"
                                                         class="py-2 px-1 text-center text-black text-xs italic">
                                                         No cheque payments
                                                     </td>
@@ -255,7 +343,7 @@
                                             </tbody>
                                             <tfoot class="border-t-2 border-gray-300">
                                                 <tr class="bg-purple-50">
-                                                    <td colspan="2"
+                                                    <td colspan="5"
                                                         class="py-1.5 px-1 text-right font-semibold text-purple-900 text-xs">
                                                         Total:</td>
                                                     <td class="py-1.5 px-1 text-right font-bold text-purple-700 text-xs"
@@ -281,14 +369,16 @@
                                         <table class="w-full text-xs">
                                             <thead>
                                                 <tr class="border-b-2 border-gray-300">
+                                                    <th class="py-1 px-1 text-left text-black">Customer</th>
                                                     <th class="py-1 px-1 text-left text-black">Bank</th>
                                                     <th class="py-1 px-1 text-left text-black">Ref #</th>
+                                                    <th class="py-1 px-1 text-left text-black">Transfer Date</th>
                                                     <th class="py-1 px-1 text-right text-black">Amount</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="bankTransferTableBody">
                                                 <tr>
-                                                    <td colspan="3"
+                                                    <td colspan="5"
                                                         class="py-2 px-1 text-center text-black text-xs italic">
                                                         No bank transfers
                                                     </td>
@@ -296,7 +386,7 @@
                                             </tbody>
                                             <tfoot class="border-t-2 border-gray-300">
                                                 <tr class="bg-blue-50">
-                                                    <td colspan="2"
+                                                    <td colspan="4"
                                                         class="py-1.5 px-1 text-right font-semibold text-blue-900 text-xs">
                                                         Total:</td>
                                                     <td class="py-1.5 px-1 text-right font-bold text-blue-700 text-xs"
@@ -581,6 +671,11 @@
                                                     <td class="py-1 px-1 text-right font-semibold text-xs text-teal-700"
                                                         id="summary_recovery_display">0.00</td>
                                                 </tr>
+                                                <tr class="border-t border-gray-200 bg-gray-50">
+                                                    <td class="py-1 px-1 text-xs text-black">Balance</td>
+                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-black"
+                                                        id="summary_balance_display">0.00</td>
+                                                </tr>
                                                 <tr class="border-t border-gray-200">
                                                     <td class="py-1 px-1 text-xs text-red-700">Less: Expenses</td>
                                                     <td class="py-1 px-1 text-right font-semibold text-xs text-red-700"
@@ -658,7 +753,7 @@
                                             value="0.00" />
                                         <input type="hidden" id="summary_total_sale" value="0.00" />
                                         <input type="hidden" id="summary_credit" name="summary_credit" value="0.00" />
-                                        <input type="hidden" id="summary_balance" value="0.00" />
+                                        <input type="hidden" id="summary_balance" name="summary_balance" value="0.00" />
                                         <input type="hidden" id="summary_expenses" name="summary_expenses"
                                             value="0.00" />
                                         <input type="hidden" id="summary_net_balance" value="0.00" />
@@ -709,6 +804,14 @@
     @push('scripts')
         <script>
             let invoiceCounter = 1;
+            const savedBatchQuantities = @json($savedBatchesData);
+            const savedCreditSales = @json($creditSalesData);
+            const savedRecoveries = @json($recoveriesData);
+            const savedBankTransfers = @json($bankTransfersData);
+            const savedCheques = @json($chequesData);
+            const savedAdvanceTaxes = @json($advanceTaxesData);
+            const savedCashDenomination = @json($cashDenom);
+            const savedExpenses = @json($savedExpensesData);
 
             // Alpine.js component for Goods Issue selector
             function goodsIssueSelector() {
@@ -740,8 +843,34 @@
                     expenseDescription: '',
 
                     init() {
-                        // Initialize with predefined expenses
                         this.expenses = JSON.parse(JSON.stringify(this.predefinedExpenses));
+
+                        if (Array.isArray(savedExpenses) && savedExpenses.length) {
+                            savedExpenses.forEach((expense) => {
+                                const predefined = this.expenses.find(
+                                    (item) => item.expense_account_id === expense.expense_account_id
+                                );
+
+                                if (predefined) {
+                                    predefined.amount = parseFloat(expense.amount) || 0;
+                                    predefined.description = expense.description || predefined.description;
+                                    predefined.label = expense.label || predefined.label;
+                                    predefined.account_code = expense.account_code || predefined.account_code;
+                                } else {
+                                    this.expenses.push({
+                                        id: expense.id || this.nextId++,
+                                        label: expense.label || expense.description || '',
+                                        account_code: expense.account_code || '',
+                                        expense_account_id: expense.expense_account_id,
+                                        is_predefined: false,
+                                        amount: parseFloat(expense.amount) || 0,
+                                        description: expense.description || expense.label || ''
+                                    });
+                                }
+                            });
+                        }
+
+                        this.calculateTotal();
 
                         // Listen for advance tax updates from modal
                         window.addEventListener('advance-tax-updated', (e) => {
@@ -804,6 +933,107 @@
                         }
                     }
                 }
+            }
+
+            function preloadFinancialEntries() {
+                const setHiddenJson = (id, data) => {
+                    const input = document.getElementById(id);
+                    if (input) {
+                        input.value = JSON.stringify(data || []);
+                    }
+                };
+
+                setHiddenJson('credit_sales', savedCreditSales);
+                setHiddenJson('recoveries_entries', savedRecoveries);
+                setHiddenJson('bank_transfers', savedBankTransfers);
+                setHiddenJson('cheques', savedCheques);
+                setHiddenJson('advance_taxes', savedAdvanceTaxes);
+
+                const creditSalesTotal = (savedCreditSales || []).reduce((sum, entry) => sum + (parseFloat(entry.sale_amount) || 0), 0);
+                const creditSalesAmountInput = document.getElementById('credit_sales_amount');
+                const summaryCreditInput = document.getElementById('summary_credit');
+                if (creditSalesAmountInput) {
+                    creditSalesAmountInput.value = creditSalesTotal.toFixed(2);
+                }
+                if (summaryCreditInput) {
+                    summaryCreditInput.value = creditSalesTotal.toFixed(2);
+                }
+
+                const recoveriesTotal = (savedRecoveries || []).reduce((sum, entry) => sum + (parseFloat(entry.amount) || 0), 0);
+                const recoveriesInput = document.getElementById('credit_recoveries_total');
+                const summaryRecoveryInput = document.getElementById('summary_recovery');
+                if (recoveriesInput) {
+                    recoveriesInput.value = recoveriesTotal.toFixed(2);
+                }
+                if (summaryRecoveryInput) {
+                    summaryRecoveryInput.value = recoveriesTotal.toFixed(2);
+                }
+
+                const bankTransfersTotal = (savedBankTransfers || []).reduce((sum, entry) => sum + (parseFloat(entry.amount) || 0), 0);
+                const bankTransfersInput = document.getElementById('total_bank_transfers');
+                if (bankTransfersInput) {
+                    bankTransfersInput.value = bankTransfersTotal.toFixed(2);
+                }
+
+                const chequesTotal = (savedCheques || []).reduce((sum, entry) => sum + (parseFloat(entry.amount) || 0), 0);
+                const chequesInput = document.getElementById('total_cheques');
+                if (chequesInput) {
+                    chequesInput.value = chequesTotal.toFixed(2);
+                }
+
+                window.dispatchEvent(new CustomEvent('credit-sales-updated'));
+                window.dispatchEvent(new CustomEvent('recoveries-updated'));
+                window.dispatchEvent(new CustomEvent('bank-transfers-updated'));
+                window.dispatchEvent(new CustomEvent('cheque-payments-updated'));
+            }
+
+            function preloadCashDenomination() {
+                if (!savedCashDenomination) {
+                    return;
+                }
+
+                const setValue = (id, value) => {
+                    const input = document.getElementById(id);
+                    if (input) {
+                        input.value = value;
+                    }
+                };
+
+                setValue('denom_5000', savedCashDenomination.denom_5000 ?? 0);
+                setValue('denom_1000', savedCashDenomination.denom_1000 ?? 0);
+                setValue('denom_500', savedCashDenomination.denom_500 ?? 0);
+                setValue('denom_100', savedCashDenomination.denom_100 ?? 0);
+                setValue('denom_50', savedCashDenomination.denom_50 ?? 0);
+                setValue('denom_20', savedCashDenomination.denom_20 ?? 0);
+                setValue('denom_10', savedCashDenomination.denom_10 ?? 0);
+                setValue('denom_coins', savedCashDenomination.denom_coins ?? 0);
+
+                updateCashTotal();
+            }
+
+            function applySavedBatchData() {
+                document.querySelectorAll('.batch-input').forEach((input) => {
+                    const stockBatchId = input.dataset.stockBatchId;
+                    const saved = savedBatchQuantities[stockBatchId];
+
+                    if (!saved) {
+                        return;
+                    }
+
+                    if (input.dataset.type === 'sold') {
+                        input.value = saved.sold ?? 0;
+                    }
+                    if (input.dataset.type === 'returned') {
+                        input.value = saved.returned ?? 0;
+                    }
+                    if (input.dataset.type === 'shortage') {
+                        input.value = saved.shortage ?? 0;
+                    }
+
+                    calculateBatchBalance(input.dataset.itemIndex, input.dataset.batchIndex);
+                });
+
+                updateGrandTotals();
             }
 
             // Initialize Select2 with AJAX on-demand loading
@@ -872,7 +1102,9 @@
                         }
                     });
                 @endif
-                                                                                });
+                preloadFinancialEntries();
+                preloadCashDenomination();
+            });
 
 
             // Track which field was last changed for smart auto-adjustment
@@ -1263,6 +1495,7 @@
 
                 const netSaleDisplay = document.getElementById('summary_net_sale_display');
                 const recoveryDisplay = document.getElementById('summary_recovery_display');
+                const balanceDisplay = document.getElementById('summary_balance_display');
                 const expensesDisplay = document.getElementById('summary_expenses_display');
                 const netBalanceDisplay = document.getElementById('summary_net_balance_display');
                 const cashReceivedDisplay = document.getElementById('summary_cash_received_display');
@@ -1276,6 +1509,7 @@
 
                 if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);
                 if (recoveryDisplay) recoveryDisplay.textContent = formatPKR(recovery);
+                if (balanceDisplay) balanceDisplay.textContent = formatPKR(balance);
                 if (expensesDisplay) expensesDisplay.textContent = formatPKR(expenses);
                 if (netBalanceDisplay) netBalanceDisplay.textContent = formatPKR(netBalance);
                 if (cashReceivedDisplay) cashReceivedDisplay.textContent = formatPKR(cashReceived);
@@ -1484,6 +1718,10 @@
                                     const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
                                     // For B/F, distribute proportionally across batches or show on first batch only
                                     const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
+                                    const savedBatch = savedBatchQuantities[batch.stock_batch_id] || {};
+                                    const savedSold = Math.round(parseFloat(savedBatch.sold) || 0);
+                                    const savedReturned = Math.round(parseFloat(savedBatch.returned) || 0);
+                                    const savedShortage = Math.round(parseFloat(savedBatch.shortage) || 0);
 
                                     const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
                                     const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
@@ -1519,11 +1757,12 @@
                                                                                                                 class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
                                                                                                                 data-item-index="${index}"
                                                                                                                 data-batch-index="${batchIdx}"
+                                                                                                                data-stock-batch-id="${batch.stock_batch_id}"
                                                                                                                 data-type="sold"
                                                                                                                 data-bf-quantity="${batchBfQuantity}"
                                                                                                                 min="0"
                                                                                                                 step="1"
-                                                                                                                value="0"
+                                                                                                                value="${savedSold}"
                                                                                                                 oninput="calculateBatchBalance(${index}, ${batchIdx}, 'sold')">
                                                                                                         </td>
                                                                                                         <td class="py-1 px-1 text-right">
@@ -1532,10 +1771,11 @@
                                                                                                                 class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
                                                                                                                 data-item-index="${index}"
                                                                                                                 data-batch-index="${batchIdx}"
+                                                                                                                data-stock-batch-id="${batch.stock_batch_id}"
                                                                                                                 data-type="returned"
                                                                                                                 min="0"
                                                                                                                 step="1"
-                                                                                                                value="0"
+                                                                                                                value="${savedReturned}"
                                                                                                                 oninput="calculateBatchBalance(${index}, ${batchIdx}, 'returned')">
                                                                                                         </td>
                                                                                                         <td class="py-1 px-1 text-right">
@@ -1544,14 +1784,15 @@
                                                                                                                 class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
                                                                                                                 data-item-index="${index}"
                                                                                                                 data-batch-index="${batchIdx}"
+                                                                                                                data-stock-batch-id="${batch.stock_batch_id}"
                                                                                                                 data-type="shortage"
                                                                                                                 min="0"
                                                                                                                 step="1"
-                                                                                                                value="0"
+                                                                                                                value="${savedShortage}"
                                                                                                                 oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
                                                                                                         </td>
                                                                                                         <td class="py-1 px-1 text-right">
-                                                                                                            <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${parseFloat(batch.quantity) + batchBfQuantity}</span>
+                                                                                                            <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${(parseFloat(batch.quantity) + batchBfQuantity) - savedSold - savedReturned - savedShortage}</span>
                                                                                                         </td>
                                                                                                     </tr>
                                                                                                 `;
@@ -1587,13 +1828,8 @@
                         const salesSummarySection = document.getElementById('salesSummarySection');
                         if (salesSummarySection) salesSummarySection.style.display = 'block';
 
-                        // Initialize balances for all batch rows
-                        items.forEach((item, index) => {
-                            const batchBreakdown = item.batch_breakdown || [];
-                            batchBreakdown.forEach((batch, batchIdx) => {
-                                calculateBatchBalance(index, batchIdx);
-                            });
-                        });
+                        applySavedBatchData();
+                        updateSalesSummary();
                     })
                     .catch(() => {
                         document.getElementById('noItemsMessage').innerHTML = '<span class="text-red-600">Error loading goods issue data. Please try again.</span>';
@@ -1751,7 +1987,7 @@
                         if (this.entries.length === 0) {
                             tbody.innerHTML = `
                                                                                                     <tr>
-                                                                                                        <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                        <td colspan="4" class="py-2 px-2 text-center text-gray-500 text-xs italic">
                                                                                                             No recovery entries added yet
                                                                                                         </td>
                                                                                                     </tr>
@@ -1765,6 +2001,12 @@
                                                                                                             <div class="font-semibold text-gray-800">${entry.customer_name}</div>
                                                                                                             ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
                                                                                                         </td>
+                                                                                                        <td class="py-1 px-2 text-center text-xs">
+                                                                                                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${entry.payment_method === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                                                                                                                ${entry.payment_method === 'cash' ? 'Cash' : 'Bank'}
+                                                                                                            </span>
+                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.payment_method === 'bank_transfer' ? (entry.bank_account_name || '—') : '—'}</td>
                                                                                                         <td class="py-1 px-2 text-right text-xs font-semibold text-green-700">
                                                                                                             ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
                                                                                                         </td>
@@ -1818,7 +2060,7 @@
                         if (this.entries.length === 0) {
                             tbody.innerHTML = `
                                                                                                     <tr>
-                                                                                                        <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                        <td colspan="5" class="py-2 px-2 text-center text-gray-500 text-xs italic">
                                                                                                             No bank transfer entries added yet
                                                                                                         </td>
                                                                                                     </tr>
@@ -1828,12 +2070,10 @@
                                 const row = document.createElement('tr');
                                 row.className = 'border-b border-gray-200';
                                 row.innerHTML = `
-                                                                                                        <td class="py-1 px-2 text-xs">
-                                                                                                            <div class="font-semibold text-gray-800">${entry.bank_account_name || 'Unknown Account'}</div>
-                                                                                                            <div class="text-xs text-gray-500">Date: ${entry.transfer_date || 'N/A'}</div>
-                                                                                                            ${entry.customer_name ? `<div class="text-xs text-gray-500">Customer: ${entry.customer_name}</div>` : ''}
-                                                                                                            ${entry.reference_number ? `<div class="text-xs text-gray-500">Ref: ${entry.reference_number}</div>` : ''}
-                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.customer_name || 'N/A'}</td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_account_name || 'Unknown Account'}</td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-700">${entry.reference_number || 'No ref'}</td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-600">${entry.transfer_date || 'N/A'}</td>
                                                                                                         <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
                                                                                                             ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
                                                                                                         </td>
@@ -1887,7 +2127,7 @@
                         if (this.entries.length === 0) {
                             tbody.innerHTML = `
                                                                                                     <tr>
-                                                                                                        <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                        <td colspan="6" class="py-2 px-2 text-center text-gray-500 text-xs italic">
                                                                                                             No cheque payment entries added yet
                                                                                                         </td>
                                                                                                     </tr>
@@ -1897,14 +2137,14 @@
                                 const row = document.createElement('tr');
                                 row.className = 'border-b border-gray-200';
                                 row.innerHTML = `
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.customer_name || 'N/A'}</td>
                                                                                                         <td class="py-1 px-2 text-xs">
-                                                                                                            <div class="font-semibold text-gray-800">Cheque #${entry.cheque_number || 'N/A'}</div>
-
-                                                                                                            ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                                                                                            <div class="font-semibold text-gray-800">${entry.cheque_number || 'N/A'}</div>
+                                                                                                            ${entry.notes ? `<div class="text-[11px] text-gray-500">${entry.notes}</div>` : ''}
                                                                                                         </td>
-                                                                                                        <td class="py-1 px-2 text-xs">
-                                                                                                            <div class="text-xs text-gray-500">${entry.bank_name || ''} - ${entry.cheque_date || ''}</div>
-                                                                                                        </td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_name || 'N/A'}</td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_account_name || 'N/A'}</td>
+                                                                                                        <td class="py-1 px-2 text-xs text-gray-600">${entry.cheque_date || 'N/A'}</td>
                                                                                                         <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
                                                                                                             ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
                                                                                                         </td>

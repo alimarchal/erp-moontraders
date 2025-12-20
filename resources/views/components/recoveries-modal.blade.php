@@ -137,6 +137,7 @@
                                     <th class="px-2 py-1 text-left text-xs font-bold text-gray-500 uppercase">Customer</th>
                                     <th class="px-2 py-1 text-center text-xs font-bold text-gray-500 uppercase">Ref #</th>
                                     <th class="px-2 py-1 text-center text-xs font-bold text-gray-500 uppercase">Method</th>
+                                    <th class="px-2 py-1 text-left text-xs font-bold text-gray-500 uppercase">Bank Account</th>
                                     <th class="px-2 py-1 text-right text-xs font-bold text-gray-500 uppercase">Prev. Bal</th>
                                     <th class="px-2 py-1 text-right text-xs font-bold text-gray-500 uppercase">Recovery</th>
                                     <th class="px-2 py-1 text-right text-xs font-bold text-gray-500 uppercase">New Bal</th>
@@ -153,6 +154,7 @@
                                                 :class="entry.payment_method === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'"
                                                 x-text="entry.payment_method === 'cash' ? 'Cash' : 'Bank'"></span>
                                         </td>
+                                        <td class="px-2 py-1.5 text-sm text-gray-700" x-text="bankAccountName(entry.bank_account_id) || '—'"></td>
                                         <td class="px-2 py-1.5 text-sm text-gray-900 text-right" x-text="formatCurrency(entry.previous_balance)"></td>
                                         <td class="px-2 py-1.5 text-sm text-green-600 font-bold text-right" x-text="formatCurrency(entry.amount)"></td>
                                         <td class="px-2 py-1.5 text-sm text-blue-600 font-bold text-right" x-text="formatCurrency(entry.new_balance)"></td>
@@ -167,7 +169,7 @@
                                 </template>
                                 <template x-if="entries.length === 0">
                                     <tr>
-                                        <td colspan="6" class="px-2 py-4 text-center text-gray-500 italic">
+                                        <td colspan="7" class="px-2 py-4 text-center text-gray-500 italic">
                                             No recoveries added yet.
                                         </td>
                                     </tr>
@@ -175,7 +177,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50 font-bold">
                                 <tr>
-                                    <td colspan="2" class="px-2 py-2 text-right text-xs text-gray-700 uppercase">Grand Totals:</td>
+                                    <td colspan="3" class="px-2 py-2 text-right text-xs text-gray-700 uppercase">Grand Totals:</td>
                                     <td class="px-2 py-2 text-right text-sm text-gray-700" x-text="formatCurrency(previousBalanceTotal)"></td>
                                     <td class="px-2 py-2 text-right text-sm text-green-700 bg-green-50" x-text="formatCurrency(recoveryTotal)"></td>
                                     <td class="px-2 py-2 text-right text-sm text-blue-700 bg-blue-50" x-text="formatCurrency(newBalanceTotal)"></td>
@@ -368,6 +370,7 @@
                         const previousBalance = parseFloat(this.form.previous_balance) || 0;
                         const newBalance = previousBalance - amount;
                         const recoveryNumber = this.form.recovery_number;
+                        const bankAccountName = this.bankAccountName(this.form.bank_account_id);
 
                         this.entries.push({
                             customer_id: customerId,
@@ -375,6 +378,7 @@
                             recovery_number: recoveryNumber,
                             payment_method: this.form.payment_method,
                             bank_account_id: this.form.payment_method === 'bank_transfer' ? this.form.bank_account_id : null,
+                            bank_account_name: bankAccountName,
                             previous_balance: parseFloat(previousBalance.toFixed(2)),
                             amount: parseFloat(amount.toFixed(2)),
                             new_balance: parseFloat(newBalance.toFixed(2)),
@@ -438,6 +442,15 @@
                     customerName(id) {
                         const found = this.customers.find(customer => Number(customer.id) === Number(id));
                         return found ? found.name : 'Unknown Customer';
+                    },
+
+                    bankAccountName(id) {
+                        if (!id) {
+                            return null;
+                        }
+
+                        const found = this.bankAccounts.find(bank => Number(bank.id) === Number(id));
+                        return found ? found.name : null;
                     },
 
                     formatCurrency(value) {

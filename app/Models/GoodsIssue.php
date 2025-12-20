@@ -20,6 +20,8 @@ class GoodsIssue extends Model
         'employee_id',
         'supplier_id',
         'issued_by',
+        'stock_in_hand_account_id',
+        'van_stock_account_id',
         'status',
         'total_quantity',
         'total_value',
@@ -66,6 +68,16 @@ class GoodsIssue extends Model
     public function settlement(): HasMany
     {
         return $this->hasMany(SalesSettlement::class);
+    }
+
+    public function stockInHandAccount(): BelongsTo
+    {
+        return $this->belongsTo(ChartOfAccount::class, 'stock_in_hand_account_id');
+    }
+
+    public function vanStockAccount(): BelongsTo
+    {
+        return $this->belongsTo(ChartOfAccount::class, 'van_stock_account_id');
     }
 
     public function isDraft(): bool

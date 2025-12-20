@@ -45,6 +45,7 @@ class ChartOfAccountSeeder extends Seeder
             ['name' => 'Inventory - GST Component', 'parent' => 'Stock Assets', 'type' => 'Stock', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Inventory - Tax Component', 'parent' => 'Stock Assets', 'type' => 'Stock', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Inventory - Excise Duty', 'parent' => 'Stock Assets', 'type' => 'Stock', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
+            ['name' => 'Van Stock', 'parent' => 'Stock Assets', 'type' => 'Stock', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Tax Assets', 'parent' => 'Current Assets', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Bank Accounts', 'parent' => 'Current Assets', 'type' => 'Bank', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Advance Tax', 'parent' => 'Tax Assets', 'type' => 'Tax', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],

@@ -31,6 +31,8 @@ class DistributionService
                 throw new \Exception('Cannot post cancelled Goods Issue');
             }
 
+            $totalIssueCost = 0.0;
+
             foreach ($goodsIssue->items as $item) {
                 // Lock CurrentStock row to prevent race conditions
                 $warehouseStock = CurrentStock::where('product_id', $item->product_id)
@@ -38,8 +40,8 @@ class DistributionService
                     ->lockForUpdate()
                     ->first();
 
-                if (!$warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
-                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: " . ($warehouseStock->quantity_on_hand ?? 0) . ", Required: {$item->quantity_issued}");
+                if (! $warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
+                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: ".($warehouseStock->quantity_on_hand ?? 0).", Required: {$item->quantity_issued}");
                 }
 
                 // Allocate stock from batches with PROMOTIONAL PRIORITY
@@ -57,6 +59,8 @@ class DistributionService
                 foreach ($batchAllocations['batches'] as $batchAllocation) {
                     $batch = $batchAllocation['batch'];
                     $qtyFromBatch = $batchAllocation['quantity'];
+                    $lineCost = (float) $qtyFromBatch * (float) $batch->unit_cost;
+                    $totalIssueCost += $lineCost;
 
                     // Create stock movement - OUT from warehouse
                     StockMovement::create([
@@ -116,7 +120,7 @@ class DistributionService
                 ]);
 
                 // Set opening balance if this is first issue of the day
-                if ($vanStock->quantity_on_hand == 0 && !$vanStock->exists) {
+                if ($vanStock->quantity_on_hand == 0 && ! $vanStock->exists) {
                     $vanStock->opening_balance = 0;
                 }
 
@@ -132,6 +136,12 @@ class DistributionService
                 $vanStock->save();
             }
 
+            // Round the total cost to 2 decimals for GL
+            $totalIssueCost = round($totalIssueCost, 2);
+
+            // Create GL transfer entry: Dr 1155 Van Stock, Cr 1151 Stock In Hand
+            $journalEntry = $this->createGoodsIssueJournalEntry($goodsIssue, $totalIssueCost);
+
             // Update goods issue status
             $goodsIssue->update([
                 'status' => 'issued',
@@ -142,22 +152,106 @@ class DistributionService
 
             return [
                 'success' => true,
-                'message' => "Goods Issue {$goodsIssue->issue_number} posted successfully with promotional priority",
+                'message' => "Goods Issue {$goodsIssue->issue_number} posted successfully with promotional priority and GL posted",
                 'data' => $goodsIssue->fresh(),
             ];
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to post goods issue: ' . $e->getMessage(), [
+            Log::error('Failed to post goods issue: '.$e->getMessage(), [
                 'goods_issue_id' => $goodsIssue->id ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to post Goods Issue: ' . $e->getMessage(),
+                'message' => 'Failed to post Goods Issue: '.$e->getMessage(),
                 'data' => null,
             ];
+        }
+    }
+
+    /**
+     * Create accounting journal entry for a posted goods issue.
+     * Dr Van Stock (1155) / Cr Stock In Hand (1151) for the unit-cost total.
+     */
+    public function createGoodsIssueJournalEntry(GoodsIssue $goodsIssue, float $totalIssueCost)
+    {
+        try {
+            if ($totalIssueCost <= 0) {
+                Log::warning('Skipping goods issue JE with zero or negative cost', [
+                    'goods_issue_id' => $goodsIssue->id,
+                    'total_cost' => $totalIssueCost,
+                ]);
+
+                return null;
+            }
+
+            // Required accounts are stored per-record on goods_issues
+            $goodsIssue->loadMissing(['stockInHandAccount', 'vanStockAccount']);
+            $stockInHand = $goodsIssue->stockInHandAccount;
+            $vanStock = $goodsIssue->vanStockAccount;
+
+            if (! $stockInHand || ! $vanStock) {
+                Log::error('Goods Issue missing configured GL accounts', [
+                    'goods_issue_id' => $goodsIssue->id,
+                    'stock_in_hand_account_id' => $goodsIssue->stock_in_hand_account_id,
+                    'van_stock_account_id' => $goodsIssue->van_stock_account_id,
+                ]);
+
+                throw new \Exception('Goods Issue is missing GL accounts. Please set Stock In Hand and Van Stock accounts.');
+            }
+
+            $costCenterId = optional($goodsIssue->employee)->cost_center_id;
+
+            $lines = [
+                [
+                    'line_no' => 1,
+                    'account_id' => $vanStock->id,
+                    'debit' => $totalIssueCost,
+                    'credit' => 0,
+                    'description' => 'Transfer to van stock',
+                    'cost_center_id' => $costCenterId,
+                ],
+                [
+                    'line_no' => 2,
+                    'account_id' => $stockInHand->id,
+                    'debit' => 0,
+                    'credit' => $totalIssueCost,
+                    'description' => 'Transfer from warehouse stock',
+                    'cost_center_id' => $costCenterId,
+                ],
+            ];
+
+            $journalEntryData = [
+                'entry_date' => $goodsIssue->issue_date,
+                'reference' => $goodsIssue->issue_number,
+                'description' => 'Goods Issue #'.$goodsIssue->issue_number.' - Transfer to vehicle '.$goodsIssue->vehicle->vehicle_number,
+                'lines' => $lines,
+                'auto_post' => true,
+            ];
+
+            $accountingService = app(AccountingService::class);
+            $result = $accountingService->createJournalEntry($journalEntryData);
+
+            if (! $result['success']) {
+                throw new \Exception($result['message'] ?? 'Failed to create journal entry for goods issue');
+            }
+
+            Log::info('Goods Issue JE created', [
+                'goods_issue_id' => $goodsIssue->id,
+                'journal_entry_id' => $result['data']->id ?? null,
+                'amount' => $totalIssueCost,
+            ]);
+
+            return $result['data'];
+        } catch (\Exception $e) {
+            Log::error('Error creating Goods Issue JE: '.$e->getMessage(), [
+                'goods_issue_id' => $goodsIssue->id ?? null,
+            ]);
+
+            // Re-throw so outer transaction can roll back
+            throw $e;
         }
     }
 
@@ -301,7 +395,7 @@ class DistributionService
                     ->where('product_id', $item->product_id)
                     ->first();
 
-                if (!$vanStock) {
+                if (! $vanStock) {
                     throw new \Exception("No van stock found for product ID {$item->product_id}");
                 }
 
@@ -326,7 +420,7 @@ class DistributionService
                 $isFirstBatch = true;
                 foreach ($item->batches as $itemBatch) {
                     $batch = $itemBatch->stockBatch;
-                    if (!$batch) {
+                    if (! $batch) {
                         continue;
                     }
 
@@ -478,14 +572,14 @@ class DistributionService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to post sales settlement: ' . $e->getMessage(), [
+            Log::error('Failed to post sales settlement: '.$e->getMessage(), [
                 'settlement_id' => $settlement->id ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to post Sales Settlement: ' . $e->getMessage(),
+                'message' => 'Failed to post Sales Settlement: '.$e->getMessage(),
                 'data' => null,
             ];
         }
@@ -504,7 +598,7 @@ class DistributionService
             // Get all required accounts
             $accounts = $this->getAccountingAccounts();
 
-            if (!$this->validateRequiredAccounts($accounts)) {
+            if (! $this->validateRequiredAccounts($accounts)) {
                 Log::warning('Required accounts not found for sales journal entry', [
                     'settlement_id' => $settlement->id,
                     'missing_accounts' => $this->getMissingAccounts($accounts),
@@ -903,7 +997,7 @@ class DistributionService
     {
         $required = ['cash', 'debtors', 'inventory', 'sales', 'cogs'];
         foreach ($required as $key) {
-            if (!isset($accounts[$key]) || !$accounts[$key]) {
+            if (! isset($accounts[$key]) || ! $accounts[$key]) {
                 return false;
             }
         }
@@ -918,7 +1012,7 @@ class DistributionService
     {
         $missing = [];
         foreach ($accounts as $key => $account) {
-            if (!$account) {
+            if (! $account) {
                 $missing[] = $key;
             }
         }

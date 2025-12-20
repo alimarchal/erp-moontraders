@@ -20,6 +20,9 @@ return new class extends Migration
             $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->onDelete('restrict');
             $table->foreignId('issued_by')->constrained('users')->cascadeOnDelete();
+            // GL account references for transfer
+            $table->foreignId('stock_in_hand_account_id')->nullable()->constrained('chart_of_accounts')->nullOnDelete();
+            $table->foreignId('van_stock_account_id')->nullable()->constrained('chart_of_accounts')->nullOnDelete();
             $table->enum('status', ['draft', 'issued', 'settled', 'cancelled'])->default('draft');
             $table->decimal('total_quantity', 15, 3)->default(0);
             $table->decimal('total_value', 15, 2)->default(0);
@@ -31,6 +34,8 @@ return new class extends Migration
             $table->index(['issue_date', 'status']);
             $table->index('employee_id');
             $table->index('vehicle_id');
+            $table->index('stock_in_hand_account_id');
+            $table->index('van_stock_account_id');
         });
     }
 

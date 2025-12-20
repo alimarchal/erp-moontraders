@@ -173,6 +173,9 @@ class GoodsIssueController extends Controller
                 'employee_id' => $request->employee_id,
                 'supplier_id' => $employee->supplier_id,
                 'issued_by' => auth()->id(),
+                // Resolve default GL accounts from COA codes for this row (stored on the record)
+                'stock_in_hand_account_id' => optional(\App\Models\ChartOfAccount::where('account_code', '1151')->first())->id,
+                'van_stock_account_id' => optional(\App\Models\ChartOfAccount::where('account_code', '1155')->first())->id,
                 'status' => 'draft',
                 'total_quantity' => $totalQuantity,
                 'total_value' => $totalValue,

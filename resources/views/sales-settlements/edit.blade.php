@@ -37,6 +37,16 @@
                 'new_balance' => (float) ($sale->balance ?? 0),
             ];
         });
+        $creditSalesDecoded = old('credit_sales');
+        if (is_string($creditSalesDecoded)) {
+            $decoded = json_decode($creditSalesDecoded, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $creditSalesDecoded = $decoded;
+            }
+        }
+        if (! is_array($creditSalesDecoded) || empty($creditSalesDecoded)) {
+            $creditSalesDecoded = $creditSalesData->toArray();
+        }
 
         $recoveriesData = $settlement->recoveries->map(function ($recovery) {
             return [
@@ -52,6 +62,20 @@
                 'notes' => $recovery->notes,
             ];
         });
+        $recoveriesDecoded = old('recoveries_entries');
+        if (is_string($recoveriesDecoded)) {
+            $decoded = json_decode($recoveriesDecoded, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $recoveriesDecoded = $decoded;
+            }
+        }
+        if (! is_array($recoveriesDecoded) || empty($recoveriesDecoded)) {
+            $recoveriesDecoded = $recoveriesData->toArray();
+        }
+        $recoveriesTotal = collect($recoveriesDecoded)->sum(function ($entry) {
+            return floatval($entry['amount'] ?? 0);
+        });
+        $recoveriesJson = e(json_encode($recoveriesDecoded));
 
         $bankTransfersData = $settlement->bankTransfers->map(function ($transfer) {
             return [
@@ -65,6 +89,16 @@
                 'notes' => $transfer->notes,
             ];
         });
+        $bankTransfersDecoded = old('bank_transfers');
+        if (is_string($bankTransfersDecoded)) {
+            $decoded = json_decode($bankTransfersDecoded, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $bankTransfersDecoded = $decoded;
+            }
+        }
+        if (! is_array($bankTransfersDecoded) || empty($bankTransfersDecoded)) {
+            $bankTransfersDecoded = $bankTransfersData->toArray();
+        }
 
         $chequesData = $settlement->cheques->map(function ($cheque) {
             return [
@@ -77,6 +111,16 @@
                 'notes' => $cheque->notes,
             ];
         });
+        $chequesDecoded = old('cheques');
+        if (is_string($chequesDecoded)) {
+            $decoded = json_decode($chequesDecoded, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $chequesDecoded = $decoded;
+            }
+        }
+        if (! is_array($chequesDecoded) || empty($chequesDecoded)) {
+            $chequesDecoded = $chequesData->toArray();
+        }
 
         $cashDenom = $settlement->cashDenominations->first();
 
@@ -98,6 +142,16 @@
                 'tax_amount' => (float) $tax->tax_amount,
             ];
         });
+        $advanceTaxesDecoded = old('advance_taxes');
+        if (is_string($advanceTaxesDecoded)) {
+            $decoded = json_decode($advanceTaxesDecoded, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $advanceTaxesDecoded = $decoded;
+            }
+        }
+        if (! is_array($advanceTaxesDecoded) || empty($advanceTaxesDecoded)) {
+            $advanceTaxesDecoded = $advanceTaxesData->toArray();
+        }
     @endphp
 
     <div class="py-6">
@@ -519,9 +573,9 @@
                                         <input type="hidden" id="credit_sales_amount" name="credit_sales_amount"
                                             value="0.00" />
                                         <input type="hidden" id="credit_recoveries_total" name="credit_recoveries_total"
-                                            value="0.00" />
+                                            value="{{ old('credit_recoveries_total', number_format($recoveriesTotal, 2, '.', '')) }}" />
                                         <input type="hidden" id="recoveries_entries" name="recoveries_entries"
-                                            value="[]" />
+                                            value="{{ $recoveriesJson }}" />
                                         <input type="hidden" id="total_bank_transfers" name="total_bank_transfers"
                                             value="0.00" />
                                         <input type="hidden" id="total_cheques" name="total_cheques" value="0.00" />
@@ -805,11 +859,11 @@
         <script>
             let invoiceCounter = 1;
             const savedBatchQuantities = @json($savedBatchesData);
-            const savedCreditSales = @json($creditSalesData);
-            const savedRecoveries = @json($recoveriesData);
-            const savedBankTransfers = @json($bankTransfersData);
-            const savedCheques = @json($chequesData);
-            const savedAdvanceTaxes = @json($advanceTaxesData);
+            const savedCreditSales = @json($creditSalesDecoded);
+            const savedRecoveries = @json($recoveriesDecoded);
+            const savedBankTransfers = @json($bankTransfersDecoded);
+            const savedCheques = @json($chequesDecoded);
+            const savedAdvanceTaxes = @json($advanceTaxesDecoded);
             const savedCashDenomination = @json($cashDenom);
             const savedExpenses = @json($savedExpensesData);
 

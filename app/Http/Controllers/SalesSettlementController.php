@@ -368,6 +368,8 @@ class SalesSettlementController extends Controller
             // Prepare recoveries details
             $recoveriesData = [];
             $totalRecoveries = 0;
+            $cashRecoveries = 0;
+            $bankRecoveries = 0;
             if ($request->has('recoveries_entries')) {
                 $entries = is_array($request->recoveries_entries)
                     ? $request->recoveries_entries
@@ -378,6 +380,11 @@ class SalesSettlementController extends Controller
                         if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
                             $recoveriesData[] = $recovery;
                             $totalRecoveries += floatval($recovery['amount'] ?? 0);
+                            if (($recovery['payment_method'] ?? '') === 'cash') {
+                                $cashRecoveries += floatval($recovery['amount'] ?? 0);
+                            } else {
+                                $bankRecoveries += floatval($recovery['amount'] ?? 0);
+                            }
                         }
                     }
                 }
@@ -396,8 +403,11 @@ class SalesSettlementController extends Controller
                 }
             }
 
-            // Cash Sales Amount is now derived from denominations total
-            $cashSalesAmount = $denomTotal;
+            // Cash sales include physical cash plus cash recoveries
+            $cashSalesAmount = $denomTotal + $cashRecoveries;
+
+            // Add online recoveries to bank transfers
+            $totalBankTransfers += $bankRecoveries;
 
             $totalSalesAmount = $cashSalesAmount +
                 $totalCheques +
@@ -831,26 +841,39 @@ class SalesSettlementController extends Controller
                 }
             }
 
-            // Prepare recovery totals
+            // Prepare recovery totals and split by payment method
             $totalRecoveries = 0;
+            $cashRecoveries = 0;
+            $bankRecoveries = 0;
             if ($request->has('recoveries_entries') && is_array($request->recoveries_entries)) {
                 foreach ($request->recoveries_entries as $recovery) {
-                    $totalRecoveries += floatval($recovery['amount'] ?? 0);
+                    $amount = floatval($recovery['amount'] ?? 0);
+                    $totalRecoveries += $amount;
+
+                    if (($recovery['payment_method'] ?? '') === 'cash') {
+                        $cashRecoveries += $amount;
+                    } else {
+                        $bankRecoveries += $amount;
+                    }
                 }
             }
 
-            // Cash Sales Amount is now derived from denominations total
-            $cashSalesAmount = $denomTotal;
+            // Cash sales now include cash recoveries (physical cash on hand)
+            $cashSalesAmount = $denomTotal + $cashRecoveries;
+
+            // Bank transfer amount also includes online recoveries
+            $totalBankTransfers += $bankRecoveries;
 
             $totalSalesAmount = $cashSalesAmount +
                 $totalCheques +
                 $totalBankTransfers +
                 ($request->credit_sales_amount ?? 0);
 
-            // Cash collected is now strictly physical cash from denominations
+            // Cash collected is physical cash (denomination count)
             $cashCollected = $denomTotal;
 
-            $cashToDeposit = $cashCollected + $totalRecoveries - ($request->expenses_claimed ?? 0);
+            // Cash to deposit includes cash recoveries, minus expenses paid from cash
+            $cashToDeposit = $cashCollected + $cashRecoveries - ($request->expenses_claimed ?? 0);
 
             // Update sales settlement
             $salesSettlement->update([

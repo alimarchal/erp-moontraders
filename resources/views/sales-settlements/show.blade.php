@@ -458,37 +458,21 @@
                                         @php
                                             $denomData = $cashDenominations;
                                             $denominations = [
-                                                [
-                                                    'label' => '5,000 Notes',
-                                                    'qty' => $denomData?->denom_5000 ?? 0,
-                                                    'value' =>
-                                                        5000
-                                                ],
-                                                [
-                                                    'label' => '1,000 Notes',
-                                                    'qty' => $denomData?->denom_1000 ?? 0,
-                                                    'value' =>
-                                                        1000
-                                                ],
+                                                ['label' => '5,000 Notes', 'qty' => $denomData?->denom_5000 ?? 0, 'value' => 5000],
+                                                ['label' => '1,000 Notes', 'qty' => $denomData?->denom_1000 ?? 0, 'value' => 1000],
                                                 ['label' => '500 Notes', 'qty' => $denomData?->denom_500 ?? 0, 'value' => 500],
                                                 ['label' => '100 Notes', 'qty' => $denomData?->denom_100 ?? 0, 'value' => 100],
                                                 ['label' => '50 Notes', 'qty' => $denomData?->denom_50 ?? 0, 'value' => 50],
                                                 ['label' => '20 Notes', 'qty' => $denomData?->denom_20 ?? 0, 'value' => 20],
                                                 ['label' => '10 Notes', 'qty' => $denomData?->denom_10 ?? 0, 'value' => 10],
-                                                [
-                                                    'label' => 'Loose Cash/Coins',
-                                                    'qty' => '-',
-                                                    'value' =>
-                                                        $denomData?->denom_coins ?? 0,
-                                                    'is_coins' => true
-                                                ],
+                                                ['label' => 'Loose Cash/Coins', 'qty' => $denomData?->denom_coins ?? 0, 'value' => 1, 'is_coins' => true],
                                             ];
-                                            $totalCash = $cashDenominationTotal;
+                                            $totalCash = 0;
                                         @endphp
                                         @foreach($denominations as $denom)
                                             @php
                                                 if (isset($denom['is_coins']) && $denom['is_coins']) {
-                                                    $amount = $denom['value'];
+                                                    $amount = (float) $denom['qty'];
                                                 } else {
                                                     $amount = $denom['qty'] * $denom['value'];
                                                 }
@@ -498,7 +482,7 @@
                                                 <td style="padding: 3px 6px; border: none;">{{ $denom['label'] }}</td>
                                                 <td style="padding: 3px 6px; text-align: right; border: none;">
                                                     @if(isset($denom['is_coins']) && $denom['is_coins'])
-                                                        -
+                                                        {{ number_format($denom['qty'], 2) }}
                                                     @else
                                                         {{ number_format($denom['qty'], 0) }}
                                                     @endif

@@ -691,7 +691,7 @@ class DistributionService
             $settlement->recoveries
                 ->reject(fn ($recovery) => $recovery->payment_method === 'cash')
                 ->groupBy('bank_account_id')
-                ->each(function ($group) use (&$addLine, $accounts): void {
+                ->each(function ($group) use (&$addLine, $accounts, $settlement): void {
                     $amount = $group->sum('amount');
                     $bankAccount = $group->first()->bankAccount;
                     $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['cash']->id;
@@ -777,7 +777,7 @@ class DistributionService
 
             $settlement->bankTransfers
                 ->groupBy('bank_account_id')
-                ->each(function ($transfers) use (&$addLine, $accounts, $employeeName): void {
+                ->each(function ($transfers) use (&$addLine, $accounts, $employeeName, $settlement): void {
                     $amount = $transfers->sum('amount');
                     $bankAccount = $transfers->first()->bankAccount;
                     $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['cash']->id;

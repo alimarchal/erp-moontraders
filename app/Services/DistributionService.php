@@ -33,6 +33,7 @@ class DistributionService
             }
 
             $totalIssueCost = 0.0;
+            $totalIssueValue = 0.0;
 
             foreach ($goodsIssue->items as $item) {
                 // Lock CurrentStock row to prevent race conditions
@@ -61,7 +62,12 @@ class DistributionService
                     $batch = $batchAllocation['batch'];
                     $qtyFromBatch = $batchAllocation['quantity'];
                     $lineCost = (float) $qtyFromBatch * (float) $batch->unit_cost;
+                    $effectiveSellingPrice = $batch->is_promotional
+                        ? ((float) ($batch->promotional_selling_price ?? $batch->selling_price))
+                        : (float) $batch->selling_price;
+
                     $totalIssueCost += $lineCost;
+                    $totalIssueValue += $qtyFromBatch * $effectiveSellingPrice;
 
                     // Create stock movement - OUT from warehouse
                     StockMovement::create([
@@ -137,11 +143,12 @@ class DistributionService
                 $vanStock->save();
             }
 
-            // Round the total cost to 2 decimals for GL
+            // Round totals to 2 decimals for GL
             $totalIssueCost = round($totalIssueCost, 2);
+            $totalIssueValue = round($totalIssueValue, 2);
 
             // Create GL transfer entry: Dr 1155 Van Stock, Cr 1151 Stock In Hand
-            $journalEntry = $this->createGoodsIssueJournalEntry($goodsIssue, $totalIssueCost);
+            $journalEntry = $this->createGoodsIssueJournalEntry($goodsIssue, $totalIssueValue);
 
             // Update goods issue status
             $goodsIssue->update([
@@ -174,15 +181,15 @@ class DistributionService
 
     /**
      * Create accounting journal entry for a posted goods issue.
-     * Dr Van Stock (1155) / Cr Stock In Hand (1151) for the unit-cost total.
+     * Dr Van Stock (1155) / Cr Stock In Hand (1151) for the selling-price total.
      */
-    public function createGoodsIssueJournalEntry(GoodsIssue $goodsIssue, float $totalIssueCost)
+    public function createGoodsIssueJournalEntry(GoodsIssue $goodsIssue, float $totalIssueValue)
     {
         try {
-            if ($totalIssueCost <= 0) {
+            if ($totalIssueValue <= 0) {
                 Log::warning('Skipping goods issue JE with zero or negative cost', [
                     'goods_issue_id' => $goodsIssue->id,
-                    'total_cost' => $totalIssueCost,
+                    'total_cost' => $totalIssueValue,
                 ]);
 
                 return null;
@@ -230,7 +237,7 @@ class DistributionService
                 [
                     'line_no' => 1,
                     'account_id' => $vanStock->id,
-                    'debit' => $totalIssueCost,
+                    'debit' => $totalIssueValue,
                     'credit' => 0,
                     'description' => 'Transfer to van stock (vehicle '.$vehicleNumber.'; salesman '.$employeeName.')',
                     'cost_center_id' => $costCenterId,
@@ -239,7 +246,7 @@ class DistributionService
                     'line_no' => 2,
                     'account_id' => $stockInHand->id,
                     'debit' => 0,
-                    'credit' => $totalIssueCost,
+                    'credit' => $totalIssueValue,
                     'description' => 'Transfer from warehouse stock (issued by '.$createdBy.')',
                     'cost_center_id' => $costCenterId,
                 ],
@@ -263,7 +270,7 @@ class DistributionService
             Log::info('Goods Issue JE created', [
                 'goods_issue_id' => $goodsIssue->id,
                 'journal_entry_id' => $result['data']->id ?? null,
-                'amount' => $totalIssueCost,
+                'amount' => $totalIssueValue,
             ]);
 
             return $result['data'];
@@ -621,6 +628,7 @@ class DistributionService
             $settlement->load([
                 'employee',
                 'items',
+                'items.batches',
                 'recoveries.customer',
                 'recoveries.bankAccount.chartOfAccount',
                 'creditSales.customer',
@@ -661,7 +669,19 @@ class DistributionService
 
             $employeeName = $settlement->employee->name ?? 'Unknown';
             $settlementDateFormatted = \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y');
+            $settlementReference = $settlement->settlement_number;
             $totalCOGS = $settlement->items->sum('total_cogs');
+            $totalCogsForGl = $settlement->items->reduce(function ($carry, $item) {
+                $itemCogsValue = $item->batches->sum(function ($batch) {
+                    return (float) $batch->quantity_sold * (float) $batch->unit_cost;
+                });
+
+                if ($itemCogsValue <= 0 && $item->quantity_sold > 0) {
+                    $itemCogsValue = (float) $item->quantity_sold * (float) $item->unit_cost;
+                }
+
+                return $carry + $itemCogsValue;
+            }, 0);
             $totalCreditSales = $settlement->creditSales->sum('sale_amount');
             $cashSalesAmount = $settlement->cash_sales_amount ?? 0;
             $chequeSalesAmount = $settlement->cheque_sales_amount ?? 0;
@@ -677,13 +697,13 @@ class DistributionService
                     $accounts['cash']->id,
                     $totalCashRecoveries,
                     0,
-                    "Recovery (Cash) - {$employeeName} - {$settlement->settlement_number}"
+                    "Recovery (Cash) - {$employeeName} - {$settlementReference} ({$settlementDateFormatted})"
                 );
                 $addLine(
                     $accounts['debtors']->id,
                     0,
                     $totalCashRecoveries,
-                    "Recovery (Cash) - {$employeeName} - {$settlement->settlement_number}"
+                    "Recovery (Cash) - {$employeeName} - {$settlementReference} ({$settlementDateFormatted})"
                 );
             }
 
@@ -691,7 +711,7 @@ class DistributionService
             $settlement->recoveries
                 ->reject(fn ($recovery) => $recovery->payment_method === 'cash')
                 ->groupBy('bank_account_id')
-                ->each(function ($group) use (&$addLine, $accounts, $settlement): void {
+                ->each(function ($group) use (&$addLine, $accounts): void {
                     $amount = $group->sum('amount');
                     $bankAccount = $group->first()->bankAccount;
                     $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['cash']->id;
@@ -701,13 +721,13 @@ class DistributionService
                         $bankAccountId,
                         $amount,
                         0,
-                        "Recovery (Bank/Online) - {$bankName} - {$settlement->settlement_number}"
+                        "Recovery (Bank/Online) - {$bankName} - {$settlementReference} ({$settlementDateFormatted})"
                     );
                     $addLine(
                         $accounts['debtors']->id,
                         0,
                         $amount,
-                        "Recovery (Bank/Online) - {$bankName} - {$settlement->settlement_number}"
+                        "Recovery (Bank/Online) - {$bankName} - {$settlementReference} ({$settlementDateFormatted})"
                     );
                 });
 
@@ -718,13 +738,13 @@ class DistributionService
                     $accounts['cheques_in_hand']->id,
                     $totalChequeRecoveries,
                     0,
-                    "Recovery (Cheques) - {$settlement->settlement_number}"
+                    "Recovery (Cheques) - {$employeeName} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['debtors']->id,
                     0,
                     $totalChequeRecoveries,
-                    "Recovery (Cheques) - {$settlement->settlement_number}"
+                    "Recovery (Cheques) - {$employeeName} - {$settlementReference}"
                 );
             }
 
@@ -734,13 +754,13 @@ class DistributionService
                     $accounts['debtors']->id,
                     $totalCreditSales,
                     0,
-                    "Sales on credit - {$settlement->settlement_number}"
+                    "Sales on credit - {$employeeName} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['sales']->id,
                     0,
                     $totalCreditSales,
-                    "Sales on credit - {$settlement->settlement_number}"
+                    "Sales on credit - {$employeeName} - {$settlementReference}"
                 );
             }
 
@@ -750,13 +770,13 @@ class DistributionService
                     $accounts['cash']->id,
                     $cashSalesAmount,
                     0,
-                    "Sales (Cash) - {$settlement->settlement_number}"
+                    "Sales (Cash) - {$employeeName} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['sales']->id,
                     0,
                     $cashSalesAmount,
-                    "Sales (Cash) - {$settlement->settlement_number}"
+                    "Sales (Cash) - {$employeeName} - {$settlementReference}"
                 );
             }
 
@@ -765,19 +785,19 @@ class DistributionService
                     $accounts['cheques_in_hand']->id,
                     $chequeSalesAmount,
                     0,
-                    "Sales (Cheques) - {$settlement->settlement_number}"
+                    "Sales (Cheques) - {$employeeName} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['sales']->id,
                     0,
                     $chequeSalesAmount,
-                    "Sales (Cheques) - {$settlement->settlement_number}"
+                    "Sales (Cheques) - {$employeeName} - {$settlementReference}"
                 );
             }
 
             $settlement->bankTransfers
                 ->groupBy('bank_account_id')
-                ->each(function ($transfers) use (&$addLine, $accounts, $employeeName, $settlement): void {
+                ->each(function ($transfers) use (&$addLine, $accounts, $employeeName): void {
                     $amount = $transfers->sum('amount');
                     $bankAccount = $transfers->first()->bankAccount;
                     $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['cash']->id;
@@ -787,13 +807,13 @@ class DistributionService
                         $bankAccountId,
                         $amount,
                         0,
-                        "Sales (Bank Transfer - {$bankName}) - {$employeeName}"
+                        "Sales (Bank Transfer - {$bankName}) - {$employeeName} - {$settlementReference}"
                     );
                     $addLine(
                         $accounts['sales']->id,
                         0,
                         $amount,
-                        "Sales (Bank Transfer - {$bankName}) - {$settlement->settlement_number}"
+                        "Sales (Bank Transfer - {$bankName}) - {$employeeName} - {$settlementReference}"
                     );
                 });
 
@@ -805,13 +825,13 @@ class DistributionService
                         $expense->expense_account_id,
                         $expense->amount,
                         0,
-                        "Expense - {$expenseAccountName} - {$settlement->settlement_number}"
+                        "Expense - {$expenseAccountName} - {$employeeName} - {$settlementReference}"
                     );
                     $addLine(
                         $accounts['cash']->id,
                         0,
                         $expense->amount,
-                        "Expense paid (Cash) - {$settlement->settlement_number}"
+                        "Expense paid (Cash) - {$employeeName} - {$settlementReference}"
                     );
                 }
             }
@@ -824,49 +844,91 @@ class DistributionService
                         $accounts['advance_tax']->id,
                         $advanceTax->amount,
                         0,
-                        "Advance tax collected - {$customerName}"
+                        "Advance tax collected - {$customerName} - {$settlementReference}"
                     );
                     $addLine(
                         $accounts['cash']->id,
                         0,
                         $advanceTax->amount,
-                        "Advance tax collected - {$settlement->settlement_number}"
+                        "Advance tax collected - {$employeeName} - {$settlementReference}"
                     );
                 }
             }
 
             // Cost of goods sold
-            if ($totalCOGS > 0) {
-                $addLine($accounts['cogs']->id, $totalCOGS, 0, 'Cost of goods sold');
-                $addLine($accounts['inventory']->id, 0, $totalCOGS, 'Inventory reduction - goods sold', 6);
+            if ($totalCogsForGl > 0) {
+                $addLine(
+                    $accounts['cogs']->id,
+                    $totalCogsForGl,
+                    0,
+                    "Cost of goods sold - {$employeeName} - {$settlementReference}"
+                );
+                $addLine(
+                    $accounts['inventory']->id,
+                    0,
+                    $totalCogsForGl,
+                    "Van stock reduction - goods sold ({$settlementReference})",
+                    6
+                );
             }
 
             // Returns
             $totalReturnValue = $settlement->items->reduce(function ($carry, $item) {
-                if ($item->quantity_returned > 0) {
-                    return $carry + ($item->quantity_returned * $item->unit_cost);
+                $itemReturnValue = $item->batches->sum(function ($batch) {
+                    return (float) $batch->quantity_returned * (float) $batch->unit_cost;
+                });
+
+                if ($itemReturnValue <= 0 && $item->quantity_returned > 0) {
+                    $itemReturnValue = (float) $item->quantity_returned * (float) $item->unit_cost;
                 }
 
-                return $carry;
+                return $carry + $itemReturnValue;
             }, 0);
 
             if ($totalReturnValue > 0) {
-                $addLine($accounts['inventory']->id, $totalReturnValue, 0, 'Goods returned to warehouse', 6);
-                $addLine($accounts['cogs']->id, 0, $totalReturnValue, 'COGS reversal - goods returned');
+                $addLine(
+                    $accounts['stock_in_hand']->id,
+                    $totalReturnValue,
+                    0,
+                    "Goods returned to warehouse - {$employeeName} - {$settlementReference}",
+                    6
+                );
+                $addLine(
+                    $accounts['inventory']->id,
+                    0,
+                    $totalReturnValue,
+                    "Van stock reduction - returns ({$settlementReference})",
+                    6
+                );
             }
 
             // Shortages
             $totalShortageValue = $settlement->items->reduce(function ($carry, $item) {
-                if ($item->quantity_shortage > 0) {
-                    return $carry + ($item->quantity_shortage * $item->unit_cost);
+                $itemShortageValue = $item->batches->sum(function ($batch) {
+                    return (float) $batch->quantity_shortage * (float) $batch->unit_cost;
+                });
+
+                if ($itemShortageValue <= 0 && $item->quantity_shortage > 0) {
+                    $itemShortageValue = (float) $item->quantity_shortage * (float) $item->unit_cost;
                 }
 
-                return $carry;
+                return $carry + $itemShortageValue;
             }, 0);
 
             if ($totalShortageValue > 0) {
-                $addLine($accounts['misc_expense']->id, $totalShortageValue, 0, 'Inventory shortage/loss');
-                $addLine($accounts['inventory']->id, 0, $totalShortageValue, 'Inventory reduction - shortage', 6);
+                $addLine(
+                    $accounts['misc_expense']->id,
+                    $totalShortageValue,
+                    0,
+                    "Inventory shortage/loss - {$employeeName} - {$settlementReference}"
+                );
+                $addLine(
+                    $accounts['inventory']->id,
+                    0,
+                    $totalShortageValue,
+                    "Van stock reduction - shortage ({$settlementReference})",
+                    6
+                );
             }
 
             $journalEntryData = [
@@ -922,6 +984,7 @@ class DistributionService
             'debtors' => \App\Models\ChartOfAccount::where('account_code', '1111')->first(),
             'earnest_money' => \App\Models\ChartOfAccount::where('account_code', '1170')->first(),
             'advance_tax' => \App\Models\ChartOfAccount::where('account_code', '1161')->first(),
+            'stock_in_hand' => \App\Models\ChartOfAccount::where('account_code', '1151')->first(),
             'inventory' => \App\Models\ChartOfAccount::where('account_code', '1155')->first(),
             'sales' => \App\Models\ChartOfAccount::where('account_code', '4110')->first(),
             'cogs' => \App\Models\ChartOfAccount::where('account_code', '5111')->first(),
@@ -940,7 +1003,7 @@ class DistributionService
      */
     protected function validateRequiredAccounts(array $accounts): bool
     {
-        $required = ['cash', 'debtors', 'inventory', 'sales', 'cogs'];
+        $required = ['cash', 'debtors', 'stock_in_hand', 'inventory', 'sales', 'cogs'];
         foreach ($required as $key) {
             if (! isset($accounts[$key]) || ! $accounts[$key]) {
                 return false;

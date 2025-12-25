@@ -139,73 +139,41 @@ class LedgerService
             // Reload the settlement to get all related data
             $settlement->load([
                 'employee',
-                'cheques',
-                'bankTransfers.bankAccount',
                 'expenses.expenseAccount',
                 'advanceTaxes',
                 'recoveries.customer',
                 'creditSales.customer',
             ]);
 
+            $employeeName = $settlement->employee?->full_name ?? $settlement->employee?->name ?? 'Unknown';
+            $settlementDate = $settlement->settlement_date?->format('d M Y') ?? (string) $settlement->settlement_date;
+
             // ========================================
             // 1. RECOVERIES - Customer Sub-Ledger
             // ========================================
             // ========================================
-            // 2. CHEQUE PAYMENTS - Customer Sub-Ledger
-            // ========================================
-            foreach ($settlement->cheques as $cheque) {
-                if ($cheque->amount > 0 && $cheque->customer_id) {
-                    $result = $this->recordCustomerEmployeeTransaction([
-                        'customer_id' => $cheque->customer_id,
-                        'employee_id' => $settlement->employee_id,
-                        'transaction_date' => $settlement->settlement_date,
-                        'transaction_type' => 'recovery',
-                        'reference_number' => $settlement->settlement_number,
-                        'sales_settlement_id' => $settlement->id,
-                        'description' => "Cheque Payment - {$cheque->bank_name} #{$cheque->cheque_number}",
-                        'debit' => 0,
-                        'credit' => $cheque->amount,
-                        'payment_method' => 'cheque',
-                    ]);
-                    $results['customer_employee_transactions'][] = $result;
-                }
-            }
-
-            // ========================================
-            // 3. BANK TRANSFERS - Customer Sub-Ledger
-            // ========================================
-            foreach ($settlement->bankTransfers as $transfer) {
-                if ($transfer->amount > 0 && $transfer->customer_id) {
-                    $result = $this->recordCustomerEmployeeTransaction([
-                        'customer_id' => $transfer->customer_id,
-                        'employee_id' => $settlement->employee_id,
-                        'transaction_date' => $settlement->settlement_date,
-                        'transaction_type' => 'recovery',
-                        'reference_number' => $settlement->settlement_number,
-                        'sales_settlement_id' => $settlement->id,
-                        'description' => "Bank Transfer - Ref: {$transfer->reference_number}",
-                        'debit' => 0,
-                        'credit' => $transfer->amount,
-                        'payment_method' => 'bank_transfer',
-                    ]);
-                    $results['customer_employee_transactions'][] = $result;
-                }
-            }
-
-            // ========================================
-            // 4. RECOVERIES (Payments against old balances) - Customer Sub-Ledger
+            // 2. RECOVERIES (Payments against old balances) - Customer Sub-Ledger
             // ========================================
             foreach ($settlement->recoveries as $recovery) {
                 if ($recovery->amount > 0 && $recovery->customer_id) {
                     $methodLabel = $recovery->payment_method === 'cash' ? 'Cash' : 'Bank Transfer';
+                    $customerName = $recovery->customer?->customer_name ?? 'Customer';
+                    $bankAccountName = $recovery->bankAccount?->account_name ?? 'Bank';
+                    $recoveryReference = $recovery->recovery_number ?? $settlement->settlement_number;
+
+                    $description = "Recovery ({$methodLabel}) from {$customerName} by {$employeeName} on {$settlementDate} (Ref: {$recoveryReference})";
+                    if ($recovery->payment_method === 'bank_transfer') {
+                        $description .= " via {$bankAccountName}";
+                    }
+
                     $result = $this->recordCustomerEmployeeTransaction([
                         'customer_id' => $recovery->customer_id,
                         'employee_id' => $recovery->employee_id ?? $settlement->employee_id,
                         'transaction_date' => $settlement->settlement_date,
                         'transaction_type' => 'recovery',
-                        'reference_number' => $recovery->recovery_number ?? $settlement->settlement_number,
+                        'reference_number' => $recoveryReference,
                         'sales_settlement_id' => $settlement->id,
-                        'description' => "Recovery via {$methodLabel} - Ref: ".($recovery->recovery_number ?? 'N/A'),
+                        'description' => $description,
                         'debit' => 0,
                         'credit' => $recovery->amount,
                         'payment_method' => $recovery->payment_method,
@@ -217,10 +185,13 @@ class LedgerService
             }
 
             // ========================================
-            // 5. CREDIT SALES - Customer Sub-Ledger
+            // 3. CREDIT SALES - Customer Sub-Ledger
             // ========================================
             foreach ($settlement->creditSales as $creditSale) {
                 if ($creditSale->sale_amount > 0 && $creditSale->customer_id) {
+                    $customerName = $creditSale->customer?->customer_name ?? 'Customer';
+                    $invoiceNumber = $creditSale->invoice_number ?? 'N/A';
+                    $description = "Credit Sale to {$customerName} by {$employeeName} on {$settlementDate} (Invoice: {$invoiceNumber})";
                     $result = $this->recordCustomerEmployeeTransaction([
                         'customer_id' => $creditSale->customer_id,
                         'employee_id' => $settlement->employee_id,
@@ -228,7 +199,7 @@ class LedgerService
                         'transaction_type' => 'credit_sale',
                         'reference_number' => $creditSale->invoice_number ?? $settlement->settlement_number,
                         'sales_settlement_id' => $settlement->id,
-                        'description' => 'Credit Sale - Invoice: '.($creditSale->invoice_number ?? 'N/A'),
+                        'description' => $description,
                         'debit' => $creditSale->sale_amount,
                         'credit' => 0,
                         'payment_method' => 'credit',

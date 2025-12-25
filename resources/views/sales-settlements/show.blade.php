@@ -85,6 +85,61 @@
         $grossMargin = $netSale > 0 ? ($grossProfit / $netSale) * 100 : 0;
         $netProfit = $grossProfit - $expensesTotal;
         $netMargin = $netSale > 0 ? ($netProfit / $netSale) * 100 : 0;
+
+        $valueTotals = [
+            'bf_in_qty' => 0,
+            'bf_in_value' => 0,
+            'issued_qty' => 0,
+            'issued_value' => 0,
+            'sold_qty' => 0,
+            'sold_value' => 0,
+            'returned_qty' => 0,
+            'returned_value' => 0,
+            'shortage_qty' => 0,
+            'shortage_value' => 0,
+        ];
+
+        foreach ($settlement->items as $item) {
+            $priceFallback = (float) ($item->unit_selling_price > 0 ? $item->unit_selling_price : $item->unit_cost);
+
+            if ($item->batches->count() > 0) {
+                foreach ($item->batches as $batch) {
+                    $price = (float) ($batch->selling_price ?? $priceFallback);
+                    $issuedQty = (float) $batch->quantity_issued;
+                    $soldQty = (float) $batch->quantity_sold;
+                    $returnedQty = (float) $batch->quantity_returned;
+                    $shortageQty = (float) $batch->quantity_shortage;
+
+                    $valueTotals['issued_qty'] += $issuedQty;
+                    $valueTotals['issued_value'] += $issuedQty * $price;
+                    $valueTotals['sold_qty'] += $soldQty;
+                    $valueTotals['sold_value'] += $soldQty * $price;
+                    $valueTotals['returned_qty'] += $returnedQty;
+                    $valueTotals['returned_value'] += $returnedQty * $price;
+                    $valueTotals['shortage_qty'] += $shortageQty;
+                    $valueTotals['shortage_value'] += $shortageQty * $price;
+                }
+            } else {
+                $issuedQty = (float) $item->quantity_issued;
+                $soldQty = (float) $item->quantity_sold;
+                $returnedQty = (float) $item->quantity_returned;
+                $shortageQty = (float) $item->quantity_shortage;
+
+                $valueTotals['issued_qty'] += $issuedQty;
+                $valueTotals['issued_value'] += $issuedQty * $priceFallback;
+                $valueTotals['sold_qty'] += $soldQty;
+                $valueTotals['sold_value'] += $soldQty * $priceFallback;
+                $valueTotals['returned_qty'] += $returnedQty;
+                $valueTotals['returned_value'] += $returnedQty * $priceFallback;
+                $valueTotals['shortage_qty'] += $shortageQty;
+                $valueTotals['shortage_value'] += $shortageQty * $priceFallback;
+            }
+        }
+
+        $totalAvailableQty = $valueTotals['bf_in_qty'] + $valueTotals['issued_qty'];
+        $totalAvailableValue = $valueTotals['bf_in_value'] + $valueTotals['issued_value'];
+        $bfOutQty = $totalAvailableQty - $valueTotals['sold_qty'] - $valueTotals['returned_qty'] - $valueTotals['shortage_qty'];
+        $bfOutValue = $totalAvailableValue - $valueTotals['sold_value'] - $valueTotals['returned_value'] - $valueTotals['shortage_value'];
     @endphp
 
     <div class="py-6">
@@ -214,6 +269,31 @@
                             <td class="py-1 px-2 text-right font-bold text-lg text-orange-700">-</td>
                             <td class="py-1 px-2 text-right font-bold text-lg text-emerald-600">
                                 {{ number_format($settlement->items->sum('total_sales_value'), 2) }}
+                            </td>
+                        </tr>
+                        <tr class="border-t border-gray-300 bg-blue-50">
+                            <td colspan="2" class="py-1 px-2 text-right font-bold text-sm">Value Totals:</td>
+                            <td class="py-1 px-2 text-right font-bold text-sm text-purple-700">
+                                {{ $valueTotals['bf_in_value'] > 0 ? number_format($valueTotals['bf_in_value'], 2) : '-' }}
+                            </td>
+                            <td class="py-1 px-2 text-right font-bold text-sm text-purple-700">
+                                {{ number_format($valueTotals['issued_value'], 2) }}
+                            </td>
+                            <td class="py-1 px-2"></td>
+                            <td class="py-1 px-2 text-right font-bold text-sm text-green-700">
+                                {{ number_format($valueTotals['sold_value'], 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right font-bold text-sm text-blue-700">
+                                {{ number_format($valueTotals['returned_value'], 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right font-bold text-sm text-red-700">
+                                {{ number_format($valueTotals['shortage_value'], 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right font-bold text-sm text-orange-700">
+                                {{ number_format($bfOutValue, 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right font-bold text-sm text-emerald-600">
+                                {{ number_format($valueTotals['sold_value'], 2) }}
                             </td>
                         </tr>
                     </x-slot>

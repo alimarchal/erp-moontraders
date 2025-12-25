@@ -671,6 +671,9 @@ class DistributionService
             };
 
             $employeeName = $settlement->employee->name ?? 'Unknown';
+            $employeeLabel = $settlement->employee_id
+                ? "{$employeeName} (ID: {$settlement->employee_id})"
+                : $employeeName;
             $settlementDateFormatted = \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y');
             $settlementReference = $settlement->settlement_number;
             $totalCOGS = $settlement->items->sum('total_cogs');
@@ -685,7 +688,6 @@ class DistributionService
 
                 return $carry + $itemCogsValue;
             }, 0);
-            $totalCreditSales = $settlement->creditSales->sum('sale_amount');
             $cashSalesAmount = $settlement->cash_sales_amount ?? 0;
             $chequeSalesAmount = $settlement->cheque_sales_amount ?? 0;
             $bankTransferSalesAmount = $settlement->bank_transfer_amount ?? 0;
@@ -700,13 +702,13 @@ class DistributionService
                     $accounts['cash']->id,
                     $totalCashRecoveries,
                     0,
-                    "Recovery (Cash) - {$employeeName} - {$settlementReference} ({$settlementDateFormatted})"
+                    "Recovery (Cash) - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
                 );
                 $addLine(
                     $accounts['debtors']->id,
                     0,
                     $totalCashRecoveries,
-                    "Recovery (Cash) - {$employeeName} - {$settlementReference} ({$settlementDateFormatted})"
+                    "Recovery (Cash) - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
                 );
             }
 
@@ -714,7 +716,7 @@ class DistributionService
             $settlement->recoveries
                 ->reject(fn ($recovery) => $recovery->payment_method === 'cash')
                 ->groupBy('bank_account_id')
-                ->each(function ($group) use (&$addLine, $accounts): void {
+                ->each(function ($group) use (&$addLine, $accounts, $employeeLabel, $settlementReference, $settlementDateFormatted): void {
                     $amount = $group->sum('amount');
                     $bankAccount = $group->first()->bankAccount;
                     $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['cash']->id;
@@ -724,13 +726,13 @@ class DistributionService
                         $bankAccountId,
                         $amount,
                         0,
-                        "Recovery (Bank/Online) - {$bankName} - {$settlementReference} ({$settlementDateFormatted})"
+                        "Recovery (Bank/Online) - {$bankName} - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
                     );
                     $addLine(
                         $accounts['debtors']->id,
                         0,
                         $amount,
-                        "Recovery (Bank/Online) - {$bankName} - {$settlementReference} ({$settlementDateFormatted})"
+                        "Recovery (Bank/Online) - {$bankName} - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
                     );
                 });
 
@@ -741,29 +743,38 @@ class DistributionService
                     $accounts['cheques_in_hand']->id,
                     $totalChequeRecoveries,
                     0,
-                    "Recovery (Cheques) - {$employeeName} - {$settlementReference}"
+                    "Recovery (Cheques) - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['debtors']->id,
                     0,
                     $totalChequeRecoveries,
-                    "Recovery (Cheques) - {$employeeName} - {$settlementReference}"
+                    "Recovery (Cheques) - {$employeeLabel} - {$settlementReference}"
                 );
             }
 
             // Credit sales
-            if ($totalCreditSales > 0) {
+            foreach ($settlement->creditSales as $creditSale) {
+                $creditAmount = (float) $creditSale->sale_amount;
+                if ($creditAmount <= 0) {
+                    continue;
+                }
+
+                $customerName = $creditSale->customer?->customer_name ?? 'Customer';
+                $invoiceNumber = $creditSale->invoice_number ? "Invoice: {$creditSale->invoice_number}" : 'Invoice: N/A';
+                $creditDescription = "Sales on credit - {$customerName} - {$invoiceNumber} - {$employeeLabel} - {$settlementReference}";
+
                 $addLine(
                     $accounts['debtors']->id,
-                    $totalCreditSales,
+                    $creditAmount,
                     0,
-                    "Sales on credit - {$employeeName} - {$settlementReference}"
+                    $creditDescription
                 );
                 $addLine(
                     $accounts['sales']->id,
                     0,
-                    $totalCreditSales,
-                    "Sales on credit - {$employeeName} - {$settlementReference}"
+                    $creditAmount,
+                    $creditDescription
                 );
             }
 
@@ -773,13 +784,13 @@ class DistributionService
                     $accounts['cash']->id,
                     $cashSalesAmount,
                     0,
-                    "Sales (Cash) - {$employeeName} - {$settlementReference}"
+                    "Sales (Cash) - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['sales']->id,
                     0,
                     $cashSalesAmount,
-                    "Sales (Cash) - {$employeeName} - {$settlementReference}"
+                    "Sales (Cash) - {$employeeLabel} - {$settlementReference}"
                 );
             }
 
@@ -788,19 +799,19 @@ class DistributionService
                     $accounts['cheques_in_hand']->id,
                     $chequeSalesAmount,
                     0,
-                    "Sales (Cheques) - {$employeeName} - {$settlementReference}"
+                    "Sales (Cheques) - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['sales']->id,
                     0,
                     $chequeSalesAmount,
-                    "Sales (Cheques) - {$employeeName} - {$settlementReference}"
+                    "Sales (Cheques) - {$employeeLabel} - {$settlementReference}"
                 );
             }
 
             $settlement->bankTransfers
                 ->groupBy('bank_account_id')
-                ->each(function ($transfers) use (&$addLine, $accounts, $employeeName, $settlementReference): void {
+                ->each(function ($transfers) use (&$addLine, $accounts, $employeeLabel, $settlementReference): void {
                     $amount = $transfers->sum('amount');
                     $bankAccount = $transfers->first()->bankAccount;
                     $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['cash']->id;
@@ -810,13 +821,13 @@ class DistributionService
                         $bankAccountId,
                         $amount,
                         0,
-                        "Sales (Bank Transfer - {$bankName}) - {$employeeName} - {$settlementReference}"
+                        "Sales (Bank Transfer - {$bankName}) - {$employeeLabel} - {$settlementReference}"
                     );
                     $addLine(
                         $accounts['sales']->id,
                         0,
                         $amount,
-                        "Sales (Bank Transfer - {$bankName}) - {$employeeName} - {$settlementReference}"
+                        "Sales (Bank Transfer - {$bankName}) - {$employeeLabel} - {$settlementReference}"
                     );
                 });
 
@@ -828,13 +839,13 @@ class DistributionService
                         $expense->expense_account_id,
                         $expense->amount,
                         0,
-                        "Expense - {$expenseAccountName} - {$employeeName} - {$settlementReference}"
+                        "Expense - {$expenseAccountName} - {$employeeLabel} - {$settlementReference}"
                     );
                     $addLine(
                         $accounts['cash']->id,
                         0,
                         $expense->amount,
-                        "Expense paid (Cash) - {$employeeName} - {$settlementReference}"
+                        "Expense paid (Cash) - {$employeeLabel} - {$settlementReference}"
                     );
                 }
             }
@@ -847,13 +858,13 @@ class DistributionService
                         $accounts['advance_tax']->id,
                         $advanceTax->amount,
                         0,
-                        "Advance tax collected - {$customerName} - {$settlementReference}"
+                        "Advance tax collected - {$customerName} - {$employeeLabel} - {$settlementReference}"
                     );
                     $addLine(
                         $accounts['cash']->id,
                         0,
                         $advanceTax->amount,
-                        "Advance tax collected - {$employeeName} - {$settlementReference}"
+                        "Advance tax collected - {$employeeLabel} - {$settlementReference}"
                     );
                 }
             }
@@ -864,7 +875,7 @@ class DistributionService
                     $accounts['cogs']->id,
                     $totalCogsForGl,
                     0,
-                    "Cost of goods sold - {$employeeName} - {$settlementReference}"
+                    "Cost of goods sold - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['inventory']->id,
@@ -893,7 +904,7 @@ class DistributionService
                     $accounts['stock_in_hand']->id,
                     $totalReturnValue,
                     0,
-                    "Goods returned to warehouse - {$employeeName} - {$settlementReference}",
+                    "Goods returned to warehouse - {$employeeLabel} - {$settlementReference}",
                     6
                 );
                 $addLine(
@@ -927,7 +938,7 @@ class DistributionService
                     $accounts['misc_expense']->id,
                     $totalShortageValue,
                     0,
-                    "Inventory shortage/loss - {$employeeName} - {$settlementReference}"
+                    "Inventory shortage/loss - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['inventory']->id,
@@ -941,7 +952,7 @@ class DistributionService
             $journalEntryData = [
                 'entry_date' => $settlement->settlement_date,
                 'reference' => $settlement->settlement_number,
-                'description' => "Sales settlement - {$employeeName} - {$settlementDateFormatted}",
+                'description' => "Sales settlement - {$employeeLabel} - {$settlementDateFormatted}",
                 'reference_type' => 'App\\Models\\SalesSettlement',
                 'reference_id' => $settlement->id,
                 'lines' => $lines,

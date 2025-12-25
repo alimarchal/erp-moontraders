@@ -5,7 +5,7 @@
     </x-slot>
 
     <x-filter-section :action="route('reports.trial-balance.index')">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <!-- Period/Date Selection -->
             <div>
                 <x-label for="accounting_period_id" value="Accounting Period" />
@@ -25,34 +25,6 @@
             <div>
                 <x-label for="as_of_date" value="As of Date" />
                 <x-input id="as_of_date" name="as_of_date" type="date" class="mt-1 block w-full" :value="$asOfDate" />
-            </div>
-
-            <!-- Optional Filters -->
-            <div>
-                <x-label for="filter_account_code" value="Filter by Account (Optional)" />
-                <select id="filter_account_code" name="filter[account_code]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Accounts</option>
-                    @foreach($accountsList as $account)
-                    <option value="{{ $account->account_code }}" {{ request('filter.account_code')===$account->
-                        account_code ? 'selected' : '' }}>
-                        {{ $account->account_code }} - {{ $account->account_name }}
-                    </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
-                <x-label for="filter_account_type" value="Filter by Type (Optional)" />
-                <select id="filter_account_type" name="filter[account_type]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Types</option>
-                    @foreach($accountTypes as $type)
-                    <option value="{{ $type }}" {{ request('filter.account_type')===$type ? 'selected' : '' }}>
-                        {{ $type }}
-                    </option>
-                    @endforeach
-                </select>
             </div>
         </div>
     </x-filter-section>
@@ -97,60 +69,5 @@
     </div>
     </div>
 
-    <!-- Detailed Account Balances -->
-    <x-data-table :items="$accounts" :headers="[
-        ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'Account Code'],
-        ['label' => 'Account Name'],
-        ['label' => 'Account Type'],
-        ['label' => 'Debit Balance', 'align' => 'text-right'],
-        ['label' => 'Credit Balance', 'align' => 'text-right'],
-    ]" emptyMessage="No account balances found.">
-        @foreach ($accounts as $index => $account)
-        @php
-        $balance = (float) $account->balance;
-        // For Trial Balance: show positive balance in Debit column, negative in Credit column
-        $debitBalance = $balance > 0 ? $balance : 0;
-        $creditBalance = $balance < 0 ? abs($balance) : 0; @endphp <tr
-            class="border-b border-gray-200 text-sm">
-            <td class="py-1 px-2 text-center">
-                {{ $index + 1 }}
-            </td>
-            <td class="py-1 px-2">
-                <div class="font-semibold uppercase font-mono">{{ $account->account_code }}</div>
-            </td>
-            <td class="py-1 px-2">
-                {{ $account->account_name }}
-            </td>
-            <td class="py-1 px-2">
-                <div class="text-xs text-gray-600">{{ $account->account_type }}</div>
-            </td>
-            <td class="py-1 px-2 text-right font-mono {{ $debitBalance > 0 ? 'font-semibold' : 'text-gray-400' }}">
-                {{ $debitBalance > 0 ? number_format($debitBalance, 2) : '-' }}
-            </td>
-            <td class="py-1 px-2 text-right font-mono {{ $creditBalance > 0 ? 'font-semibold' : 'text-gray-400' }}">
-                {{ $creditBalance > 0 ? number_format($creditBalance, 2) : '-' }}
-            </td>
-            </tr>
-            @endforeach
-            @php
-            $totalDebitBalance = collect($accounts)->sum(function($account) {
-            $balance = (float) $account->balance;
-            return $balance > 0 ? $balance : 0;
-            });
-            $totalCreditBalance = collect($accounts)->sum(function($account) {
-            $balance = (float) $account->balance;
-            return $balance < 0 ? abs($balance) : 0; }); @endphp <tr
-                class="border-t-2 border-gray-400 bg-gray-100 font-bold">
-                <td colspan="4" class="py-2 px-2 text-right">
-                    TOTAL ({{ count($accounts) }} accounts):
-                </td>
-                <td class="py-2 px-2 text-right font-mono">
-                    {{ number_format($totalDebitBalance, 2) }}
-                </td>
-                <td class="py-2 px-2 text-right font-mono">
-                    {{ number_format($totalCreditBalance, 2) }}
-                </td>
-                </tr>
-    </x-data-table>
+    
 </x-app-layout>

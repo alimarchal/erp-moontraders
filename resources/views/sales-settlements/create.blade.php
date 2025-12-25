@@ -541,12 +541,6 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                <tr class="bg-blue-50 border-y-2 border-blue-200">
-                                                    <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Sale
-                                                        Amount</td>
-                                                    <td class="py-1 px-1 text-right font-bold text-xs text-blue-800"
-                                                        id="summary_total_sale_display">0.00</td>
-                                                </tr>
                                                 <tr class="border-t border-gray-200">
                                                     <td class="py-1 px-1 text-xs text-black">Credit Sale Amount</td>
                                                     <td class="py-1 px-1 text-right font-semibold text-xs text-orange-700"
@@ -575,10 +569,31 @@
                                                         id="summary_net_sale_display">0.00</td>
                                                 </tr>
                                                 <tr class="border-t border-gray-200">
+                                                    <td class="py-1 px-1 text-xs text-black">Return Value</td>
+                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-blue-700"
+                                                        id="summary_return_value_display">0.00</td>
+                                                </tr>
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-1 px-1 text-xs text-black">Shortage Value</td>
+                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-red-700"
+                                                        id="summary_shortage_value_display">0.00</td>
+                                                </tr>
+                                                <tr class="border-t border-gray-200">
                                                     <td class="py-1 px-1 text-xs text-black">Recovery (From Customers)
                                                     </td>
                                                     <td class="py-1 px-1 text-right font-semibold text-xs text-teal-700"
                                                         id="summary_recovery_display">0.00</td>
+                                                </tr>
+                                                <tr class="border-t border-gray-200">
+                                                    <td class="py-1 px-1 text-xs text-black">Bank Online Recoveries</td>
+                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-blue-700"
+                                                        id="summary_bank_recovery_display">0.00</td>
+                                                </tr>
+                                                <tr class="bg-blue-50 border-y-2 border-blue-200">
+                                                    <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Sale
+                                                        Amount</td>
+                                                    <td class="py-1 px-1 text-right font-bold text-xs text-blue-800"
+                                                        id="summary_total_sale_display">0.00</td>
                                                 </tr>
                                                 <tr class="border-t border-gray-200 bg-gray-50">
                                                     <td class="py-1 px-1 text-xs text-black">Balance</td>
@@ -591,16 +606,15 @@
                                                         id="summary_expenses_display">0.00</td>
                                                 </tr>
                                                 <tr class="bg-indigo-50 border-y-2 border-indigo-200">
-                                                    <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Net
-                                                        Balance</td>
+                                                    <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Net Balance</td>
                                                     <td class="py-1 px-1 text-right font-bold text-xs text-indigo-900"
                                                         id="summary_net_balance_display">0.00</td>
                                                 </tr>
                                                 <tr class="border-t border-gray-200">
                                                     <td class="py-1 px-1 text-xs text-black">
-                                                        Cash Received (counted)
+                                                        Cash Received (denomination + bank + cheques)
                                                         <div class="text-[10px] text-gray-600 italic">
-                                                            Physical + Bank + Cheques
+                                                            Physical + bank transfers + cheques (sales only)
                                                         </div>
                                                     </td>
                                                     <td class="py-1 px-1 text-right font-semibold text-xs text-emerald-700"
@@ -659,6 +673,10 @@
                                         <input type="hidden" id="summary_net_sale" name="summary_net_sale"
                                             value="0.00" />
                                         <input type="hidden" id="summary_recovery" name="summary_recovery"
+                                            value="0.00" />
+                                        <input type="hidden" id="summary_return_value" name="summary_return_value"
+                                            value="0.00" />
+                                        <input type="hidden" id="summary_shortage_value" name="summary_shortage_value"
                                             value="0.00" />
                                         <input type="hidden" id="summary_total_sale" value="0.00" />
                                         <input type="hidden" id="summary_credit" name="summary_credit" value="0.00" />
@@ -1159,6 +1177,15 @@
                 if (issuedValueEl) issuedValueEl.textContent = formatPKR(grandIssuedValue);
                 if (bfInValueEl) bfInValueEl.textContent = grandBfIn > 0 ? formatPKR(grandBfInValue) : '-';
 
+                const returnValueInput = document.getElementById('summary_return_value');
+                if (returnValueInput) {
+                    returnValueInput.value = grandReturnValue.toFixed(2);
+                }
+                const shortageValueInput = document.getElementById('summary_shortage_value');
+                if (shortageValueInput) {
+                    shortageValueInput.value = grandShortageValue.toFixed(2);
+                }
+
                 // Update Sales Summary with sold value (Net Sale = Value of SOLD Items)
                 const netSaleEl = document.getElementById('summary_net_sale');
                 if (netSaleEl) {
@@ -1171,6 +1198,8 @@
             function updateSalesSummary() {
                 const netSale = parseFloat(document.getElementById('summary_net_sale').value) || 0;
                 const recovery = parseFloat(document.getElementById('summary_recovery').value) || 0;
+                const returnValue = parseFloat(document.getElementById('summary_return_value').value) || 0;
+                const shortageValue = parseFloat(document.getElementById('summary_shortage_value').value) || 0;
                 const credit = parseFloat(document.getElementById('summary_credit').value) || 0;
                 const expenses = parseFloat(document.getElementById('summary_expenses').value) || 0;
 
@@ -1193,16 +1222,41 @@
                 // Total Sale Amount = Credit + Cheque + Bank + Cash
                 const totalSaleAmount = creditSalesAmount + chequeSalesAmount + bankSalesAmount + cashSalesAmount;
 
-                // Legacy calculations for backward compatibility if needed
+                let recoveryCash = 0;
+                let recoveryBank = 0;
+                const recoveriesEntriesInput = document.getElementById('recoveries_entries');
+                if (recoveriesEntriesInput && recoveriesEntriesInput.value) {
+                    try {
+                        const entries = JSON.parse(recoveriesEntriesInput.value);
+                        if (Array.isArray(entries)) {
+                            recoveryCash = entries.reduce((sum, entry) => {
+                                if (entry.payment_method === 'cash') {
+                                    return sum + (parseFloat(entry.amount) || 0);
+                                }
+                                return sum;
+                            }, 0);
+                            recoveryBank = entries.reduce((sum, entry) => {
+                                if (entry.payment_method === 'bank_transfer') {
+                                    return sum + (parseFloat(entry.amount) || 0);
+                                }
+                                return sum;
+                            }, 0);
+                        }
+                    } catch (e) {
+                        recoveryCash = 0;
+                        recoveryBank = 0;
+                    }
+                }
+
                 const totalSale = netSale + recovery;
                 const balance = totalSale - credit;
                 const netBalance = balance - expenses;
 
-                // Cash Received (counted) = Physical + Bank + Cheques
+                // Cash Received (counted) = Physical + bank transfers + cheques + bank recoveries
                 const cashReceived = cashSalesAmount + bankSalesAmount + chequeSalesAmount;
                 const shortExcess = cashReceived - netBalance;
 
-                document.getElementById('summary_total_sale').value = totalSaleAmount.toFixed(2);
+                document.getElementById('summary_total_sale').value = totalSale.toFixed(2);
                 document.getElementById('summary_balance').value = balance.toFixed(2);
                 document.getElementById('summary_net_balance').value = netBalance.toFixed(2);
                 document.getElementById('summary_short_excess').value = shortExcess.toFixed(2);
@@ -1252,13 +1306,15 @@
 
                 const netSaleDisplay = document.getElementById('summary_net_sale_display');
                 const recoveryDisplay = document.getElementById('summary_recovery_display');
+                const returnValueDisplay = document.getElementById('summary_return_value_display');
+                const shortageValueDisplay = document.getElementById('summary_shortage_value_display');
                 const balanceDisplay = document.getElementById('summary_balance_display');
                 const expensesDisplay = document.getElementById('summary_expenses_display');
                 const netBalanceDisplay = document.getElementById('summary_net_balance_display');
                 const cashReceivedDisplay = document.getElementById('summary_cash_received_display');
                 const shortExcessDisplay = document.getElementById('summary_short_excess_display');
 
-                if (totalSaleDisplay) totalSaleDisplay.textContent = formatPKR(totalSaleAmount);
+                if (totalSaleDisplay) totalSaleDisplay.textContent = formatPKR(totalSale);
                 if (creditDisplay) creditDisplay.textContent = formatPKR(creditSalesAmount);
                 if (chequeDisplay) chequeDisplay.textContent = formatPKR(chequeSalesAmount);
                 if (bankDisplay) bankDisplay.textContent = formatPKR(bankSalesAmount);
@@ -1266,6 +1322,10 @@
 
                 if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);
                 if (recoveryDisplay) recoveryDisplay.textContent = formatPKR(recovery);
+                const bankRecoveryDisplay = document.getElementById('summary_bank_recovery_display');
+                if (bankRecoveryDisplay) bankRecoveryDisplay.textContent = formatPKR(recoveryBank);
+                if (returnValueDisplay) returnValueDisplay.textContent = formatPKR(returnValue);
+                if (shortageValueDisplay) shortageValueDisplay.textContent = formatPKR(shortageValue);
                 if (balanceDisplay) balanceDisplay.textContent = formatPKR(balance);
                 if (expensesDisplay) expensesDisplay.textContent = formatPKR(expenses);
                 if (netBalanceDisplay) netBalanceDisplay.textContent = formatPKR(netBalance);
@@ -1376,7 +1436,7 @@
                 document.getElementById('denom_10_total').textContent = '₨ ' + denom10.toLocaleString('en-PK');
 
                 const physicalCashTotal = denom5000 + denom1000 + denom500 + denom100 + denom50 + denom20 + denom10 + coins;
-                const totalCash = physicalCashTotal + bankTransferTotal + chequesTotal;
+                const totalCash = physicalCashTotal;
 
                 // Update physical cash display
                 document.getElementById('totalCashDisplay').textContent = '₨ ' + physicalCashTotal.toLocaleString('en-PK', {
@@ -1842,6 +1902,9 @@
                         // Listen for updates from the modal
                         window.addEventListener('bank-transfers-updated', () => {
                             this.updateDisplay();
+                            if (typeof updateCashTotal === 'function') {
+                                updateCashTotal();
+                            }
                         });
 
                         // Initial load
@@ -1913,6 +1976,9 @@
                         // Listen for updates from the modal
                         window.addEventListener('cheque-payments-updated', () => {
                             this.updateDisplay();
+                            if (typeof updateCashTotal === 'function') {
+                                updateCashTotal();
+                            }
                         });
 
                         // Initial load

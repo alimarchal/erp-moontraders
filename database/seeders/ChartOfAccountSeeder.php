@@ -104,6 +104,7 @@ class ChartOfAccountSeeder extends Seeder
             ['name' => 'Toll Tax / Labor', 'parent' => 'Indirect Expenses', 'type' => '', 'is_group' => 0, 'root_type' => 'Expense', 'disabled' => 0],
             ['name' => 'Food/Salesman/Loader Charges', 'parent' => 'Indirect Expenses', 'type' => '', 'is_group' => 0, 'root_type' => 'Expense', 'disabled' => 0],
             ['name' => 'Scheme Discount Expense', 'parent' => 'Indirect Expenses', 'type' => '', 'is_group' => 0, 'root_type' => 'Expense', 'disabled' => 0],
+            ['name' => 'Inventory Shortage', 'parent' => 'Indirect Expenses', 'type' => '', 'is_group' => 0, 'root_type' => 'Expense', 'disabled' => 0],
             ['name' => 'Percentage Expense', 'parent' => 'Indirect Expenses', 'type' => '', 'is_group' => 0, 'root_type' => 'Expense', 'disabled' => 0],
             ['name' => 'Income', 'parent' => 'Income', 'type' => '', 'is_group' => 1, 'root_type' => 'Income', 'disabled' => 0],
             ['name' => 'Direct Income', 'parent' => 'Income', 'type' => '', 'is_group' => 1, 'root_type' => 'Income', 'disabled' => 0],

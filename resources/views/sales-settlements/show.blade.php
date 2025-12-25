@@ -76,8 +76,12 @@
         $expensesTotal = (float) ($settlement->expenses->sum('amount') ?? 0);
         $totalSaleAmount = $cashSalesAmount + $chequeSalesAmount + $bankSalesAmount + $creditSalesAmount;
 
-        $netBalance = ($netSale + $recoveryTotal) - $creditSalesAmount - $expensesTotal;
-        $cashReceived = $cashSalesAmount + $bankSalesAmount + $chequeSalesAmount;
+        $totalSale = $netSale + $recoveryTotal;
+        $balance = $totalSale - $creditSalesAmount;
+        $netBalance = $balance - $expensesTotal;
+        $cashReceived = ($cashDenominationTotal > 0 ? $cashDenominationTotal : $cashSalesAmount)
+            + $bankSalesAmount
+            + $chequeSalesAmount;
         $shortExcess = $cashReceived - $netBalance;
 
         $totalCOGS = (float) ($settlement->items->sum('total_cogs') ?? 0);
@@ -763,6 +767,18 @@
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">Return Value</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-blue-700">
+                                                {{ number_format($valueTotals['returned_value'], 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">Shortage Value</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-red-700">
+                                                {{ number_format($valueTotals['shortage_value'], 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
                                             <td class="py-1 px-1 text-xs text-black">Recovery (From Customers)</td>
                                             <td class="py-1 px-1 text-right font-semibold text-xs text-teal-700">
                                                 <div class="flex flex-col items-end">
@@ -776,23 +792,41 @@
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
+                                            <td class="py-1 px-1 text-xs text-black">Bank Online Recoveries</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-blue-700">
+                                                {{ number_format($recoveryBank, 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="bg-blue-50 border-y-2 border-blue-200">
+                                            <td class="py-1 px-1 text-xs font-semibold text-blue-900">Total Sale Amount</td>
+                                            <td class="py-1 px-1 text-right font-bold text-xs text-blue-800">
+                                                {{ number_format($totalSale, 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200 bg-gray-50">
+                                            <td class="py-1 px-1 text-xs text-black">Expected Cash (Sales + Cash Recoveries)</td>
+                                            <td class="py-1 px-1 text-right font-semibold text-xs text-black">
+                                                {{ number_format($balance, 2) }}
+                                            </td>
+                                        </tr>
+                                        <tr class="border-t border-gray-200">
                                             <td class="py-1 px-1 text-xs text-red-700">Less: Expenses</td>
                                             <td class="py-1 px-1 text-right font-semibold text-xs text-red-700">
                                                 {{ number_format($expensesTotal, 2) }}
                                             </td>
                                         </tr>
                                         <tr class="bg-indigo-50 border-y-2 border-indigo-200">
-                                            <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Net Balance
-                                            </td>
+                                            <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Expected Cash
+                                                (After Expenses)</td>
                                             <td class="py-1 px-1 text-right font-bold text-xs text-indigo-900">
                                                 {{ number_format($netBalance, 2) }}
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
                                             <td class="py-1 px-1 text-xs text-black">
-                                                Cash Received (counted)
+                                                Cash Received (denomination + bank + cheques)
                                                 <div class="text-[10px] text-gray-600 italic">
-                                                    Physical + Bank + Cheques
+                                                    Physical + bank transfers + cheques (sales only)
                                                 </div>
                                             </td>
                                             <td class="py-1 px-1 text-right font-semibold text-xs text-emerald-700">

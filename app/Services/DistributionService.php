@@ -994,7 +994,7 @@ class DistributionService
             'scheme' => \App\Models\ChartOfAccount::where('account_code', '5292')->first(),
             'food_salesman_loader' => \App\Models\ChartOfAccount::where('account_code', '5282')->first(),
             'percentage' => \App\Models\ChartOfAccount::where('account_code', '5292')->first(),
-            'misc_expense' => \App\Models\ChartOfAccount::where('account_code', '5211')->first(),
+            'misc_expense' => \App\Models\ChartOfAccount::where('account_code', '5213')->first(),
         ];
     }
 

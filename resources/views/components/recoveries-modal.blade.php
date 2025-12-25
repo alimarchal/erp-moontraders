@@ -476,18 +476,40 @@
                         return this.entries.reduce((sum, entry) => sum + (parseFloat(entry.new_balance) || 0), 0);
                     },
 
+                    parseEntries(rawValue) {
+                        if (!rawValue) {
+                            return [];
+                        }
+
+                        let normalized = rawValue.trim();
+                        if (
+                            (normalized.startsWith("'") && normalized.endsWith("'")) ||
+                            (normalized.startsWith('"') && normalized.endsWith('"'))
+                        ) {
+                            normalized = normalized.slice(1, -1);
+                        }
+
+                        if (normalized.includes('&quot;') || normalized.includes('&#039;') || normalized.includes('&amp;')) {
+                            normalized = normalized
+                                .replace(/&quot;/g, '"')
+                                .replace(/&#039;/g, "'")
+                                .replace(/&amp;/g, '&');
+                        }
+
+                        try {
+                            const parsed = JSON.parse(normalized);
+                            return Array.isArray(parsed) ? parsed : [];
+                        } catch (error) {
+                            console.error('Error parsing recoveries entries:', error);
+                            return [];
+                        }
+                    },
+
                     init() {
                         // Initialize entries from the hidden input if it has a value
                         const entriesInput = document.getElementById(entriesInputId);
                         if (entriesInput && entriesInput.value) {
-                            try {
-                                const parsed = JSON.parse(entriesInput.value);
-                                if (Array.isArray(parsed)) {
-                                    this.entries = parsed;
-                                }
-                            } catch (e) {
-                                console.error('Error parsing recoveries entries:', e);
-                            }
+                            this.entries = this.parseEntries(entriesInput.value);
                         }
 
                         window.addEventListener('update-modal-customers', (event) => {

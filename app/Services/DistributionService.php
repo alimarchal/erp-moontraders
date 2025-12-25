@@ -576,6 +576,9 @@ class DistributionService
 
             // Create accounting journal entry
             $journalEntry = $this->createSalesJournalEntry($settlement);
+            if (! $journalEntry) {
+                throw new \Exception('Failed to create journal entry for Sales Settlement.');
+            }
 
             // Process ledger entries for credit sales
             $ledgerService = app(LedgerService::class);
@@ -797,7 +800,7 @@ class DistributionService
 
             $settlement->bankTransfers
                 ->groupBy('bank_account_id')
-                ->each(function ($transfers) use (&$addLine, $accounts, $employeeName): void {
+                ->each(function ($transfers) use (&$addLine, $accounts, $employeeName, $settlementReference): void {
                     $amount = $transfers->sum('amount');
                     $bankAccount = $transfers->first()->bankAccount;
                     $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['cash']->id;
@@ -916,6 +919,10 @@ class DistributionService
             }, 0);
 
             if ($totalShortageValue > 0) {
+                if (! $accounts['misc_expense']) {
+                    throw new \Exception('Inventory Shortage account (5213) not found.');
+                }
+
                 $addLine(
                     $accounts['misc_expense']->id,
                     $totalShortageValue,

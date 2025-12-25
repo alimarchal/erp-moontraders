@@ -403,21 +403,19 @@ class SalesSettlementController extends Controller
                 }
             }
 
-            // Cash sales include physical cash plus cash recoveries
-            $cashSalesAmount = $denomTotal + $cashRecoveries;
-
-            // Add online recoveries to bank transfers
-            $totalBankTransfers += $bankRecoveries;
+            // Cash sales include only physical cash from denominations
+            $cashSalesAmount = $denomTotal;
 
             $totalSalesAmount = $cashSalesAmount +
                 $totalCheques +
                 $totalBankTransfers +
-                ($request->credit_sales_amount ?? 0);
+                ($request->credit_sales_amount ?? 0) +
+                $totalRecoveries;
 
             // Cash collected is now strictly physical cash from denominations
             $cashCollected = $denomTotal;
 
-            $cashToDeposit = $cashCollected + $totalRecoveries - ($request->expenses_claimed ?? 0);
+            $cashToDeposit = $cashCollected + $cashRecoveries - ($request->expenses_claimed ?? 0);
 
             // Calculate total expenses from the expenses array (dynamic from Alpine.js)
             $totalExpenses = 0;
@@ -858,16 +856,14 @@ class SalesSettlementController extends Controller
                 }
             }
 
-            // Cash sales now include cash recoveries (physical cash on hand)
-            $cashSalesAmount = $denomTotal + $cashRecoveries;
-
-            // Bank transfer amount also includes online recoveries
-            $totalBankTransfers += $bankRecoveries;
+            // Cash sales include only physical cash from denominations
+            $cashSalesAmount = $denomTotal;
 
             $totalSalesAmount = $cashSalesAmount +
                 $totalCheques +
                 $totalBankTransfers +
-                ($request->credit_sales_amount ?? 0);
+                ($request->credit_sales_amount ?? 0) +
+                $totalRecoveries;
 
             // Cash collected is physical cash (denomination count)
             $cashCollected = $denomTotal;

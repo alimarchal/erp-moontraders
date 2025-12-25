@@ -44,12 +44,19 @@ class DailySalesReportController extends Controller
             ->orderBy('employee_id')
             ->get();
 
+        $settlements->each(function ($settlement) {
+            $settlement->net_sales_amount = $settlement->items->sum('total_sales_value');
+            $settlement->total_cogs_amount = $settlement->items->sum('total_cogs');
+            $settlement->recoveries_amount = (float) ($settlement->credit_recoveries ?? 0);
+        });
+
         // Calculate summary
         $summary = [
-            'total_sales' => $settlements->sum('total_sales_amount'),
+            'total_sales' => $settlements->sum('net_sales_amount'),
             'cash_sales' => $settlements->sum('cash_sales_amount'),
             'credit_sales' => $settlements->sum('credit_sales_amount'),
             'cheque_sales' => $settlements->sum('cheque_sales_amount'),
+            'recoveries' => $settlements->sum('recoveries_amount'),
             'total_quantity_sold' => $settlements->sum('total_quantity_sold'),
             'total_quantity_returned' => $settlements->sum('total_quantity_returned'),
             'total_quantity_shortage' => $settlements->sum('total_quantity_shortage'),
@@ -59,10 +66,8 @@ class DailySalesReportController extends Controller
         ];
 
         // Calculate gross profit
-        $totalCOGS = $settlements->sum(function ($settlement) {
-            return $settlement->items->sum('total_cogs');
-        });
-        $summary['gross_profit'] = $summary['total_sales'] - $totalCOGS;
+        $summary['total_cogs'] = $settlements->sum('total_cogs_amount');
+        $summary['gross_profit'] = $summary['total_sales'] - $summary['total_cogs'];
         $summary['gross_profit_margin'] = $summary['total_sales'] > 0
             ? ($summary['gross_profit'] / $summary['total_sales']) * 100
             : 0;
@@ -148,47 +153,50 @@ class DailySalesReportController extends Controller
         $startDate = $request->input('start_date', now()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
 
-        // Get salesman-wise performance
-        $salesmanPerformance = DB::table('sales_settlements as ss')
-            ->join('employees as e', 'ss.employee_id', '=', 'e.id')
-            ->join('vehicles as v', 'ss.vehicle_id', '=', 'v.id')
-            ->where('ss.status', 'posted')
-            ->whereBetween('ss.settlement_date', [$startDate, $endDate])
-            ->select(
-                'e.id as employee_id',
-                'e.name as employee_name',
-                'e.employee_code',
-                'v.vehicle_number',
-                DB::raw('COUNT(ss.id) as settlement_count'),
-                DB::raw('SUM(ss.total_sales_amount) as total_sales'),
-                DB::raw('SUM(ss.cash_sales_amount) as cash_sales'),
-                DB::raw('SUM(ss.credit_sales_amount) as credit_sales'),
-                DB::raw('SUM(ss.cheque_sales_amount) as cheque_sales'),
-                DB::raw('SUM(ss.total_quantity_sold) as total_quantity_sold'),
-                DB::raw('SUM(ss.total_quantity_returned) as total_returned'),
-                DB::raw('SUM(ss.total_quantity_shortage) as total_shortage'),
-                DB::raw('SUM(ss.cash_collected) as cash_collected'),
-                DB::raw('SUM(ss.expenses_claimed) as expenses_claimed')
-            )
-            ->groupBy('e.id', 'e.name', 'e.employee_code', 'v.vehicle_number')
-            ->orderByDesc('total_sales')
+        $settlements = SalesSettlement::with(['employee', 'vehicle', 'items'])
+            ->where('status', 'posted')
+            ->whereBetween('settlement_date', [$startDate, $endDate])
             ->get();
 
-        // Calculate gross profit for each salesman
-        foreach ($salesmanPerformance as $salesman) {
-            $cogs = DB::table('sales_settlement_items as ssi')
-                ->join('sales_settlements as ss', 'ssi.sales_settlement_id', '=', 'ss.id')
-                ->where('ss.employee_id', $salesman->employee_id)
-                ->where('ss.status', 'posted')
-                ->whereBetween('ss.settlement_date', [$startDate, $endDate])
-                ->sum('ssi.total_cogs');
+        $salesmanPerformance = $settlements
+            ->groupBy(function ($settlement) {
+                return $settlement->employee_id.'-'.$settlement->vehicle_id;
+            })
+            ->map(function ($group) {
+                $first = $group->first();
+                $totalSales = $group->sum(function ($settlement) {
+                    return $settlement->items->sum('total_sales_value');
+                });
+                $totalCogs = $group->sum(function ($settlement) {
+                    return $settlement->items->sum('total_cogs');
+                });
 
-            $salesman->total_cogs = $cogs;
-            $salesman->gross_profit = $salesman->total_sales - $cogs;
-            $salesman->gross_profit_margin = $salesman->total_sales > 0
-                ? ($salesman->gross_profit / $salesman->total_sales) * 100
-                : 0;
-        }
+                $grossProfit = $totalSales - $totalCogs;
+
+                return (object) [
+                    'employee_id' => $first->employee_id,
+                    'employee_name' => $first->employee->name ?? 'N/A',
+                    'employee_code' => $first->employee->employee_code ?? '',
+                    'vehicle_number' => $first->vehicle->vehicle_number ?? 'N/A',
+                    'settlement_count' => $group->count(),
+                    'total_sales' => $totalSales,
+                    'cash_sales' => $group->sum('cash_sales_amount'),
+                    'credit_sales' => $group->sum('credit_sales_amount'),
+                    'cheque_sales' => $group->sum('cheque_sales_amount'),
+                    'bank_transfer_sales' => $group->sum('bank_transfer_amount'),
+                    'recoveries' => $group->sum('credit_recoveries'),
+                    'total_quantity_sold' => $group->sum('total_quantity_sold'),
+                    'total_returned' => $group->sum('total_quantity_returned'),
+                    'total_shortage' => $group->sum('total_quantity_shortage'),
+                    'cash_collected' => $group->sum('cash_collected'),
+                    'expenses_claimed' => $group->sum('expenses_claimed'),
+                    'total_cogs' => $totalCogs,
+                    'gross_profit' => $grossProfit,
+                    'gross_profit_margin' => $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : 0,
+                ];
+            })
+            ->sortByDesc('total_sales')
+            ->values();
 
         // Calculate totals
         $totals = [
@@ -196,6 +204,8 @@ class DailySalesReportController extends Controller
             'total_sales' => $salesmanPerformance->sum('total_sales'),
             'cash_sales' => $salesmanPerformance->sum('cash_sales'),
             'credit_sales' => $salesmanPerformance->sum('credit_sales'),
+            'bank_transfer_sales' => $salesmanPerformance->sum('bank_transfer_sales'),
+            'recoveries' => $salesmanPerformance->sum('recoveries'),
             'total_quantity_sold' => $salesmanPerformance->sum('total_quantity_sold'),
             'cash_collected' => $salesmanPerformance->sum('cash_collected'),
             'gross_profit' => $salesmanPerformance->sum('gross_profit'),

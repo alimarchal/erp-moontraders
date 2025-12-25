@@ -19,6 +19,9 @@
         ['label' => 'Salesman'],
         ['label' => 'Supplier'],
         ['label' => 'Total Credit Sales', 'align' => 'text-right'],
+        ['label' => 'Recoveries', 'align' => 'text-right'],
+        ['label' => 'Balance', 'align' => 'text-right'],
+        ['label' => 'Customers', 'align' => 'text-right'],
         ['label' => 'Number of Sales', 'align' => 'text-right'],
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No credit sales found for any salesman">
@@ -33,11 +36,26 @@
             </td>
             <td class="py-1 px-2">
                 <div class="text-gray-900">{{ $salesman->supplier->supplier_name ?? 'N/A' }}</div>
-                <div class="text-xs text-gray-500">{{ $salesman->supplier->supplier_code ?? '-' }}</div>
+                <div class="text-xs text-gray-500">{{ $salesman->supplier->short_name ?? '-' }}</div>
             </td>
             <td class="py-1 px-2 text-right">
                 <span class="font-mono font-bold text-orange-700">
                     {{ number_format($salesman->credit_sales_sum_sale_amount, 2) }}
+                </span>
+            </td>
+            <td class="py-1 px-2 text-right">
+                <span class="font-mono text-gray-700">
+                    {{ number_format($salesman->recoveries_sum_amount, 2) }}
+                </span>
+            </td>
+            <td class="py-1 px-2 text-right">
+                <span class="font-mono font-semibold text-gray-900">
+                    {{ number_format($salesman->credit_sales_sum_sale_amount - $salesman->recoveries_sum_amount, 2) }}
+                </span>
+            </td>
+            <td class="py-1 px-2 text-right">
+                <span class="px-2 py-1 text-sm font-semibold bg-slate-100 text-slate-800 rounded-full">
+                    {{ $salesman->customers_count }}
                 </span>
             </td>
             <td class="py-1 px-2 text-right">
@@ -60,6 +78,17 @@
             </td>
             <td class="py-2 px-2 text-right font-mono text-orange-700">
                 {{ number_format($salesmen->sum('credit_sales_sum_sale_amount'), 2) }}
+            </td>
+            <td class="py-2 px-2 text-right font-mono text-gray-700">
+                {{ number_format($salesmen->sum('recoveries_sum_amount'), 2) }}
+            </td>
+            <td class="py-2 px-2 text-right font-mono text-gray-900">
+                {{ number_format($salesmen->sum('credit_sales_sum_sale_amount') - $salesmen->sum('recoveries_sum_amount'), 2) }}
+            </td>
+            <td class="py-2 px-2 text-right">
+                <span class="px-2 py-1 text-sm font-bold bg-slate-200 text-slate-900 rounded-full">
+                    {{ $salesmen->sum('customers_count') }}
+                </span>
             </td>
             <td class="py-2 px-2 text-right">
                 <span class="px-2 py-1 text-sm font-bold bg-blue-200 text-blue-900 rounded-full">

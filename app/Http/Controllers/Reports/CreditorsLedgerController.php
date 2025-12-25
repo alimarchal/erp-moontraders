@@ -7,6 +7,7 @@ use App\Models\Customer;
 use App\Models\Employee;
 use App\Services\LedgerService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CreditorsLedgerController extends Controller
 {
@@ -82,6 +83,7 @@ class CreditorsLedgerController extends Controller
         $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 100;
 
         $dateFrom = $request->input('filter.date_from');
+        $dateTo = $request->input('filter.date_to');
         // Query customer_employee_account_transactions through the accounts
         $entriesQuery = DB::table('customer_employee_account_transactions as ceat')
             ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
@@ -189,23 +191,22 @@ class CreditorsLedgerController extends Controller
 
         // Query credit sales from customer_employee_account_transactions
         $creditSalesQuery = \App\Models\CustomerEmployeeAccountTransaction::query()
-            ->select('ceat.*', 'cea.employee_id', 'ss.settlement_number', 'ss.settlement_date')
-            ->from('customer_employee_account_transactions as ceat')
-            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
-            ->leftJoin('sales_settlements as ss', 'ceat.sales_settlement_id', '=', 'ss.id')
+            ->select('customer_employee_account_transactions.*', 'cea.employee_id', 'ss.settlement_number', 'ss.settlement_date')
+            ->join('customer_employee_accounts as cea', 'customer_employee_account_transactions.customer_employee_account_id', '=', 'cea.id')
+            ->leftJoin('sales_settlements as ss', 'customer_employee_account_transactions.sales_settlement_id', '=', 'ss.id')
             ->where('cea.customer_id', $customer->id)
-            ->where('ceat.transaction_type', 'credit_sale')
+            ->where('customer_employee_account_transactions.transaction_type', 'credit_sale')
             ->with(['account.employee', 'salesSettlement']);
 
         if ($request->filled('filter.date_from')) {
-            $creditSalesQuery->whereDate('ceat.transaction_date', '>=', $request->input('filter.date_from'));
+            $creditSalesQuery->whereDate('customer_employee_account_transactions.transaction_date', '>=', $request->input('filter.date_from'));
         }
 
         if ($request->filled('filter.date_to')) {
-            $creditSalesQuery->whereDate('ceat.transaction_date', '<=', $request->input('filter.date_to'));
+            $creditSalesQuery->whereDate('customer_employee_account_transactions.transaction_date', '<=', $request->input('filter.date_to'));
         }
 
-        $creditSales = $creditSalesQuery->orderByDesc('ceat.transaction_date')
+        $creditSales = $creditSalesQuery->orderByDesc('customer_employee_account_transactions.transaction_date')
             ->paginate($perPage)
             ->withQueryString();
 

@@ -41,8 +41,6 @@
         ['label' => '#', 'align' => 'text-center'],
         ['label' => 'Settlement Number'],
         ['label' => 'Date', 'align' => 'text-center'],
-        ['label' => 'Salesman'],
-        ['label' => 'Vehicle'],
         ['label' => 'Total Sales', 'align' => 'text-right'],
         ['label' => 'Credit Sale', 'align' => 'text-right'],
         ['label' => 'Cheque Sale', 'align' => 'text-right'],
@@ -51,8 +49,8 @@
         ['label' => 'Profit', 'align' => 'text-right'],
         ['label' => 'Status', 'align' => 'text-center'],
         ['label' => 'Actions', 'align' => 'text-center'],
-    ]" emptyMessage="No sales settlements found."
-        :emptyRoute="route('sales-settlements.create')" emptyLinkText="Create a Settlement">
+    ]" emptyMessage="No sales settlements found." :emptyRoute="route('sales-settlements.create')"
+        emptyLinkText="Create a Settlement">
 
         @foreach ($settlements as $index => $settlement)
             <tr class="border-b border-gray-200 text-sm">
@@ -66,17 +64,23 @@
                     <div class="text-xs text-gray-500">
                         GI: {{ $settlement->goodsIssue->issue_number }}
                     </div>
+
+
                 </td>
-                <td class="py-1 px-2 text-center">
-                    {{ \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y') }}
-                </td>
-                <td class="py-1 px-2">
-                    {{ $settlement->employee->full_name }}
-                </td>
-                <td class="py-1 px-2">
-                    {{ $settlement->vehicle->vehicle_number }}
+                <td class="py-1 px-2 text-left">
+                    <div class="text-xs text-gray-500">
+                        Date: {{ \Carbon\Carbon::parse($settlement->goodsIssue->issue_date)->format('d M Y') }}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        SM: {{ $settlement->employee->full_name }}
+                    </div>
+                    <div class="text-xs text-gray-500">
+                        VH: {{ $settlement->vehicle->vehicle_number }}
+                    </div>
                 </td>
                 <td class="py-1 px-2 text-right">
+
+
                     <div class="font-semibold text-gray-900">
                         Rs {{ number_format($settlement->total_sales_amount, 2) }}
                     </div>
@@ -119,9 +123,10 @@
                     </div>
                 </td>
                 <td class="py-1 px-2 text-center">
-                    <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full
-                                        {{ $settlement->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                        {{ $settlement->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full
+                                                                        {{ $settlement->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                                                        {{ $settlement->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                         {{ ucfirst($settlement->status) }}
                     </span>
                 </td>

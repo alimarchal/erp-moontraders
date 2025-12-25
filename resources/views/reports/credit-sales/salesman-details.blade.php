@@ -32,6 +32,49 @@
         </div>
     </div>
 
+    @if($customerSummaries->count() > 0)
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mb-4">
+            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                <div class="px-4 py-3 border-b border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-700">Customers Summary</h3>
+                    <p class="text-xs text-gray-500">Click a customer to view their credit sales history for this salesman.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700">
+                                <th class="py-2 px-3 text-left">Customer</th>
+                                <th class="py-2 px-3 text-right">Sales Count</th>
+                                <th class="py-2 px-3 text-right">Total Amount</th>
+                                <th class="py-2 px-3 text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($customerSummaries as $customer)
+                                <tr class="border-b border-gray-100">
+                                    <td class="py-2 px-3">
+                                        <div class="font-semibold">{{ $customer->customer_name }}</div>
+                                        <div class="text-xs text-gray-500">{{ $customer->customer_code }}</div>
+                                    </td>
+                                    <td class="py-2 px-3 text-right font-mono">{{ number_format($customer->sales_count) }}</td>
+                                    <td class="py-2 px-3 text-right font-mono font-semibold text-orange-700">
+                                        {{ number_format($customer->total_amount, 2) }}
+                                    </td>
+                                    <td class="py-2 px-3 text-center">
+                                        <a class="text-indigo-600 hover:text-indigo-900 font-semibold"
+                                            href="{{ route('reports.credit-sales.salesman-details', $employee) }}?customer_id={{ $customer->customer_id }}">
+                                            View Details
+                                        </a>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <x-data-table :items="$creditSales" :headers="[
         ['label' => '#', 'align' => 'text-center'],
         ['label' => 'Date'],
@@ -50,14 +93,18 @@
                     {{ \Carbon\Carbon::parse($sale->created_at)->format('d-m-Y') }}
                 </td>
                 <td class="py-1 px-2">
-                    <a href="{{ route('sales-settlements.show', $sale->salesSettlement) }}"
-                        class="text-indigo-600 hover:text-indigo-900 font-semibold">
-                        {{ $sale->salesSettlement->settlement_number }}
-                    </a>
+                    @if($sale->salesSettlement)
+                        <a href="{{ route('sales-settlements.show', $sale->salesSettlement) }}"
+                            class="text-indigo-600 hover:text-indigo-900 font-semibold">
+                            {{ $sale->salesSettlement->settlement_number }}
+                        </a>
+                    @else
+                        <span class="text-gray-500">-</span>
+                    @endif
                 </td>
                 <td class="py-1 px-2">
-                    <div class="font-semibold">{{ $sale->customer->customer_name }}</div>
-                    <div class="text-xs text-gray-500">{{ $sale->customer->customer_code }}</div>
+                    <div class="font-semibold">{{ $sale->account->customer->customer_name ?? 'N/A' }}</div>
+                    <div class="text-xs text-gray-500">{{ $sale->account->customer->customer_code ?? '-' }}</div>
                 </td>
                 <td class="py-1 px-2 font-mono">{{ $sale->invoice_number ?? '-' }}</td>
                 <td class="py-1 px-2 text-right font-mono font-semibold text-orange-700">

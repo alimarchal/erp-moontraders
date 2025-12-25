@@ -963,20 +963,8 @@ class DistributionService
             $result = $accountingService->createJournalEntry($journalEntryData);
 
             if ($result['success']) {
-                Log::info('Consolidated sales settlement journal entry created', [
-                    'settlement_id' => $settlement->id,
-                    'settlement_number' => $settlement->settlement_number,
-                    'journal_entry_id' => $result['data']->id,
-                    'total_lines' => count($lines),
-                ]);
-
                 return $result['data'];
             }
-
-            Log::error('Failed to create consolidated journal entry', [
-                'settlement_id' => $settlement->id,
-                'result' => $result,
-            ]);
 
             return null;
         } catch (\Exception $e) {

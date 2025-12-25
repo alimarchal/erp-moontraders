@@ -66,8 +66,8 @@ class VanStockLedgerController extends Controller
             $movementsQuery->where('movement_type', $movementType);
         }
 
-        $movements = $movementsQuery->orderBy('movement_date', 'desc')
-            ->orderBy('id', 'desc')
+        $movements = $movementsQuery->orderBy('movement_date')
+            ->orderBy('id')
             ->paginate($perPage)
             ->withQueryString();
 

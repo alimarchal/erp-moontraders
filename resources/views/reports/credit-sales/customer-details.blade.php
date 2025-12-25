@@ -8,7 +8,7 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2">
         <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-4">
             <div class="p-4">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                     <div>
                         <p class="text-sm text-gray-500">Customer Code</p>
                         <p class="font-semibold">{{ $customer->customer_code }}</p>
@@ -28,6 +28,12 @@
                             {{ number_format($creditSales->sum('debit'), 2) }}
                         </p>
                     </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Total Recoveries</p>
+                        <p class="text-xl font-bold text-gray-800 font-mono">
+                            {{ number_format($salesmenBreakdown->sum('total_recoveries'), 2) }}
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -45,7 +51,9 @@
                                 <tr class="bg-green-800 text-white uppercase text-sm">
                                     <th class="py-2 px-2 text-left">Salesman</th>
                                     <th class="py-2 px-2 text-left">Supplier</th>
-                                    <th class="py-2 px-2 text-right">Total Amount</th>
+                                    <th class="py-2 px-2 text-right">Credit Sales</th>
+                                    <th class="py-2 px-2 text-right">Recoveries</th>
+                                    <th class="py-2 px-2 text-right">Balance</th>
                                     <th class="py-2 px-2 text-right">Number of Sales</th>
                                 </tr>
                             </thead>
@@ -53,16 +61,21 @@
                                 @foreach ($salesmenBreakdown as $breakdown)
                                     <tr class="border-b border-gray-200 hover:bg-gray-50">
                                         <td class="py-1 px-2">
-                                            <div class="font-semibold text-blue-900">{{ $breakdown->employee->full_name }}</div>
-                                            <div class="text-xs text-gray-500">{{ $breakdown->employee->employee_code }}</div>
+                                            <div class="font-semibold text-blue-900">{{ $breakdown->employee_name }}</div>
+                                            <div class="text-xs text-gray-500">{{ $breakdown->employee_code }}</div>
                                         </td>
                                         <td class="py-1 px-2">
-                                            <div class="font-medium">{{ $breakdown->supplier->supplier_name ?? 'N/A' }}</div>
-                                            <div class="text-xs text-gray-500">{{ $breakdown->supplier->supplier_code ?? '-' }}
-                                            </div>
+                                            <div class="font-medium">{{ $breakdown->supplier_name ?? 'N/A' }}</div>
+                                            <div class="text-xs text-gray-500">{{ $breakdown->short_name ?? '-' }}</div>
                                         </td>
                                         <td class="py-1 px-2 text-right font-mono font-bold text-orange-700">
-                                            {{ number_format($breakdown->total_amount, 2) }}
+                                            {{ number_format($breakdown->total_credit_sales, 2) }}
+                                        </td>
+                                        <td class="py-1 px-2 text-right font-mono text-gray-700">
+                                            {{ number_format($breakdown->total_recoveries, 2) }}
+                                        </td>
+                                        <td class="py-1 px-2 text-right font-mono font-semibold text-gray-900">
+                                            {{ number_format($breakdown->total_credit_sales - $breakdown->total_recoveries, 2) }}
                                         </td>
                                         <td class="py-1 px-2 text-right">
                                             <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
@@ -98,17 +111,21 @@
                     {{ \Carbon\Carbon::parse($sale->created_at)->format('d-m-Y') }}
                 </td>
                 <td class="py-1 px-2">
-                    <div class="font-semibold text-blue-900">{{ $sale->employee->full_name }}</div>
-                    <div class="text-xs text-gray-500">{{ $sale->employee->employee_code }}</div>
+                    <div class="font-semibold text-blue-900">{{ $sale->account->employee->full_name ?? 'N/A' }}</div>
+                    <div class="text-xs text-gray-500">{{ $sale->account->employee->employee_code ?? '-' }}</div>
                 </td>
                 <td class="py-1 px-2">
-                    <div class="font-medium">{{ $sale->supplier->supplier_name ?? 'N/A' }}</div>
+                    <div class="font-medium">{{ $sale->account->employee->supplier->supplier_name ?? 'N/A' }}</div>
                 </td>
                 <td class="py-1 px-2">
-                    <a href="{{ route('sales-settlements.show', $sale->salesSettlement) }}"
-                        class="text-indigo-600 hover:text-indigo-900 font-semibold">
-                        {{ $sale->salesSettlement->settlement_number }}
-                    </a>
+                    @if($sale->salesSettlement)
+                        <a href="{{ route('sales-settlements.show', $sale->salesSettlement) }}"
+                            class="text-indigo-600 hover:text-indigo-900 font-semibold">
+                            {{ $sale->salesSettlement->settlement_number }}
+                        </a>
+                    @else
+                        <span class="text-gray-500">-</span>
+                    @endif
                 </td>
                 <td class="py-1 px-2 font-mono">{{ $sale->invoice_number ?? '-' }}</td>
                 <td class="py-1 px-2 text-right font-mono font-semibold text-orange-700">

@@ -25,14 +25,14 @@
                 <table class="min-w-max w-full table-auto text-sm">
                     <thead>
                         <tr class="bg-green-800 text-white uppercase text-sm">
-                            <th class="py-2 px-2 text-left">Employee Code</th>
-                            <th class="py-2 px-2 text-left">Employee Name</th>
-                            <th class="py-2 px-2 text-left">Vehicle</th>
+                            <th class="py-2 px-2 text-left">Salesman / Vehicle</th>
                             <th class="py-2 px-2 text-right">Settlements</th>
                             <th class="py-2 px-2 text-right">Qty Sold</th>
                             <th class="py-2 px-2 text-right">Total Sales</th>
                             <th class="py-2 px-2 text-right">Cash Sales</th>
                             <th class="py-2 px-2 text-right">Credit Sales</th>
+                            <th class="py-2 px-2 text-right">Bank Transfer</th>
+                            <th class="py-2 px-2 text-right">Recoveries</th>
                             <th class="py-2 px-2 text-right">Cash Collected</th>
                             <th class="py-2 px-2 text-right">COGS</th>
                             <th class="py-2 px-2 text-right">Gross Profit</th>
@@ -42,9 +42,11 @@
                     <tbody class="text-black font-extrabold">
                         @foreach($salesmanPerformance as $salesman)
                         <tr class="border-b border-gray-200 hover:bg-gray-50">
-                            <td class="py-1 px-2 font-mono">{{ $salesman->employee_code }}</td>
-                            <td class="py-1 px-2">{{ $salesman->employee_name }}</td>
-                            <td class="py-1 px-2 font-mono">{{ $salesman->vehicle_number }}</td>
+                            <td class="py-1 px-2">
+                                <div class="font-semibold text-gray-900">{{ $salesman->employee_name }}</div>
+                                <div class="text-xs text-gray-500">{{ $salesman->employee_code }}</div>
+                                <div class="text-xs text-gray-500">{{ $salesman->vehicle_number }}</div>
+                            </td>
                             <td class="py-1 px-2 text-right font-mono">{{ $salesman->settlement_count }}</td>
                             <td class="py-1 px-2 text-right font-mono">{{ number_format($salesman->total_quantity_sold,
                                 2) }}</td>
@@ -53,6 +55,10 @@
                             <td class="py-1 px-2 text-right font-mono">{{ number_format($salesman->cash_sales, 2) }}
                             </td>
                             <td class="py-1 px-2 text-right font-mono">{{ number_format($salesman->credit_sales, 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right font-mono">{{ number_format($salesman->bank_transfer_sales, 2) }}
+                            </td>
+                            <td class="py-1 px-2 text-right font-mono">{{ number_format($salesman->recoveries, 2) }}
                             </td>
                             <td class="py-1 px-2 text-right font-mono">{{ number_format($salesman->cash_collected, 2) }}
                             </td>
@@ -69,7 +75,7 @@
                         </tr>
                         @endforeach
                         <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
-                            <td colspan="3" class="py-2 px-2 text-right">TOTALS</td>
+                            <td class="py-2 px-2 text-right">TOTALS</td>
                             <td class="py-2 px-2 text-right font-mono">{{ number_format($totals['settlement_count']) }}
                             </td>
                             <td class="py-2 px-2 text-right font-mono">{{ number_format($totals['total_quantity_sold'],
@@ -79,6 +85,10 @@
                             <td class="py-2 px-2 text-right font-mono">{{ number_format($totals['cash_sales'], 2) }}
                             </td>
                             <td class="py-2 px-2 text-right font-mono">{{ number_format($totals['credit_sales'], 2) }}
+                            </td>
+                            <td class="py-2 px-2 text-right font-mono">{{ number_format($totals['bank_transfer_sales'], 2) }}
+                            </td>
+                            <td class="py-2 px-2 text-right font-mono">{{ number_format($totals['recoveries'], 2) }}
                             </td>
                             <td class="py-2 px-2 text-right font-mono">{{ number_format($totals['cash_collected'], 2) }}
                             </td>

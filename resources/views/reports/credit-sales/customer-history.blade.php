@@ -19,6 +19,8 @@
         ['label' => 'Customer'],
         ['label' => 'Contact'],
         ['label' => 'Total Credit Sales', 'align' => 'text-right'],
+        ['label' => 'Recoveries', 'align' => 'text-right'],
+        ['label' => 'Balance', 'align' => 'text-right'],
         ['label' => 'Number of Sales', 'align' => 'text-right'],
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No credit sales found for any customer">
@@ -44,6 +46,16 @@
                 </span>
             </td>
             <td class="py-1 px-2 text-right">
+                <span class="font-mono text-gray-700">
+                    {{ number_format($customer->recoveries_sum_amount, 2) }}
+                </span>
+            </td>
+            <td class="py-1 px-2 text-right">
+                <span class="font-mono font-semibold text-gray-900">
+                    {{ number_format($customer->credit_sales_sum_sale_amount - $customer->recoveries_sum_amount, 2) }}
+                </span>
+            </td>
+            <td class="py-1 px-2 text-right">
                 <span class="px-2 py-1 text-sm font-semibold bg-blue-100 text-blue-800 rounded-full">
                     {{ $customer->credit_sales_count }}
                 </span>
@@ -63,6 +75,12 @@
             </td>
             <td class="py-2 px-2 text-right font-mono text-orange-700">
                 {{ number_format($customers->sum('credit_sales_sum_sale_amount'), 2) }}
+            </td>
+            <td class="py-2 px-2 text-right font-mono text-gray-700">
+                {{ number_format($customers->sum('recoveries_sum_amount'), 2) }}
+            </td>
+            <td class="py-2 px-2 text-right font-mono text-gray-900">
+                {{ number_format($customers->sum('credit_sales_sum_sale_amount') - $customers->sum('recoveries_sum_amount'), 2) }}
             </td>
             <td class="py-2 px-2 text-right">
                 <span class="px-2 py-1 text-sm font-bold bg-blue-200 text-blue-900 rounded-full">

@@ -68,8 +68,7 @@
             </div>
             <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
                 <div class="text-sm text-gray-600">Credit Sales</div>
-                <div class="text-2xl font-bold text-purple-600 font-mono">{{ number_format($summary['credit_sales'], 2)
-                    }}</div>
+                <div class="text-2xl font-bold text-purple-600 font-mono">{{ number_format($summary['credit_sales'], 2) }}</div>
             </div>
             <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                 <div class="text-sm text-gray-600">Gross Profit</div>
@@ -91,6 +90,7 @@
         ['label' => 'Total Sales', 'align' => 'text-right'],
         ['label' => 'Cash', 'align' => 'text-right'],
         ['label' => 'Credit', 'align' => 'text-right'],
+        ['label' => 'Recoveries', 'align' => 'text-right'],
         ['label' => 'Cash to Deposit', 'align' => 'text-right'],
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No sales settlements found for the selected criteria.">
@@ -115,13 +115,16 @@
                 {{ number_format($settlement->total_quantity_sold, 2) }}
             </td>
             <td class="py-1 px-2 text-right font-mono font-semibold">
-                {{ number_format($settlement->total_sales_amount, 2) }}
+                {{ number_format($settlement->net_sales_amount, 2) }}
             </td>
             <td class="py-1 px-2 text-right font-mono">
                 {{ number_format($settlement->cash_sales_amount, 2) }}
             </td>
             <td class="py-1 px-2 text-right font-mono">
                 {{ number_format($settlement->credit_sales_amount, 2) }}
+            </td>
+            <td class="py-1 px-2 text-right font-mono">
+                {{ number_format($settlement->recoveries_amount, 2) }}
             </td>
             <td class="py-1 px-2 text-right font-mono">
                 {{ number_format($settlement->cash_to_deposit, 2) }}
@@ -148,6 +151,9 @@
             </td>
             <td class="py-2 px-2 text-right font-mono">
                 {{ number_format($summary['credit_sales'], 2) }}
+            </td>
+            <td class="py-2 px-2 text-right font-mono">
+                {{ number_format($summary['recoveries'], 2) }}
             </td>
             <td class="py-2 px-2 text-right font-mono">
                 {{ number_format($summary['cash_to_deposit'], 2) }}
@@ -210,6 +216,10 @@
                     <div class="flex justify-between">
                         <span>Credit:</span>
                         <span class="font-mono font-semibold">{{ number_format($summary['credit_sales'], 2) }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Recoveries:</span>
+                        <span class="font-mono font-semibold">{{ number_format($summary['recoveries'], 2) }}</span>
                     </div>
                     <div class="flex justify-between">
                         <span>Cheque:</span>

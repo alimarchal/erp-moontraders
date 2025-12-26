@@ -69,11 +69,22 @@ class VehicleSeeder extends Seeder
             $vehicleType = isset($row['vehicle_type']) ? trim((string) $row['vehicle_type']) : null;
             $vehicleType = $vehicleType === '' ? null : $vehicleType;
 
+            // Validate foreign keys exist before using them
+            $companyId = $this->normalizeNullableInt($row['company_id'] ?? null);
+            if ($companyId && ! \App\Models\Company::find($companyId)) {
+                $companyId = null;
+            }
+
+            $supplierId = $this->normalizeNullableInt($row['supplier_id'] ?? null);
+            if ($supplierId && ! \App\Models\Supplier::find($supplierId)) {
+                $supplierId = null;
+            }
+
             $attributes = [
                 'registration_number' => $registrationNumber,
                 'vehicle_type' => $vehicleType,
-                'company_id' => $this->normalizeNullableInt($row['company_id'] ?? null),
-                'supplier_id' => $this->normalizeNullableInt($row['supplier_id'] ?? null),
+                'company_id' => $companyId,
+                'supplier_id' => $supplierId,
                 'driver_name' => $driverName,
                 'driver_phone' => $driverPhone,
                 'is_active' => true,

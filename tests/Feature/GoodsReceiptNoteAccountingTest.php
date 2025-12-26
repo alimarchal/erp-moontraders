@@ -64,11 +64,11 @@ beforeEach(function () {
         'category' => 'Revenue',
     ]);
 
-    // Create required chart of accounts
+    // Create required chart of accounts (must match codes in InventoryService)
     $this->inventoryAccount = ChartOfAccount::create([
         'account_type_id' => $assetType->id,
         'currency_id' => $currency->id,
-        'account_code' => '1161',
+        'account_code' => '1151',
         'account_name' => 'Stock In Hand',
         'normal_balance' => 'debit',
         'is_active' => true,
@@ -77,8 +77,8 @@ beforeEach(function () {
     $this->creditorsAccount = ChartOfAccount::create([
         'account_type_id' => $liabilityType->id,
         'currency_id' => $currency->id,
-        'account_code' => '2111',
-        'account_name' => 'Creditors',
+        'account_code' => '2110',
+        'account_name' => 'Accounts Payable',
         'normal_balance' => 'credit',
         'is_active' => true,
     ]);
@@ -119,7 +119,7 @@ beforeEach(function () {
     $this->roundOffAccount = ChartOfAccount::create([
         'account_type_id' => $expenseType->id,
         'currency_id' => $currency->id,
-        'account_code' => '52160',
+        'account_code' => '5271',
         'account_name' => 'Round Off',
         'normal_balance' => 'debit',
         'is_active' => true,
@@ -141,11 +141,10 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
         'receipt_date' => now(),
     ]);
 
-    // With the new logic:
-    // - Accounting value = extended - discount + GST = 10000 - 500 + 1710 = 11210
+    // Service calculates:
+    // - Invoice value = extended - discount + GST + advance_tax = 10000 - 500 + 1710 + 92 = 11302
     // - Actual inventory = total_cost = 9200 (qty × unit_cost)
-    // - Rounding difference = 11210 - 9200 = 2010 (Dr. Round Off)
-    // - Total debits = 11210 + 92 (advance tax) = 11302
+    // - Rounding difference = 11302 - 9200 = 2102 (Dr. Round Off)
     // - Creditors = 11302 - 300 (FMR) = 11002
     $grn->items()->create([
         'line_no' => 1,
@@ -158,8 +157,8 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
         'extended_value' => 10000, // Base value
         'discount_value' => 500, // Discount
         'fmr_allowance' => 300, // FMR Allowance
-        'sales_tax_value' => 1710, // GST (capitalized into inventory)
-        'advance_income_tax' => 92, // 1% advance tax
+        'sales_tax_value' => 1710, // GST (included in invoice value)
+        'advance_income_tax' => 92, // Advance tax (included in invoice value)
         'quantity_received' => 100,
         'quantity_accepted' => 100,
         'unit_cost' => 92, // Unit cost per stock unit
@@ -184,24 +183,19 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
     // Verify journal entry details
     $details = $journalEntry->details;
 
-    // Should have 5 lines: Inventory Dr, Round Off Dr, Advance Tax Dr, FMR Allowance Cr, Creditors Cr
-    // (GST is now capitalized into inventory, rounding difference goes to Round Off)
-    expect($details)->toHaveCount(5);
+    // Should have 4 lines: Inventory Dr, Round Off Dr, FMR Allowance Cr, Creditors Cr
+    // (GST and advance tax are included in invoice value, difference goes to Round Off)
+    expect($details)->toHaveCount(4);
 
-    // Dr. Inventory = actual cost (9200), NOT accounting value
+    // Dr. Inventory = actual cost (9200), NOT invoice value
     $inventoryLine = $details->where('chart_of_account_id', $this->inventoryAccount->id)->first();
     expect((float) $inventoryLine->debit)->toBe(9200.00);
     expect((float) $inventoryLine->credit)->toBe(0.00);
 
-    // Dr. Round Off = accounting value - actual = 11210 - 9200 = 2010
+    // Dr. Round Off = invoice value - actual = 11302 - 9200 = 2102
     $roundOffLine = $details->where('chart_of_account_id', $this->roundOffAccount->id)->first();
-    expect((float) $roundOffLine->debit)->toBe(2010.00);
+    expect((float) $roundOffLine->debit)->toBe(2102.00);
     expect((float) $roundOffLine->credit)->toBe(0.00);
-
-    // Dr. Advance Tax (92)
-    $advanceTaxLine = $details->where('chart_of_account_id', $this->advanceTaxAccount->id)->first();
-    expect((float) $advanceTaxLine->debit)->toBe(92.00);
-    expect((float) $advanceTaxLine->credit)->toBe(0.00);
 
     // Cr. FMR Allowance (300) - reduces amount payable
     $fmrLine = $details->where('chart_of_account_id', $this->fmrAllowanceAccount->id)->first();
@@ -217,7 +211,7 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
     $totalDebits = $details->sum('debit');
     $totalCredits = $details->sum('credit');
     expect((float) $totalDebits)->toBe((float) $totalCredits);
-    expect((float) $totalDebits)->toBe(11302.00); // 9200 + 2010 + 92
+    expect((float) $totalDebits)->toBe(11302.00); // 9200 + 2102
 });
 
 it('creates journal entry with only inventory and creditors when no taxes or allowances', function () {
@@ -281,7 +275,8 @@ it('creates correct reversing journal entry when GRN is reversed', function () {
     ]);
 
     // Same data as posting test
-    // - Accounting value = 11210, Actual = 9200, Rounding = 2010
+    // - Invoice value = 10000 - 500 + 1710 + 92 = 11302
+    // - Actual = 9200, Rounding = 2102
     $grn->items()->create([
         'line_no' => 1,
         'product_id' => $this->product->id,
@@ -324,9 +319,9 @@ it('creates correct reversing journal entry when GRN is reversed', function () {
 
     $details = $reversingEntry->details;
 
-    // Should have 5 lines (opposite of posting):
-    // Dr. Creditors, Dr. FMR, Cr. Inventory, Cr. Round Off, Cr. Advance Tax
-    expect($details)->toHaveCount(5);
+    // Should have 4 lines (opposite of posting):
+    // Dr. Creditors, Dr. FMR, Cr. Inventory, Cr. Round Off
+    expect($details)->toHaveCount(4);
 
     // Dr. Creditors (11002 - reverse the credit)
     $creditorsLine = $details->where('chart_of_account_id', $this->creditorsAccount->id)->first();
@@ -343,15 +338,10 @@ it('creates correct reversing journal entry when GRN is reversed', function () {
     expect((float) $inventoryLine->debit)->toBe(0.00);
     expect((float) $inventoryLine->credit)->toBe(9200.00);
 
-    // Cr. Round Off (2010 - reverse the debit)
+    // Cr. Round Off (2102 - reverse the debit)
     $roundOffLine = $details->where('chart_of_account_id', $this->roundOffAccount->id)->first();
     expect((float) $roundOffLine->debit)->toBe(0.00);
-    expect((float) $roundOffLine->credit)->toBe(2010.00);
-
-    // Cr. Advance Tax (92 - reverse the debit)
-    $advanceTaxLine = $details->where('chart_of_account_id', $this->advanceTaxAccount->id)->first();
-    expect((float) $advanceTaxLine->debit)->toBe(0.00);
-    expect((float) $advanceTaxLine->credit)->toBe(92.00);
+    expect((float) $roundOffLine->credit)->toBe(2102.00);
 
     // Verify debits = credits
     $totalDebits = $details->sum('debit');

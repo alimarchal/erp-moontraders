@@ -151,9 +151,29 @@ class EmployeeSeeder extends Seeder
             $designation = $row['designation'] ?? null;
             $costCenterId = $this->getCostCenterForDesignation($designation);
 
+            // Validate foreign keys exist before using them
+            $companyId = $row['company_id'] ?? null;
+            if ($companyId && ! \App\Models\Company::find($companyId)) {
+                $companyId = null;
+            }
+
+            $supplierId = $row['supplier_id'] ?? null;
+            if ($supplierId && ! \App\Models\Supplier::find($supplierId)) {
+                $supplierId = null;
+            }
+
+            $warehouseId = $row['warehouse_id'] ?? null;
+            if ($warehouseId && ! \App\Models\Warehouse::find($warehouseId)) {
+                $warehouseId = null;
+            }
+
+            if ($costCenterId && ! \App\Models\CostCenter::find($costCenterId)) {
+                $costCenterId = null;
+            }
+
             Employee::create([
-                'company_id' => $row['company_id'] ?? null,
-                'supplier_id' => $row['supplier_id'] ?? null,
+                'company_id' => $companyId,
+                'supplier_id' => $supplierId,
                 'employee_code' => $code,
                 'name' => $name,
                 'company_name' => $row['company'] ?? null,
@@ -161,7 +181,7 @@ class EmployeeSeeder extends Seeder
                 'phone' => $phone,
                 'email' => null,
                 'address' => null,
-                'warehouse_id' => $row['warehouse_id'] ?? null,
+                'warehouse_id' => $warehouseId,
                 'cost_center_id' => $costCenterId,
                 'user_id' => null,
                 'hire_date' => null,

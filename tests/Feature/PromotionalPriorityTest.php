@@ -188,6 +188,63 @@ test('promotional items (priority 1) are issued before regular items (priority 9
 })->group('promotional-priority', 'distribution');
 
 test('sales settlement calculates COGS from promotional batches first', function () {
+    // Setup accounting prerequisites for journal entries
+    $currency = \App\Models\Currency::factory()->base()->create([
+        'currency_code' => 'PKR',
+        'currency_name' => 'Pakistani Rupee',
+        'currency_symbol' => 'Rs',
+    ]);
+
+    \App\Models\AccountingPeriod::create([
+        'name' => now()->format('F Y'),
+        'start_date' => now()->startOfMonth(),
+        'end_date' => now()->endOfMonth(),
+        'status' => 'open',
+    ]);
+
+    // Create required cost centers
+    \Illuminate\Support\Facades\DB::table('cost_centers')->insert([
+        ['id' => 4, 'code' => 'CC004', 'name' => 'Sales', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+        ['id' => 6, 'code' => 'CC006', 'name' => 'Warehouse', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
+    $accountType = \App\Models\AccountType::create([
+        'type_name' => 'Asset',
+        'report_group' => 'BalanceSheet',
+        'description' => 'Test',
+    ]);
+
+    // Create required chart of accounts
+    $accounts = [
+        ['code' => '1121', 'name' => 'Cash'],
+        ['code' => '1122', 'name' => 'Cheques In Hand'],
+        ['code' => '1111', 'name' => 'Debtors'],
+        ['code' => '1170', 'name' => 'Earnest Money'],
+        ['code' => '1161', 'name' => 'Advance Tax'],
+        ['code' => '1151', 'name' => 'Stock In Hand'],
+        ['code' => '1155', 'name' => 'Van Stock'],
+        ['code' => '4110', 'name' => 'Sales'],
+        ['code' => '5111', 'name' => 'COGS'],
+        ['code' => '5272', 'name' => 'Toll Tax'],
+        ['code' => '5252', 'name' => 'AMR Powder'],
+        ['code' => '5262', 'name' => 'AMR Liquid'],
+        ['code' => '5292', 'name' => 'Scheme'],
+        ['code' => '5282', 'name' => 'Food Salesman Loader'],
+        ['code' => '5213', 'name' => 'Misc Expense'],
+    ];
+
+    foreach ($accounts as $acc) {
+        \App\Models\ChartOfAccount::create([
+            'account_code' => $acc['code'],
+            'account_name' => $acc['name'],
+            'account_type_id' => $accountType->id,
+            'currency_id' => $currency->id,
+            'normal_balance' => 'debit',
+            'is_group' => false,
+            'is_active' => true,
+        ]);
+    }
+
     // Setup: Create master data
     $user = \App\Models\User::factory()->create();
     $this->actingAs($user);

@@ -107,6 +107,21 @@ it('posts returns to stock in hand and shortages to van stock in settlement jour
         'currency_symbol' => 'Rs',
     ]);
 
+    // Create accounting period for journal entries
+    \App\Models\AccountingPeriod::create([
+        'name' => now()->format('F Y'),
+        'start_date' => now()->startOfMonth(),
+        'end_date' => now()->endOfMonth(),
+        'status' => 'open',
+    ]);
+
+    // Create required cost centers (used by DistributionService for journal entries)
+    // DistributionService uses cost_center_id 4 and 6 for sales and warehouse operations
+    \Illuminate\Support\Facades\DB::table('cost_centers')->insert([
+        ['id' => 4, 'code' => 'CC004', 'name' => 'Sales & Marketing', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+        ['id' => 6, 'code' => 'CC006', 'name' => 'Warehouse & Inventory', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+    ]);
+
     $accountType = AccountType::create([
         'type_name' => 'Asset',
         'report_group' => 'BalanceSheet',
@@ -174,7 +189,7 @@ it('posts returns to stock in hand and shortages to van stock in settlement jour
     ]);
 
     $miscExpense = ChartOfAccount::create([
-        'account_code' => '5211',
+        'account_code' => '5213',
         'account_name' => 'Inventory Shortage',
         'account_type_id' => $accountType->id,
         'currency_id' => $currency->id,

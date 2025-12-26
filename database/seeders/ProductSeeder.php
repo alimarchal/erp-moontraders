@@ -41,15 +41,31 @@ class ProductSeeder extends Seeder
                     continue;
                 }
 
+                // Validate foreign keys exist before using them
+                $supplierId = $productData['supplier_id'] ?? null;
+                if ($supplierId && ! \App\Models\Supplier::find($supplierId)) {
+                    $supplierId = null;
+                }
+
+                $uomId = $productData['uom_id'] ?? 1;
+                if ($uomId && ! \App\Models\Uom::find($uomId)) {
+                    $uomId = null;
+                }
+
+                $salesUomId = $productData['sales_uom_id'] ?? null;
+                if ($salesUomId && ! \App\Models\Uom::find($salesUomId)) {
+                    $salesUomId = null;
+                }
+
                 Product::create([
                     'product_code' => $productData['product_code'],
                     'product_name' => $productData['product_name'],
                     'description' => $productData['description'] ?? null,
-                    'supplier_id' => $productData['supplier_id'] ?? null,
+                    'supplier_id' => $supplierId,
                     'brand' => $productData['brand'] ?? null,
                     'pack_size' => $productData['pack_size'] ?? null,
-                    'uom_id' => $productData['uom_id'] ?? 1,
-                    'sales_uom_id' => $productData['sales_uom_id'] ?? null,
+                    'uom_id' => $uomId,
+                    'sales_uom_id' => $salesUomId,
                     'uom_conversion_factor' => $productData['uom_conversion_factor'] ?? 1,
                     'cost_price' => $productData['cost_price'] ?? 0,
                     'unit_sell_price' => $productData['unit_sell_price'] ?? $productData['unit_sell_price'] ?? 0,

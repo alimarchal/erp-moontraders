@@ -1,2 +1,0 @@
-Make a new report use same tempalte and filters like https://moontraders.test/settings/accounting-periods, this report should have Start Date (From), End Date (To), and all otheres use the laravel spatie for filters and make sure this does not effect my database performance, i have provided you the GL Codes and using chart of accounts do it and before working tell me what you understand
-Sr#, Month - Year, FMR (4210), AMR Powder (5252), AMR Liquid (5262), Difference (AMR - FMR)

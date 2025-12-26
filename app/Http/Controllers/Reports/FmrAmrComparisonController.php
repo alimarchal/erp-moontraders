@@ -22,9 +22,9 @@ class FmrAmrComparisonController extends Controller
      */
     public function index(Request $request)
     {
-        // Default to current month if no dates provided
-        $startDate = $request->input('filter.start_date', now()->startOfMonth()->format('Y-m-d'));
-        $endDate = $request->input('filter.end_date', now()->endOfMonth()->format('Y-m-d'));
+        // Default to current year (Jan 1 to Dec 31) if no dates provided
+        $startDate = $request->input('filter.start_date', now()->startOfYear()->format('Y-m-d'));
+        $endDate = $request->input('filter.end_date', now()->endOfYear()->format('Y-m-d'));
 
         // Get account IDs for the GL codes
         $accounts = DB::table('chart_of_accounts')

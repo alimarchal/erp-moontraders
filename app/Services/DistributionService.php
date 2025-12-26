@@ -988,7 +988,7 @@ class DistributionService
             'cash' => \App\Models\ChartOfAccount::where('account_code', '1121')->first(),
             'cheques_in_hand' => \App\Models\ChartOfAccount::where('account_code', '1122')->first(),
             'debtors' => \App\Models\ChartOfAccount::where('account_code', '1111')->first(),
-            'earnest_money' => \App\Models\ChartOfAccount::where('account_code', '1170')->first(),
+            'earnest_money' => \App\Models\ChartOfAccount::where('account_code', '1141')->first(),
             'advance_tax' => \App\Models\ChartOfAccount::where('account_code', '1161')->first(),
             'stock_in_hand' => \App\Models\ChartOfAccount::where('account_code', '1151')->first(),
             'inventory' => \App\Models\ChartOfAccount::where('account_code', '1155')->first(),
@@ -999,7 +999,7 @@ class DistributionService
             'amr_liquid' => \App\Models\ChartOfAccount::where('account_code', '5262')->first(),
             'scheme' => \App\Models\ChartOfAccount::where('account_code', '5292')->first(),
             'food_salesman_loader' => \App\Models\ChartOfAccount::where('account_code', '5282')->first(),
-            'percentage' => \App\Models\ChartOfAccount::where('account_code', '5292')->first(),
+            'percentage' => \App\Models\ChartOfAccount::where('account_code', '5223')->first(),
             'misc_expense' => \App\Models\ChartOfAccount::where('account_code', '5213')->first(),
         ];
     }

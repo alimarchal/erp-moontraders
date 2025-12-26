@@ -46,14 +46,14 @@ class SalesSettlementExpense extends Model
     public static function getCommonExpenseAccounts(): array
     {
         return [
-            ['account_id' => 70, 'account_code' => '52250', 'label' => 'Toll Tax'],
-            ['account_id' => 68, 'account_code' => '52230', 'label' => 'AMR Powder'],
-            ['account_id' => 69, 'account_code' => '52240', 'label' => 'AMR Liquid'],
-            ['account_id' => 72, 'account_code' => '52270', 'label' => 'Scheme Discount Expense'],
-            ['account_id' => 18, 'account_code' => '1171', 'label' => 'Advance Tax'],
-            ['account_id' => 71, 'account_code' => '52260', 'label' => 'Food/Salesman/Loader Charges'],
-            ['account_id' => 73, 'account_code' => '52280', 'label' => 'Percentage Expense'],
-            ['account_id' => 56, 'account_code' => '52110', 'label' => 'Miscellaneous Expenses'],
+            ['account_id' => 72, 'account_code' => '5272', 'label' => 'Toll Tax'],
+            ['account_id' => 70, 'account_code' => '5252', 'label' => 'AMR Powder'],
+            ['account_id' => 71, 'account_code' => '5262', 'label' => 'AMR Liquid'],
+            ['account_id' => 74, 'account_code' => '5292', 'label' => 'Scheme Discount Expense'],
+            ['account_id' => 20, 'account_code' => '1161', 'label' => 'Advance Tax'],
+            ['account_id' => 73, 'account_code' => '5282', 'label' => 'Food/Salesman/Loader Charges'],
+            ['account_id' => 76, 'account_code' => '5223', 'label' => 'Percentage Expense'],
+            ['account_id' => 58, 'account_code' => '5221', 'label' => 'Miscellaneous Expenses'],
         ];
     }
 }

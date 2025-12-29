@@ -726,7 +726,7 @@ class SalesSettlementController extends Controller
             'items.batches',
             'creditSales.customer',
             'recoveries.customer',
-            'advanceTaxes',
+            'advanceTaxes.customer',
             'expenses',
         ]);
 

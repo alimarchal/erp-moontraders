@@ -29,7 +29,7 @@
             <div
                 class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-indigo-600 to-indigo-700 shrink-0">
                 <div>
-                    <h3 class="text-lg font-semibold text-white">Advance Tax (1171)</h3>
+                    <h3 class="text-lg font-semibold text-white">Advance Tax (1161)</h3>
                     <p class="text-xs text-indigo-100">Add per-customer advance tax deductions.</p>
                 </div>
                 <button type="button" @click="closeModal()" class="text-white hover:text-indigo-100">

@@ -87,7 +87,16 @@ beforeEach(function () {
         'account_type_id' => $incomeType->id,
         'currency_id' => $currency->id,
         'account_code' => '4210',
-        'account_name' => 'FMR Allowance',
+        'account_name' => 'FMR Allowance Liquid',
+        'normal_balance' => 'credit',
+        'is_active' => true,
+    ]);
+
+    $this->fmrAllowancePowderAccount = ChartOfAccount::create([
+        'account_type_id' => $incomeType->id,
+        'currency_id' => $currency->id,
+        'account_code' => '4220',
+        'account_name' => 'FMR Allowance Powder',
         'normal_balance' => 'credit',
         'is_active' => true,
     ]);
@@ -584,4 +593,86 @@ it('handles negative rounding difference (actual > accounting) by crediting Roun
     $totalDebits = $details->sum('debit');
     $totalCredits = $details->sum('credit');
     expect((float) $totalDebits)->toBe((float) $totalCredits);
+});
+
+it('splits FMR allowance between liquid and powder accounts based on product type', function () {
+    // Create a powder product
+    $powderProduct = Product::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'is_powder' => true,
+    ]);
+
+    // Create a liquid product (default is_powder is false)
+    $liquidProduct = Product::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'is_powder' => false,
+    ]);
+
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'status' => 'draft',
+        'receipt_date' => now(),
+    ]);
+
+    // Item 1: Liquid product with 100 FMR
+    $grn->items()->create([
+        'line_no' => 1,
+        'product_id' => $liquidProduct->id,
+        'stock_uom_id' => $this->uom->id,
+        'purchase_uom_id' => $this->uom->id,
+        'qty_in_purchase_uom' => 10,
+        'uom_conversion_factor' => 1,
+        'qty_in_stock_uom' => 10,
+        'extended_value' => 1000,
+        'discount_value' => 0,
+        'fmr_allowance' => 100,
+        'sales_tax_value' => 0,
+        'advance_income_tax' => 0,
+        'quantity_received' => 10,
+        'quantity_accepted' => 10,
+        'unit_cost' => 100,
+        'total_cost' => 1000,
+    ]);
+
+    // Item 2: Powder product with 250 FMR
+    $grn->items()->create([
+        'line_no' => 2,
+        'product_id' => $powderProduct->id,
+        'stock_uom_id' => $this->uom->id,
+        'purchase_uom_id' => $this->uom->id,
+        'qty_in_purchase_uom' => 10,
+        'uom_conversion_factor' => 1,
+        'qty_in_stock_uom' => 10,
+        'extended_value' => 2000,
+        'discount_value' => 0,
+        'fmr_allowance' => 250,
+        'sales_tax_value' => 0,
+        'advance_income_tax' => 0,
+        'quantity_received' => 10,
+        'quantity_accepted' => 10,
+        'unit_cost' => 200,
+        'total_cost' => 2000,
+    ]);
+
+    // Post GRN
+    $inventoryService = app(InventoryService::class);
+    $result = $inventoryService->postGrnToInventory($grn->fresh());
+
+    expect($result['success'])->toBeTrue();
+
+    $journalEntry = JournalEntry::find($grn->fresh()->journal_entry_id);
+    $details = $journalEntry->details;
+
+    // Verify FMR Allowance Liquid (4210)
+    $liquidFmrLine = $details->where('chart_of_account_id', $this->fmrAllowanceAccount->id)->first();
+    expect((float) $liquidFmrLine->credit)->toBe(100.00);
+
+    // Verify FMR Allowance Powder (4220)
+    $powderFmrLine = $details->where('chart_of_account_id', $this->fmrAllowancePowderAccount->id)->first();
+    expect((float) $powderFmrLine->credit)->toBe(250.00);
+
+    // Verify total creditors (3000 - 350 = 2650)
+    $creditorsLine = $details->where('chart_of_account_id', $this->creditorsAccount->id)->first();
+    expect((float) $creditorsLine->credit)->toBe(2650.00);
 });

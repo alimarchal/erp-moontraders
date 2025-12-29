@@ -119,6 +119,16 @@ class SalesSettlement extends Model
         return $this->hasMany(SalesSettlementAdvanceTax::class);
     }
 
+    public function amrPowders(): HasMany
+    {
+        return $this->hasMany(SalesSettlementAmrPowder::class);
+    }
+
+    public function amrLiquids(): HasMany
+    {
+        return $this->hasMany(SalesSettlementAmrLiquid::class);
+    }
+
     public function expenses(): HasMany
     {
         return $this->hasMany(SalesSettlementExpense::class);

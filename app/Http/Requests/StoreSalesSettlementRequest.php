@@ -32,6 +32,18 @@ class StoreSalesSettlementRequest extends FormRequest
             ]);
         }
 
+        if ($this->has('amr_powders') && is_string($this->amr_powders)) {
+            $this->merge([
+                'amr_powders' => json_decode($this->amr_powders, true),
+            ]);
+        }
+
+        if ($this->has('amr_liquids') && is_string($this->amr_liquids)) {
+            $this->merge([
+                'amr_liquids' => json_decode($this->amr_liquids, true),
+            ]);
+        }
+
         if ($this->has('bank_transfers') && is_string($this->bank_transfers)) {
             $this->merge([
                 'bank_transfers' => json_decode($this->bank_transfers, true),
@@ -131,6 +143,20 @@ class StoreSalesSettlementRequest extends FormRequest
             'advance_taxes.*.tax_amount' => 'required_with:advance_taxes|numeric|min:0',
             'advance_taxes.*.invoice_number' => 'nullable|string|max:100',
             'advance_taxes.*.notes' => 'nullable|string',
+
+            // AMR Powder breakdown
+            'amr_powders' => 'nullable|array',
+            'amr_powders.*.product_id' => 'required_with:amr_powders|exists:products,id',
+            'amr_powders.*.quantity' => 'required_with:amr_powders|numeric|min:0',
+            'amr_powders.*.amount' => 'required_with:amr_powders|numeric|min:0',
+            'amr_powders.*.notes' => 'nullable|string',
+
+            // AMR Liquid breakdown
+            'amr_liquids' => 'nullable|array',
+            'amr_liquids.*.product_id' => 'required_with:amr_liquids|exists:products,id',
+            'amr_liquids.*.quantity' => 'required_with:amr_liquids|numeric|min:0',
+            'amr_liquids.*.amount' => 'required_with:amr_liquids|numeric|min:0',
+            'amr_liquids.*.notes' => 'nullable|string',
 
             // Bank transfers
             'bank_transfers' => 'nullable|array',

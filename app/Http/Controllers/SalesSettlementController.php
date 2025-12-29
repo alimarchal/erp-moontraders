@@ -123,6 +123,14 @@ class SalesSettlementController extends Controller
             'bankAccounts' => \App\Models\BankAccount::where('is_active', true)
                 ->orderBy('account_name')
                 ->get(['id', 'account_name', 'bank_name', 'account_number']),
+            'powderProducts' => \App\Models\Product::where('is_powder', true)
+                ->where('is_active', true)
+                ->orderBy('product_name')
+                ->get(['id', 'product_code', 'product_name']),
+            'liquidProducts' => \App\Models\Product::where('is_powder', false)
+                ->where('is_active', true)
+                ->orderBy('product_name')
+                ->get(['id', 'product_code', 'product_name']),
         ]);
     }
 
@@ -596,6 +604,32 @@ class SalesSettlementController extends Controller
                 }
             }
 
+            // Create AMR Powder breakdown records if any
+            if (! empty($request->amr_powders) && is_array($request->amr_powders)) {
+                foreach ($request->amr_powders as $powder) {
+                    SalesSettlementAmrPowder::create([
+                        'sales_settlement_id' => $settlement->id,
+                        'product_id' => $powder['product_id'],
+                        'quantity' => $powder['quantity'],
+                        'amount' => $powder['amount'],
+                        'notes' => $powder['notes'] ?? null,
+                    ]);
+                }
+            }
+
+            // Create AMR Liquid breakdown records if any
+            if (! empty($request->amr_liquids) && is_array($request->amr_liquids)) {
+                foreach ($request->amr_liquids as $liquid) {
+                    SalesSettlementAmrLiquid::create([
+                        'sales_settlement_id' => $settlement->id,
+                        'product_id' => $liquid['product_id'],
+                        'quantity' => $liquid['quantity'],
+                        'amount' => $liquid['amount'],
+                        'notes' => $liquid['notes'] ?? null,
+                    ]);
+                }
+            }
+
             // Create expense records in sales_settlement_expenses table (store ALL expenses including zero amounts)
             if (! empty($request->expenses) && is_array($request->expenses)) {
                 foreach ($request->expenses as $expense) {
@@ -727,6 +761,8 @@ class SalesSettlementController extends Controller
             'creditSales.customer',
             'recoveries.customer',
             'advanceTaxes.customer',
+            'amrPowders.product',
+            'amrLiquids.product',
             'expenses',
         ]);
 
@@ -749,6 +785,14 @@ class SalesSettlementController extends Controller
             'bankAccounts' => \App\Models\BankAccount::where('is_active', true)
                 ->orderBy('account_name')
                 ->get(['id', 'account_name', 'bank_name', 'account_number']),
+            'powderProducts' => \App\Models\Product::where('is_powder', true)
+                ->where('is_active', true)
+                ->orderBy('product_name')
+                ->get(['id', 'product_code', 'product_name']),
+            'liquidProducts' => \App\Models\Product::where('is_powder', false)
+                ->where('is_active', true)
+                ->orderBy('product_name')
+                ->get(['id', 'product_code', 'product_name']),
         ]);
     }
 
@@ -907,6 +951,8 @@ class SalesSettlementController extends Controller
             $salesSettlement->bankTransfers()->delete();
             $salesSettlement->cheques()->delete();
             $salesSettlement->advanceTaxes()->delete();
+            $salesSettlement->amrPowders()->delete();
+            $salesSettlement->amrLiquids()->delete();
 
             // Create cash denomination record
             SalesSettlementCashDenomination::create([
@@ -1009,6 +1055,32 @@ class SalesSettlementController extends Controller
                         'tax_amount' => $advanceTax['tax_amount'],
                         'invoice_number' => $advanceTax['invoice_number'] ?? null,
                         'notes' => $advanceTax['notes'] ?? null,
+                    ]);
+                }
+            }
+
+            // Create AMR Powder breakdown records if any
+            if (! empty($request->amr_powders) && is_array($request->amr_powders)) {
+                foreach ($request->amr_powders as $powder) {
+                    SalesSettlementAmrPowder::create([
+                        'sales_settlement_id' => $salesSettlement->id,
+                        'product_id' => $powder['product_id'],
+                        'quantity' => $powder['quantity'],
+                        'amount' => $powder['amount'],
+                        'notes' => $powder['notes'] ?? null,
+                    ]);
+                }
+            }
+
+            // Create AMR Liquid breakdown records if any
+            if (! empty($request->amr_liquids) && is_array($request->amr_liquids)) {
+                foreach ($request->amr_liquids as $liquid) {
+                    SalesSettlementAmrLiquid::create([
+                        'sales_settlement_id' => $salesSettlement->id,
+                        'product_id' => $liquid['product_id'],
+                        'quantity' => $liquid['quantity'],
+                        'amount' => $liquid['amount'],
+                        'notes' => $liquid['notes'] ?? null,
                     ]);
                 }
             }

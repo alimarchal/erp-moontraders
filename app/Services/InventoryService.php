@@ -114,19 +114,20 @@ class InventoryService
      * Accounting Entries:
      * Dr. Inventory - Main (Asset) - Account 1151 Stock In Hand (actual cost; taxes included in cost)
      * Dr/Cr. Round Off - Account 5271 (rounding difference between invoice and actual cost)
-     * Cr. FMR Allowance - Account 4210 (income/contra-cost, if any)
+     * Cr. FMR Allowance - Account 4210 (Liquid) or 4220 (Powder) (income/contra-cost, if any)
      * Cr. Accounts Payable (Liability) - Account 2110 Accounts Payable (amount payable to supplier)
      */
     protected function createGrnJournalEntry(GoodsReceiptNote $grn)
     {
         try {
-            // Load supplier relationship if not already loaded
-            $grn->loadMissing('supplier', 'items');
+            // Load supplier and items with products relationship
+            $grn->loadMissing('supplier', 'items.product');
 
             // Find required accounts from Chart of Accounts
             $inventoryAccount = ChartOfAccount::where('account_code', '1151')->first();
             $apAccount = ChartOfAccount::where('account_code', '2110')->first();
-            $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
+            $fmrAllowanceLiquidAccount = ChartOfAccount::where('account_code', '4210')->first();
+            $fmrAllowancePowderAccount = ChartOfAccount::where('account_code', '4220')->first();
             $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
             $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
@@ -138,6 +139,12 @@ class InventoryService
 
             if (! $apAccount) {
                 Log::warning('Accounts Payable account (2110 - Accounts Payable) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
+
+                return null;
+            }
+
+            if (! $fmrAllowanceLiquidAccount || ! $fmrAllowancePowderAccount) {
+                Log::warning('FMR Allowance accounts (4210 - Liquid or 4220 - Powder) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
@@ -155,6 +162,18 @@ class InventoryService
             $totalGst = $grn->items->sum('sales_tax_value');
             $totalAdvanceTax = $grn->items->sum('advance_income_tax');
             $totalExciseDuty = $grn->items->sum('excise_duty') ?? 0;
+
+            // Calculate FMR allowance by product type
+            $fmrAllowanceLiquid = 0;
+            $fmrAllowancePowder = 0;
+            foreach ($grn->items as $item) {
+                $fmrAmount = $item->fmr_allowance ?? 0;
+                if ($item->product && $item->product->is_powder) {
+                    $fmrAllowancePowder += $fmrAmount;
+                } else {
+                    $fmrAllowanceLiquid += $fmrAmount;
+                }
+            }
 
             // Calculate ACTUAL inventory value from items (quantity_accepted × unit_cost)
             // This is the true cost that should be recorded in Stock In Hand
@@ -210,14 +229,26 @@ class InventoryService
                 ];
             }
 
-            // Cr. FMR Allowance (if any) - Income/contra-cost
-            if ($totalFmrAllowance > 0 && $fmrAllowanceAccount) {
+            // Cr. FMR Allowance Liquid (if any) - Income/contra-cost
+            if ($fmrAllowanceLiquid > 0) {
                 $journalLines[] = [
                     'line_no' => $lineNo++,
-                    'account_id' => $fmrAllowanceAccount->id,
+                    'account_id' => $fmrAllowanceLiquidAccount->id,
                     'debit' => 0,
-                    'credit' => $totalFmrAllowance,
-                    'description' => 'FMR allowance - income for handling returns',
+                    'credit' => $fmrAllowanceLiquid,
+                    'description' => 'FMR allowance (Liquid) - income for handling returns',
+                    'cost_center_id' => $warehouseCostCenter->id,
+                ];
+            }
+
+            // Cr. FMR Allowance Powder (if any) - Income/contra-cost
+            if ($fmrAllowancePowder > 0) {
+                $journalLines[] = [
+                    'line_no' => $lineNo++,
+                    'account_id' => $fmrAllowancePowderAccount->id,
+                    'debit' => 0,
+                    'credit' => $fmrAllowancePowder,
+                    'description' => 'FMR allowance (Powder) - income for handling returns',
                     'cost_center_id' => $warehouseCostCenter->id,
                 ];
             }
@@ -267,25 +298,32 @@ class InventoryService
      *
      * Reversal Entries (opposite of posting entries):
      * Dr. Accounts Payable (Liability) - Account 2110 Accounts Payable
-     * Dr. FMR Allowance - Account 4210 (reverse the credit, if any)
+     * Dr. FMR Allowance - Account 4210 (Liquid) or 4220 (Powder) (reverse the credit, if any)
      * Cr. Inventory (Asset) - Account 1151 Stock In Hand
      * Dr/Cr. Round Off - Account 5271 (reverse rounding from posting)
      */
     protected function createGrnReversingJournalEntry(GoodsReceiptNote $grn)
     {
         try {
-            // Load supplier relationship if not already loaded
-            $grn->loadMissing('supplier', 'items');
+            // Load supplier and items with products relationship
+            $grn->loadMissing('supplier', 'items.product');
 
             // Find required accounts from Chart of Accounts
             $inventoryAccount = ChartOfAccount::where('account_code', '1151')->first();
             $apAccount = ChartOfAccount::where('account_code', '2110')->first();
-            $fmrAllowanceAccount = ChartOfAccount::where('account_code', '4210')->first();
+            $fmrAllowanceLiquidAccount = ChartOfAccount::where('account_code', '4210')->first();
+            $fmrAllowancePowderAccount = ChartOfAccount::where('account_code', '4220')->first();
             $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
             $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
             if (! $inventoryAccount || ! $apAccount) {
                 Log::warning('Required accounts not found in Chart of Accounts. Skipping reversing journal entry for GRN: '.$grn->id);
+
+                return null;
+            }
+
+            if (! $fmrAllowanceLiquidAccount || ! $fmrAllowancePowderAccount) {
+                Log::warning('FMR Allowance accounts (4210 - Liquid or 4220 - Powder) not found in Chart of Accounts. Skipping reversing journal entry for GRN: '.$grn->id);
 
                 return null;
             }
@@ -309,6 +347,18 @@ class InventoryService
             $totalGst = $grn->items->sum('sales_tax_value');
             $totalAdvanceTax = $grn->items->sum('advance_income_tax');
             $totalExciseDuty = $grn->items->sum('excise_duty') ?? 0;
+
+            // Calculate FMR allowance by product type (same as posting)
+            $fmrAllowanceLiquid = 0;
+            $fmrAllowancePowder = 0;
+            foreach ($grn->items as $item) {
+                $fmrAmount = $item->fmr_allowance ?? 0;
+                if ($item->product && $item->product->is_powder) {
+                    $fmrAllowancePowder += $fmrAmount;
+                } else {
+                    $fmrAllowanceLiquid += $fmrAmount;
+                }
+            }
 
             // Calculate ACTUAL inventory value from items (quantity_accepted × unit_cost)
             $actualInventoryValue = $grn->items->sum('total_cost');
@@ -357,14 +407,26 @@ class InventoryService
                 'cost_center_id' => $warehouseCostCenter->id,
             ];
 
-            // Dr. FMR Allowance (if any) - reverse the credit
-            if ($totalFmrAllowance > 0 && $fmrAllowanceAccount) {
+            // Dr. FMR Allowance Liquid (if any) - reverse the credit
+            if ($fmrAllowanceLiquid > 0) {
                 $journalLines[] = [
                     'line_no' => $lineNo++,
-                    'account_id' => $fmrAllowanceAccount->id,
-                    'debit' => $totalFmrAllowance,
+                    'account_id' => $fmrAllowanceLiquidAccount->id,
+                    'debit' => $fmrAllowanceLiquid,
                     'credit' => 0,
-                    'description' => 'Reversal - FMR allowance',
+                    'description' => 'Reversal - FMR allowance (Liquid)',
+                    'cost_center_id' => $warehouseCostCenter->id,
+                ];
+            }
+
+            // Dr. FMR Allowance Powder (if any) - reverse the credit
+            if ($fmrAllowancePowder > 0) {
+                $journalLines[] = [
+                    'line_no' => $lineNo++,
+                    'account_id' => $fmrAllowancePowderAccount->id,
+                    'debit' => $fmrAllowancePowder,
+                    'credit' => 0,
+                    'description' => 'Reversal - FMR allowance (Powder)',
                     'cost_center_id' => $warehouseCostCenter->id,
                 ];
             }

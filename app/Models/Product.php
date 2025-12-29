@@ -35,6 +35,7 @@ class Product extends Model
         'reorder_level',
         'unit_sell_price',
         'cost_price',
+        'is_powder',
         'is_active',
     ];
 
@@ -44,6 +45,7 @@ class Product extends Model
         'reorder_level' => 'decimal:2',
         'unit_sell_price' => 'decimal:2',
         'cost_price' => 'decimal:2',
+        'is_powder' => 'boolean',
         'is_active' => 'boolean',
     ];
 

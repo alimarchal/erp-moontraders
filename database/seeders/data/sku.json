@@ -12,6 +12,7 @@
     "cost_price": 2221.44,
     "unit_sell_price": 2372.69,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -27,6 +28,7 @@
     "cost_price": 2245.08,
     "unit_sell_price": 2397.94,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -42,6 +44,7 @@
     "cost_price": 1448.38,
     "unit_sell_price": 1516.81,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -57,6 +60,7 @@
     "cost_price": 1039.63,
     "unit_sell_price": 1110.42,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -72,6 +76,7 @@
     "cost_price": 888.57,
     "unit_sell_price": 949.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -87,6 +92,7 @@
     "cost_price": 26.7,
     "unit_sell_price": 27.78,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -102,6 +108,7 @@
     "cost_price": 533.14,
     "unit_sell_price": 549.51,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -117,6 +124,7 @@
     "cost_price": 1656.89,
     "unit_sell_price": 1762.23,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -132,6 +140,7 @@
     "cost_price": 1110.71,
     "unit_sell_price": 1186.45,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -147,6 +156,7 @@
     "cost_price": 479.83,
     "unit_sell_price": 511.62,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -162,6 +172,7 @@
     "cost_price": 239.92,
     "unit_sell_price": 255.81,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -177,6 +188,7 @@
     "cost_price": 44.43,
     "unit_sell_price": 47.37,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -192,6 +204,7 @@
     "cost_price": 35.54,
     "unit_sell_price": 37.01,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -207,6 +220,7 @@
     "cost_price": 2376.3,
     "unit_sell_price": 2562.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -222,6 +236,7 @@
     "cost_price": 2112.26,
     "unit_sell_price": 2277.78,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -237,6 +252,7 @@
     "cost_price": 994.52,
     "unit_sell_price": 1072.45,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -252,6 +268,7 @@
     "cost_price": 994.52,
     "unit_sell_price": 1072.45,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -267,6 +284,7 @@
     "cost_price": 396.05,
     "unit_sell_price": 427.08,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -282,6 +300,7 @@
     "cost_price": 396.05,
     "unit_sell_price": 427.08,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -297,6 +316,7 @@
     "cost_price": 1572.78,
     "unit_sell_price": 1676.95,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -312,6 +332,7 @@
     "cost_price": 1048.51,
     "unit_sell_price": 1117.97,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -327,6 +348,7 @@
     "cost_price": 661.99,
     "unit_sell_price": 705.84,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -342,6 +364,7 @@
     "cost_price": 207.24,
     "unit_sell_price": 208.07,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -357,6 +380,7 @@
     "cost_price": 439.84,
     "unit_sell_price": 468.97,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -372,6 +396,7 @@
     "cost_price": 69.79,
     "unit_sell_price": 74.35,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -387,6 +412,7 @@
     "cost_price": 3261.07,
     "unit_sell_price": 3483.1,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -402,6 +428,7 @@
     "cost_price": 1578.96,
     "unit_sell_price": 1644.75,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -417,6 +444,7 @@
     "cost_price": 26.66,
     "unit_sell_price": 28.4,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -432,6 +460,7 @@
     "cost_price": 17.81,
     "unit_sell_price": 18.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -447,6 +476,7 @@
     "cost_price": 567.07,
     "unit_sell_price": 604.64,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -462,6 +492,7 @@
     "cost_price": 44.43,
     "unit_sell_price": 47.45,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -477,6 +508,7 @@
     "cost_price": 2481.9,
     "unit_sell_price": 2676.39,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -492,6 +524,7 @@
     "cost_price": 2481.9,
     "unit_sell_price": 2676.39,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -507,6 +540,7 @@
     "cost_price": 2481.9,
     "unit_sell_price": 2676.39,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -522,6 +556,7 @@
     "cost_price": 1258.56,
     "unit_sell_price": 1357.18,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -537,6 +572,7 @@
     "cost_price": 1258.56,
     "unit_sell_price": 1357.18,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -552,6 +588,7 @@
     "cost_price": 1258.56,
     "unit_sell_price": 1357.18,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -567,6 +604,7 @@
     "cost_price": 642.48,
     "unit_sell_price": 692.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -582,6 +620,7 @@
     "cost_price": 642.48,
     "unit_sell_price": 692.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -597,6 +636,7 @@
     "cost_price": 642.48,
     "unit_sell_price": 692.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -612,6 +652,7 @@
     "cost_price": 370.59,
     "unit_sell_price": 397.23,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -627,6 +668,7 @@
     "cost_price": 370.59,
     "unit_sell_price": 397.23,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -642,6 +684,7 @@
     "cost_price": 370.59,
     "unit_sell_price": 397.23,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -657,6 +700,7 @@
     "cost_price": 679.73,
     "unit_sell_price": 730.79,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -672,6 +716,7 @@
     "cost_price": 679.73,
     "unit_sell_price": 730.79,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -687,6 +732,7 @@
     "cost_price": 379.41,
     "unit_sell_price": 406.69,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -702,6 +748,7 @@
     "cost_price": 261.47,
     "unit_sell_price": 275.23,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -717,6 +764,7 @@
     "cost_price": 255.73,
     "unit_sell_price": 268.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -732,6 +780,7 @@
     "cost_price": 26.46,
     "unit_sell_price": 27.78,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -747,6 +796,7 @@
     "cost_price": 1241.04,
     "unit_sell_price": 1338.19,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -762,6 +812,7 @@
     "cost_price": 1588.24,
     "unit_sell_price": 1702.42,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -777,6 +828,7 @@
     "cost_price": 1588.24,
     "unit_sell_price": 1702.42,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -792,6 +844,7 @@
     "cost_price": 765.7,
     "unit_sell_price": 825.69,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -807,6 +860,7 @@
     "cost_price": 396.05,
     "unit_sell_price": 427.08,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -822,6 +876,7 @@
     "cost_price": 765.7,
     "unit_sell_price": 825.69,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -837,6 +892,7 @@
     "cost_price": 396.05,
     "unit_sell_price": 427.08,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -852,6 +908,7 @@
     "cost_price": 396.05,
     "unit_sell_price": 427.08,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -867,6 +924,7 @@
     "cost_price": 39.6,
     "unit_sell_price": 42.71,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -882,6 +940,7 @@
     "cost_price": 39.6,
     "unit_sell_price": 42.71,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -897,6 +956,7 @@
     "cost_price": 39.6,
     "unit_sell_price": 42.71,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -912,6 +972,7 @@
     "cost_price": 475.26,
     "unit_sell_price": 512.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -927,6 +988,7 @@
     "cost_price": 475.26,
     "unit_sell_price": 512.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -942,6 +1004,7 @@
     "cost_price": 475.26,
     "unit_sell_price": 512.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -957,6 +1020,7 @@
     "cost_price": 550.47,
     "unit_sell_price": 1157.87,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -972,6 +1036,7 @@
     "cost_price": 1073.73,
     "unit_sell_price": 1157.87,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -987,6 +1052,7 @@
     "cost_price": 1073.73,
     "unit_sell_price": 1157.87,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1002,6 +1068,7 @@
     "cost_price": 545.67,
     "unit_sell_price": 588.43,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1017,6 +1084,7 @@
     "cost_price": 545.67,
     "unit_sell_price": 588.43,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1032,6 +1100,7 @@
     "cost_price": 545.67,
     "unit_sell_price": 588.43,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1047,6 +1116,7 @@
     "cost_price": 545.67,
     "unit_sell_price": 588.43,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1062,6 +1132,7 @@
     "cost_price": 219.92,
     "unit_sell_price": 237.27,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1077,6 +1148,7 @@
     "cost_price": 46.81,
     "unit_sell_price": 50.33,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1092,6 +1164,7 @@
     "cost_price": 1616.46,
     "unit_sell_price": 1738.04,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1107,6 +1180,7 @@
     "cost_price": 1533.56,
     "unit_sell_price": 1648.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1122,6 +1196,7 @@
     "cost_price": 1260.01,
     "unit_sell_price": 1301.22,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1137,6 +1212,7 @@
     "cost_price": 663.16,
     "unit_sell_price": 713.04,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1152,6 +1228,7 @@
     "cost_price": 306.71,
     "unit_sell_price": 329.78,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1167,6 +1244,7 @@
     "cost_price": 55.33,
     "unit_sell_price": 59.49,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1182,6 +1260,7 @@
     "cost_price": 1403.95,
     "unit_sell_price": 1499.54,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1197,6 +1276,7 @@
     "cost_price": 924.12,
     "unit_sell_price": 987.04,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1212,6 +1292,7 @@
     "cost_price": 53.31,
     "unit_sell_price": 56.94,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1227,6 +1308,7 @@
     "cost_price": 408.74,
     "unit_sell_price": 436.57,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1242,6 +1324,7 @@
     "cost_price": 5055.03,
     "unit_sell_price": 5451.14,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1257,6 +1340,7 @@
     "cost_price": 2094.88,
     "unit_sell_price": 2258.8,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1272,6 +1356,7 @@
     "cost_price": 1056.21,
     "unit_sell_price": 1138.89,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1287,6 +1372,7 @@
     "cost_price": 5314.26,
     "unit_sell_price": 5730.68,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1302,6 +1388,7 @@
     "cost_price": 2549.12,
     "unit_sell_price": 2749.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1317,6 +1404,7 @@
     "cost_price": 2333.09,
     "unit_sell_price": 2515.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1332,6 +1420,7 @@
     "cost_price": 1730.82,
     "unit_sell_price": 2143.18,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1347,6 +1436,7 @@
     "cost_price": 1728.22,
     "unit_sell_price": 1879.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1362,6 +1452,7 @@
     "cost_price": 704.14,
     "unit_sell_price": 759.26,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1377,6 +1468,7 @@
     "cost_price": 2769.31,
     "unit_sell_price": 2982.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1392,6 +1484,7 @@
     "cost_price": 1728.22,
     "unit_sell_price": 1863.64,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1407,6 +1500,7 @@
     "cost_price": 704.14,
     "unit_sell_price": 759.26,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1422,6 +1516,7 @@
     "cost_price": 3469.49,
     "unit_sell_price": 3698.53,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1437,6 +1532,7 @@
     "cost_price": 1883.44,
     "unit_sell_price": 2007.77,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1452,6 +1548,7 @@
     "cost_price": 991.28,
     "unit_sell_price": 1056.72,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1467,6 +1564,7 @@
     "cost_price": 991.3,
     "unit_sell_price": 1056.72,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1482,6 +1580,7 @@
     "cost_price": 1892.45,
     "unit_sell_price": 2016.6,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1497,6 +1596,7 @@
     "cost_price": 63.08,
     "unit_sell_price": 67.22,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1512,6 +1612,7 @@
     "cost_price": 26.23,
     "unit_sell_price": 27.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1527,6 +1628,7 @@
     "cost_price": 1379.13,
     "unit_sell_price": 1493.4,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1542,6 +1644,7 @@
     "cost_price": 1946.79,
     "unit_sell_price": 2088.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1557,6 +1660,7 @@
     "cost_price": 884.1,
     "unit_sell_price": 949.67,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1572,6 +1676,7 @@
     "cost_price": 79.45,
     "unit_sell_price": 85.42,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1587,6 +1692,7 @@
     "cost_price": 405.52,
     "unit_sell_price": 432.3,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1602,6 +1708,7 @@
     "cost_price": 511.98,
     "unit_sell_price": 550.51,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1617,6 +1724,7 @@
     "cost_price": 1260.01,
     "unit_sell_price": 1354.78,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1632,6 +1740,7 @@
     "cost_price": 334.91,
     "unit_sell_price": 353.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1647,6 +1756,7 @@
     "cost_price": 85.99,
     "unit_sell_price": 90.53,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1662,6 +1772,7 @@
     "cost_price": 195.27,
     "unit_sell_price": 216.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1677,6 +1788,7 @@
     "cost_price": 168.9,
     "unit_sell_price": 179.07,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1692,6 +1804,7 @@
     "cost_price": 213.03,
     "unit_sell_price": 235.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1707,6 +1820,7 @@
     "cost_price": 199.9,
     "unit_sell_price": 206.9,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1722,6 +1836,7 @@
     "cost_price": 307.0,
     "unit_sell_price": 317.51,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1737,6 +1852,7 @@
     "cost_price": 81.66,
     "unit_sell_price": 83.8,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1752,6 +1868,7 @@
     "cost_price": 41.18,
     "unit_sell_price": 42.45,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1767,6 +1884,7 @@
     "cost_price": 362.04,
     "unit_sell_price": 383.18,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1782,6 +1900,7 @@
     "cost_price": 85.99,
     "unit_sell_price": 91.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1797,6 +1916,7 @@
     "cost_price": 343.43,
     "unit_sell_price": 366.36,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1812,6 +1932,7 @@
     "cost_price": 343.43,
     "unit_sell_price": 366.36,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1827,6 +1948,7 @@
     "cost_price": 343.43,
     "unit_sell_price": 366.36,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1842,6 +1964,7 @@
     "cost_price": 343.43,
     "unit_sell_price": 366.36,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1857,6 +1980,7 @@
     "cost_price": 343.43,
     "unit_sell_price": 366.36,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1872,6 +1996,7 @@
     "cost_price": 343.43,
     "unit_sell_price": 366.36,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1887,6 +2012,7 @@
     "cost_price": 65.57,
     "unit_sell_price": 69.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1902,6 +2028,7 @@
     "cost_price": 65.57,
     "unit_sell_price": 69.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1917,6 +2044,7 @@
     "cost_price": 65.57,
     "unit_sell_price": 69.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1932,6 +2060,7 @@
     "cost_price": 65.57,
     "unit_sell_price": 69.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1947,6 +2076,7 @@
     "cost_price": 65.57,
     "unit_sell_price": 69.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1962,6 +2092,7 @@
     "cost_price": 65.57,
     "unit_sell_price": 69.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1977,6 +2108,7 @@
     "cost_price": 429.28,
     "unit_sell_price": 457.94,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -1992,6 +2124,7 @@
     "cost_price": 429.28,
     "unit_sell_price": 457.94,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2007,6 +2140,7 @@
     "cost_price": 429.28,
     "unit_sell_price": 457.94,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2022,6 +2156,7 @@
     "cost_price": 429.28,
     "unit_sell_price": 457.94,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2037,6 +2172,7 @@
     "cost_price": 128.76,
     "unit_sell_price": 137.35,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2052,6 +2188,7 @@
     "cost_price": 218.43,
     "unit_sell_price": 233.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2067,6 +2204,7 @@
     "cost_price": 218.43,
     "unit_sell_price": 233.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2082,6 +2220,7 @@
     "cost_price": 44.44,
     "unit_sell_price": 47.43,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2097,6 +2236,7 @@
     "cost_price": 44.44,
     "unit_sell_price": 47.43,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2112,6 +2252,7 @@
     "cost_price": 108.61,
     "unit_sell_price": 137.35,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2127,6 +2268,7 @@
     "cost_price": 128.75,
     "unit_sell_price": 137.35,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2142,6 +2284,7 @@
     "cost_price": 128.75,
     "unit_sell_price": 137.35,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2157,6 +2300,7 @@
     "cost_price": 73.77,
     "unit_sell_price": 78.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2172,6 +2316,7 @@
     "cost_price": 142.78,
     "unit_sell_price": 151.37,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2187,6 +2332,7 @@
     "cost_price": 89.24,
     "unit_sell_price": 94.6,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2202,6 +2348,7 @@
     "cost_price": 89.24,
     "unit_sell_price": 94.6,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2217,6 +2364,7 @@
     "cost_price": 151.16,
     "unit_sell_price": 161.34,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2232,6 +2380,7 @@
     "cost_price": 151.16,
     "unit_sell_price": 161.34,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2247,6 +2396,7 @@
     "cost_price": 142.27,
     "unit_sell_price": 151.85,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2262,6 +2412,7 @@
     "cost_price": 142.27,
     "unit_sell_price": 151.85,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2277,6 +2428,7 @@
     "cost_price": 168.96,
     "unit_sell_price": 180.35,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2292,6 +2444,7 @@
     "cost_price": 168.96,
     "unit_sell_price": 180.35,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2307,6 +2460,7 @@
     "cost_price": 118.81,
     "unit_sell_price": 123.46,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2322,6 +2476,7 @@
     "cost_price": 250.0,
     "unit_sell_price": 278.53,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2337,6 +2492,7 @@
     "cost_price": 79.1,
     "unit_sell_price": 88.2,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2352,6 +2508,7 @@
     "cost_price": 49.45,
     "unit_sell_price": 55.71,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2367,6 +2524,7 @@
     "cost_price": 65.91,
     "unit_sell_price": 73.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2382,6 +2540,7 @@
     "cost_price": 42.02,
     "unit_sell_price": 45.66,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2397,6 +2556,7 @@
     "cost_price": 34.42,
     "unit_sell_price": 38.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2412,6 +2572,7 @@
     "cost_price": 41.63,
     "unit_sell_price": 46.42,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2427,6 +2588,7 @@
     "cost_price": 38.24,
     "unit_sell_price": 42.55,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2442,6 +2604,7 @@
     "cost_price": 31.29,
     "unit_sell_price": 34.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2457,6 +2620,7 @@
     "cost_price": 120.17,
     "unit_sell_price": 127.8,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2472,6 +2636,7 @@
     "cost_price": 45.79,
     "unit_sell_price": 51.06,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2487,6 +2652,7 @@
     "cost_price": 358.85,
     "unit_sell_price": 415.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2502,6 +2668,7 @@
     "cost_price": 358.85,
     "unit_sell_price": 420.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2517,6 +2684,7 @@
     "cost_price": 85.75,
     "unit_sell_price": 88.54,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2532,6 +2700,7 @@
     "cost_price": 52.36,
     "unit_sell_price": 54.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2547,6 +2716,7 @@
     "cost_price": 85.75,
     "unit_sell_price": 88.54,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2562,6 +2732,7 @@
     "cost_price": 306.14,
     "unit_sell_price": 316.09,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2577,6 +2748,7 @@
     "cost_price": 334.02,
     "unit_sell_price": 344.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2592,6 +2764,7 @@
     "cost_price": 487.47,
     "unit_sell_price": 503.26,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2607,6 +2780,7 @@
     "cost_price": 117.34,
     "unit_sell_price": 121.16,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2622,6 +2796,7 @@
     "cost_price": 84.86,
     "unit_sell_price": 87.61,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2637,6 +2812,7 @@
     "cost_price": 84.86,
     "unit_sell_price": 87.61,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2652,6 +2828,7 @@
     "cost_price": 84.86,
     "unit_sell_price": 87.61,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2667,6 +2844,7 @@
     "cost_price": 84.86,
     "unit_sell_price": 87.61,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2682,6 +2860,7 @@
     "cost_price": 53.59,
     "unit_sell_price": 55.34,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2697,6 +2876,7 @@
     "cost_price": 213.65,
     "unit_sell_price": 220.59,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2712,6 +2892,7 @@
     "cost_price": 54.14,
     "unit_sell_price": 55.92,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2727,6 +2908,7 @@
     "cost_price": 45.12,
     "unit_sell_price": 46.6,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2742,6 +2924,7 @@
     "cost_price": 81.22,
     "unit_sell_price": 83.88,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2757,6 +2940,7 @@
     "cost_price": 333.89,
     "unit_sell_price": 344.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2772,6 +2956,7 @@
     "cost_price": 306.74,
     "unit_sell_price": 322.58,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2787,6 +2972,7 @@
     "cost_price": 964.08,
     "unit_sell_price": 1013.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2802,6 +2988,7 @@
     "cost_price": 1840.44,
     "unit_sell_price": 1935.48,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2817,6 +3004,7 @@
     "cost_price": 360.9,
     "unit_sell_price": 372.79,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2832,6 +3020,7 @@
     "cost_price": 270.8,
     "unit_sell_price": 279.59,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2847,6 +3036,7 @@
     "cost_price": 63.17,
     "unit_sell_price": 65.24,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2862,6 +3052,7 @@
     "cost_price": 2406.66,
     "unit_sell_price": 2483.9,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2877,6 +3068,7 @@
     "cost_price": 1247.95,
     "unit_sell_price": 1287.95,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2892,6 +3084,7 @@
     "cost_price": 84.84,
     "unit_sell_price": 87.61,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2907,6 +3100,7 @@
     "cost_price": 141.12,
     "unit_sell_price": 145.71,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2922,6 +3116,7 @@
     "cost_price": 510.92,
     "unit_sell_price": 530.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2937,6 +3132,7 @@
     "cost_price": 2597.98,
     "unit_sell_price": 2695.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2952,6 +3148,7 @@
     "cost_price": 1311.04,
     "unit_sell_price": 1360.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2967,6 +3164,7 @@
     "cost_price": 2597.98,
     "unit_sell_price": 2695.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2982,6 +3180,7 @@
     "cost_price": 1311.04,
     "unit_sell_price": 1360.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -2997,6 +3196,7 @@
     "cost_price": 5176.68,
     "unit_sell_price": 5370.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3012,6 +3212,7 @@
     "cost_price": 2549.78,
     "unit_sell_price": 2695.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3027,6 +3228,7 @@
     "cost_price": 1537.58,
     "unit_sell_price": 1625.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3042,6 +3244,7 @@
     "cost_price": 5070.64,
     "unit_sell_price": 5360.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3057,6 +3260,7 @@
     "cost_price": 8251.83,
     "unit_sell_price": 8560.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3072,6 +3276,7 @@
     "cost_price": 501.28,
     "unit_sell_price": 530.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3087,6 +3292,7 @@
     "cost_price": 342.0,
     "unit_sell_price": 360.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3102,6 +3308,7 @@
     "cost_price": 1769.05,
     "unit_sell_price": 1863.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3117,6 +3324,7 @@
     "cost_price": 333.45,
     "unit_sell_price": 340.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3132,6 +3340,7 @@
     "cost_price": 1748.48,
     "unit_sell_price": 1840.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3147,6 +3356,7 @@
     "cost_price": 286.43,
     "unit_sell_price": 301.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3162,6 +3372,7 @@
     "cost_price": 1406.48,
     "unit_sell_price": 1480.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3177,6 +3388,7 @@
     "cost_price": 192.38,
     "unit_sell_price": 202.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3192,6 +3404,7 @@
     "cost_price": 936.23,
     "unit_sell_price": 985.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3207,6 +3420,7 @@
     "cost_price": 1598.85,
     "unit_sell_price": 1683.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3222,6 +3436,7 @@
     "cost_price": 74.52,
     "unit_sell_price": 81.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3237,6 +3452,7 @@
     "cost_price": 49.68,
     "unit_sell_price": 54.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3252,6 +3468,7 @@
     "cost_price": 9.18,
     "unit_sell_price": 9.48,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3267,6 +3484,7 @@
     "cost_price": 18.51,
     "unit_sell_price": 19.1,
     "valuation_method": "FIFO",
+    "is_powder": true,
     "is_active": true
   },
   {
@@ -3282,6 +3500,7 @@
     "cost_price": 46.26,
     "unit_sell_price": 47.76,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3297,6 +3516,7 @@
     "cost_price": 91.57,
     "unit_sell_price": 94.55,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3312,6 +3532,7 @@
     "cost_price": 1508.17,
     "unit_sell_price": 1557.36,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3327,6 +3548,7 @@
     "cost_price": 1027.03,
     "unit_sell_price": 1060.17,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3342,6 +3564,7 @@
     "cost_price": 646.75,
     "unit_sell_price": 667.61,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3357,6 +3580,7 @@
     "cost_price": 703.88,
     "unit_sell_price": 726.35,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3372,6 +3596,7 @@
     "cost_price": 924.33,
     "unit_sell_price": 954.47,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3387,6 +3612,7 @@
     "cost_price": 1059.42,
     "unit_sell_price": 1093.6,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3402,6 +3628,7 @@
     "cost_price": 1064.04,
     "unit_sell_price": 1098.37,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3417,6 +3644,7 @@
     "cost_price": 572.62,
     "unit_sell_price": 591.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3432,6 +3660,7 @@
     "cost_price": 615.78,
     "unit_sell_price": 635.46,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3447,6 +3676,7 @@
     "cost_price": 2266.87,
     "unit_sell_price": 2340.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3462,6 +3692,7 @@
     "cost_price": 370.0,
     "unit_sell_price": 382.86,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3477,6 +3708,7 @@
     "cost_price": 308.33,
     "unit_sell_price": 319.15,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3492,6 +3724,7 @@
     "cost_price": 536.65,
     "unit_sell_price": 553.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3507,6 +3740,7 @@
     "cost_price": 268.32,
     "unit_sell_price": 276.98,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3522,6 +3756,7 @@
     "cost_price": 9.12,
     "unit_sell_price": 9.44,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3537,6 +3772,7 @@
     "cost_price": 45.6,
     "unit_sell_price": 47.17,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3552,6 +3788,7 @@
     "cost_price": 181.5,
     "unit_sell_price": 187.74,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3567,6 +3804,7 @@
     "cost_price": 363.92,
     "unit_sell_price": 376.42,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3582,6 +3820,7 @@
     "cost_price": 175.31,
     "unit_sell_price": 181.4,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3597,6 +3836,7 @@
     "cost_price": 286.31,
     "unit_sell_price": 296.26,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3612,6 +3852,7 @@
     "cost_price": 277.23,
     "unit_sell_price": 286.54,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3627,6 +3868,7 @@
     "cost_price": 555.15,
     "unit_sell_price": 573.07,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3642,6 +3884,7 @@
     "cost_price": 527.69,
     "unit_sell_price": 546.14,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3657,6 +3900,7 @@
     "cost_price": 490.38,
     "unit_sell_price": 506.21,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3672,6 +3916,7 @@
     "cost_price": 245.19,
     "unit_sell_price": 253.72,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3687,6 +3932,7 @@
     "cost_price": 9.23,
     "unit_sell_price": 9.53,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3702,6 +3948,7 @@
     "cost_price": 46.26,
     "unit_sell_price": 47.76,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3717,6 +3964,7 @@
     "cost_price": 91.31,
     "unit_sell_price": 94.28,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3732,6 +3980,7 @@
     "cost_price": 183.6,
     "unit_sell_price": 189.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3747,6 +3996,7 @@
     "cost_price": 924.3,
     "unit_sell_price": 954.16,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3762,6 +4012,7 @@
     "cost_price": 461.31,
     "unit_sell_price": 476.32,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3777,6 +4028,7 @@
     "cost_price": 249.11,
     "unit_sell_price": 257.13,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3792,6 +4044,7 @@
     "cost_price": 216.91,
     "unit_sell_price": 227.28,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3807,6 +4060,7 @@
     "cost_price": 373.08,
     "unit_sell_price": 390.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3822,6 +4076,7 @@
     "cost_price": 346.19,
     "unit_sell_price": 362.7,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3837,6 +4092,7 @@
     "cost_price": 650.72,
     "unit_sell_price": 681.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3852,6 +4108,7 @@
     "cost_price": 158.33,
     "unit_sell_price": 163.64,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3867,6 +4124,7 @@
     "cost_price": 350.95,
     "unit_sell_price": 362.73,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3882,6 +4140,7 @@
     "cost_price": 350.95,
     "unit_sell_price": 362.73,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3897,6 +4156,7 @@
     "cost_price": 438.91,
     "unit_sell_price": 453.63,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3912,6 +4172,7 @@
     "cost_price": 438.91,
     "unit_sell_price": 453.63,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3927,6 +4188,7 @@
     "cost_price": 22.7,
     "unit_sell_price": 23.47,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3942,6 +4204,7 @@
     "cost_price": 68.09,
     "unit_sell_price": 70.45,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3957,6 +4220,7 @@
     "cost_price": 136.18,
     "unit_sell_price": 140.85,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3972,6 +4236,7 @@
     "cost_price": 127.1,
     "unit_sell_price": 131.46,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -3987,6 +4252,7 @@
     "cost_price": 63.55,
     "unit_sell_price": 65.73,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4002,6 +4268,7 @@
     "cost_price": 45.39,
     "unit_sell_price": 46.97,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4017,6 +4284,7 @@
     "cost_price": 77.17,
     "unit_sell_price": 79.85,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4032,6 +4300,7 @@
     "cost_price": 72.69,
     "unit_sell_price": 75.19,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4047,6 +4316,7 @@
     "cost_price": 136.3,
     "unit_sell_price": 140.98,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4062,6 +4332,7 @@
     "cost_price": 206.0,
     "unit_sell_price": 213.16,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4077,6 +4348,7 @@
     "cost_price": 219.46,
     "unit_sell_price": 226.85,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4092,6 +4364,7 @@
     "cost_price": 358.41,
     "unit_sell_price": 370.87,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4107,6 +4380,7 @@
     "cost_price": 223.94,
     "unit_sell_price": 231.73,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4122,6 +4396,7 @@
     "cost_price": 470.27,
     "unit_sell_price": 486.11,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4137,6 +4412,7 @@
     "cost_price": 134.36,
     "unit_sell_price": 139.04,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4152,6 +4428,7 @@
     "cost_price": 349.35,
     "unit_sell_price": 361.49,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4167,6 +4444,7 @@
     "cost_price": 188.11,
     "unit_sell_price": 194.65,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4182,6 +4460,7 @@
     "cost_price": 88.68,
     "unit_sell_price": 91.76,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4197,6 +4476,7 @@
     "cost_price": 64.05,
     "unit_sell_price": 66.28,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4212,6 +4492,7 @@
     "cost_price": 89.91,
     "unit_sell_price": 93.13,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4227,6 +4508,7 @@
     "cost_price": 137.46,
     "unit_sell_price": 142.24,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4242,6 +4524,7 @@
     "cost_price": 250.12,
     "unit_sell_price": 258.7,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4257,6 +4540,7 @@
     "cost_price": 288.66,
     "unit_sell_price": 298.58,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4272,6 +4556,7 @@
     "cost_price": 104.48,
     "unit_sell_price": 108.28,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4287,6 +4572,7 @@
     "cost_price": 113.69,
     "unit_sell_price": 117.59,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4302,6 +4588,7 @@
     "cost_price": 192.44,
     "unit_sell_price": 199.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4317,6 +4604,7 @@
     "cost_price": 274.91,
     "unit_sell_price": 284.36,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4332,6 +4620,7 @@
     "cost_price": 329.89,
     "unit_sell_price": 341.23,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4347,6 +4636,7 @@
     "cost_price": 145.97,
     "unit_sell_price": 154.54,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4362,6 +4652,7 @@
     "cost_price": 137.38,
     "unit_sell_price": 146.17,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4377,6 +4668,7 @@
     "cost_price": 214.66,
     "unit_sell_price": 227.28,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4392,6 +4684,7 @@
     "cost_price": 369.21,
     "unit_sell_price": 390.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4407,6 +4700,7 @@
     "cost_price": 386.38,
     "unit_sell_price": 410.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4422,6 +4716,7 @@
     "cost_price": 584.0,
     "unit_sell_price": 604.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4437,6 +4732,7 @@
     "cost_price": 729.83,
     "unit_sell_price": 755.21,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4452,6 +4748,7 @@
     "cost_price": 45.81,
     "unit_sell_price": 47.41,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4467,6 +4764,7 @@
     "cost_price": 109.96,
     "unit_sell_price": 113.75,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4482,6 +4780,7 @@
     "cost_price": 64.14,
     "unit_sell_price": 66.87,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4497,6 +4796,7 @@
     "cost_price": 311.54,
     "unit_sell_price": 322.27,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4512,6 +4812,7 @@
     "cost_price": 394.01,
     "unit_sell_price": 407.58,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4527,6 +4828,7 @@
     "cost_price": 339.03,
     "unit_sell_price": 350.71,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4542,6 +4844,7 @@
     "cost_price": 412.33,
     "unit_sell_price": 426.54,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4557,6 +4860,7 @@
     "cost_price": 137.44,
     "unit_sell_price": 142.18,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4572,6 +4876,7 @@
     "cost_price": 164.93,
     "unit_sell_price": 170.62,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4587,6 +4892,7 @@
     "cost_price": 90.71,
     "unit_sell_price": 93.87,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4602,6 +4908,7 @@
     "cost_price": 437.9,
     "unit_sell_price": 453.13,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4617,6 +4924,7 @@
     "cost_price": 257.59,
     "unit_sell_price": 266.54,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4632,6 +4940,7 @@
     "cost_price": 682.04,
     "unit_sell_price": 721.74,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4647,6 +4956,7 @@
     "cost_price": 369.78,
     "unit_sell_price": 391.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4662,6 +4972,7 @@
     "cost_price": 8.51,
     "unit_sell_price": 8.93,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4677,6 +4988,7 @@
     "cost_price": 43.11,
     "unit_sell_price": 45.25,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4692,6 +5004,7 @@
     "cost_price": 171.68,
     "unit_sell_price": 180.09,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4707,6 +5020,7 @@
     "cost_price": 276.06,
     "unit_sell_price": 289.59,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4722,6 +5036,7 @@
     "cost_price": 344.21,
     "unit_sell_price": 361.08,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4737,6 +5052,7 @@
     "cost_price": 129.44,
     "unit_sell_price": 135.75,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4752,6 +5068,7 @@
     "cost_price": 474.48,
     "unit_sell_price": 497.74,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4767,6 +5084,7 @@
     "cost_price": 405.46,
     "unit_sell_price": 430.42,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4782,6 +5100,7 @@
     "cost_price": 414.49,
     "unit_sell_price": 441.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4797,6 +5116,7 @@
     "cost_price": 212.74,
     "unit_sell_price": 225.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4812,6 +5132,7 @@
     "cost_price": 189.79,
     "unit_sell_price": 199.1,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4827,6 +5148,7 @@
     "cost_price": 327.82,
     "unit_sell_price": 343.9,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4842,6 +5164,7 @@
     "cost_price": 215.67,
     "unit_sell_price": 226.17,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4857,6 +5180,7 @@
     "cost_price": 171.68,
     "unit_sell_price": 181.09,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4872,6 +5196,7 @@
     "cost_price": 232.93,
     "unit_sell_price": 244.34,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4887,6 +5212,7 @@
     "cost_price": 396.84,
     "unit_sell_price": 416.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4902,6 +5228,7 @@
     "cost_price": 414.09,
     "unit_sell_price": 439.58,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4917,6 +5244,7 @@
     "cost_price": 210.09,
     "unit_sell_price": 223.02,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4932,6 +5260,7 @@
     "cost_price": 157.57,
     "unit_sell_price": 167.27,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4947,6 +5276,7 @@
     "cost_price": 288.88,
     "unit_sell_price": 306.66,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4962,6 +5292,7 @@
     "cost_price": 306.39,
     "unit_sell_price": 321.4,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4977,6 +5308,7 @@
     "cost_price": 525.24,
     "unit_sell_price": 550.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -4992,6 +5324,7 @@
     "cost_price": 1006.7,
     "unit_sell_price": 1068.67,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5007,6 +5340,7 @@
     "cost_price": 373.04,
     "unit_sell_price": 391.3,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5022,6 +5356,7 @@
     "cost_price": 207.25,
     "unit_sell_price": 220.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5037,6 +5372,7 @@
     "cost_price": 393.93,
     "unit_sell_price": 413.22,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5052,6 +5388,7 @@
     "cost_price": 794.01,
     "unit_sell_price": 832.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5067,6 +5404,7 @@
     "cost_price": 248.7,
     "unit_sell_price": 260.87,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5082,6 +5420,7 @@
     "cost_price": 406.2,
     "unit_sell_price": 431.2,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5097,6 +5436,7 @@
     "cost_price": 431.07,
     "unit_sell_price": 457.61,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5112,6 +5452,7 @@
     "cost_price": 1119.13,
     "unit_sell_price": 1173.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5127,6 +5468,7 @@
     "cost_price": 787.53,
     "unit_sell_price": 837.01,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5142,6 +5484,7 @@
     "cost_price": 1409.27,
     "unit_sell_price": 1478.26,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5157,6 +5500,7 @@
     "cost_price": 911.88,
     "unit_sell_price": 956.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5172,6 +5516,7 @@
     "cost_price": 467.99,
     "unit_sell_price": 491.18,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5187,6 +5532,7 @@
     "cost_price": 753.98,
     "unit_sell_price": 791.35,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5202,6 +5548,7 @@
     "cost_price": 1741.62,
     "unit_sell_price": 1827.92,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5217,6 +5564,7 @@
     "cost_price": 8.83,
     "unit_sell_price": 9.1,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5232,6 +5580,7 @@
     "cost_price": 1534.28,
     "unit_sell_price": 1610.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5247,6 +5596,7 @@
     "cost_price": 17.65,
     "unit_sell_price": 18.53,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5262,6 +5612,7 @@
     "cost_price": 1256.66,
     "unit_sell_price": 1318.93,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5277,6 +5628,7 @@
     "cost_price": 788.65,
     "unit_sell_price": 827.73,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5292,6 +5644,7 @@
     "cost_price": 450.66,
     "unit_sell_price": 472.73,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5307,6 +5660,7 @@
     "cost_price": 4.41,
     "unit_sell_price": 4.62,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5322,6 +5676,7 @@
     "cost_price": 8.83,
     "unit_sell_price": 9.49,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5337,6 +5692,7 @@
     "cost_price": 172.88,
     "unit_sell_price": 181.36,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5352,6 +5708,7 @@
     "cost_price": 695.01,
     "unit_sell_price": 729.06,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5367,6 +5724,7 @@
     "cost_price": 408.32,
     "unit_sell_price": 428.32,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5382,6 +5740,7 @@
     "cost_price": 4.33,
     "unit_sell_price": 4.55,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5397,6 +5756,7 @@
     "cost_price": 8.83,
     "unit_sell_price": 9.26,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5412,6 +5772,7 @@
     "cost_price": 170.27,
     "unit_sell_price": 178.7,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5427,6 +5788,7 @@
     "cost_price": 580.65,
     "unit_sell_price": 609.85,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5442,6 +5804,7 @@
     "cost_price": 432.46,
     "unit_sell_price": 453.64,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5457,6 +5820,7 @@
     "cost_price": 537.32,
     "unit_sell_price": 563.61,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5472,6 +5836,7 @@
     "cost_price": 320.66,
     "unit_sell_price": 336.35,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5487,6 +5852,7 @@
     "cost_price": 147.33,
     "unit_sell_price": 155.63,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5502,6 +5868,7 @@
     "cost_price": 865.78,
     "unit_sell_price": 908.18,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5517,6 +5884,7 @@
     "cost_price": 1129.39,
     "unit_sell_price": 1184.73,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5532,6 +5900,7 @@
     "cost_price": 0.0,
     "unit_sell_price": 0.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5547,6 +5916,7 @@
     "cost_price": 4.41,
     "unit_sell_price": 4.63,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5562,6 +5932,7 @@
     "cost_price": 8.82,
     "unit_sell_price": 9.26,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5577,6 +5948,7 @@
     "cost_price": 165.06,
     "unit_sell_price": 173.15,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5592,6 +5964,7 @@
     "cost_price": 695.01,
     "unit_sell_price": 729.06,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5607,6 +5980,7 @@
     "cost_price": 651.57,
     "unit_sell_price": 683.47,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5622,6 +5996,7 @@
     "cost_price": 660.25,
     "unit_sell_price": 692.97,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5637,6 +6012,7 @@
     "cost_price": 390.94,
     "unit_sell_price": 410.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5652,6 +6028,7 @@
     "cost_price": 537.32,
     "unit_sell_price": 563.64,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5667,6 +6044,7 @@
     "cost_price": 995.21,
     "unit_sell_price": 1044.53,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5682,6 +6060,7 @@
     "cost_price": 1451.35,
     "unit_sell_price": 1523.27,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5697,6 +6076,7 @@
     "cost_price": 1326.94,
     "unit_sell_price": 1392.7,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5712,6 +6092,7 @@
     "cost_price": 417.01,
     "unit_sell_price": 437.67,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5727,6 +6108,7 @@
     "cost_price": 787.87,
     "unit_sell_price": 826.92,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5742,6 +6124,7 @@
     "cost_price": 389.79,
     "unit_sell_price": 408.69,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5757,6 +6140,7 @@
     "cost_price": 447.84,
     "unit_sell_price": 469.56,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5772,6 +6156,7 @@
     "cost_price": 398.08,
     "unit_sell_price": 434.67,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5787,6 +6172,7 @@
     "cost_price": 771.29,
     "unit_sell_price": 808.67,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5802,6 +6188,7 @@
     "cost_price": 456.14,
     "unit_sell_price": 478.74,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5817,6 +6204,7 @@
     "cost_price": 746.41,
     "unit_sell_price": 782.58,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5832,6 +6220,7 @@
     "cost_price": 729.82,
     "unit_sell_price": 765.22,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5847,6 +6236,7 @@
     "cost_price": 431.26,
     "unit_sell_price": 452.17,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5862,6 +6252,7 @@
     "cost_price": 995.21,
     "unit_sell_price": 1044.53,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5877,6 +6268,7 @@
     "cost_price": 464.43,
     "unit_sell_price": 487.45,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5892,6 +6284,7 @@
     "cost_price": 746.41,
     "unit_sell_price": 782.58,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5907,6 +6300,7 @@
     "cost_price": 43.56,
     "unit_sell_price": 47.44,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5922,6 +6316,7 @@
     "cost_price": 130.67,
     "unit_sell_price": 142.68,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5937,6 +6332,7 @@
     "cost_price": 21.1,
     "unit_sell_price": 22.89,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5952,6 +6348,7 @@
     "cost_price": 109.71,
     "unit_sell_price": 119.47,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5967,6 +6364,7 @@
     "cost_price": 148.1,
     "unit_sell_price": 160.41,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5982,6 +6380,7 @@
     "cost_price": 347.59,
     "unit_sell_price": 377.13,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -5997,6 +6396,7 @@
     "cost_price": 25.32,
     "unit_sell_price": 27.87,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6012,6 +6412,7 @@
     "cost_price": 62.43,
     "unit_sell_price": 67.74,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6027,6 +6428,7 @@
     "cost_price": 65.34,
     "unit_sell_price": 70.1,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6042,6 +6444,7 @@
     "cost_price": 241.39,
     "unit_sell_price": 261.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6057,6 +6460,7 @@
     "cost_price": 26.33,
     "unit_sell_price": 28.33,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6072,6 +6476,7 @@
     "cost_price": 43.89,
     "unit_sell_price": 47.22,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6087,6 +6492,7 @@
     "cost_price": 121.96,
     "unit_sell_price": 132.33,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6102,6 +6508,7 @@
     "cost_price": 304.9,
     "unit_sell_price": 330.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6117,6 +6524,7 @@
     "cost_price": 79.0,
     "unit_sell_price": 85.07,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6132,6 +6540,7 @@
     "cost_price": 130.67,
     "unit_sell_price": 142.68,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6147,6 +6556,7 @@
     "cost_price": 378.95,
     "unit_sell_price": 411.16,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6162,6 +6572,7 @@
     "cost_price": 209.08,
     "unit_sell_price": 228.08,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6177,6 +6588,7 @@
     "cost_price": 105.49,
     "unit_sell_price": 114.13,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6192,6 +6604,7 @@
     "cost_price": 209.08,
     "unit_sell_price": 228.69,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6207,6 +6620,7 @@
     "cost_price": 374.6,
     "unit_sell_price": 408.64,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6222,6 +6636,7 @@
     "cost_price": 162.39,
     "unit_sell_price": 174.87,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6237,6 +6652,7 @@
     "cost_price": 130.67,
     "unit_sell_price": 142.04,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6252,6 +6668,7 @@
     "cost_price": 183.19,
     "unit_sell_price": 209.48,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6267,6 +6684,7 @@
     "cost_price": 213.43,
     "unit_sell_price": 231.57,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6282,6 +6700,7 @@
     "cost_price": 152.45,
     "unit_sell_price": 165.41,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6297,6 +6716,7 @@
     "cost_price": 34.85,
     "unit_sell_price": 37.81,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6312,6 +6732,7 @@
     "cost_price": 152.45,
     "unit_sell_price": 165.41,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6327,6 +6748,7 @@
     "cost_price": 182.94,
     "unit_sell_price": 197.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6342,6 +6764,7 @@
     "cost_price": 182.94,
     "unit_sell_price": 197.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6357,6 +6780,7 @@
     "cost_price": 165.52,
     "unit_sell_price": 179.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6372,6 +6796,7 @@
     "cost_price": 152.45,
     "unit_sell_price": 165.41,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6387,6 +6812,7 @@
     "cost_price": 246.0,
     "unit_sell_price": 258.06,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6402,6 +6828,7 @@
     "cost_price": 79.07,
     "unit_sell_price": 82.95,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6417,6 +6844,7 @@
     "cost_price": 246.0,
     "unit_sell_price": 258.06,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6432,6 +6860,7 @@
     "cost_price": 79.07,
     "unit_sell_price": 82.95,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6447,6 +6876,7 @@
     "cost_price": 1007.62,
     "unit_sell_price": 1040.27,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6462,6 +6892,7 @@
     "cost_price": 1099.22,
     "unit_sell_price": 1117.18,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6477,6 +6908,7 @@
     "cost_price": 2839.66,
     "unit_sell_price": 2916.09,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6492,6 +6924,7 @@
     "cost_price": 2748.06,
     "unit_sell_price": 2843.58,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6507,6 +6940,7 @@
     "cost_price": 4671.7,
     "unit_sell_price": 4719.84,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6522,6 +6956,7 @@
     "cost_price": 7786.17,
     "unit_sell_price": 8044.59,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6537,6 +6972,7 @@
     "cost_price": 2748.06,
     "unit_sell_price": 2843.58,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6552,6 +6988,7 @@
     "cost_price": 4122.29,
     "unit_sell_price": 4258.9,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6567,6 +7004,7 @@
     "cost_price": 608.9,
     "unit_sell_price": 666.01,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6582,6 +7020,7 @@
     "cost_price": 347.6,
     "unit_sell_price": 379.69,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6597,6 +7036,7 @@
     "cost_price": 496.56,
     "unit_sell_price": 538.76,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6612,6 +7052,7 @@
     "cost_price": 862.44,
     "unit_sell_price": 935.75,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6627,6 +7068,7 @@
     "cost_price": 148.1,
     "unit_sell_price": 160.68,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6642,6 +7084,7 @@
     "cost_price": 27.71,
     "unit_sell_price": 28.55,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6657,6 +7100,7 @@
     "cost_price": 46.19,
     "unit_sell_price": 47.58,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6672,6 +7116,7 @@
     "cost_price": 92.38,
     "unit_sell_price": 95.15,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6687,6 +7132,7 @@
     "cost_price": 202.26,
     "unit_sell_price": 209.26,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6702,6 +7148,7 @@
     "cost_price": 367.77,
     "unit_sell_price": 380.48,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6717,6 +7164,7 @@
     "cost_price": 966.51,
     "unit_sell_price": 998.76,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6732,6 +7180,7 @@
     "cost_price": 1840.05,
     "unit_sell_price": 1901.46,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6747,6 +7196,7 @@
     "cost_price": 2024.08,
     "unit_sell_price": 2091.7,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6762,6 +7212,7 @@
     "cost_price": 3385.92,
     "unit_sell_price": 3500.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6777,6 +7228,7 @@
     "cost_price": 1518.8,
     "unit_sell_price": 1569.49,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6792,6 +7244,7 @@
     "cost_price": 782.41,
     "unit_sell_price": 808.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6807,6 +7260,7 @@
     "cost_price": 27.71,
     "unit_sell_price": 28.54,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6822,6 +7276,7 @@
     "cost_price": 217.91,
     "unit_sell_price": 226.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6837,6 +7292,7 @@
     "cost_price": 261.5,
     "unit_sell_price": 272.34,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6852,6 +7308,7 @@
     "cost_price": 523.0,
     "unit_sell_price": 538.68,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6867,6 +7324,7 @@
     "cost_price": 1046.0,
     "unit_sell_price": 1089.13,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6882,6 +7340,7 @@
     "cost_price": 85.99,
     "unit_sell_price": 89.85,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6897,6 +7356,7 @@
     "cost_price": 1380.68,
     "unit_sell_price": 1426.81,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6912,6 +7372,7 @@
     "cost_price": 17.49,
     "unit_sell_price": 18.44,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6927,6 +7388,7 @@
     "cost_price": 46.19,
     "unit_sell_price": 47.56,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6942,6 +7404,7 @@
     "cost_price": 27.71,
     "unit_sell_price": 28.54,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6957,6 +7420,7 @@
     "cost_price": 165.77,
     "unit_sell_price": 170.84,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6972,6 +7436,7 @@
     "cost_price": 331.53,
     "unit_sell_price": 342.43,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -6987,6 +7452,7 @@
     "cost_price": 830.17,
     "unit_sell_price": 856.09,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7002,6 +7468,7 @@
     "cost_price": 1659.42,
     "unit_sell_price": 1711.21,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7017,6 +7484,7 @@
     "cost_price": 2908.35,
     "unit_sell_price": 3000.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7032,6 +7500,7 @@
     "cost_price": 92.38,
     "unit_sell_price": 95.15,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7047,6 +7516,7 @@
     "cost_price": 324.92,
     "unit_sell_price": 335.66,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7062,6 +7532,7 @@
     "cost_price": 183.88,
     "unit_sell_price": 190.24,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7077,6 +7548,7 @@
     "cost_price": 367.75,
     "unit_sell_price": 380.48,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7092,6 +7564,7 @@
     "cost_price": 1058.56,
     "unit_sell_price": 1093.88,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7107,6 +7580,7 @@
     "cost_price": 736.39,
     "unit_sell_price": 760.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7122,6 +7596,7 @@
     "cost_price": 261.2,
     "unit_sell_price": 272.34,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7137,6 +7612,7 @@
     "cost_price": 174.98,
     "unit_sell_price": 180.73,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7152,6 +7628,7 @@
     "cost_price": 349.95,
     "unit_sell_price": 361.46,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7167,6 +7644,7 @@
     "cost_price": 784.05,
     "unit_sell_price": 808.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7182,6 +7660,7 @@
     "cost_price": 1568.1,
     "unit_sell_price": 1617.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7197,6 +7676,7 @@
     "cost_price": 5542.0,
     "unit_sell_price": 5786.06,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7212,6 +7692,7 @@
     "cost_price": 5566.0,
     "unit_sell_price": 5798.51,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7227,6 +7708,7 @@
     "cost_price": 2610.0,
     "unit_sell_price": 2749.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7242,6 +7724,7 @@
     "cost_price": 5968.7,
     "unit_sell_price": 6212.11,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7257,6 +7740,7 @@
     "cost_price": 4721.44,
     "unit_sell_price": 4898.15,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7272,6 +7756,7 @@
     "cost_price": 1788.6,
     "unit_sell_price": 1850.02,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7287,6 +7772,7 @@
     "cost_price": 2306.0,
     "unit_sell_price": 2407.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7302,6 +7788,7 @@
     "cost_price": 2216.85,
     "unit_sell_price": 2313.42,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7317,6 +7804,7 @@
     "cost_price": 2305.63,
     "unit_sell_price": 2410.62,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7332,6 +7820,7 @@
     "cost_price": 2216.85,
     "unit_sell_price": 2313.42,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7347,6 +7836,7 @@
     "cost_price": 2304.48,
     "unit_sell_price": 2404.97,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7362,6 +7852,7 @@
     "cost_price": 1057.0,
     "unit_sell_price": 1157.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7377,6 +7868,7 @@
     "cost_price": 1057.0,
     "unit_sell_price": 1157.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7392,6 +7884,7 @@
     "cost_price": 1057.0,
     "unit_sell_price": 1157.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7407,6 +7900,7 @@
     "cost_price": 1190.0,
     "unit_sell_price": 1301.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7422,6 +7916,7 @@
     "cost_price": 1190.0,
     "unit_sell_price": 1301.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7437,6 +7932,7 @@
     "cost_price": 1057.0,
     "unit_sell_price": 1157.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7452,6 +7948,7 @@
     "cost_price": 846.0,
     "unit_sell_price": 918.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7467,6 +7964,7 @@
     "cost_price": 846.0,
     "unit_sell_price": 918.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7482,6 +7980,7 @@
     "cost_price": 1057.0,
     "unit_sell_price": 1157.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7497,6 +7996,7 @@
     "cost_price": 1190.0,
     "unit_sell_price": 1301.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7512,6 +8012,7 @@
     "cost_price": 846.0,
     "unit_sell_price": 918.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7527,6 +8028,7 @@
     "cost_price": 1057.0,
     "unit_sell_price": 1157.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7542,6 +8044,7 @@
     "cost_price": 1057.0,
     "unit_sell_price": 1157.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7557,6 +8060,7 @@
     "cost_price": 1057.0,
     "unit_sell_price": 1157.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7572,6 +8076,7 @@
     "cost_price": 512.0,
     "unit_sell_price": 527.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7587,6 +8092,7 @@
     "cost_price": 8500.0,
     "unit_sell_price": 8840.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7602,6 +8108,7 @@
     "cost_price": 5195.0,
     "unit_sell_price": 5346.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7617,6 +8124,7 @@
     "cost_price": 2335.0,
     "unit_sell_price": 2460.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7632,6 +8140,7 @@
     "cost_price": 1555.0,
     "unit_sell_price": 1638.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7647,6 +8156,7 @@
     "cost_price": 515.0,
     "unit_sell_price": 535.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7662,6 +8172,7 @@
     "cost_price": 517.0,
     "unit_sell_price": 540.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7677,6 +8188,7 @@
     "cost_price": 515.0,
     "unit_sell_price": 535.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7692,6 +8204,7 @@
     "cost_price": 8500.0,
     "unit_sell_price": 8840.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7707,6 +8220,7 @@
     "cost_price": 2595.0,
     "unit_sell_price": 2700.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7722,6 +8236,7 @@
     "cost_price": 1295.0,
     "unit_sell_price": 1362.4,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7737,6 +8252,7 @@
     "cost_price": 515.0,
     "unit_sell_price": 535.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7752,6 +8268,7 @@
     "cost_price": 5075.0,
     "unit_sell_price": 5280.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7767,6 +8284,7 @@
     "cost_price": 8150.0,
     "unit_sell_price": 8600.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7782,6 +8300,7 @@
     "cost_price": 2605.0,
     "unit_sell_price": 2720.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7797,6 +8316,7 @@
     "cost_price": 1310.0,
     "unit_sell_price": 1368.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7812,6 +8332,7 @@
     "cost_price": 5510.0,
     "unit_sell_price": 5775.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7827,6 +8348,7 @@
     "cost_price": 2490.0,
     "unit_sell_price": 2640.75,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7842,6 +8364,7 @@
     "cost_price": 1660.0,
     "unit_sell_price": 1758.75,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7857,6 +8380,7 @@
     "cost_price": 550.0,
     "unit_sell_price": 577.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7872,6 +8396,7 @@
     "cost_price": 415.0,
     "unit_sell_price": 440.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7887,6 +8412,7 @@
     "cost_price": 1411.2,
     "unit_sell_price": 1450.7,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7902,6 +8428,7 @@
     "cost_price": 2770.66,
     "unit_sell_price": 2848.2,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7917,6 +8444,7 @@
     "cost_price": 2751.84,
     "unit_sell_price": 2828.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7932,6 +8460,7 @@
     "cost_price": 1411.2,
     "unit_sell_price": 1450.68,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7947,6 +8476,7 @@
     "cost_price": 2770.66,
     "unit_sell_price": 2848.16,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7962,6 +8492,7 @@
     "cost_price": 10330.01,
     "unit_sell_price": 10618.96,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7977,6 +8508,7 @@
     "cost_price": 10292.38,
     "unit_sell_price": 10580.27,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -7992,6 +8524,7 @@
     "cost_price": 10950.8,
     "unit_sell_price": 11257.26,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8007,6 +8540,7 @@
     "cost_price": 8763.56,
     "unit_sell_price": 9008.7,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8022,6 +8556,7 @@
     "cost_price": 2751.84,
     "unit_sell_price": 2828.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8037,6 +8572,7 @@
     "cost_price": 10950.92,
     "unit_sell_price": 11257.25,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8052,6 +8588,7 @@
     "cost_price": 2798.89,
     "unit_sell_price": 2877.18,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8067,6 +8604,7 @@
     "cost_price": 10467.18,
     "unit_sell_price": 10744.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8082,6 +8620,7 @@
     "cost_price": 2616.86,
     "unit_sell_price": 2686.13,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8097,6 +8636,7 @@
     "cost_price": 1208.93,
     "unit_sell_price": 1242.75,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8112,6 +8652,7 @@
     "cost_price": 2366.12,
     "unit_sell_price": 2432.3,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8127,6 +8668,7 @@
     "cost_price": 1330.23,
     "unit_sell_price": 1365.45,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8142,6 +8684,7 @@
     "cost_price": 2602.64,
     "unit_sell_price": 2671.53,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8157,6 +8700,7 @@
     "cost_price": 2526.78,
     "unit_sell_price": 2593.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8172,6 +8716,7 @@
     "cost_price": 7426.86,
     "unit_sell_price": 7634.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8187,6 +8732,7 @@
     "cost_price": 2160.18,
     "unit_sell_price": 2220.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8202,6 +8748,7 @@
     "cost_price": 10657.04,
     "unit_sell_price": 10939.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8217,6 +8764,7 @@
     "cost_price": 8404.27,
     "unit_sell_price": 8626.76,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8232,6 +8780,7 @@
     "cost_price": 9471.87,
     "unit_sell_price": 9722.22,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8247,6 +8796,7 @@
     "cost_price": 2730.63,
     "unit_sell_price": 2802.9,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8262,6 +8812,7 @@
     "cost_price": 10713.93,
     "unit_sell_price": 10997.78,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8277,6 +8828,7 @@
     "cost_price": 15359.36,
     "unit_sell_price": 15766.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8292,6 +8844,7 @@
     "cost_price": 13502.9,
     "unit_sell_price": 13961.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8307,6 +8860,7 @@
     "cost_price": 12163.77,
     "unit_sell_price": 12576.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8322,6 +8876,7 @@
     "cost_price": 3371.08,
     "unit_sell_price": 3485.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8337,6 +8892,7 @@
     "cost_price": 14564.81,
     "unit_sell_price": 15060.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8352,6 +8908,7 @@
     "cost_price": 13521.5,
     "unit_sell_price": 13980.76,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8367,6 +8924,7 @@
     "cost_price": 16948.15,
     "unit_sell_price": 17777.78,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8382,6 +8940,7 @@
     "cost_price": 10062.92,
     "unit_sell_price": 10555.56,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8397,6 +8956,7 @@
     "cost_price": 23303.7,
     "unit_sell_price": 24444.44,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8412,6 +8972,7 @@
     "cost_price": 13378.45,
     "unit_sell_price": 14033.33,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8427,6 +8988,7 @@
     "cost_price": 26481.39,
     "unit_sell_price": 27777.78,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8442,6 +9004,7 @@
     "cost_price": 33543.21,
     "unit_sell_price": 35185.19,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8457,6 +9020,7 @@
     "cost_price": 1094.07,
     "unit_sell_price": 1170.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8472,6 +9036,7 @@
     "cost_price": 1477.37,
     "unit_sell_price": 1580.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8487,6 +9052,7 @@
     "cost_price": 78.94,
     "unit_sell_price": 85.1,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8502,6 +9068,7 @@
     "cost_price": 78.94,
     "unit_sell_price": 85.1,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8517,6 +9084,7 @@
     "cost_price": 78.94,
     "unit_sell_price": 85.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8532,6 +9100,7 @@
     "cost_price": 78.94,
     "unit_sell_price": 85.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8547,6 +9116,7 @@
     "cost_price": 78.94,
     "unit_sell_price": 85.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8562,6 +9132,7 @@
     "cost_price": 78.94,
     "unit_sell_price": 85.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8577,6 +9148,7 @@
     "cost_price": 78.94,
     "unit_sell_price": 85.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8592,6 +9164,7 @@
     "cost_price": 78.94,
     "unit_sell_price": 85.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8607,6 +9180,7 @@
     "cost_price": 78.94,
     "unit_sell_price": 85.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8622,6 +9196,7 @@
     "cost_price": 78.94,
     "unit_sell_price": 85.05,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8637,6 +9212,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8652,6 +9228,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8667,6 +9244,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8682,6 +9260,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8697,6 +9276,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8712,6 +9292,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8727,6 +9308,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8742,6 +9324,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8757,6 +9340,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8772,6 +9356,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8787,6 +9372,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 328.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8802,6 +9388,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8817,6 +9404,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8832,6 +9420,7 @@
     "cost_price": 200.0,
     "unit_sell_price": 214.11,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8847,6 +9436,7 @@
     "cost_price": 242.0,
     "unit_sell_price": 268.33,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8862,6 +9452,7 @@
     "cost_price": 250.0,
     "unit_sell_price": 267.64,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8877,6 +9468,7 @@
     "cost_price": 308.0,
     "unit_sell_price": 328.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8892,6 +9484,7 @@
     "cost_price": 115.0,
     "unit_sell_price": 127.88,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8907,6 +9500,7 @@
     "cost_price": 308.0,
     "unit_sell_price": 328.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8922,6 +9516,7 @@
     "cost_price": 308.0,
     "unit_sell_price": 274.02,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8937,6 +9532,7 @@
     "cost_price": 308.0,
     "unit_sell_price": 328.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8952,6 +9548,7 @@
     "cost_price": 308.0,
     "unit_sell_price": 328.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8967,6 +9564,7 @@
     "cost_price": 205.0,
     "unit_sell_price": 219.21,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8982,6 +9580,7 @@
     "cost_price": 205.0,
     "unit_sell_price": 219.21,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -8997,6 +9596,7 @@
     "cost_price": 308.0,
     "unit_sell_price": 328.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9012,6 +9612,7 @@
     "cost_price": 308.0,
     "unit_sell_price": 328.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9027,6 +9628,7 @@
     "cost_price": 274.01,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9042,6 +9644,7 @@
     "cost_price": 210.18,
     "unit_sell_price": 220.65,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9057,6 +9660,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 295.34,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9072,6 +9676,7 @@
     "cost_price": 205.0,
     "unit_sell_price": 220.65,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9087,6 +9692,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 295.34,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9102,6 +9708,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 295.34,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9117,6 +9724,7 @@
     "cost_price": 315.28,
     "unit_sell_price": 328.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9132,6 +9740,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9147,6 +9756,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9162,6 +9772,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9177,6 +9788,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 295.3,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9192,6 +9804,7 @@
     "cost_price": 341.0,
     "unit_sell_price": 365.36,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9207,6 +9820,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 295.3,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9222,6 +9836,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9237,6 +9852,7 @@
     "cost_price": 205.0,
     "unit_sell_price": 220.65,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9252,6 +9868,7 @@
     "cost_price": 308.0,
     "unit_sell_price": 328.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9267,6 +9884,7 @@
     "cost_price": 250.0,
     "unit_sell_price": 274.02,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9282,6 +9900,7 @@
     "cost_price": 205.0,
     "unit_sell_price": 220.65,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9297,6 +9916,7 @@
     "cost_price": 205.0,
     "unit_sell_price": 220.65,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9312,6 +9932,7 @@
     "cost_price": 205.0,
     "unit_sell_price": 220.65,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9327,6 +9948,7 @@
     "cost_price": 291.57,
     "unit_sell_price": 322.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9342,6 +9964,7 @@
     "cost_price": 205.0,
     "unit_sell_price": 220.65,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9357,6 +9980,7 @@
     "cost_price": 259.02,
     "unit_sell_price": 286.53,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9372,6 +9996,7 @@
     "cost_price": 205.0,
     "unit_sell_price": 220.67,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9387,6 +10012,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9402,6 +10028,7 @@
     "cost_price": 205.0,
     "unit_sell_price": 220.65,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9417,6 +10044,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 292.29,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9432,6 +10060,7 @@
     "cost_price": 315.28,
     "unit_sell_price": 328.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9447,6 +10076,7 @@
     "cost_price": 274.29,
     "unit_sell_price": 292.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9462,6 +10092,7 @@
     "cost_price": 131.9,
     "unit_sell_price": 132.57,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9477,6 +10108,7 @@
     "cost_price": 211.85,
     "unit_sell_price": 241.62,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9492,6 +10124,7 @@
     "cost_price": 30.87,
     "unit_sell_price": 152.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9507,6 +10140,7 @@
     "cost_price": 135.59,
     "unit_sell_price": 154.55,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9522,6 +10156,7 @@
     "cost_price": 255.23,
     "unit_sell_price": 290.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9537,6 +10172,7 @@
     "cost_price": 61.57,
     "unit_sell_price": 81.82,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9552,6 +10188,7 @@
     "cost_price": 133.78,
     "unit_sell_price": 156.9,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9567,6 +10204,7 @@
     "cost_price": 264.04,
     "unit_sell_price": 309.69,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9582,6 +10220,7 @@
     "cost_price": 42.63,
     "unit_sell_price": 50.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9597,6 +10236,7 @@
     "cost_price": 42.63,
     "unit_sell_price": 50.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9612,6 +10252,7 @@
     "cost_price": 274.53,
     "unit_sell_price": 315.63,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9627,6 +10268,7 @@
     "cost_price": 274.53,
     "unit_sell_price": 315.63,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9642,6 +10284,7 @@
     "cost_price": 314.71,
     "unit_sell_price": 358.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9657,6 +10300,7 @@
     "cost_price": 131.6,
     "unit_sell_price": 150.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9672,6 +10316,7 @@
     "cost_price": 254.45,
     "unit_sell_price": 290.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9687,6 +10332,7 @@
     "cost_price": 128.43,
     "unit_sell_price": 128.43,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9702,6 +10348,7 @@
     "cost_price": 42.63,
     "unit_sell_price": 63.57,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9717,6 +10364,7 @@
     "cost_price": 60.98,
     "unit_sell_price": 71.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9732,6 +10380,7 @@
     "cost_price": 95.22,
     "unit_sell_price": 108.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9747,6 +10396,7 @@
     "cost_price": 150.39,
     "unit_sell_price": 171.38,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9762,6 +10412,7 @@
     "cost_price": 31.66,
     "unit_sell_price": 36.08,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9777,6 +10428,7 @@
     "cost_price": 19.53,
     "unit_sell_price": 22.9,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9792,6 +10444,7 @@
     "cost_price": 201.46,
     "unit_sell_price": 229.69,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9807,6 +10460,7 @@
     "cost_price": 193.77,
     "unit_sell_price": 246.97,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9822,6 +10476,7 @@
     "cost_price": 111.22,
     "unit_sell_price": 126.76,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9837,6 +10492,7 @@
     "cost_price": 277.92,
     "unit_sell_price": 316.74,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9852,6 +10508,7 @@
     "cost_price": 42.63,
     "unit_sell_price": 63.57,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9867,6 +10524,7 @@
     "cost_price": 238.78,
     "unit_sell_price": 269.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9882,6 +10540,7 @@
     "cost_price": 60.51,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9897,6 +10556,7 @@
     "cost_price": 70.51,
     "unit_sell_price": 74.09,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9912,6 +10572,7 @@
     "cost_price": 121.87,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9927,6 +10588,7 @@
     "cost_price": 49.4,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9942,6 +10604,7 @@
     "cost_price": 121.87,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9957,6 +10620,7 @@
     "cost_price": 238.78,
     "unit_sell_price": 269.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9972,6 +10636,7 @@
     "cost_price": 57.52,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -9987,6 +10652,7 @@
     "cost_price": 121.87,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10002,6 +10668,7 @@
     "cost_price": 121.88,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10017,6 +10684,7 @@
     "cost_price": 121.88,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10032,6 +10700,7 @@
     "cost_price": 57.52,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10047,6 +10716,7 @@
     "cost_price": 121.88,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10062,6 +10732,7 @@
     "cost_price": 238.78,
     "unit_sell_price": 269.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10077,6 +10748,7 @@
     "cost_price": 56.22,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10092,6 +10764,7 @@
     "cost_price": 113.74,
     "unit_sell_price": 128.16,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10107,6 +10780,7 @@
     "cost_price": 74.09,
     "unit_sell_price": 74.09,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10122,6 +10796,7 @@
     "cost_price": 121.87,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10137,6 +10812,7 @@
     "cost_price": 219.69,
     "unit_sell_price": 250.56,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10152,6 +10828,7 @@
     "cost_price": 121.88,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10167,6 +10844,7 @@
     "cost_price": 121.88,
     "unit_sell_price": 128.15,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10182,6 +10860,7 @@
     "cost_price": 111.17,
     "unit_sell_price": 128.16,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10197,6 +10876,7 @@
     "cost_price": 56.22,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10212,6 +10892,7 @@
     "cost_price": 70.51,
     "unit_sell_price": 74.09,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10227,6 +10908,7 @@
     "cost_price": 121.87,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10242,6 +10924,7 @@
     "cost_price": 238.78,
     "unit_sell_price": 269.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10257,6 +10940,7 @@
     "cost_price": 116.41,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10272,6 +10956,7 @@
     "cost_price": 44.11,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10287,6 +10972,7 @@
     "cost_price": 121.87,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10302,6 +10988,7 @@
     "cost_price": 238.78,
     "unit_sell_price": 269.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10317,6 +11004,7 @@
     "cost_price": 238.78,
     "unit_sell_price": 250.56,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10332,6 +11020,7 @@
     "cost_price": 49.0,
     "unit_sell_price": 55.57,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10347,6 +11036,7 @@
     "cost_price": 121.88,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10362,6 +11052,7 @@
     "cost_price": 121.88,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10377,6 +11068,7 @@
     "cost_price": 121.88,
     "unit_sell_price": 128.15,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10392,6 +11084,7 @@
     "cost_price": 238.78,
     "unit_sell_price": 269.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10407,6 +11100,7 @@
     "cost_price": 74.09,
     "unit_sell_price": 74.09,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10422,6 +11116,7 @@
     "cost_price": 121.88,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10437,6 +11132,7 @@
     "cost_price": 57.52,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10452,6 +11148,7 @@
     "cost_price": 121.87,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10467,6 +11164,7 @@
     "cost_price": 111.17,
     "unit_sell_price": 128.15,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10482,6 +11180,7 @@
     "cost_price": 57.52,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10497,6 +11196,7 @@
     "cost_price": 238.78,
     "unit_sell_price": 269.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10512,6 +11212,7 @@
     "cost_price": 57.52,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10527,6 +11228,7 @@
     "cost_price": 121.87,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10542,6 +11244,7 @@
     "cost_price": 112.88,
     "unit_sell_price": 128.15,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10557,6 +11260,7 @@
     "cost_price": 53.19,
     "unit_sell_price": 64.83,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10572,6 +11276,7 @@
     "cost_price": 121.87,
     "unit_sell_price": 137.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10587,6 +11292,7 @@
     "cost_price": 238.78,
     "unit_sell_price": 269.12,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10602,6 +11308,7 @@
     "cost_price": 65.63,
     "unit_sell_price": 100.1,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10617,6 +11324,7 @@
     "cost_price": 172.91,
     "unit_sell_price": 200.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10632,6 +11340,7 @@
     "cost_price": 335.9,
     "unit_sell_price": 388.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10647,6 +11356,7 @@
     "cost_price": 97.46,
     "unit_sell_price": 112.72,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10662,6 +11372,7 @@
     "cost_price": 14.62,
     "unit_sell_price": 18.2,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10677,6 +11388,7 @@
     "cost_price": 335.9,
     "unit_sell_price": 388.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10692,6 +11404,7 @@
     "cost_price": 142.3,
     "unit_sell_price": 165.51,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10707,6 +11420,7 @@
     "cost_price": 345.83,
     "unit_sell_price": 400.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10722,6 +11436,7 @@
     "cost_price": 270.54,
     "unit_sell_price": 312.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10737,6 +11452,7 @@
     "cost_price": 487.41,
     "unit_sell_price": 563.75,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10752,6 +11468,7 @@
     "cost_price": 330.83,
     "unit_sell_price": 382.64,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10767,6 +11484,7 @@
     "cost_price": 551.38,
     "unit_sell_price": 637.73,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10782,6 +11500,7 @@
     "cost_price": 138.33,
     "unit_sell_price": 160.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10797,6 +11516,7 @@
     "cost_price": 138.33,
     "unit_sell_price": 160.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10812,6 +11532,7 @@
     "cost_price": 138.33,
     "unit_sell_price": 160.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10827,6 +11548,7 @@
     "cost_price": 138.33,
     "unit_sell_price": 160.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10842,6 +11564,7 @@
     "cost_price": 98.56,
     "unit_sell_price": 114.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10857,6 +11580,7 @@
     "cost_price": 98.56,
     "unit_sell_price": 114.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10872,6 +11596,7 @@
     "cost_price": 98.56,
     "unit_sell_price": 114.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10887,6 +11612,7 @@
     "cost_price": 156.49,
     "unit_sell_price": 181.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10902,6 +11628,7 @@
     "cost_price": 98.56,
     "unit_sell_price": 114.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10917,6 +11644,7 @@
     "cost_price": 156.49,
     "unit_sell_price": 181.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10932,6 +11660,7 @@
     "cost_price": 33.02,
     "unit_sell_price": 36.08,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10947,6 +11676,7 @@
     "cost_price": 224.59,
     "unit_sell_price": 279.52,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10962,6 +11692,7 @@
     "cost_price": 558.04,
     "unit_sell_price": 645.44,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10977,6 +11708,7 @@
     "cost_price": 299.01,
     "unit_sell_price": 345.85,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -10992,6 +11724,7 @@
     "cost_price": 263.7,
     "unit_sell_price": 304.99,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11007,6 +11740,7 @@
     "cost_price": 263.7,
     "unit_sell_price": 304.99,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11022,6 +11756,7 @@
     "cost_price": 263.7,
     "unit_sell_price": 304.99,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11037,6 +11772,7 @@
     "cost_price": 345.84,
     "unit_sell_price": 400.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11052,6 +11788,7 @@
     "cost_price": 415.01,
     "unit_sell_price": 480.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11067,6 +11804,7 @@
     "cost_price": 129.28,
     "unit_sell_price": 160.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11082,6 +11820,7 @@
     "cost_price": 107.6,
     "unit_sell_price": 200.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11097,6 +11836,7 @@
     "cost_price": 224.19,
     "unit_sell_price": 259.31,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11112,6 +11852,7 @@
     "cost_price": 252.46,
     "unit_sell_price": 291.99,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11127,6 +11868,7 @@
     "cost_price": 513.03,
     "unit_sell_price": 593.37,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11142,6 +11884,7 @@
     "cost_price": 144.8,
     "unit_sell_price": 200.0,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11157,6 +11900,7 @@
     "cost_price": 224.05,
     "unit_sell_price": 259.14,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11172,6 +11916,7 @@
     "cost_price": 15.73,
     "unit_sell_price": 18.2,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11187,6 +11932,7 @@
     "cost_price": 252.46,
     "unit_sell_price": 291.99,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11202,6 +11948,7 @@
     "cost_price": 513.03,
     "unit_sell_price": 593.37,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11217,6 +11964,7 @@
     "cost_price": 31.48,
     "unit_sell_price": 36.42,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11232,6 +11980,7 @@
     "cost_price": 78.6,
     "unit_sell_price": 90.91,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11247,6 +11996,7 @@
     "cost_price": 268.04,
     "unit_sell_price": 333.6,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11262,6 +12012,7 @@
     "cost_price": 293.75,
     "unit_sell_price": 365.6,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11277,6 +12028,7 @@
     "cost_price": 136.74,
     "unit_sell_price": 158.15,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11292,6 +12044,7 @@
     "cost_price": 172.42,
     "unit_sell_price": 200.53,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11307,6 +12060,7 @@
     "cost_price": 97.46,
     "unit_sell_price": 112.72,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11322,6 +12076,7 @@
     "cost_price": 15.73,
     "unit_sell_price": 18.2,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11337,6 +12092,7 @@
     "cost_price": 158.25,
     "unit_sell_price": 201.45,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11352,6 +12108,7 @@
     "cost_price": 335.9,
     "unit_sell_price": 388.5,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11367,6 +12124,7 @@
     "cost_price": 64.89,
     "unit_sell_price": 74.8,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   },
   {
@@ -11382,6 +12140,7 @@
     "cost_price": 90.69,
     "unit_sell_price": 104.89,
     "valuation_method": "FIFO",
+    "is_powder": false,
     "is_active": true
   }
 ]

@@ -11,7 +11,9 @@ class FmrAmrComparisonController extends Controller
     /**
      * GL Account codes for the report.
      */
-    private const FMR_ACCOUNT_CODE = '4210';
+    private const FMR_LIQUID_ACCOUNT_CODE = '4210';
+
+    private const FMR_POWDER_ACCOUNT_CODE = '4220';
 
     private const AMR_POWDER_ACCOUNT_CODE = '5252';
 
@@ -29,13 +31,15 @@ class FmrAmrComparisonController extends Controller
         // Get account IDs for the GL codes
         $accounts = DB::table('chart_of_accounts')
             ->whereIn('account_code', [
-                self::FMR_ACCOUNT_CODE,
+                self::FMR_LIQUID_ACCOUNT_CODE,
+                self::FMR_POWDER_ACCOUNT_CODE,
                 self::AMR_POWDER_ACCOUNT_CODE,
                 self::AMR_LIQUID_ACCOUNT_CODE,
             ])
             ->pluck('id', 'account_code');
 
-        $fmrAccountId = $accounts[self::FMR_ACCOUNT_CODE] ?? null;
+        $fmrLiquidAccountId = $accounts[self::FMR_LIQUID_ACCOUNT_CODE] ?? null;
+        $fmrPowderAccountId = $accounts[self::FMR_POWDER_ACCOUNT_CODE] ?? null;
         $amrPowderAccountId = $accounts[self::AMR_POWDER_ACCOUNT_CODE] ?? null;
         $amrLiquidAccountId = $accounts[self::AMR_LIQUID_ACCOUNT_CODE] ?? null;
 
@@ -45,17 +49,23 @@ class FmrAmrComparisonController extends Controller
         // Build the query to get monthly totals
         $actualData = collect();
 
-        if ($fmrAccountId && $amrPowderAccountId && $amrLiquidAccountId) {
+        if ($fmrLiquidAccountId && $fmrPowderAccountId && $amrPowderAccountId && $amrLiquidAccountId) {
             $actualData = DB::table('journal_entry_details as jed')
                 ->join('journal_entries as je', 'je.id', '=', 'jed.journal_entry_id')
-                ->whereIn('jed.chart_of_account_id', [$fmrAccountId, $amrPowderAccountId, $amrLiquidAccountId])
+                ->whereIn('jed.chart_of_account_id', [
+                    $fmrLiquidAccountId,
+                    $fmrPowderAccountId,
+                    $amrPowderAccountId,
+                    $amrLiquidAccountId,
+                ])
                 ->where('je.status', 'posted')
                 ->whereNull('je.deleted_at')
                 ->whereBetween('je.entry_date', [$startDate, $endDate])
                 ->select(
                     DB::raw('YEAR(je.entry_date) as year'),
                     DB::raw('MONTH(je.entry_date) as month'),
-                    DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$fmrAccountId} THEN (jed.credit - jed.debit) ELSE 0 END) as fmr_total"),
+                    DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$fmrLiquidAccountId} THEN (jed.credit - jed.debit) ELSE 0 END) as fmr_liquid_total"),
+                    DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$fmrPowderAccountId} THEN (jed.credit - jed.debit) ELSE 0 END) as fmr_powder_total"),
                     DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$amrPowderAccountId} THEN (jed.debit - jed.credit) ELSE 0 END) as amr_powder_total"),
                     DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$amrLiquidAccountId} THEN (jed.debit - jed.credit) ELSE 0 END) as amr_liquid_total")
                 )
@@ -69,24 +79,37 @@ class FmrAmrComparisonController extends Controller
             $key = $monthData['year'].'-'.$monthData['month'];
             $actual = $actualData->get($key);
 
+            $fmrLiquid = $actual->fmr_liquid_total ?? 0;
+            $fmrPowder = $actual->fmr_powder_total ?? 0;
+            $amrLiquid = $actual->amr_liquid_total ?? 0;
+            $amrPowder = $actual->amr_powder_total ?? 0;
+
             return (object) [
                 'year' => $monthData['year'],
                 'month' => $monthData['month'],
                 'month_year' => $monthData['month_year'],
-                'fmr_total' => $actual->fmr_total ?? 0,
-                'amr_powder_total' => $actual->amr_powder_total ?? 0,
-                'amr_liquid_total' => $actual->amr_liquid_total ?? 0,
-                'amr_total' => ($actual->amr_powder_total ?? 0) + ($actual->amr_liquid_total ?? 0),
-                'difference' => (($actual->amr_powder_total ?? 0) + ($actual->amr_liquid_total ?? 0)) - ($actual->fmr_total ?? 0),
+                'fmr_liquid_total' => $fmrLiquid,
+                'fmr_powder_total' => $fmrPowder,
+                'fmr_total' => $fmrLiquid + $fmrPowder,
+                'amr_liquid_total' => $amrLiquid,
+                'amr_powder_total' => $amrPowder,
+                'amr_total' => $amrLiquid + $amrPowder,
+                'liquid_diff' => $amrLiquid - $fmrLiquid,
+                'powder_diff' => $amrPowder - $fmrPowder,
+                'difference' => ($amrLiquid + $amrPowder) - ($fmrLiquid + $fmrPowder),
             ];
         });
 
         // Calculate grand totals
         $grandTotals = (object) [
+            'fmr_liquid_total' => $reportData->sum('fmr_liquid_total'),
+            'fmr_powder_total' => $reportData->sum('fmr_powder_total'),
             'fmr_total' => $reportData->sum('fmr_total'),
-            'amr_powder_total' => $reportData->sum('amr_powder_total'),
             'amr_liquid_total' => $reportData->sum('amr_liquid_total'),
+            'amr_powder_total' => $reportData->sum('amr_powder_total'),
             'amr_total' => $reportData->sum('amr_total'),
+            'liquid_diff' => $reportData->sum('liquid_diff'),
+            'powder_diff' => $reportData->sum('powder_diff'),
             'difference' => $reportData->sum('difference'),
         ];
 

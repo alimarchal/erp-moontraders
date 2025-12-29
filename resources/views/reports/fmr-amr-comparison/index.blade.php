@@ -23,52 +23,60 @@
     <x-data-table :items="$reportData" :headers="[
         ['label' => 'Sr#', 'align' => 'text-center'],
         ['label' => 'Month - Year'],
-        ['label' => 'FMR (4210)', 'align' => 'text-right'],
-        ['label' => 'AMR Powder (5252)', 'align' => 'text-right'],
+        ['label' => 'FMR Liquid (4210)', 'align' => 'text-right'],
+        ['label' => 'FMR Powder (4220)', 'align' => 'text-right'],
         ['label' => 'AMR Liquid (5262)', 'align' => 'text-right'],
-        ['label' => 'Difference (AMR - FMR)', 'align' => 'text-right'],
-    ]" emptyMessage="No data found for the selected date range.">
+        ['label' => 'AMR Powder (5252)', 'align' => 'text-right'],
+        ['label' => 'Total Diff', 'align' => 'text-right'],
+    ]"   emptyMessage="No data found for the selected date range.">
         @foreach ($reportData as $index => $row)
-        <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
-            <td class="py-2 px-3 text-center">
-                {{ $index + 1 }}
-            </td>
-            <td class="py-2 px-3 font-medium">
-                {{ $row->month_year }}
-            </td>
-            <td class="py-2 px-3 text-right font-mono">
-                {{ number_format($row->fmr_total, 2) }}
-            </td>
-            <td class="py-2 px-3 text-right font-mono">
-                {{ number_format($row->amr_powder_total, 2) }}
-            </td>
-            <td class="py-2 px-3 text-right font-mono">
-                {{ number_format($row->amr_liquid_total, 2) }}
-            </td>
-            <td class="py-2 px-3 text-right font-mono {{ $row->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                {{ number_format($row->difference, 2) }}
-            </td>
-        </tr>
+            <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
+                <td class="py-2 px-3 text-center">
+                    {{ $index + 1 }}
+                </td>
+                <td class="py-2 px-3 font-medium">
+                    {{ $row->month_year }}
+                </td>
+                <td class="py-2 px-3 text-right font-mono">
+                    {{ number_format($row->fmr_liquid_total, 2) }}
+                </td>
+                <td class="py-2 px-3 text-right font-mono">
+                    {{ number_format($row->fmr_powder_total, 2) }}
+                </td>
+                <td class="py-2 px-3 text-right font-mono">
+                    {{ number_format($row->amr_liquid_total, 2) }}
+                </td>
+                <td class="py-2 px-3 text-right font-mono">
+                    {{ number_format($row->amr_powder_total, 2) }}
+                </td>
+                <td class="py-2 px-3 text-right font-mono {{ $row->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                    {{ number_format($row->difference, 2) }}
+                </td>
+            </tr>
         @endforeach
 
         @if($reportData->count() > 0)
-        <tr class="bg-gray-100 font-semibold text-sm border-t-2 border-gray-300">
-            <td class="py-2 px-3 text-center" colspan="2">
-                Grand Total
-            </td>
-            <td class="py-2 px-3 text-right font-mono">
-                {{ number_format($grandTotals->fmr_total, 2) }}
-            </td>
-            <td class="py-2 px-3 text-right font-mono">
-                {{ number_format($grandTotals->amr_powder_total, 2) }}
-            </td>
-            <td class="py-2 px-3 text-right font-mono">
-                {{ number_format($grandTotals->amr_liquid_total, 2) }}
-            </td>
-            <td class="py-2 px-3 text-right font-mono {{ $grandTotals->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                {{ number_format($grandTotals->difference, 2) }}
-            </td>
-        </tr>
+            <tr class="bg-gray-100 font-semibold text-sm border-t-2 border-gray-300">
+                <td class="py-2 px-3 text-center" colspan="2">
+                    Grand Total
+                </td>
+                <td class="py-2 px-3 text-right font-mono">
+                    {{ number_format($grandTotals->fmr_liquid_total, 2) }}
+                </td>
+                <td class="py-2 px-3 text-right font-mono">
+                    {{ number_format($grandTotals->fmr_powder_total, 2) }}
+                </td>
+                <td class="py-2 px-3 text-right font-mono">
+                    {{ number_format($grandTotals->amr_liquid_total, 2) }}
+                </td>
+                <td class="py-2 px-3 text-right font-mono">
+                    {{ number_format($grandTotals->amr_powder_total, 2) }}
+                </td>
+                <td
+                    class="py-2 px-3 text-right font-mono {{ $grandTotals->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                    {{ number_format($grandTotals->difference, 2) }}
+                </td>
+            </tr>
         @endif
     </x-data-table>
 </x-app-layout>

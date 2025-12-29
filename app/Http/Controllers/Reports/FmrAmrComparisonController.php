@@ -39,11 +39,14 @@ class FmrAmrComparisonController extends Controller
         $amrPowderAccountId = $accounts[self::AMR_POWDER_ACCOUNT_CODE] ?? null;
         $amrLiquidAccountId = $accounts[self::AMR_LIQUID_ACCOUNT_CODE] ?? null;
 
+        // Generate all months for the selected date range
+        $allMonths = $this->generateAllMonths($startDate, $endDate);
+
         // Build the query to get monthly totals
-        $reportData = collect();
+        $actualData = collect();
 
         if ($fmrAccountId && $amrPowderAccountId && $amrLiquidAccountId) {
-            $reportData = DB::table('journal_entry_details as jed')
+            $actualData = DB::table('journal_entry_details as jed')
                 ->join('journal_entries as je', 'je.id', '=', 'jed.journal_entry_id')
                 ->whereIn('jed.chart_of_account_id', [$fmrAccountId, $amrPowderAccountId, $amrLiquidAccountId])
                 ->where('je.status', 'posted')
@@ -57,17 +60,26 @@ class FmrAmrComparisonController extends Controller
                     DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$amrLiquidAccountId} THEN (jed.debit - jed.credit) ELSE 0 END) as amr_liquid_total")
                 )
                 ->groupBy(DB::raw('YEAR(je.entry_date)'), DB::raw('MONTH(je.entry_date)'))
-                ->orderBy('year')
-                ->orderBy('month')
                 ->get()
-                ->map(function ($row) {
-                    $row->amr_total = $row->amr_powder_total + $row->amr_liquid_total;
-                    $row->difference = $row->amr_total - $row->fmr_total;
-                    $row->month_year = \Carbon\Carbon::createFromDate($row->year, $row->month, 1)->format('F - Y');
-
-                    return $row;
-                });
+                ->keyBy(fn ($row) => $row->year.'-'.$row->month);
         }
+
+        // Merge actual data with all months (show 0.00 for missing months)
+        $reportData = $allMonths->map(function ($monthData) use ($actualData) {
+            $key = $monthData['year'].'-'.$monthData['month'];
+            $actual = $actualData->get($key);
+
+            return (object) [
+                'year' => $monthData['year'],
+                'month' => $monthData['month'],
+                'month_year' => $monthData['month_year'],
+                'fmr_total' => $actual->fmr_total ?? 0,
+                'amr_powder_total' => $actual->amr_powder_total ?? 0,
+                'amr_liquid_total' => $actual->amr_liquid_total ?? 0,
+                'amr_total' => ($actual->amr_powder_total ?? 0) + ($actual->amr_liquid_total ?? 0),
+                'difference' => (($actual->amr_powder_total ?? 0) + ($actual->amr_liquid_total ?? 0)) - ($actual->fmr_total ?? 0),
+            ];
+        });
 
         // Calculate grand totals
         $grandTotals = (object) [
@@ -84,5 +96,27 @@ class FmrAmrComparisonController extends Controller
             'startDate' => $startDate,
             'endDate' => $endDate,
         ]);
+    }
+
+    /**
+     * Generate all months between start and end date.
+     */
+    private function generateAllMonths(string $startDate, string $endDate): \Illuminate\Support\Collection
+    {
+        $start = \Carbon\Carbon::parse($startDate)->startOfMonth();
+        $end = \Carbon\Carbon::parse($endDate)->endOfMonth();
+
+        $months = collect();
+
+        while ($start->lte($end)) {
+            $months->push([
+                'year' => $start->year,
+                'month' => $start->month,
+                'month_year' => $start->format('F - Y'),
+            ]);
+            $start->addMonth();
+        }
+
+        return $months;
     }
 }

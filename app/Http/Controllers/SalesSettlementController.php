@@ -8,6 +8,8 @@ use App\Models\Customer;
 use App\Models\GoodsIssue;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementAdvanceTax;
+use App\Models\SalesSettlementAmrLiquid;
+use App\Models\SalesSettlementAmrPowder;
 use App\Models\SalesSettlementBankTransfer;
 use App\Models\SalesSettlementCashDenomination;
 use App\Models\SalesSettlementCheque;
@@ -778,6 +780,84 @@ class SalesSettlementController extends Controller
             ->orderBy('customer_name')
             ->get(['id', 'customer_code', 'customer_name']);
 
+        // Prepare data for Alpine.js
+        $savedBatchesData = [];
+        foreach ($salesSettlement->items as $item) {
+            foreach ($item->batches as $batch) {
+                $savedBatchesData[$item->product_id][$batch->stock_batch_id] = [
+                    'quantity_sold' => (float) $batch->quantity_sold,
+                    'quantity_returned' => (float) $batch->quantity_returned,
+                    'quantity_shortage' => (float) $batch->quantity_shortage,
+                ];
+            }
+        }
+
+        $creditSalesDecoded = $salesSettlement->creditSales->map(fn ($s) => [
+            'customer_id' => $s->customer_id,
+            'customer_name' => $s->customer?->customer_name ?? 'Unknown',
+            'sale_amount' => (float) $s->sale_amount,
+            'invoice_number' => $s->invoice_number,
+            'notes' => $s->notes,
+        ]);
+
+        $recoveriesDecoded = $salesSettlement->recoveries->map(fn ($r) => [
+            'customer_id' => $r->customer_id,
+            'customer_name' => $r->customer?->customer_name ?? 'Unknown',
+            'recovery_amount' => (float) $r->recovery_amount,
+            'payment_mode' => $r->payment_mode,
+            'reference_number' => $r->reference_number,
+            'notes' => $r->notes,
+        ]);
+
+        $bankTransfersDecoded = $salesSettlement->bankTransfers->map(fn ($t) => [
+            'customer_id' => $t->customer_id,
+            'customer_name' => $t->customer?->customer_name ?? 'Unknown',
+            'bank_account_id' => $t->bank_account_id,
+            'amount' => (float) $t->amount,
+            'reference_number' => $t->reference_number,
+            'transfer_date' => $t->transfer_date,
+        ]);
+
+        $chequesDecoded = $salesSettlement->cheques->map(fn ($c) => [
+            'customer_id' => $c->customer_id,
+            'customer_name' => $c->customer?->customer_name ?? 'Unknown',
+            'bank_account_id' => $c->bank_account_id,
+            'cheque_number' => $c->cheque_number,
+            'amount' => (float) $c->amount,
+            'cheque_date' => $c->cheque_date,
+        ]);
+
+        $advanceTaxesDecoded = $salesSettlement->advanceTaxes->map(fn ($tax) => [
+            'customer_id' => $tax->customer_id,
+            'customer_name' => $tax->customer?->customer_name ?? 'Unknown',
+            'sale_amount' => (float) $tax->sale_amount,
+            'tax_rate' => (float) $tax->tax_rate,
+            'tax_amount' => (float) $tax->tax_amount,
+            'invoice_number' => $tax->invoice_number,
+        ]);
+
+        $amrPowdersDecoded = $salesSettlement->amrPowders->map(fn ($p) => [
+            'product_id' => $p->product_id,
+            'product_name' => $p->product?->product_name ?? 'Unknown',
+            'quantity' => (float) $p->quantity,
+            'amount' => (float) $p->amount,
+        ]);
+
+        $amrLiquidsDecoded = $salesSettlement->amrLiquids->map(fn ($l) => [
+            'product_id' => $l->product_id,
+            'product_name' => $l->product?->product_name ?? 'Unknown',
+            'quantity' => (float) $l->quantity,
+            'amount' => (float) $l->amount,
+        ]);
+
+        $cashDenom = $salesSettlement->cashDenomination;
+
+        $savedExpensesData = $salesSettlement->expenses->map(fn ($e) => [
+            'expense_account_id' => $e->expense_account_id,
+            'amount' => (float) $e->amount,
+            'description' => $e->description,
+        ]);
+
         return view('sales-settlements.edit', [
             'settlement' => $salesSettlement,
             'expenseAccounts' => $expenseAccounts,
@@ -793,6 +873,16 @@ class SalesSettlementController extends Controller
                 ->where('is_active', true)
                 ->orderBy('product_name')
                 ->get(['id', 'product_code', 'product_name']),
+            'savedBatchesData' => $savedBatchesData,
+            'creditSalesDecoded' => $creditSalesDecoded,
+            'recoveriesDecoded' => $recoveriesDecoded,
+            'bankTransfersDecoded' => $bankTransfersDecoded,
+            'chequesDecoded' => $chequesDecoded,
+            'advanceTaxesDecoded' => $advanceTaxesDecoded,
+            'amrPowdersDecoded' => $amrPowdersDecoded,
+            'amrLiquidsDecoded' => $amrLiquidsDecoded,
+            'cashDenom' => $cashDenom,
+            'savedExpensesData' => $savedExpensesData,
         ]);
     }
 

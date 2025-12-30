@@ -37,6 +37,7 @@ class ChartOfAccountSeeder extends Seeder
             ['name' => 'Cash In Hand', 'parent' => 'Current Assets', 'type' => 'Cash', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Cash', 'parent' => 'Cash In Hand', 'type' => 'Cash', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Cheques in Hand', 'parent' => 'Cash In Hand', 'type' => 'Cash', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
+            ['name' => 'Salesman Clearing Account', 'parent' => 'Cash In Hand', 'type' => 'Cash', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Loans and Advances (Assets)', 'parent' => 'Current Assets', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Employee Advances', 'parent' => 'Loans and Advances (Assets)', 'type' => 'Payable', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Securities and Deposits', 'parent' => 'Current Assets', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],

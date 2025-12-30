@@ -13,10 +13,10 @@
                     onchange="this.form.submit()">
                     <option value="">All Time (Custom Dates)</option>
                     @foreach($accountingPeriods as $period)
-                    <option value="{{ $period->id }}" {{ $periodId==$period->id ? 'selected' : '' }}>
-                        {{ $period->name }} ({{ \Carbon\Carbon::parse($period->start_date)->format('M d, Y') }} - {{
+                                    <option value="{{ $period->id }}" {{ $periodId == $period->id ? 'selected' : '' }}>
+                                        {{ $period->name }} ({{ \Carbon\Carbon::parse($period->start_date)->format('M d, Y') }} - {{
                         \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
-                    </option>
+                                    </option>
                     @endforeach
                 </select>
             </div>
@@ -46,10 +46,10 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
-                    <option value="{{ $account->account_code }}" {{ request('filter.account_code')===$account->
+                                    <option value="{{ $account->account_code }}" {{ request('filter.account_code') === $account->
                         account_code ? 'selected' : '' }}>
-                        {{ $account->account_code }} - {{ $account->account_name }}
-                    </option>
+                                        {{ $account->account_code }} - {{ $account->account_name }}
+                                    </option>
                     @endforeach
                 </select>
             </div>
@@ -66,10 +66,10 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
-                    <option value="{{ $account->account_name }}" {{ request('filter.account_name')===$account->
+                                    <option value="{{ $account->account_name }}" {{ request('filter.account_name') === $account->
                         account_name ? 'selected' : '' }}>
-                        {{ $account->account_name }} ({{ $account->account_code }})
-                    </option>
+                                        {{ $account->account_name }} ({{ $account->account_code }})
+                                    </option>
                     @endforeach
                 </select>
             </div>
@@ -106,10 +106,10 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
-                    <option value="{{ $cc->code }}" {{ request('filter.cost_center_code')===$cc->code ? 'selected' : ''
-                        }}>
-                        {{ $cc->code }} - {{ $cc->name }}
-                    </option>
+                        <option value="{{ $cc->code }}" {{ request('filter.cost_center_code') === $cc->code ? 'selected' : ''
+                                                                                }}>
+                            {{ $cc->code }} - {{ $cc->name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -120,10 +120,10 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
-                    <option value="{{ $cc->name }}" {{ request('filter.cost_center_name')===$cc->name ? 'selected' : ''
-                        }}>
-                        {{ $cc->name }} ({{ $cc->code }})
-                    </option>
+                        <option value="{{ $cc->name }}" {{ request('filter.cost_center_name') === $cc->name ? 'selected' : ''
+                                                                                }}>
+                            {{ $cc->name }} ({{ $cc->code }})
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -177,9 +177,9 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($statusOptions as $value => $label)
-                    <option value="{{ $value }}" {{ request('filter.status')===$value ? 'selected' : '' }}>
-                        {{ $label }}
-                    </option>
+                        <option value="{{ $value }}" {{ request('filter.status') === $value ? 'selected' : '' }}>
+                            {{ $label }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -188,29 +188,29 @@
                 <x-label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="-entry_date" {{ request('sort')=='-entry_date' || !request('sort') ? 'selected' : ''
+                    <option value="-entry_date" {{ request('sort') == '-entry_date' || !request('sort') ? 'selected' : ''
                         }}>Entry Date (Newest)</option>
-                    <option value="entry_date" {{ request('sort')=='entry_date' ? 'selected' : '' }}>Entry Date (Oldest)
+                    <option value="entry_date" {{ request('sort') == 'entry_date' ? 'selected' : '' }}>Entry Date (Oldest)
                     </option>
-                    <option value="journal_entry_id" {{ request('sort')=='journal_entry_id' ? 'selected' : '' }}>Journal
+                    <option value="journal_entry_id" {{ request('sort') == 'journal_entry_id' ? 'selected' : '' }}>Journal
                         Entry ID (Asc)</option>
-                    <option value="-journal_entry_id" {{ request('sort')=='-journal_entry_id' ? 'selected' : '' }}>
+                    <option value="-journal_entry_id" {{ request('sort') == '-journal_entry_id' ? 'selected' : '' }}>
                         Journal Entry ID (Desc)</option>
-                    <option value="account_code" {{ request('sort')=='account_code' ? 'selected' : '' }}>Account Code
+                    <option value="account_code" {{ request('sort') == 'account_code' ? 'selected' : '' }}>Account Code
                         (A-Z)</option>
-                    <option value="-account_code" {{ request('sort')=='-account_code' ? 'selected' : '' }}>Account Code
+                    <option value="-account_code" {{ request('sort') == '-account_code' ? 'selected' : '' }}>Account Code
                         (Z-A)</option>
-                    <option value="account_name" {{ request('sort')=='account_name' ? 'selected' : '' }}>Account Name
+                    <option value="account_name" {{ request('sort') == 'account_name' ? 'selected' : '' }}>Account Name
                         (A-Z)</option>
-                    <option value="-account_name" {{ request('sort')=='-account_name' ? 'selected' : '' }}>Account Name
+                    <option value="-account_name" {{ request('sort') == '-account_name' ? 'selected' : '' }}>Account Name
                         (Z-A)</option>
-                    <option value="-debit" {{ request('sort')=='-debit' ? 'selected' : '' }}>Debit (High-Low)</option>
-                    <option value="debit" {{ request('sort')=='debit' ? 'selected' : '' }}>Debit (Low-High)</option>
-                    <option value="-credit" {{ request('sort')=='-credit' ? 'selected' : '' }}>Credit (High-Low)
+                    <option value="-debit" {{ request('sort') == '-debit' ? 'selected' : '' }}>Debit (High-Low)</option>
+                    <option value="debit" {{ request('sort') == 'debit' ? 'selected' : '' }}>Debit (Low-High)</option>
+                    <option value="-credit" {{ request('sort') == '-credit' ? 'selected' : '' }}>Credit (High-Low)
                     </option>
-                    <option value="credit" {{ request('sort')=='credit' ? 'selected' : '' }}>Credit (Low-High)</option>
-                    <option value="status" {{ request('sort')=='status' ? 'selected' : '' }}>Status (A-Z)</option>
-                    <option value="-status" {{ request('sort')=='-status' ? 'selected' : '' }}>Status (Z-A)</option>
+                    <option value="credit" {{ request('sort') == 'credit' ? 'selected' : '' }}>Credit (Low-High)</option>
+                    <option value="status" {{ request('sort') == 'status' ? 'selected' : '' }}>Status (A-Z)</option>
+                    <option value="-status" {{ request('sort') == '-status' ? 'selected' : '' }}>Status (Z-A)</option>
                 </select>
             </div>
 
@@ -218,11 +218,11 @@
                 <x-label for="per_page" value="Show Per Page" />
                 <select id="per_page" name="per_page"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
-                    <option value="25" {{ request('per_page', 25)==25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page')==50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
+                    <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page', 25) == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page') == 250 ? 'selected' : '' }}>250</option>
                 </select>
             </div>
         </div>
@@ -230,71 +230,66 @@
 
     <x-data-table :items="$entries" :headers="[
         ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'Entry Date'],
-        ['label' => 'Reference'],
+        ['label' => 'Date / Ref / CS'],
         ['label' => 'Journal Description'],
         ['label' => 'Account'],
         ['label' => 'Debit', 'align' => 'text-right'],
         ['label' => 'Credit', 'align' => 'text-right'],
-        ['label' => 'Cost Center'],
         ['label' => 'Status', 'align' => 'text-center'],
     ]" emptyMessage="No general ledger entries found.">
         @php
-        $statusClasses = [
-        'posted' => 'bg-emerald-100 text-emerald-700',
-        'draft' => 'bg-yellow-100 text-yellow-700',
-        'void' => 'bg-red-100 text-red-700',
-        ];
+            $statusClasses = [
+                'posted' => 'bg-emerald-100 text-emerald-700',
+                'draft' => 'bg-yellow-100 text-yellow-700',
+                'void' => 'bg-red-100 text-red-700',
+            ];
         @endphp
         @foreach ($entries as $index => $entry)
-        <tr class="border-b border-gray-200 text-sm">
-            <td class="py-1 px-2 text-center">
-                {{ $entries->firstItem() + $index }}
-            </td>
-            <td class="py-1 px-2 whitespace-nowrap">
-                {{ optional($entry->entry_date)->format('d-m-Y') }}
-            </td>
-            <td class="py-1 px-2">
-                <div class="break-words max-w-[8rem]">{{ $entry->reference ?? '—' }}</div>
-            </td>
-            <td class="py-1 px-2">
-                <div class="font-semibold break-words max-w-xs">{{ $entry->journal_description ?? '—' }}</div>
-                <div class="text-xs text-gray-600 break-words max-w-xs">
-                    <abbr class="text-red-700" title="Line Description">LD:</abbr> {{ $entry->line_description ??
-                    $entry->journal_description ?? '—' }}
-                </div>
-            </td>
-            <td class="py-1 px-2">
-                <div class="font-semibold uppercase font-mono">{{ $entry->account_code }}</div>
-                <div class="text-xs text-gray-600">{{ $entry->account_name }}</div>
-            </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format((float) $entry->debit, 2) }}
-            </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format((float) $entry->credit, 2) }}
-            </td>
-            <td class="py-1 px-2">
-                @if ($entry->cost_center_code)
-                <div class="font-semibold uppercase font-mono">{{ $entry->cost_center_code }}</div>
-                <div class="text-xs text-gray-600">{{ $entry->cost_center_name }}</div>
-                @else
-                <span class="text-gray-400">—</span>
-                @endif
-            </td>
-            <td class="py-1 px-2 text-center">
-                @php
-                $status = $entry->status ?? 'draft';
-                $badgeClass = $statusClasses[$status] ?? 'bg-gray-100 text-gray-600';
-                @endphp
-                <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
-                    {{ ucfirst($status) }}
-                </span>
-            </td>
-        </tr>
+            <tr class="border-b border-gray-200 text-sm">
+                <td class="py-1 px-2 text-center">
+                    {{ $entries->firstItem() + $index }}
+                </td>
+                <td class="py-1 px-2 whitespace-nowrap">
+                    {{ optional($entry->entry_date)->format('d-m-Y') }}
+                    <div class="break-words max-w-[8rem]">{{ $entry->reference ?? '—' }}</div>
+                    @if ($entry->cost_center_code)
+                        <div class="font-semibold uppercase font-mono">{{ $entry->cost_center_code }}</div>
+                        <div class="text-xs text-gray-600">{{ $entry->cost_center_name }}</div>
+                    @else
+                        <span class="text-gray-400">—</span>
+                    @endif
+                </td>
+                <td class="py-1 px-2">
+                    <div class="font-semibold break-words max-w-xs">{{ $entry->journal_description ?? '—' }}</div>
+                    <div class="text-xs text-gray-600 break-words max-w-xs">
+                        <abbr class="text-red-700" title="Line Description">LD:</abbr> {{ $entry->line_description ??
+            $entry->journal_description ?? '—' }}
+                    </div>
+                </td>
+                <td class="py-1 px-2">
+                    <div class="font-semibold uppercase font-mono">{{ $entry->account_code }}</div>
+                    <div class="text-xs text-gray-600">{{ $entry->account_name }}</div>
+                </td>
+                <td class="py-1 px-2 text-right font-mono">
+                    {{ number_format((float) $entry->debit, 2) }}
+                </td>
+                <td class="py-1 px-2 text-right font-mono">
+                    {{ number_format((float) $entry->credit, 2) }}
+                </td>
+
+                <td class="py-1 px-2 text-center">
+                    @php
+                        $status = $entry->status ?? 'draft';
+                        $badgeClass = $statusClasses[$status] ?? 'bg-gray-100 text-gray-600';
+                    @endphp
+                    <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
+                        {{ ucfirst($status) }}
+                    </span>
+                </td>
+            </tr>
         @endforeach
         <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
-            <td colspan="5" class="py-2 px-2 text-right">
+            <td colspan="4" class="py-2 px-2 text-right">
                 Page Total ({{ $entries->count() }} rows):
             </td>
             <td class="py-2 px-2 text-right font-mono">

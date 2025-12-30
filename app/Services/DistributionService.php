@@ -148,7 +148,7 @@ class DistributionService
             $totalIssueValue = round($totalIssueValue, 2);
 
             // Create GL transfer entry: Dr 1155 Van Stock, Cr 1151 Stock In Hand
-            $journalEntry = $this->createGoodsIssueJournalEntry($goodsIssue, $totalIssueValue);
+            $journalEntry = $this->createGoodsIssueJournalEntry($goodsIssue, $totalIssueCost);
 
             // Update goods issue status
             $goodsIssue->update([
@@ -181,15 +181,15 @@ class DistributionService
 
     /**
      * Create accounting journal entry for a posted goods issue.
-     * Dr Van Stock (1155) / Cr Stock In Hand (1151) for the selling-price total.
+     * Dr Van Stock (1155) / Cr Stock In Hand (1151) for the cost total.
      */
-    public function createGoodsIssueJournalEntry(GoodsIssue $goodsIssue, float $totalIssueValue)
+    public function createGoodsIssueJournalEntry(GoodsIssue $goodsIssue, float $totalIssueCost)
     {
         try {
-            if ($totalIssueValue <= 0) {
+            if ($totalIssueCost <= 0) {
                 Log::warning('Skipping goods issue JE with zero or negative cost', [
                     'goods_issue_id' => $goodsIssue->id,
-                    'total_cost' => $totalIssueValue,
+                    'total_cost' => $totalIssueCost,
                 ]);
 
                 return null;
@@ -237,7 +237,7 @@ class DistributionService
                 [
                     'line_no' => 1,
                     'account_id' => $vanStock->id,
-                    'debit' => $totalIssueValue,
+                    'debit' => $totalIssueCost,
                     'credit' => 0,
                     'description' => 'Transfer to van stock (vehicle '.$vehicleNumber.'; salesman '.$employeeName.')',
                     'cost_center_id' => $costCenterId,
@@ -246,7 +246,7 @@ class DistributionService
                     'line_no' => 2,
                     'account_id' => $stockInHand->id,
                     'debit' => 0,
-                    'credit' => $totalIssueValue,
+                    'credit' => $totalIssueCost,
                     'description' => 'Transfer from warehouse stock (issued by '.$createdBy.')',
                     'cost_center_id' => $costCenterId,
                 ],
@@ -270,7 +270,7 @@ class DistributionService
             Log::info('Goods Issue JE created', [
                 'goods_issue_id' => $goodsIssue->id,
                 'journal_entry_id' => $result['data']->id ?? null,
-                'amount' => $totalIssueValue,
+                'amount' => $totalIssueCost,
             ]);
 
             return $result['data'];

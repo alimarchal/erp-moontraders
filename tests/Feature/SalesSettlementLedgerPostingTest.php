@@ -148,6 +148,16 @@ it('posts returns to stock in hand and shortages to van stock in settlement jour
         'is_active' => true,
     ]);
 
+    ChartOfAccount::create([
+        'account_code' => '1123',
+        'account_name' => 'Salesman Clearing',
+        'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
+        'normal_balance' => 'debit',
+        'is_group' => false,
+        'is_active' => true,
+    ]);
+
     $stockInHand = ChartOfAccount::create([
         'account_code' => '1151',
         'account_name' => 'Stock In Hand',

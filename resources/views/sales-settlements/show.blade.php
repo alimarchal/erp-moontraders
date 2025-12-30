@@ -785,7 +785,7 @@
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
-                                            <td class="py-1 px-1 text-xs text-black">Recovery (From Customers)</td>
+                                            <td class="py-1 px-1 text-xs text-black">Recovery (Cash)</td>
                                             <td class="py-1 px-1 text-right font-semibold text-xs text-teal-700">
                                                 <div class="flex flex-col items-end">
                                                     <span>{{ number_format($recoveryTotal, 2) }}</span>
@@ -829,7 +829,7 @@
                                         </tr>
                                         <tr class="border-t border-gray-200">
                                             <td class="py-1 px-1 text-xs text-black">
-                                                Actual Physical Cash Collected
+                                                Physical Cash Submitted
                                                 <div class="text-[10px] text-gray-600 italic">
                                                     From Denomination Breakdown
                                                 </div>

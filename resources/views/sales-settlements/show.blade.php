@@ -65,25 +65,29 @@
         $cashSalesAmount = (float) ($settlement->cash_sales_amount ?? 0);
         $cashDenominations = $settlement->cashDenominations->first();
         $cashDenominationTotal = (float) ($cashDenominations?->total_amount ?? 0.0);
-        if ($cashDenominationTotal > 0) {
-            $cashSalesAmount = $cashDenominationTotal;
-        }
 
+        // Recovery Breakdown
         $recoveryCash = (float) $settlement->recoveries->where('payment_method', 'cash')->sum('amount');
         $recoveryBank = (float) $settlement->recoveries->where('payment_method', 'bank_transfer')->sum('amount');
         $recoveryTotal = (float) ($settlement->credit_recoveries ?? 0);
 
+        // Expenses & Taxes
         $expensesTotal = (float) ($settlement->expenses->sum('amount') ?? 0);
-        $totalSaleAmount = $cashSalesAmount + $chequeSalesAmount + $bankSalesAmount + $creditSalesAmount;
+        $advanceTaxTotal = (float) ($settlement->advanceTaxes->sum('tax_amount') ?? 0);
+        $totalDeductions = $expensesTotal + $advanceTaxTotal;
 
-        $totalSale = $netSale + $recoveryTotal;
-        $balance = $totalSale - $creditSalesAmount;
-        $netBalance = $balance - $expensesTotal;
-        $cashReceived = ($cashDenominationTotal > 0 ? $cashDenominationTotal : $cashSalesAmount)
-            + $bankSalesAmount
-            + $chequeSalesAmount;
-        $shortExcess = $cashReceived - $netBalance;
+        // Expected Cash Calculation (Professional Accounting)
+        // Only Cash Sales and Cash Recoveries should be in the salesman's physical wallet
+        $expectedCashGross = $cashSalesAmount + $recoveryCash;
+        $expectedCashNet = $expectedCashGross - $totalDeductions;
 
+        // Actual Physical Cash Collected
+        $actualPhysicalCash = $cashDenominationTotal > 0 ? $cashDenominationTotal : (float) $settlement->cash_collected;
+
+        // Shortage/Excess (Physical Cash vs Expected Cash)
+        $shortExcess = $actualPhysicalCash - $expectedCashNet;
+
+        // Profit Analysis
         $totalCOGS = (float) ($settlement->items->sum('total_cogs') ?? 0);
         $grossProfit = $netSale - $totalCOGS;
         $grossMargin = $netSale > 0 ? ($grossProfit / $netSale) * 100 : 0;
@@ -804,38 +808,37 @@
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200 bg-gray-50">
-                                            <td class="py-1 px-1 text-xs text-black">Expected Cash (Sales + Cash Recoveries)</td>
+                                            <td class="py-1 px-1 text-xs text-black font-semibold">Expected Cash (Cash Sales + Cash Recoveries)</td>
                                             <td class="py-1 px-1 text-right font-semibold text-xs text-black">
-                                                {{ number_format($balance, 2) }}
+                                                {{ number_format($expectedCashGross, 2) }}
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
-                                            <td class="py-1 px-1 text-xs text-red-700">Less: Expenses</td>
+                                            <td class="py-1 px-1 text-xs text-red-700">Less: Expenses & Advance Tax</td>
                                             <td class="py-1 px-1 text-right font-semibold text-xs text-red-700">
-                                                {{ number_format($expensesTotal, 2) }}
+                                                {{ number_format($totalDeductions, 2) }}
                                             </td>
                                         </tr>
                                         <tr class="bg-indigo-50 border-y-2 border-indigo-200">
-                                            <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Expected Cash
-                                                (After Expenses)</td>
+                                            <td class="py-1 px-1 text-xs font-semibold text-indigo-900">Net Expected Cash (Physical)</td>
                                             <td class="py-1 px-1 text-right font-bold text-xs text-indigo-900">
-                                                {{ number_format($netBalance, 2) }}
+                                                {{ number_format($expectedCashNet, 2) }}
                                             </td>
                                         </tr>
                                         <tr class="border-t border-gray-200">
                                             <td class="py-1 px-1 text-xs text-black">
-                                                Cash Received (denomination + bank + cheques)
+                                                Actual Physical Cash Collected
                                                 <div class="text-[10px] text-gray-600 italic">
-                                                    Physical + bank transfers + cheques (sales only)
+                                                    From Denomination Breakdown
                                                 </div>
                                             </td>
                                             <td class="py-1 px-1 text-right font-semibold text-xs text-emerald-700">
-                                                {{ number_format($cashReceived, 2) }}
+                                                {{ number_format($actualPhysicalCash, 2) }}
                                             </td>
                                         </tr>
                                         <tr class="bg-purple-50 border-y-2 border-purple-200">
                                             <td class="py-1 px-1 text-xs font-semibold text-purple-900">
-                                                Short/Excess</td>
+                                                Cash Short/Excess</td>
                                             <td class="py-1 px-1 text-right font-bold text-xs text-purple-900">
                                                 {{ number_format($shortExcess, 2) }}
                                             </td>

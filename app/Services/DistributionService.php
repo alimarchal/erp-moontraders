@@ -676,7 +676,246 @@ class DistributionService
                 : $employeeName;
             $settlementDateFormatted = \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y');
             $settlementReference = $settlement->settlement_number;
-            $totalCOGS = $settlement->items->sum('total_cogs');
+
+            // 1. Credit Sales
+            foreach ($settlement->creditSales as $creditSale) {
+                $creditAmount = (float) $creditSale->sale_amount;
+                if ($creditAmount <= 0) {
+                    continue;
+                }
+
+                $customerName = $creditSale->customer?->customer_name ?? 'Customer';
+                $invoiceNumber = $creditSale->invoice_number ? "Inv: {$creditSale->invoice_number}" : 'Inv: N/A';
+                $creditDescription = "Credit Sales - {$customerName} - {$invoiceNumber} - {$employeeLabel} - {$settlementReference}";
+
+                $addLine(
+                    $accounts['debtors']->id,
+                    $creditAmount,
+                    0,
+                    $creditDescription
+                );
+                $addLine(
+                    $accounts['sales']->id,
+                    0,
+                    $creditAmount,
+                    $creditDescription
+                );
+            }
+
+            // 2. Recoveries Detail
+            // Recoveries - cash (using salesman_clearing)
+            $totalCashRecoveries = $settlement->recoveries
+                ->where('payment_method', 'cash')
+                ->sum('amount');
+
+            if ($totalCashRecoveries > 0) {
+                $addLine(
+                    $accounts['salesman_clearing']->id,
+                    $totalCashRecoveries,
+                    0,
+                    "Cash Recovery from Debtor - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
+                );
+                $addLine(
+                    $accounts['debtors']->id,
+                    0,
+                    $totalCashRecoveries,
+                    "Cash Recovery from Debtor - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
+                );
+            }
+
+            // Recoveries - bank/online
+            $settlement->recoveries
+                ->reject(fn ($recovery) => $recovery->payment_method === 'cash')
+                ->groupBy('bank_account_id')
+                ->each(function ($group) use (&$addLine, $accounts, $employeeLabel, $settlementReference, $settlementDateFormatted): void {
+                    $amount = $group->sum('amount');
+                    $bankAccount = $group->first()->bankAccount;
+                    $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['bank_fallback']->id;
+                    $bankName = $bankAccount?->bank_name ?? 'Bank (Unallocated)';
+
+                    $addLine(
+                        $bankAccountId,
+                        $amount,
+                        0,
+                        "Bank Recovery from Debtor - {$bankName} - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
+                    );
+                    $addLine(
+                        $accounts['debtors']->id,
+                        0,
+                        $amount,
+                        "Bank Recovery from Debtor - {$bankName} - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
+                    );
+                });
+
+            // 3. Cheque Payments (Recoveries and Sales)
+            // Cheque recoveries
+            $totalChequeRecoveries = $settlement->cheques->sum('amount');
+            if ($totalChequeRecoveries > 0) {
+                $addLine(
+                    $accounts['cheques_in_hand']->id,
+                    $totalChequeRecoveries,
+                    0,
+                    "Cheque Recovery from Debtor - {$employeeLabel} - {$settlementReference}"
+                );
+                $addLine(
+                    $accounts['debtors']->id,
+                    0,
+                    $totalChequeRecoveries,
+                    "Cheque Recovery from Debtor - {$employeeLabel} - {$settlementReference}"
+                );
+            }
+
+            // Cheque sales
+            $chequeSalesAmount = $settlement->cheque_sales_amount ?? 0;
+            if ($chequeSalesAmount > 0) {
+                $addLine(
+                    $accounts['cheques_in_hand']->id,
+                    $chequeSalesAmount,
+                    0,
+                    "Cheque Sales (Direct) - {$employeeLabel} - {$settlementReference}"
+                );
+                $addLine(
+                    $accounts['sales']->id,
+                    0,
+                    $chequeSalesAmount,
+                    "Cheque Sales (Direct) - {$employeeLabel} - {$settlementReference}"
+                );
+            }
+
+            // 4. Bank Transfers
+            $settlement->bankTransfers
+                ->groupBy('bank_account_id')
+                ->each(function ($transfers) use (&$addLine, $accounts, $employeeLabel, $settlementReference): void {
+                    $amount = $transfers->sum('amount');
+                    $bankAccount = $transfers->first()->bankAccount;
+                    $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['bank_fallback']->id;
+                    $bankName = $bankAccount?->bank_name ?? 'Bank (Unallocated)';
+
+                    $addLine(
+                        $bankAccountId,
+                        $amount,
+                        0,
+                        "Bank Transfer Sales - {$bankName} - {$employeeLabel} - {$settlementReference}"
+                    );
+                    $addLine(
+                        $accounts['sales']->id,
+                        0,
+                        $amount,
+                        "Bank Transfer Sales - {$bankName} - {$employeeLabel} - {$settlementReference}"
+                    );
+                });
+
+            // 5. Cash Sales (Gross)
+            $cashSalesAmount = $settlement->cash_sales_amount ?? 0;
+            if ($cashSalesAmount > 0) {
+                $addLine(
+                    $accounts['salesman_clearing']->id,
+                    $cashSalesAmount,
+                    0,
+                    "Gross Cash Sales (Total cash invoices) - {$employeeLabel} - {$settlementReference}"
+                );
+                $addLine(
+                    $accounts['sales']->id,
+                    0,
+                    $cashSalesAmount,
+                    "Gross Cash Sales (Total cash invoices) - {$employeeLabel} - {$settlementReference}"
+                );
+            }
+
+            // 6. Expense Detail
+            // Expenses paid from cash (using salesman_clearing)
+            foreach ($settlement->expenses as $expense) {
+                if ($expense->amount > 0 && $expense->expense_account_id) {
+                    $expenseAccountName = $expense->expenseAccount->account_name ?? 'Expense';
+                    $addLine(
+                        $expense->expense_account_id,
+                        $expense->amount,
+                        0,
+                        "Expense: {$expenseAccountName} (Paid from salesman cash) - {$employeeLabel} - {$settlementReference}"
+                    );
+                    $addLine(
+                        $accounts['salesman_clearing']->id,
+                        0,
+                        $expense->amount,
+                        "Expense: {$expenseAccountName} (Paid from salesman cash) - {$employeeLabel} - {$settlementReference}"
+                    );
+                }
+            }
+
+            // Advance tax collected (using salesman_clearing)
+            foreach ($settlement->advanceTaxes as $advanceTax) {
+                if ($advanceTax->amount > 0) {
+                    $customerName = $advanceTax->customer->customer_name ?? 'Customer';
+                    $addLine(
+                        $accounts['advance_tax']->id,
+                        $advanceTax->amount,
+                        0,
+                        "Advance Tax Collected from {$customerName} - {$employeeLabel} - {$settlementReference}"
+                    );
+                    $addLine(
+                        $accounts['salesman_clearing']->id,
+                        0,
+                        $advanceTax->amount,
+                        "Advance Tax Collected from {$customerName} - {$employeeLabel} - {$settlementReference}"
+                    );
+                }
+            }
+
+            // 7. Cash Shortage / Excess Adjustment
+            // This ensures the Salesman Clearing Account (1123) matches the actual physical cash submitted
+            $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries - $settlement->expenses_claimed - $settlement->advanceTaxes->sum('amount');
+            $actualPhysicalCash = (float) $settlement->cash_collected;
+            $cashDifference = round($actualPhysicalCash - $expectedClearingBalance, 2);
+
+            if ($cashDifference < 0) {
+                // Shortage: Dr Write Off / Expense, Cr Salesman Clearing
+                $addLine(
+                    $accounts['misc_expense']->id,
+                    abs($cashDifference),
+                    0,
+                    "Cash Shortage (Expected: {$expectedClearingBalance}, Actual: {$actualPhysicalCash}) - {$employeeLabel} - {$settlementReference}"
+                );
+                $addLine(
+                    $accounts['salesman_clearing']->id,
+                    0,
+                    abs($cashDifference),
+                    "Cash Shortage Adjustment - {$employeeLabel} - {$settlementReference}"
+                );
+            } elseif ($cashDifference > 0) {
+                // Excess: Dr Salesman Clearing, Cr Misc Income (using Write Off as fallback or 4xxx)
+                $addLine(
+                    $accounts['salesman_clearing']->id,
+                    $cashDifference,
+                    0,
+                    "Cash Excess (Expected: {$expectedClearingBalance}, Actual: {$actualPhysicalCash}) - {$employeeLabel} - {$settlementReference}"
+                );
+                $addLine(
+                    $accounts['misc_expense']->id, // Ideally a Misc Income account
+                    0,
+                    $cashDifference,
+                    "Cash Excess Adjustment - {$employeeLabel} - {$settlementReference}"
+                );
+            }
+
+            // 8. Final Cash Deposit (Transfer from Clearing to Main Cash)
+            // After adjustments, the balance in 1123 is exactly the physical cash collected.
+            // We now move it to the main Cash Account (1121).
+            if ($actualPhysicalCash > 0) {
+                $addLine(
+                    $accounts['cash']->id,
+                    $actualPhysicalCash,
+                    0,
+                    "Final Cash Deposit (Physical cash submitted) - {$employeeLabel} - {$settlementReference}"
+                );
+                $addLine(
+                    $accounts['salesman_clearing']->id,
+                    0,
+                    $actualPhysicalCash,
+                    "Final Cash Deposit (Physical cash submitted) - {$employeeLabel} - {$settlementReference}"
+                );
+            }
+
+            // 9. COGS (Moved to end)
             $totalCogsForGl = $settlement->items->reduce(function ($carry, $item) {
                 $itemCogsValue = $item->batches->sum(function ($batch) {
                     return (float) $batch->quantity_sold * (float) $batch->unit_cost;
@@ -688,205 +927,24 @@ class DistributionService
 
                 return $carry + $itemCogsValue;
             }, 0);
-            $cashSalesAmount = $settlement->cash_sales_amount ?? 0;
-            $chequeSalesAmount = $settlement->cheque_sales_amount ?? 0;
-            $bankTransferSalesAmount = $settlement->bank_transfer_amount ?? 0;
 
-            // Recoveries - cash
-            $totalCashRecoveries = $settlement->recoveries
-                ->where('payment_method', 'cash')
-                ->sum('amount');
-
-            if ($totalCashRecoveries > 0) {
-                $addLine(
-                    $accounts['cash']->id,
-                    $totalCashRecoveries,
-                    0,
-                    "Recovery (Cash) - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
-                );
-                $addLine(
-                    $accounts['debtors']->id,
-                    0,
-                    $totalCashRecoveries,
-                    "Recovery (Cash) - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
-                );
-            }
-
-            // Recoveries - bank/online
-            $settlement->recoveries
-                ->reject(fn ($recovery) => $recovery->payment_method === 'cash')
-                ->groupBy('bank_account_id')
-                ->each(function ($group) use (&$addLine, $accounts, $employeeLabel, $settlementReference, $settlementDateFormatted): void {
-                    $amount = $group->sum('amount');
-                    $bankAccount = $group->first()->bankAccount;
-                    $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['cash']->id;
-                    $bankName = $bankAccount?->bank_name ?? 'Bank';
-
-                    $addLine(
-                        $bankAccountId,
-                        $amount,
-                        0,
-                        "Recovery (Bank/Online) - {$bankName} - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
-                    );
-                    $addLine(
-                        $accounts['debtors']->id,
-                        0,
-                        $amount,
-                        "Recovery (Bank/Online) - {$bankName} - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
-                    );
-                });
-
-            // Cheque recoveries
-            $totalChequeRecoveries = $settlement->cheques->sum('amount');
-            if ($totalChequeRecoveries > 0) {
-                $addLine(
-                    $accounts['cheques_in_hand']->id,
-                    $totalChequeRecoveries,
-                    0,
-                    "Recovery (Cheques) - {$employeeLabel} - {$settlementReference}"
-                );
-                $addLine(
-                    $accounts['debtors']->id,
-                    0,
-                    $totalChequeRecoveries,
-                    "Recovery (Cheques) - {$employeeLabel} - {$settlementReference}"
-                );
-            }
-
-            // Credit sales
-            foreach ($settlement->creditSales as $creditSale) {
-                $creditAmount = (float) $creditSale->sale_amount;
-                if ($creditAmount <= 0) {
-                    continue;
-                }
-
-                $customerName = $creditSale->customer?->customer_name ?? 'Customer';
-                $invoiceNumber = $creditSale->invoice_number ? "Invoice: {$creditSale->invoice_number}" : 'Invoice: N/A';
-                $creditDescription = "Sales on credit - {$customerName} - {$invoiceNumber} - {$employeeLabel} - {$settlementReference}";
-
-                $addLine(
-                    $accounts['debtors']->id,
-                    $creditAmount,
-                    0,
-                    $creditDescription
-                );
-                $addLine(
-                    $accounts['sales']->id,
-                    0,
-                    $creditAmount,
-                    $creditDescription
-                );
-            }
-
-            // Sales by tender type
-            if ($cashSalesAmount > 0) {
-                $addLine(
-                    $accounts['cash']->id,
-                    $cashSalesAmount,
-                    0,
-                    "Sales (Cash) - {$employeeLabel} - {$settlementReference}"
-                );
-                $addLine(
-                    $accounts['sales']->id,
-                    0,
-                    $cashSalesAmount,
-                    "Sales (Cash) - {$employeeLabel} - {$settlementReference}"
-                );
-            }
-
-            if ($chequeSalesAmount > 0) {
-                $addLine(
-                    $accounts['cheques_in_hand']->id,
-                    $chequeSalesAmount,
-                    0,
-                    "Sales (Cheques) - {$employeeLabel} - {$settlementReference}"
-                );
-                $addLine(
-                    $accounts['sales']->id,
-                    0,
-                    $chequeSalesAmount,
-                    "Sales (Cheques) - {$employeeLabel} - {$settlementReference}"
-                );
-            }
-
-            $settlement->bankTransfers
-                ->groupBy('bank_account_id')
-                ->each(function ($transfers) use (&$addLine, $accounts, $employeeLabel, $settlementReference): void {
-                    $amount = $transfers->sum('amount');
-                    $bankAccount = $transfers->first()->bankAccount;
-                    $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['cash']->id;
-                    $bankName = $bankAccount?->bank_name ?? 'Bank';
-
-                    $addLine(
-                        $bankAccountId,
-                        $amount,
-                        0,
-                        "Sales (Bank Transfer - {$bankName}) - {$employeeLabel} - {$settlementReference}"
-                    );
-                    $addLine(
-                        $accounts['sales']->id,
-                        0,
-                        $amount,
-                        "Sales (Bank Transfer - {$bankName}) - {$employeeLabel} - {$settlementReference}"
-                    );
-                });
-
-            // Expenses paid from cash
-            foreach ($settlement->expenses as $expense) {
-                if ($expense->amount > 0 && $expense->expense_account_id) {
-                    $expenseAccountName = $expense->expenseAccount->account_name ?? 'Expense';
-                    $addLine(
-                        $expense->expense_account_id,
-                        $expense->amount,
-                        0,
-                        "Expense - {$expenseAccountName} - {$employeeLabel} - {$settlementReference}"
-                    );
-                    $addLine(
-                        $accounts['cash']->id,
-                        0,
-                        $expense->amount,
-                        "Expense paid (Cash) - {$employeeLabel} - {$settlementReference}"
-                    );
-                }
-            }
-
-            // Advance tax collected
-            foreach ($settlement->advanceTaxes as $advanceTax) {
-                if ($advanceTax->amount > 0) {
-                    $customerName = $advanceTax->customer->customer_name ?? 'Customer';
-                    $addLine(
-                        $accounts['advance_tax']->id,
-                        $advanceTax->amount,
-                        0,
-                        "Advance tax collected - {$customerName} - {$employeeLabel} - {$settlementReference}"
-                    );
-                    $addLine(
-                        $accounts['cash']->id,
-                        0,
-                        $advanceTax->amount,
-                        "Advance tax collected - {$employeeLabel} - {$settlementReference}"
-                    );
-                }
-            }
-
-            // Cost of goods sold
             if ($totalCogsForGl > 0) {
                 $addLine(
                     $accounts['cogs']->id,
                     $totalCogsForGl,
                     0,
-                    "Cost of goods sold - {$employeeLabel} - {$settlementReference}"
+                    "Cost of Goods Sold (Inventory consumed) - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['inventory']->id,
                     0,
                     $totalCogsForGl,
-                    "Van stock reduction - goods sold ({$settlementReference})",
+                    "Van Stock Reduction - Goods Sold ({$settlementReference})",
                     6
                 );
             }
 
-            // Returns
+            // 10. Returns (Moved to end)
             $totalReturnValue = $settlement->items->reduce(function ($carry, $item) {
                 $itemReturnValue = $item->batches->sum(function ($batch) {
                     return (float) $batch->quantity_returned * (float) $batch->unit_cost;
@@ -904,19 +962,19 @@ class DistributionService
                     $accounts['stock_in_hand']->id,
                     $totalReturnValue,
                     0,
-                    "Goods returned to warehouse - {$employeeLabel} - {$settlementReference}",
+                    "Goods Returned to Warehouse (Inventory transfer) - {$employeeLabel} - {$settlementReference}",
                     6
                 );
                 $addLine(
                     $accounts['inventory']->id,
                     0,
                     $totalReturnValue,
-                    "Van stock reduction - returns ({$settlementReference})",
+                    "Van Stock Reduction - Returns ({$settlementReference})",
                     6
                 );
             }
 
-            // Shortages
+            // 11. Inventory Shortages (Moved to end)
             $totalShortageValue = $settlement->items->reduce(function ($carry, $item) {
                 $itemShortageValue = $item->batches->sum(function ($batch) {
                     return (float) $batch->quantity_shortage * (float) $batch->unit_cost;
@@ -938,13 +996,13 @@ class DistributionService
                     $accounts['misc_expense']->id,
                     $totalShortageValue,
                     0,
-                    "Inventory shortage/loss - {$employeeLabel} - {$settlementReference}"
+                    "Inventory Shortage/Loss (Van stock discrepancy) - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['inventory']->id,
                     0,
                     $totalShortageValue,
-                    "Van stock reduction - shortage ({$settlementReference})",
+                    "Van Stock Reduction - Shortage ({$settlementReference})",
                     6
                 );
             }
@@ -952,7 +1010,7 @@ class DistributionService
             $journalEntryData = [
                 'entry_date' => $settlement->settlement_date,
                 'reference' => $settlement->settlement_number,
-                'description' => "Sales settlement - {$employeeLabel} - {$settlementDateFormatted}",
+                'description' => "Consolidated Sales Settlement - {$employeeLabel} - {$settlementDateFormatted}",
                 'reference_type' => 'App\\Models\\SalesSettlement',
                 'reference_id' => $settlement->id,
                 'lines' => $lines,
@@ -987,6 +1045,8 @@ class DistributionService
             // Cash & equivalents
             'cash' => \App\Models\ChartOfAccount::where('account_code', '1121')->first(),
             'cheques_in_hand' => \App\Models\ChartOfAccount::where('account_code', '1122')->first(),
+            'salesman_clearing' => \App\Models\ChartOfAccount::where('account_code', '1123')->first(),
+            'bank_fallback' => \App\Models\ChartOfAccount::where('account_code', '1171')->first(),
             'debtors' => \App\Models\ChartOfAccount::where('account_code', '1111')->first(),
             'earnest_money' => \App\Models\ChartOfAccount::where('account_code', '1141')->first(),
             'advance_tax' => \App\Models\ChartOfAccount::where('account_code', '1161')->first(),
@@ -1009,7 +1069,7 @@ class DistributionService
      */
     protected function validateRequiredAccounts(array $accounts): bool
     {
-        $required = ['cash', 'debtors', 'stock_in_hand', 'inventory', 'sales', 'cogs'];
+        $required = ['cash', 'debtors', 'stock_in_hand', 'inventory', 'sales', 'cogs', 'salesman_clearing'];
         foreach ($required as $key) {
             if (! isset($accounts[$key]) || ! $accounts[$key]) {
                 return false;

@@ -413,19 +413,18 @@ class SalesSettlementController extends Controller
                 }
             }
 
-            // Cash sales include only physical cash from denominations
-            $cashSalesAmount = $denomTotal;
+            // Calculate Gross Cash Sales = Total Sales Value - Credit - Cheque - Bank
+            // This is the revenue that should be recorded in the GL
+            $grossCashSales = $totalSalesValue - ($request->credit_sales_amount ?? 0) - $totalCheques - $totalBankTransfers;
 
-            $totalSalesAmount = $cashSalesAmount +
-                $totalCheques +
-                $totalBankTransfers +
-                ($request->credit_sales_amount ?? 0) +
-                $totalRecoveries;
+            // Cash sales field should store the GROSS amount for revenue tracking
+            $cashSalesAmount = $grossCashSales;
 
-            // Cash collected is now strictly physical cash from denominations
+            // Total Sales Amount is the total revenue from items sold
+            $totalSalesAmount = $totalSalesValue;
+
+            // Cash collected is strictly physical cash from denominations (Net)
             $cashCollected = $denomTotal;
-
-            $cashToDeposit = $cashCollected + $cashRecoveries - ($request->expenses_claimed ?? 0);
 
             // Calculate total expenses from the expenses array (dynamic from Alpine.js)
             $totalExpenses = 0;
@@ -434,6 +433,11 @@ class SalesSettlementController extends Controller
                     $totalExpenses += floatval($expense['amount'] ?? 0);
                 }
             }
+
+            // Cash to deposit is what the salesman actually hands over (Physical Cash + Cash Recoveries - Expenses)
+            // Wait, cashRecoveries are already part of the physical cash if he collected them and didn't spend them.
+            // The professional formula for cash to deposit is simply the physical cash he has.
+            $cashToDeposit = $cashCollected;
 
             // Create sales settlement
             $settlement = SalesSettlement::create([

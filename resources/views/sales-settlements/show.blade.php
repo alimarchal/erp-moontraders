@@ -70,11 +70,13 @@
         $recoveryCash = (float) $settlement->recoveries->where('payment_method', 'cash')->sum('amount');
         $recoveryBank = (float) $settlement->recoveries->where('payment_method', 'bank_transfer')->sum('amount');
         $recoveryTotal = (float) ($settlement->credit_recoveries ?? 0);
+        $totalSale = $netSale + $recoveryTotal;
+        $totalSaleAmount = $totalSale;
 
         // Expenses & Taxes
-        $expensesTotal = (float) ($settlement->expenses->sum('amount') ?? 0);
+        $totalExpenses = (float) ($settlement->expenses->sum('amount') ?? 0);
         $advanceTaxTotal = (float) ($settlement->advanceTaxes->sum('tax_amount') ?? 0);
-        $totalDeductions = $expensesTotal + $advanceTaxTotal;
+        $totalDeductions = $totalExpenses + $advanceTaxTotal;
 
         // Expected Cash Calculation (Professional Accounting)
         // Only Cash Sales and Cash Recoveries should be in the salesman's physical wallet
@@ -91,7 +93,7 @@
         $totalCOGS = (float) ($settlement->items->sum('total_cogs') ?? 0);
         $grossProfit = $netSale - $totalCOGS;
         $grossMargin = $netSale > 0 ? ($grossProfit / $netSale) * 100 : 0;
-        $netProfit = $grossProfit - $expensesTotal;
+        $netProfit = $grossProfit - $totalExpenses;
         $netMargin = $netSale > 0 ? ($netProfit / $netSale) * 100 : 0;
 
         $valueTotals = [
@@ -1002,7 +1004,7 @@
                                             <td style="padding: 3px 6px;">Total Expenses</td>
                                             <td
                                                 style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
-                                                {{ number_format($expensesTotal, 0) }}</td>
+                                                {{ number_format($totalExpenses, 0) }}</td>
                                             <td style="padding: 3px 6px; text-align: right;">-
                                             </td>
                                         </tr>
@@ -1056,7 +1058,7 @@
                                             </td>
                                             <td
                                                 style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
-                                                {{ number_format($expensesTotal, 0) }}</td>
+                                                {{ number_format($totalExpenses, 0) }}</td>
                                         </tr>
                                     </tbody>
                                     <tfoot>
@@ -1121,7 +1123,7 @@
                                             <td style="padding: 3px 6px;">Total Expenses</td>
                                             <td
                                                 style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
-                                                {{ number_format($expensesTotal, 0) }}
+                                                {{ number_format($totalExpenses, 0) }}
                                             </td>
                                         </tr>
                                     </tbody>

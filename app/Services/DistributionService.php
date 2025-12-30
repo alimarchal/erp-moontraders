@@ -824,8 +824,9 @@ class DistributionService
 
             // 6. Expense Detail
             // Expenses paid from cash (using salesman_clearing)
+            // We skip Advance Tax (ID 20) here because it's handled separately below for better descriptions
             foreach ($settlement->expenses as $expense) {
-                if ($expense->amount > 0 && $expense->expense_account_id) {
+                if ($expense->amount > 0 && $expense->expense_account_id && $expense->expense_account_id != 20) {
                     $expenseAccountName = $expense->expenseAccount->account_name ?? 'Expense';
                     $addLine(
                         $expense->expense_account_id,
@@ -844,18 +845,18 @@ class DistributionService
 
             // Advance tax collected (using salesman_clearing)
             foreach ($settlement->advanceTaxes as $advanceTax) {
-                if ($advanceTax->amount > 0) {
+                if ($advanceTax->tax_amount > 0) {
                     $customerName = $advanceTax->customer->customer_name ?? 'Customer';
                     $addLine(
                         $accounts['advance_tax']->id,
-                        $advanceTax->amount,
+                        $advanceTax->tax_amount,
                         0,
                         "Advance Tax Collected from {$customerName} - {$employeeLabel} - {$settlementReference}"
                     );
                     $addLine(
                         $accounts['salesman_clearing']->id,
                         0,
-                        $advanceTax->amount,
+                        $advanceTax->tax_amount,
                         "Advance Tax Collected from {$customerName} - {$employeeLabel} - {$settlementReference}"
                     );
                 }
@@ -863,7 +864,8 @@ class DistributionService
 
             // 7. Cash Shortage / Excess Adjustment
             // This ensures the Salesman Clearing Account (1123) matches the actual physical cash submitted
-            $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries - $settlement->expenses_claimed - $settlement->advanceTaxes->sum('amount');
+            // Note: settlement->expenses->sum('amount') already includes Advance Tax and AMR from the UI
+            $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries - $settlement->expenses->sum('amount');
             $actualPhysicalCash = (float) $settlement->cash_collected;
             $cashDifference = round($actualPhysicalCash - $expectedClearingBalance, 2);
 

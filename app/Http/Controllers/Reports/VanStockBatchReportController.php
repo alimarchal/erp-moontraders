@@ -30,8 +30,7 @@ class VanStockBatchReportController extends Controller
                         WHEN movement_type = 'shortage' THEN quantity 
                         ELSE 0 
                     END
-                ) as quantity_on_hand"),
-                DB::raw("MAX(unit_cost) as last_unit_cost")
+                ) as quantity_on_hand")
             )
             ->whereNotNull('vehicle_id')
             ->groupBy('vehicle_id', 'product_id', 'stock_batch_id')
@@ -51,13 +50,22 @@ class VanStockBatchReportController extends Controller
 
         $totals = [
             'total_quantity' => 0,
-            'total_value' => 0,
+            'total_value_cost' => 0,
+            'total_value_selling' => 0,
         ];
 
         foreach ($stocks as $vehicleStocks) {
             foreach ($vehicleStocks as $stock) {
+                $batch = $stock->stockBatch;
+                $sellingPrice = $batch->is_promotional ? ($batch->promotional_selling_price ?? $batch->selling_price) : $batch->selling_price;
+                
                 $totals['total_quantity'] += $stock->quantity_on_hand;
-                $totals['total_value'] += $stock->quantity_on_hand * $stock->last_unit_cost;
+                $totals['total_value_cost'] += $stock->quantity_on_hand * ($batch->unit_cost ?? 0);
+                $totals['total_value_selling'] += $stock->quantity_on_hand * ($sellingPrice ?? 0);
+                
+                // Attach calculated prices to the stock object for the view
+                $stock->calculated_selling_price = $sellingPrice;
+                $stock->calculated_unit_cost = $batch->unit_cost ?? 0;
             }
         }
 

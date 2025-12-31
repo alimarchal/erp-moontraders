@@ -78,6 +78,7 @@ class DistributionService
                         'product_id' => $item->product_id,
                         'stock_batch_id' => $batch->id,
                         'warehouse_id' => $goodsIssue->warehouse_id,
+                        'vehicle_id' => $goodsIssue->vehicle_id,
                         'quantity' => -$qtyFromBatch,
                         'uom_id' => $item->uom_id,
                         'unit_cost' => $batch->unit_cost,
@@ -479,6 +480,7 @@ class DistributionService
                             'product_id' => $item->product_id,
                             'stock_batch_id' => $batch->id,
                             'warehouse_id' => $settlement->warehouse_id,
+                            'vehicle_id' => $settlement->vehicle_id,
                             'quantity' => -$soldQty,
                             'uom_id' => $uomId,
                             'unit_cost' => $itemBatch->unit_cost,
@@ -497,6 +499,7 @@ class DistributionService
                             'product_id' => $item->product_id,
                             'stock_batch_id' => $batch->id,
                             'warehouse_id' => $settlement->warehouse_id,
+                            'vehicle_id' => $settlement->vehicle_id,
                             'quantity' => $returnedQty, // Positive for return
                             'uom_id' => $uomId,
                             'unit_cost' => $itemBatch->unit_cost,
@@ -547,6 +550,7 @@ class DistributionService
                             'product_id' => $item->product_id,
                             'stock_batch_id' => $batch->id,
                             'warehouse_id' => $settlement->warehouse_id,
+                            'vehicle_id' => $settlement->vehicle_id,
                             'quantity' => -$shortageQty, // Negative for loss
                             'uom_id' => $uomId,
                             'unit_cost' => $itemBatch->unit_cost,

@@ -215,6 +215,23 @@
                             </svg>
                         </div>
                     </a>
+
+                    <!-- Van Stock by Batch Report Card -->
+                    <a href="{{ route('reports.van-stock-batch.index') }}"
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-4 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8 text-gray-800">📦</div>
+                                <div class="mt-1 text-base font-extrabold text-gray-700">Van Stock by Batch</div>
+                                <div class="text-xs text-gray-500 mt-1">Batch-level Details</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-indigo-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M21 7.5l-9-5.25L3 7.5m18 0l-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9" />
+                            </svg>
+                        </div>
+                    </a>
                 </div>
             </div>
 

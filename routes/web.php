@@ -25,6 +25,7 @@ use App\Http\Controllers\Reports\FmrAmrComparisonController;
 use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\TrialBalanceController;
+use App\Http\Controllers\Reports\VanStockBatchReportController;
 use App\Http\Controllers\Reports\VanStockLedgerController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\SalesSettlementController;
@@ -125,6 +126,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/summary', [VanStockLedgerController::class, 'summary'])->name('summary');
         Route::get('/vehicle/{vehicle}', [VanStockLedgerController::class, 'vehicleLedger'])->name('vehicle-ledger');
     });
+
+    // Van Stock by Batch Report
+    Route::get('reports/van-stock-batch', [VanStockBatchReportController::class, 'index'])->name('reports.van-stock-batch.index');
 
     // Supplier Payment Routes
     Route::resource('supplier-payments', SupplierPaymentController::class);

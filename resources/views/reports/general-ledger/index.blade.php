@@ -249,7 +249,7 @@
                 <td class="py-1 px-2 text-center">
                     {{ $entries->firstItem() + $index }}
                 </td>
-                <td class="py-1 px-2 whitespace-nowrap">
+                <td class="py-1 px-2 break-words max-w-xs">
                     {{ optional($entry->entry_date)->format('d-m-Y') }}
                     <div class="break-words max-w-[8rem]">{{ $entry->reference ?? '—' }}</div>
                     @if ($entry->cost_center_code)

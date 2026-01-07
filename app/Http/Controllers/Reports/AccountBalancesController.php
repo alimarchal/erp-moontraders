@@ -17,8 +17,8 @@ class AccountBalancesController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page', 100);
-        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 100;
+        $perPage = $request->input('per_page', 200);
+        $perPage = \in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 200;
 
         // Handle date and period selection
         $periodId = $request->input('accounting_period_id');
@@ -37,8 +37,8 @@ class AccountBalancesController extends Controller
             $asOfDate = now()->format('Y-m-d');
         }
 
-        // Build query with date filtering
-        $balancesQuery = ChartOfAccount::select([
+        // Build query with date filtering - Only show posting accounts (non-group accounts)
+        $balancesQuery = ChartOfAccount::query()->select([
             'chart_of_accounts.id as account_id',
             'chart_of_accounts.account_code',
             'chart_of_accounts.account_name',
@@ -58,6 +58,7 @@ class AccountBalancesController extends Controller
                 $join->on('journal_entry_details.journal_entry_id', '=', 'journal_entries.id')
                     ->where('journal_entries.status', '=', 'posted');
             })
+            ->where('chart_of_accounts.is_group', false)
             ->groupBy([
                 'chart_of_accounts.id',
                 'chart_of_accounts.account_code',
@@ -81,7 +82,6 @@ class AccountBalancesController extends Controller
                 // Exact matches
                 AllowedFilter::exact('normal_balance', 'chart_of_accounts.normal_balance'),
                 AllowedFilter::exact('is_active', 'chart_of_accounts.is_active'),
-                AllowedFilter::exact('is_group', 'chart_of_accounts.is_group'),
 
                 // Numeric ranges
                 AllowedFilter::callback('balance_min', function ($query, $value) use ($asOfDate) {
@@ -114,20 +114,21 @@ class AccountBalancesController extends Controller
             ->withQueryString();
 
         // Get distinct values for dropdowns
-        $accountTypes = ChartOfAccount::select('account_types.type_name as account_type')
+        $accountTypes = ChartOfAccount::query()->select('account_types.type_name as account_type')
             ->join('account_types', 'chart_of_accounts.account_type_id', '=', 'account_types.id')
             ->distinct()
             ->whereNotNull('account_types.type_name')
             ->orderBy('account_types.type_name')
             ->pluck('account_type');
 
-        $accounts = ChartOfAccount::select('id as account_id', 'account_code', 'account_name')
+        $accounts = ChartOfAccount::query()->select('id as account_id', 'account_code', 'account_name')
+            ->where('is_group', false)
             ->whereNotNull('account_code')
             ->orderBy('account_code')
             ->get();
 
         // Get accounting periods for dropdown
-        $accountingPeriods = AccountingPeriod::orderBy('start_date', 'desc')->get();
+        $accountingPeriods = AccountingPeriod::query()->orderBy('start_date', 'desc')->get();
 
         return view('reports.account-balances.index', [
             'balances' => $balances,

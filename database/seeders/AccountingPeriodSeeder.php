@@ -22,7 +22,7 @@ class AccountingPeriodSeeder extends Seeder
         
         $periods = [];
         
-        for ($year = 2024; $year <= 2030; $year++) {
+        for ($year = 2025; $year <= 2026; $year++) {
             $fiscalYearStatus = $this->determineYearStatus($year, $currentYear);
             
             $periods[] = [

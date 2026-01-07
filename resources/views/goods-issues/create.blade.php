@@ -74,24 +74,18 @@
                                     @endforeach
                                 </select>
                             </div>
-
-                            <div class="md:col-span-4">
-                                <x-label for="notes" value="Notes" />
-                                <textarea id="notes" name="notes" rows="2"
-                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">{{ old('notes') }}</textarea>
                             </div>
-                        </div>
 
-                        <hr class="my-6 border-gray-200">
 
+                       
                         <x-form-table title="Products to Issue" :headers="[
                             ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
                             ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '120px'],
                             ['label' => 'Quantity<br>Issued', 'align' => 'text-center', 'width' => '120px'],
                             ['label' => 'UOM', 'align' => 'text-center', 'width' => '120px'],
-                            ['label' => 'Price<br>Breakdown', 'align' => 'text-left', 'width' => '250px'],
+                            ['label' => 'Price<br>Breakdown', 'align' => 'text-left', 'width' => '200px'],
                             ['label' => 'Total<br>Value', 'align' => 'text-right', 'width' => '140px'],
-                            ['label' => 'Action', 'align' => 'text-center', 'width' => '100px'],
+                            ['label' => 'Action', 'align' => 'text-center', 'width' => '8-px'],
                         ]">
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(item, index) in items" :key="index">
@@ -186,6 +180,20 @@
                                 </tr>
                             </tfoot>
                         </x-form-table>
+
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                             <hr class="my-6 border-gray-200">
+
+                            <div class="md:col-span-4">
+                                <x-label for="notes" value="Notes" />
+                                <textarea id="notes" name="notes" rows="2"
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">{{ old('notes') }}</textarea>
+                            </div>
+                        </div>
+
+
+                        
 
                         <div class="flex items-center justify-end mt-6">
                             <x-button type="button" @click="validateAndSubmit()">

@@ -36,8 +36,11 @@ class IncomeStatementController extends Controller
         }
         // Default to current open period if no dates or period specified
         else {
+            $today = now()->toDateString();
             $currentPeriod = AccountingPeriod::where('status', 'open')
-                ->orderBy('start_date', 'desc')
+                ->whereDate('start_date', '<=', $today)
+                ->whereDate('end_date', '>=', $today)
+                ->orderBy('start_date', 'desc') // Prefer the most specific (e.g. Quarter vs Year)
                 ->first();
 
             if ($currentPeriod) {

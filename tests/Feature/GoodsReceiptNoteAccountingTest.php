@@ -77,8 +77,8 @@ beforeEach(function () {
     $this->creditorsAccount = ChartOfAccount::create([
         'account_type_id' => $liabilityType->id,
         'currency_id' => $currency->id,
-        'account_code' => '2110',
-        'account_name' => 'Accounts Payable',
+        'account_code' => '2111',
+        'account_name' => 'Creditors',
         'normal_balance' => 'credit',
         'is_active' => true,
     ]);

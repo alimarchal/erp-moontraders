@@ -37,7 +37,7 @@ class AccountBalancesController extends Controller
             $asOfDate = now()->format('Y-m-d');
         }
 
-        // Build query with date filtering - Only show posting accounts (non-group accounts)
+        // Build query with date filtering - Show all accounts (posting and non-posting)
         $balancesQuery = ChartOfAccount::query()->select([
             'chart_of_accounts.id as account_id',
             'chart_of_accounts.account_code',
@@ -50,7 +50,15 @@ class AccountBalancesController extends Controller
             'chart_of_accounts.is_group',
             DB::raw("COALESCE(SUM(CASE WHEN journal_entries.entry_date <= '{$asOfDate}' THEN journal_entry_details.debit ELSE 0 END), 0) as total_debits"),
             DB::raw("COALESCE(SUM(CASE WHEN journal_entries.entry_date <= '{$asOfDate}' THEN journal_entry_details.credit ELSE 0 END), 0) as total_credits"),
-            DB::raw("COALESCE(SUM(CASE WHEN journal_entries.entry_date <= '{$asOfDate}' THEN journal_entry_details.debit - journal_entry_details.credit ELSE 0 END), 0) as balance"),
+            DB::raw("COALESCE(SUM(CASE 
+                WHEN journal_entries.entry_date <= '{$asOfDate}' THEN 
+                    CASE 
+                        WHEN chart_of_accounts.normal_balance = 'debit' THEN journal_entry_details.debit - journal_entry_details.credit
+                        WHEN chart_of_accounts.normal_balance = 'credit' THEN journal_entry_details.credit - journal_entry_details.debit
+                        ELSE journal_entry_details.debit - journal_entry_details.credit
+                    END
+                ELSE 0 
+            END), 0) as balance"),
         ])
             ->leftJoin('account_types', 'chart_of_accounts.account_type_id', '=', 'account_types.id')
             ->leftJoin('journal_entry_details', 'chart_of_accounts.id', '=', 'journal_entry_details.chart_of_account_id')
@@ -58,7 +66,6 @@ class AccountBalancesController extends Controller
                 $join->on('journal_entry_details.journal_entry_id', '=', 'journal_entries.id')
                     ->where('journal_entries.status', '=', 'posted');
             })
-            ->where('chart_of_accounts.is_group', false)
             ->groupBy([
                 'chart_of_accounts.id',
                 'chart_of_accounts.account_code',

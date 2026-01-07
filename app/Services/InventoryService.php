@@ -115,7 +115,7 @@ class InventoryService
      * Dr. Inventory - Main (Asset) - Account 1151 Stock In Hand (actual cost; taxes included in cost)
      * Dr/Cr. Round Off - Account 5271 (rounding difference between invoice and actual cost)
      * Cr. FMR Allowance - Account 4210 (Liquid) or 4220 (Powder) (income/contra-cost, if any)
-     * Cr. Accounts Payable (Liability) - Account 2110 Accounts Payable (amount payable to supplier)
+     * Cr. Accounts Payable (Liability) - Account 2111 Creditors (amount payable to supplier)
      */
     protected function createGrnJournalEntry(GoodsReceiptNote $grn)
     {
@@ -125,7 +125,7 @@ class InventoryService
 
             // Find required accounts from Chart of Accounts
             $inventoryAccount = ChartOfAccount::where('account_code', '1151')->first();
-            $apAccount = ChartOfAccount::where('account_code', '2110')->first();
+            $apAccount = ChartOfAccount::where('account_code', '2111')->first();
             $fmrAllowanceLiquidAccount = ChartOfAccount::where('account_code', '4210')->first();
             $fmrAllowancePowderAccount = ChartOfAccount::where('account_code', '4220')->first();
             $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
@@ -138,7 +138,7 @@ class InventoryService
             }
 
             if (! $apAccount) {
-                Log::warning('Accounts Payable account (2110 - Accounts Payable) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
+                Log::warning('Accounts Payable account (2111 - Creditors) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
@@ -297,7 +297,7 @@ class InventoryService
      * Create Reversing Journal Entry for GRN reversal
      *
      * Reversal Entries (opposite of posting entries):
-     * Dr. Accounts Payable (Liability) - Account 2110 Accounts Payable
+     * Dr. Accounts Payable (Liability) - Account 2111 Creditors
      * Dr. FMR Allowance - Account 4210 (Liquid) or 4220 (Powder) (reverse the credit, if any)
      * Cr. Inventory (Asset) - Account 1151 Stock In Hand
      * Dr/Cr. Round Off - Account 5271 (reverse rounding from posting)
@@ -310,7 +310,7 @@ class InventoryService
 
             // Find required accounts from Chart of Accounts
             $inventoryAccount = ChartOfAccount::where('account_code', '1151')->first();
-            $apAccount = ChartOfAccount::where('account_code', '2110')->first();
+            $apAccount = ChartOfAccount::where('account_code', '2111')->first();
             $fmrAllowanceLiquidAccount = ChartOfAccount::where('account_code', '4210')->first();
             $fmrAllowancePowderAccount = ChartOfAccount::where('account_code', '4220')->first();
             $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();

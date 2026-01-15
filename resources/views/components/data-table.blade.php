@@ -17,7 +17,7 @@
                         <tr class="bg-green-800 text-white uppercase text-sm">
                             @foreach($headers as $header)
                                 <th class="py-2 px-2 {{ $header['align'] ?? 'text-left' }}">
-                                    {{ $header['label'] }}
+                                    {!! $header['label'] !!}
                                 </th>
                             @endforeach
                         </tr>

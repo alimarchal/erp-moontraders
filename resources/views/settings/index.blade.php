@@ -21,6 +21,12 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="grid grid-cols-12 gap-6">
 
+                <!-- Access & Identity Section -->
+                <div class="col-span-12 mt-4 first:mt-0">
+                    <h3 class="text-xl font-bold text-gray-800 border-b-2 border-indigo-500 pb-2 mb-4">Access & Identity
+                    </h3>
+                </div>
+
                 @can('user-list')
                     <!-- Users Module Card -->
                     <a href="{{ route('users.index') }}"
@@ -29,6 +35,7 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\User::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Users</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Manage system users & logins</div>
                             </div>
                             <svg class="h-16 w-16 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -48,6 +55,7 @@
                                 <div class="text-3xl font-bold leading-8">{{ \Spatie\Permission\Models\Role::count() }}
                                 </div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Roles</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Permissions & access levels</div>
                             </div>
                             <svg class="h-16 w-16 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -58,7 +66,53 @@
                     </a>
                 @endcan
 
-                @can('account-type-list')
+                @can('permission-list')
+                    <!-- Permissions Module Card -->
+                    <a href="{{ route('permissions.index') }}"
+                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8">
+                                    {{ \Spatie\Permission\Models\Permission::count() }}
+                                </div>
+                                <div class="mt-1 text-base font-extrabold text-black uppercase">Permissions</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Fine-grained access control</div>
+                            </div>
+                            <svg class="h-16 w-16 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z">
+                                </path>
+                            </svg>
+                        </div>
+                    </a>
+                @endcan
+
+                @can('company-list')
+                    <!-- Companies Module Card -->
+                    <a href="{{ route('companies.index') }}"
+                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8">{{ \App\Models\Company::count() }}</div>
+                                <div class="mt-1 text-base font-extrabold text-black uppercase">Companies</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Legal entities & details</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-indigo-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15 19.1276C15.8329 19.37 16.7138 19.5 17.625 19.5C19.1037 19.5 20.5025 19.1576 21.7464 18.5478C21.7488 18.4905 21.75 18.4329 21.75 18.375C21.75 16.0968 19.9031 14.25 17.625 14.25C16.2069 14.25 14.956 14.9655 14.2136 16.0552M15 19.1276V19.125C15 18.0121 14.7148 16.9658 14.2136 16.0552M15 19.1276C15 19.1632 14.9997 19.1988 14.9991 19.2343C13.1374 20.3552 10.9565 21 8.625 21C6.29353 21 4.11264 20.3552 2.25092 19.2343C2.25031 19.198 2.25 19.1615 2.25 19.125C2.25 15.6042 5.10418 12.75 8.625 12.75C11.0329 12.75 13.129 14.085 14.2136 16.0552M12 6.375C12 8.23896 10.489 9.75 8.625 9.75C6.76104 9.75 5.25 8.23896 5.25 6.375C5.25 4.51104 6.76104 3 8.625 3C10.489 3 12 4.51104 12 6.375ZM20.25 8.625C20.25 10.0747 19.0747 11.25 17.625 11.25C16.1753 11.25 15 10.0747 15 8.625C15 7.17525 16.1753 6 17.625 6C19.0747 6 20.25 7.17525 20.25 8.625Z" />
+                            </svg>
+                        </div>
+                    </a>
+                @endcan
+
+                <!-- Financial Core Section -->
+                <div class="col-span-12 mt-6">
+                    <h3 class="text-xl font-bold text-gray-800 border-b-2 border-green-500 pb-2 mb-4">Financial Core
+                    </h3>
+                </div>
+
+                @can('chart-of-account-list')
                     <!-- Account Types Module Card -->
                     <a href="{{ route('account-types.index') }}"
                         class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
@@ -66,6 +120,8 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\AccountType::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Account Types</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Define categories for your ledger
+                                </div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-blue-600">
@@ -90,6 +146,7 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\Currency::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Currencies</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Multi-currency setup & rates</div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-yellow-600">
@@ -107,7 +164,9 @@
                         <div class="p-5 flex justify-between">
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\AccountingPeriod::count() }}</div>
-                                <div class="mt-1 text-base font-extrabold text-black uppercase">Accounting Periods</div>
+                                <div class="mt-1 text-base font-extrabold text-black uppercase">Fiscal Periods</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Manage financial months & years
+                                </div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-emerald-600">
@@ -118,6 +177,71 @@
                     </a>
                 @endcan
 
+                @can('chart-of-account-list')
+                    <!-- Chart of Accounts Module Card -->
+                    <a href="{{ route('chart-of-accounts.index') }}"
+                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8">{{ \App\Models\ChartOfAccount::count() }}</div>
+                                <div class="mt-1 text-base font-extrabold text-black uppercase">Chart of Accounts</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Master list of all ledger accounts
+                                </div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-green-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3.75 3V14.25C3.75 15.4926 4.75736 16.5 6 16.5H8.25M3.75 3H2.25M3.75 3H20.25M20.25 3H21.75M20.25 3V14.25C20.25 15.4926 19.2426 16.5 18 16.5H15.75M8.25 16.5H15.75M8.25 16.5L7.25 19.5M15.75 16.5L16.75 19.5M16.75 19.5L17.25 21M16.75 19.5H7.25M7.25 19.5L6.75 21M7.5 12L10.5 9L12.6476 11.1476C13.6542 9.70301 14.9704 8.49023 16.5 7.60539" />
+                            </svg>
+                        </div>
+                    </a>
+                @endcan
+
+                @can('bank-account-list')
+                    <!-- Bank Accounts Module Card -->
+                    <a href="{{ route('bank-accounts.index') }}"
+                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8">{{ \App\Models\BankAccount::count() }}</div>
+                                <div class="mt-1 text-base font-extrabold text-black uppercase">Bank Accounts</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Company bank accounts & balances
+                                </div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-teal-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M2.25 8.25H21.75M2.25 9H21.75M9.75 15.75H14.25M7.5 12H16.5M6.75 18.75H17.25C18.4926 18.75 19.5 17.7426 19.5 16.5V7.5C19.5 6.25736 18.4926 5.25 17.25 5.25H6.75C5.50736 5.25 4.5 6.25736 4.5 7.5V16.5C4.5 17.7426 5.50736 18.75 6.75 18.75Z" />
+                            </svg>
+                        </div>
+                    </a>
+                @endcan
+
+                @can('cost-center-list')
+                    <!-- Cost Centers Module Card -->
+                    <a href="{{ route('cost-centers.index') }}"
+                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8">{{ \App\Models\CostCenter::count() }}</div>
+                                <div class="mt-1 text-base font-extrabold text-black uppercase">Cost Centers</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Departmental cost tracking</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-purple-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M2.25 21H21.75M3.75 3V21M14.25 3V21M20.25 7.5V21M6.75 6.75H7.5M6.75 9.75H7.5M6.75 12.75H7.5M10.5 6.75H11.25M10.5 9.75H11.25M10.5 12.75H11.25M6.75 21V17.625C6.75 17.0037 7.25368 16.5 7.875 16.5H10.125C10.7463 16.5 11.25 17.0037 11.25 17.625V21M3 3H15M14.25 7.5H21M17.25 11.25H17.2575V11.2575H17.25V11.25ZM17.25 14.25H17.2575V14.2575H17.25V14.25ZM17.25 17.25H17.2575V17.2575H17.25V17.25Z" />
+                            </svg>
+                        </div>
+                    </a>
+                @endcan
+
+                <!-- Tax Configuration Section -->
+                <div class="col-span-12 mt-6">
+                    <h3 class="text-xl font-bold text-gray-800 border-b-2 border-red-500 pb-2 mb-4">Tax Configuration
+                    </h3>
+                </div>
+
                 @can('tax-list')
                     <!-- Tax Codes Module Card -->
                     <a href="{{ route('tax-codes.index') }}"
@@ -126,6 +250,7 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\TaxCode::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Tax Codes</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Define VAT, Sales Tax, etc.</div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-red-600">
@@ -142,6 +267,8 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\TaxRate::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Tax Rates</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Percentage rates for tax codes
+                                </div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-rose-600">
@@ -158,6 +285,8 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\ProductTaxMapping::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Tax Mappings</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Link products to specific taxes
+                                </div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-fuchsia-600">
@@ -174,6 +303,7 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\TaxTransaction::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Tax Transactions</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">History of tax applications</div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-violet-600">
@@ -184,41 +314,12 @@
                     </a>
                 @endcan
 
-                @can('chart-of-account-list')
-                    <!-- Chart of Accounts Module Card -->
-                    <a href="{{ route('chart-of-accounts.index') }}"
-                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
-                        <div class="p-5 flex justify-between">
-                            <div>
-                                <div class="text-3xl font-bold leading-8">{{ \App\Models\ChartOfAccount::count() }}</div>
-                                <div class="mt-1 text-base font-extrabold text-black uppercase">Chart of Accounts</div>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="h-16 w-16 text-green-600">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M3.75 3V14.25C3.75 15.4926 4.75736 16.5 6 16.5H8.25M3.75 3H2.25M3.75 3H20.25M20.25 3H21.75M20.25 3V14.25C20.25 15.4926 19.2426 16.5 18 16.5H15.75M8.25 16.5H15.75M8.25 16.5L7.25 19.5M15.75 16.5L16.75 19.5M16.75 19.5L17.25 21M16.75 19.5H7.25M7.25 19.5L6.75 21M7.5 12L10.5 9L12.6476 11.1476C13.6542 9.70301 14.9704 8.49023 16.5 7.60539" />
-                            </svg>
-                        </div>
-                    </a>
-                @endcan
-
-                @can('cost-center-list')
-                    <!-- Cost Centers Module Card -->
-                    <a href="{{ route('cost-centers.index') }}"
-                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
-                        <div class="p-5 flex justify-between">
-                            <div>
-                                <div class="text-3xl font-bold leading-8">{{ \App\Models\CostCenter::count() }}</div>
-                                <div class="mt-1 text-base font-extrabold text-black uppercase">Cost Centers</div>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="h-16 w-16 text-purple-600">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M2.25 21H21.75M3.75 3V21M14.25 3V21M20.25 7.5V21M6.75 6.75H7.5M6.75 9.75H7.5M6.75 12.75H7.5M10.5 6.75H11.25M10.5 9.75H11.25M10.5 12.75H11.25M6.75 21V17.625C6.75 17.0037 7.25368 16.5 7.875 16.5H10.125C10.7463 16.5 11.25 17.0037 11.25 17.625V21M3 3H15M14.25 7.5H21M17.25 11.25H17.2575V11.2575H17.25V11.25ZM17.25 14.25H17.2575V14.2575H17.25V14.25ZM17.25 17.25H17.2575V17.2575H17.25V17.25Z" />
-                            </svg>
-                        </div>
-                    </a>
-                @endcan
+                <!-- Partners & Stakeholders Section -->
+                <div class="col-span-12 mt-6">
+                    <h3 class="text-xl font-bold text-gray-800 border-b-2 border-orange-500 pb-2 mb-4">Partners &
+                        Stakeholders
+                    </h3>
+                </div>
 
                 @can('supplier-list')
                     <!-- Suppliers Module Card -->
@@ -228,29 +329,12 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\Supplier::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Suppliers</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Vendor management & profiles</div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-emerald-600">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M5.121 17.804A9 9 0 0112 15a9 9 0 016.879 2.804M15 11a3 3 0 10-6 0 3 3 0 006 0zM21 12a9 9 0 10-18 0 9 9 0 0018 0z" />
-                            </svg>
-                        </div>
-                    </a>
-                @endcan
-
-                @can('employee-list')
-                    <!-- Employees Module Card -->
-                    <a href="{{ route('employees.index') }}"
-                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
-                        <div class="p-5 flex justify-between">
-                            <div>
-                                <div class="text-3xl font-bold leading-8">{{ \App\Models\Employee::count() }}</div>
-                                <div class="mt-1 text-base font-extrabold text-black uppercase">Employees</div>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="h-16 w-16 text-lime-600">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M15 19.1276C15.8329 19.37 16.7138 19.5 17.625 19.5C19.1037 19.5 20.5025 19.1576 21.7464 18.5478C21.7488 18.4905 21.75 18.4329 21.75 18.375C21.75 16.0968 19.9031 14.25 17.625 14.25C16.2069 14.25 14.956 14.9655 14.2136 16.0552M15 19.1276V19.125C15 18.0121 14.7148 16.9658 14.2136 16.0552M15 19.1276C15 19.1632 14.9997 19.1988 14.9991 19.2343C13.1374 20.3552 10.9565 21 8.625 21C6.29353 21 4.11264 20.3552 2.25092 19.2343C2.25031 19.198 2.25 19.1615 2.25 19.125C2.25 15.6042 5.10418 12.75 8.625 12.75C11.0329 12.75 13.129 14.085 14.2136 16.0552M12 6.375C12 8.23896 10.489 9.75 8.625 9.75C6.76104 9.75 5.25 8.23896 5.25 6.375C5.25 4.51104 6.76104 3 8.625 3C10.489 3 12 4.51104 12 6.375Z" />
                             </svg>
                         </div>
                     </a>
@@ -264,6 +348,8 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\Customer::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Customers</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Client database & account history
+                                </div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-pink-600">
@@ -274,6 +360,32 @@
                     </a>
                 @endcan
 
+                @can('employee-list')
+                    <!-- Employees Module Card -->
+                    <a href="{{ route('employees.index') }}"
+                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8">{{ \App\Models\Employee::count() }}</div>
+                                <div class="mt-1 text-base font-extrabold text-black uppercase">Employees</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Staff records & payroll info</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-lime-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15 19.1276C15.8329 19.37 16.7138 19.5 17.625 19.5C19.1037 19.5 20.5025 19.1576 21.7464 18.5478C21.7488 18.4905 21.75 18.4329 21.75 18.375C21.75 16.0968 19.9031 14.25 17.625 14.25C16.2069 14.25 14.956 14.9655 14.2136 16.0552M15 19.1276V19.125C15 18.0121 14.7148 16.9658 14.2136 16.0552M15 19.1276C15 19.1632 14.9997 19.1988 14.9991 19.2343C13.1374 20.3552 10.9565 21 8.625 21C6.29353 21 4.11264 20.3552 2.25092 19.2343C2.25031 19.198 2.25 19.1615 2.25 19.125C2.25 15.6042 5.10418 12.75 8.625 12.75C11.0329 12.75 13.129 14.085 14.2136 16.0552M12 6.375C12 8.23896 10.489 9.75 8.625 9.75C6.76104 9.75 5.25 8.23896 5.25 6.375C5.25 4.51104 6.76104 3 8.625 3C10.489 3 12 4.51104 12 6.375Z" />
+                            </svg>
+                        </div>
+                    </a>
+                @endcan
+
+                <!-- Inventory & Products Section -->
+                <div class="col-span-12 mt-6">
+                    <h3 class="text-xl font-bold text-gray-800 border-b-2 border-indigo-500 pb-2 mb-4">Inventory &
+                        Products
+                    </h3>
+                </div>
+
                 @can('product-list')
                     <!-- Products Module Card -->
                     <a href="{{ route('products.index') }}"
@@ -282,6 +394,7 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\Product::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Products</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Item master & specifications</div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-indigo-600">
@@ -303,7 +416,9 @@
                         <div class="p-5 flex justify-between">
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\Uom::count() }}</div>
-                                <div class="mt-1 text-base font-extrabold text-black uppercase">Units of Measure</div>
+                                <div class="mt-1 text-base font-extrabold text-black uppercase">Units</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Measurement units (KG, PCS, etc)
+                                </div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-purple-600">
@@ -314,6 +429,12 @@
                     </a>
                 @endcan
 
+                <!-- Asset Management Section -->
+                <div class="col-span-12 mt-6">
+                    <h3 class="text-xl font-bold text-gray-800 border-b-2 border-amber-500 pb-2 mb-4">Asset Management
+                    </h3>
+                </div>
+
                 @can('vehicle-list')
                     <!-- Vehicles Module Card -->
                     <a href="{{ route('vehicles.index') }}"
@@ -322,6 +443,7 @@
                             <div>
                                 <div class="text-3xl font-bold leading-8">{{ \App\Models\Vehicle::count() }}</div>
                                 <div class="mt-1 text-base font-extrabold text-black uppercase">Vehicles</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Fleet tracking & details</div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-amber-600">
@@ -332,41 +454,6 @@
                     </a>
                 @endcan
 
-                @can('bank-account-list')
-                    <!-- Bank Accounts Module Card -->
-                    <a href="{{ route('bank-accounts.index') }}"
-                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
-                        <div class="p-5 flex justify-between">
-                            <div>
-                                <div class="text-3xl font-bold leading-8">{{ \App\Models\BankAccount::count() }}</div>
-                                <div class="mt-1 text-base font-extrabold text-black uppercase">Bank Accounts</div>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="h-16 w-16 text-teal-600">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M2.25 8.25H21.75M2.25 9H21.75M9.75 15.75H14.25M7.5 12H16.5M6.75 18.75H17.25C18.4926 18.75 19.5 17.7426 19.5 16.5V7.5C19.5 6.25736 18.4926 5.25 17.25 5.25H6.75C5.50736 5.25 4.5 6.25736 4.5 7.5V16.5C4.5 17.7426 5.50736 18.75 6.75 18.75Z" />
-                            </svg>
-                        </div>
-                    </a>
-                @endcan
-
-                @can('company-list')
-                    <!-- Companies Module Card -->
-                    <a href="{{ route('companies.index') }}"
-                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
-                        <div class="p-5 flex justify-between">
-                            <div>
-                                <div class="text-3xl font-bold leading-8">{{ \App\Models\Company::count() }}</div>
-                                <div class="mt-1 text-base font-extrabold text-black uppercase">Companies</div>
-                            </div>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="h-16 w-16 text-indigo-600">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M15 19.1276C15.8329 19.37 16.7138 19.5 17.625 19.5C19.1037 19.5 20.5025 19.1576 21.7464 18.5478C21.7488 18.4905 21.75 18.4329 21.75 18.375C21.75 16.0968 19.9031 14.25 17.625 14.25C16.2069 14.25 14.956 14.9655 14.2136 16.0552M15 19.1276V19.125C15 18.0121 14.7148 16.9658 14.2136 16.0552M15 19.1276C15 19.1632 14.9997 19.1988 14.9991 19.2343C13.1374 20.3552 10.9565 21 8.625 21C6.29353 21 4.11264 20.3552 2.25092 19.2343C2.25031 19.198 2.25 19.1615 2.25 19.125C2.25 15.6042 5.10418 12.75 8.625 12.75C11.0329 12.75 13.129 14.085 14.2136 16.0552M12 6.375C12 8.23896 10.489 9.75 8.625 9.75C6.76104 9.75 5.25 8.23896 5.25 6.375C5.25 4.51104 6.76104 3 8.625 3C10.489 3 12 4.51104 12 6.375ZM20.25 8.625C20.25 10.0747 19.0747 11.25 17.625 11.25C16.1753 11.25 15 10.0747 15 8.625C15 7.17525 16.1753 6 17.625 6C19.0747 6 20.25 7.17525 20.25 8.625Z" />
-                            </svg>
-                        </div>
-                    </a>
-                @endcan
 
                 @can('warehouse-list')
                     <!-- Warehouses Module Card -->

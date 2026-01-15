@@ -8,13 +8,28 @@ use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class ChartOfAccountController extends Controller
+class ChartOfAccountController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:chart-of-account-list', only: ['index', 'show', 'tree']),
+            new Middleware('can:chart-of-account-create', only: ['create', 'store']),
+            new Middleware('can:chart-of-account-edit', only: ['edit', 'update']),
+            new Middleware('can:chart-of-account-delete', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

@@ -21,13 +21,29 @@ use App\Models\SalesSettlementRecovery;
 use App\Models\StockBatch;
 use App\Models\VanStockBalance;
 use App\Services\DistributionService;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class SalesSettlementController extends Controller
+class SalesSettlementController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:sales-settlement-list', only: ['index', 'show']),
+            new Middleware('permission:sales-settlement-create', only: ['create', 'store', 'getUnloadedProducts']),
+            new Middleware('permission:sales-settlement-edit', only: ['edit', 'update']),
+            new Middleware('permission:sales-settlement-delete', only: ['destroy']),
+            new Middleware('permission:sales-settlement-post', only: ['post']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

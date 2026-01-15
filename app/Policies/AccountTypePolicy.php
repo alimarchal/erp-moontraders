@@ -12,7 +12,7 @@ class AccountTypePolicy
      */
     public function viewAny(User $user): bool
     {
-        return false;
+        return $user->can('account-type-list');
     }
 
     /**
@@ -20,7 +20,7 @@ class AccountTypePolicy
      */
     public function view(User $user, AccountType $accountType): bool
     {
-        return false;
+        return $user->can('account-type-list');
     }
 
     /**
@@ -28,7 +28,7 @@ class AccountTypePolicy
      */
     public function create(User $user): bool
     {
-        return false;
+        return $user->can('account-type-create');
     }
 
     /**
@@ -36,7 +36,7 @@ class AccountTypePolicy
      */
     public function update(User $user, AccountType $accountType): bool
     {
-        return false;
+        return $user->can('account-type-edit');
     }
 
     /**
@@ -44,7 +44,7 @@ class AccountTypePolicy
      */
     public function delete(User $user, AccountType $accountType): bool
     {
-        return false;
+        return $user->can('account-type-delete');
     }
 
     /**

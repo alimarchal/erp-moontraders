@@ -6,6 +6,8 @@ use App\Http\Requests\StoreAccountTypeRequest;
 use App\Http\Requests\UpdateAccountTypeRequest;
 use App\Models\AccountType;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
@@ -15,8 +17,21 @@ use Spatie\QueryBuilder\QueryBuilder;
  * AccountTypeController handles CRUD operations for account types
  * Manages account type categorization for the chart of accounts
  */
-class AccountTypeController extends Controller
+class AccountTypeController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:account-type-list', only: ['index', 'show']),
+            new Middleware('can:account-type-create', only: ['create', 'store']),
+            new Middleware('can:account-type-edit', only: ['edit', 'update']),
+            new Middleware('can:account-type-delete', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display paginated list of account types with filtering capabilities
      *

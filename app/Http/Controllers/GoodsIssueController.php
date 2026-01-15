@@ -12,13 +12,29 @@ use App\Models\Uom;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class GoodsIssueController extends Controller
+class GoodsIssueController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:goods-issue-list', only: ['index', 'show']),
+            new Middleware('permission:goods-issue-create', only: ['create', 'store']),
+            new Middleware('permission:goods-issue-edit', only: ['edit', 'update']),
+            new Middleware('permission:goods-issue-delete', only: ['destroy']),
+            new Middleware('permission:goods-issue-post', only: ['post']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

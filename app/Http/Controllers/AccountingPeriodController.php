@@ -7,13 +7,30 @@ use App\Http\Requests\UpdateAccountingPeriodRequest;
 use App\Models\AccountingPeriod;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class AccountingPeriodController extends Controller
+class AccountingPeriodController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:accounting-period-list', only: ['index', 'show']),
+            new Middleware('can:accounting-period-create', only: ['create', 'store']),
+            new Middleware('can:accounting-period-edit', only: ['edit', 'update']),
+            new Middleware('can:accounting-period-delete', only: ['destroy']),
+            new Middleware('can:accounting-period-close', only: ['close']),
+            new Middleware('can:accounting-period-open', only: ['open']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

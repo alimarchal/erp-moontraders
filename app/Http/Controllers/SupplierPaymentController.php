@@ -7,12 +7,29 @@ use App\Models\Supplier;
 use App\Models\SupplierPayment;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class SupplierPaymentController extends Controller
+class SupplierPaymentController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:supplier-payment-list', only: ['index', 'show']),
+            new Middleware('permission:supplier-payment-create', only: ['create', 'store', 'getUnpaidGrns']),
+            new Middleware('permission:supplier-payment-edit', only: ['edit', 'update']),
+            new Middleware('permission:supplier-payment-delete', only: ['destroy']),
+            new Middleware('permission:supplier-payment-post', only: ['post']),
+            new Middleware('permission:supplier-payment-reverse', only: ['reverse']),
+        ];
+    }
+
     protected $paymentService;
 
     public function __construct(PaymentService $paymentService)

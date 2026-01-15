@@ -7,13 +7,28 @@ use App\Http\Requests\UpdateCostCenterRequest;
 use App\Models\CostCenter;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class CostCenterController extends Controller
+class CostCenterController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:cost-center-list', only: ['index', 'show']),
+            new Middleware('can:cost-center-create', only: ['create', 'store']),
+            new Middleware('can:cost-center-edit', only: ['edit', 'update']),
+            new Middleware('can:cost-center-delete', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

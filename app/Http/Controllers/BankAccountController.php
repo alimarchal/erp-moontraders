@@ -8,13 +8,28 @@ use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class BankAccountController extends Controller
+class BankAccountController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:bank-account-list', only: ['index', 'show']),
+            new Middleware('can:bank-account-create', only: ['create', 'store']),
+            new Middleware('can:bank-account-edit', only: ['edit', 'update']),
+            new Middleware('can:bank-account-delete', only: ['destroy']),
+        ];
+    }
+
     public function index(Request $request)
     {
         $accounts = QueryBuilder::for(

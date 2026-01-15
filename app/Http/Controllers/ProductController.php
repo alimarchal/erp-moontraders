@@ -9,13 +9,28 @@ use App\Models\Supplier;
 use App\Models\Uom;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class ProductController extends Controller
+class ProductController extends Controller implements HasMiddleware
 {
+    /**
+     * Get the middleware that should be assigned to the controller.
+     */
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:product-list', only: ['index', 'show']),
+            new Middleware('can:product-create', only: ['create', 'store']),
+            new Middleware('can:product-edit', only: ['edit', 'update']),
+            new Middleware('can:product-delete', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

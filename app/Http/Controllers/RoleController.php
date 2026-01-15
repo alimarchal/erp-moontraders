@@ -95,6 +95,16 @@ class RoleController extends Controller implements HasMiddleware
         return view('settings.roles.index', compact('roles'));
     }
 
+    // Display the specified role
+    public function show(Role $role)
+    {
+        $role->load('permissions');
+        $permissions = Permission::all();
+        $rolePermissions = $role->permissions->pluck('id')->toArray();
+
+        return view('settings.roles.show', compact('role', 'permissions', 'rolePermissions'));
+    }
+
     // Show the form for editing the specified role
     public function edit(Role $role)
     {

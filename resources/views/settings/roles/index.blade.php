@@ -1,75 +1,91 @@
-<x-app-layout title="Roles Management">
-    <x-page-header title="Roles" :breadcrumbs="[
-        ['label' => 'Settings', 'url' => '#'],
-        ['label' => 'Roles', 'url' => route('roles.index')],
-    ]">
-        @can('role-create')
-            <a href="{{ route('roles.create') }}"
-                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:bg-indigo-700 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
-                Create Role
-            </a>
-        @endcan
-    </x-page-header>
+<x-app-layout>
+    <x-slot name="header">
+        <x-page-header title="Roles" :createRoute="route('roles.create')" createLabel="Add Role" :showSearch="true"
+            :showRefresh="true" backRoute="settings.index" />
+    </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <x-status-message />
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
+        <x-status-message />
 
+        <x-filter-section :action="route('roles.index')" method="GET">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <x-label for="search" value="Search" />
+                    <x-input id="search" name="filter[name]" type="text" class="mt-1 block w-full"
+                        :value="request('filter.name')" placeholder="Search role name..." />
+                </div>
+            </div>
+        </x-filter-section>
+
+        <div class="mt-6">
             <x-data-table :items="$roles" :headers="[
+        ['label' => '#', 'align' => 'text-center'],
         ['label' => 'Name'],
-        ['label' => 'Guard'],
-        ['label' => 'Permissions'],
-        ['label' => 'Created At'],
+        ['label' => 'Guard Name', 'align' => 'text-center'],
+        ['label' => 'Permissions', 'align' => 'text-center'],
+        ['label' => 'Created At', 'align' => 'text-center'],
         ['label' => 'Actions', 'align' => 'text-center'],
-    ]">
-                @foreach($roles as $role)
+    ]" emptyMessage="No roles found." :emptyRoute="route('roles.create')" emptyLinkText="Add a role">
+                @foreach ($roles as $index => $role)
                     <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
-                        <td class="py-1 px-2 font-medium text-gray-900">
+                        <td class="py-1 px-2 text-center">
+                            {{ $roles->firstItem() + $index }}
+                        </td>
+                        <td class="py-1 px-2 font-semibold">
                             {{ $role->name }}
                         </td>
-                        <td class="py-1 px-2">
+                        <td class="py-1 px-2 text-center">
                             <span
-                                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                                class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
                                 {{ $role->guard_name }}
                             </span>
                         </td>
-                        <td class="py-1 px-2 text-sm text-gray-600">
-                            {{ $role->permissions_count ?? $role->permissions->count() }} permissions
+                        <td class="py-1 px-2 text-center">
+                            <span
+                                class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">
+                                {{ $role->permissions_count ?? $role->permissions->count() }} permissions
+                            </span>
                         </td>
-                        <td class="py-1 px-2 text-sm text-gray-600">
-                            {{ $role->created_at->format('M d, Y') }}
+                        <td class="py-1 px-2 text-center text-gray-600">
+                            {{ $role->created_at->format('d-m-Y') }}
                         </td>
                         <td class="py-1 px-2 text-center">
                             <div class="flex justify-center space-x-2">
-                                @can('role-edit')
-                                    <a href="{{ route('roles.edit', $role) }}" class="text-indigo-600 hover:text-indigo-900"
-                                        title="Edit">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                            stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
-                                        </svg>
-                                    </a>
-                                @endcan
-
-                                @if($role->name !== 'super-admin')
-                                    @can('role-delete')
-                                        <form action="{{ route('roles.destroy', $role) }}" method="POST" class="inline"
-                                            onsubmit="return confirm('Are you sure you want to delete this role?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900" title="Delete">
-                                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                    stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="m14.74 9-.34 6m-4.74 0-.34-6m4.74-3-.34 6m-4.74 0-.34-6M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18Zm0 0V9m0 12h-3m3 0h3" />
-                                                </svg>
-                                            </button>
-                                        </form>
-                                    @endcan
+                                <a href="{{ route('roles.show', $role) }}"
+                                    class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-md transition-colors duration-150"
+                                    title="View">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </a>
+                                <a href="{{ route('roles.edit', $role) }}"
+                                    class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
+                                    title="Edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                    </svg>
+                                </a>
+                                @if ($role->name !== 'Super Admin' && $role->name !== 'super-admin')
+                                    <form method="POST" action="{{ route('roles.destroy', $role) }}"
+                                        onsubmit="return confirm('Are you sure you want to delete this role?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                            class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                            title="Delete">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </form>
                                 @endif
                             </div>
                         </td>

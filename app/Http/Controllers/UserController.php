@@ -104,6 +104,13 @@ class UserController extends Controller implements HasMiddleware
         return redirect()->route('users.index')->with('success', 'User created successfully with assigned roles and permissions.');
     }
 
+    public function show(User $user)
+    {
+        $user->load(['roles.permissions', 'permissions']);
+
+        return view('settings.users.show', compact('user'));
+    }
+
     public function edit(User $user)
     {
         $roles = Role::all();

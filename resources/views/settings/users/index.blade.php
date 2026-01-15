@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Settings User Management" :createRoute="route('users.create')" createLabel="Add User"
-            :showSearch="true" :showRefresh="true" backRoute="settings.index" />
+        <x-page-header title="Users" :createRoute="route('users.create')" createLabel="Add User" :showSearch="true"
+            :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
     <x-filter-section :action="route('users.index')">
@@ -61,45 +61,45 @@
             </div>
 
             <x-data-table :items="$users" :headers="[
-        ['label' => '<input type=\'checkbox\' id=\'select-all\'>', 'align' => 'text-center'],
-        ['label' => 'Name'],
-        ['label' => 'Designation'],
-        ['label' => 'Email', 'align' => 'text-center'],
-        ['label' => 'Roles', 'align' => 'text-center'],
-        ['label' => 'Status', 'align' => 'text-center'],
-        ['label' => 'Actions', 'align' => 'text-center'],
-    ]" emptyMessage="No users found."
-                :emptyRoute="route('users.create')" emptyLinkText="Add a user">
+                ['label' => '<input type=\'checkbox\' id=\'select-all\' class=\'rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500\'>', 'align' => 'text-center'],
+                ['label' => 'User'],
+                ['label' => 'Designation'],
+                ['label' => 'Email', 'align' => 'text-center'],
+                ['label' => 'Roles', 'align' => 'text-center'],
+                ['label' => 'Status', 'align' => 'text-center'],
+                ['label' => 'Actions', 'align' => 'text-center'],
+            ]" emptyMessage="No users found." :emptyRoute="route('users.create')" emptyLinkText="Add a user">
                 @foreach ($users as $index => $user)
                     <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
                         <td class="py-1 px-2 text-center">
                             @if($user->id !== auth()->id())
-                                <input type="checkbox" name="ids[]" value="{{ $user->id }}" class="user-checkbox">
+                                <input type="checkbox" name="ids[]" value="{{ $user->id }}" class="user-checkbox rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500">
                             @else
-                                <span class="text-xs text-gray-400 italic">Self</span>
+                                <span class="text-[10px] text-gray-400 font-medium italic">Self</span>
                             @endif
                         </td>
-                        <td class="py-1 px-2 font-semibold">
-                            {{ $user->name }}
+                        <td class="py-1 px-2">
+                            <div class="font-semibold">{{ $user->name }}</div>
                             @if($user->is_super_admin === 'Yes')
-                                <span class="block text-[10px] text-red-600 font-bold uppercase">Super Admin</span>
+                                <div class="text-[9px] text-red-600 font-bold uppercase tracking-tighter">Super Admin</div>
                             @endif
                         </td>
-                        <td class="py-1 px-2">{{ $user->designation ?? 'N/A' }}</td>
+                        <td class="py-1 px-2 text-gray-600 font-medium">{{ $user->designation ?? 'N/A' }}</td>
                         <td class="py-1 px-2 text-center">{{ $user->email }}</td>
                         <td class="py-1 px-2 text-center">
                             <div class="flex flex-wrap justify-center gap-1">
-                                @foreach($user->roles as $role)
-                                    <span
-                                        class="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full border border-blue-200">
+                                @forelse($user->roles as $role)
+                                    <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-blue-100 text-blue-700">
                                         {{ $role->name }}
                                     </span>
-                                @endforeach
+                                @empty
+                                    <span class="text-xs text-gray-400 italic">No Roles</span>
+                                @endforelse
                             </div>
                         </td>
                         <td class="py-1 px-2 text-center">
                             <span @class([
-                                'px-2 py-1 rounded-full text-[10px] font-bold uppercase',
+                                'inline-flex items-center px-2 py-1 text-[10px] font-bold uppercase rounded-full',
                                 'bg-emerald-100 text-emerald-700' => $user->is_active === 'Yes',
                                 'bg-red-100 text-red-700' => $user->is_active === 'No',
                             ])>
@@ -107,25 +107,28 @@
                             </span>
                         </td>
                         <td class="py-1 px-2 text-center">
-                            <div class="flex justify-center gap-2">
-                                <a href="{{ route('users.edit', $user) }}" class="text-emerald-600 hover:text-emerald-900"
+                            <div class="flex justify-center space-x-2">
+                                <a href="{{ route('users.edit', $user) }}"
+                                    class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
                                     title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                        stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
                                 </a>
                                 @if($user->id !== auth()->id())
-                                    <form action="{{ route('users.destroy', $user) }}" method="POST" class="inline delete-form">
+                                    <form method="POST" action="{{ route('users.destroy', $user) }}"
+                                        onsubmit="return confirm('Are you sure you want to delete this user?');">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900" title="Delete"
-                                            onclick="return confirm('Are you sure?')">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                                stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="m14.74 9-.34 6m-4.74 0-.34-6m4.74-3-.34 6m-4.74 0-.34-6M12 21a9 9 0 1 1 0-18 9 9 0 0 1 0 18Zm0 0V9m0 12h-3m3 0h3" />
+                                        <button type="submit"
+                                            class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                            title="Delete">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M6 18L18 6M6 6l12 12" />
                                             </svg>
                                         </button>
                                     </form>

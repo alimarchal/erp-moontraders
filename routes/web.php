@@ -28,8 +28,11 @@ use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\Reports\VanStockBatchReportController;
 use App\Http\Controllers\Reports\VanStockLedgerController;
 use App\Http\Controllers\ReportsController;
-use App\Http\Controllers\SalesSettlementController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\SalesSettlementController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\TaxCodeController;
@@ -212,6 +215,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         // Units of Measure CRUD
         Route::resource('uoms', UomController::class);
+
+        // RBAC Management
+        Route::resource('users', UserController::class);
+        Route::post('users/bulk-update', [UserController::class, 'bulkUpdate'])->name('users.bulk-update');
+        Route::resource('roles', RoleController::class);
+        Route::resource('permissions', PermissionController::class);
     });
 
     // Reports Routes

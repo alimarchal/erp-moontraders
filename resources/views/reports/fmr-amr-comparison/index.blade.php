@@ -9,7 +9,7 @@
                 width: 100%;
                 border-collapse: collapse;
                 border: 1px solid black;
-                font-size: 12px;
+                font-size: 14px;
                 line-height: 1.2;
             }
 
@@ -20,9 +20,17 @@
                 word-wrap: break-word;
             }
 
+            .print-only {
+                display: none;
+            }
+
             @media print {
                 @page {
-                    margin: 10mm;
+                    margin: 15mm 10mm 20mm 10mm;
+
+                    @bottom-center {
+                        content: "Page " counter(page) " of " counter(pages);
+                    }
                 }
 
                 .no-print {
@@ -32,6 +40,7 @@
                 body {
                     margin: 0 !important;
                     padding: 0 !important;
+                    counter-reset: page 1;
                 }
 
                 .max-w-7xl {
@@ -65,6 +74,21 @@
                     margin-top: 0 !important;
                     margin-bottom: 8px !important;
                 }
+
+                .print-info {
+                    font-size: 9px !important;
+                    margin-top: 5px !important;
+                    margin-bottom: 10px !important;
+                    color: #000 !important;
+                }
+
+                .print-only {
+                    display: block !important;
+                }
+
+                .page-footer {
+                    display: none;
+                }
             }
         </style>
     @endpush
@@ -85,15 +109,23 @@
         </div>
     </x-filter-section>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8  ">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg my-4 print:shadow-none">
             <div class="overflow-x-auto">
-                <p class="text-center font-extrabold mb-4">
-                    FMR vs AMR Comparison Report<br>
+                <p class="text-center font-extrabold mb-2">
                     Moon Traders<br>
+                    FMR vs AMR Comparison Report<br>
                     For the period {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
                     {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
+                    <br>
+                    <span class="print-only print-info text-xs text-center">
+                        Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
+                    </span>
                 </p>
+
+
+
+                <div class="page-footer"></div>
 
                 <table class="report-table">
                     <thead>

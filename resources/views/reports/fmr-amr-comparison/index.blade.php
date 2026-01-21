@@ -68,6 +68,12 @@
                 .report-table th,
                 .report-table td {
                     padding: 2px 3px !important;
+                    color: #000 !important;
+                }
+
+                .text-green-600,
+                .text-red-600 {
+                    color: #000 !important;
                 }
 
                 p {

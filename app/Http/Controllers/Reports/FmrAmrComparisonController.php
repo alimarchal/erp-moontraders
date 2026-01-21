@@ -94,9 +94,9 @@ class FmrAmrComparisonController extends Controller
                 'amr_liquid_total' => $amrLiquid,
                 'amr_powder_total' => $amrPowder,
                 'amr_total' => $amrLiquid + $amrPowder,
-                'liquid_diff' => $amrLiquid - $fmrLiquid,
-                'powder_diff' => $amrPowder - $fmrPowder,
-                'difference' => ($amrLiquid + $amrPowder) - ($fmrLiquid + $fmrPowder),
+                'liquid_diff' => $fmrLiquid - $amrLiquid,
+                'powder_diff' => $fmrPowder - $amrPowder,
+                'difference' => ($fmrLiquid + $fmrPowder) - ($amrLiquid + $amrPowder),
             ];
         });
 

@@ -83,6 +83,7 @@
                 table {
                     font-size: 11px !important;
                     width: 100% !important;
+                    table-layout: auto !important;
                 }
 
                 .report-table th,
@@ -91,6 +92,18 @@
                 table td {
                     padding: 2px 3px !important;
                     color: #000 !important;
+                    word-wrap: break-word !important;
+                    white-space: normal !important;
+                    font-size: 11px !important;
+                }
+
+                table th *,
+                table td *,
+                table th span,
+                table td span,
+                table td div,
+                table td abbr {
+                    font-size: 11px !important;
                 }
 
                 p {

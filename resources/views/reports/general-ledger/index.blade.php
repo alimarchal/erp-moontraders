@@ -68,6 +68,7 @@
                 table {
                     font-size: 11px !important;
                     width: 100% !important;
+                    table-layout: auto !important;
                 }
 
                 .report-table th,
@@ -75,6 +76,19 @@
                 table th,
                 table td {
                     padding: 2px 3px !important;
+                    color: #000 !important;
+                    word-wrap: break-word !important;
+                    white-space: normal !important;
+                    font-size: 11px !important;
+                }
+
+                table th *,
+                table td *,
+                table th span,
+                table td span,
+                table td div,
+                table td abbr {
+                    font-size: 11px !important;
                     color: #000 !important;
                 }
 
@@ -200,7 +214,7 @@
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
                         <option value="{{ $cc->code }}" {{ request('filter.cost_center_code') === $cc->code ? 'selected' : ''
-                                                                                        }}>
+                                                                                                                                                }}>
                             {{ $cc->code }} - {{ $cc->name }}
                         </option>
                     @endforeach
@@ -214,7 +228,7 @@
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
                         <option value="{{ $cc->name }}" {{ request('filter.cost_center_name') === $cc->name ? 'selected' : ''
-                                                                                        }}>
+                                                                                                                                                }}>
                             {{ $cc->name }} ({{ $cc->code }})
                         </option>
                     @endforeach
@@ -339,10 +353,10 @@
         @endphp
         @foreach ($entries as $index => $entry)
             <tr class="border-b border-gray-200 text-sm">
-                <td class="py-1 px-2 text-center">
+                <td class="py-1 px-1 text-center">
                     {{ $entries->firstItem() + $index }}
                 </td>
-                <td class="py-1 px-2 break-words max-w-xs">
+                <td class="py-1 px-1 break-words max-w-xs">
                     {{ optional($entry->entry_date)->format('d-m-Y') }}
                     <div class="break-words max-w-[8rem]">{{ $entry->reference ?? '—' }}</div>
                     @if ($entry->cost_center_code)
@@ -352,46 +366,46 @@
                         <span class="text-gray-400">—</span>
                     @endif
                 </td>
-                <td class="py-1 px-2">
+                <td class="py-1 px-1">
                     <div class="font-semibold break-words max-w-xs">{{ $entry->journal_description ?? '—' }}</div>
                     <div class="text-xs text-gray-600 break-words max-w-xs">
                         <abbr class="text-red-700" title="Line Description">LD:</abbr> {{ $entry->line_description ??
             $entry->journal_description ?? '—' }}
                     </div>
                 </td>
-                <td class="py-1 px-2">
+                <td class="py-1 px-1">
                     <div class="font-semibold uppercase font-mono">{{ $entry->account_code }}</div>
                     <div class="text-xs text-gray-600">{{ $entry->account_name }}</div>
                 </td>
-                <td class="py-1 px-2 text-right font-mono">
+                <td class="py-1 px-1 text-right font-mono">
                     {{ number_format((float) $entry->debit, 2) }}
                 </td>
-                <td class="py-1 px-2 text-right font-mono">
+                <td class="py-1 px-1 text-right font-mono">
                     {{ number_format((float) $entry->credit, 2) }}
                 </td>
 
-                <td class="py-1 px-2 text-center">
+                <td class="py-1 px-1 text-center">
                     @php
                         $status = $entry->status ?? 'draft';
                         $badgeClass = $statusClasses[$status] ?? 'bg-gray-100 text-gray-600';
                     @endphp
-                    <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
+                    <span class="inline-flex items-center px-1 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
                         {{ ucfirst($status) }}
                     </span>
                 </td>
             </tr>
         @endforeach
         <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
-            <td colspan="4" class="py-2 px-2 text-right">
+            <td colspan="4" class="py-1 px-1 text-right">
                 Page Total ({{ $entries->count() }} rows):
             </td>
-            <td class="py-2 px-2 text-right font-mono">
+            <td class="py-1 px-1 text-right font-mono">
                 {{ number_format($entries->sum('debit'), 2) }}
             </td>
-            <td class="py-2 px-2 text-right font-mono">
+            <td class="py-1 px-1 text-right font-mono">
                 {{ number_format($entries->sum('credit'), 2) }}
             </td>
-            <td colspan="2"></td>
+            <td></td>
         </tr>
     </x-data-table>
 </x-app-layout>

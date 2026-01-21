@@ -214,7 +214,7 @@
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
                         <option value="{{ $cc->code }}" {{ request('filter.cost_center_code') === $cc->code ? 'selected' : ''
-                                                                                                                                                }}>
+                                                                                                                                                                                }}>
                             {{ $cc->code }} - {{ $cc->name }}
                         </option>
                     @endforeach
@@ -228,7 +228,7 @@
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
                         <option value="{{ $cc->name }}" {{ request('filter.cost_center_name') === $cc->name ? 'selected' : ''
-                                                                                                                                                }}>
+                                                                                                                                                                                }}>
                             {{ $cc->name }} ({{ $cc->code }})
                         </option>
                     @endforeach

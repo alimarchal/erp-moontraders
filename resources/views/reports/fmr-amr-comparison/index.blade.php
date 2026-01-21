@@ -147,19 +147,19 @@
                             <tr>
                                 <td class="text-center" style="vertical-align: middle;">{{ $counter++ }}</td>
                                 <td style="vertical-align: middle;">{{ $row->month_year }}</td>
-                                <td class="text-right" style="vertical-align: middle;">
+                                <td class="text-right font-mono" style="vertical-align: middle;">
                                     {{ number_format($row->fmr_liquid_total, 2) }}
                                 </td>
-                                <td class="text-right" style="vertical-align: middle;">
+                                <td class="text-right font-mono" style="vertical-align: middle;">
                                     {{ number_format($row->fmr_powder_total, 2) }}
                                 </td>
-                                <td class="text-right" style="vertical-align: middle;">
+                                <td class="text-right font-mono" style="vertical-align: middle;">
                                     {{ number_format($row->amr_liquid_total, 2) }}
                                 </td>
-                                <td class="text-right" style="vertical-align: middle;">
+                                <td class="text-right font-mono" style="vertical-align: middle;">
                                     {{ number_format($row->amr_powder_total, 2) }}
                                 </td>
-                                <td class="text-right {{ $row->difference >= 0 ? 'text-green-600' : 'text-red-600' }}"
+                                <td class="text-right  font-mono {{ $row->difference >= 0 ? 'text-green-600' : 'text-red-600' }}"
                                     style="vertical-align: middle; font-weight: bold;">
                                     {{ number_format($row->difference, 2) }}
                                 </td>
@@ -169,20 +169,20 @@
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
                             <td colspan="2" class="text-center px-2 py-1">Grand Total</td>
-                            <td class="text-right px-2 py-1">
+                            <td class="text-right  font-mono px-2 py-1">
                                 {{ number_format($grandTotals->fmr_liquid_total, 2) }}
                             </td>
-                            <td class="text-right px-2 py-1">
+                            <td class="text-right  font-mono px-2 py-1">
                                 {{ number_format($grandTotals->fmr_powder_total, 2) }}
                             </td>
-                            <td class="text-right px-2 py-1">
+                            <td class="text-right  font-mono px-2 py-1">
                                 {{ number_format($grandTotals->amr_liquid_total, 2) }}
                             </td>
-                            <td class="text-right px-2 py-1">
+                            <td class="text-right  font-mono px-2 py-1">
                                 {{ number_format($grandTotals->amr_powder_total, 2) }}
                             </td>
                             <td
-                                class="text-right px-2 py-1 {{ $grandTotals->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                class="text-right  font-mono px-2 py-1 {{ $grandTotals->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                 {{ number_format($grandTotals->difference, 2) }}
                             </td>
                         </tr>

@@ -89,6 +89,8 @@
                 table td div,
                 table td abbr {
                     font-size: 11px !important;
+                    color: #000 !important;
+                    font-weight: normal !important;
                 }
 
                 p {
@@ -270,55 +272,55 @@
 
     <x-data-table :items="$balances" :headers="[
         ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'Account Code'],
+        ['label' => 'Acc <br> Code'],
         ['label' => 'Account Name'],
-        ['label' => 'Account Type'],
-        ['label' => 'Report Group'],
-        ['label' => 'Total Debits', 'align' => 'text-right'],
-        ['label' => 'Total Credits', 'align' => 'text-right'],
+        ['label' => 'Account <br> Type'],
+        ['label' => 'Report <br> Group'],
+        ['label' => 'Total <br> Debits', 'align' => 'text-right'],
+        ['label' => 'Total <br> Credits', 'align' => 'text-right'],
         ['label' => 'Balance', 'align' => 'text-right'],
         ['label' => 'Status', 'align' => 'text-center'],
-    ]" emptyMessage="No account balances found.">
+    ]"  emptyMessage="No account balances found.">
         @foreach ($balances as $index => $balance)
             <tr class="border-b border-gray-200 text-sm">
-                <td class="py-1 px-2 text-center">
+                <td class="py-1 px-1 text-center">
                     {{ $balances->firstItem() + $index }}
                 </td>
-                <td class="py-1 px-2">
+                <td class="py-1 px-1">
                     <div class="font-semibold uppercase">{{ $balance->account_code }}</div>
                 </td>
-                <td class="py-1 px-2">
+                <td class="py-1 px-1">
                     {{ $balance->account_name }}
                 </td>
-                <td class="py-1 px-2">
+                <td class="py-1 px-1">
                     <div class="text-xs">{{ $balance->account_type }}</div>
                 </td>
-                <td class="py-1 px-2">
+                <td class="py-1 px-1">
                     <span
-                        class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full 
-                                            {{ $balance->report_group === 'BalanceSheet' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
+                        class="inline-flex items-center px-1 py-1 text-xs font-semibold rounded-full 
+                                                                                                                            {{ $balance->report_group === 'BalanceSheet' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
                         {{ $balance->report_group === 'BalanceSheet' ? 'Balance Sheet' : 'Income Statement' }}
                     </span>
                 </td>
-                <td class="py-1 px-2 text-right font-mono">
+                <td class="py-1 px-1 text-right font-mono">
                     {{ number_format((float) $balance->total_debits, 2) }}
                 </td>
-                <td class="py-1 px-2 text-right font-mono">
+                <td class="py-1 px-1 text-right font-mono">
                     {{ number_format((float) $balance->total_credits, 2) }}
                 </td>
                 <td
-                    class="py-1 px-2 text-right font-mono font-bold {{ $balance->balance < 0 ? 'text-red-600' : 'text-green-600' }}">
+                    class="py-1 px-1 text-right font-mono font-bold {{ $balance->balance < 0 ? 'text-red-600' : 'text-green-600' }}">
                     {{ number_format((float) $balance->balance, 2) }}
                 </td>
-                <td class="py-1 px-2 text-center">
+                <td class="py-1 px-1 text-center">
                     @if ($balance->is_active)
                         <span
-                            class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">
+                            class="inline-flex items-center px-1 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">
                             Active
                         </span>
                     @else
                         <span
-                            class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
+                            class="inline-flex items-center px-1 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
                             Inactive
                         </span>
                     @endif
@@ -326,16 +328,16 @@
             </tr>
         @endforeach
         <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
-            <td colspan="5" class="py-2 px-2 text-right">
+            <td colspan="5" class="py-1 px-1 text-right">
                 Grand Total ({{ $balances->total() }} accounts):
             </td>
-            <td class="py-2 px-2 text-right font-mono">
+            <td class="py-1 px-1 text-right font-mono">
                 {{ number_format($balances->sum('total_debits'), 2) }}
             </td>
-            <td class="py-2 px-2 text-right font-mono">
+            <td class="py-1 px-1 text-right font-mono">
                 {{ number_format($balances->sum('total_credits'), 2) }}
             </td>
-            <td class="py-2 px-2 text-right font-mono">
+            <td class="py-1 px-1 text-right font-mono">
                 {{ number_format($balances->sum('balance'), 2) }}
             </td>
             <td></td>

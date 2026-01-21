@@ -1,10 +1,62 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="FMR vs AMR Comparison" :createRoute="null" createLabel="" :showSearch="true"
-            :showRefresh="true" backRoute="reports.index" />
+        <x-page-header title="FMR vs AMR Comparison" :showSearch="true" :showRefresh="true" backRoute="reports.index" />
     </x-slot>
 
-    <x-filter-section :action="route('reports.fmr-amr-comparison.index')">
+    @push('header')
+        <style>
+            .report-table {
+                width: 100%;
+                border-collapse: collapse;
+                border: 1px solid black;
+                font-size: 12px;
+                line-height: 1.2;
+            }
+
+            .report-table th,
+            .report-table td {
+                border: 1px solid black;
+                padding: 3px 4px;
+                word-wrap: break-word;
+            }
+
+            @media print {
+                @page {
+                    /* size: landscape; */
+                    margin: 10mm;
+                }
+
+                .no-print {
+                    display: none !important;
+                }
+
+                body {
+                    margin: 0;
+                    padding: 0;
+                }
+
+                .max-w-7xl {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                .report-table {
+                    font-size: 12px !important;
+                    width: 100% !important;
+                    table-layout: fixed;
+                }
+
+                .report-table th,
+                .report-table td {
+                    padding: 2px !important;
+                }
+            }
+        </style>
+    @endpush
+
+    <x-filter-section :action="route('reports.fmr-amr-comparison.index')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
                 <x-label for="filter_start_date" value="Start Date (From)" />
@@ -20,63 +72,76 @@
         </div>
     </x-filter-section>
 
-    <x-data-table :items="$reportData" :headers="[
-        ['label' => 'Sr#', 'align' => 'text-center'],
-        ['label' => 'Month - Year'],
-        ['label' => 'FMR Liquid (4210)', 'align' => 'text-right'],
-        ['label' => 'FMR Powder (4220)', 'align' => 'text-right'],
-        ['label' => 'AMR Liquid (5262)', 'align' => 'text-right'],
-        ['label' => 'AMR Powder (5252)', 'align' => 'text-right'],
-        ['label' => 'Total Diff', 'align' => 'text-right'],
-    ]"   emptyMessage="No data found for the selected date range.">
-        @foreach ($reportData as $index => $row)
-            <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
-                <td class="py-2 px-3 text-center">
-                    {{ $index + 1 }}
-                </td>
-                <td class="py-2 px-3 font-medium">
-                    {{ $row->month_year }}
-                </td>
-                <td class="py-2 px-3 text-right font-mono">
-                    {{ number_format($row->fmr_liquid_total, 2) }}
-                </td>
-                <td class="py-2 px-3 text-right font-mono">
-                    {{ number_format($row->fmr_powder_total, 2) }}
-                </td>
-                <td class="py-2 px-3 text-right font-mono">
-                    {{ number_format($row->amr_liquid_total, 2) }}
-                </td>
-                <td class="py-2 px-3 text-right font-mono">
-                    {{ number_format($row->amr_powder_total, 2) }}
-                </td>
-                <td class="py-2 px-3 text-right font-mono {{ $row->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                    {{ number_format($row->difference, 2) }}
-                </td>
-            </tr>
-        @endforeach
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="bg-white overflow-hidden p-4">
+            <div class="overflow-x-auto">
+                <p class="text-center font-extrabold mb-4">
+                    FMR vs AMR Comparison Report<br>
+                    Moon Traders<br>
+                    For the period {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
+                    {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
+                </p>
 
-        @if($reportData->count() > 0)
-            <tr class="bg-gray-100 font-semibold text-sm border-t-2 border-gray-300">
-                <td class="py-2 px-3 text-center" colspan="2">
-                    Grand Total
-                </td>
-                <td class="py-2 px-3 text-right font-mono">
-                    {{ number_format($grandTotals->fmr_liquid_total, 2) }}
-                </td>
-                <td class="py-2 px-3 text-right font-mono">
-                    {{ number_format($grandTotals->fmr_powder_total, 2) }}
-                </td>
-                <td class="py-2 px-3 text-right font-mono">
-                    {{ number_format($grandTotals->amr_liquid_total, 2) }}
-                </td>
-                <td class="py-2 px-3 text-right font-mono">
-                    {{ number_format($grandTotals->amr_powder_total, 2) }}
-                </td>
-                <td
-                    class="py-2 px-3 text-right font-mono {{ $grandTotals->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
-                    {{ number_format($grandTotals->difference, 2) }}
-                </td>
-            </tr>
-        @endif
-    </x-data-table>
+                <table class="report-table">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th style="width: 40px;">Sr#</th>
+                            <th style="width: 120px;">Month - Year</th>
+                            <th style="width: 100px;">FMR Liquid<br>(4210)</th>
+                            <th style="width: 100px;">FMR Powder<br>(4220)</th>
+                            <th style="width: 100px;">AMR Liquid<br>(5262)</th>
+                            <th style="width: 100px;">AMR Powder<br>(5252)</th>
+                            <th style="width: 120px;">Net Benefit/(Cost)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @php $counter = 1; @endphp
+                        @foreach ($reportData as $row)
+                            <tr>
+                                <td class="text-center" style="vertical-align: middle;">{{ $counter++ }}</td>
+                                <td style="vertical-align: middle;">{{ $row->month_year }}</td>
+                                <td class="text-right" style="vertical-align: middle;">
+                                    {{ number_format($row->fmr_liquid_total, 2) }}
+                                </td>
+                                <td class="text-right" style="vertical-align: middle;">
+                                    {{ number_format($row->fmr_powder_total, 2) }}
+                                </td>
+                                <td class="text-right" style="vertical-align: middle;">
+                                    {{ number_format($row->amr_liquid_total, 2) }}
+                                </td>
+                                <td class="text-right" style="vertical-align: middle;">
+                                    {{ number_format($row->amr_powder_total, 2) }}
+                                </td>
+                                <td class="text-right {{ $row->difference >= 0 ? 'text-green-600' : 'text-red-600' }}"
+                                    style="vertical-align: middle; font-weight: bold;">
+                                    {{ number_format($row->difference, 2) }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-gray-100 font-extrabold">
+                        <tr>
+                            <td colspan="2" class="text-center px-2 py-1">Grand Total</td>
+                            <td class="text-right px-2 py-1">
+                                {{ number_format($grandTotals->fmr_liquid_total, 2) }}
+                            </td>
+                            <td class="text-right px-2 py-1">
+                                {{ number_format($grandTotals->fmr_powder_total, 2) }}
+                            </td>
+                            <td class="text-right px-2 py-1">
+                                {{ number_format($grandTotals->amr_liquid_total, 2) }}
+                            </td>
+                            <td class="text-right px-2 py-1">
+                                {{ number_format($grandTotals->amr_powder_total, 2) }}
+                            </td>
+                            <td
+                                class="text-right px-2 py-1 {{ $grandTotals->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                {{ number_format($grandTotals->difference, 2) }}
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
 </x-app-layout>

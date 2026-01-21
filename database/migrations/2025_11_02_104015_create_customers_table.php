@@ -57,6 +57,8 @@ return new class extends Migration
             $table->date('last_sale_date')->nullable();
             $table->foreignId('sales_rep_id')->nullable()->constrained('users')->nullOnDelete()->comment('Assigned salesperson');
 
+            $table->boolean('it_status')->default(false)->index();
+            $table->string('ntn')->nullable();
             $table->boolean('is_active')->default(true)->index();
             $table->timestamps();
             $table->softDeletes();

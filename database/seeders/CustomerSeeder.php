@@ -38,6 +38,8 @@ class CustomerSeeder extends Seeder
                     'customer_code' => $customer['customer_code'],
                     'customer_name' => $customer['customer_name'],
                     'business_name' => $customer['business_name'],
+                    'it_status' => $customer['it_status'] ?? false,
+                    'ntn' => $customer['ntn'] ?? null,
                     'channel_type' => $this->normalizeChannelType($customer['channel_type'] ?? 'General Store'),
                     'address' => $customer['address'] ?? null,
                     'sub_locality' => $customer['sub_locality'] ?? null,
@@ -66,13 +68,13 @@ class CustomerSeeder extends Seeder
     {
         $validTypes = [
             'General Store',
-            'Wholesale',
             'Pharmacy',
+            'Wholesale',
             'Bakery',
-            'Minimart',
             'Hotel & Accommodation',
-            'Petromart',
+            'Minimart',
             '3rd Party',
+            'Petromart',
             'Other',
         ];
 

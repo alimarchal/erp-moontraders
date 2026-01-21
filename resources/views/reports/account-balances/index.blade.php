@@ -4,7 +4,100 @@
             :showRefresh="true" backRoute="reports.index" />
     </x-slot>
 
-    <x-filter-section :action="route('reports.account-balances.index')">
+    @push('header')
+        <style>
+            .report-table,
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                border: 1px solid black;
+                font-size: 14px;
+                line-height: 1.2;
+            }
+
+            .report-table th,
+            .report-table td,
+            table th,
+            table td {
+                border: 1px solid black;
+                padding: 3px 4px;
+                word-wrap: break-word;
+            }
+
+            .print-only {
+                display: none;
+            }
+
+            @media print {
+                @page {
+                    margin: 15mm 10mm 20mm 10mm;
+
+                    @bottom-center {
+                        content: "Page " counter(page) " of " counter(pages);
+                    }
+                }
+
+                .no-print {
+                    display: none !important;
+                }
+
+                body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    counter-reset: page 1;
+                }
+
+                .max-w-7xl {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                .bg-white {
+                    margin: 0 !important;
+                    padding: 10px !important;
+                    box-shadow: none !important;
+                }
+
+                .overflow-x-auto {
+                    overflow: visible !important;
+                }
+
+                .report-table,
+                table {
+                    font-size: 11px !important;
+                    width: 100% !important;
+                }
+
+                .report-table th,
+                .report-table td,
+                table th,
+                table td {
+                    padding: 2px 3px !important;
+                    color: #000 !important;
+                }
+
+                p {
+                    margin-top: 0 !important;
+                    margin-bottom: 8px !important;
+                }
+
+                .print-info {
+                    font-size: 9px !important;
+                    margin-top: 5px !important;
+                    margin-bottom: 10px !important;
+                    color: #000 !important;
+                }
+
+                .print-only {
+                    display: block !important;
+                }
+            }
+        </style>
+    @endpush
+
+    <x-filter-section :action="route('reports.account-balances.index')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div class="lg:col-span-2">
                 <x-label for="accounting_period_id" value="Accounting Period" />

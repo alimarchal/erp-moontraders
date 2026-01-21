@@ -13,7 +13,7 @@
                 <div class="grid grid-cols-12 gap-6">
                     <!-- General Ledger Report Card -->
                     <a href="{{ route('reports.general-ledger.index') }}"
-                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-4 intro-y bg-white block">
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
                         <div class="p-5 flex justify-between">
                             <div>
                                 <div class="text-3xl font-bold leading-8 text-gray-800">GL</div>
@@ -30,13 +30,12 @@
 
                     <!-- Trial Balance Report Card -->
                     <a href="{{ route('reports.trial-balance.index') }}"
-                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-4 intro-y bg-white block">
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
                         <div class="p-5 flex justify-between">
                             <div>
                                 <div class="text-3xl font-bold leading-8 text-gray-800">TB</div>
                                 <div class="mt-1 text-base font-extrabold text-gray-700">Trial
                                     Balance</div>
-                                <div class="text-xs text-gray-500 mt-1">Database View</div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-green-600">
@@ -48,13 +47,12 @@
 
                     <!-- Account Balances Report Card -->
                     <a href="{{ route('reports.account-balances.index') }}"
-                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-4 intro-y bg-white block">
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
                         <div class="p-5 flex justify-between">
                             <div>
                                 <div class="text-3xl font-bold leading-8 text-gray-800">AB</div>
                                 <div class="mt-1 text-base font-extrabold text-gray-700">Account
                                     Balances</div>
-                                <div class="text-xs text-gray-500 mt-1">Database View</div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-purple-600">
@@ -66,17 +64,32 @@
 
                     <!-- FMR vs AMR Comparison Report Card -->
                     <a href="{{ route('reports.fmr-amr-comparison.index') }}"
-                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-4 intro-y bg-white block">
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
                         <div class="p-5 flex justify-between">
                             <div>
                                 <div class="text-3xl font-bold leading-8 text-gray-800">FMR</div>
                                 <div class="mt-1 text-base font-extrabold text-gray-700">FMR vs AMR</div>
-                                <div class="text-xs text-gray-500 mt-1">Monthly Comparison</div>
                             </div>
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
                                 stroke="currentColor" class="h-16 w-16 text-rose-600">
                                 <path stroke-linecap="round" stroke-linejoin="round"
                                     d="M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5" />
+                            </svg>
+                        </div>
+                    </a>
+
+                    <!-- Shop List Report Card -->
+                    <a href="{{ route('reports.shop-list.index') }}"
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8 text-gray-800">SL</div>
+                                <div class="mt-1 text-base font-extrabold text-gray-700">Shop List</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-sky-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M13.5 21v-7.5a.75.75 0 01.75-.75h3a.75.75 0 01.75.75V21m-4.5 0H2.36m11.14 0H18m0 0h3.64m-1.39 0V9.349m-16.5 11.65V9.35m0 0a3.001 3.001 0 003.75-.615A2.993 2.993 0 009.75 9.75c.896 0 1.7-.393 2.25-1.016a2.993 2.993 0 002.25 1.016c.896 0 1.7-.393 2.25-1.016a3.001 3.001 0 003.75.614m-16.5 0a3.004 3.004 0 01-.621-4.72L4.318 3.44A1.5 1.5 0 015.378 3h13.243a1.5 1.5 0 011.06.44l1.19 1.189a3 3 0 01-.621 4.72m-13.5 8.65h3.75a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75H6.75a.75.75 0 00-.75.75v3.75c0 .415.336.75.75.75z" />
                             </svg>
                         </div>
                     </a>

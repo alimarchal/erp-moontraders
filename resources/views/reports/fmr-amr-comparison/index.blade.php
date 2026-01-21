@@ -115,8 +115,8 @@
         </div>
     </x-filter-section>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8  ">
-        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg my-4 print:shadow-none">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
                 <p class="text-center font-extrabold mb-2">
                     Moon Traders<br>
@@ -128,10 +128,6 @@
                         Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
                     </span>
                 </p>
-
-
-
-                <div class="page-footer"></div>
 
                 <table class="report-table">
                     <thead>

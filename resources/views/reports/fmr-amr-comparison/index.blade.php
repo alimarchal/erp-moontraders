@@ -72,8 +72,8 @@
         </div>
     </x-filter-section>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div class="bg-white overflow-hidden p-4">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 ">
+        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg my-4 print:shadow-none">
             <div class="overflow-x-auto">
                 <p class="text-center font-extrabold mb-4">
                     FMR vs AMR Comparison Report<br>

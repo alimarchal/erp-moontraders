@@ -22,7 +22,6 @@
 
             @media print {
                 @page {
-                    /* size: landscape; */
                     margin: 10mm;
                 }
 
@@ -31,8 +30,8 @@
                 }
 
                 body {
-                    margin: 0;
-                    padding: 0;
+                    margin: 0 !important;
+                    padding: 0 !important;
                 }
 
                 .max-w-7xl {
@@ -42,15 +41,29 @@
                     padding: 0 !important;
                 }
 
+                .bg-white {
+                    margin: 0 !important;
+                    padding: 10px !important;
+                    box-shadow: none !important;
+                }
+
+                .overflow-x-auto {
+                    overflow: visible !important;
+                }
+
                 .report-table {
-                    font-size: 12px !important;
+                    font-size: 11px !important;
                     width: 100% !important;
-                    table-layout: fixed;
                 }
 
                 .report-table th,
                 .report-table td {
-                    padding: 2px !important;
+                    padding: 2px 3px !important;
+                }
+
+                p {
+                    margin-top: 0 !important;
+                    margin-bottom: 8px !important;
                 }
             }
         </style>

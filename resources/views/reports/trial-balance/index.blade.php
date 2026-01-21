@@ -122,9 +122,9 @@
                     onchange="this.form.submit()">
                     <option value="">Custom Date</option>
                     @foreach($accountingPeriods as $period)
-                    <option value="{{ $period->id }}" {{ $periodId==$period->id ? 'selected' : '' }}>
-                        {{ $period->name }} (As of {{ \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
-                    </option>
+                        <option value="{{ $period->id }}" {{ $periodId == $period->id ? 'selected' : '' }}>
+                            {{ $period->name }} (As of {{ \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -159,23 +159,22 @@
                         {{ number_format((float) $trialBalance->total_credits, 2) }}
                     </div>
                 </div>
-                <div
-                    class="p-4 rounded-lg {{ abs($trialBalance->difference) < 0.01 ? 'bg-emerald-50' : 'bg-red-50' }}">
+                <div class="p-4 rounded-lg {{ abs($trialBalance->difference) < 0.01 ? 'bg-emerald-50' : 'bg-red-50' }}">
                     <div class="text-sm text-gray-600">Difference</div>
                     <div
                         class="text-2xl font-bold font-mono {{ abs($trialBalance->difference) < 0.01 ? 'text-emerald-700' : 'text-red-700' }}">
                         {{ number_format((float) $trialBalance->difference, 2) }}
                     </div>
-                    @if(abs($trialBalance->difference) < 0.01) <div
-                        class="text-xs text-emerald-600 mt-1">✓ Balanced
+                    @if(abs($trialBalance->difference) < 0.01)
+                        <div class="text-xs text-emerald-600 mt-1">✓ Balanced
+                        </div>
+                    @else
+                        <div class="text-xs text-red-600 mt-1">⚠️ Out of Balance</div>
+                    @endif
                 </div>
-                @else
-                <div class="text-xs text-red-600 mt-1">⚠️ Out of Balance</div>
-                @endif
             </div>
         </div>
     </div>
-    </div>
 
-    
+
 </x-app-layout>

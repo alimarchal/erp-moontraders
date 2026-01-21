@@ -106,10 +106,10 @@
                     onchange="this.form.submit()">
                     <option value="">All Time (Custom Date)</option>
                     @foreach($accountingPeriods as $period)
-                    <option value="{{ $period->id }}" {{ $periodId==$period->id ? 'selected' : '' }}>
-                        {{ $period->name }} ({{ \Carbon\Carbon::parse($period->start_date)->format('M d, Y') }} - {{
+                                    <option value="{{ $period->id }}" {{ $periodId == $period->id ? 'selected' : '' }}>
+                                        {{ $period->name }} ({{ \Carbon\Carbon::parse($period->start_date)->format('M d, Y') }} - {{
                         \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
-                    </option>
+                                    </option>
                     @endforeach
                 </select>
             </div>
@@ -123,11 +123,11 @@
                 <x-label for="per_page" value="Show Per Page" />
                 <select id="per_page" name="per_page"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
-                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page')==50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page', 100)==100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
+                    <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page', 100) == 100 ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page') == 250 ? 'selected' : '' }}>250</option>
                 </select>
             </div>
 
@@ -137,10 +137,10 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
-                    <option value="{{ $account->account_code }}" {{ request('filter.account_code')===$account->
+                                    <option value="{{ $account->account_code }}" {{ request('filter.account_code') === $account->
                         account_code ? 'selected' : '' }}>
-                        {{ $account->account_code }} - {{ $account->account_name }}
-                    </option>
+                                        {{ $account->account_code }} - {{ $account->account_name }}
+                                    </option>
                     @endforeach
                 </select>
             </div>
@@ -151,10 +151,10 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
-                    <option value="{{ $account->account_name }}" {{ request('filter.account_name')===$account->
+                                    <option value="{{ $account->account_name }}" {{ request('filter.account_name') === $account->
                         account_name ? 'selected' : '' }}>
-                        {{ $account->account_name }} ({{ $account->account_code }})
-                    </option>
+                                        {{ $account->account_name }} ({{ $account->account_code }})
+                                    </option>
                     @endforeach
                 </select>
             </div>
@@ -165,9 +165,9 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Types</option>
                     @foreach($accountTypes as $type)
-                    <option value="{{ $type }}" {{ request('filter.account_type')===$type ? 'selected' : '' }}>
-                        {{ $type }}
-                    </option>
+                        <option value="{{ $type }}" {{ request('filter.account_type') === $type ? 'selected' : '' }}>
+                            {{ $type }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -177,10 +177,10 @@
                 <select id="filter_normal_balance" name="filter[normal_balance]"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
-                    <option value="debit" {{ request('filter.normal_balance')==='debit' ? 'selected' : '' }}>
+                    <option value="debit" {{ request('filter.normal_balance') === 'debit' ? 'selected' : '' }}>
                         Debit
                     </option>
-                    <option value="credit" {{ request('filter.normal_balance')==='credit' ? 'selected' : '' }}>
+                    <option value="credit" {{ request('filter.normal_balance') === 'credit' ? 'selected' : '' }}>
                         Credit
                     </option>
                 </select>
@@ -191,10 +191,10 @@
                 <select id="filter_is_active" name="filter[is_active]"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
-                    <option value="true" {{ request('filter.is_active')==='true' ? 'selected' : '' }}>
+                    <option value="true" {{ request('filter.is_active') === 'true' ? 'selected' : '' }}>
                         Active
                     </option>
-                    <option value="false" {{ request('filter.is_active')==='false' ? 'selected' : '' }}>
+                    <option value="false" {{ request('filter.is_active') === 'false' ? 'selected' : '' }}>
                         Inactive
                     </option>
                 </select>
@@ -216,29 +216,29 @@
                 <x-label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="account_code" {{ request('sort')=='account_code' || !request('sort') ? 'selected'
-                        : '' }}>Account Code (A-Z)</option>
-                    <option value="-account_code" {{ request('sort')=='-account_code' ? 'selected' : '' }}>Account Code
+                    <option value="account_code" {{ request('sort') == 'account_code' || !request('sort') ? 'selected'
+    : '' }}>Account Code (A-Z)</option>
+                    <option value="-account_code" {{ request('sort') == '-account_code' ? 'selected' : '' }}>Account Code
                         (Z-A)</option>
-                    <option value="account_name" {{ request('sort')=='account_name' ? 'selected' : '' }}>Account Name
+                    <option value="account_name" {{ request('sort') == 'account_name' ? 'selected' : '' }}>Account Name
                         (A-Z)</option>
-                    <option value="-account_name" {{ request('sort')=='-account_name' ? 'selected' : '' }}>Account Name
+                    <option value="-account_name" {{ request('sort') == '-account_name' ? 'selected' : '' }}>Account Name
                         (Z-A)</option>
-                    <option value="account_type" {{ request('sort')=='account_type' ? 'selected' : '' }}>Account Type
+                    <option value="account_type" {{ request('sort') == 'account_type' ? 'selected' : '' }}>Account Type
                         (A-Z)</option>
-                    <option value="-account_type" {{ request('sort')=='-account_type' ? 'selected' : '' }}>Account Type
+                    <option value="-account_type" {{ request('sort') == '-account_type' ? 'selected' : '' }}>Account Type
                         (Z-A)</option>
-                    <option value="-total_debits" {{ request('sort')=='-total_debits' ? 'selected' : '' }}>Debits
+                    <option value="-total_debits" {{ request('sort') == '-total_debits' ? 'selected' : '' }}>Debits
                         (High-Low)</option>
-                    <option value="total_debits" {{ request('sort')=='total_debits' ? 'selected' : '' }}>Debits
+                    <option value="total_debits" {{ request('sort') == 'total_debits' ? 'selected' : '' }}>Debits
                         (Low-High)</option>
-                    <option value="-total_credits" {{ request('sort')=='-total_credits' ? 'selected' : '' }}>Credits
+                    <option value="-total_credits" {{ request('sort') == '-total_credits' ? 'selected' : '' }}>Credits
                         (High-Low)</option>
-                    <option value="total_credits" {{ request('sort')=='total_credits' ? 'selected' : '' }}>Credits
+                    <option value="total_credits" {{ request('sort') == 'total_credits' ? 'selected' : '' }}>Credits
                         (Low-High)</option>
-                    <option value="-balance" {{ request('sort')=='-balance' ? 'selected' : '' }}>Balance (High-Low)
+                    <option value="-balance" {{ request('sort') == '-balance' ? 'selected' : '' }}>Balance (High-Low)
                     </option>
-                    <option value="balance" {{ request('sort')=='balance' ? 'selected' : '' }}>Balance (Low-High)
+                    <option value="balance" {{ request('sort') == 'balance' ? 'selected' : '' }}>Balance (Low-High)
                     </option>
                 </select>
             </div>
@@ -267,50 +267,50 @@
         ['label' => 'Status', 'align' => 'text-center'],
     ]" emptyMessage="No account balances found.">
         @foreach ($balances as $index => $balance)
-        <tr class="border-b border-gray-200 text-sm">
-            <td class="py-1 px-2 text-center">
-                {{ $balances->firstItem() + $index }}
-            </td>
-            <td class="py-1 px-2">
-                <div class="font-semibold uppercase">{{ $balance->account_code }}</div>
-            </td>
-            <td class="py-1 px-2">
-                {{ $balance->account_name }}
-            </td>
-            <td class="py-1 px-2">
-                <div class="text-xs">{{ $balance->account_type }}</div>
-            </td>
-            <td class="py-1 px-2">
-                <span
-                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full 
-                    {{ $balance->report_group === 'BalanceSheet' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
-                    {{ $balance->report_group === 'BalanceSheet' ? 'Balance Sheet' : 'Income Statement' }}
-                </span>
-            </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format((float) $balance->total_debits, 2) }}
-            </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format((float) $balance->total_credits, 2) }}
-            </td>
-            <td
-                class="py-1 px-2 text-right font-mono font-bold {{ $balance->balance < 0 ? 'text-red-600' : 'text-green-600' }}">
-                {{ number_format((float) $balance->balance, 2) }}
-            </td>
-            <td class="py-1 px-2 text-center">
-                @if ($balance->is_active)
-                <span
-                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">
-                    Active
-                </span>
-                @else
-                <span
-                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
-                    Inactive
-                </span>
-                @endif
-            </td>
-        </tr>
+            <tr class="border-b border-gray-200 text-sm">
+                <td class="py-1 px-2 text-center">
+                    {{ $balances->firstItem() + $index }}
+                </td>
+                <td class="py-1 px-2">
+                    <div class="font-semibold uppercase">{{ $balance->account_code }}</div>
+                </td>
+                <td class="py-1 px-2">
+                    {{ $balance->account_name }}
+                </td>
+                <td class="py-1 px-2">
+                    <div class="text-xs">{{ $balance->account_type }}</div>
+                </td>
+                <td class="py-1 px-2">
+                    <span
+                        class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full 
+                            {{ $balance->report_group === 'BalanceSheet' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
+                        {{ $balance->report_group === 'BalanceSheet' ? 'Balance Sheet' : 'Income Statement' }}
+                    </span>
+                </td>
+                <td class="py-1 px-2 text-right font-mono">
+                    {{ number_format((float) $balance->total_debits, 2) }}
+                </td>
+                <td class="py-1 px-2 text-right font-mono">
+                    {{ number_format((float) $balance->total_credits, 2) }}
+                </td>
+                <td
+                    class="py-1 px-2 text-right font-mono font-bold {{ $balance->balance < 0 ? 'text-red-600' : 'text-green-600' }}">
+                    {{ number_format((float) $balance->balance, 2) }}
+                </td>
+                <td class="py-1 px-2 text-center">
+                    @if ($balance->is_active)
+                        <span
+                            class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">
+                            Active
+                        </span>
+                    @else
+                        <span
+                            class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
+                            Inactive
+                        </span>
+                    @endif
+                </td>
+            </tr>
         @endforeach
         <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
             <td colspan="5" class="py-2 px-2 text-right">

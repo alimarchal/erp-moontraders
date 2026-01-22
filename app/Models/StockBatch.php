@@ -62,6 +62,23 @@ class StockBatch extends Model
         return $this->belongsTo(PromotionalCampaign::class);
     }
 
+    public function grnItem()
+    {
+        return $this->hasOne(GoodsReceiptNoteItem::class, 'batch_number', 'batch_code');
+    }
+
+    public function grn()
+    {
+        return $this->hasOneThrough(
+            GoodsReceiptNote::class,
+            GoodsReceiptNoteItem::class,
+            'batch_number',
+            'id',
+            'batch_code',
+            'grn_id'
+        );
+    }
+
     public function isExpired(): bool
     {
         return $this->expiry_date && $this->expiry_date < now();

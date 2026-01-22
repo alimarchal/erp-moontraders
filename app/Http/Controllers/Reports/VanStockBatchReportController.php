@@ -3,11 +3,10 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
-
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\Vehicle;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class VanStockBatchReportController extends Controller
@@ -16,6 +15,7 @@ class VanStockBatchReportController extends Controller
     {
         $vehicleId = $request->input('filter.vehicle_id');
         $productId = $request->input('filter.product_id');
+        $expiryStatus = $request->input('filter.expiry_status');
 
         $query = StockMovement::query()
             ->select(
@@ -23,12 +23,12 @@ class VanStockBatchReportController extends Controller
                 'product_id',
                 'stock_batch_id',
                 DB::raw("SUM(
-                    CASE 
-                        WHEN movement_type = 'transfer' AND reference_type = 'App\\\\Models\\\\GoodsIssue' THEN -quantity 
-                        WHEN movement_type = 'sale' THEN quantity 
-                        WHEN movement_type = 'return' THEN -quantity 
-                        WHEN movement_type = 'shortage' THEN quantity 
-                        ELSE 0 
+                    CASE
+                        WHEN movement_type = 'transfer' AND reference_type = 'App\\\\Models\\\\GoodsIssue' THEN -quantity
+                        WHEN movement_type = 'sale' THEN quantity
+                        WHEN movement_type = 'return' THEN -quantity
+                        WHEN movement_type = 'shortage' THEN quantity
+                        ELSE 0
                     END
                 ) as quantity_on_hand")
             )
@@ -45,8 +45,28 @@ class VanStockBatchReportController extends Controller
         }
 
         $stocks = $query->with(['vehicle', 'product', 'stockBatch'])
-            ->get()
-            ->groupBy('vehicle_id');
+            ->get();
+
+        // Apply expiry status filter after fetching (since expiry_date is on stockBatch)
+        if ($expiryStatus) {
+            $stocks = $stocks->filter(function ($stock) use ($expiryStatus) {
+                $expiryDate = $stock->stockBatch->expiry_date ?? null;
+
+                if (! $expiryDate) {
+                    return $expiryStatus === 'valid'; // Items without expiry are considered valid
+                }
+
+                return match ($expiryStatus) {
+                    'expired' => $expiryDate->isPast(),
+                    'expiring_soon' => ! $expiryDate->isPast() && $expiryDate->diffInDays(now()) < 30,
+                    'valid' => $expiryDate->isFuture() && $expiryDate->diffInDays(now()) >= 30,
+                    default => true,
+                };
+            });
+        }
+
+        // Group by vehicle
+        $stocks = $stocks->groupBy('vehicle_id');
 
         $totals = [
             'total_quantity' => 0,
@@ -58,11 +78,11 @@ class VanStockBatchReportController extends Controller
             foreach ($vehicleStocks as $stock) {
                 $batch = $stock->stockBatch;
                 $sellingPrice = $batch->is_promotional ? ($batch->promotional_selling_price ?? $batch->selling_price) : $batch->selling_price;
-                
+
                 $totals['total_quantity'] += $stock->quantity_on_hand;
                 $totals['total_value_cost'] += $stock->quantity_on_hand * ($batch->unit_cost ?? 0);
                 $totals['total_value_selling'] += $stock->quantity_on_hand * ($sellingPrice ?? 0);
-                
+
                 // Attach calculated prices to the stock object for the view
                 $stock->calculated_selling_price = $sellingPrice;
                 $stock->calculated_unit_cost = $batch->unit_cost ?? 0;

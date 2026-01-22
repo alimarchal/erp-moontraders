@@ -35,8 +35,24 @@ class CreditorsLedgerController extends Controller
             $customersQuery->where('customer_code', 'like', '%'.$request->input('filter.customer_code').'%');
         }
 
+        if ($request->filled('filter.business_name')) {
+            $customersQuery->where('business_name', 'like', '%'.$request->input('filter.business_name').'%');
+        }
+
+        if ($request->filled('filter.phone')) {
+            $customersQuery->where('phone', 'like', '%'.$request->input('filter.phone').'%');
+        }
+
         if ($request->filled('filter.city')) {
-            $customersQuery->where('city', 'like', '%'.$request->input('filter.city').'%');
+            $customersQuery->where('city', $request->input('filter.city'));
+        }
+
+        if ($request->filled('filter.channel_type')) {
+            $customersQuery->where('channel_type', $request->input('filter.channel_type'));
+        }
+
+        if ($request->filled('filter.is_active')) {
+            $customersQuery->where('is_active', $request->input('filter.is_active'));
         }
 
         if ($request->filled('filter.balance_min')) {
@@ -65,12 +81,14 @@ class CreditorsLedgerController extends Controller
             ->selectRaw('SUM(debit) as total_debits, SUM(credit) as total_credits')
             ->first();
 
-        $cities = Customer::distinct('city')->whereNotNull('city')->pluck('city')->sort();
+        $cities = Customer::whereNotNull('city')->distinct()->pluck('city')->sort();
+        $channelTypes = Customer::whereNotNull('channel_type')->distinct()->pluck('channel_type')->sort();
 
         return view('reports.creditors-ledger.index', [
             'customers' => $customers,
             'totals' => $totals,
             'cities' => $cities,
+            'channelTypes' => $channelTypes,
         ]);
     }
 
@@ -84,7 +102,8 @@ class CreditorsLedgerController extends Controller
 
         $dateFrom = $request->input('filter.date_from');
         $dateTo = $request->input('filter.date_to');
-        // Query customer_employee_account_transactions through the accounts
+
+        // Base query for entries
         $entriesQuery = DB::table('customer_employee_account_transactions as ceat')
             ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
             ->leftJoin('employees as e', 'cea.employee_id', '=', 'e.id')
@@ -110,11 +129,20 @@ class CreditorsLedgerController extends Controller
             $entriesQuery->where('ceat.transaction_type', $request->input('filter.transaction_type'));
         }
 
+        if ($request->filled('filter.reference_number')) {
+            $entriesQuery->where('ceat.reference_number', 'like', '%'.$request->input('filter.reference_number').'%');
+        }
+
+        if ($request->filled('filter.employee_id')) {
+            $entriesQuery->where('cea.employee_id', $request->input('filter.employee_id'));
+        }
+
         $entries = $entriesQuery->orderBy('ceat.transaction_date')
             ->orderBy('ceat.id')
             ->paginate($perPage)
             ->withQueryString();
 
+        // Calculate opening balance (all transactions before dateFrom or before current page)
         $openingBalance = 0;
         if ($dateFrom) {
             $openingBalanceResult = DB::table('customer_employee_account_transactions as ceat')
@@ -127,6 +155,51 @@ class CreditorsLedgerController extends Controller
 
             $openingBalance = $openingBalanceResult ? (float) $openingBalanceResult->balance : 0;
         }
+
+        // Calculate balance before current page (for pagination)
+        $balanceBeforePage = $openingBalance;
+        if ($entries->currentPage() > 1) {
+            // Get sum of all entries before current page
+            $beforePageQuery = DB::table('customer_employee_account_transactions as ceat')
+                ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                ->where('cea.customer_id', $customer->id)
+                ->whereNull('ceat.deleted_at');
+
+            if ($dateFrom) {
+                $beforePageQuery->whereDate('ceat.transaction_date', '>=', $dateFrom);
+            }
+            if ($dateTo) {
+                $beforePageQuery->whereDate('ceat.transaction_date', '<=', $dateTo);
+            }
+            if ($request->filled('filter.transaction_type')) {
+                $beforePageQuery->where('ceat.transaction_type', $request->input('filter.transaction_type'));
+            }
+            if ($request->filled('filter.reference_number')) {
+                $beforePageQuery->where('ceat.reference_number', 'like', '%'.$request->input('filter.reference_number').'%');
+            }
+            if ($request->filled('filter.employee_id')) {
+                $beforePageQuery->where('cea.employee_id', $request->input('filter.employee_id'));
+            }
+
+            $entriesBeforePage = ($entries->currentPage() - 1) * $perPage;
+            $beforePageResult = $beforePageQuery
+                ->orderBy('ceat.transaction_date')
+                ->orderBy('ceat.id')
+                ->limit($entriesBeforePage)
+                ->selectRaw('COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0) as balance')
+                ->first();
+
+            $balanceBeforePage = $openingBalance + ($beforePageResult ? (float) $beforePageResult->balance : 0);
+        }
+
+        // Calculate running balance for each entry
+        $runningBalance = $balanceBeforePage;
+        $entries->getCollection()->transform(function ($entry) use (&$runningBalance) {
+            $runningBalance += (float) ($entry->debit ?? 0) - (float) ($entry->credit ?? 0);
+            $entry->balance = $runningBalance;
+
+            return $entry;
+        });
 
         $summary = [
             'opening_balance' => $openingBalance,
@@ -141,11 +214,17 @@ class CreditorsLedgerController extends Controller
             ->whereNull('deleted_at')
             ->pluck('transaction_type');
 
+        // Get employees for filter dropdown
+        $employees = Employee::whereHas('customerAccounts', function ($q) use ($customer) {
+            $q->where('customer_id', $customer->id);
+        })->orderBy('name')->get();
+
         return view('reports.creditors-ledger.customer-ledger', [
             'customer' => $customer,
             'entries' => $entries,
             'summary' => $summary,
             'transactionTypes' => $transactionTypes,
+            'employees' => $employees,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
         ]);

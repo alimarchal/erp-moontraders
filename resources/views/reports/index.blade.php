@@ -93,6 +93,22 @@
                             </svg>
                         </div>
                     </a>
+
+                    <!-- SKU & Rates Report Card -->
+                    <a href="{{ route('reports.sku-rates.index') }}"
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8 text-gray-800">SKU</div>
+                                <div class="mt-1 text-base font-extrabold text-gray-700">SKU & Rates</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-amber-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+                            </svg>
+                        </div>
+                    </a>
                 </div>
             </div>
 

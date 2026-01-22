@@ -100,7 +100,18 @@
     @endpush
 
     <x-filter-section :action="route('reports.fmr-amr-comparison.index')" class="no-print">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+                <x-label for="filter_source" value="Source" />
+                <select id="filter_source" name="filter[source]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="all" {{ $sourceFilter === 'all' ? 'selected' : '' }}>All Sources</option>
+                    <option value="grn" {{ $sourceFilter === 'grn' ? 'selected' : '' }}>Supplier GRN</option>
+                    <option value="settlement" {{ $sourceFilter === 'settlement' ? 'selected' : '' }}>Sales Settlement
+                    </option>
+                </select>
+            </div>
+
             <div>
                 <x-label for="filter_supplier_ids" value="Supplier(s)" />
                 <select id="filter_supplier_ids" name="filter[supplier_ids][]" multiple
@@ -111,7 +122,7 @@
                         </option>
                     @endforeach
                 </select>
-                <p class="text-xs text-gray-500 mt-1">Leave empty to show all suppliers</p>
+                <p class="text-xs text-gray-500 mt-1">Only applies to GRN source</p>
             </div>
 
             <div>
@@ -134,7 +145,8 @@
                 <p class="text-center font-extrabold mb-2">
                     Moon Traders<br>
                     FMR vs AMR Comparison Report<br>
-                    <span class="text-sm font-semibold">Supplier: {{ $selectedSupplierNames }}</span><br>
+                    <span class="text-sm font-semibold">Source: {{ $selectedSourceLabel }} | Supplier:
+                        {{ $selectedSupplierNames }}</span><br>
                     For the period {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
                     {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
                     <br>

@@ -26,6 +26,7 @@ use App\Http\Controllers\Reports\FmrAmrComparisonController;
 use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\ShopListController;
+use App\Http\Controllers\Reports\SkuRatesController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\Reports\VanStockBatchReportController;
 use App\Http\Controllers\Reports\VanStockLedgerController;
@@ -234,5 +235,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
         Route::get('fmr-amr-comparison', [FmrAmrComparisonController::class, 'index'])->name('fmr-amr-comparison.index');
         Route::get('shop-list', [ShopListController::class, 'index'])->name('shop-list.index');
+        Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
     });
 });

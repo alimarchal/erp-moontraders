@@ -36,6 +36,9 @@ class FmrAmrComparisonController extends Controller
         }
         $supplierIds = array_filter($supplierIds);
 
+        // Get source filter: 'all', 'grn', or 'settlement'
+        $sourceFilter = $request->input('filter.source', 'all');
+
         // Get all active suppliers for the dropdown
         $suppliers = Supplier::query()
             ->where('disabled', false)
@@ -60,14 +63,18 @@ class FmrAmrComparisonController extends Controller
         // Generate all months for the selected date range
         $allMonths = $this->generateAllMonths($startDate, $endDate);
 
-        // Build the query to get monthly totals (grouped by supplier and month)
+        // Build the query to get monthly totals (grouped by source/supplier and month)
+        // Hybrid approach: Shows supplier for GRN entries, "Sales Settlement" for non-GRN entries
         $actualData = collect();
 
         if ($fmrLiquidAccountId && $fmrPowderAccountId && $amrPowderAccountId && $amrLiquidAccountId) {
             $query = DB::table('journal_entry_details as jed')
                 ->join('journal_entries as je', 'je.id', '=', 'jed.journal_entry_id')
-                ->join('goods_receipt_notes as grn', 'grn.journal_entry_id', '=', 'je.id')
-                ->join('suppliers as s', 's.id', '=', 'grn.supplier_id')
+                ->leftJoin('goods_receipt_notes as grn', function ($join) {
+                    $join->on('grn.journal_entry_id', '=', 'je.id')
+                        ->whereNull('grn.deleted_at');
+                })
+                ->leftJoin('suppliers as s', 's.id', '=', 'grn.supplier_id')
                 ->whereIn('jed.chart_of_account_id', [
                     $fmrLiquidAccountId,
                     $fmrPowderAccountId,
@@ -76,18 +83,26 @@ class FmrAmrComparisonController extends Controller
                 ])
                 ->where('je.status', 'posted')
                 ->whereNull('je.deleted_at')
-                ->whereNull('grn.deleted_at')
                 ->whereBetween('je.entry_date', [$startDate, $endDate]);
 
-            // Apply supplier filter when supplier(s) selected
+            // Apply source filter
+            if ($sourceFilter === 'grn') {
+                // Only GRN-linked entries (supplier must exist)
+                $query->whereNotNull('grn.id');
+            } elseif ($sourceFilter === 'settlement') {
+                // Only non-GRN entries (Sales Settlements)
+                $query->whereNull('grn.id');
+            }
+
+            // Apply supplier filter when supplier(s) selected - only applies to GRN entries
             if (! empty($supplierIds)) {
                 $query->whereIn('grn.supplier_id', $supplierIds);
             }
 
             $actualData = $query->select(
-                's.id as supplier_id',
-                's.supplier_name',
-                's.short_name',
+                DB::raw('COALESCE(s.id, 0) as supplier_id'),
+                DB::raw("COALESCE(s.supplier_name, 'Sales Settlement') as supplier_name"),
+                DB::raw("COALESCE(s.short_name, 'Settlement') as short_name"),
                 DB::raw('YEAR(je.entry_date) as year'),
                 DB::raw('MONTH(je.entry_date) as month'),
                 DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$fmrLiquidAccountId} THEN (jed.credit - jed.debit) ELSE 0 END) as fmr_liquid_total"),
@@ -95,8 +110,14 @@ class FmrAmrComparisonController extends Controller
                 DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$amrPowderAccountId} THEN (jed.debit - jed.credit) ELSE 0 END) as amr_powder_total"),
                 DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$amrLiquidAccountId} THEN (jed.debit - jed.credit) ELSE 0 END) as amr_liquid_total")
             )
-                ->groupBy('s.id', 's.supplier_name', 's.short_name', DB::raw('YEAR(je.entry_date)'), DB::raw('MONTH(je.entry_date)'))
-                ->orderBy('s.supplier_name')
+                ->groupBy(
+                    DB::raw('COALESCE(s.id, 0)'),
+                    DB::raw("COALESCE(s.supplier_name, 'Sales Settlement')"),
+                    DB::raw("COALESCE(s.short_name, 'Settlement')"),
+                    DB::raw('YEAR(je.entry_date)'),
+                    DB::raw('MONTH(je.entry_date)')
+                )
+                ->orderBy(DB::raw('COALESCE(s.supplier_name, "ZZZZ")'))
                 ->orderBy(DB::raw('YEAR(je.entry_date)'))
                 ->orderBy(DB::raw('MONTH(je.entry_date)'))
                 ->get();
@@ -148,6 +169,14 @@ class FmrAmrComparisonController extends Controller
             ? $suppliers->whereIn('id', $supplierIds)->pluck('supplier_name')->implode(', ')
             : 'All Suppliers';
 
+        // Get source label for display
+        $sourceLabels = [
+            'all' => 'All Sources',
+            'grn' => 'Supplier GRN Only',
+            'settlement' => 'Sales Settlement Only',
+        ];
+        $selectedSourceLabel = $sourceLabels[$sourceFilter] ?? 'All Sources';
+
         return view('reports.fmr-amr-comparison.index', [
             'reportData' => $reportData,
             'grandTotals' => $grandTotals,
@@ -156,6 +185,8 @@ class FmrAmrComparisonController extends Controller
             'suppliers' => $suppliers,
             'selectedSupplierIds' => $supplierIds,
             'selectedSupplierNames' => $selectedSupplierNames,
+            'sourceFilter' => $sourceFilter,
+            'selectedSourceLabel' => $selectedSourceLabel,
         ]);
     }
 

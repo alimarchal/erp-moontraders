@@ -170,10 +170,25 @@
                 </div>
             </div>
 
-            <!-- Sales & Distribution Reports Section -->
+            <!-- Goods Issue Reports Section (Moved from just being in Sales/Distribution?) - Actually sticking to Sales & Distribution -->
             <div class="mb-6">
                 <h3 class="text-lg font-semibold text-gray-700 mb-3">Sales & Distribution Reports</h3>
                 <div class="grid grid-cols-12 gap-6">
+                    <!-- Goods Issue Report Card -->
+                    <a href="{{ route('reports.goods-issue.index') }}"
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8 text-gray-800">GIR</div>
+                                <div class="mt-1 text-base font-extrabold text-gray-700">Goods Issue</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-indigo-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125V13.5m-9-3.75h3.375c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125h-3.375m0 0H6.375c-.621 0-1.125-.504-1.125-1.125v-1.5c0-.621.504-1.125 1.125-1.125h3.375m0 0v-2.25" />
+                            </svg>
+                        </div>
+                    </a>
                     <!-- Daily Sales Report Card -->
                     <a href="{{ route('reports.daily-sales.index') }}"
                         class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">

@@ -238,5 +238,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('sales-settlement', [\App\Http\Controllers\Reports\SalesSettlementReportController::class, 'index'])->name('sales-settlement.index');
         Route::get('shop-list', [ShopListController::class, 'index'])->name('shop-list.index');
         Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
+        Route::get('goods-issue', [\App\Http\Controllers\Reports\GoodsIssueReportController::class, 'index'])->name('goods-issue.index');
     });
 });

@@ -234,6 +234,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('balance-sheet', [BalanceSheetController::class, 'index'])->name('balance-sheet.index');
         Route::get('income-statement', [IncomeStatementController::class, 'index'])->name('income-statement.index');
         Route::get('fmr-amr-comparison', [FmrAmrComparisonController::class, 'index'])->name('fmr-amr-comparison.index');
+        Route::get('sales-settlement/{salesSettlement}/print', [\App\Http\Controllers\Reports\SalesSettlementReportController::class, 'print'])->name('sales-settlement.print');
+        Route::get('sales-settlement', [\App\Http\Controllers\Reports\SalesSettlementReportController::class, 'index'])->name('sales-settlement.index');
         Route::get('shop-list', [ShopListController::class, 'index'])->name('shop-list.index');
         Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
     });

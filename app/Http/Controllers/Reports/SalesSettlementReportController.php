@@ -139,7 +139,9 @@ class SalesSettlementReportController extends Controller
             'recoveries.bankAccount',
             'bankTransfers.customer',
             'bankTransfers.bankAccount',
-            'cashDenominations'
+            'cashDenominations',
+            'amrPowders.product',
+            'amrLiquids.product'
         ]);
 
         return view('reports.sales-settlement.print', [

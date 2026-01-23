@@ -193,265 +193,406 @@
             </tfoot>
         </table>
 
-        <!-- Wrapper for Financial Cards -->
-        <div class="grid grid-cols-2 gap-6">
+        <!-- Financial Details Section -->
+        <div class="mt-6 space-y-6">
 
-            <!-- Credit Sales -->
-            <div>
-                <div class="section-title">Credit Sales Detail</div>
-                <table class="report-table">
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th class="text-right">Sale</th>
-                            <th class="text-right">Balance</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($settlement->creditSales as $creditSale)
+            <!-- 1. Credit Sales Detail -->
+            @if($settlement->creditSales->count() > 0)
+                <div>
+                    <div class="section-title">Credit Sales Detail</div>
+                    <table class="report-table">
+                        <thead>
                             <tr>
-                                <td>{{ $creditSale->customer->customer_name ?? 'N/A' }}</td>
-                                <td class="text-right font-mono">{{ number_format($creditSale->sale_amount, 2) }}</td>
-                                <td class="text-right font-mono">{{ number_format($creditSale->sale_amount, 2) }}</td>
-                                <!-- Balance logic same as sale for now as per show view -->
+                                <th>Customer</th>
+                                <th>Invoice #</th>
+                                <th>Notes</th>
+                                <th class="text-right">Sale Amount</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="text-center italic">No credit sales</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                    <tfoot>
-                        <tr class="font-bold bg-gray-50">
-                            <td class="text-right">Total:</td>
-                            <td class="text-right font-mono">{{ number_format($settlement->credit_sales_amount, 2) }}
-                            </td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
-            <!-- Recoveries -->
-            <div>
-                <div class="section-title">Recoveries Detail</div>
-                <table class="report-table">
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th class="text-center">Method</th>
-                            <th>Bank</th>
-                            <th class="text-right">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($settlement->recoveries as $recovery)
-                            <tr>
-                                <td>{{ $recovery->customer->customer_name ?? 'N/A' }}</td>
-                                <td class="text-center uppercase text-[10px]">{{ $recovery->payment_method }}</td>
-                                <td>{{ $recovery->payment_method === 'bank_transfer' ? ($recovery->bankAccount->account_name ?? '-') : '-' }}
+                        </thead>
+                        <tbody>
+                            @foreach($settlement->creditSales as $credit)
+                                <tr>
+                                    <td>{{ $credit->customer->customer_name ?? 'N/A' }}</td>
+                                    <td>{{ $credit->invoice_number ?? '-' }}</td>
+                                    <td class="text-xs text-gray-600">{{ $credit->notes ?? '-' }}</td>
+                                    <td class="text-right font-mono">{{ number_format($credit->sale_amount, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr class="font-bold bg-gray-50">
+                                <td colspan="3" class="text-right">Total Credit Sales:</td>
+                                <td class="text-right font-mono">{{ number_format($settlement->credit_sales_amount, 2) }}
                                 </td>
-                                <td class="text-right font-mono">{{ number_format($recovery->amount, 2) }}</td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="text-center italic">No recoveries</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                    <tfoot>
-                        <tr class="font-bold bg-gray-50">
-                            <td colspan="3" class="text-right">Total:</td>
-                            <td class="text-right font-mono">{{ number_format($settlement->credit_recoveries, 2) }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+                        </tfoot>
+                    </table>
+                </div>
+            @endif
 
-            <!-- Cheques -->
-            <div>
-                <div class="section-title">Cheque Payments</div>
-                <table class="report-table">
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th>Cheque #</th>
-                            <th>Bank</th>
-                            <th>Date</th>
-                            <th class="text-right">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($settlement->cheques as $cheque)
+            <!-- 2. Recoveries Detail -->
+            @if($settlement->recoveries->count() > 0)
+                <div>
+                    <div class="section-title">Recoveries (Received)</div>
+                    <table class="report-table">
+                        <thead>
                             <tr>
-                                <td>{{ $cheque->customer->customer_name ?? 'N/A' }}</td>
-                                <td>{{ $cheque->cheque_number }}</td>
-                                <td>{{ $cheque->bank_name }}</td>
-                                <td>{{ $cheque->cheque_date ? \Carbon\Carbon::parse($cheque->cheque_date)->format('d-M-y') : '-' }}
+                                <th>Rec #</th>
+                                <th>Customer</th>
+                                <th class="text-center">Method</th>
+                                <th>Bank / Ref</th>
+                                <th>Notes</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($settlement->recoveries as $recovery)
+                                <tr>
+                                    <td>{{ $recovery->recovery_number ?? '-' }}</td>
+                                    <td>{{ $recovery->customer->customer_name ?? 'N/A' }}</td>
+                                    <td class="text-center uppercase text-xs">{{ $recovery->payment_method }}</td>
+                                    <td class="text-xs">
+                                        @if($recovery->payment_method === 'bank_transfer')
+                                            {{ $recovery->bankAccount->account_name ?? '-' }}
+                                        @elseif($recovery->payment_method === 'cheque')
+                                            {{ $recovery->cheque_number ?? '-' }}
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+                                    <td class="text-xs text-gray-600">{{ $recovery->notes ?? '-' }}</td>
+                                    <td class="text-right font-mono">{{ number_format($recovery->amount, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr class="font-bold bg-gray-50">
+                                <td colspan="5" class="text-right">Total Recoveries:</td>
+                                <td class="text-right font-mono">{{ number_format($settlement->credit_recoveries, 2) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            @endif
+
+            <!-- 3. Bank Transfers -->
+            @if($settlement->bankTransfers->count() > 0)
+                <div>
+                    <div class="section-title">Bank Transfers</div>
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Receiving Bank</th>
+                                <th>Ref #</th>
+                                <th>Notes</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach($settlement->bankTransfers as $transfer)
+                                <tr>
+                                    <td>{{ $transfer->transfer_date ? \Carbon\Carbon::parse($transfer->transfer_date)->format('d-M-y') : '-' }}
+                                    </td>
+                                    <td>{{ $transfer->customer->customer_name ?? 'N/A' }}</td>
+                                    <td>{{ $transfer->bankAccount->account_name ?? 'Online' }}</td>
+                                    <td>{{ $transfer->reference_number ?? '-' }}</td>
+                                    <td class="text-xs text-gray-600">{{ $transfer->notes ?? '-' }}</td>
+                                    <td class="text-right font-mono">{{ number_format($transfer->amount, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr class="font-bold bg-gray-50">
+                                <td colspan="5" class="text-right">Total Transfers:</td>
+                                <td class="text-right font-mono">{{ number_format($settlement->bank_transfer_amount, 2) }}
                                 </td>
-                                <td class="text-right font-mono">{{ number_format($cheque->amount, 2) }}</td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="text-center italic">No cheques</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                    <tfoot>
-                        <tr class="font-bold bg-gray-50">
-                            <td colspan="4" class="text-right">Total:</td>
-                            <td class="text-right font-mono">{{ number_format($settlement->cheques_collected, 2) }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+                        </tfoot>
+                    </table>
+                </div>
+            @endif
 
-            <!-- Bank Transfers -->
-            <div>
-                <div class="section-title">Bank Transfers</div>
-                <table class="report-table">
-                    <thead>
-                        <tr>
-                            <th>Customer</th>
-                            <th>Bank</th>
-                            <th>Ref #</th>
-                            <th>Date</th>
-                            <th class="text-right">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($settlement->bankTransfers as $transfer)
+            <!-- 4. Cheques -->
+            @if($settlement->cheques->count() > 0)
+                <div>
+                    <div class="section-title">Cheque Payments</div>
+                    <table class="report-table">
+                        <thead>
                             <tr>
-                                <td>{{ $transfer->customer->customer_name ?? 'N/A' }}</td>
-                                <td>{{ $transfer->bankAccount->account_name ?? 'Online' }}</td>
-                                <td>{{ $transfer->reference_number ?? '-' }}</td>
-                                <td>{{ $transfer->transfer_date ? \Carbon\Carbon::parse($transfer->transfer_date)->format('d-M-y') : '-' }}
-                                </td>
-                                <td class="text-right font-mono">{{ number_format($transfer->amount, 2) }}</td>
+                                <th>Cheque #</th>
+                                <th>Date</th>
+                                <th>Customer</th>
+                                <th>Bank Name</th>
+                                <th>Holder</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                                <th class="text-right">Amount</th>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="text-center italic">No bank transfers</td>
+                        </thead>
+                        <tbody>
+                            @foreach($settlement->cheques as $cheque)
+                                <tr>
+                                    <td>{{ $cheque->cheque_number }}</td>
+                                    <td>{{ $cheque->cheque_date ? \Carbon\Carbon::parse($cheque->cheque_date)->format('d-M-y') : '-' }}
+                                    </td>
+                                    <td>{{ $cheque->customer->customer_name ?? 'N/A' }}</td>
+                                    <td>{{ $cheque->bank_name }}</td>
+                                    <td>{{ $cheque->account_holder_name ?? '-' }}</td>
+                                    <td class="uppercase text-[10px]">{{ $cheque->status }}</td>
+                                    <td class="text-xs text-gray-600">{{ $cheque->notes ?? '-' }}</td>
+                                    <td class="text-right font-mono">{{ number_format($cheque->amount, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr class="font-bold bg-gray-50">
+                                <td colspan="7" class="text-right">Total Cheques:</td>
+                                <td class="text-right font-mono">{{ number_format($settlement->cheques_collected, 2) }}</td>
                             </tr>
-                        @endforelse
-                    </tbody>
-                    <tfoot>
-                        <tr class="font-bold bg-gray-50">
-                            <td colspan="4" class="text-right">Total:</td>
-                            <td class="text-right font-mono">{{ number_format($settlement->bank_transfer_amount, 2) }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+                        </tfoot>
+                    </table>
+                </div>
+            @endif
 
-            <!-- Cash Denominations -->
-            <div>
-                <div class="section-title">Cash Detail (Denominations)</div>
-                <table class="report-table">
-                    <thead>
-                        <tr>
-                            <th>Denomination</th>
-                            <th class="text-right">Qty</th>
-                            <th class="text-right">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php
-                            $denoms = $settlement->cashDenominations->first();
-                            $denomList = [
-                                '5000' => 5000,
-                                '1000' => 1000,
-                                '500' => 500,
-                                '100' => 100,
-                                '50' => 50,
-                                '20' => 20,
-                                '10' => 10
-                            ];
-                            $coins = $denoms->denom_coins ?? 0;
-                            $totalCash = 0;
-                        @endphp
-                        @foreach($denomList as $key => $val)
+            <!-- 5. Cash Denominations and Expenses Split -->
+            <div class="grid grid-cols-2 gap-6">
+                <!-- Cash Denominations -->
+                <div>
+                    <div class="section-title">Cash Denominations</div>
+                    <table class="report-table">
+                        <thead>
+                            <tr>
+                                <th>Denomination</th>
+                                <th class="text-right">Qty</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                             @php
-                                $qty = $denoms->{"denom_$key"} ?? 0;
-                                $amt = $qty * $val;
-                                $totalCash += $amt;
+                                $denoms = $settlement->cashDenominations->first();
+                                $denomList = [5000, 1000, 500, 100, 50, 20, 10];
+                                $coins = $denoms->denom_coins ?? 0;
+                                $totalCash = 0;
                             @endphp
-                            <tr>
-                                <td>{{ number_format($val) }}</td>
-                                <td class="text-right font-mono">{{ $qty > 0 ? $qty : '-' }}</td>
-                                <td class="text-right font-mono">{{ $amt > 0 ? number_format($amt, 2) : '-' }}</td>
-                            </tr>
-                        @endforeach
-                        @if($coins > 0)
-                            @php $totalCash += $coins; @endphp
+                            @foreach($denomList as $val)
+                                @php
+                                    $qty = $denoms->{"denom_$val"} ?? 0;
+                                    $amt = $qty * $val;
+                                    $totalCash += $amt;
+                                @endphp
+                                <tr>
+                                    <td>{{ number_format($val) }}</td>
+                                    <td class="text-right font-mono">{{ $qty > 0 ? $qty : '0' }}</td>
+                                    <td class="text-right font-mono">{{ $amt > 0 ? number_format($amt, 2) : '-' }}</td>
+                                </tr>
+                            @endforeach
                             <tr>
                                 <td>Coins</td>
                                 <td class="text-right font-mono">-</td>
                                 <td class="text-right font-mono">{{ number_format($coins, 2) }}</td>
                             </tr>
-                        @endif
-                    </tbody>
-                    <tfoot>
-                        <tr class="font-bold bg-green-50">
-                            <td colspan="2" class="text-right text-green-800">Total Physical Cash:</td>
-                            <td class="text-right font-mono text-green-800">{{ number_format($totalCash, 2) }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
-
-            <!-- Expenses -->
-            <div>
-                <div class="section-title">Expense Detail</div>
-                <table class="report-table">
-                    <thead>
-                        <tr>
-                            <th>Description / Account</th>
-                            <th class="text-right">Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @php $totalExpenses = 0; @endphp
-                        @forelse($settlement->expenses as $expense)
-                            @php $totalExpenses += $expense->amount; @endphp
-                            <tr>
-                                <td>
-                                    {{ $expense->expenseAccount->account_name ?? $expense->description }}
-                                    @if(isset($expense->expenseAccount->account_code))
-                                        <span
-                                            class="text-xs text-gray-500">({{ $expense->expenseAccount->account_code }})</span>
-                                    @endif
-                                </td>
-                                <td class="text-right font-mono">{{ number_format($expense->amount, 2) }}</td>
+                            @php $totalCash += $coins; @endphp
+                        </tbody>
+                        <tfoot>
+                            <tr class="font-bold bg-green-50">
+                                <td colspan="2" class="text-right text-green-800">Total Physical Cash:</td>
+                                <td class="text-right font-mono text-green-800">{{ number_format($totalCash, 2) }}</td>
                             </tr>
-                        @empty
-                        @endforelse
+                        </tfoot>
+                    </table>
+                </div>
 
-                        @foreach($settlement->advanceTaxes as $tax)
-                            @php $totalExpenses += $tax->tax_amount; @endphp
-                            <tr class="bg-yellow-50">
-                                <td>
-                                    Advance Tax - {{ $tax->customer->customer_name ?? 'N/A' }}
-                                    <span class="text-xs text-gray-500">(Inv:{{ $tax->invoice_number }})</span>
-                                </td>
-                                <td class="text-right font-mono">{{ number_format($tax->tax_amount, 2) }}</td>
-                            </tr>
-                        @endforeach
+                <!-- Expenses Column (Split into multiple tables) -->
+                <div class="space-y-4">
+                    @php
+                        // Logic to find AMR Powder even if stored as Generic Expense (Code 5252)
+                        $amrPowderExp = $settlement->expenses->filter(fn($e) => optional($e->expenseAccount)->account_code == '5252');
+                        $amrLiquidExp = $settlement->expenses->filter(fn($e) => optional($e->expenseAccount)->account_code == '5262');
+                        // Generic Expenses (exclude AMR codes)
+                        $genericExp = $settlement->expenses->reject(fn($e) => in_array(optional($e->expenseAccount)->account_code, ['5252', '5262']));
 
-                        @if($settlement->expenses->isEmpty() && $settlement->advanceTaxes->isEmpty())
-                            <tr>
-                                <td colspan="2" class="text-center italic">No expenses</td>
-                            </tr>
-                        @endif
-                    </tbody>
-                    <tfoot>
-                        <tr class="font-bold bg-orange-50">
-                            <td class="text-right text-orange-900">Total Expenses:</td>
-                            <td class="text-right font-mono text-orange-900">{{ number_format($totalExpenses, 2) }}</td>
-                        </tr>
-                    </tfoot>
-                </table>
+                        $hasAmrPowder = $settlement->amrPowders->count() > 0 || $amrPowderExp->count() > 0;
+                        $hasAmrLiquid = $settlement->amrLiquids->count() > 0 || $amrLiquidExp->count() > 0;
+                        $totalAllExpenses = 0;
+                    @endphp
+
+                    <!-- Advance Tax Table -->
+                    @if($settlement->advanceTaxes->count() > 0)
+                        <div>
+                            <div class="section-title">Advance Tax Details</div>
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Customer / Inv</th>
+                                        <th>Notes</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $advTotal = 0; @endphp
+                                    @foreach($settlement->advanceTaxes as $tax)
+                                        @php $advTotal += $tax->tax_amount; @endphp
+                                        <tr>
+                                            <td>
+                                                {{ $tax->customer->customer_name }}
+                                                <div class="text-[10px] text-gray-500">Inv: {{ $tax->invoice_number }}</div>
+                                            </td>
+                                            <td class="text-xs text-gray-600">{{ $tax->notes ?? '-' }}</td>
+                                            <td class="text-right font-mono">{{ number_format($tax->tax_amount, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                    @php $totalAllExpenses += $advTotal; @endphp
+                                </tbody>
+                                <tfoot>
+                                    <tr class="font-bold bg-yellow-50">
+                                        <td colspan="2" class="text-right">Total Adv Tax:</td>
+                                        <td class="text-right font-mono">{{ number_format($advTotal, 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    @endif
+
+                    <!-- AMR Powder Table -->
+                    @if($hasAmrPowder)
+                        <div>
+                            <div class="section-title">AMR Powder Details</div>
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product / Description</th>
+                                        <th>Notes</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $powderTotal = 0; @endphp
+                                    {{-- From Dedicated Model --}}
+                                    @foreach($settlement->amrPowders as $amr)
+                                        @php $powderTotal += $amr->amount; @endphp
+                                        <tr>
+                                            <td>{{ $amr->product->product_name }}</td>
+                                            <td class="text-xs text-gray-600">{{ $amr->notes ?? '-' }}</td>
+                                            <td class="text-right font-mono">{{ number_format($amr->amount, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                    {{-- From Generic Expense --}}
+                                    @foreach($amrPowderExp as $exp)
+                                        @php $powderTotal += $exp->amount; @endphp
+                                        <tr>
+                                            <td>{{ $exp->description ?: 'AMR Powder Expense' }} <span
+                                                    class="text-[10px] text-gray-500">(Exp)</span></td>
+                                            <td class="text-xs text-gray-600">-</td>
+                                            <td class="text-right font-mono">{{ number_format($exp->amount, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                    @php $totalAllExpenses += $powderTotal; @endphp
+                                </tbody>
+                                <tfoot>
+                                    <tr class="font-bold bg-blue-50">
+                                        <td colspan="2" class="text-right">Total Powder:</td>
+                                        <td class="text-right font-mono">{{ number_format($powderTotal, 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    @endif
+
+                    <!-- AMR Liquid Table -->
+                    @if($hasAmrLiquid)
+                        <div>
+                            <div class="section-title">AMR Liquid Details</div>
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product / Description</th>
+                                        <th>Notes</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $liquidTotal = 0; @endphp
+                                    {{-- From Dedicated Model --}}
+                                    @foreach($settlement->amrLiquids as $amr)
+                                        @php $liquidTotal += $amr->amount; @endphp
+                                        <tr>
+                                            <td>{{ $amr->product->product_name }}</td>
+                                            <td class="text-xs text-gray-600">{{ $amr->notes ?? '-' }}</td>
+                                            <td class="text-right font-mono">{{ number_format($amr->amount, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                    {{-- From Generic Expense --}}
+                                    @foreach($amrLiquidExp as $exp)
+                                        @php $liquidTotal += $exp->amount; @endphp
+                                        <tr>
+                                            <td>{{ $exp->description ?: 'AMR Liquid Expense' }} <span
+                                                    class="text-[10px] text-gray-500">(Exp)</span></td>
+                                            <td class="text-xs text-gray-600">-</td>
+                                            <td class="text-right font-mono">{{ number_format($exp->amount, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                    @php $totalAllExpenses += $liquidTotal; @endphp
+                                </tbody>
+                                <tfoot>
+                                    <tr class="font-bold bg-blue-50">
+                                        <td colspan="2" class="text-right">Total Liquid:</td>
+                                        <td class="text-right font-mono">{{ number_format($liquidTotal, 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    @endif
+
+                    <!-- General Expenses -->
+                    <div>
+                        <div class="section-title">General / Other Expenses</div>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Description / Account</th>
+                                    <th>Rcpt #</th>
+                                    <th class="text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php $genericTotal = 0; @endphp
+                                @forelse($genericExp as $expense)
+                                    @php $genericTotal += $expense->amount; @endphp
+                                    <tr>
+                                        <td>
+                                            {{ $expense->expenseAccount->account_name ?? $expense->description }}
+                                            @if(isset($expense->expenseAccount->account_code))
+                                                <span
+                                                    class="text-[10px] text-gray-500">({{ $expense->expenseAccount->account_code }})</span>
+                                            @endif
+                                        </td>
+                                        <td>{{ $expense->receipt_number ?? '-' }}</td>
+                                        <td class="text-right font-mono">{{ number_format($expense->amount, 2) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="3" class="text-center italic text-gray-500">No other expenses</td>
+                                    </tr>
+                                @endforelse
+                                @php $totalAllExpenses += $genericTotal; @endphp
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-bold bg-orange-50">
+                                    <td colspan="2" class="text-right">Total General:</td>
+                                    <td class="text-right font-mono">{{ number_format($genericTotal, 2) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="border-t-2 border-dashed border-gray-400 pt-2 text-right font-bold text-sm">
+                        Total All Expenses: <span
+                            class="font-mono text-base">{{ number_format($totalAllExpenses, 2) }}</span>
+                    </div>
+
+                </div>
             </div>
 
         </div>
@@ -483,7 +624,8 @@
                 <tr class="bg-gray-50 font-bold border-t border-b">
                     <td>Net Sale (Sold Items Value)</td>
                     <td class="text-right font-mono">
-                        {{ number_format($settlement->items->sum('total_sales_value'), 2) }}</td>
+                        {{ number_format($settlement->items->sum('total_sales_value'), 2) }}
+                    </td>
                 </tr>
                 <tr>
                     <td>Recovery (Cash + Bank)</td>

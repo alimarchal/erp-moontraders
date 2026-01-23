@@ -9,7 +9,7 @@
 <div x-data="advanceTaxModal({
         customers: @js($customers->map(fn($customer) => [
             'id' => $customer->id,
-            'name' => $customer->customer_name,
+            'name' => $customer->customer_name . ' (' . $customer->customer_code . ')',
         ])->values()),
         inputId: '{{ $inputId }}',
         entriesInputId: '{{ $entriesInputId }}',

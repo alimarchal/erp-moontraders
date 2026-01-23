@@ -358,6 +358,133 @@
 
             <!-- 5. Cash Denominations and Expenses Split -->
             <div class="grid grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <!-- Main Expense Detail Table (Matches View) -->
+                    <div>
+                        <div class="section-title">Expense Detail</div>
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Expense Account / Description</th>
+                                    <th>Rcpt #</th>
+                                    <th class="text-right">Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @php
+                                    $totalExpenses = 0;
+                                @endphp
+
+                                {{-- 1. General Expenses (All records in sales_settlement_expenses) --}}
+                                @forelse($settlement->expenses as $expense)
+                                    @php $totalExpenses += $expense->amount; @endphp
+                                    <tr>
+                                        <td>
+                                            @if($expense->expenseAccount)
+                                                {{ $expense->expenseAccount->account_name }}
+                                                <span
+                                                    class="text-xs text-gray-500">({{ $expense->expenseAccount->account_code }})</span>
+                                            @else
+                                                {{ $expense->description ?? 'Unknown Account' }}
+                                            @endif
+                                        </td>
+                                        <td>{{ $expense->receipt_number ?? '-' }}</td>
+                                        <td class="text-right font-mono">{{ number_format($expense->amount, 2) }}</td>
+                                    </tr>
+                                @empty
+                                    <!-- No general expenses -->
+                                @endforelse
+
+                                {{-- 2. Advance Tax (Added to main table as per show view) --}}
+                                @foreach($settlement->advanceTaxes as $tax)
+                                    @php $totalExpenses += $tax->tax_amount; @endphp
+                                    <tr class="bg-yellow-50">
+                                        <td>
+                                            Advance Tax - {{ $tax->customer->customer_name }}
+                                            @if($tax->invoice_number)
+                                                <span class="text-xs text-gray-500">(Inv: {{ $tax->invoice_number }})</span>
+                                            @endif
+                                            <span class="text-xs text-gray-500">(A/C 1161)</span>
+                                        </td>
+                                        <td>-</td>
+                                        <td class="text-right font-mono">{{ number_format($tax->tax_amount, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                            <tfoot>
+                                <tr class="font-bold bg-orange-50">
+                                    <td colspan="2" class="text-right">Total Expenses:</td>
+                                    <td class="text-right font-mono">{{ number_format($totalExpenses, 2) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- AMR / FMR Breakdowns (Dedicated Tables if any) -->
+                    @if($settlement->amrPowders->count() > 0)
+                        <div>
+                            <div class="section-title">AMR Powder Details</div>
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Notes</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($settlement->amrPowders as $amr)
+                                        <tr>
+                                            <td>{{ $amr->product->product_name }}</td>
+                                            <td class="text-xs text-gray-600">{{ $amr->notes ?? '-' }}</td>
+                                            <td class="text-right font-mono">{{ number_format($amr->amount, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="font-bold bg-blue-50">
+                                        <td colspan="2" class="text-right">Total AMR Powder:</td>
+                                        <td class="text-right font-mono">
+                                            {{ number_format($settlement->amrPowders->sum('amount'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    @endif
+
+                    @if($settlement->amrLiquids->count() > 0)
+                        <div>
+                            <div class="section-title">AMR Liquid (FMR) Details</div>
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Notes</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($settlement->amrLiquids as $amr)
+                                        <tr>
+                                            <td>{{ $amr->product->product_name }}</td>
+                                            <td class="text-xs text-gray-600">{{ $amr->notes ?? '-' }}</td>
+                                            <td class="text-right font-mono">{{ number_format($amr->amount, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="font-bold bg-blue-50">
+                                        <td colspan="2" class="text-right">Total AMR Liquid:</td>
+                                        <td class="text-right font-mono">
+                                            {{ number_format($settlement->amrLiquids->sum('amount'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    @endif
+
+                </div>
+
                 <!-- Cash Denominations -->
                 <div>
                     <div class="section-title">Cash Denominations</div>
@@ -402,196 +529,6 @@
                             </tr>
                         </tfoot>
                     </table>
-                </div>
-
-                <!-- Expenses Column (Split into multiple tables) -->
-                <div class="space-y-4">
-                    @php
-                        // Logic to find AMR Powder even if stored as Generic Expense (Code 5252)
-                        $amrPowderExp = $settlement->expenses->filter(fn($e) => optional($e->expenseAccount)->account_code == '5252');
-                        $amrLiquidExp = $settlement->expenses->filter(fn($e) => optional($e->expenseAccount)->account_code == '5262');
-                        // Generic Expenses (exclude AMR codes)
-                        $genericExp = $settlement->expenses->reject(fn($e) => in_array(optional($e->expenseAccount)->account_code, ['5252', '5262']));
-
-                        $hasAmrPowder = $settlement->amrPowders->count() > 0 || $amrPowderExp->count() > 0;
-                        $hasAmrLiquid = $settlement->amrLiquids->count() > 0 || $amrLiquidExp->count() > 0;
-                        $totalAllExpenses = 0;
-                    @endphp
-
-                    <!-- Advance Tax Table -->
-                    @if($settlement->advanceTaxes->count() > 0)
-                        <div>
-                            <div class="section-title">Advance Tax Details</div>
-                            <table class="report-table">
-                                <thead>
-                                    <tr>
-                                        <th>Customer / Inv</th>
-                                        <th>Notes</th>
-                                        <th class="text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php $advTotal = 0; @endphp
-                                    @foreach($settlement->advanceTaxes as $tax)
-                                        @php $advTotal += $tax->tax_amount; @endphp
-                                        <tr>
-                                            <td>
-                                                {{ $tax->customer->customer_name }}
-                                                <div class="text-[10px] text-gray-500">Inv: {{ $tax->invoice_number }}</div>
-                                            </td>
-                                            <td class="text-xs text-gray-600">{{ $tax->notes ?? '-' }}</td>
-                                            <td class="text-right font-mono">{{ number_format($tax->tax_amount, 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                    @php $totalAllExpenses += $advTotal; @endphp
-                                </tbody>
-                                <tfoot>
-                                    <tr class="font-bold bg-yellow-50">
-                                        <td colspan="2" class="text-right">Total Adv Tax:</td>
-                                        <td class="text-right font-mono">{{ number_format($advTotal, 2) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    @endif
-
-                    <!-- AMR Powder Table -->
-                    @if($hasAmrPowder)
-                        <div>
-                            <div class="section-title">AMR Powder Details</div>
-                            <table class="report-table">
-                                <thead>
-                                    <tr>
-                                        <th>Product / Description</th>
-                                        <th>Notes</th>
-                                        <th class="text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php $powderTotal = 0; @endphp
-                                    {{-- From Dedicated Model --}}
-                                    @foreach($settlement->amrPowders as $amr)
-                                        @php $powderTotal += $amr->amount; @endphp
-                                        <tr>
-                                            <td>{{ $amr->product->product_name }}</td>
-                                            <td class="text-xs text-gray-600">{{ $amr->notes ?? '-' }}</td>
-                                            <td class="text-right font-mono">{{ number_format($amr->amount, 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                    {{-- From Generic Expense --}}
-                                    @foreach($amrPowderExp as $exp)
-                                        @php $powderTotal += $exp->amount; @endphp
-                                        <tr>
-                                            <td>{{ $exp->description ?: 'AMR Powder Expense' }} <span
-                                                    class="text-[10px] text-gray-500">(Exp)</span></td>
-                                            <td class="text-xs text-gray-600">-</td>
-                                            <td class="text-right font-mono">{{ number_format($exp->amount, 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                    @php $totalAllExpenses += $powderTotal; @endphp
-                                </tbody>
-                                <tfoot>
-                                    <tr class="font-bold bg-blue-50">
-                                        <td colspan="2" class="text-right">Total Powder:</td>
-                                        <td class="text-right font-mono">{{ number_format($powderTotal, 2) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    @endif
-
-                    <!-- AMR Liquid Table -->
-                    @if($hasAmrLiquid)
-                        <div>
-                            <div class="section-title">AMR Liquid Details</div>
-                            <table class="report-table">
-                                <thead>
-                                    <tr>
-                                        <th>Product / Description</th>
-                                        <th>Notes</th>
-                                        <th class="text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @php $liquidTotal = 0; @endphp
-                                    {{-- From Dedicated Model --}}
-                                    @foreach($settlement->amrLiquids as $amr)
-                                        @php $liquidTotal += $amr->amount; @endphp
-                                        <tr>
-                                            <td>{{ $amr->product->product_name }}</td>
-                                            <td class="text-xs text-gray-600">{{ $amr->notes ?? '-' }}</td>
-                                            <td class="text-right font-mono">{{ number_format($amr->amount, 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                    {{-- From Generic Expense --}}
-                                    @foreach($amrLiquidExp as $exp)
-                                        @php $liquidTotal += $exp->amount; @endphp
-                                        <tr>
-                                            <td>{{ $exp->description ?: 'AMR Liquid Expense' }} <span
-                                                    class="text-[10px] text-gray-500">(Exp)</span></td>
-                                            <td class="text-xs text-gray-600">-</td>
-                                            <td class="text-right font-mono">{{ number_format($exp->amount, 2) }}</td>
-                                        </tr>
-                                    @endforeach
-                                    @php $totalAllExpenses += $liquidTotal; @endphp
-                                </tbody>
-                                <tfoot>
-                                    <tr class="font-bold bg-blue-50">
-                                        <td colspan="2" class="text-right">Total Liquid:</td>
-                                        <td class="text-right font-mono">{{ number_format($liquidTotal, 2) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    @endif
-
-                    <!-- General Expenses -->
-                    <div>
-                        <div class="section-title">General / Other Expenses</div>
-                        <table class="report-table">
-                            <thead>
-                                <tr>
-                                    <th>Description / Account</th>
-                                    <th>Rcpt #</th>
-                                    <th class="text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php $genericTotal = 0; @endphp
-                                @forelse($genericExp as $expense)
-                                    @php $genericTotal += $expense->amount; @endphp
-                                    <tr>
-                                        <td>
-                                            {{ $expense->expenseAccount->account_name ?? $expense->description }}
-                                            @if(isset($expense->expenseAccount->account_code))
-                                                <span
-                                                    class="text-[10px] text-gray-500">({{ $expense->expenseAccount->account_code }})</span>
-                                            @endif
-                                        </td>
-                                        <td>{{ $expense->receipt_number ?? '-' }}</td>
-                                        <td class="text-right font-mono">{{ number_format($expense->amount, 2) }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="3" class="text-center italic text-gray-500">No other expenses</td>
-                                    </tr>
-                                @endforelse
-                                @php $totalAllExpenses += $genericTotal; @endphp
-                            </tbody>
-                            <tfoot>
-                                <tr class="font-bold bg-orange-50">
-                                    <td colspan="2" class="text-right">Total General:</td>
-                                    <td class="text-right font-mono">{{ number_format($genericTotal, 2) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                    <div class="border-t-2 border-dashed border-gray-400 pt-2 text-right font-bold text-sm">
-                        Total All Expenses: <span
-                            class="font-mono text-base">{{ number_format($totalAllExpenses, 2) }}</span>
-                    </div>
-
                 </div>
             </div>
 

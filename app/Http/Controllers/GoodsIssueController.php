@@ -51,12 +51,38 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 AllowedFilter::exact('status'),
                 AllowedFilter::scope('issue_date_from'),
                 AllowedFilter::scope('issue_date_to'),
+                AllowedFilter::exact('issue_date'), // Added for direct day filtering
+                AllowedFilter::callback('product_id', function ($query, $value) {
+                    $query->whereHas('items', function ($q) use ($value) {
+                        $q->where('product_id', $value);
+                    });
+                }),
             ])
             ->defaultSort('-issue_date')
             ->paginate(20)
             ->withQueryString();
 
+        // Calculate totals based on the same filters (excluding pagination)
+        $totalValue = QueryBuilder::for(GoodsIssue::class)
+            ->allowedFilters([
+                AllowedFilter::partial('issue_number'),
+                AllowedFilter::exact('warehouse_id'),
+                AllowedFilter::exact('vehicle_id'),
+                AllowedFilter::exact('employee_id'),
+                AllowedFilter::exact('status'),
+                AllowedFilter::scope('issue_date_from'),
+                AllowedFilter::scope('issue_date_to'),
+                AllowedFilter::exact('issue_date'),
+                AllowedFilter::callback('product_id', function ($query, $value) {
+                    $query->whereHas('items', function ($q) use ($value) {
+                        $q->where('product_id', $value);
+                    });
+                }),
+            ])
+            ->sum('total_value');
+
         return view('goods-issues.index', [
+            'totalValue' => $totalValue,
             'goodsIssues' => $goodsIssues,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
@@ -229,7 +255,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Goods Issue: '.$e->getMessage());
+                ->with('error', 'Unable to create Goods Issue: ' . $e->getMessage());
         }
     }
 

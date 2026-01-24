@@ -25,6 +25,11 @@
                     <tbody class="text-black text-md leading-normal font-extrabold">
                         {{ $slot }}
                     </tbody>
+                    @if(isset($footer))
+                        <tfoot class="bg-gray-100 font-bold uppercase text-sm">
+                            {{ $footer }}
+                        </tfoot>
+                    @endif
                 </table>
             </div>
             @if (method_exists($items, 'hasPages') && $items->hasPages())

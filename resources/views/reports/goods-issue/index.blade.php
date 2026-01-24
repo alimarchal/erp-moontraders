@@ -1,7 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Goods Issue Report" :showSearch="true" :showRefresh="true"
-            backRoute="reports.index" />
+        <x-page-header title="Goods Issue Report" :showSearch="true" :showRefresh="true" backRoute="reports.index" />
     </x-slot>
 
     @push('header')
@@ -178,9 +177,8 @@
             <!-- Issue Number -->
             <div>
                 <x-label for="filter_issue_number" value="Issue #" />
-                <x-input id="filter_issue_number" name="filter[issue_number]" type="text"
-                    class="mt-1 block w-full" placeholder="Search Issue #..."
-                    value="{{ $filters['issue_number'] ?? '' }}" />
+                <x-input id="filter_issue_number" name="filter[issue_number]" type="text" class="mt-1 block w-full"
+                    placeholder="Search Issue #..." value="{{ $filters['issue_number'] ?? '' }}" />
             </div>
         </div>
     </x-filter-section>
@@ -207,62 +205,88 @@
                 <table class="report-table">
                     <thead>
                         <tr class="bg-gray-100">
-                            <th>Date</th>
-                            <th>Issue #</th>
-                            <th>Issued By</th>
-                            <th>Salesman / Vehicle</th>
-                            <th>Warehouse</th>
-                            <th class="text-right">Total Qty</th>
-                            <th class="text-right">Total Value</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center">Action</th>
+                            <th class="w-10">S.No</th>
+                            <th class="w-20">SKU Code</th>
+                            <th class="w-40">SKU</th>
+                            <th class="w-24">Category</th>
+                            @foreach($matrixData['dates'] as $date)
+                                <th class="w-8 text-center">{{ \Carbon\Carbon::parse($date)->format('j') }}</th>
+                            @endforeach
+                            <th class="bg-gray-200">Total</th>
+                            <th class="bg-yellow-50">G.I Total</th>
+                            <th class="bg-blue-50">Settlement Total</th>
+                            <th class="bg-green-50">Profit</th>
+                            <th class="bg-indigo-50">Sale</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($goodsIssues as $gi)
+                        @forelse($matrixData['products'] as $product)
                             <tr>
-                                <td>{{ $gi->issue_date ? $gi->issue_date->format('d-M-y') : '-' }}</td>
-                                <td class="font-bold whitespace-nowrap">
-                                    {{ $gi->issue_number }}
+                                <td class="text-center">{{ $loop->iteration }}</td>
+                                <td class="text-xs">{{ $product['product_code'] }}</td>
+                                <td class="font-bold">{{ $product['product_name'] }}</td>
+                                <td class="text-xs text-gray-600">{{ $product['category_name'] }}</td>
+
+                                @foreach($matrixData['dates'] as $date)
+                                    @php
+                                        $count = $product['daily_data'][$date]['count'] ?? 0;
+                                    @endphp
+                                    <td
+                                        class="text-center font-mono text-black">
+                                        @if($count > 0)
+                                            <a href="{{ route('goods-issues.index', ['filter[issue_date]' => $date, 'filter[status]' => 'issued', 'filter[product_id]' => $product['product_id']]) }}"
+                                                class="hover:underline cursor-pointer text-black" target="_blank">
+                                                {{ $count }}
+                                            </a>
+                                        @else
+                                            <span>0</span>
+                                        @endif
+                                    </td>
+                                @endforeach
+
+                                <td class="text-right font-bold bg-gray-100">
+                                    {{ $product['totals']['total_issued_qty'] + 0 }}
                                 </td>
-                                <td>{{ $gi->issuedBy->name ?? '-' }}</td>
-                                <td>
-                                    <span class="font-semibold">{{ $gi->employee->name ?? '-' }}</span>
-                                    <span class="text-gray-500">({{ $gi->vehicle->registration_number ?? '-' }})</span>
+                                <td class="text-right font-mono bg-yellow-50">
+                                    {{ number_format($product['totals']['total_issued_value'], 0) }}
                                 </td>
-                                <td>{{ $gi->warehouse->warehouse_name ?? '-' }}</td>
-                                <td class="text-right font-bold">{{ number_format($gi->total_quantity, 2) }}</td>
-                                <td class="text-right font-bold">{{ number_format($gi->total_value, 2) }}</td>
-                                <td class="text-center">
-                                    <span
-                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $gi->status === 'issued' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
-                                        {{ ucfirst($gi->status) }}
-                                    </span>
+                                <td class="text-right font-mono bg-blue-50">
+                                    {{ number_format($product['totals']['total_sale'], 0) }}
                                 </td>
-                                <td class="text-center whitespace-nowrap text-sm font-medium">
-                                    <a href="{{ route('goods-issues.show', $gi->id) }}"
-                                        class="text-indigo-600 hover:text-indigo-900 mr-2" title="View">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 inline">
-                                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                        </svg>
-                                    </a>
+                                <td
+                                    class="text-right font-mono bg-green-50 {{ $product['totals']['total_profit'] < 0 ? 'text-red-600' : 'text-green-600' }}">
+                                    {{ number_format($product['totals']['total_profit'], 0) }}
+                                </td>
+                                <td class="text-right font-mono bg-indigo-50">
+                                    {{ number_format($product['totals']['total_sale'], 0) }}
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center py-4 text-gray-500">No records found for the selected
-                                    criteria.</td>
+                                <td colspan="{{ count($matrixData['dates']) + 9 }}" class="text-center py-4 text-gray-500">
+                                    No data found for the selected criteria.
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>
-                    <tfoot class="bg-gray-100 font-bold">
+                    <tfoot class="bg-gray-100 font-extrabold sticky bottom-0">
                         <tr>
-                            <td colspan="5" class="text-right px-2">Grand Totals:</td>
-                            <td class="text-right font-mono">{{ number_format($totals->total_quantity, 2) }}</td>
-                            <td class="text-right font-mono">{{ number_format($totals->total_value, 2) }}</td>
-                            <td></td>
-                            <td></td>
+                            <td colspan="4" class="text-right px-2">Grand Totals:</td>
+
+                            {{-- Daily Totals (Optional? Leaving blank for layout clarity or calculate if needed) --}}
+                            @foreach($matrixData['dates'] as $date)
+                                <td></td>
+                            @endforeach
+
+                            <td class="text-right">{{ $matrixData['grand_totals']['issued_qty'] + 0 }}</td>
+                            <td class="text-right">{{ number_format($matrixData['grand_totals']['issued_value'], 0) }}
+                            </td>
+                            <td class="text-right">{{ number_format($matrixData['grand_totals']['sale_amount'], 0) }}
+                            </td> {{-- Using Sale Amount as Settlement Total roughly? Or Sold Value? Using Sale Amount
+                            based on mockup column name --}}
+                            <td class="text-right">{{ number_format($matrixData['grand_totals']['profit'], 0) }}</td>
+                            <td class="text-right">{{ number_format($matrixData['grand_totals']['sale_amount'], 0) }}
+                            </td>
                         </tr>
                     </tfoot>
                 </table>

@@ -222,7 +222,7 @@
                     <tbody>
                         @forelse($matrixData['products'] as $product)
                             <tr>
-                                <td class="text-center">{{ $loop->iteration }}</td>
+                                <td class="text-center font-mono">{{ $loop->iteration }}</td>
                                 <td class="text-xs">{{ $product['product_code'] }}</td>
                                 <td class="font-bold">{{ $product['product_name'] }}</td>
                                 <td class="text-xs text-gray-600">{{ $product['category_name'] }}</td>
@@ -231,8 +231,7 @@
                                     @php
                                         $count = $product['daily_data'][$date]['count'] ?? 0;
                                     @endphp
-                                    <td
-                                        class="text-center font-mono text-black">
+                                    <td class="text-center font-mono text-black">
                                         @if($count > 0)
                                             <a href="{{ route('goods-issues.index', ['filter[issue_date]' => $date, 'filter[status]' => 'issued', 'filter[product_id]' => $product['product_id']]) }}"
                                                 class="hover:underline cursor-pointer text-black" target="_blank">
@@ -244,17 +243,22 @@
                                     </td>
                                 @endforeach
 
-                                <td class="text-right font-bold bg-gray-100">
-                                    {{ $product['totals']['total_issued_qty'] + 0 }}
+                                <td class="text-center font-bold bg-gray-100 font-mono text-black">
+                                    <a href="{{ route('goods-issues.index', ['filter[issue_date_from]' => $startDate, 'filter[issue_date_to]' => $endDate, 'filter[status]' => 'issued', 'filter[product_id]' => $product['product_id']]) }}"
+                                        class="hover:underline cursor-pointer text-black" target="_blank">
+                                        {{ $product['totals']['total_issued_qty'] + 0 }}
+                                    </a>
                                 </td>
-                                <td class="text-right font-mono bg-yellow-50">
-                                    {{ number_format($product['totals']['total_issued_value'], 0) }}
+                                <td class="text-right font-mono bg-yellow-50 text-black">
+                                    <a href="{{ route('goods-issues.index', ['filter[issue_date_from]' => $startDate, 'filter[issue_date_to]' => $endDate, 'filter[status]' => 'issued', 'filter[product_id]' => $product['product_id']]) }}"
+                                        class="hover:underline cursor-pointer text-black" target="_blank">
+                                        {{ number_format($product['totals']['total_issued_value'], 0) }}
+                                    </a>
                                 </td>
-                                <td class="text-right font-mono bg-blue-50">
+                                <td class="text-right font-mono bg-blue-50 text-black">
                                     {{ number_format($product['totals']['total_sale'], 0) }}
                                 </td>
-                                <td
-                                    class="text-right font-mono bg-green-50 {{ $product['totals']['total_profit'] < 0 ? 'text-red-600' : 'text-green-600' }}">
+                                <td class="text-right font-mono bg-green-50 text-black">
                                     {{ number_format($product['totals']['total_profit'], 0) }}
                                 </td>
                                 <td class="text-right font-mono bg-indigo-50">
@@ -278,14 +282,19 @@
                                 <td></td>
                             @endforeach
 
-                            <td class="text-right">{{ $matrixData['grand_totals']['issued_qty'] + 0 }}</td>
-                            <td class="text-right">{{ number_format($matrixData['grand_totals']['issued_value'], 0) }}
+                            <td class="text-center font-mono">{{ $matrixData['grand_totals']['issued_qty'] + 0 }}</td>
+                            <td class="text-right font-mono">
+                                {{ number_format($matrixData['grand_totals']['issued_value'], 0) }}
                             </td>
-                            <td class="text-right">{{ number_format($matrixData['grand_totals']['sale_amount'], 0) }}
+                            <td class="text-right font-mono">
+                                {{ number_format($matrixData['grand_totals']['sale_amount'], 0) }}
                             </td> {{-- Using Sale Amount as Settlement Total roughly? Or Sold Value? Using Sale Amount
                             based on mockup column name --}}
-                            <td class="text-right">{{ number_format($matrixData['grand_totals']['profit'], 0) }}</td>
-                            <td class="text-right">{{ number_format($matrixData['grand_totals']['sale_amount'], 0) }}
+                            <td class="text-right font-mono">
+                                {{ number_format($matrixData['grand_totals']['profit'], 0) }}
+                            </td>
+                            <td class="text-right font-mono">
+                                {{ number_format($matrixData['grand_totals']['sale_amount'], 0) }}
                             </td>
                         </tr>
                     </tfoot>

@@ -134,7 +134,7 @@ class GoodsIssueReportController extends Controller
                     'value' => $item->total_value,
                     'count' => $item->issue_count
                 ];
-                $rowTotalIssuedQty += $item->total_qty;
+                $rowTotalIssuedQty += $item->issue_count; // Summing counts as per user request
                 $rowTotalIssuedValue += $item->total_value;
             }
 
@@ -161,7 +161,7 @@ class GoodsIssueReportController extends Controller
                 ]);
 
                 // Add to grand totals
-                $matrixData['grand_totals']['issued_qty'] += $rowTotalIssuedQty;
+                $matrixData['grand_totals']['issued_qty'] += $rowTotalIssuedQty; // This is now a Count sum
                 $matrixData['grand_totals']['issued_value'] += $rowTotalIssuedValue;
                 $matrixData['grand_totals']['sold_qty'] += $rowTotalSold;
                 $matrixData['grand_totals']['sale_amount'] += $rowTotalSale;

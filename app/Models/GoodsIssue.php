@@ -99,4 +99,14 @@ class GoodsIssue extends Model
     {
         return $this->status === 'draft' && $this->items()->count() > 0;
     }
+
+    public function scopeIssueDateFrom($query, $date)
+    {
+        return $query->where('issue_date', '>=', $date);
+    }
+
+    public function scopeIssueDateTo($query, $date)
+    {
+        return $query->where('issue_date', '<=', $date);
+    }
 }

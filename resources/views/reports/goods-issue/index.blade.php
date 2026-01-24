@@ -183,7 +183,7 @@
         </div>
     </x-filter-section>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
                 <p class="text-center font-extrabold mb-2 text-xl">

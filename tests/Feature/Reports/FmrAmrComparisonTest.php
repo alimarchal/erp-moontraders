@@ -4,6 +4,34 @@ use App\Models\User;
 
 beforeEach(function () {
     $this->user = User::factory()->create();
+
+    // Create accounting periods for the test years
+    \App\Models\AccountingPeriod::factory()->create([
+        'name' => 'FY 2025',
+        'start_date' => '2025-01-01',
+        'end_date' => '2025-12-31',
+        'status' => 'open',
+    ]);
+
+    \App\Models\AccountingPeriod::factory()->create([
+        'name' => 'FY 2026',
+        'start_date' => '2026-01-01',
+        'end_date' => '2026-12-31',
+        'status' => 'open',
+    ]);
+
+    $this->currency = \App\Models\Currency::factory()->create();
+    $this->accountType = \App\Models\AccountType::factory()->create([
+        'type_name' => 'Expense',
+        'report_group' => 'BalanceSheet',
+    ]);
+
+    // Seed Chart of Accounts
+    \App\Models\ChartOfAccount::factory()->create(['account_code' => '4210', 'account_name' => 'FMR Liquid', 'account_type_id' => $this->accountType->id, 'currency_id' => $this->currency->id]);
+    \App\Models\ChartOfAccount::factory()->create(['account_code' => '4220', 'account_name' => 'FMR Powder', 'account_type_id' => $this->accountType->id, 'currency_id' => $this->currency->id]);
+    \App\Models\ChartOfAccount::factory()->create(['account_code' => '5262', 'account_name' => 'AMR Liquid', 'account_type_id' => $this->accountType->id, 'currency_id' => $this->currency->id]);
+    \App\Models\ChartOfAccount::factory()->create(['account_code' => '5252', 'account_name' => 'AMR Powder', 'account_type_id' => $this->accountType->id, 'currency_id' => $this->currency->id]);
+    \App\Models\ChartOfAccount::factory()->create(['account_code' => '1110', 'account_name' => 'Cash', 'account_type_id' => $this->accountType->id, 'currency_id' => $this->currency->id]);
 });
 
 test('fmr amr comparison report page loads for authenticated user', function () {
@@ -48,6 +76,16 @@ test('fmr amr comparison calculates difference as fmr minus amr', function () {
         'description' => 'Test FMR vs AMR entry',
         'status' => 'posted',
         'reference_no' => 'TEST-001',
+        'currency_id' => $this->currency->id,
+    ]);
+
+    // Create a supplier
+    $supplier = \App\Models\Supplier::factory()->create();
+
+    // Create a GRN for this JE to satisfy the content of the report query
+    \App\Models\GoodsReceiptNote::factory()->create([
+        'journal_entry_id' => $journalEntry->id,
+        'supplier_id' => $supplier->id,
     ]);
 
     // FMR accounts are income (credit increases income)
@@ -117,7 +155,7 @@ test('fmr amr comparison calculates difference as fmr minus amr', function () {
     // FMR Total = 1000 (liquid) + 500 (powder) = 1500
     // AMR Total = 700 (liquid) + 300 (powder) = 1000
     // Difference = 1500 - 1000 = 500 (positive = net benefit)
-    
+
     $reportData = $response->viewData('reportData');
     $juneData = $reportData->first();
 
@@ -149,6 +187,16 @@ test('fmr amr comparison shows negative difference when amr exceeds fmr', functi
         'description' => 'Test AMR exceeds FMR',
         'status' => 'posted',
         'reference_no' => 'TEST-002',
+        'currency_id' => $this->currency->id,
+    ]);
+
+    // Create a supplier
+    $supplier = \App\Models\Supplier::factory()->create();
+
+    // Create a GRN for this JE to satisfy the report requirements
+    \App\Models\GoodsReceiptNote::factory()->create([
+        'journal_entry_id' => $journalEntry->id,
+        'supplier_id' => $supplier->id,
     ]);
 
     // FMR Liquid: 300 credit
@@ -196,10 +244,30 @@ test('fmr amr comparison shows negative difference when amr exceeds fmr', functi
     // FMR Total = 300
     // AMR Total = 800
     // Difference = 300 - 800 = -500 (negative = net cost)
-    
+
     $reportData = $response->viewData('reportData');
     $julyData = $reportData->first();
 
     expect($julyData->difference)->toBe(-500.0)
         ->and($julyData->difference)->toBeLessThan(0);
+});
+
+test('fmr amr comparison report handles complex filters without binding errors', function () {
+    // This test reproduces the binding mismatch error by exercising the path where
+    // multiple unions and whereIn clauses are used together.
+    $this->actingAs($this->user);
+
+    // Create a supplier and some data to ensure the query builds fully
+    $supplier = \App\Models\Supplier::factory()->create();
+
+    $response = $this->get(route('reports.fmr-amr-comparison.index', [
+        'filter' => [
+            'source' => 'all',
+            'supplier_ids' => [$supplier->id],
+            'start_date' => '2026-01-01',
+            'end_date' => '2026-12-31',
+        ],
+    ]));
+
+    $response->assertSuccessful();
 });

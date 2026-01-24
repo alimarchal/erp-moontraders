@@ -31,7 +31,7 @@ class FmrAmrComparisonController extends Controller
 
         // Get supplier filter (supports multiple selection)
         $supplierIds = $request->input('filter.supplier_ids', []);
-        if (! is_array($supplierIds)) {
+        if (!is_array($supplierIds)) {
             $supplierIds = array_filter([$supplierIds]);
         }
         $supplierIds = array_filter($supplierIds);
@@ -57,6 +57,7 @@ class FmrAmrComparisonController extends Controller
 
         $fmrLiquidAccountId = $accounts[self::FMR_LIQUID_ACCOUNT_CODE] ?? null;
         $fmrPowderAccountId = $accounts[self::FMR_POWDER_ACCOUNT_CODE] ?? null;
+
         $amrPowderAccountId = $accounts[self::AMR_POWDER_ACCOUNT_CODE] ?? null;
         $amrLiquidAccountId = $accounts[self::AMR_LIQUID_ACCOUNT_CODE] ?? null;
 
@@ -79,18 +80,18 @@ class FmrAmrComparisonController extends Controller
                 ->where('je.status', 'posted')
                 ->whereNull('je.deleted_at')
                 ->whereBetween('je.entry_date', [$startDate, $endDate])
-                ->select(
-                    DB::raw("'grn' as source_type"),
-                    's.id as supplier_id',
-                    's.supplier_name',
-                    's.short_name',
-                    DB::raw('YEAR(je.entry_date) as year'),
-                    DB::raw('MONTH(je.entry_date) as month'),
-                    DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$fmrLiquidAccountId} THEN (jed.credit - jed.debit) ELSE 0 END) as fmr_liquid_total"),
-                    DB::raw("SUM(CASE WHEN jed.chart_of_account_id = {$fmrPowderAccountId} THEN (jed.credit - jed.debit) ELSE 0 END) as fmr_powder_total"),
-                    DB::raw('0 as amr_powder_total'),
-                    DB::raw('0 as amr_liquid_total')
-                )
+                ->selectRaw("
+                    'grn' as source_type,
+                    s.id as supplier_id,
+                    s.supplier_name,
+                    s.short_name,
+                    YEAR(je.entry_date) as year,
+                    MONTH(je.entry_date) as month,
+                    SUM(CASE WHEN jed.chart_of_account_id = {$fmrLiquidAccountId} THEN (jed.credit - jed.debit) ELSE 0 END) as fmr_liquid_total,
+                    SUM(CASE WHEN jed.chart_of_account_id = {$fmrPowderAccountId} THEN (jed.credit - jed.debit) ELSE 0 END) as fmr_powder_total,
+                    0 as amr_powder_total,
+                    0 as amr_liquid_total
+                ")
                 ->groupBy('s.id', 's.supplier_name', 's.short_name', DB::raw('YEAR(je.entry_date)'), DB::raw('MONTH(je.entry_date)'));
 
             // Query 2: Sales Settlement AMR Liquid (supplier from product)
@@ -101,18 +102,18 @@ class FmrAmrComparisonController extends Controller
                 ->where('ss.status', 'posted')
                 ->whereNull('ss.deleted_at')
                 ->whereBetween('ss.settlement_date', [$startDate, $endDate])
-                ->select(
-                    DB::raw("'settlement' as source_type"),
-                    's.id as supplier_id',
-                    's.supplier_name',
-                    's.short_name',
-                    DB::raw('YEAR(ss.settlement_date) as year'),
-                    DB::raw('MONTH(ss.settlement_date) as month'),
-                    DB::raw('0 as fmr_liquid_total'),
-                    DB::raw('0 as fmr_powder_total'),
-                    DB::raw('0 as amr_powder_total'),
-                    DB::raw('SUM(sal.amount) as amr_liquid_total')
-                )
+                ->selectRaw("
+                    'settlement' as source_type,
+                    s.id as supplier_id,
+                    s.supplier_name,
+                    s.short_name,
+                    YEAR(ss.settlement_date) as year,
+                    MONTH(ss.settlement_date) as month,
+                    0 as fmr_liquid_total,
+                    0 as fmr_powder_total,
+                    0 as amr_powder_total,
+                    SUM(sal.amount) as amr_liquid_total
+                ")
                 ->groupBy('s.id', 's.supplier_name', 's.short_name', DB::raw('YEAR(ss.settlement_date)'), DB::raw('MONTH(ss.settlement_date)'));
 
             // Query 3: Sales Settlement AMR Powder (supplier from product)
@@ -123,52 +124,40 @@ class FmrAmrComparisonController extends Controller
                 ->where('ss.status', 'posted')
                 ->whereNull('ss.deleted_at')
                 ->whereBetween('ss.settlement_date', [$startDate, $endDate])
-                ->select(
-                    DB::raw("'settlement' as source_type"),
-                    's.id as supplier_id',
-                    's.supplier_name',
-                    's.short_name',
-                    DB::raw('YEAR(ss.settlement_date) as year'),
-                    DB::raw('MONTH(ss.settlement_date) as month'),
-                    DB::raw('0 as fmr_liquid_total'),
-                    DB::raw('0 as fmr_powder_total'),
-                    DB::raw('SUM(sap.amount) as amr_powder_total'),
-                    DB::raw('0 as amr_liquid_total')
-                )
+                ->selectRaw("
+                    'settlement' as source_type,
+                    s.id as supplier_id,
+                    s.supplier_name,
+                    s.short_name,
+                    YEAR(ss.settlement_date) as year,
+                    MONTH(ss.settlement_date) as month,
+                    0 as fmr_liquid_total,
+                    0 as fmr_powder_total,
+                    SUM(sap.amount) as amr_powder_total,
+                    0 as amr_liquid_total
+                ")
                 ->groupBy('s.id', 's.supplier_name', 's.short_name', DB::raw('YEAR(ss.settlement_date)'), DB::raw('MONTH(ss.settlement_date)'));
 
-            // Apply source filter
+            // Apply supplier filter to each query individually if properly set
+            if (!empty($supplierIds)) {
+                $grnQuery->whereIn('s.id', $supplierIds);
+                $settlementLiquidQuery->whereIn('s.id', $supplierIds);
+                $settlementPowderQuery->whereIn('s.id', $supplierIds);
+            }
+
+            // Combine based on source filter
             if ($sourceFilter === 'grn') {
-                // Only GRN entries
                 $combinedData = $grnQuery;
             } elseif ($sourceFilter === 'settlement') {
-                // Only settlement entries
                 $combinedData = $settlementLiquidQuery->unionAll($settlementPowderQuery);
             } else {
-                // All sources
                 $combinedData = $grnQuery->unionAll($settlementLiquidQuery)->unionAll($settlementPowderQuery);
             }
 
-            // Apply supplier filter
-            if (! empty($supplierIds)) {
-                if ($sourceFilter === 'grn') {
-                    $grnQuery->whereIn('s.id', $supplierIds);
-                    $combinedData = $grnQuery;
-                } elseif ($sourceFilter === 'settlement') {
-                    $settlementLiquidQuery->whereIn('s.id', $supplierIds);
-                    $settlementPowderQuery->whereIn('s.id', $supplierIds);
-                    $combinedData = $settlementLiquidQuery->unionAll($settlementPowderQuery);
-                } else {
-                    $grnQuery->whereIn('s.id', $supplierIds);
-                    $settlementLiquidQuery->whereIn('s.id', $supplierIds);
-                    $settlementPowderQuery->whereIn('s.id', $supplierIds);
-                    $combinedData = $grnQuery->unionAll($settlementLiquidQuery)->unionAll($settlementPowderQuery);
-                }
-            }
-
             // Aggregate combined data by supplier, year, month
-            $actualData = DB::table(DB::raw("({$combinedData->toSql()}) as combined"))
-                ->mergeBindings($combinedData)
+            $actualData = DB::table(function ($query) use ($combinedData) {
+                $query->fromSub($combinedData, 'combined');
+            })
                 ->select(
                     'supplier_id',
                     'supplier_name',
@@ -229,7 +218,7 @@ class FmrAmrComparisonController extends Controller
         ];
 
         // Get selected supplier names for display
-        $selectedSupplierNames = ! empty($supplierIds)
+        $selectedSupplierNames = !empty($supplierIds)
             ? $suppliers->whereIn('id', $supplierIds)->pluck('supplier_name')->implode(', ')
             : 'All Suppliers';
 

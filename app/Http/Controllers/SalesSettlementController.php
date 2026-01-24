@@ -65,8 +65,41 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->paginate(20)
             ->withQueryString();
 
+        // Calculate totals for the filtered results
+        $totals = QueryBuilder::for(SalesSettlement::class)
+            ->allowedFilters([
+                AllowedFilter::partial('settlement_number'),
+                AllowedFilter::exact('employee_id'),
+                AllowedFilter::exact('vehicle_id'),
+                AllowedFilter::exact('warehouse_id'),
+                AllowedFilter::exact('status'),
+                AllowedFilter::scope('settlement_date_from'),
+                AllowedFilter::scope('settlement_date_to'),
+            ])
+            ->selectRaw('
+                SUM(total_quantity_sold) as total_sold_qty,
+                SUM(total_quantity_returned) as total_returned_qty,
+                SUM(total_quantity_shortage) as total_shortage_qty,
+                SUM(total_sales_amount) as total_sales_amount,
+                SUM(credit_sales_amount) as total_credit_sales,
+                SUM(cheque_sales_amount) as total_cheque_sales,
+                SUM(bank_transfer_amount) as total_bank_transfer,
+                SUM(cash_sales_amount) as total_cash_sales,
+                SUM(credit_recoveries) as total_recoveries,
+                SUM(expenses_claimed) as total_expenses,
+                SUM(gross_profit) as total_gross_profit,
+                SUM(total_cogs) as total_cogs,
+                SUM(cash_to_deposit) as total_cash_deposit
+            ')
+            ->first();
+
+        // Calculate Net Profit
+        $netProfit = $totals->total_gross_profit - $totals->total_expenses;
+        $totals->total_net_profit = $netProfit;
+
         return view('sales-settlements.index', [
             'settlements' => $settlements,
+            'totals' => $totals,
         ]);
     }
 
@@ -167,7 +200,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->map(function ($gi) {
                 return [
                     'id' => $gi->id,
-                    'text' => $gi->issue_number.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
+                    'text' => $gi->issue_number . ' - ' . $gi->employee->full_name . ' (' . $gi->issue_date->format('d M Y') . ')',
                 ];
             });
 
@@ -372,7 +405,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $totalBankTransfers = 0;
             if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
                 foreach ($request->bank_transfers as $transfer) {
-                    if (! empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
+                    if (!empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
                         $bankTransfersData[] = $transfer;
                         $totalBankTransfers += floatval($transfer['amount'] ?? 0);
                     }
@@ -384,7 +417,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $totalCheques = 0;
             if ($request->has('cheques') && is_array($request->cheques)) {
                 foreach ($request->cheques as $cheque) {
-                    if (! empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
+                    if (!empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
                         $chequesData[] = $cheque;
                         $totalCheques += floatval($cheque['amount'] ?? 0);
                     }
@@ -403,7 +436,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
                 if (is_array($entries)) {
                     foreach ($entries as $recovery) {
-                        if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
+                        if (!empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
                             $recoveriesData[] = $recovery;
                             $totalRecoveries += floatval($recovery['amount'] ?? 0);
                             if (($recovery['payment_method'] ?? '') === 'cash') {
@@ -422,7 +455,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 $entries = $request->credit_sales;
                 if (is_array($entries)) {
                     foreach ($entries as $creditSale) {
-                        if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
+                        if (!empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
                             $creditSalesData[] = $creditSale;
                         }
                     }
@@ -444,7 +477,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             // Calculate total expenses from the expenses array (dynamic from Alpine.js)
             $totalExpenses = 0;
-            if (! empty($request->expenses) && is_array($request->expenses)) {
+            if (!empty($request->expenses) && is_array($request->expenses)) {
                 foreach ($request->expenses as $expense) {
                     $totalExpenses += floatval($expense['amount'] ?? 0);
                 }
@@ -562,9 +595,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
                 if (isset($item['batches']) && is_array($item['batches'])) {
                     // Auto-distribute item-level quantities to batches if batch-level values are all zero
-                    $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
-                    $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
-                    $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
+                    $batchSoldSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_sold'] ?? 0));
+                    $batchReturnedSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_returned'] ?? 0));
+                    $batchShortageSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_shortage'] ?? 0));
 
                     $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
 
@@ -612,7 +645,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             // Create advance tax breakdown records if any
-            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
+            if (!empty($request->advance_taxes) && is_array($request->advance_taxes)) {
                 foreach ($request->advance_taxes as $advanceTax) {
                     SalesSettlementAdvanceTax::create([
                         'sales_settlement_id' => $settlement->id,
@@ -627,7 +660,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             // Create AMR Powder breakdown records if any
-            if (! empty($request->amr_powders) && is_array($request->amr_powders)) {
+            if (!empty($request->amr_powders) && is_array($request->amr_powders)) {
                 foreach ($request->amr_powders as $powder) {
                     SalesSettlementAmrPowder::create([
                         'sales_settlement_id' => $settlement->id,
@@ -640,7 +673,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             // Create AMR Liquid breakdown records if any
-            if (! empty($request->amr_liquids) && is_array($request->amr_liquids)) {
+            if (!empty($request->amr_liquids) && is_array($request->amr_liquids)) {
                 foreach ($request->amr_liquids as $liquid) {
                     SalesSettlementAmrLiquid::create([
                         'sales_settlement_id' => $settlement->id,
@@ -653,9 +686,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             // Create expense records in sales_settlement_expenses table (store ALL expenses including zero amounts)
-            if (! empty($request->expenses) && is_array($request->expenses)) {
+            if (!empty($request->expenses) && is_array($request->expenses)) {
                 foreach ($request->expenses as $expense) {
-                    if (! empty($expense['expense_account_id'])) {
+                    if (!empty($expense['expense_account_id'])) {
                         SalesSettlementExpense::create([
                             'sales_settlement_id' => $settlement->id,
                             'expense_date' => $request->settlement_date,
@@ -669,7 +702,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             // Create recovery records in sales_settlement_recoveries table
-            if (! empty($recoveriesData)) {
+            if (!empty($recoveriesData)) {
                 foreach ($recoveriesData as $recovery) {
                     SalesSettlementRecovery::create([
                         'sales_settlement_id' => $settlement->id,
@@ -687,7 +720,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             // Create credit sales records in sales_settlement_credit_sales table
-            if (! empty($creditSalesData)) {
+            if (!empty($creditSalesData)) {
                 Log::info('Creating Credit Sales Records', ['count' => count($creditSalesData)]);
                 foreach ($creditSalesData as $creditSale) {
                     $record = SalesSettlementCreditSale::create([
@@ -729,7 +762,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Sales Settlement: '.$e->getMessage());
+                ->with('error', 'Unable to create Sales Settlement: ' . $e->getMessage());
         }
     }
 
@@ -812,7 +845,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
         }
 
-        $creditSalesDecoded = $salesSettlement->creditSales->map(fn ($s) => [
+        $creditSalesDecoded = $salesSettlement->creditSales->map(fn($s) => [
             'customer_id' => $s->customer_id,
             'customer_name' => $s->customer?->customer_name ?? 'Unknown',
             'sale_amount' => (float) $s->sale_amount,
@@ -820,7 +853,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'notes' => $s->notes,
         ]);
 
-        $recoveriesDecoded = $salesSettlement->recoveries->map(fn ($r) => [
+        $recoveriesDecoded = $salesSettlement->recoveries->map(fn($r) => [
             'customer_id' => $r->customer_id,
             'customer_name' => $r->customer?->customer_name ?? 'Unknown',
             'recovery_amount' => (float) $r->recovery_amount,
@@ -829,7 +862,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'notes' => $r->notes,
         ]);
 
-        $bankTransfersDecoded = $salesSettlement->bankTransfers->map(fn ($t) => [
+        $bankTransfersDecoded = $salesSettlement->bankTransfers->map(fn($t) => [
             'customer_id' => $t->customer_id,
             'customer_name' => $t->customer?->customer_name ?? 'Unknown',
             'bank_account_id' => $t->bank_account_id,
@@ -838,7 +871,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'transfer_date' => $t->transfer_date,
         ]);
 
-        $chequesDecoded = $salesSettlement->cheques->map(fn ($c) => [
+        $chequesDecoded = $salesSettlement->cheques->map(fn($c) => [
             'customer_id' => $c->customer_id,
             'customer_name' => $c->customer?->customer_name ?? 'Unknown',
             'bank_account_id' => $c->bank_account_id,
@@ -847,7 +880,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'cheque_date' => $c->cheque_date,
         ]);
 
-        $advanceTaxesDecoded = $salesSettlement->advanceTaxes->map(fn ($tax) => [
+        $advanceTaxesDecoded = $salesSettlement->advanceTaxes->map(fn($tax) => [
             'customer_id' => $tax->customer_id,
             'customer_name' => $tax->customer?->customer_name ?? 'Unknown',
             'sale_amount' => (float) $tax->sale_amount,
@@ -856,14 +889,14 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'invoice_number' => $tax->invoice_number,
         ]);
 
-        $amrPowdersDecoded = $salesSettlement->amrPowders->map(fn ($p) => [
+        $amrPowdersDecoded = $salesSettlement->amrPowders->map(fn($p) => [
             'product_id' => $p->product_id,
             'product_name' => $p->product?->product_name ?? 'Unknown',
             'quantity' => (float) $p->quantity,
             'amount' => (float) $p->amount,
         ]);
 
-        $amrLiquidsDecoded = $salesSettlement->amrLiquids->map(fn ($l) => [
+        $amrLiquidsDecoded = $salesSettlement->amrLiquids->map(fn($l) => [
             'product_id' => $l->product_id,
             'product_name' => $l->product?->product_name ?? 'Unknown',
             'quantity' => (float) $l->quantity,
@@ -872,7 +905,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         $cashDenom = $salesSettlement->cashDenomination;
 
-        $savedExpensesData = $salesSettlement->expenses->map(fn ($e) => [
+        $savedExpensesData = $salesSettlement->expenses->map(fn($e) => [
             'expense_account_id' => $e->expense_account_id,
             'amount' => (float) $e->amount,
             'description' => $e->description,
@@ -1105,9 +1138,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 // Store batch breakdown if available
                 if (isset($item['batches']) && is_array($item['batches'])) {
                     // Auto-distribute item-level quantities to batches if batch-level values are all zero
-                    $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
-                    $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
-                    $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
+                    $batchSoldSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_sold'] ?? 0));
+                    $batchReturnedSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_returned'] ?? 0));
+                    $batchShortageSum = collect($item['batches'])->sum(fn($b) => (float) ($b['quantity_shortage'] ?? 0));
 
                     $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
 
@@ -1155,7 +1188,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             // Create advance tax breakdown records if any
-            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
+            if (!empty($request->advance_taxes) && is_array($request->advance_taxes)) {
                 foreach ($request->advance_taxes as $advanceTax) {
                     SalesSettlementAdvanceTax::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -1170,7 +1203,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             // Create AMR Powder breakdown records if any
-            if (! empty($request->amr_powders) && is_array($request->amr_powders)) {
+            if (!empty($request->amr_powders) && is_array($request->amr_powders)) {
                 foreach ($request->amr_powders as $powder) {
                     SalesSettlementAmrPowder::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -1183,7 +1216,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             // Create AMR Liquid breakdown records if any
-            if (! empty($request->amr_liquids) && is_array($request->amr_liquids)) {
+            if (!empty($request->amr_liquids) && is_array($request->amr_liquids)) {
                 foreach ($request->amr_liquids as $liquid) {
                     SalesSettlementAmrLiquid::create([
                         'sales_settlement_id' => $salesSettlement->id,
@@ -1196,9 +1229,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
 
             // Create expense records in sales_settlement_expenses table (store ALL expenses including zero amounts)
-            if (! empty($request->expenses) && is_array($request->expenses)) {
+            if (!empty($request->expenses) && is_array($request->expenses)) {
                 foreach ($request->expenses as $expense) {
-                    if (! empty($expense['expense_account_id'])) {
+                    if (!empty($expense['expense_account_id'])) {
                         SalesSettlementExpense::create([
                             'sales_settlement_id' => $salesSettlement->id,
                             'expense_date' => $request->settlement_date,
@@ -1219,7 +1252,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
                 if (is_array($entries)) {
                     foreach ($entries as $recovery) {
-                        if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
+                        if (!empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
                             SalesSettlementRecovery::create([
                                 'sales_settlement_id' => $salesSettlement->id,
                                 'customer_id' => $recovery['customer_id'],
@@ -1242,7 +1275,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 $entries = $request->credit_sales;
                 if (is_array($entries)) {
                     foreach ($entries as $creditSale) {
-                        if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
+                        if (!empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
                             SalesSettlementCreditSale::create([
                                 'sales_settlement_id' => $salesSettlement->id,
                                 'customer_id' => $creditSale['customer_id'],
@@ -1261,7 +1294,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
                 foreach ($request->bank_transfers as $transfer) {
-                    if (! empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
+                    if (!empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
                         SalesSettlementBankTransfer::create([
                             'sales_settlement_id' => $salesSettlement->id,
                             'bank_account_id' => $transfer['bank_account_id'],
@@ -1277,7 +1310,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             if ($request->has('cheques') && is_array($request->cheques)) {
                 foreach ($request->cheques as $cheque) {
-                    if (! empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
+                    if (!empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
                         SalesSettlementCheque::create([
                             'sales_settlement_id' => $salesSettlement->id,
                             'customer_id' => $cheque['customer_id'] ?? null,

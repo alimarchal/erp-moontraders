@@ -8,6 +8,7 @@ use App\Models\GoodsIssue;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -108,6 +109,8 @@ class GoodsIssueReportController extends Controller
                 'issued_value' => 0,
                 'sold_qty' => 0,
                 'sale_amount' => 0,
+                'cogs' => 0,
+                'gross_profit' => 0,
                 'profit' => 0,
             ]
         ];
@@ -117,6 +120,31 @@ class GoodsIssueReportController extends Controller
         foreach ($period as $date) {
             $matrixData['dates'][] = $date->format('Y-m-d');
         }
+
+        // Calculate Global Totals for Allocation (Expenses / Sales)
+        // We filter settlements by the expected settlement date range
+        $globalFinancials = DB::table('sales_settlements')
+            ->join('goods_issues', 'sales_settlements.goods_issue_id', '=', 'goods_issues.id')
+            ->whereBetween('goods_issues.issue_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->where('goods_issues.status', 'issued') // Match report logic
+            ->when($request->input('filter.status'), function ($query, $status) {
+                $query->where('goods_issues.status', $status);
+            })
+            ->when($request->input('filter.issue_number'), function ($query, $number) {
+                $query->where('goods_issues.issue_number', 'like', "%{$number}%");
+            })
+            ->when($employeeIds, function ($query) use ($employeeIds) {
+                $query->whereIn('goods_issues.employee_id', (array) $employeeIds);
+            })
+            ->selectRaw('SUM(expenses_claimed) as total_expenses, SUM(total_sales_amount) as total_sales')
+            ->first();
+
+        $totalExpenses = $globalFinancials->total_expenses ?? 0;
+        $totalSalesGlobal = $globalFinancials->total_sales ?? 0;
+        $expenseRatio = $totalSalesGlobal > 0 ? ($totalExpenses / $totalSalesGlobal) : 0;
+
+        $matrixData['grand_totals']['expenses'] = $totalExpenses;
+        // Matrix Grand Totals for Profit/Net Profit will be summed from rows to ensure consistency
 
         // Build Product Rows
         foreach ($products as $product) {
@@ -141,7 +169,16 @@ class GoodsIssueReportController extends Controller
             // Settlement Totals
             $rowTotalSold = $settlementData ? $settlementData->total_sold : 0;
             $rowTotalSale = $settlementData ? $settlementData->total_sales : 0;
-            $rowTotalProfit = $settlementData ? ($settlementData->total_sales - $settlementData->total_cogs) : 0;
+            $rowTotalCogs = $settlementData ? $settlementData->total_cogs : 0;
+            $rowGrossProfit = $settlementData ? ($settlementData->total_sales - $settlementData->total_cogs) : 0;
+
+            // Allocate Expenses to calculate Net Profit
+            $rowExpenses = $rowTotalSale * $expenseRatio;
+            $rowNetProfit = $rowGrossProfit - $rowExpenses;
+
+            // Calculate Avg Unit Cost (Weighted Average based on Issued)
+            $actualQtyIssued = $giData->sum('total_qty');
+            $avgUnitCost = $actualQtyIssued > 0 ? $rowTotalIssuedValue / $actualQtyIssued : 0;
 
             // Allow row if it has any activity (issue OR settlement) or if we want to show all products
             if ($rowTotalIssuedQty > 0 || $rowTotalSold > 0) {
@@ -156,18 +193,27 @@ class GoodsIssueReportController extends Controller
                         'total_issued_value' => $rowTotalIssuedValue,
                         'total_sold_qty' => $rowTotalSold,
                         'total_sale' => $rowTotalSale,
-                        'total_profit' => $rowTotalProfit,
+                        'total_cogs' => $rowTotalCogs,
+                        'total_profit' => $rowNetProfit, // Saving NET PROFIT as the main profit for the column
+                        'total_gross_profit' => $rowGrossProfit, // Keeping GP if needed
+                        'avg_unit_cost' => $avgUnitCost,
                     ]
                 ]);
 
                 // Add to grand totals
-                $matrixData['grand_totals']['issued_qty'] += $rowTotalIssuedQty; // This is now a Count sum
+                $matrixData['grand_totals']['issued_qty'] += $rowTotalIssuedQty;
                 $matrixData['grand_totals']['issued_value'] += $rowTotalIssuedValue;
                 $matrixData['grand_totals']['sold_qty'] += $rowTotalSold;
                 $matrixData['grand_totals']['sale_amount'] += $rowTotalSale;
-                $matrixData['grand_totals']['profit'] += $rowTotalProfit;
+                $matrixData['grand_totals']['cogs'] += $rowTotalCogs;
+                $matrixData['grand_totals']['gross_profit'] += $rowGrossProfit;
+                $matrixData['grand_totals']['profit'] += $rowNetProfit; // Summing NET PROFIT
             }
         }
+
+        // Final Net Profit is simply the sum of row net profits (which equals GP - Exp)
+        // We can just assign the calculated profit to 'net_profit' as well for consistency in footer logic
+        $matrixData['grand_totals']['net_profit'] = $matrixData['grand_totals']['profit'];
 
         // Fetch filter options (Same as before)
         $employees = Employee::where('is_active', true)

@@ -125,8 +125,8 @@
                 <td class="py-1 px-2 text-center">
                     <span
                         class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full
-                                                                        {{ $settlement->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                                                        {{ $settlement->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                                                            {{ $settlement->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                                                            {{ $settlement->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                         {{ ucfirst($settlement->status) }}
                     </span>
                 </td>
@@ -140,6 +140,83 @@
                 </td>
             </tr>
         @endforeach
+
+        <x-slot name="footer">
+            <tr class="bg-gray-50 border-t-2 border-gray-300 font-bold text-xs uppercase text-gray-700">
+                <td colspan="3" class="py-2 px-2 text-right">Totals:</td>
+                <td class="py-2 px-2 text-right font-mono text-black text-sm">
+                    {{ number_format($totals->total_sales_amount, 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono text-black text-sm">
+                    {{ number_format($totals->total_credit_sales, 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono text-black text-sm">
+                    {{ number_format($totals->total_cheque_sales, 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono text-black text-sm">
+                    {{ number_format($totals->total_bank_transfer, 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono text-black text-sm">
+                    {{ number_format($totals->total_cash_sales, 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono text-black text-sm">
+                    Net: {{ number_format($totals->total_net_profit, 2) }}
+                </td>
+                <td colspan="2"></td>
+            </tr>
+            <tr class="bg-gray-100 text-xs text-gray-600">
+                <td colspan="11" class="py-2 px-4">
+                    <div class="grid grid-cols-4 gap-4 text-center">
+                        <div class="bg-white p-2 rounded shadow-sm">
+                            <span
+                                class="block font-bold text-gray-800 border-b border-gray-200 pb-1 mb-1">Quantities</span>
+                            <div class="grid grid-cols-3 gap-2 font-mono text-black">
+                                <div><span
+                                        class="text-[10px] text-gray-500 block uppercase">Sold</span>{{ $totals->total_sold_qty + 0 }}
+                                </div>
+                                <div><span
+                                        class="text-[10px] text-gray-500 block uppercase">Return</span>{{ $totals->total_returned_qty + 0 }}
+                                </div>
+                                <div><span
+                                        class="text-[10px] text-gray-500 block uppercase">Short</span>{{ $totals->total_shortage_qty + 0 }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-2 rounded shadow-sm">
+                            <span
+                                class="block font-bold text-gray-800 border-b border-gray-200 pb-1 mb-1">Financials</span>
+                            <div class="font-mono text-black text-xs text-left px-2">
+                                <div class="flex justify-between"><span>Recoveries:</span>
+                                    <span>{{ number_format($totals->total_recoveries, 2) }}</span></div>
+                                <div class="flex justify-between font-bold mt-1"><span>Deposit:</span>
+                                    <span>{{ number_format($totals->total_cash_deposit, 2) }}</span></div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-2 rounded shadow-sm">
+                            <span class="block font-bold text-gray-800 border-b border-gray-200 pb-1 mb-1">Costs</span>
+                            <div class="font-mono text-black text-xs text-left px-2">
+                                <div class="flex justify-between"><span>COGS:</span>
+                                    <span>{{ number_format($totals->total_cogs, 2) }}</span></div>
+                                <div class="flex justify-between text-orange-600"><span>Exp:</span>
+                                    <span>{{ number_format($totals->total_expenses, 2) }}</span></div>
+                            </div>
+                        </div>
+                        <div class="bg-white p-2 rounded shadow-sm">
+                            <span
+                                class="block font-bold text-gray-800 border-b border-gray-200 pb-1 mb-1">Profitability</span>
+                            <div class="font-mono text-black text-xs text-left px-2">
+                                <div class="flex justify-between"><span>Gross:</span>
+                                    <span>{{ number_format($totals->total_gross_profit, 2) }}</span></div>
+                                <div
+                                    class="flex justify-between text-green-700 font-bold mt-1 text-sm border-t border-gray-100 pt-1">
+                                    <span>Net:</span> <span>{{ number_format($totals->total_net_profit, 2) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </x-slot>
 
     </x-data-table>
 </x-app-layout>

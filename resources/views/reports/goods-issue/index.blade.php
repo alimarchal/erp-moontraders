@@ -214,9 +214,10 @@
                             @endforeach
                             <th class="bg-gray-200">Total</th>
                             <th class="bg-yellow-50">G.I Total</th>
-                            <th class="bg-blue-50">Settlement Total</th>
-                            <th class="bg-green-50">Profit</th>
+                            <th class="bg-orange-50">Avg Cost</th>
                             <th class="bg-indigo-50">Sale</th>
+                            <th class="bg-red-50">COGS</th>
+                            <th class="bg-green-50">Net Profit</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -252,22 +253,34 @@
                                 <td class="text-right font-mono bg-yellow-50 text-black">
                                     <a href="{{ route('goods-issues.index', ['filter[issue_date_from]' => $startDate, 'filter[issue_date_to]' => $endDate, 'filter[status]' => 'issued', 'filter[product_id]' => $product['product_id']]) }}"
                                         class="hover:underline cursor-pointer text-black" target="_blank">
-                                        {{ number_format($product['totals']['total_issued_value'], 0) }}
+                                        {{ number_format($product['totals']['total_issued_value'], 2) }}
                                     </a>
                                 </td>
-                                <td class="text-right font-mono bg-blue-50 text-black">
-                                    {{ number_format($product['totals']['total_sale'], 0) }}
+                                <td class="text-right font-mono bg-orange-50 text-black">
+                                    {{ number_format($product['totals']['avg_unit_cost'], 2) }}
+                                </td>
+                                <td class="text-right font-mono bg-indigo-50 text-black">
+                                    <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
+                                        class="hover:underline cursor-pointer text-black" target="_blank">
+                                        {{ number_format($product['totals']['total_sale'], 2) }}
+                                    </a>
+                                </td>
+                                <td class="text-right font-mono bg-red-50 text-black">
+                                    <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
+                                        class="hover:underline cursor-pointer text-black" target="_blank">
+                                        {{ number_format($product['totals']['total_cogs'], 2) }}
+                                    </a>
                                 </td>
                                 <td class="text-right font-mono bg-green-50 text-black">
-                                    {{ number_format($product['totals']['total_profit'], 0) }}
-                                </td>
-                                <td class="text-right font-mono bg-indigo-50">
-                                    {{ number_format($product['totals']['total_sale'], 0) }}
+                                    <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
+                                        class="hover:underline cursor-pointer text-black" target="_blank">
+                                        {{ number_format($product['totals']['total_profit'], 2) }}
+                                    </a>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ count($matrixData['dates']) + 9 }}" class="text-center py-4 text-gray-500">
+                                <td colspan="{{ count($matrixData['dates']) + 10 }}" class="text-center py-4 text-gray-500">
                                     No data found for the selected criteria.
                                 </td>
                             </tr>
@@ -284,17 +297,34 @@
 
                             <td class="text-center font-mono">{{ $matrixData['grand_totals']['issued_qty'] + 0 }}</td>
                             <td class="text-right font-mono">
-                                {{ number_format($matrixData['grand_totals']['issued_value'], 0) }}
+                                {{ number_format($matrixData['grand_totals']['issued_value'], 2) }}
                             </td>
+                            <td class="text-right font-mono text-gray-400">-</td>
                             <td class="text-right font-mono">
-                                {{ number_format($matrixData['grand_totals']['sale_amount'], 0) }}
-                            </td> {{-- Using Sale Amount as Settlement Total roughly? Or Sold Value? Using Sale Amount
-                            based on mockup column name --}}
-                            <td class="text-right font-mono">
-                                {{ number_format($matrixData['grand_totals']['profit'], 0) }}
+                                {{ number_format($matrixData['grand_totals']['sale_amount'], 2) }}
                             </td>
-                            <td class="text-right font-mono">
-                                {{ number_format($matrixData['grand_totals']['sale_amount'], 0) }}
+                            <td class="text-right font-mono">{{ number_format($matrixData['grand_totals']['cogs'], 2) }}
+                            </td>
+                            <td class="text-right font-mono text-blue-700">GP:
+                                {{ number_format($matrixData['grand_totals']['profit'], 2) }}</td>
+                        </tr>
+                        <tr class="bg-gray-200 text-sm">
+                            <td colspan="{{ count($matrixData['dates']) + 10 }}"
+                                class="text-right font-bold pr-4 py-2 border-t border-gray-300">
+                                <span class="mr-4 text-orange-700 font-mono">
+                                    Total Expenses:
+                                    <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
+                                        class="hover:underline cursor-pointer" target="_blank">
+                                        {{ number_format($matrixData['grand_totals']['expenses'] ?? 0, 2) }}
+                                    </a>
+                                </span>
+                                <span class="text-green-800 font-mono text-lg">
+                                    Net Profit:
+                                    <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
+                                        class="hover:underline cursor-pointer" target="_blank">
+                                        {{ number_format($matrixData['grand_totals']['net_profit'] ?? 0, 2) }}
+                                    </a>
+                                </span>
                             </td>
                         </tr>
                     </tfoot>

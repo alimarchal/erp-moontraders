@@ -207,4 +207,14 @@ class SalesSettlement extends Model
     {
         return $this->status === 'draft';
     }
+
+    public function scopeSettlementDateFrom($query, $date)
+    {
+        return $query->where('settlement_date', '>=', $date);
+    }
+
+    public function scopeSettlementDateTo($query, $date)
+    {
+        return $query->where('settlement_date', '<=', $date);
+    }
 }

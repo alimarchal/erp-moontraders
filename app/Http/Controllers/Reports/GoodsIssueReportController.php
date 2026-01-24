@@ -194,6 +194,7 @@ class GoodsIssueReportController extends Controller
                         'total_sold_qty' => $rowTotalSold,
                         'total_sale' => $rowTotalSale,
                         'total_cogs' => $rowTotalCogs,
+                        'total_expenses' => $rowExpenses,
                         'total_profit' => $rowNetProfit, // Saving NET PROFIT as the main profit for the column
                         'total_gross_profit' => $rowGrossProfit, // Keeping GP if needed
                         'avg_unit_cost' => $avgUnitCost,

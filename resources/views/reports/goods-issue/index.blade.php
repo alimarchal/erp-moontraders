@@ -208,7 +208,7 @@
                             <th class="w-10">S.No</th>
                             <th class="w-20">SKU Code</th>
                             <th class="w-40">SKU</th>
-                            <th class="w-24">Category</th>
+                            <th class="w-24">Brand</th>
                             @foreach($matrixData['dates'] as $date)
                                 <th class="w-8 text-center">{{ \Carbon\Carbon::parse($date)->format('j') }}</th>
                             @endforeach
@@ -217,6 +217,7 @@
                             <th class="bg-orange-50">Avg Cost</th>
                             <th class="bg-indigo-50">Sale</th>
                             <th class="bg-red-50">COGS</th>
+                            <th class="bg-orange-100">Expenses</th>
                             <th class="bg-green-50">Net Profit</th>
                         </tr>
                     </thead>
@@ -271,6 +272,12 @@
                                         {{ number_format($product['totals']['total_cogs'], 2) }}
                                     </a>
                                 </td>
+                                <td class="text-right font-mono bg-orange-100 text-black">
+                                    <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
+                                        class="hover:underline cursor-pointer text-black" target="_blank">
+                                        {{ number_format($product['totals']['total_expenses'], 2) }}
+                                    </a>
+                                </td>
                                 <td class="text-right font-mono bg-green-50 text-black">
                                     <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
                                         class="hover:underline cursor-pointer text-black" target="_blank">
@@ -280,7 +287,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ count($matrixData['dates']) + 10 }}" class="text-center py-4 text-gray-500">
+                                <td colspan="{{ count($matrixData['dates']) + 11 }}" class="text-center py-4 text-gray-500">
                                     No data found for the selected criteria.
                                 </td>
                             </tr>
@@ -305,26 +312,11 @@
                             </td>
                             <td class="text-right font-mono">{{ number_format($matrixData['grand_totals']['cogs'], 2) }}
                             </td>
-                            <td class="text-right font-mono text-blue-700">GP:
-                                {{ number_format($matrixData['grand_totals']['profit'], 2) }}</td>
-                        </tr>
-                        <tr class="bg-gray-200 text-sm">
-                            <td colspan="{{ count($matrixData['dates']) + 10 }}"
-                                class="text-right font-bold pr-4 py-2 border-t border-gray-300">
-                                <span class="mr-4 text-orange-700 font-mono">
-                                    Total Expenses:
-                                    <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
-                                        class="hover:underline cursor-pointer" target="_blank">
-                                        {{ number_format($matrixData['grand_totals']['expenses'] ?? 0, 2) }}
-                                    </a>
-                                </span>
-                                <span class="text-green-800 font-mono text-lg">
-                                    Net Profit:
-                                    <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
-                                        class="hover:underline cursor-pointer" target="_blank">
-                                        {{ number_format($matrixData['grand_totals']['net_profit'] ?? 0, 2) }}
-                                    </a>
-                                </span>
+                            <td class="text-right font-mono text-orange-700">
+                                {{ number_format($matrixData['grand_totals']['expenses'], 2) }}
+                            </td>
+                            <td class="text-right font-mono text-green-700 font-bold">
+                                {{ number_format($matrixData['grand_totals']['profit'], 2) }}
                             </td>
                         </tr>
                     </tfoot>

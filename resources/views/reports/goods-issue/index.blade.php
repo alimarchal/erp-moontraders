@@ -208,7 +208,7 @@
                             <th class="w-10">S.No</th>
                             <th class="w-20">SKU Code</th>
                             <th class="w-40">SKU</th>
-                            <th class="w-24">Brand</th>
+                            <th class="w-24">Category</th>
                             @foreach($matrixData['dates'] as $date)
                                 <th class="w-8 text-center">{{ \Carbon\Carbon::parse($date)->format('j') }}</th>
                             @endforeach
@@ -227,7 +227,7 @@
                                 <td class="text-center font-mono">{{ $loop->iteration }}</td>
                                 <td class="text-xs">{{ $product['product_code'] }}</td>
                                 <td class="font-bold">{{ $product['product_name'] }}</td>
-                                <td class="text-xs text-gray-600">{{ $product['category_name'] }}</td>
+                                <td class="text-xs text-gray-600 text-center">{{ $product['category_name'] }}</td>
 
                                 @foreach($matrixData['dates'] as $date)
                                     @php

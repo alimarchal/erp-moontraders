@@ -14,6 +14,16 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     environment: Testing
+    
+    services:
+      mariadb:
+        image: mariadb:10.10
+        env:
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: yes
+          MARIADB_DATABASE: moontraders_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=3
 
     steps:
       - name: Checkout

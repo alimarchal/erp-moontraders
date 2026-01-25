@@ -11,7 +11,7 @@ use App\Models\Vehicle;
 use App\Models\Warehouse;
 
 test('sales settlement edit page can be rendered', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['is_super_admin' => 'Yes']);
 
     $employee = Employee::factory()->create();
     $vehicle = Vehicle::factory()->create();

@@ -209,15 +209,17 @@
                             <th class="w-20">SKU Code</th>
                             <th class="w-40">SKU</th>
                             <th class="w-24">Category</th>
+                            <th class="bg-yellow-50">G.I Total</th>
                             @foreach($matrixData['dates'] as $date)
                                 <th class="w-8 text-center">{{ \Carbon\Carbon::parse($date)->format('j') }}</th>
                             @endforeach
                             <th class="bg-gray-200">Total</th>
-                            <th class="bg-yellow-50">G.I Total</th>
-                            <th class="bg-orange-50">Avg Cost</th>
-                            <th class="bg-indigo-50">Sale</th>
+
+                            <!-- <th class="bg-orange-50">Avg Cost</th> -->
                             <th class="bg-red-50">COGS</th>
-                            <th class="bg-orange-100">Expenses</th>
+                            <th class="bg-indigo-50">Sale</th>
+
+                            <th class="bg-orange-100">Avg Expenses</th>
                             <th class="bg-green-50">Net Profit</th>
                         </tr>
                     </thead>
@@ -228,6 +230,12 @@
                                 <td class="text-xs">{{ $product['product_code'] }}</td>
                                 <td class="font-bold">{{ $product['product_name'] }}</td>
                                 <td class="text-xs text-gray-600 text-center">{{ $product['category_name'] }}</td>
+                                <td class="text-right font-mono bg-yellow-50 text-black">
+                                    <a href="{{ route('goods-issues.index', ['filter[issue_date_from]' => $startDate, 'filter[issue_date_to]' => $endDate, 'filter[status]' => 'issued', 'filter[product_id]' => $product['product_id']]) }}"
+                                        class="hover:underline cursor-pointer text-black" target="_blank">
+                                        {{ number_format($product['totals']['total_issued_value'], 2) }}
+                                    </a>
+                                </td>
 
                                 @foreach($matrixData['dates'] as $date)
                                     @php
@@ -251,14 +259,15 @@
                                         {{ $product['totals']['total_issued_qty'] + 0 }}
                                     </a>
                                 </td>
-                                <td class="text-right font-mono bg-yellow-50 text-black">
-                                    <a href="{{ route('goods-issues.index', ['filter[issue_date_from]' => $startDate, 'filter[issue_date_to]' => $endDate, 'filter[status]' => 'issued', 'filter[product_id]' => $product['product_id']]) }}"
+
+                                <!-- <td class="text-right font-mono bg-orange-50 text-black">
+                                                                                        {{ number_format($product['totals']['avg_unit_cost'], 2) }}
+                                                                                    </td> -->
+                                <td class="text-right font-mono bg-red-50 text-black">
+                                    <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
                                         class="hover:underline cursor-pointer text-black" target="_blank">
-                                        {{ number_format($product['totals']['total_issued_value'], 2) }}
+                                        {{ number_format($product['totals']['total_cogs'], 2) }}
                                     </a>
-                                </td>
-                                <td class="text-right font-mono bg-orange-50 text-black">
-                                    {{ number_format($product['totals']['avg_unit_cost'], 2) }}
                                 </td>
                                 <td class="text-right font-mono bg-indigo-50 text-black">
                                     <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
@@ -266,18 +275,15 @@
                                         {{ number_format($product['totals']['total_sale'], 2) }}
                                     </a>
                                 </td>
-                                <td class="text-right font-mono bg-red-50 text-black">
-                                    <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
-                                        class="hover:underline cursor-pointer text-black" target="_blank">
-                                        {{ number_format($product['totals']['total_cogs'], 2) }}
-                                    </a>
-                                </td>
+
+
                                 <td class="text-right font-mono bg-orange-100 text-black">
                                     <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
                                         class="hover:underline cursor-pointer text-black" target="_blank">
                                         {{ number_format($product['totals']['total_expenses'], 2) }}
                                     </a>
                                 </td>
+
                                 <td class="text-right font-mono bg-green-50 text-black">
                                     <a href="{{ route('sales-settlements.index', ['filter[settlement_date_from]' => $startDate, 'filter[settlement_date_to]' => $endDate]) }}"
                                         class="hover:underline cursor-pointer text-black" target="_blank">
@@ -296,22 +302,23 @@
                     <tfoot class="bg-gray-100 font-extrabold sticky bottom-0">
                         <tr>
                             <td colspan="4" class="text-right px-2">Grand Totals:</td>
-
+                            <td class="text-right font-mono">
+                                {{ number_format($matrixData['grand_totals']['issued_value'], 2) }}
+                            </td>
                             {{-- Daily Totals (Optional? Leaving blank for layout clarity or calculate if needed) --}}
                             @foreach($matrixData['dates'] as $date)
                                 <td></td>
                             @endforeach
 
                             <td class="text-center font-mono">{{ $matrixData['grand_totals']['issued_qty'] + 0 }}</td>
-                            <td class="text-right font-mono">
-                                {{ number_format($matrixData['grand_totals']['issued_value'], 2) }}
+
+                            <!-- <td class="text-right font-mono text-gray-400">-</td> -->
+                            <td class="text-right font-mono">{{ number_format($matrixData['grand_totals']['cogs'], 2) }}
                             </td>
-                            <td class="text-right font-mono text-gray-400">-</td>
                             <td class="text-right font-mono">
                                 {{ number_format($matrixData['grand_totals']['sale_amount'], 2) }}
                             </td>
-                            <td class="text-right font-mono">{{ number_format($matrixData['grand_totals']['cogs'], 2) }}
-                            </td>
+
                             <td class="text-right font-mono text-orange-700">
                                 {{ number_format($matrixData['grand_totals']['expenses'], 2) }}
                             </td>

@@ -109,25 +109,35 @@ test('fmr amr comparison calculates difference as fmr minus amr', function () {
         'description' => 'FMR Powder allowance',
     ]);
 
-    // AMR accounts are expenses (debit increases expense)
-    // AMR Liquid: 700 debit
-    \App\Models\JournalEntryDetail::create([
-        'journal_entry_id' => $journalEntry->id,
-        'chart_of_account_id' => $amrLiquid->id,
-        'line_no' => 3,
-        'debit' => 700,
-        'credit' => 0,
-        'description' => 'AMR Liquid expense',
+    // Create a product linked to supplier
+    $product = \App\Models\Product::factory()->create([
+        'supplier_id' => $supplier->id,
+        'product_name' => 'AMR Test Product',
     ]);
 
-    // AMR Powder: 300 debit
-    \App\Models\JournalEntryDetail::create([
-        'journal_entry_id' => $journalEntry->id,
-        'chart_of_account_id' => $amrPowder->id,
-        'line_no' => 4,
-        'debit' => 300,
-        'credit' => 0,
-        'description' => 'AMR Powder expense',
+    // Create a posted sales settlement for June
+    $settlement = \App\Models\SalesSettlement::factory()->create([
+        'settlement_date' => '2025-06-20',
+        'status' => 'posted',
+        'warehouse_id' => \App\Models\Warehouse::factory(),
+        'vehicle_id' => \App\Models\Vehicle::factory(),
+        'employee_id' => \App\Models\Employee::factory(),
+    ]);
+
+    // Add AMR Liquid record (700 debit/expense)
+    \App\Models\SalesSettlementAmrLiquid::create([
+        'sales_settlement_id' => $settlement->id,
+        'product_id' => $product->id,
+        'quantity' => 10,
+        'amount' => 700,
+    ]);
+
+    // Add AMR Powder record (300 debit/expense)
+    \App\Models\SalesSettlementAmrPowder::create([
+        'sales_settlement_id' => $settlement->id,
+        'product_id' => $product->id,
+        'quantity' => 10,
+        'amount' => 300,
     ]);
 
     // Balancing entry (debit cash to balance the entry)
@@ -159,19 +169,19 @@ test('fmr amr comparison calculates difference as fmr minus amr', function () {
     $reportData = $response->viewData('reportData');
     $juneData = $reportData->first();
 
-    expect($juneData->fmr_liquid_total)->toBe(1000.0)
-        ->and($juneData->fmr_powder_total)->toBe(500.0)
-        ->and($juneData->amr_liquid_total)->toBe(700.0)
-        ->and($juneData->amr_powder_total)->toBe(300.0)
-        ->and($juneData->difference)->toBe(500.0);
+    expect((float) $juneData->fmr_liquid_total)->toBe(1000.0)
+        ->and((float) $juneData->fmr_powder_total)->toBe(500.0)
+        ->and((float) $juneData->amr_liquid_total)->toBe(700.0)
+        ->and((float) $juneData->amr_powder_total)->toBe(300.0)
+        ->and((float) $juneData->difference)->toBe(500.0);
 
     // Check grand totals
     $grandTotals = $response->viewData('grandTotals');
-    expect($grandTotals->fmr_liquid_total)->toBe(1000.0)
-        ->and($grandTotals->fmr_powder_total)->toBe(500.0)
-        ->and($grandTotals->amr_liquid_total)->toBe(700.0)
-        ->and($grandTotals->amr_powder_total)->toBe(300.0)
-        ->and($grandTotals->difference)->toBe(500.0);
+    expect((float) $grandTotals->fmr_liquid_total)->toBe(1000.0)
+        ->and((float) $grandTotals->fmr_powder_total)->toBe(500.0)
+        ->and((float) $grandTotals->amr_liquid_total)->toBe(700.0)
+        ->and((float) $grandTotals->amr_powder_total)->toBe(300.0)
+        ->and((float) $grandTotals->difference)->toBe(500.0);
 });
 
 test('fmr amr comparison shows negative difference when amr exceeds fmr', function () {
@@ -209,25 +219,27 @@ test('fmr amr comparison shows negative difference when amr exceeds fmr', functi
         'description' => 'FMR Liquid allowance',
     ]);
 
-    // AMR Liquid: 800 debit
-    \App\Models\JournalEntryDetail::create([
-        'journal_entry_id' => $journalEntry->id,
-        'chart_of_account_id' => $amrLiquid->id,
-        'line_no' => 2,
-        'debit' => 800,
-        'credit' => 0,
-        'description' => 'AMR Liquid expense',
+    // Create a product linked to supplier
+    $product = \App\Models\Product::factory()->create([
+        'supplier_id' => $supplier->id,
+        'product_name' => 'AMR Test Product',
     ]);
 
-    // Balancing entry
-    $cashAccount = \App\Models\ChartOfAccount::where('account_code', '1110')->first();
-    \App\Models\JournalEntryDetail::create([
-        'journal_entry_id' => $journalEntry->id,
-        'chart_of_account_id' => $cashAccount->id,
-        'line_no' => 3,
-        'debit' => 0,
-        'credit' => 500,
-        'description' => 'Balancing entry',
+    // Create a posted sales settlement for July
+    $settlement = \App\Models\SalesSettlement::factory()->create([
+        'settlement_date' => '2025-07-20',
+        'status' => 'posted',
+        'warehouse_id' => \App\Models\Warehouse::factory(),
+        'vehicle_id' => \App\Models\Vehicle::factory(),
+        'employee_id' => \App\Models\Employee::factory(),
+    ]);
+
+    // Add AMR Liquid record (800 debit/expense)
+    \App\Models\SalesSettlementAmrLiquid::create([
+        'sales_settlement_id' => $settlement->id,
+        'product_id' => $product->id,
+        'quantity' => 10,
+        'amount' => 800,
     ]);
 
     // Get the report
@@ -248,8 +260,8 @@ test('fmr amr comparison shows negative difference when amr exceeds fmr', functi
     $reportData = $response->viewData('reportData');
     $julyData = $reportData->first();
 
-    expect($julyData->difference)->toBe(-500.0)
-        ->and($julyData->difference)->toBeLessThan(0);
+    expect((float) $julyData->difference)->toBe(-500.0)
+        ->and((float) $julyData->difference)->toBeLessThan(0);
 });
 
 test('fmr amr comparison report handles complex filters without binding errors', function () {

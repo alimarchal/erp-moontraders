@@ -12,7 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('shows value totals for sold, returned, and shortage quantities on settlement show page', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['is_super_admin' => 'Yes']);
 
     $goodsIssue = GoodsIssue::factory()->create();
     $settlement = SalesSettlement::factory()->create([

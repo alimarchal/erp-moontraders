@@ -18,7 +18,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('uses promotional batch selling price when calculating sales value', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = \App\Models\User::factory()->create(['is_super_admin' => 'Yes']);
     $this->actingAs($user);
 
     $product = Product::factory()->create([

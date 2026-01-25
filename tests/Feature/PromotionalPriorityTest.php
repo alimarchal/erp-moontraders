@@ -27,6 +27,12 @@ test('promotional items (priority 1) are issued before regular items (priority 9
     $user = \App\Models\User::factory()->create();
     $this->actingAs($user);
 
+    \App\Models\AccountingPeriod::factory()->create([
+        'start_date' => now()->startOfMonth(),
+        'end_date' => now()->endOfMonth(),
+        'status' => 'open',
+    ]);
+
     $product = Product::factory()->create([
         'product_code' => 'COKE-001',
         'product_name' => 'Coca Cola 1L',
@@ -217,6 +223,7 @@ test('sales settlement calculates COGS from promotional batches first', function
     // Create required chart of accounts
     $accounts = [
         ['code' => '1121', 'name' => 'Cash'],
+        ['code' => '1123', 'name' => 'Salesman Clearing'], // Added missing required account
         ['code' => '1122', 'name' => 'Cheques In Hand'],
         ['code' => '1111', 'name' => 'Debtors'],
         ['code' => '1170', 'name' => 'Earnest Money'],
@@ -385,6 +392,12 @@ test('multiple promotional batches are sorted by priority order correctly', func
     // Setup
     $user = \App\Models\User::factory()->create();
     $this->actingAs($user);
+
+    \App\Models\AccountingPeriod::factory()->create([
+        'start_date' => now()->startOfMonth(),
+        'end_date' => now()->endOfMonth(),
+        'status' => 'open',
+    ]);
 
     $product = Product::factory()->create(['product_code' => 'PEPSI-001']);
     $warehouse = Warehouse::factory()->create();

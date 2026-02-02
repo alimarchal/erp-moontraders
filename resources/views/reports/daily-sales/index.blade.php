@@ -196,6 +196,36 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <x-label for="settlement_number" value="Settlement #" />
+                <x-input id="settlement_number" name="settlement_number" type="text" class="mt-1 block w-full"
+                    placeholder="Search..." value="{{ request('settlement_number') }}" />
+            </div>
+            <div>
+                <x-label for="sort_by" value="Sort By" />
+                <select id="sort_by" name="sort_by"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="date_desc" {{ $sortBy == 'date_desc' ? 'selected' : '' }}>Date (Newest First)</option>
+                    <option value="date_asc" {{ $sortBy == 'date_asc' ? 'selected' : '' }}>Date (Oldest First)</option>
+                    <option value="settlement_no_desc" {{ $sortBy == 'settlement_no_desc' ? 'selected' : '' }}>Settlement
+                        # (Desc)</option>
+                    <option value="settlement_no_asc" {{ $sortBy == 'settlement_no_asc' ? 'selected' : '' }}>Settlement #
+                        (Asc)</option>
+                    <option value="salesman_asc" {{ $sortBy == 'salesman_asc' ? 'selected' : '' }}>Salesman (A-Z)</option>
+                    <option value="total_sales_desc" {{ $sortBy == 'total_sales_desc' ? 'selected' : '' }}>Total Sales
+                        (High-Low)</option>
+                    <option value="total_sales_asc" {{ $sortBy == 'total_sales_asc' ? 'selected' : '' }}>Total Sales
+                        (Low-High)</option>
+                    <option value="gp_margin_desc" {{ $sortBy == 'gp_margin_desc' ? 'selected' : '' }}>GP Margin
+                        (High-Low)</option>
+                    <option value="gp_margin_asc" {{ $sortBy == 'gp_margin_asc' ? 'selected' : '' }}>GP Margin (Low-High)
+                    </option>
+                    <option value="net_profit_desc" {{ $sortBy == 'net_profit_desc' ? 'selected' : '' }}>Net Profit
+                        (High-Low)</option>
+                    <option value="net_profit_asc" {{ $sortBy == 'net_profit_asc' ? 'selected' : '' }}>Net Profit
+                        (Low-High)</option>
+                </select>
+            </div>
         </div>
     </x-filter-section>
 
@@ -274,9 +304,15 @@
                                 <td>
 
                                     <a href="{{ route('sales-settlements.show', $settlement) }}"
-                                        class="font-semibold text-indigo-600 hover:text-indigo-900 hover:underline" x-data
+                                        class="font-semibold text-indigo-600 hover:text-indigo-900 hover:underline print:text-black"
+                                        x-data
                                         @copy.prevent="$event.clipboardData.setData('text/plain', '{{ $settlement->settlement_number }}')">
-                                        {{ preg_replace('/^SETTLE-\d{4}-(\d+)$/', '$1', $settlement->settlement_number) }}
+                                        <span class="print:hidden">
+                                            {{ preg_replace('/^SETTLE-\d{4}-(\d+)$/', '$1', $settlement->settlement_number) }}
+                                        </span>
+                                        <span class="print-only">
+                                            {{ preg_replace('/^SETTLE-\d{2}(\d{2})-(\d+)$/', 'S$1$2', $settlement->settlement_number) }}
+                                        </span>
                                     </a>
                                 </td>
                                 <td class="text-right text-black">
@@ -526,4 +562,21 @@
             </div>
         </div>
     </div>
+    @push('scripts')
+        <script>
+            $(document).ready(function () {
+                // Re-initialize specific select2s with allowClear to enable resetting
+                $('#employee_id').select2({
+                    width: '100%',
+                    placeholder: "All Salesmen",
+                    allowClear: true
+                });
+                $('#vehicle_id').select2({
+                    width: '100%',
+                    placeholder: "All Vehicles",
+                    allowClear: true
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>

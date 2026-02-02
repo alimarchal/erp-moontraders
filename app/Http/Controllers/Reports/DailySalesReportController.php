@@ -40,17 +40,42 @@ class DailySalesReportController extends Controller
             $query->where('warehouse_id', $warehouseId);
         }
 
-        $settlements = $query->orderBy('settlement_date', 'desc')
-            ->orderBy('employee_id')
-            ->get();
+        if ($request->filled('settlement_number')) {
+            $query->where('settlement_number', 'like', '%' . $request->input('settlement_number') . '%');
+        }
 
+        $settlements = $query->get();
+
+        // Calculate calculated fields first
         $settlements->each(function ($settlement) {
             $settlement->net_sales_amount = $settlement->items->sum('total_sales_value');
             $settlement->total_cogs_amount = $settlement->items->sum('total_cogs');
             $settlement->recoveries_amount = (float) ($settlement->credit_recoveries ?? 0);
+            $settlement->gross_profit = $settlement->net_sales_amount - $settlement->total_cogs_amount;
+            $settlement->net_profit = $settlement->gross_profit - $settlement->expenses_claimed;
+            $settlement->gp_margin = $settlement->net_sales_amount > 0 ? ($settlement->gross_profit / $settlement->net_sales_amount) * 100 : 0;
+            $settlement->np_margin = $settlement->net_sales_amount > 0 ? ($settlement->net_profit / $settlement->net_sales_amount) * 100 : 0;
         });
 
-        // Calculate summary
+        // Apply sorting
+        $sortBy = $request->input('sort_by', 'date_desc');
+        $settlements = match ($sortBy) {
+            'date_asc' => $settlements->sortBy('settlement_date'),
+            'date_desc' => $settlements->sortByDesc('settlement_date'),
+            'settlement_no_asc' => $settlements->sortBy('settlement_number'),
+            'settlement_no_desc' => $settlements->sortByDesc('settlement_number'),
+            'salesman_asc' => $settlements->sortBy(fn($s) => $s->employee->name ?? ''),
+            'salesman_desc' => $settlements->sortByDesc(fn($s) => $s->employee->name ?? ''),
+            'total_sales_desc' => $settlements->sortByDesc('net_sales_amount'),
+            'total_sales_asc' => $settlements->sortBy('net_sales_amount'),
+            'net_profit_desc' => $settlements->sortByDesc('net_profit'),
+            'net_profit_asc' => $settlements->sortBy('net_profit'),
+            'gp_margin_desc' => $settlements->sortByDesc('gp_margin'),
+            'gp_margin_asc' => $settlements->sortBy('gp_margin'),
+            default => $settlements->sortByDesc('settlement_date'),
+        };
+
+        // Summary calculation remains the same...
         $summary = [
             'total_sales' => $settlements->sum('net_sales_amount'),
             'cash_sales' => $settlements->sum('cash_sales_amount'),
@@ -83,6 +108,7 @@ class DailySalesReportController extends Controller
             'employeeId' => $employeeId,
             'vehicleId' => $vehicleId,
             'warehouseId' => $warehouseId,
+            'sortBy' => $sortBy,
         ]);
     }
 
@@ -160,7 +186,7 @@ class DailySalesReportController extends Controller
 
         $salesmanPerformance = $settlements
             ->groupBy(function ($settlement) {
-                return $settlement->employee_id.'-'.$settlement->vehicle_id;
+                return $settlement->employee_id . '-' . $settlement->vehicle_id;
             })
             ->map(function ($group) {
                 $first = $group->first();

@@ -120,35 +120,83 @@ class DailySalesReportController extends Controller
         $startDate = $request->input('start_date', now()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
         $employeeId = $request->input('employee_id');
+        $vehicleId = $request->input('vehicle_id');
+        $warehouseId = $request->input('warehouse_id');
 
-        // Get product-wise sales data
-        $query = DB::table('sales_settlement_items as ssi')
+        // Get raw data for PHP-side aggregation to handle expense allocation
+        $rawItems = DB::table('sales_settlement_items as ssi')
             ->join('sales_settlements as ss', 'ssi.sales_settlement_id', '=', 'ss.id')
             ->join('products as p', 'ssi.product_id', '=', 'p.id')
             ->join('employees as e', 'ss.employee_id', '=', 'e.id')
+            ->join('vehicles as v', 'ss.vehicle_id', '=', 'v.id')
             ->where('ss.status', 'posted')
             ->whereBetween('ss.settlement_date', [$startDate, $endDate]);
 
         if ($employeeId) {
-            $query->where('ss.employee_id', $employeeId);
+            $rawItems->where('ss.employee_id', $employeeId);
         }
 
-        $productSales = $query->select(
+        if ($vehicleId) {
+            $rawItems->where('ss.vehicle_id', $vehicleId);
+        }
+
+        if ($warehouseId) {
+            $rawItems->where('ss.warehouse_id', $warehouseId);
+        }
+
+        $rawItems = $rawItems->select(
             'p.id as product_id',
             'p.product_name',
-            'p.product_code',
-            DB::raw('SUM(ssi.quantity_issued) as total_issued'),
-            DB::raw('SUM(ssi.quantity_sold) as total_sold'),
-            DB::raw('SUM(ssi.quantity_returned) as total_returned'),
-            DB::raw('SUM(ssi.quantity_shortage) as total_shortage'),
-            DB::raw('SUM(ssi.total_sales_value) as total_sales_value'),
-            DB::raw('SUM(ssi.total_cogs) as total_cogs'),
-            DB::raw('SUM(ssi.total_sales_value - ssi.total_cogs) as gross_profit'),
-            DB::raw('AVG(ssi.unit_selling_price) as avg_selling_price')
-        )
-            ->groupBy('p.id', 'p.product_name', 'p.product_code')
-            ->orderByDesc('total_sales_value')
-            ->get();
+            'e.id as employee_id',
+            'e.name as employee_name',
+            'v.id as vehicle_id',
+            'v.vehicle_number',
+            'ss.id as settlement_id',
+            'ssi.quantity_issued',
+            'ssi.quantity_sold',
+            'ssi.quantity_returned',
+            'ssi.quantity_shortage',
+            'ssi.total_sales_value',
+            'ssi.total_cogs',
+            'ssi.unit_selling_price',
+            'ss.total_sales_amount as settlement_total_sales',
+            'ss.expenses_claimed as settlement_total_expense'
+        )->get();
+
+        // Aggregate data strictly by Product ID
+        $productSales = $rawItems->groupBy(function ($item) {
+            return $item->product_id;
+        })->map(function ($group) {
+            $first = $group->first();
+
+            // Calculate allocated expense for ALL items in this product group
+            $allocatedExpense = $group->sum(function ($item) {
+                if ($item->settlement_total_sales > 0) {
+                    return ($item->total_sales_value / $item->settlement_total_sales) * $item->settlement_total_expense;
+                }
+                return 0;
+            });
+
+            $totalSales = $group->sum('total_sales_value');
+            $totalCogs = $group->sum('total_cogs');
+            $grossProfit = $totalSales - $totalCogs;
+            $netProfit = $grossProfit - $allocatedExpense;
+
+            return (object) [
+                'product_id' => $first->product_id,
+                'product_name' => $first->product_name,
+                'avg_selling_price' => $group->avg('unit_selling_price'),
+                'total_issued' => $group->sum('quantity_issued'),
+                'total_sold' => $group->sum('quantity_sold'),
+                'total_returned' => $group->sum('quantity_returned'),
+                'total_shortage' => $group->sum('quantity_shortage'),
+                'total_sales_value' => $totalSales,
+                'total_cogs' => $totalCogs,
+                'gross_profit' => $grossProfit,
+                'allocated_expense' => $allocatedExpense,
+                'net_profit' => $netProfit,
+            ];
+        })->sortByDesc('total_sales_value');
 
         // Calculate totals
         $totals = [
@@ -159,15 +207,20 @@ class DailySalesReportController extends Controller
             'total_sales_value' => $productSales->sum('total_sales_value'),
             'total_cogs' => $productSales->sum('total_cogs'),
             'gross_profit' => $productSales->sum('gross_profit'),
+            'net_profit' => $productSales->sum('net_profit'),
         ];
 
         return view('reports.daily-sales.product-wise', [
             'productSales' => $productSales,
             'totals' => $totals,
             'employees' => Employee::orderBy('name')->get(['id', 'name']),
+            'vehicles' => Vehicle::orderBy('vehicle_number')->get(['id', 'vehicle_number']),
+            'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'startDate' => $startDate,
             'endDate' => $endDate,
             'employeeId' => $employeeId,
+            'vehicleId' => $vehicleId,
+            'warehouseId' => $warehouseId,
         ]);
     }
 
@@ -178,11 +231,27 @@ class DailySalesReportController extends Controller
     {
         $startDate = $request->input('start_date', now()->toDateString());
         $endDate = $request->input('end_date', now()->toDateString());
+        $employeeId = $request->input('employee_id');
+        $vehicleId = $request->input('vehicle_id');
+        $warehouseId = $request->input('warehouse_id');
 
-        $settlements = SalesSettlement::with(['employee', 'vehicle', 'items'])
+        $query = SalesSettlement::with(['employee', 'vehicle', 'items'])
             ->where('status', 'posted')
-            ->whereBetween('settlement_date', [$startDate, $endDate])
-            ->get();
+            ->whereBetween('settlement_date', [$startDate, $endDate]);
+
+        if ($employeeId) {
+            $query->where('employee_id', $employeeId);
+        }
+
+        if ($vehicleId) {
+            $query->where('vehicle_id', $vehicleId);
+        }
+
+        if ($warehouseId) {
+            $query->where('warehouse_id', $warehouseId);
+        }
+
+        $settlements = $query->get();
 
         $salesmanPerformance = $settlements
             ->groupBy(function ($settlement) {
@@ -198,6 +267,8 @@ class DailySalesReportController extends Controller
                 });
 
                 $grossProfit = $totalSales - $totalCogs;
+                $expenses = $group->sum('expenses_claimed');
+                $netProfit = $grossProfit - $expenses;
 
                 return (object) [
                     'employee_id' => $first->employee_id,
@@ -215,9 +286,10 @@ class DailySalesReportController extends Controller
                     'total_returned' => $group->sum('total_quantity_returned'),
                     'total_shortage' => $group->sum('total_quantity_shortage'),
                     'cash_collected' => $group->sum('cash_collected'),
-                    'expenses_claimed' => $group->sum('expenses_claimed'),
+                    'expenses_claimed' => $expenses,
                     'total_cogs' => $totalCogs,
                     'gross_profit' => $grossProfit,
+                    'net_profit' => $netProfit,
                     'gross_profit_margin' => $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : 0,
                 ];
             })

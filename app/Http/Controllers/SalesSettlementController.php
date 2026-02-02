@@ -60,6 +60,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 AllowedFilter::exact('status'),
                 AllowedFilter::scope('settlement_date_from'),
                 AllowedFilter::scope('settlement_date_to'),
+                AllowedFilter::callback('product_id', function ($query, $value) {
+                    $query->whereHas('items', function ($q) use ($value) {
+                        $q->where('product_id', $value);
+                    });
+                }),
             ])
             ->defaultSort('-settlement_date')
             ->paginate(20)
@@ -75,6 +80,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 AllowedFilter::exact('status'),
                 AllowedFilter::scope('settlement_date_from'),
                 AllowedFilter::scope('settlement_date_to'),
+                AllowedFilter::callback('product_id', function ($query, $value) {
+                    $query->whereHas('items', function ($q) use ($value) {
+                        $q->where('product_id', $value);
+                    });
+                }),
             ])
             ->selectRaw('
                 SUM(total_quantity_sold) as total_sold_qty,

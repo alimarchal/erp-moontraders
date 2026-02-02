@@ -239,5 +239,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('shop-list', [ShopListController::class, 'index'])->name('shop-list.index');
         Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
         Route::get('goods-issue', [\App\Http\Controllers\Reports\GoodsIssueReportController::class, 'index'])->name('goods-issue.index');
+        Route::get('roi', [\App\Http\Controllers\Reports\RoiReportController::class, 'index'])->name('roi.index');
     });
 });

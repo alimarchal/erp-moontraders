@@ -20,9 +20,9 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Employees</option>
                     @foreach($employees as $employee)
-                    <option value="{{ $employee->id }}" {{ $employeeId==$employee->id ? 'selected' : '' }}>
-                        {{ $employee->name }}
-                    </option>
+                        <option value="{{ $employee->id }}" {{ $employeeId == $employee->id ? 'selected' : '' }}>
+                            {{ $employee->name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -32,9 +32,9 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Vehicles</option>
                     @foreach($vehicles as $vehicle)
-                    <option value="{{ $vehicle->id }}" {{ $vehicleId==$vehicle->id ? 'selected' : '' }}>
-                        {{ $vehicle->vehicle_number }}
-                    </option>
+                        <option value="{{ $vehicle->id }}" {{ $vehicleId == $vehicle->id ? 'selected' : '' }}>
+                            {{ $vehicle->vehicle_number }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -44,9 +44,9 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Warehouses</option>
                     @foreach($warehouses as $warehouse)
-                    <option value="{{ $warehouse->id }}" {{ $warehouseId==$warehouse->id ? 'selected' : '' }}>
-                        {{ $warehouse->warehouse_name }}
-                    </option>
+                        <option value="{{ $warehouse->id }}" {{ $warehouseId == $warehouse->id ? 'selected' : '' }}>
+                            {{ $warehouse->warehouse_name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -68,7 +68,9 @@
             </div>
             <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
                 <div class="text-sm text-gray-600">Credit Sales</div>
-                <div class="text-2xl font-bold text-purple-600 font-mono">{{ number_format($summary['credit_sales'], 2) }}</div>
+                <div class="text-2xl font-bold text-purple-600 font-mono">
+                    {{ number_format($summary['credit_sales'], 2) }}
+                </div>
             </div>
             <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
                 <div class="text-sm text-gray-600">Gross Profit</div>
@@ -92,142 +94,140 @@
         ['label' => 'Credit', 'align' => 'text-right'],
         ['label' => 'Recoveries', 'align' => 'text-right'],
         ['label' => 'Cash to Deposit', 'align' => 'text-right'],
-        ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No sales settlements found for the selected criteria.">
         @foreach ($settlements as $index => $settlement)
-        <tr class="border-b border-gray-200 text-sm">
-            <td class="py-1 px-2 text-center">
-                {{ $loop->iteration }}
-            </td>
-            <td class="py-1 px-2 whitespace-nowrap">
-                {{ $settlement->settlement_date->format('d-m-Y') }}
-            </td>
-            <td class="py-1 px-2">
-                <div class="font-semibold">{{ $settlement->settlement_number }}</div>
-            </td>
-            <td class="py-1 px-2">
-                <div class="font-semibold">{{ $settlement->employee->name ?? 'N/A' }}</div>
-            </td>
-            <td class="py-1 px-2">
-                <div class="font-mono">{{ $settlement->vehicle->vehicle_number ?? 'N/A' }}</div>
-            </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format($settlement->total_quantity_sold, 2) }}
-            </td>
-            <td class="py-1 px-2 text-right font-mono font-semibold">
-                {{ number_format($settlement->net_sales_amount, 2) }}
-            </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format($settlement->cash_sales_amount, 2) }}
-            </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format($settlement->credit_sales_amount, 2) }}
-            </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format($settlement->recoveries_amount, 2) }}
-            </td>
-            <td class="py-1 px-2 text-right font-mono">
-                {{ number_format($settlement->cash_to_deposit, 2) }}
-            </td>
-            <td class="py-1 px-2 text-center">
-                <a href="{{ route('sales-settlements.show', $settlement) }}"
-                    class="text-indigo-600 hover:text-indigo-900">View</a>
-            </td>
-        </tr>
+            <tr class="border-b border-gray-200 text-sm">
+                <td class="py-1 px-2 text-center">
+                    {{ $loop->iteration }}
+                </td>
+                <td class="py-1 px-2 whitespace-nowrap">
+                    {{ $settlement->settlement_date->format('d-m-Y') }}
+                </td>
+                <td class="py-1 px-2">
+                    <div class="font-semibold">
+                        <a href="{{ route('sales-settlements.show', $settlement) }}"
+                            class="text-indigo-600 hover:text-indigo-900 hover:underline">
+                            {{ $settlement->settlement_number }} </a>
+                    </div>
+                </td>
+                <td class="py-1 px-2">
+                    <div class="font-semibold">{{ $settlement->employee->name ?? 'N/A' }}</div>
+                </td>
+                <td class="py-1 px-2">
+                    <div class="font-mono">{{ $settlement->vehicle->vehicle_number ?? 'N/A' }}</div>
+                </td>
+                <td class="py-1 px-2 text-right font-mono">
+                    {{ number_format($settlement->total_quantity_sold, 2) }}
+                </td>
+                <td class="py-1 px-2 text-right font-mono font-semibold">
+                    {{ number_format($settlement->net_sales_amount, 2) }}
+                </td>
+                <td class="py-1 px-2 text-right font-mono">
+                    {{ number_format($settlement->cash_sales_amount, 2) }}
+                </td>
+                <td class="py-1 px-2 text-right font-mono">
+                    {{ number_format($settlement->credit_sales_amount, 2) }}
+                </td>
+                <td class="py-1 px-2 text-right font-mono">
+                    {{ number_format($settlement->recoveries_amount, 2) }}
+                </td>
+                <td class="py-1 px-2 text-right font-mono">
+                    {{ number_format($settlement->cash_to_deposit, 2) }}
+                </td>
+            </tr>
         @endforeach
         @if($settlements->count() > 0)
-        <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
-            <td colspan="5" class="py-2 px-2 text-right">
-                Page Total ({{ $settlements->count() }} rows):
-            </td>
-            <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($summary['total_quantity_sold'], 2) }}
-            </td>
-            <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($summary['total_sales'], 2) }}
-            </td>
-            <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($summary['cash_sales'], 2) }}
-            </td>
-            <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($summary['credit_sales'], 2) }}
-            </td>
-            <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($summary['recoveries'], 2) }}
-            </td>
-            <td class="py-2 px-2 text-right font-mono">
-                {{ number_format($summary['cash_to_deposit'], 2) }}
-            </td>
-            <td></td>
-        </tr>
+            <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
+                <td colspan="5" class="py-2 px-2 text-right">
+                    Page Total ({{ $settlements->count() }} rows):
+                </td>
+                <td class="py-2 px-2 text-right font-mono">
+                    {{ number_format($summary['total_quantity_sold'], 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono">
+                    {{ number_format($summary['total_sales'], 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono">
+                    {{ number_format($summary['cash_sales'], 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono">
+                    {{ number_format($summary['credit_sales'], 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono">
+                    {{ number_format($summary['recoveries'], 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono">
+                    {{ number_format($summary['cash_to_deposit'], 2) }}
+                </td>
+            </tr>
         @endif
     </x-data-table>
 
     <!-- Additional Summary Cards -->
     @if($settlements->count() > 0)
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mb-6">
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <div class="text-sm font-semibold text-gray-700 mb-2">Quantity Summary</div>
-                <div class="space-y-1 text-sm">
-                    <div class="flex justify-between">
-                        <span>Sold:</span>
-                        <span class="font-mono font-semibold">{{ number_format($summary['total_quantity_sold'], 2)
-                            }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>Returned:</span>
-                        <span class="font-mono font-semibold">{{ number_format($summary['total_quantity_returned'], 2)
-                            }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>Shortage:</span>
-                        <span class="font-mono font-semibold text-red-600">{{
-                            number_format($summary['total_quantity_shortage'], 2) }}</span>
-                    </div>
-                </div>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <div class="text-sm font-semibold text-gray-700 mb-2">Cash Management</div>
-                <div class="space-y-1 text-sm">
-                    <div class="flex justify-between">
-                        <span>Cash Collected:</span>
-                        <span class="font-mono font-semibold">{{ number_format($summary['cash_collected'], 2) }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>Expenses:</span>
-                        <span class="font-mono font-semibold">{{ number_format($summary['expenses_claimed'], 2)
-                            }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>To Deposit:</span>
-                        <span class="font-mono font-semibold text-green-600">{{
-                            number_format($summary['cash_to_deposit'], 2) }}</span>
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 pt-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 rounded-md shadow-lg">
+                    <div class="text-sm font-semibold text-gray-700 mb-2">Quantity Summary</div>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span>Sold:</span>
+                            <span class="font-mono font-semibold">{{ number_format($summary['total_quantity_sold'], 2)
+                                                                        }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Returned:</span>
+                            <span class="font-mono font-semibold">{{ number_format($summary['total_quantity_returned'], 2)
+                                                                        }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Shortage:</span>
+                            <span class="font-mono font-semibold text-red-600">{{
+            number_format($summary['total_quantity_shortage'], 2) }}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <div class="text-sm font-semibold text-gray-700 mb-2">Payment Methods</div>
-                <div class="space-y-1 text-sm">
-                    <div class="flex justify-between">
-                        <span>Cash:</span>
-                        <span class="font-mono font-semibold">{{ number_format($summary['cash_sales'], 2) }}</span>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 rounded-md shadow-lg">
+                    <div class="text-sm font-semibold text-gray-700 mb-2">Cash Management</div>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span>Cash Collected:</span>
+                            <span class="font-mono font-semibold">{{ number_format($summary['cash_collected'], 2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Expenses:</span>
+                            <span class="font-mono font-semibold">{{ number_format($summary['expenses_claimed'], 2)
+                                                                        }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>To Deposit:</span>
+                            <span class="font-mono font-semibold text-green-600">{{
+            number_format($summary['cash_to_deposit'], 2) }}</span>
+                        </div>
                     </div>
-                    <div class="flex justify-between">
-                        <span>Credit:</span>
-                        <span class="font-mono font-semibold">{{ number_format($summary['credit_sales'], 2) }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>Recoveries:</span>
-                        <span class="font-mono font-semibold">{{ number_format($summary['recoveries'], 2) }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>Cheque:</span>
-                        <span class="font-mono font-semibold">{{ number_format($summary['cheque_sales'], 2) }}</span>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 rounded-md shadow-lg">
+                    <div class="text-sm font-semibold text-gray-700 mb-2">Payment Methods</div>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span>Cash:</span>
+                            <span class="font-mono font-semibold">{{ number_format($summary['cash_sales'], 2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Credit:</span>
+                            <span class="font-mono font-semibold">{{ number_format($summary['credit_sales'], 2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Recoveries:</span>
+                            <span class="font-mono font-semibold">{{ number_format($summary['recoveries'], 2) }}</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Cheque:</span>
+                            <span class="font-mono font-semibold">{{ number_format($summary['cheque_sales'], 2) }}</span>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
     @endif
 </x-app-layout>

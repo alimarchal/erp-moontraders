@@ -84,71 +84,99 @@
 
     <x-data-table :items="$settlements" :headers="[
         ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'Date'],
-        ['label' => 'Settlement #'],
-        ['label' => 'Employee'],
-        ['label' => 'Vehicle'],
-        ['label' => 'Qty Sold', 'align' => 'text-right'],
+        ['label' => 'Date / Sett #'],
+        ['label' => 'Salesman / Veh'],
         ['label' => 'Total Sales', 'align' => 'text-right'],
-        ['label' => 'Cash', 'align' => 'text-right'],
+        ['label' => 'Rtn', 'align' => 'text-right'],
+        ['label' => 'Net Sales', 'align' => 'text-right'],
+        ['label' => 'Cash Coll.', 'align' => 'text-right'],
         ['label' => 'Credit', 'align' => 'text-right'],
         ['label' => 'Recoveries', 'align' => 'text-right'],
-        ['label' => 'Cash to Deposit', 'align' => 'text-right'],
-    ]" emptyMessage="No sales settlements found for the selected criteria.">
+        ['label' => 'Expenses', 'align' => 'text-right'],
+        ['label' => 'Shortage', 'align' => 'text-right'],
+        ['label' => 'Net Profit', 'align' => 'text-right'],
+        ['label' => 'Net Deposit', 'align' => 'text-right'],
+    ]"    emptyMessage="No sales settlements found for the selected criteria.">
         @foreach ($settlements as $index => $settlement)
-            <tr class="border-b border-gray-200 text-sm">
+            <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
                 <td class="py-1 px-2 text-center">
                     {{ $loop->iteration }}
                 </td>
-                <td class="py-1 px-2 whitespace-nowrap">
-                    {{ $settlement->settlement_date->format('d-m-Y') }}
-                </td>
                 <td class="py-1 px-2">
-                    <div class="font-semibold">
-                        <a href="{{ route('sales-settlements.show', $settlement) }}"
-                            class="text-indigo-600 hover:text-indigo-900 hover:underline">
-                            {{ $settlement->settlement_number }} </a>
+                    <div class="text-xs text-gray-500">{{ $settlement->settlement_date->format('d-m-Y') }} /
+
+                        @if($settlement->status === 'posted')
+                            Posted
+                        @else
+                            Draft
+                        @endif
+
+                    </div>
+                    <a href="{{ route('sales-settlements.show', $settlement) }}"
+                        class="font-semibold text-indigo-600 hover:text-indigo-900 hover:underline">
+                        {{ $settlement->settlement_number }}
+                    </a>
+
+
+
+                </td>
+
+                <td class="py-1 px-2 text-right font-mono text-gray-600">
+                    <div class="text-xs text-gray-500 text-left">{{ $settlement->employee->name ?? 'N/A' }}
+                        <br>
+                        {{ $settlement->vehicle->vehicle_number ?? 'N/A' }}
                     </div>
                 </td>
-                <td class="py-1 px-2">
-                    <div class="font-semibold">{{ $settlement->employee->name ?? 'N/A' }}</div>
+
+                <td class="py-1 px-2 text-right font-mono text-gray-600">
+                    <div class="text-xs text-gray-500 font-mono">{{ number_format($settlement->total_sales_amount, 2) }}
+                    </div>
                 </td>
-                <td class="py-1 px-2">
-                    <div class="font-mono">{{ $settlement->vehicle->vehicle_number ?? 'N/A' }}</div>
+                <td class="py-1 px-2 text-right font-mono text-red-600">
+                    {{ number_format($settlement->total_quantity_returned, 0) }}
                 </td>
-                <td class="py-1 px-2 text-right font-mono">
-                    {{ number_format($settlement->total_quantity_sold, 2) }}
-                </td>
-                <td class="py-1 px-2 text-right font-mono font-semibold">
+                <td class="py-1 px-2 text-right font-mono font-bold text-gray-900">
                     {{ number_format($settlement->net_sales_amount, 2) }}
                 </td>
-                <td class="py-1 px-2 text-right font-mono">
-                    {{ number_format($settlement->cash_sales_amount, 2) }}
+                <td class="py-1 px-2 text-right font-mono text-green-600">
+                    {{ number_format($settlement->cash_collected, 2) }}
                 </td>
-                <td class="py-1 px-2 text-right font-mono">
+                <td class="py-1 px-2 text-right font-mono text-orange-600">
                     {{ number_format($settlement->credit_sales_amount, 2) }}
                 </td>
-                <td class="py-1 px-2 text-right font-mono">
-                    {{ number_format($settlement->recoveries_amount, 2) }}
+                <td class="py-1 px-2 text-right font-mono text-blue-600">
+                    {{ number_format($settlement->credit_recoveries, 2) }}
                 </td>
-                <td class="py-1 px-2 text-right font-mono">
+                <td class="py-1 px-2 text-right font-mono text-red-600">
+                    {{ number_format($settlement->expenses_claimed, 2) }}
+                </td>
+                <td class="py-1 px-2 text-right font-abc text-red-600 font-bold">
+                    {{ number_format($settlement->total_quantity_shortage, 2) }}
+                </td>
+                <td class="py-1 px-2 text-right font-mono font-bold text-green-600">
+                    {{ number_format($settlement->gross_profit - $settlement->expenses_claimed, 2) }}
+                </td>
+                <td class="py-1 px-2 text-right font-mono font-bold text-emerald-700">
                     {{ number_format($settlement->cash_to_deposit, 2) }}
                 </td>
             </tr>
         @endforeach
         @if($settlements->count() > 0)
             <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
-                <td colspan="5" class="py-2 px-2 text-right">
+                <td colspan="3" class="py-2 px-2 text-right">
                     Page Total ({{ $settlements->count() }} rows):
                 </td>
                 <td class="py-2 px-2 text-right font-mono">
-                    {{ number_format($summary['total_quantity_sold'], 2) }}
+                    {{ number_format($settlements->sum('total_sales_amount'), 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono">
+                    {{ number_format($settlements->sum('total_quantity_returned'), 0) }}
                 </td>
                 <td class="py-2 px-2 text-right font-mono">
                     {{ number_format($summary['total_sales'], 2) }}
                 </td>
                 <td class="py-2 px-2 text-right font-mono">
-                    {{ number_format($summary['cash_sales'], 2) }}
+                    {{ number_format($summary['cash_collected'], 2) }}
                 </td>
                 <td class="py-2 px-2 text-right font-mono">
                     {{ number_format($summary['credit_sales'], 2) }}
@@ -156,7 +184,16 @@
                 <td class="py-2 px-2 text-right font-mono">
                     {{ number_format($summary['recoveries'], 2) }}
                 </td>
-                <td class="py-2 px-2 text-right font-mono">
+                <td class="py-2 px-2 text-right font-mono text-red-600">
+                    {{ number_format($summary['expenses_claimed'], 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono text-red-600">
+                    {{ number_format($summary['total_quantity_shortage'], 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono text-green-600">
+                    {{ number_format($summary['gross_profit'] - $summary['expenses_claimed'], 2) }}
+                </td>
+                <td class="py-2 px-2 text-right font-mono text-emerald-700">
                     {{ number_format($summary['cash_to_deposit'], 2) }}
                 </td>
             </tr>
@@ -172,13 +209,15 @@
                     <div class="space-y-1 text-sm">
                         <div class="flex justify-between">
                             <span>Sold:</span>
-                            <span class="font-mono font-semibold">{{ number_format($summary['total_quantity_sold'], 2)
-                                                                        }}</span>
+                            <span
+                                class="font-mono font-semibold">{{ number_format($summary['total_quantity_sold'], 2)
+                                                                                                                                                                                                                                                        }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span>Returned:</span>
-                            <span class="font-mono font-semibold">{{ number_format($summary['total_quantity_returned'], 2)
-                                                                        }}</span>
+                            <span
+                                class="font-mono font-semibold">{{ number_format($summary['total_quantity_returned'], 2)
+                                                                                                                                                                                                                                                        }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span>Shortage:</span>
@@ -196,8 +235,9 @@
                         </div>
                         <div class="flex justify-between">
                             <span>Expenses:</span>
-                            <span class="font-mono font-semibold">{{ number_format($summary['expenses_claimed'], 2)
-                                                                        }}</span>
+                            <span
+                                class="font-mono font-semibold">{{ number_format($summary['expenses_claimed'], 2)
+                                                                                                                                                                                                                                                        }}</span>
                         </div>
                         <div class="flex justify-between">
                             <span>To Deposit:</span>

@@ -189,46 +189,46 @@
                             <td class="py-1 px-2">
                                 @if($item->batches->count() > 0)
                                     @if($item->batches->count() === 1)
-                                                    @php $b = $item->batches->first(); @endphp
-                                                    <div class="flex items-center space-x-1">
-                                                        <span class="font-semibold text-green-600">
-                                                            {{ number_format($b->quantity_issued, 0) }} × {{
+                                                                            @php $b = $item->batches->first(); @endphp
+                                                                            <div class="flex items-center space-x-1">
+                                                                                <span class="font-semibold text-green-600">
+                                                                                    {{ number_format($b->quantity_issued, 0) }} × {{
                                         number_format($b->selling_price, 2) }}
-                                                        </span>
-                                                        @if($b->is_promotional)
-                                                            <span
-                                                                class="px-2 py-1 ml-1 text-xs font-semibold rounded bg-orange-100 text-orange-800">
-                                                                Promotional
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                    <div class="text-xs text-black mt-1">
-                                                        Sold: {{ number_format($b->quantity_sold, 0) }} |
-                                                        Returned: {{ number_format($b->quantity_returned, 0) }} |
-                                                        Shortage: {{ number_format($b->quantity_shortage, 0) }}
-                                                    </div>
+                                                                                </span>
+                                                                                @if($b->is_promotional)
+                                                                                    <span
+                                                                                        class="px-2 py-1 ml-1 text-xs font-semibold rounded bg-orange-100 text-orange-800">
+                                                                                        Promotional
+                                                                                    </span>
+                                                                                @endif
+                                                                            </div>
+                                                                            <div class="text-xs text-black mt-1">
+                                                                                Sold: {{ number_format($b->quantity_sold, 0) }} |
+                                                                                Returned: {{ number_format($b->quantity_returned, 0) }} |
+                                                                                Shortage: {{ number_format($b->quantity_shortage, 0) }}
+                                                                            </div>
                                     @else
                                         <div class="space-y-1">
                                             @foreach($item->batches as $b)
-                                                            <div
-                                                                class="text-xs border-l-2 pl-2 {{ $b->is_promotional ? 'border-orange-400' : 'border-gray-300' }}">
-                                                                <div class="flex justify-between">
-                                                                    <span class="text-black font-medium">
-                                                                        {{ number_format($b->quantity_issued, 0) }} × {{
+                                                                                        <div
+                                                                                            class="text-xs border-l-2 pl-2 {{ $b->is_promotional ? 'border-orange-400' : 'border-gray-300' }}">
+                                                                                            <div class="flex justify-between">
+                                                                                                <span class="text-black font-medium">
+                                                                                                    {{ number_format($b->quantity_issued, 0) }} × {{
                                                 number_format($b->selling_price, 2) }}
-                                                                        @if($b->is_promotional)
-                                                                            <span title="Promotional">🎁</span>
-                                                                        @endif
-                                                                    </span>
-                                                                    <span class="font-semibold">= {{ number_format($b->quantity_issued *
+                                                                                                    @if($b->is_promotional)
+                                                                                                        <span title="Promotional">🎁</span>
+                                                                                                    @endif
+                                                                                                </span>
+                                                                                                <span class="font-semibold">= {{ number_format($b->quantity_issued *
                                                 $b->selling_price, 2) }}</span>
-                                                                </div>
-                                                                <div class="text-black mt-0.5">
-                                                                    S: {{ number_format($b->quantity_sold, 0) }} |
-                                                                    R: {{ number_format($b->quantity_returned, 0) }} |
-                                                                    Sh: {{ number_format($b->quantity_shortage, 0) }}
-                                                                </div>
-                                                            </div>
+                                                                                            </div>
+                                                                                            <div class="text-black mt-0.5">
+                                                                                                S: {{ number_format($b->quantity_sold, 0) }} |
+                                                                                                R: {{ number_format($b->quantity_returned, 0) }} |
+                                                                                                Sh: {{ number_format($b->quantity_shortage, 0) }}
+                                                                                            </div>
+                                                                                        </div>
                                             @endforeach
                                         </div>
                                     @endif
@@ -333,20 +333,20 @@
                                     </thead>
                                     <tbody>
                                         @forelse($settlement->creditSales as $creditSale)
-                                                                            @php
-                                                                                $saleAmount = $creditSale->sale_amount ?? 0;
-                                                                                $salesmanBalance = $saleAmount;
-                                                                            @endphp
-                                                                            <tr class="hover:bg-gray-50">
-                                                                                <td class="py-1 px-1 text-xs">{{ $creditSale->customer->customer_name ??
+                                                                                                                @php
+                                                                                                                    $saleAmount = $creditSale->sale_amount ?? 0;
+                                                                                                                    $salesmanBalance = $saleAmount;
+                                                                                                                @endphp
+                                                                                                                <tr class="hover:bg-gray-50">
+                                                                                                                    <td class="py-1 px-1 text-xs">{{ $creditSale->customer->customer_name ??
                                             'N/A' }}</td>
-                                                                                <td class="py-1 px-1 text-right font-semibold text-xs"> {{
+                                                                                                                    <td class="py-1 px-1 text-right font-semibold text-xs"> {{
                                             number_format($saleAmount, 0) }}</td>
-                                                                                <td class="py-1 px-1 text-right font-semibold text-xs text-blue-600"
-                                                                                    title="Balance with Salesman:  {{ number_format($salesmanBalance, 2) }}">
-                                                                                    {{ number_format($salesmanBalance, 0) }}
-                                                                                </td>
-                                                                            </tr>
+                                                                                                                    <td class="py-1 px-1 text-right font-semibold text-xs text-blue-600"
+                                                                                                                        title="Balance with Salesman:  {{ number_format($salesmanBalance, 2) }}">
+                                                                                                                        {{ number_format($salesmanBalance, 0) }}
+                                                                                                                    </td>
+                                                                                                                </tr>
                                         @empty
                                             <tr>
                                                 <td colspan="3" class="py-2 px-1 text-center text-black text-xs italic">
@@ -615,23 +615,23 @@
                                                     </div>
                                                     <div style="display: flex; flex-direction: column; gap: 4px;">
                                                         @foreach($settlement->cheques as $cheque)
-                                                                                                    <div
-                                                                                                        style="background-color: white; padding: 4px; border: 1px solid #c4b5fd; border-radius: 4px; font-size: 10px;">
-                                                                                                        <div
-                                                                                                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
-                                                                                                            <div><span style="font-weight: 500;">Cheque #:</span> {{
+                                                                                                                                                    <div
+                                                                                                                                                        style="background-color: white; padding: 4px; border: 1px solid #c4b5fd; border-radius: 4px; font-size: 10px;">
+                                                                                                                                                        <div
+                                                                                                                                                            style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px;">
+                                                                                                                                                            <div><span style="font-weight: 500;">Cheque #:</span> {{
                                                             $cheque->cheque_number ?? 'N/A' }}</div>
-                                                                                                            <div><span style="font-weight: 500;">Amount:</span> {{
+                                                                                                                                                            <div><span style="font-weight: 500;">Amount:</span> {{
                                                             number_format($cheque->amount ?? 0, 0) }}</div>
-                                                                                                            <div><span style="font-weight: 500;">Bank:</span> {{
+                                                                                                                                                            <div><span style="font-weight: 500;">Bank:</span> {{
                                                             $cheque->bank_name ?? 'N/A' }}</div>
-                                                                                                            <div><span style="font-weight: 500;">Deposit Bank:</span> {{
+                                                                                                                                                            <div><span style="font-weight: 500;">Deposit Bank:</span> {{
                                                             $cheque->bankAccount->account_name ?? 'N/A' }}</div>
-                                                                                                            <div><span style="font-weight: 500;">Date:</span> {{
+                                                                                                                                                            <div><span style="font-weight: 500;">Date:</span> {{
                                                             isset($cheque->cheque_date) ?
                                                             \Carbon\Carbon::parse($cheque->cheque_date)->format('d M Y') : 'N/A' }}</div>
-                                                                                                        </div>
-                                                                                                    </div>
+                                                                                                                                                        </div>
+                                                                                                                                                    </div>
                                                         @endforeach
                                                     </div>
                                                 </td>
@@ -845,300 +845,100 @@
                                                 {{ number_format($shortExcess, 2) }}
                                             </td>
                                         </tr>
-                                        {{-- Profit Analysis --}}
-                                        <tr class="bg-gray-100 border-t-2 border-gray-300">
-                                            <td colspan="2"
-                                                class="py-1 px-1 text-center font-bold text-black text-xs uppercase tracking-wide">
-                                                Profit Analysis</td>
-                                        </tr>
-                                        <tr class="border-t border-gray-200">
-                                            <td class="py-0.5 px-1 text-xs text-gray-700">Total COGS</td>
-                                            <td class="py-0.5 px-1 text-right font-semibold text-xs text-black">
-                                                {{ number_format($totalCOGS, 2) }}
-                                            </td>
-                                        </tr>
-                                        <tr class="bg-green-50 border-t border-green-200">
-                                            <td class="py-0.5 px-1 font-semibold text-xs text-green-800">Gross Profit
-                                                (Sales - COGS)</td>
-                                            <td class="py-0.5 px-1 text-right font-bold text-xs text-green-700">
-                                                {{ number_format($grossProfit, 2) }}
-                                            </td>
-                                        </tr>
-                                        <tr class="border-t border-gray-200">
-                                            <td class="py-0.5 px-1 text-xs text-gray-500 pl-2">Gross Margin</td>
-                                            <td class="py-0.5 px-1 text-right text-xs font-semibold">
-                                                {{ number_format($grossMargin, 2) }}%
-                                            </td>
-                                        </tr>
-                                        <tr class="border-t border-gray-200">
-                                            <td class="py-0.5 px-1 text-xs text-red-700">Less: Expenses</td>
-                                            <td class="py-0.5 px-1 text-right font-semibold text-xs text-red-700">
-                                                {{ number_format($totalExpenses, 2) }}
-                                            </td>
-                                        </tr>
-                                        <tr
-                                            class="bg-gradient-to-r from-emerald-100 to-teal-100 border-t-2 border-emerald-400">
-                                            <td class="py-1 px-1 font-bold text-xs text-emerald-900">Net Profit (After
-                                                Expenses)</td>
-                                            <td class="py-1 px-1 text-right font-bold text-xs text-emerald-900">
-                                                {{ number_format($netProfit, 2) }}
-                                            </td>
-                                        </tr>
-                                        <tr class="border-t border-gray-200">
-                                            <td class="py-0.5 px-1 text-xs text-gray-500 pl-2">Net Margin</td>
-                                            <td class="py-0.5 px-1 text-right text-xs font-semibold">
-                                                {{ number_format($netMargin, 2) }}%
-                                            </td>
-                                        </tr>
+
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Cash Reconciliation Summary --}}
+
+                    {{-- Financial Performance Cards (Consolidated) --}}
                     <div class="mb-6">
-                        <div class="flex items-center mb-4">
-                            <svg class="w-6 h-6 mr-2 text-indigo-600" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z">
-                                </path>
-                            </svg>
-                            <h4 class="text-lg font-bold text-black">Cash Reconciliation Summary</h4>
+                        <div class="flex items-center mb-4 px-1">
+                            <h4 class="text-xl font-bold text-gray-800">Financial Overview</h4>
                         </div>
 
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-
-                            {{-- Financial Performance Cards --}}
-                            <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-6">
-                            @php
-                                $totalSalesValue = $netSale;
-                                $grossProfitMargin = $netSale > 0 ? ($grossProfit / $netSale) * 100 : 0;
-                                $netProfitMargin = $netSale > 0 ? ($netProfit / $netSale) * 100 : 0;
-                            @endphp
-
-                            {{-- Sales Performance Card --}}
-                            <div class="bg-white rounded-lg border border-blue-300 overflow-hidden">
-                                <div class="bg-gradient-to-r from-blue-500 to-blue-600 px-3 py-2 text-center">
-                                    <h4 class="text-base font-bold text-black">Sales Performance</h4>
+                            {{-- Card 1: Cash Flow Outcome --}}
+                            <div class="bg-white rounded-lg border border-emerald-300 overflow-hidden shadow-sm">
+                                <div class="bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-3">
+                                    <h4 class="font-bold text-white flex items-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                        Cash Flow & Settlement
+                                    </h4>
                                 </div>
-                                <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
-                                    <thead>
-                                        <tr style="background-color: #f8fafc; color: #000;">
-                                            <th
-                                                style="padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
-                                                Description</th>
-                                            <th
-                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
-                                                Amount</th>
+                                <div class="p-4">
+                                    <table class="w-full text-sm">
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-2 text-gray-600">Expected (Cash Sales + Rec)</td>
+                                            <td class="py-2 text-right font-semibold">{{ number_format($expectedCashGross, 2) }}</td>
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr style="color: #000;">
-                                            <td style="padding: 3px 6px;">Total Sales Value</td>
-                                            <td style="padding: 3px 6px; text-align: right; font-weight: 600;">
-                                                {{
-    number_format($totalSalesValue, 0) }}</td>
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-2 text-red-600">Less: Expenses</td>
+                                            <td class="py-2 text-right font-semibold text-red-600">{{ number_format($totalDeductions, 2) }}</td>
                                         </tr>
-                                        <tr style="color: #000;">
-                                            <td style="padding: 3px 6px;">Credit Extended</td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #ea580c;">
-                                                {{ number_format($creditSalesAmount, 0) }}
+                                        <tr class="bg-emerald-50">
+                                            <td class="py-2 px-2 font-bold text-emerald-800">Target Net Deposit</td>
+                                            <td class="py-2 px-2 text-right font-bold text-emerald-800">{{ number_format($expectedCashNet, 2) }}</td>
+                                        </tr>
+                                        <tr><td colspan="2" class="h-2"></td></tr>
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-2 text-gray-600">Physical Cash (Counted)</td>
+                                            <td class="py-2 text-right font-semibold text-gray-800">{{ number_format($actualPhysicalCash, 2) }}</td>
+                                        </tr>
+                                        <tr class="{{ $shortExcess >= 0 ? 'bg-green-100' : 'bg-red-100' }}">
+                                            <td class="py-2 px-2 font-bold {{ $shortExcess >= 0 ? 'text-green-800' : 'text-red-800' }}">
+                                                {{ $shortExcess >= 0 ? 'Cash Excess' : 'Cash Shortage' }}
+                                            </td>
+                                            <td class="py-2 px-2 text-right font-bold {{ $shortExcess >= 0 ? 'text-green-800' : 'text-red-800' }}">
+                                                {{ number_format($shortExcess, 2) }}
                                             </td>
                                         </tr>
-                                    </tbody>
-                                    <tfoot class="border-t-2 border-gray-300">
+                                    </table>
+                                </div>
+                            </div>
+
+                            {{-- Card 2: Profitability Analysis --}}
+                            <div class="bg-white rounded-lg border border-blue-300 overflow-hidden shadow-sm">
+                                <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3">
+                                    <h4 class="font-bold text-white flex items-center">
+                                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                                        Profit & Loss Analysis
+                                    </h4>
+                                </div>
+                                <div class="p-4">
+                                    <table class="w-full text-sm">
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-2 text-gray-600">Net Sales Revenue</td>
+                                            <td class="py-2 text-right font-semibold">{{ number_format($netSale, 2) }}</td>
+                                        </tr>
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-2 text-red-600">Less: Cost of Goods (COGS)</td>
+                                            <td class="py-2 text-right font-semibold text-red-600">{{ number_format($totalCOGS, 2) }}</td>
+                                        </tr>
                                         <tr class="bg-blue-50">
-                                            <td class="py-1.5 px-1 text-right font-semibold text-blue-900 text-xs">
-                                                Net Cash Sales:</td>
-                                            <td class="py-1.5 px-1 text-right font-bold text-blue-700 text-xs">{{
-    number_format($totalSalesValue - $creditSalesAmount, 0) }}</td>
+                                            <td class="py-2 px-2 font-bold text-blue-800">Gross Profit</td>
+                                            <td class="py-2 px-2 text-right font-bold text-blue-800">
+                                                {{ number_format($grossProfit, 2) }}
+                                                <span class="text-xs font-normal ml-1">({{ number_format($grossMargin, 1) }}%)</span>
+                                            </td>
                                         </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            {{-- Profitability Card --}}
-                            <div class="bg-white rounded-lg border border-green-300 overflow-hidden">
-                                <div class="bg-gradient-to-r from-green-500 to-green-600 px-3 py-2 text-center">
-                                    <h4 class="text-base font-bold text-black">Profitability Analysis</h4>
+                                        <tr><td colspan="2" class="h-2"></td></tr>
+                                        <tr class="border-b border-gray-100">
+                                            <td class="py-2 text-red-600">Less: Total Expenses</td>
+                                            <td class="py-2 text-right font-semibold text-red-600">{{ number_format($totalExpenses, 2) }}</td>
+                                        </tr>
+                                        <tr class="{{ $netProfit >= 0 ? 'bg-green-100' : 'bg-red-100' }}">
+                                            <td class="py-2 px-2 font-bold {{ $netProfit >= 0 ? 'text-green-800' : 'text-red-800' }}">Net Profit</td>
+                                            <td class="py-2 px-2 text-right font-bold {{ $netProfit >= 0 ? 'text-green-800' : 'text-red-800' }}">
+                                                {{ number_format($netProfit, 2) }}
+                                                <span class="text-xs font-normal ml-1">({{ number_format($netMargin, 1) }}%)</span>
+                                            </td>
+                                        </tr>
+                                    </table>
                                 </div>
-                                <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
-                                    <thead>
-                                        <tr style="background-color: #f8fafc; color: #000;">
-                                            <th
-                                                style="padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
-                                                Metric</th>
-                                            <th
-                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
-                                                Value</th>
-                                            <th
-                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
-                                                %</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr style="color: #000;">
-                                            <td style="padding: 3px 6px;">Total COGS</td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
-                                                {{
-    number_format($totalCOGS, 0) }}</td>
-                                            <td style="padding: 3px 6px; text-align: right;">-
-                                            </td>
-                                        </tr>
-                                        <tr style="color: #000;">
-                                            <td style="padding: 3px 6px;">Gross Profit</td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $grossProfit >= 0 ? '#059669' : '#dc2626' }};">
-                                                {{ number_format($grossProfit, 0) }}
-                                            </td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $grossProfitMargin >= 0 ? '#059669' : '#dc2626' }};">
-                                                {{ number_format($grossProfitMargin, 1) }}%
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 3px 6px;">Total Expenses</td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
-                                                {{ number_format($totalExpenses, 0) }}</td>
-                                            <td style="padding: 3px 6px; text-align: right;">-
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr
-                                            style="background-color: #f0fdf4; border-top: 2px solid #059669; color: #000;">
-                                            <td style="padding: 4px 6px; font-weight: bold; color: #047857;">
-                                                Net Profit:</td>
-                                            <td
-                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: {{ $netProfit >= 0 ? '#047857' : '#dc2626' }};">
-                                                {{ number_format($netProfit, 0) }}
-                                            </td>
-                                            <td
-                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: {{ $netProfitMargin >= 0 ? '#047857' : '#dc2626' }};">
-                                                {{ number_format($netProfitMargin, 1) }}%
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            {{-- Final Summary Card --}}
-                            <div
-                                class="bg-white rounded-lg border {{ $netProfit >= 0 ? 'border-emerald-300' : 'border-red-300' }} overflow-hidden">
-                                <div
-                                    class="bg-gradient-to-r {{ $netProfit >= 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600' }} px-3 py-2 text-center">
-                                    <h4 class="text-base font-bold text-black">Final Summary</h4>
-                                </div>
-                                <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
-                                    <thead>
-                                        <tr style="background-color: #f8fafc; color: #000;">
-                                            <th
-                                                style="padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
-                                                Summary Item</th>
-                                            <th
-                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
-                                                Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr style="color: #000;">
-                                            <td style="padding: 3px 6px;">Gross Profit</td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $grossProfit >= 0 ? '#059669' : '#dc2626' }};">
-                                                {{ number_format($grossProfit, 0) }}
-                                            </td>
-                                        </tr>
-                                        <tr style="color: #000;">
-                                            <td style="padding: 3px 6px;">Less: Expenses
-                                            </td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
-                                                {{ number_format($totalExpenses, 0) }}</td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr
-                                            style="background-color: {{ $netProfit >= 0 ? '#ecfdf5' : '#fef2f2' }}; border-top: 2px solid {{ $netProfit >= 0 ? '#059669' : '#dc2626' }}; color: #000;">
-                                            <td
-                                                style="padding: 5px 6px; font-weight: bold; color: {{ $netProfit >= 0 ? '#047857' : '#991b1b' }};">
-                                                Net Profit After Expenses:
-                                            </td>
-                                            <td
-                                                style="padding: 5px 6px; text-align: right; font-weight: bold; color: {{ $netProfit >= 0 ? '#047857' : '#991b1b' }}; font-size: 12px;">
-                                                {{ number_format($netProfit, 0) }}
-                                            </td>
-                                        </tr>
-                                        <tr
-                                            style="background-color: {{ $netProfit >= 0 ? '#f0fdf4' : '#fee2e2' }}; color: #000;">
-                                            <td
-                                                style="padding: 3px 6px; font-weight: 600; color: {{ $netProfit >= 0 ? '#065f46' : '#7f1d1d' }};">
-                                                Net Margin:
-                                            </td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: {{ $netProfitMargin >= 0 ? '#065f46' : '#7f1d1d' }};">
-                                                {{ number_format($netProfitMargin, 1) }}%
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-
-                            {{-- Cash Summary Card --}}
-                            <div class="bg-white rounded-lg border border-emerald-300 overflow-hidden">
-                                <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 px-3 py-2 text-center">
-                                    <h4 class="text-base font-bold text-black">Cash Summary</h4>
-                                </div>
-                                <table style="border-collapse: collapse; width: 100%; font-size: 14px;">
-                                    <thead>
-                                        <tr style="background-color: #f8fafc; color: #000;">
-                                            <th
-                                                style="padding: 4px 6px; text-align: left; font-weight: bold; color: #374151;">
-                                                Item</th>
-                                            <th
-                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #374151;">
-                                                Amount</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr style="color: #000;">
-                                            <td style="padding: 3px 6px;">Cash Collected</td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #059669;">
-                                                {{ number_format($settlement->cash_collected ?? 0, 0) }}
-                                            </td>
-                                        </tr>
-                                        <tr style="color: #000;">
-                                            <td style="padding: 3px 6px;">Credit Recovery</td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #1e40af;">
-                                                {{ number_format($recoveryTotal, 0) }}
-                                            </td>
-                                        </tr>
-                                        <tr style="color: #000;">
-                                            <td style="padding: 3px 6px;">Total Expenses</td>
-                                            <td
-                                                style="padding: 3px 6px; text-align: right; font-weight: 600; color: #dc2626;">
-                                                {{ number_format($totalExpenses, 0) }}
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tfoot>
-                                        <tr
-                                            style="background-color: #ecfdf5; border-top: 2px solid #059669; color: #000;">
-                                            <td style="padding: 4px 6px; font-weight: bold; color: #047857;">
-                                                Net Cash to Deposit:</td>
-                                            <td
-                                                style="padding: 4px 6px; text-align: right; font-weight: bold; color: #047857; font-size: 12px;">
-                                                {{ number_format($settlement->cash_to_deposit ?? 0, 0) }}
-                                            </td>
-                                        </tr>
-                                    </tfoot>
-                                </table>
                             </div>
                         </div>
                     </div>

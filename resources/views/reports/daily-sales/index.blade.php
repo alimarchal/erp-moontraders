@@ -11,7 +11,7 @@
                 border-collapse: collapse;
                 border: 1px solid black;
                 font-size: 12px;
-                line-height: 1.2;
+                line-height: 1.0;
             }
 
             .report-table th,
@@ -76,7 +76,7 @@
                 }
 
                 .report-table {
-                    font-size: 10px !important;
+                    font-size: 12px !important;
                     width: 100% !important;
                     table-layout: auto;
                 }
@@ -85,15 +85,13 @@
                     page-break-inside: avoid;
                 }
 
-                .report-table .text-right {
-                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-                }
-
                 .report-table th,
                 .report-table td {
-                    padding: 2px 3px !important;
+                    padding: 1px 2px !important;
                     color: #000 !important;
                     background-color: white !important;
+                    white-space: normal !important;
+                    overflow-wrap: break-word;
                 }
 
                 /* Ensure specific background colors are removed in print */
@@ -113,13 +111,13 @@
 
                 p {
                     margin-top: 0 !important;
-                    margin-bottom: 8px !important;
+                    margin-bottom: 4px !important;
                 }
 
                 .print-info {
-                    font-size: 9px !important;
-                    margin-top: 5px !important;
-                    margin-bottom: 10px !important;
+                    font-size: 8px !important;
+                    margin-top: 2px !important;
+                    margin-bottom: 5px !important;
                     color: #000 !important;
                 }
 
@@ -134,6 +132,14 @@
 
                 .page-footer {
                     display: none;
+                }
+
+                /* Force grid for summary tables in print */
+                .summary-grid {
+                    display: grid !important;
+                    grid-template-columns: repeat(4, 1fr) !important;
+                    gap: 0.5rem !important;
+                    margin-top: 0.5rem !important;
                 }
             }
 
@@ -193,6 +199,8 @@
         </div>
     </x-filter-section>
 
+    <!-- Summary Cards Removed -->
+
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
@@ -223,43 +231,53 @@
                 <table class="report-table">
                     <thead>
                         <tr class="bg-gray-100">
-                            <th class="text-center w-10">Sr#</th>
-                            <th class="w-24">Date / Sett #</th>
-                            <th class="w-32">Salesman / Veh</th>
-                            <th class="text-right">T.Sales</th>
-                            <th class="text-right">Rtn</th>
-                            <th class="text-right">N.Sales</th>
+                            <th class="text-center">Sr#</th>
+                            <th class="text-left">Date</th>
+                            <th class="text-left">Settlement #</th>
+                            <th class="text-left">Salesman</th>
+                            <th class="text-left">Vehicle</th>
+                            <th class="text-right">Total Sales</th>
+                            <th class="text-right">Return</th>
+                            <th class="text-right">Net Sales</th>
                             <th class="text-right">Cash</th>
                             <th class="text-right">Credit</th>
-                            <th class="text-right">Recov.</th>
-                            <th class="text-right">Exp.</th>
+                            <th class="text-right">Recovery</th>
+                            <th class="text-right">Expense</th>
                             <th class="text-right">Short.</th>
-                            <th class="text-right">N.Profit</th>
-                            <th class="text-right">N.Dep</th>
+                            <th class="text-right">Net Profit</th>
+                            <th class="text-right">Net Deposit</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach ($settlements as $index => $settlement)
                             <tr>
-                                <td class="text-center">
+                                <td class="text-center text-black">
                                     {{ $loop->iteration }}
                                 </td>
+
+                                <td class="text-right text-black">
+                                    {{ $settlement->settlement_date->format('d-m-Y') }}
+                                    @if($settlement->status === 'posted')
+                                        (P)
+                                    @else
+                                        (D)
+                                    @endif
+
+                                </td>
                                 <td>
-                                    <div class="text-xs text-black">{{ $settlement->settlement_date->format('d-m-Y') }} /
-                                        @if($settlement->status === 'posted')
-                                            Posted
-                                        @else
-                                            Draft
-                                        @endif
-                                    </div>
+
                                     <a href="{{ route('sales-settlements.show', $settlement) }}"
                                         class="font-semibold text-indigo-600 hover:text-indigo-900 hover:underline">
                                         {{ $settlement->settlement_number }}
                                     </a>
                                 </td>
-                                <td class="text-right font-mono text-black">
+                                <td class="text-right text-black">
                                     <div class="text-xs text-black text-left">{{ $settlement->employee->name ?? 'N/A' }}
-                                        <br>
+
+                                    </div>
+                                </td>
+                                <td class="text-right text-black">
+                                    <div class="text-xs text-black text-left">
                                         {{ $settlement->vehicle->vehicle_number ?? 'N/A' }}
                                     </div>
                                 </td>
@@ -299,7 +317,7 @@
                     <tfoot class="bg-gray-100 font-extrabold sticky bottom-0">
                         @if($settlements->count() > 0)
                             <tr>
-                                <td colspan="3" class="py-2 px-2 text-right">
+                                <td colspan="5" class="py-2 px-2 text-right">
                                     Page Total ({{ $settlements->count() }} rows):
                                 </td>
                                 <td class="py-2 px-2 text-right font-mono">
@@ -339,8 +357,9 @@
 
                 <!-- Summary Tables -->
                 @if($settlements->count() > 0)
-                    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 align-top">
-                        
+                    <div
+                        class="mt-8 print:mt-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 align-top summary-grid">
+
                         <!-- Quantity Summary Table -->
                         <div class="print:break-inside-avoid">
                             <h4 class="font-bold text-md mb-2 text-center text-black">Quantity Summary</h4>
@@ -354,15 +373,21 @@
                                 <tbody>
                                     <tr>
                                         <td class="font-semibold text-black">Sold</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['total_quantity_sold'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['total_quantity_sold'], 2) }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="font-semibold text-black">Returned</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['total_quantity_returned'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['total_quantity_returned'], 2) }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="font-semibold text-black">Shortage</td>
-                                        <td class="text-right font-mono font-bold text-red-600 print:text-black">{{ number_format($summary['total_quantity_shortage'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-red-600 print:text-black">
+                                            {{ number_format($summary['total_quantity_shortage'], 2) }}
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -381,15 +406,21 @@
                                 <tbody>
                                     <tr>
                                         <td class="font-semibold text-black">Cash Coll.</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['cash_collected'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['cash_collected'], 2) }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="font-semibold text-black">Expenses</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['expenses_claimed'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['expenses_claimed'], 2) }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="font-semibold text-black">To Deposit</td>
-                                        <td class="text-right font-mono font-bold text-green-600 print:text-black">{{ number_format($summary['cash_to_deposit'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-green-600 print:text-black">
+                                            {{ number_format($summary['cash_to_deposit'], 2) }}
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -398,7 +429,7 @@
                         <!-- Payment Methods Table -->
                         <div class="print:break-inside-avoid">
                             <h4 class="font-bold text-md mb-2 text-center text-black">Payment Methods</h4>
-                             <table class="report-table w-full">
+                            <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100 print:bg-transparent">
                                         <th class="text-left">Method</th>
@@ -408,28 +439,36 @@
                                 <tbody>
                                     <tr>
                                         <td class="font-semibold text-black">Cash</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['cash_sales'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['cash_sales'], 2) }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="font-semibold text-black">Credit</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['credit_sales'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['credit_sales'], 2) }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="font-semibold text-black">Recoveries</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['recoveries'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['recoveries'], 2) }}
+                                        </td>
                                     </tr>
-                                      <tr>
+                                    <tr>
                                         <td class="font-semibold text-black">Cheque</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['cheque_sales'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['cheque_sales'], 2) }}
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
                         </div>
 
-                         <!-- Profitability Table -->
+                        <!-- Profitability Table -->
                         <div class="print:break-inside-avoid">
                             <h4 class="font-bold text-md mb-2 text-center text-black">Profitability</h4>
-                             <table class="report-table w-full">
+                            <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100 print:bg-transparent">
                                         <th class="text-left">Metric</th>
@@ -439,15 +478,21 @@
                                 <tbody>
                                     <tr>
                                         <td class="font-semibold text-black">Total Sales</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['total_sales'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['total_sales'], 2) }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="font-semibold text-black">Gross Profit</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['gross_profit'], 2) }}</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['gross_profit'], 2) }}
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="font-semibold text-black">Margin</td>
-                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['gross_profit_margin'], 2) }}%</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['gross_profit_margin'], 2) }}%
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>

@@ -4,7 +4,147 @@
             :showRefresh="true" backRoute="reports.index" />
     </x-slot>
 
-    <x-filter-section :action="route('reports.daily-sales.index')">
+    @push('header')
+        <style>
+            .report-table {
+                width: 100%;
+                border-collapse: collapse;
+                border: 1px solid black;
+                font-size: 12px;
+                line-height: 1.2;
+            }
+
+            .report-table th,
+            .report-table td {
+                border: 1px solid black;
+                padding: 4px 6px;
+                white-space: nowrap;
+            }
+
+            .print-only {
+                display: none;
+            }
+
+            @media print {
+                @page {
+                    margin: 15mm 10mm 20mm 10mm;
+
+                    @bottom-center {
+                        content: "Page " counter(page) " of " counter(pages);
+                    }
+                }
+
+                .no-print {
+                    display: none !important;
+                }
+
+                body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    counter-reset: page 1;
+                    background-color: white !important;
+                }
+
+                .max-w-7xl,
+                .max-w-8xl {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                .bg-white {
+                    background-color: white !important;
+                    margin: 0 !important;
+                    padding: 10px !important;
+                    border: none !important;
+                    box-shadow: none !important;
+                }
+
+                .shadow-xl,
+                .shadow-lg {
+                    box-shadow: none !important;
+                }
+
+                .rounded-lg,
+                .sm\:rounded-lg {
+                    border-radius: 0 !important;
+                }
+
+                .overflow-x-auto {
+                    overflow: visible !important;
+                }
+
+                .report-table {
+                    font-size: 10px !important;
+                    width: 100% !important;
+                    table-layout: auto;
+                }
+
+                .report-table tr {
+                    page-break-inside: avoid;
+                }
+
+                .report-table .text-right {
+                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+                }
+
+                .report-table th,
+                .report-table td {
+                    padding: 2px 3px !important;
+                    color: #000 !important;
+                    background-color: white !important;
+                }
+
+                /* Ensure specific background colors are removed in print */
+                .bg-gray-100,
+                .bg-gray-50,
+                .bg-blue-50,
+                .bg-red-50,
+                .bg-indigo-50,
+                .bg-green-50,
+                .bg-orange-50,
+                .bg-red-100,
+                .bg-red-200,
+                .bg-green-100,
+                .bg-emerald-100 {
+                    background-color: white !important;
+                }
+
+                p {
+                    margin-top: 0 !important;
+                    margin-bottom: 8px !important;
+                }
+
+                .print-info {
+                    font-size: 9px !important;
+                    margin-top: 5px !important;
+                    margin-bottom: 10px !important;
+                    color: #000 !important;
+                }
+
+                /* Header visibility in print */
+                .report-header {
+                    display: block !important;
+                }
+
+                .print-only {
+                    display: block !important;
+                }
+
+                .page-footer {
+                    display: none;
+                }
+            }
+
+            /* Screen styles for header */
+            .report-header {
+                /* Visible on screen by default now */
+            }
+        </style>
+    @endpush
+
+    <x-filter-section :action="route('reports.daily-sales.index')" class="no-print" maxWidth="max-w-8xl">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <x-label for="start_date" value="Start Date" />
@@ -53,221 +193,268 @@
         </div>
     </x-filter-section>
 
-    <!-- Summary Cards -->
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-            <div class="bg-green-50 p-4 rounded-lg border border-green-200">
-                <div class="text-sm text-gray-600">Total Sales</div>
-                <div class="text-2xl font-bold text-green-600 font-mono">{{ number_format($summary['total_sales'], 2) }}
-                </div>
-            </div>
-            <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <div class="text-sm text-gray-600">Cash Sales</div>
-                <div class="text-2xl font-bold text-blue-600 font-mono">{{ number_format($summary['cash_sales'], 2) }}
-                </div>
-            </div>
-            <div class="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                <div class="text-sm text-gray-600">Credit Sales</div>
-                <div class="text-2xl font-bold text-purple-600 font-mono">
-                    {{ number_format($summary['credit_sales'], 2) }}
-                </div>
-            </div>
-            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-                <div class="text-sm text-gray-600">Gross Profit</div>
-                <div class="text-2xl font-bold text-yellow-600 font-mono">{{ number_format($summary['gross_profit'], 2)
-                    }}</div>
-                <div class="text-xs text-gray-500">Margin: {{ number_format($summary['gross_profit_margin'], 2) }}%
-                </div>
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 pb-16">
+        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
+            <div class="overflow-x-auto">
+                {{-- Report Header --}}
+                <p class="text-center font-extrabold mb-2 text-xl report-header">
+                    Moon Traders<br>
+                    <span class="text-lg">Daily Sales Report</span><br>
+                    <span class="text-xs font-normal">
+                        Period: {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
+                        {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
+                    </span>
+                    @if($employeeId || $vehicleId || $warehouseId)
+                        <br>
+                        <span class="text-xs font-normal">
+                            @if($employeeId) Employee: {{ $employees->firstWhere('id', $employeeId)->name ?? '' }} @endif
+                            @if($vehicleId) | Vehicle: {{ $vehicles->firstWhere('id', $vehicleId)->vehicle_number ?? '' }}
+                            @endif
+                            @if($warehouseId) | Warehouse:
+                            {{ $warehouses->firstWhere('id', $warehouseId)->warehouse_name ?? '' }} @endif
+                        </span>
+                    @endif
+                    <br>
+                    <span class="print-only text-xs text-center hidden">
+                        Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
+                    </span>
+                </p>
+
+                <table class="report-table">
+                    <thead>
+                        <tr class="bg-gray-100">
+                            <th class="text-center w-10">Sr#</th>
+                            <th class="w-24">Date / Sett #</th>
+                            <th class="w-32">Salesman / Veh</th>
+                            <th class="text-right">T.Sales</th>
+                            <th class="text-right">Rtn</th>
+                            <th class="text-right">N.Sales</th>
+                            <th class="text-right">Cash</th>
+                            <th class="text-right">Credit</th>
+                            <th class="text-right">Recov.</th>
+                            <th class="text-right">Exp.</th>
+                            <th class="text-right">Short.</th>
+                            <th class="text-right">N.Profit</th>
+                            <th class="text-right">N.Dep</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($settlements as $index => $settlement)
+                            <tr>
+                                <td class="text-center">
+                                    {{ $loop->iteration }}
+                                </td>
+                                <td>
+                                    <div class="text-xs text-black">{{ $settlement->settlement_date->format('d-m-Y') }} /
+                                        @if($settlement->status === 'posted')
+                                            Posted
+                                        @else
+                                            Draft
+                                        @endif
+                                    </div>
+                                    <a href="{{ route('sales-settlements.show', $settlement) }}"
+                                        class="font-semibold text-indigo-600 hover:text-indigo-900 hover:underline">
+                                        {{ $settlement->settlement_number }}
+                                    </a>
+                                </td>
+                                <td class="text-right font-mono text-black">
+                                    <div class="text-xs text-black text-left">{{ $settlement->employee->name ?? 'N/A' }}
+                                        <br>
+                                        {{ $settlement->vehicle->vehicle_number ?? 'N/A' }}
+                                    </div>
+                                </td>
+                                <td class="text-right font-mono">
+                                    {{ number_format($settlement->total_sales_amount, 2) }}
+                                </td>
+                                <td class="text-right font-mono">
+                                    {{ number_format($settlement->total_quantity_returned, 0) }}
+                                </td>
+                                <td class="text-right font-mono font-bold">
+                                    {{ number_format($settlement->net_sales_amount, 2) }}
+                                </td>
+                                <td class="text-right font-mono">
+                                    {{ number_format($settlement->cash_collected, 2) }}
+                                </td>
+                                <td class="text-right font-mono">
+                                    {{ number_format($settlement->credit_sales_amount, 2) }}
+                                </td>
+                                <td class="text-right font-mono">
+                                    {{ number_format($settlement->credit_recoveries, 2) }}
+                                </td>
+                                <td class="text-right font-mono">
+                                    {{ number_format($settlement->expenses_claimed, 2) }}
+                                </td>
+                                <td class="text-right font-abc font-bold">
+                                    {{ number_format($settlement->total_quantity_shortage, 2) }}
+                                </td>
+                                <td class="text-right font-mono font-bold">
+                                    {{ number_format($settlement->gross_profit - $settlement->expenses_claimed, 2) }}
+                                </td>
+                                <td class="text-right font-mono font-bold">
+                                    {{ number_format($settlement->cash_to_deposit, 2) }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-gray-100 font-extrabold sticky bottom-0">
+                        @if($settlements->count() > 0)
+                            <tr>
+                                <td colspan="3" class="py-2 px-2 text-right">
+                                    Page Total ({{ $settlements->count() }} rows):
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($settlements->sum('total_sales_amount'), 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($settlements->sum('total_quantity_returned'), 0) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($summary['total_sales'], 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($summary['cash_collected'], 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($summary['credit_sales'], 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($summary['recoveries'], 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($summary['expenses_claimed'], 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($summary['total_quantity_shortage'], 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($summary['gross_profit'] - $summary['expenses_claimed'], 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($summary['cash_to_deposit'], 2) }}
+                                </td>
+                            </tr>
+                        @endif
+                    </tfoot>
+                </table>
+
+                <!-- Summary Tables -->
+                @if($settlements->count() > 0)
+                    <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 align-top">
+                        
+                        <!-- Quantity Summary Table -->
+                        <div class="print:break-inside-avoid">
+                            <h4 class="font-bold text-md mb-2 text-center text-black">Quantity Summary</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100 print:bg-transparent">
+                                        <th class="text-left">Metric</th>
+                                        <th class="text-right">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-semibold text-black">Sold</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['total_quantity_sold'], 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-black">Returned</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['total_quantity_returned'], 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-black">Shortage</td>
+                                        <td class="text-right font-mono font-bold text-red-600 print:text-black">{{ number_format($summary['total_quantity_shortage'], 2) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Cash Management Table -->
+                        <div class="print:break-inside-avoid">
+                            <h4 class="font-bold text-md mb-2 text-center text-black">Cash Management</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100 print:bg-transparent">
+                                        <th class="text-left">Metric</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-semibold text-black">Cash Coll.</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['cash_collected'], 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-black">Expenses</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['expenses_claimed'], 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-black">To Deposit</td>
+                                        <td class="text-right font-mono font-bold text-green-600 print:text-black">{{ number_format($summary['cash_to_deposit'], 2) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Payment Methods Table -->
+                        <div class="print:break-inside-avoid">
+                            <h4 class="font-bold text-md mb-2 text-center text-black">Payment Methods</h4>
+                             <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100 print:bg-transparent">
+                                        <th class="text-left">Method</th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-semibold text-black">Cash</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['cash_sales'], 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-black">Credit</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['credit_sales'], 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-black">Recoveries</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['recoveries'], 2) }}</td>
+                                    </tr>
+                                      <tr>
+                                        <td class="font-semibold text-black">Cheque</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['cheque_sales'], 2) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                         <!-- Profitability Table -->
+                        <div class="print:break-inside-avoid">
+                            <h4 class="font-bold text-md mb-2 text-center text-black">Profitability</h4>
+                             <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100 print:bg-transparent">
+                                        <th class="text-left">Metric</th>
+                                        <th class="text-right">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="font-semibold text-black">Total Sales</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['total_sales'], 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-black">Gross Profit</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['gross_profit'], 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-black">Margin</td>
+                                        <td class="text-right font-mono font-bold text-black">{{ number_format($summary['gross_profit_margin'], 2) }}%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
-
-    <x-data-table :items="$settlements" :headers="[
-        ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'Date / Sett #'],
-        ['label' => 'Salesman / Veh'],
-        ['label' => 'Total Sales', 'align' => 'text-right'],
-        ['label' => 'Rtn', 'align' => 'text-right'],
-        ['label' => 'Net Sales', 'align' => 'text-right'],
-        ['label' => 'Cash Coll.', 'align' => 'text-right'],
-        ['label' => 'Credit', 'align' => 'text-right'],
-        ['label' => 'Recoveries', 'align' => 'text-right'],
-        ['label' => 'Expenses', 'align' => 'text-right'],
-        ['label' => 'Shortage', 'align' => 'text-right'],
-        ['label' => 'Net Profit', 'align' => 'text-right'],
-        ['label' => 'Net Deposit', 'align' => 'text-right'],
-    ]"    emptyMessage="No sales settlements found for the selected criteria.">
-        @foreach ($settlements as $index => $settlement)
-            <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
-                <td class="py-1 px-2 text-center">
-                    {{ $loop->iteration }}
-                </td>
-                <td class="py-1 px-2">
-                    <div class="text-xs text-gray-500">{{ $settlement->settlement_date->format('d-m-Y') }} /
-
-                        @if($settlement->status === 'posted')
-                            Posted
-                        @else
-                            Draft
-                        @endif
-
-                    </div>
-                    <a href="{{ route('sales-settlements.show', $settlement) }}"
-                        class="font-semibold text-indigo-600 hover:text-indigo-900 hover:underline">
-                        {{ $settlement->settlement_number }}
-                    </a>
-
-
-
-                </td>
-
-                <td class="py-1 px-2 text-right font-mono text-gray-600">
-                    <div class="text-xs text-gray-500 text-left">{{ $settlement->employee->name ?? 'N/A' }}
-                        <br>
-                        {{ $settlement->vehicle->vehicle_number ?? 'N/A' }}
-                    </div>
-                </td>
-
-                <td class="py-1 px-2 text-right font-mono text-gray-600">
-                    <div class="text-xs text-gray-500 font-mono">{{ number_format($settlement->total_sales_amount, 2) }}
-                    </div>
-                </td>
-                <td class="py-1 px-2 text-right font-mono text-red-600">
-                    {{ number_format($settlement->total_quantity_returned, 0) }}
-                </td>
-                <td class="py-1 px-2 text-right font-mono font-bold text-gray-900">
-                    {{ number_format($settlement->net_sales_amount, 2) }}
-                </td>
-                <td class="py-1 px-2 text-right font-mono text-green-600">
-                    {{ number_format($settlement->cash_collected, 2) }}
-                </td>
-                <td class="py-1 px-2 text-right font-mono text-orange-600">
-                    {{ number_format($settlement->credit_sales_amount, 2) }}
-                </td>
-                <td class="py-1 px-2 text-right font-mono text-blue-600">
-                    {{ number_format($settlement->credit_recoveries, 2) }}
-                </td>
-                <td class="py-1 px-2 text-right font-mono text-red-600">
-                    {{ number_format($settlement->expenses_claimed, 2) }}
-                </td>
-                <td class="py-1 px-2 text-right font-abc text-red-600 font-bold">
-                    {{ number_format($settlement->total_quantity_shortage, 2) }}
-                </td>
-                <td class="py-1 px-2 text-right font-mono font-bold text-green-600">
-                    {{ number_format($settlement->gross_profit - $settlement->expenses_claimed, 2) }}
-                </td>
-                <td class="py-1 px-2 text-right font-mono font-bold text-emerald-700">
-                    {{ number_format($settlement->cash_to_deposit, 2) }}
-                </td>
-            </tr>
-        @endforeach
-        @if($settlements->count() > 0)
-            <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
-                <td colspan="3" class="py-2 px-2 text-right">
-                    Page Total ({{ $settlements->count() }} rows):
-                </td>
-                <td class="py-2 px-2 text-right font-mono">
-                    {{ number_format($settlements->sum('total_sales_amount'), 2) }}
-                </td>
-                <td class="py-2 px-2 text-right font-mono">
-                    {{ number_format($settlements->sum('total_quantity_returned'), 0) }}
-                </td>
-                <td class="py-2 px-2 text-right font-mono">
-                    {{ number_format($summary['total_sales'], 2) }}
-                </td>
-                <td class="py-2 px-2 text-right font-mono">
-                    {{ number_format($summary['cash_collected'], 2) }}
-                </td>
-                <td class="py-2 px-2 text-right font-mono">
-                    {{ number_format($summary['credit_sales'], 2) }}
-                </td>
-                <td class="py-2 px-2 text-right font-mono">
-                    {{ number_format($summary['recoveries'], 2) }}
-                </td>
-                <td class="py-2 px-2 text-right font-mono text-red-600">
-                    {{ number_format($summary['expenses_claimed'], 2) }}
-                </td>
-                <td class="py-2 px-2 text-right font-mono text-red-600">
-                    {{ number_format($summary['total_quantity_shortage'], 2) }}
-                </td>
-                <td class="py-2 px-2 text-right font-mono text-green-600">
-                    {{ number_format($summary['gross_profit'] - $summary['expenses_claimed'], 2) }}
-                </td>
-                <td class="py-2 px-2 text-right font-mono text-emerald-700">
-                    {{ number_format($summary['cash_to_deposit'], 2) }}
-                </td>
-            </tr>
-        @endif
-    </x-data-table>
-
-    <!-- Additional Summary Cards -->
-    @if($settlements->count() > 0)
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 pt-4">
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 rounded-md shadow-lg">
-                    <div class="text-sm font-semibold text-gray-700 mb-2">Quantity Summary</div>
-                    <div class="space-y-1 text-sm">
-                        <div class="flex justify-between">
-                            <span>Sold:</span>
-                            <span
-                                class="font-mono font-semibold">{{ number_format($summary['total_quantity_sold'], 2)
-                                                                                                                                                                                                                                                        }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Returned:</span>
-                            <span
-                                class="font-mono font-semibold">{{ number_format($summary['total_quantity_returned'], 2)
-                                                                                                                                                                                                                                                        }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Shortage:</span>
-                            <span class="font-mono font-semibold text-red-600">{{
-            number_format($summary['total_quantity_shortage'], 2) }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 rounded-md shadow-lg">
-                    <div class="text-sm font-semibold text-gray-700 mb-2">Cash Management</div>
-                    <div class="space-y-1 text-sm">
-                        <div class="flex justify-between">
-                            <span>Cash Collected:</span>
-                            <span class="font-mono font-semibold">{{ number_format($summary['cash_collected'], 2) }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Expenses:</span>
-                            <span
-                                class="font-mono font-semibold">{{ number_format($summary['expenses_claimed'], 2)
-                                                                                                                                                                                                                                                        }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>To Deposit:</span>
-                            <span class="font-mono font-semibold text-green-600">{{
-            number_format($summary['cash_to_deposit'], 2) }}</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 p-4 rounded-lg border border-gray-200 rounded-md shadow-lg">
-                    <div class="text-sm font-semibold text-gray-700 mb-2">Payment Methods</div>
-                    <div class="space-y-1 text-sm">
-                        <div class="flex justify-between">
-                            <span>Cash:</span>
-                            <span class="font-mono font-semibold">{{ number_format($summary['cash_sales'], 2) }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Credit:</span>
-                            <span class="font-mono font-semibold">{{ number_format($summary['credit_sales'], 2) }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Recoveries:</span>
-                            <span class="font-mono font-semibold">{{ number_format($summary['recoveries'], 2) }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Cheque:</span>
-                            <span class="font-mono font-semibold">{{ number_format($summary['cheque_sales'], 2) }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
 </x-app-layout>

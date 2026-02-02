@@ -297,17 +297,43 @@ class DailySalesReportController extends Controller
             });
 
         // Sort the collection
-        if ($sortBy === 'employee_name') {
-            $salesmanPerformance = $salesmanPerformance->sortBy('employee_name');
-        } elseif ($sortBy === 'settlement_count') {
-            $salesmanPerformance = $salesmanPerformance->sortByDesc('settlement_count');
-        } elseif ($sortBy === 'net_profit') {
-            $salesmanPerformance = $salesmanPerformance->sortByDesc('net_profit');
-        } elseif ($sortBy === 'gross_profit_margin') {
-            $salesmanPerformance = $salesmanPerformance->sortByDesc('gross_profit_margin');
+        // Sort the collection
+        $sortDirection = 'desc';
+        $sortKey = 'total_sales';
+
+        if (str_ends_with($sortBy, '_asc')) {
+            $sortDirection = 'asc';
+            $sortKey = substr($sortBy, 0, -4);
+        } elseif (str_ends_with($sortBy, '_desc')) {
+            $sortDirection = 'desc';
+            $sortKey = substr($sortBy, 0, -5);
         } else {
-            // Default: Total Sales Desc
-            $salesmanPerformance = $salesmanPerformance->sortByDesc('total_sales');
+            // Check for explicit keys that don't follow the pattern or defaults
+            // This handles legacy keys or simple 'column_name' requests which default to desc for metrics
+            if ($sortBy === 'employee_name') {
+                $sortKey = 'employee_name';
+                $sortDirection = 'asc';
+            }
+        }
+
+        // Map request keys to actual collection keys if they differ
+        $collectionKey = match ($sortKey) {
+            'employee_name' => 'employee_name',
+            'total_sales' => 'total_sales',
+            'net_profit' => 'net_profit',
+            'gross_profit_margin' => 'gross_profit_margin',
+            'expenses_claimed' => 'expenses_claimed',
+            'total_quantity_sold' => 'total_quantity_sold',
+            'total_returned' => 'total_returned',
+            'total_shortage' => 'total_shortage',
+            'settlement_count' => 'settlement_count',
+            default => 'total_sales',
+        };
+
+        if ($sortDirection === 'asc') {
+            $salesmanPerformance = $salesmanPerformance->sortBy($collectionKey);
+        } else {
+            $salesmanPerformance = $salesmanPerformance->sortByDesc($collectionKey);
         }
 
         $salesmanPerformance = $salesmanPerformance->values();

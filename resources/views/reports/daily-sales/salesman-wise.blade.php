@@ -169,16 +169,59 @@
                     @endforeach
                 </select>
             </div>
-        </div>
-        <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-             <div>
+            <div>
                 <x-label for="sort_by" value="Sort By" />
-                <select id="sort_by" name="sort_by" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="total_sales" {{ $sortBy == 'total_sales' ? 'selected' : '' }}>Total Sales (High to Low)</option>
-                    <option value="net_profit" {{ $sortBy == 'net_profit' ? 'selected' : '' }}>Net Profit (High to Low)</option>
-                    <option value="gross_profit_margin" {{ $sortBy == 'gross_profit_margin' ? 'selected' : '' }}>GP Margin % (High to Low)</option>
-                    <option value="employee_name" {{ $sortBy == 'employee_name' ? 'selected' : '' }}>Salesman Name (A-Z)</option>
-                    <option value="settlement_count" {{ $sortBy == 'settlement_count' ? 'selected' : '' }}>Settlement Count (High to Low)</option>
+                <select id="sort_by" name="sort_by"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    {{-- Total Sales --}}
+                    <option value="total_sales_desc" {{ $sortBy == 'total_sales_desc' || $sortBy == 'total_sales' ? 'selected' : '' }}>Total Sales (High to Low)</option>
+                    <option value="total_sales_asc" {{ $sortBy == 'total_sales_asc' ? 'selected' : '' }}>Total Sales (Low
+                        to High)</option>
+
+                    {{-- Net Profit --}}
+                    <option value="net_profit_desc" {{ $sortBy == 'net_profit_desc' ? 'selected' : '' }}>Net Profit (High
+                        to Low)</option>
+                    <option value="net_profit_asc" {{ $sortBy == 'net_profit_asc' ? 'selected' : '' }}>Net Profit (Low to
+                        High)</option>
+
+                    {{-- GP Margin --}}
+                    <option value="gross_profit_margin_desc" {{ $sortBy == 'gross_profit_margin_desc' ? 'selected' : '' }}>GP Margin % (High to Low)</option>
+                    <option value="gross_profit_margin_asc" {{ $sortBy == 'gross_profit_margin_asc' ? 'selected' : '' }}>
+                        GP Margin % (Low to High)</option>
+
+                    {{-- Expenses --}}
+                    <option value="expenses_claimed_desc" {{ $sortBy == 'expenses_claimed_desc' ? 'selected' : '' }}>
+                        Expenses (High to Low)</option>
+                    <option value="expenses_claimed_asc" {{ $sortBy == 'expenses_claimed_asc' ? 'selected' : '' }}>
+                        Expenses (Low to High)</option>
+
+                    {{-- Qty Sold --}}
+                    <option value="total_quantity_sold_desc" {{ $sortBy == 'total_quantity_sold_desc' ? 'selected' : '' }}>Qty Sold (High to Low)</option>
+                    <option value="total_quantity_sold_asc" {{ $sortBy == 'total_quantity_sold_asc' ? 'selected' : '' }}>
+                        Qty Sold (Low to High)</option>
+
+                    {{-- Returns --}}
+                    <option value="total_returned_desc" {{ $sortBy == 'total_returned_desc' ? 'selected' : '' }}>Returns
+                        (High to Low)</option>
+                    <option value="total_returned_asc" {{ $sortBy == 'total_returned_asc' ? 'selected' : '' }}>Returns
+                        (Low to High)</option>
+
+                    {{-- Shortage --}}
+                    <option value="total_shortage_desc" {{ $sortBy == 'total_shortage_desc' ? 'selected' : '' }}>Shortage
+                        (High to Low)</option>
+                    <option value="total_shortage_asc" {{ $sortBy == 'total_shortage_asc' ? 'selected' : '' }}>Shortage
+                        (Low to High)</option>
+
+                    {{-- Employee Name --}}
+                    <option value="employee_name_asc" {{ $sortBy == 'employee_name_asc' || $sortBy == 'employee_name' ? 'selected' : '' }}>Salesman Name (A-Z)</option>
+                    <option value="employee_name_desc" {{ $sortBy == 'employee_name_desc' ? 'selected' : '' }}>Salesman
+                        Name (Z-A)</option>
+
+                    {{-- Settlement Count --}}
+                    <option value="settlement_count_desc" {{ $sortBy == 'settlement_count_desc' ? 'selected' : '' }}>
+                        Settlement Count (High to Low)</option>
+                    <option value="settlement_count_asc" {{ $sortBy == 'settlement_count_asc' ? 'selected' : '' }}>
+                        Settlement Count (Low to High)</option>
                 </select>
             </div>
         </div>
@@ -227,6 +270,7 @@
                             <th class="text-right">Rtn Qty</th>
                             <th class="text-right">Short Qty</th>
                             <th class="text-right">Net Sales</th>
+                            <th class="text-right">Gross Profit</th>
                             <th class="text-right">Expense</th>
                             <th class="text-right">Net Profit</th>
                             <th class="text-right">NP %</th>
@@ -258,6 +302,9 @@
                                 </td>
                                 <td class="text-right font-mono font-bold">
                                     {{ number_format($salesman->total_sales, 2) }}
+                                </td>
+                                <td class="text-right font-mono font-bold text-blue-700 print:text-black">
+                                    {{ number_format($salesman->gross_profit, 2) }}
                                 </td>
                                 <td class="text-right font-mono text-red-600 print:text-black">
                                     {{ number_format($salesman->expenses_claimed, 2) }}
@@ -294,6 +341,9 @@
                                 </td>
                                 <td class="py-2 px-2 text-right font-mono">
                                     {{ number_format($totals['total_sales'], 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($totals['gross_profit'], 2) }}
                                 </td>
                                 <td class="py-2 px-2 text-right font-mono">
                                     {{ number_format($totals['expenses_claimed'], 2) }}

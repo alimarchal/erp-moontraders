@@ -253,6 +253,8 @@ class DailySalesReportController extends Controller
 
         $settlements = $query->get();
 
+        $sortBy = $request->input('sort_by', 'total_sales');
+
         $salesmanPerformance = $settlements
             ->groupBy(function ($settlement) {
                 return $settlement->employee_id . '-' . $settlement->vehicle_id;
@@ -292,9 +294,23 @@ class DailySalesReportController extends Controller
                     'net_profit' => $netProfit,
                     'gross_profit_margin' => $totalSales > 0 ? ($grossProfit / $totalSales) * 100 : 0,
                 ];
-            })
-            ->sortByDesc('total_sales')
-            ->values();
+            });
+
+        // Sort the collection
+        if ($sortBy === 'employee_name') {
+            $salesmanPerformance = $salesmanPerformance->sortBy('employee_name');
+        } elseif ($sortBy === 'settlement_count') {
+            $salesmanPerformance = $salesmanPerformance->sortByDesc('settlement_count');
+        } elseif ($sortBy === 'net_profit') {
+            $salesmanPerformance = $salesmanPerformance->sortByDesc('net_profit');
+        } elseif ($sortBy === 'gross_profit_margin') {
+            $salesmanPerformance = $salesmanPerformance->sortByDesc('gross_profit_margin');
+        } else {
+            // Default: Total Sales Desc
+            $salesmanPerformance = $salesmanPerformance->sortByDesc('total_sales');
+        }
+
+        $salesmanPerformance = $salesmanPerformance->values();
 
         // Calculate totals
         $totals = [
@@ -305,15 +321,26 @@ class DailySalesReportController extends Controller
             'bank_transfer_sales' => $salesmanPerformance->sum('bank_transfer_sales'),
             'recoveries' => $salesmanPerformance->sum('recoveries'),
             'total_quantity_sold' => $salesmanPerformance->sum('total_quantity_sold'),
+            'total_returned' => $salesmanPerformance->sum('total_returned'),
+            'total_shortage' => $salesmanPerformance->sum('total_shortage'),
             'cash_collected' => $salesmanPerformance->sum('cash_collected'),
+            'expenses_claimed' => $salesmanPerformance->sum('expenses_claimed'),
             'gross_profit' => $salesmanPerformance->sum('gross_profit'),
+            'net_profit' => $salesmanPerformance->sum('net_profit'),
         ];
 
         return view('reports.daily-sales.salesman-wise', [
             'salesmanPerformance' => $salesmanPerformance,
             'totals' => $totals,
+            'employees' => Employee::orderBy('name')->get(['id', 'name']),
+            'vehicles' => Vehicle::orderBy('vehicle_number')->get(['id', 'vehicle_number']),
+            'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'startDate' => $startDate,
             'endDate' => $endDate,
+            'employeeId' => $employeeId,
+            'vehicleId' => $vehicleId,
+            'warehouseId' => $warehouseId,
+            'sortBy' => $sortBy,
         ]);
     }
 

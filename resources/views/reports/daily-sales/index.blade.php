@@ -11,7 +11,7 @@
                 border-collapse: collapse;
                 border: 1px solid black;
                 font-size: 12px;
-                line-height: 1.0;
+                line-height: 1.2;
             }
 
             .report-table th,
@@ -27,7 +27,7 @@
 
             @media print {
                 @page {
-                    margin: 15mm 10mm 20mm 10mm;
+                    margin: 15mm 5mm 20mm 5mm;
 
                     @bottom-center {
                         content: "Page " counter(page) " of " counter(pages);
@@ -161,10 +161,10 @@
                 <x-input id="end_date" name="end_date" type="date" class="mt-1 block w-full" :value="$endDate" />
             </div>
             <div>
-                <x-label for="employee_id" value="Employee" />
+                <x-label for="employee_id" value="Salesman" />
                 <select id="employee_id" name="employee_id"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Employees</option>
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
+                    <option value="">All Salesmen</option>
                     @foreach($employees as $employee)
                         <option value="{{ $employee->id }}" {{ $employeeId == $employee->id ? 'selected' : '' }}>
                             {{ $employee->name }}
@@ -175,7 +175,7 @@
             <div>
                 <x-label for="vehicle_id" value="Vehicle" />
                 <select id="vehicle_id" name="vehicle_id"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All Vehicles</option>
                     @foreach($vehicles as $vehicle)
                         <option value="{{ $vehicle->id }}" {{ $vehicleId == $vehicle->id ? 'selected' : '' }}>
@@ -212,14 +212,19 @@
                         Period: {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
                         {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
                     </span>
-                    @if($employeeId || $vehicleId || $warehouseId)
+                    @php
+                        $filters = [];
+                        if ($employeeId)
+                            $filters[] = 'Employee: ' . ($employees->firstWhere('id', $employeeId)->name ?? '');
+                        if ($vehicleId)
+                            $filters[] = 'Vehicle: ' . ($vehicles->firstWhere('id', $vehicleId)->vehicle_number ?? '');
+                        if ($warehouseId)
+                            $filters[] = 'Warehouse: ' . ($warehouses->firstWhere('id', $warehouseId)->warehouse_name ?? '');
+                    @endphp
+                    @if(count($filters) > 0)
                         <br>
                         <span class="text-xs font-normal">
-                            @if($employeeId) Employee: {{ $employees->firstWhere('id', $employeeId)->name ?? '' }} @endif
-                            @if($vehicleId) | Vehicle: {{ $vehicles->firstWhere('id', $vehicleId)->vehicle_number ?? '' }}
-                            @endif
-                            @if($warehouseId) | Warehouse:
-                            {{ $warehouses->firstWhere('id', $warehouseId)->warehouse_name ?? '' }} @endif
+                            {!! implode(' | ', $filters) !!}
                         </span>
                     @endif
                     <br>
@@ -233,17 +238,17 @@
                         <tr class="bg-gray-100">
                             <th class="text-center">Sr#</th>
                             <th class="text-left">Date</th>
-                            <th class="text-left">Settlement #</th>
+                            <th class="text-left">Setl #</th>
                             <th class="text-left">Salesman</th>
                             <th class="text-left">Vehicle</th>
                             <th class="text-right">Total Sales</th>
-                            <th class="text-right">Return</th>
+                            <th class="text-right">Rtn</th>
                             <th class="text-right">Net Sales</th>
                             <th class="text-right">Cash</th>
                             <th class="text-right">Credit</th>
                             <th class="text-right">Recovery</th>
                             <th class="text-right">Expense</th>
-                            <th class="text-right">Short.</th>
+                            <th class="text-right">Shortage</th>
                             <th class="text-right">Net Profit</th>
                             <th class="text-right">Net Deposit</th>
                         </tr>
@@ -255,20 +260,23 @@
                                     {{ $loop->iteration }}
                                 </td>
 
-                                <td class="text-right text-black">
-                                    {{ $settlement->settlement_date->format('d-m-Y') }}
+                                <td class="text-left text-black">
+                                    {{ $settlement->settlement_date->format('d-m-y') }}
                                     @if($settlement->status === 'posted')
                                         (P)
+                                        {{ str_replace(['Warehouse - I', 'Warehouse - II', 'Warehouse'], ['W-I', 'W-II', 'W'], $settlement->warehouse->warehouse_name) }}
                                     @else
                                         (D)
+                                        {{ str_replace(['Warehouse - I', 'Warehouse - II', 'Warehouse'], ['W-I', 'W-II', 'W'], $settlement->warehouse->warehouse_name) }}
                                     @endif
 
                                 </td>
                                 <td>
 
                                     <a href="{{ route('sales-settlements.show', $settlement) }}"
-                                        class="font-semibold text-indigo-600 hover:text-indigo-900 hover:underline">
-                                        {{ $settlement->settlement_number }}
+                                        class="font-semibold text-indigo-600 hover:text-indigo-900 hover:underline" x-data
+                                        @copy.prevent="$event.clipboardData.setData('text/plain', '{{ $settlement->settlement_number }}')">
+                                        {{ preg_replace('/^SETTLE-\d{4}-(\d+)$/', '$1', $settlement->settlement_number) }}
                                     </a>
                                 </td>
                                 <td class="text-right text-black">
@@ -489,9 +497,25 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="font-semibold text-black">Margin</td>
+                                        <td class="font-semibold text-black">GP Margin</td>
                                         <td class="text-right font-mono font-bold text-black">
                                             {{ number_format($summary['gross_profit_margin'], 2) }}%
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-black">Net Profit</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            {{ number_format($summary['gross_profit'] - $summary['expenses_claimed'], 2) }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="font-semibold text-black">NP Margin</td>
+                                        <td class="text-right font-mono font-bold text-black">
+                                            @php
+                                                $netProfit = $summary['gross_profit'] - $summary['expenses_claimed'];
+                                                $netProfitMargin = $summary['total_sales'] > 0 ? ($netProfit / $summary['total_sales']) * 100 : 0;
+                                            @endphp
+                                            {{ number_format($netProfitMargin, 2) }}%
                                         </td>
                                     </tr>
                                 </tbody>

@@ -150,7 +150,7 @@
         </style>
     @endpush
 
-    <x-filter-section :action="route('sales-settlements.index')" class="no-print" maxWidth="max-w-8xl">
+    <x-filter-section :action="route('sales-settlements.index')" class="no-print" maxWidth="max-w-7xl">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <x-label for="filter_settlement_number" value="Settlement #" />
@@ -216,7 +216,7 @@
         </div>
     </x-filter-section>
 
-    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 pb-16">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
                 {{-- Report Header --}}
@@ -258,17 +258,33 @@
                         <thead>
                             <tr class="bg-gray-100">
                                 <th class="text-center">Sr#</th>
-                                <th class="text-left">Date / SM / Veh</th>
-                                <th class="text-left">Setl # / GI #</th>
-                                <th class="text-right">Total Sales</th>
-                                <th class="text-right">Credit</th>
-                                <th class="text-right">Cheque</th>
-                                <th class="text-right">Bank Transfer</th>
-                                <th class="text-right">Cash Sale</th>
-                                <th class="text-right">GP</th>
-                                <th class="text-right">Exp</th>
-                                <th class="text-right">Net Profit</th>
-                                <th class="text-right">COGS</th>
+                                <th class="text-center">Date</th>
+                                <th class="text-center">Settlement #</th>
+                                <th class="text-center">Goods Issue #</th>
+                                <th class="text-center">
+                                    <x-tooltip text="Salesman">
+                                        <span class="print:hidden">SM</span>
+                                        <span class="print-only">Salesman</span>
+                                    </x-tooltip>
+                                </th>
+                                <th class="text-center">
+                                    <x-tooltip text="CMV (Commercial Motor Vehicle)">
+                                        <span class="print:hidden">CMV</span>
+                                        <span class="print-only">Vehicle</span>
+                                    </x-tooltip>
+                                </th>
+
+                                <th class="text-center">
+                                    <x-tooltip text="COGS (Cost of Good Sold)">
+                                        <span class="print:hidden">COGS</span>
+                                        <span class="print-only">COGS</span>
+                                    </x-tooltip>
+                                </th>
+                                <th class="text-center">Total Sales</th>
+                                <!-- <th class="text-center">GP</th> -->
+                                <th class="text-center">Exp</th>
+                                <th class="text-center">Net Profit</th>
+
                                 <th class="text-center no-print">Status</th>
                             </tr>
                         </thead>
@@ -279,65 +295,74 @@
                                         {{ $settlements->firstItem() + $index }}
                                     </td>
 
-                                    <td class="text-left text-black">
+                                    <td class="text-center text-black">
                                         {{ $settlement->settlement_date->format('d-m-y') }}
-
-                                        ({{ $settlement->vehicle->registration_number ?? $settlement->vehicle->vehicle_number ?? 'N/A' }})
-                                        <!-- {{ str_replace(['Warehouse - I', 'Warehouse - II', 'Warehouse'], ['W-I', 'W-II', 'W'], $settlement->warehouse->warehouse_name) }} -->
-                                        <br>
-                                        {{ $settlement->employee->name ?? 'N/A' }}
                                     </td>
-                                    <td>
-                                        <a href="{{ route('sales-settlements.show', $settlement) }}"
-                                            class="text-blue-600 hover:underline"
-                                            oncopy="event.preventDefault(); event.clipboardData.setData('text/plain', '{{ $settlement->settlement_number }}');">
-                                            <span class="print:hidden">
-                                                {{ preg_replace('/^SETTLE-\d{2}(\d{2})-(\d+)$/', 'SI-$1-$2', $settlement->settlement_number) }}
-                                            </span>
-                                            <span class="print-only">
-                                                {{ preg_replace('/^SETTLE-\d{2}(\d{2})-(\d+)$/', 'SI-$1-$2', $settlement->settlement_number) }}
-                                            </span>
-                                        </a>
-                                        <br>
-                                        @if($settlement->goodsIssue)
-                                            <a href="{{ route('goods-issues.show', $settlement->goodsIssue) }}"
+
+                                    <td class="text-center text-black print:text-black">
+                                        <x-tooltip :text="$settlement->settlement_number">
+                                            <a href="{{ route('sales-settlements.show', $settlement) }}"
                                                 class="text-blue-600 hover:underline"
-                                                oncopy="event.preventDefault(); event.clipboardData.setData('text/plain', '{{ $settlement->goodsIssue->issue_number }}');">
+                                                oncopy="event.preventDefault(); event.clipboardData.setData('text/plain', '{{ $settlement->settlement_number }}');">
                                                 <span class="print:hidden">
-                                                    {{ preg_replace('/^GI-\d{2}(\d{2})-(\d+)$/', 'GI-$1-$2', $settlement->goodsIssue->issue_number) }}
+                                                    {{ preg_replace('/^SETTLE-\d{2}(\d{2})-(\d+)$/', 'SI-$1-$2', $settlement->settlement_number) }}
                                                 </span>
                                                 <span class="print-only">
-                                                    {{ preg_replace('/^GI-\d{2}(\d{2})-(\d+)$/', 'GI-$1-$2', $settlement->goodsIssue->issue_number) }}
+                                                    {{ preg_replace('/^SETTLE-\d{2}(\d{2})-(\d+)$/', 'SI-$1-$2', $settlement->settlement_number) }}
                                                 </span>
                                             </a>
+                                        </x-tooltip>
+                                    </td>
+
+                                    <td class="text-center text-black">
+
+                                        @if($settlement->goodsIssue)
+                                            <x-tooltip :text="$settlement->goodsIssue->issue_number">
+                                                <a href="{{ route('goods-issues.show', $settlement->goodsIssue) }}"
+                                                    class="text-blue-600 hover:underline"
+                                                    oncopy="event.preventDefault(); event.clipboardData.setData('text/plain', '{{ $settlement->goodsIssue->issue_number }}');">
+                                                    <span class="print:hidden">
+                                                        {{ preg_replace('/^GI-\d{2}(\d{2})-(\d+)$/', 'GI-$1-$2', $settlement->goodsIssue->issue_number) }}
+                                                    </span>
+                                                    <span class="print-only">
+                                                        {{ preg_replace('/^GI-\d{2}(\d{2})-(\d+)$/', 'GI-$1-$2', $settlement->goodsIssue->issue_number) }}
+                                                    </span>
+                                                </a>
+                                            </x-tooltip>
                                         @else
                                             -
                                         @endif
                                     </td>
 
 
+                                    <td class="text-left text-black">
+
+                                        {{ $settlement->employee->name ?? 'N/A' }}
+                                        <!-- {{ str_replace(['Warehouse - I', 'Warehouse - II', 'Warehouse'], ['W-I', 'W-II', 'W'], $settlement->warehouse->warehouse_name) }} -->
+
+                                    </td>
+
+
+                                    <td class="text-left text-black">
+                                        {{ $settlement->vehicle->registration_number ?? $settlement->vehicle->vehicle_number ?? 'N/A' }}
+                                        <!-- {{ str_replace(['Warehouse - I', 'Warehouse - II', 'Warehouse'], ['W-I', 'W-II', 'W'], $settlement->warehouse->warehouse_name) }} -->
+
+                                    </td>
+
+
+                                    <td class="text-right font-mono text-black-500">
+                                        {{ number_format($settlement->total_cogs, 2) }}
+                                    </td>
 
                                     <td class="text-right font-mono font-bold">
                                         {{ number_format($settlement->total_sales_amount, 2) }}
                                     </td>
-                                    <td class="text-right font-mono text-orange-700">
-                                        {{ number_format($settlement->credit_sales_amount, 2) }}
-                                    </td>
-                                    <td class="text-right font-mono text-blue-700">
-                                        {{ number_format($settlement->cheque_sales_amount, 2) }}
-                                    </td>
-                                    <td class="text-right font-mono text-indigo-700">
-                                        {{ number_format($settlement->bank_transfer_amount, 2) }}
-                                    </td>
-                                    <td class="text-right font-mono text-green-700">
-                                        {{ number_format($settlement->cash_sales_amount, 2) }}
-                                    </td>
                                     @php
                                         $netProfit = $settlement->gross_profit - $settlement->expenses_claimed;
                                     @endphp
-                                    <td class="text-right font-mono">
-                                        {{ number_format($settlement->gross_profit, 2) }}
-                                    </td>
+                                    <!-- <td class="text-right font-mono">
+                                                                                        {{ number_format($settlement->gross_profit, 2) }}
+                                                                                    </td> -->
                                     <td class="text-right font-mono text-orange-600">
                                         {{ number_format($settlement->expenses_claimed, 2) }}
                                     </td>
@@ -345,58 +370,40 @@
                                         class="text-right font-mono font-bold {{ $netProfit > 0 ? 'text-green-700' : 'text-red-700' }}">
                                         {{ number_format($netProfit, 2) }}
                                     </td>
-                                    <td class="text-right font-mono text-gray-500">
-                                        {{ number_format($settlement->total_cogs, 2) }}
-                                    </td>
+
                                     <td class="text-center no-print relative overflow-visible group">
-                                        <span
-                                            class="cursor-help font-bold {{ $settlement->status === 'posted' ? 'text-green-600' : 'text-gray-600' }}">
-                                            {{ $settlement->status === 'posted' ? 'P' : 'D' }}
-                                        </span>
-                                        <!-- Flowbite-style Tooltip -->
-                                        <div
-                                            class="invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 absolute z-50 inline-block px-3 py-2 text-xs font-medium text-white bg-gray-900 rounded-lg shadow-sm -translate-x-1/2 left-1/2 bottom-full mb-2 dark:bg-gray-700 whitespace-nowrap min-w-[max-content]">
-                                            {{ ucfirst($settlement->status) }}
-                                            <div
-                                                class="absolute w-2 h-2 bg-gray-900 dark:bg-gray-700 transform rotate-45 -bottom-1 left-1/2 -translate-x-1/2">
-                                            </div>
-                                        </div>
+                                        <x-tooltip :text="ucfirst($settlement->status)">
+                                            <span
+                                                class="cursor-help font-bold {{ $settlement->status === 'posted' ? 'text-green-600' : 'text-gray-600' }}">
+                                                {{ $settlement->status === 'posted' ? 'Posted' : 'Draft' }}
+                                            </span>
+                                        </x-tooltip>
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
                         <tfoot class="bg-gray-100 font-extrabold sticky bottom-0">
                             <tr>
-                                <td colspan="3" class="py-2 px-2 text-right">
+                                <td colspan="6" class="py-2 px-2 text-right font-mono">
                                     Total ({{ $settlements->total() }}):
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($totals->total_cogs, 2) }}
                                 </td>
                                 <td class="py-2 px-2 text-right font-mono">
                                     {{ number_format($totals->total_sales_amount, 2) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
-                                    {{ number_format($totals->total_credit_sales, 2) }}
-                                </td>
-                                <td class="py-2 px-2 text-right font-mono">
-                                    {{ number_format($totals->total_cheque_sales, 2) }}
-                                </td>
-                                <td class="py-2 px-2 text-right font-mono">
-                                    {{ number_format($totals->total_bank_transfer, 2) }}
-                                </td>
-                                <td class="py-2 px-2 text-right font-mono">
-                                    {{ number_format($totals->total_cash_sales, 2) }}
-                                </td>
-                                <td class="py-2 px-2 text-right font-mono">
-                                    {{ number_format($totals->total_gross_profit, 2) }}
-                                </td>
+
+                                <!-- <td class="py-2 px-2 text-right font-mono">
+                                                            {{ number_format($totals->total_gross_profit, 2) }}
+                                                        </td> -->
                                 <td class="py-2 px-2 text-right font-mono">
                                     {{ number_format($totals->total_expenses, 2) }}
                                 </td>
                                 <td class="py-2 px-2 text-right font-mono">
                                     {{ number_format($totals->total_net_profit, 2) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
-                                    {{ number_format($totals->total_cogs, 2) }}
-                                </td>
+
                             </tr>
                         </tfoot>
                     </table>

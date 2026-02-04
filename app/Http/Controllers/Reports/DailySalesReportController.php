@@ -376,25 +376,58 @@ class DailySalesReportController extends Controller
     public function vanStock(Request $request)
     {
         $vehicleId = $request->input('vehicle_id');
+        $employeeId = $request->input('employee_id');
+        $settlementNumber = $request->input('settlement_number');
+        $goodsIssueNumber = $request->input('goods_issue_number');
 
-        $query = DB::table('van_stock_balances as vsb')
+        // Find vehicle IDs from Settlement/GI if provided
+        $vehicleIdsFromRelation = null;
+
+        if ($settlementNumber) {
+            $vehicleIdsFromRelation = SalesSettlement::where('settlement_number', 'like', "%{$settlementNumber}%")
+                ->pluck('vehicle_id')
+                ->toArray();
+        }
+
+        if ($goodsIssueNumber) {
+            $giVehicleIds = \App\Models\GoodsIssue::where('issue_number', 'like', "%{$goodsIssueNumber}%")
+                ->pluck('vehicle_id')
+                ->toArray();
+
+            $vehicleIdsFromRelation = $vehicleIdsFromRelation
+                ? array_intersect($vehicleIdsFromRelation, $giVehicleIds)
+                : $giVehicleIds;
+        }
+
+        $query = DB::table('van_stock_batches as vsb')
             ->join('vehicles as v', 'vsb.vehicle_id', '=', 'v.id')
+            ->leftJoin('employees as e', 'v.employee_id', '=', 'e.id')
             ->join('products as p', 'vsb.product_id', '=', 'p.id')
             ->select(
                 'v.id as vehicle_id',
                 'v.vehicle_number',
+                'e.name as employee_name',
                 'p.id as product_id',
                 'p.product_code',
                 'p.product_name',
-                'vsb.opening_balance',
                 'vsb.quantity_on_hand',
-                'vsb.average_cost',
-                DB::raw('vsb.quantity_on_hand * vsb.average_cost as total_value')
+                'vsb.goods_issue_number as latest_issue_number',
+                'vsb.unit_cost as issue_unit_cost',
+                'vsb.selling_price as issue_selling_price',
+                DB::raw('vsb.quantity_on_hand * vsb.unit_cost as total_value')
             )
             ->where('vsb.quantity_on_hand', '>', 0);
 
         if ($vehicleId) {
             $query->where('vsb.vehicle_id', $vehicleId);
+        }
+
+        if ($employeeId) {
+            $query->where('v.employee_id', $employeeId);
+        }
+
+        if ($vehicleIdsFromRelation !== null) {
+            $query->whereIn('vsb.vehicle_id', $vehicleIdsFromRelation);
         }
 
         $vanStock = $query->orderBy('v.vehicle_number')
@@ -407,7 +440,9 @@ class DailySalesReportController extends Controller
         return view('reports.daily-sales.van-stock', [
             'groupedStock' => $groupedStock,
             'vehicles' => Vehicle::orderBy('vehicle_number')->get(['id', 'vehicle_number']),
+            'employees' => Employee::orderBy('name')->get(['id', 'name']),
             'vehicleId' => $vehicleId,
+            'employeeId' => $employeeId,
         ]);
     }
 }

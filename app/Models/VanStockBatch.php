@@ -6,29 +6,24 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class VanStockBalance extends Model
+class VanStockBatch extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'vehicle_id',
         'product_id',
-        'opening_balance',
+        'goods_issue_item_id',
+        'goods_issue_number',
         'quantity_on_hand',
-        'average_cost',
-        'last_issue_number',
-        'last_unit_cost',
-        'last_selling_price',
-        'last_updated',
+        'unit_cost',
+        'selling_price',
     ];
 
     protected $casts = [
-        'opening_balance' => 'decimal:3',
         'quantity_on_hand' => 'decimal:3',
-        'average_cost' => 'decimal:2',
-        'last_unit_cost' => 'decimal:2',
-        'last_selling_price' => 'decimal:2',
-        'last_updated' => 'datetime',
+        'unit_cost' => 'decimal:2',
+        'selling_price' => 'decimal:2',
     ];
 
     public function vehicle(): BelongsTo
@@ -41,8 +36,8 @@ class VanStockBalance extends Model
         return $this->belongsTo(Product::class);
     }
 
-    public function getTotalValue(): float
+    public function goodsIssueItem(): BelongsTo
     {
-        return $this->quantity_on_hand * $this->average_cost;
+        return $this->belongsTo(GoodsIssueItem::class);
     }
 }

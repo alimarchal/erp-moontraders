@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -18,6 +17,9 @@ return new class extends Migration
             $table->decimal('opening_balance', 15, 3)->default(0)->comment('Previous day closing = today opening');
             $table->decimal('quantity_on_hand', 15, 3)->default(0);
             $table->decimal('average_cost', 15, 2)->default(0);
+            $table->string('last_issue_number')->nullable();
+            $table->decimal('last_unit_cost', 15, 2)->default(0);
+            $table->decimal('last_selling_price', 15, 2)->default(0);
             $table->timestamp('last_updated')->useCurrent();
             $table->timestamps();
 

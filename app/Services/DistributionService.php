@@ -10,6 +10,7 @@ use App\Models\SalesSettlement;
 use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
 use App\Models\VanStockBalance;
+use App\Models\VanStockBatch;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -42,8 +43,8 @@ class DistributionService
                     ->lockForUpdate()
                     ->first();
 
-                if (! $warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
-                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: ".($warehouseStock->quantity_on_hand ?? 0).", Required: {$item->quantity_issued}");
+                if (!$warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
+                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: " . ($warehouseStock->quantity_on_hand ?? 0) . ", Required: {$item->quantity_issued}");
                 }
 
                 // Allocate stock from batches with PROMOTIONAL PRIORITY
@@ -128,7 +129,7 @@ class DistributionService
                 ]);
 
                 // Set opening balance if this is first issue of the day
-                if ($vanStock->quantity_on_hand == 0 && ! $vanStock->exists) {
+                if ($vanStock->quantity_on_hand == 0 && !$vanStock->exists) {
                     $vanStock->opening_balance = 0;
                 }
 
@@ -136,12 +137,31 @@ class DistributionService
 
                 // Calculate weighted average cost from batch allocations
                 $totalValue = 0;
+                // dump($batchAllocations); 
                 foreach ($batchAllocations['batches'] as $batchAllocation) {
+                    // dump('Allocating batch: ' . $batchAllocation['batch']->batch_code . ' Qty: ' . $batchAllocation['quantity']);
                     $totalValue += $batchAllocation['quantity'] * $batchAllocation['batch']->unit_cost;
                 }
                 $vanStock->average_cost = $item->quantity_issued > 0 ? $totalValue / $item->quantity_issued : 0;
+
+                // Update latest issue details
+                $vanStock->last_issue_number = $goodsIssue->issue_number;
+                $vanStock->last_unit_cost = $item->unit_cost;
+                $vanStock->last_selling_price = $item->selling_price;
+
                 $vanStock->last_updated = now();
                 $vanStock->save();
+
+                // Create granular VanStockBatch record
+                \App\Models\VanStockBatch::create([
+                    'vehicle_id' => $goodsIssue->vehicle_id,
+                    'product_id' => $item->product_id,
+                    'goods_issue_item_id' => $item->id,
+                    'goods_issue_number' => $goodsIssue->issue_number,
+                    'quantity_on_hand' => $item->quantity_issued,
+                    'unit_cost' => $item->unit_cost,
+                    'selling_price' => $item->selling_price,
+                ]);
             }
 
             // Round totals to 2 decimals for GL
@@ -167,14 +187,14 @@ class DistributionService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to post goods issue: '.$e->getMessage(), [
+            Log::error('Failed to post goods issue: ' . $e->getMessage(), [
                 'goods_issue_id' => $goodsIssue->id ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to post Goods Issue: '.$e->getMessage(),
+                'message' => 'Failed to post Goods Issue: ' . $e->getMessage(),
                 'data' => null,
             ];
         }
@@ -202,7 +222,7 @@ class DistributionService
             $vanStock = $goodsIssue->vanStockAccount;
 
             // Fallback: resolve defaults by account_code if not already set on the record (keeps legacy data/tests working)
-            if (! $stockInHand) {
+            if (!$stockInHand) {
                 $stockInHand = ChartOfAccount::where('account_code', '1151')->first();
                 if ($stockInHand) {
                     $goodsIssue->stock_in_hand_account_id = $stockInHand->id;
@@ -210,7 +230,7 @@ class DistributionService
                 }
             }
 
-            if (! $vanStock) {
+            if (!$vanStock) {
                 $vanStock = ChartOfAccount::where('account_code', '1155')->first();
                 if ($vanStock) {
                     $goodsIssue->van_stock_account_id = $vanStock->id;
@@ -218,7 +238,7 @@ class DistributionService
                 }
             }
 
-            if (! $stockInHand || ! $vanStock) {
+            if (!$stockInHand || !$vanStock) {
                 Log::error('Goods Issue missing configured GL accounts', [
                     'goods_issue_id' => $goodsIssue->id,
                     'stock_in_hand_account_id' => $goodsIssue->stock_in_hand_account_id,
@@ -240,7 +260,7 @@ class DistributionService
                     'account_id' => $vanStock->id,
                     'debit' => $totalIssueCost,
                     'credit' => 0,
-                    'description' => 'Transfer to van stock (vehicle '.$vehicleNumber.'; salesman '.$employeeName.')',
+                    'description' => 'Transfer to van stock (vehicle ' . $vehicleNumber . '; salesman ' . $employeeName . ')',
                     'cost_center_id' => $costCenterId,
                 ],
                 [
@@ -248,7 +268,7 @@ class DistributionService
                     'account_id' => $stockInHand->id,
                     'debit' => 0,
                     'credit' => $totalIssueCost,
-                    'description' => 'Transfer from warehouse stock (issued by '.$createdBy.')',
+                    'description' => 'Transfer from warehouse stock (issued by ' . $createdBy . ')',
                     'cost_center_id' => $costCenterId,
                 ],
             ];
@@ -256,7 +276,7 @@ class DistributionService
             $journalEntryData = [
                 'entry_date' => $goodsIssue->issue_date,
                 'reference' => $goodsIssue->issue_number,
-                'description' => 'Goods Issue #'.$goodsIssue->issue_number.' - Transfer to vehicle '.$vehicleNumber.' (Salesman: '.$employeeName.'; Created by: '.$createdBy.')',
+                'description' => 'Goods Issue #' . $goodsIssue->issue_number . ' - Transfer to vehicle ' . $vehicleNumber . ' (Salesman: ' . $employeeName . '; Created by: ' . $createdBy . ')',
                 'lines' => $lines,
                 'auto_post' => true,
             ];
@@ -264,7 +284,7 @@ class DistributionService
             $accountingService = app(AccountingService::class);
             $result = $accountingService->createJournalEntry($journalEntryData);
 
-            if (! $result['success']) {
+            if (!$result['success']) {
                 throw new \Exception($result['message'] ?? 'Failed to create journal entry for goods issue');
             }
 
@@ -276,7 +296,7 @@ class DistributionService
 
             return $result['data'];
         } catch (\Exception $e) {
-            Log::error('Error creating Goods Issue JE: '.$e->getMessage(), [
+            Log::error('Error creating Goods Issue JE: ' . $e->getMessage(), [
                 'goods_issue_id' => $goodsIssue->id ?? null,
             ]);
 
@@ -425,7 +445,7 @@ class DistributionService
                     ->where('product_id', $item->product_id)
                     ->first();
 
-                if (! $vanStock) {
+                if (!$vanStock) {
                     throw new \Exception("No van stock found for product ID {$item->product_id}");
                 }
 
@@ -450,7 +470,7 @@ class DistributionService
                 $isFirstBatch = true;
                 foreach ($item->batches as $itemBatch) {
                     $batch = $itemBatch->stockBatch;
-                    if (! $batch) {
+                    if (!$batch) {
                         continue;
                     }
 
@@ -565,6 +585,25 @@ class DistributionService
                 $vanStock->last_updated = now();
                 $vanStock->save();
 
+                // Reduce VanStockBatch (FIFO)
+                $qtyToReduceFromBatch = $totalToReduce;
+                $vanStockBatches = VanStockBatch::where('vehicle_id', $settlement->vehicle_id)
+                    ->where('product_id', $item->product_id)
+                    ->where('quantity_on_hand', '>', 0)
+                    ->orderBy('created_at')
+                    ->get();
+
+                foreach ($vanStockBatches as $vsBatch) {
+                    if ($qtyToReduceFromBatch <= 0)
+                        break;
+
+                    $deduct = min($vsBatch->quantity_on_hand, $qtyToReduceFromBatch);
+                    $vsBatch->quantity_on_hand -= $deduct;
+                    $vsBatch->save();
+
+                    $qtyToReduceFromBatch -= $deduct;
+                }
+
                 // Sync warehouse CurrentStock from valuation layers for returns/shortages
                 if ($item->quantity_returned > 0 || $item->quantity_shortage > 0) {
                     $this->syncCurrentStockFromValuationLayers($item->product_id, $settlement->warehouse_id);
@@ -580,7 +619,7 @@ class DistributionService
 
             // Create accounting journal entry
             $journalEntry = $this->createSalesJournalEntry($settlement);
-            if (! $journalEntry) {
+            if (!$journalEntry) {
                 throw new \Exception('Failed to create journal entry for Sales Settlement.');
             }
 
@@ -608,14 +647,14 @@ class DistributionService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to post sales settlement: '.$e->getMessage(), [
+            Log::error('Failed to post sales settlement: ' . $e->getMessage(), [
                 'settlement_id' => $settlement->id ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to post Sales Settlement: '.$e->getMessage(),
+                'message' => 'Failed to post Sales Settlement: ' . $e->getMessage(),
                 'data' => null,
             ];
         }
@@ -647,7 +686,7 @@ class DistributionService
 
             $accounts = $this->getAccountingAccounts();
 
-            if (! $this->validateRequiredAccounts($accounts)) {
+            if (!$this->validateRequiredAccounts($accounts)) {
                 Log::warning('Required accounts not found for sales journal entry', [
                     'settlement_id' => $settlement->id,
                     'missing_accounts' => $this->getMissingAccounts($accounts),
@@ -729,7 +768,7 @@ class DistributionService
 
             // Recoveries - bank/online
             $settlement->recoveries
-                ->reject(fn ($recovery) => $recovery->payment_method === 'cash')
+                ->reject(fn($recovery) => $recovery->payment_method === 'cash')
                 ->groupBy('bank_account_id')
                 ->each(function ($group) use (&$addLine, $accounts, $employeeLabel, $settlementReference, $settlementDateFormatted): void {
                     $amount = $group->sum('amount');
@@ -994,7 +1033,7 @@ class DistributionService
             }, 0);
 
             if ($totalShortageValue > 0) {
-                if (! $accounts['misc_expense']) {
+                if (!$accounts['misc_expense']) {
                     throw new \Exception('Inventory Shortage account (5213) not found.');
                 }
 
@@ -1077,7 +1116,7 @@ class DistributionService
     {
         $required = ['cash', 'debtors', 'stock_in_hand', 'inventory', 'sales', 'cogs', 'salesman_clearing'];
         foreach ($required as $key) {
-            if (! isset($accounts[$key]) || ! $accounts[$key]) {
+            if (!isset($accounts[$key]) || !$accounts[$key]) {
                 return false;
             }
         }
@@ -1092,7 +1131,7 @@ class DistributionService
     {
         $missing = [];
         foreach ($accounts as $key => $account) {
-            if (! $account) {
+            if (!$account) {
                 $missing[] = $key;
             }
         }

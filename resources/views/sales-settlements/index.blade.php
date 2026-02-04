@@ -282,7 +282,7 @@
                                 </th>
                                 <th class="text-center">Total Sales</th>
                                 <!-- <th class="text-center">GP</th> -->
-                                <th class="text-center">Exp</th>
+                                <th class="text-center">Expenses</th>
                                 <th class="text-center">Net Profit</th>
 
                                 <th class="text-center no-print">Status</th>
@@ -302,7 +302,7 @@
                                     <td class="text-center text-black print:text-black">
                                         <x-tooltip :text="$settlement->settlement_number">
                                             <a href="{{ route('sales-settlements.show', $settlement) }}"
-                                                class="text-blue-600 hover:underline"
+                                                class="text-blue-600 hover:underline print:text-black print:no-underline print:text-xs"
                                                 oncopy="event.preventDefault(); event.clipboardData.setData('text/plain', '{{ $settlement->settlement_number }}');">
                                                 <span class="print:hidden">
                                                     {{ preg_replace('/^SETTLE-\d{2}(\d{2})-(\d+)$/', 'SI-$1-$2', $settlement->settlement_number) }}
@@ -320,7 +320,7 @@
                                         @if($settlement->goodsIssue)
                                             <x-tooltip :text="$settlement->goodsIssue->issue_number">
                                                 <a href="{{ route('goods-issues.show', $settlement->goodsIssue) }}"
-                                                    class="text-blue-600 hover:underline"
+                                                    class="text-blue-600 hover:underline print:text-black print:no-underline print:text-xs"
                                                     oncopy="event.preventDefault(); event.clipboardData.setData('text/plain', '{{ $settlement->goodsIssue->issue_number }}');">
                                                     <span class="print:hidden">
                                                         {{ preg_replace('/^GI-\d{2}(\d{2})-(\d+)$/', 'GI-$1-$2', $settlement->goodsIssue->issue_number) }}
@@ -362,8 +362,8 @@
                                         $netProfit = $settlement->gross_profit - $settlement->expenses_claimed;
                                     @endphp
                                     <!-- <td class="text-right font-mono">
-                                                                                                                                        {{ number_format($settlement->gross_profit, 2) }}
-                                                                                                                                    </td> -->
+                                                                                                                                                                        {{ number_format($settlement->gross_profit, 2) }}
+                                                                                                                                                                    </td> -->
                                     <td class="text-right font-mono text-orange-600">
                                         {{ number_format($settlement->expenses_claimed, 2) }}
                                     </td>
@@ -396,8 +396,8 @@
                                 </td>
 
                                 <!-- <td class="py-2 px-2 text-right font-mono">
-                                                                                    {{ number_format($totals->total_gross_profit, 2) }}
-                                                                                </td> -->
+                                                                                                    {{ number_format($totals->total_gross_profit, 2) }}
+                                                                                                </td> -->
                                 <td class="py-2 px-2 text-right font-mono">
                                     {{ number_format($totals->total_expenses, 2) }}
                                 </td>

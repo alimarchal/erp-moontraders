@@ -20,8 +20,8 @@ class SalesSettlementReportController extends Controller
         if (!$request->has('filter.settlement_date_from')) {
             $request->merge([
                 'filter' => array_merge($request->input('filter', []), [
-                    'settlement_date_from' => '2026-01-01',
-                    'settlement_date_to' => now()->format('Y-m-d'),
+                    'settlement_date_from' => now()->startOfMonth()->format('Y-m-d'),
+                    'settlement_date_to' => now()->endOfMonth()->format('Y-m-d'),
                 ])
             ]);
         }

@@ -350,24 +350,24 @@
                                     </td>
 
 
-                                    <td class="text-right font-mono text-black-500">
+                                    <td class="text-right tabular-nums text-black-500">
                                         {{ number_format($settlement->total_cogs, 2) }}
                                     </td>
 
-                                    <td class="text-right font-mono font-bold">
+                                    <td class="text-right tabular-nums font-bold">
                                         {{ number_format($settlement->total_sales_amount, 2) }}
                                     </td>
                                     @php
                                         $netProfit = $settlement->gross_profit - $settlement->expenses_claimed;
                                     @endphp
-                                    <!-- <td class="text-right font-mono">
-                                                                                                                                                                                                                                                                        {{ number_format($settlement->gross_profit, 2) }}
-                                                                                                                                                                                                                                                                    </td> -->
-                                    <td class="text-right font-mono text-orange-600">
+                                    <!-- <td class="text-right tabular-nums">
+                                                                                                                                                                                                                                                                                        {{ number_format($settlement->gross_profit, 2) }}
+                                                                                                                                                                                                                                                                                    </td> -->
+                                    <td class="text-right tabular-nums text-orange-600">
                                         {{ number_format($settlement->expenses_claimed, 2) }}
                                     </td>
                                     <td
-                                        class="text-right font-mono font-bold {{ $netProfit > 0 ? 'text-green-700' : 'text-red-700' }}">
+                                        class="text-right tabular-nums font-bold {{ $netProfit > 0 ? 'text-green-700' : 'text-red-700' }}">
                                         {{ number_format($netProfit, 2) }}
                                     </td>
 
@@ -384,23 +384,23 @@
                         </tbody>
                         <tfoot class="bg-gray-100 font-extrabold sticky bottom-0">
                             <tr>
-                                <td colspan="6" class="py-2 px-2 text-right font-mono">
+                                <td colspan="6" class="py-2 px-2 text-right tabular-nums">
                                     Total ({{ $settlements->count() }}):
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals->total_cogs, 2) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals->total_sales_amount, 2) }}
                                 </td>
 
-                                <!-- <td class="py-2 px-2 text-right font-mono">
-                                                                                                                                                            {{ number_format($totals->total_gross_profit, 2) }}
-                                                                                                                                                        </td> -->
-                                <td class="py-2 px-2 text-right font-mono">
+                                <!-- <td class="py-2 px-2 text-right tabular-nums">
+                                                                                                                                                                    {{ number_format($totals->total_gross_profit, 2) }}
+                                                                                                                                                                </td> -->
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals->total_expenses, 2) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals->total_net_profit, 2) }}
                                 </td>
 

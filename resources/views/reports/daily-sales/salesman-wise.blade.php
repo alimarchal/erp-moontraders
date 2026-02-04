@@ -288,31 +288,31 @@
                                 <td class="text-left text-black">
                                     {{ $salesman->vehicle_number }}
                                 </td>
-                                <td class="text-center text-black font-mono">
+                                <td class="text-center text-black tabular-nums">
                                     {{ $salesman->settlement_count }}
                                 </td>
-                                <td class="text-right font-mono font-bold">
+                                <td class="text-right tabular-nums font-bold">
                                     {{ number_format($salesman->total_quantity_sold, 0) }}
                                 </td>
-                                <td class="text-right font-mono text-red-600 print:text-black">
+                                <td class="text-right tabular-nums text-red-600 print:text-black">
                                     {{ number_format($salesman->total_returned, 0) }}
                                 </td>
-                                <td class="text-right font-mono text-red-600 print:text-black">
+                                <td class="text-right tabular-nums text-red-600 print:text-black">
                                     {{ number_format($salesman->total_shortage, 0) }}
                                 </td>
-                                <td class="text-right font-mono font-bold">
+                                <td class="text-right tabular-nums font-bold">
                                     {{ number_format($salesman->total_sales, 2) }}
                                 </td>
-                                <td class="text-right font-mono font-bold text-blue-700 print:text-black">
+                                <td class="text-right tabular-nums font-bold text-blue-700 print:text-black">
                                     {{ number_format($salesman->gross_profit, 2) }}
                                 </td>
-                                <td class="text-right font-mono text-red-600 print:text-black">
+                                <td class="text-right tabular-nums text-red-600 print:text-black">
                                     {{ number_format($salesman->expenses_claimed, 2) }}
                                 </td>
-                                <td class="text-right font-mono font-bold text-green-700 print:text-black">
+                                <td class="text-right tabular-nums font-bold text-green-700 print:text-black">
                                     {{ number_format($salesman->net_profit, 2) }}
                                 </td>
-                                <td class="text-right font-mono">
+                                <td class="text-right tabular-nums">
                                     @php
                                         $npMargin = $salesman->total_sales > 0 ? ($salesman->net_profit / $salesman->total_sales) * 100 : 0;
                                     @endphp
@@ -327,31 +327,31 @@
                                 <td colspan="3" class="py-2 px-2 text-right">
                                     Total ({{ $salesmanPerformance->count() }} Rows):
                                 </td>
-                                <td class="py-2 px-2 text-center font-mono">
+                                <td class="py-2 px-2 text-center tabular-nums">
                                     {{ $totals['settlement_count'] }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals['total_quantity_sold'], 0) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals['total_returned'], 0) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals['total_shortage'], 0) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals['total_sales'], 2) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals['gross_profit'], 2) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals['expenses_claimed'], 2) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals['net_profit'], 2) }}
                                 </td>
-                                <td class="py-2 px-2 text-right font-mono">
+                                <td class="py-2 px-2 text-right tabular-nums">
                                     @php
                                         $totalNpMargin = $totals['total_sales'] > 0 ? ($totals['net_profit'] / $totals['total_sales']) * 100 : 0;
                                     @endphp

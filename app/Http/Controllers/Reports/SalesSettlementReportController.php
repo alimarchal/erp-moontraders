@@ -17,17 +17,17 @@ class SalesSettlementReportController extends Controller
     public function index(Request $request)
     {
         // Set default dates in request if missing, so QueryBuilder picks them up via default logic or accessible via input
-        if (!$request->has('filter.start_date')) {
+        if (!$request->has('filter.settlement_date_from')) {
             $request->merge([
                 'filter' => array_merge($request->input('filter', []), [
-                    'start_date' => now()->startOfMonth()->format('Y-m-d'),
-                    'end_date' => now()->format('Y-m-d'),
+                    'settlement_date_from' => '2026-01-01',
+                    'settlement_date_to' => now()->format('Y-m-d'),
                 ])
             ]);
         }
 
-        $startDate = $request->input('filter.start_date');
-        $endDate = $request->input('filter.end_date');
+        $startDate = $request->input('filter.settlement_date_from');
+        $endDate = $request->input('filter.settlement_date_to');
 
         // Spatie Query Builder Implementation
         $query = QueryBuilder::for(SalesSettlement::class)
@@ -38,12 +38,8 @@ class SalesSettlementReportController extends Controller
                 AllowedFilter::exact('status'),
                 AllowedFilter::partial('settlement_number'),
                 // Custom date filters
-                AllowedFilter::callback('start_date', function ($query, $value) {
-                    $query->where('settlement_date', '>=', $value);
-                }),
-                AllowedFilter::callback('end_date', function ($query, $value) {
-                    $query->where('settlement_date', '<=', $value);
-                }),
+                AllowedFilter::scope('settlement_date_from'),
+                AllowedFilter::scope('settlement_date_to'),
             ])
             ->defaultSort('-settlement_date', '-settlement_number')
             ->allowedSorts([
@@ -75,11 +71,14 @@ class SalesSettlementReportController extends Controller
             'bank_transfer_amount' => $settlements->sum('bank_transfer_amount'),
             'credit_sales_amount' => $settlements->sum('credit_sales_amount'),
             'expenses_claimed' => $settlements->sum('expenses_claimed'),
+            'total_expenses' => $settlements->sum('expenses_claimed'),
             'total_quantity_shortage' => $settlements->sum('total_quantity_shortage'),
             'cash_to_deposit' => $settlements->sum('cash_to_deposit'),
             'credit_recoveries' => $settlements->sum('credit_recoveries'),
             'gross_profit' => $settlements->sum('gross_profit'),
-            'net_profit' => $settlements->sum('gross_profit') - $settlements->sum('expenses_claimed'),
+            'total_gross_profit' => $settlements->sum('gross_profit'),
+            'total_cogs' => $settlements->sum('total_cogs'),
+            'total_net_profit' => $settlements->sum('gross_profit') - $settlements->sum('expenses_claimed'),
         ];
 
         // Fetch filter options

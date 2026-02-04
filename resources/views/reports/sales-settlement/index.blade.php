@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Sale Settlement Report" :showSearch="true" :showRefresh="true" backRoute="reports.index" />
+        <x-page-header title="Sales Settlements Report" :showSearch="true" :showRefresh="true" />
     </x-slot>
 
     @push('header')
@@ -11,8 +11,6 @@
                 border: 1px solid black;
                 font-size: 12px;
                 line-height: 1.2;
-                font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-                color: black;
             }
 
             .report-table th,
@@ -28,168 +26,224 @@
 
             @media print {
                 @page {
-                    margin: 10mm 5mm 10mm 5mm;
-                    size: landscape;
-                }
+                    margin: 15mm 5mm 20mm 5mm;
 
-                body {
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                    background-color: white !important;
+                    @bottom-center {
+                        content: "Page " counter(page) " of " counter(pages);
+                    }
                 }
 
                 .no-print {
                     display: none !important;
                 }
 
-                .max-w-7xl, .max-w-8xl {
+                body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    counter-reset: page 1;
+                    background-color: white !important;
+                }
+
+                .max-w-7xl,
+                .max-w-8xl {
                     max-width: 100% !important;
                     width: 100% !important;
                     margin: 0 !important;
                     padding: 0 !important;
                 }
 
-                .bg-white, .bg-gray-100, .bg-gray-50 {
+                .bg-white {
                     background-color: white !important;
-                    box-shadow: none !important;
+                    margin: 0 !important;
+                    padding: 10px !important;
                     border: none !important;
+                    box-shadow: none !important;
+                }
+
+                .shadow-xl,
+                .shadow-lg {
+                    box-shadow: none !important;
+                }
+
+                .rounded-lg,
+                .sm\:rounded-lg {
+                    border-radius: 0 !important;
+                }
+
+                .overflow-x-auto {
+                    overflow: visible !important;
                 }
 
                 .report-table {
-                    font-size: 10px !important;
+                    font-size: 12px !important;
                     width: 100% !important;
+                    table-layout: auto;
                 }
 
-                .report-table th, .report-table td {
-                    border: 1px solid black !important;
-                    padding: 2px 4px !important;
-                    color: black !important;
+                .report-table tr {
+                    page-break-inside: avoid;
                 }
 
-                .text-red-600, .text-green-600, .text-blue-600 {
-                    color: black !important; /* Force black for strict printing if requested, but user said 'font ka color black use karna hai' which generally means main text, usually colors are allowed for indicators unless strictly mono. */
+                .report-table th,
+                .report-table td {
+                    padding: 1px 2px !important;
+                    color: #000 !important;
+                    background-color: white !important;
+                    white-space: normal !important;
+                    overflow-wrap: break-word;
                 }
-                /* User said: "font ka color use karna hai wo black color use karna hai" - defaulting to black everywhere for safety */
-                * {
-                    color: black !important;
+
+                /* Ensure specific background colors are removed in print */
+                .bg-gray-100,
+                .bg-gray-50,
+                .bg-blue-50,
+                .bg-red-50,
+                .bg-indigo-50,
+                .bg-green-50,
+                .bg-orange-50,
+                .bg-red-100,
+                .bg-red-200,
+                .bg-green-100,
+                .bg-emerald-100 {
+                    background-color: white !important;
                 }
-                
+
+                p {
+                    margin-top: 0 !important;
+                    margin-bottom: 4px !important;
+                }
+
+                .print-info {
+                    font-size: 8px !important;
+                    margin-top: 2px !important;
+                    margin-bottom: 5px !important;
+                    color: #000 !important;
+                }
+
+                /* Header visibility in print */
                 .report-header {
                     display: block !important;
                 }
-                
-                a { 
-                    text-decoration: none !important; 
-                    color: black !important; 
+
+                .print-only {
+                    display: block !important;
                 }
+
+                .page-footer {
+                    display: none;
+                }
+
+                /* Force grid for summary tables in print */
+                .summary-grid {
+                    display: grid !important;
+                    grid-template-columns: repeat(4, 1fr) !important;
+                    gap: 0.5rem !important;
+                    margin-top: 0.5rem !important;
+                }
+            }
+
+            /* Screen styles for header */
+            .report-header {
+                /* Visible on screen by default now */
             }
         </style>
     @endpush
 
-    <x-filter-section :action="route('reports.sales-settlement.index')" class="no-print" maxWidth="max-w-8xl">
+    <x-filter-section :action="route('reports.sales-settlement.index')" class="no-print" maxWidth="max-w-7xl">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <!-- Dates -->
             <div>
-                <x-label for="filter_start_date" value="Start Date" />
-                <x-input id="filter_start_date" name="filter[start_date]" type="date" class="mt-1 block w-full"
-                    :value="$startDate" />
+                <x-label for="filter_settlement_number" value="Settlement #" />
+                <x-input id="filter_settlement_number" name="filter[settlement_number]" type="text"
+                    class="mt-1 block w-full" :value="request('filter.settlement_number')" placeholder="Search..." />
             </div>
-            <div>
-                <x-label for="filter_end_date" value="End Date" />
-                <x-input id="filter_end_date" name="filter[end_date]" type="date" class="mt-1 block w-full"
-                    :value="$endDate" />
-            </div>
-
-            <!-- Salesman -->
-            <div wire:ignore>
-                <x-label for="filter_employee_id" value="Salesman number" />
-                <select id="filter_employee_id" name="filter[employee_id][]" multiple
-                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ in_array($employee->id, $filters['employee_id'] ?? []) ? 'selected' : '' }}>
-                            {{ $employee->name }} ({{ $employee->code }})
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Vehicle -->
-            <div wire:ignore>
-                <x-label for="filter_vehicle_id" value="Vehicle" />
-                <select id="filter_vehicle_id" name="filter[vehicle_id]"
-                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Vehicles</option>
-                    @foreach($vehicles as $vehicle)
-                        <option value="{{ $vehicle->id }}" {{ ($filters['vehicle_id'] ?? '') == $vehicle->id ? 'selected' : '' }}>
-                            {{ $vehicle->registration_number }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Warehouse -->
-            <div wire:ignore>
-                <x-label for="filter_warehouse_id" value="Warehouse" />
-                <select id="filter_warehouse_id" name="filter[warehouse_id]"
-                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Warehouses</option>
-                    @foreach($warehouses as $wh)
-                        <option value="{{ $wh->id }}" {{ ($filters['warehouse_id'] ?? '') == $wh->id ? 'selected' : '' }}>
-                            {{ $wh->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <!-- Status -->
             <div>
                 <x-label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Statuses</option>
-                    <option value="posted" {{ ($filters['status'] ?? '') == 'posted' ? 'selected' : '' }}>Posted</option>
-                    <option value="draft" {{ ($filters['status'] ?? '') == 'draft' ? 'selected' : '' }}>Draft</option>
+                    <option value="draft" {{ request('filter.status') === 'draft' ? 'selected' : '' }}>Draft</option>
+                    <option value="posted" {{ request('filter.status') === 'posted' ? 'selected' : '' }}>Posted</option>
+                </select>
+            </div>
+            <div>
+                <x-label for="filter_settlement_date_from" value="Date From" />
+                <x-input id="filter_settlement_date_from" name="filter[settlement_date_from]" type="date"
+                    class="mt-1 block w-full" :value="$startDate" />
+            </div>
+            <div>
+                <x-label for="filter_settlement_date_to" value="Date To" />
+                <x-input id="filter_settlement_date_to" name="filter[settlement_date_to]" type="date"
+                    class="mt-1 block w-full" :value="$endDate" />
+            </div>
+            <div>
+                <x-label for="filter_employee_id" value="Salesman" />
+                <select id="filter_employee_id" name="filter[employee_id]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
+                    <option value="">All Salesmen</option>
+                    @foreach($employees as $employee)
+                        <option value="{{ $employee->id }}" {{ request('filter.employee_id') == $employee->id ? 'selected' : '' }}>
+                            {{ $employee->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <x-label for="filter_vehicle_id" value="Vehicle" />
+                <select id="filter_vehicle_id" name="filter[vehicle_id]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
+                    <option value="">All Vehicles</option>
+                    @foreach($vehicles as $vehicle)
+                        <option value="{{ $vehicle->id }}" {{ request('filter.vehicle_id') == $vehicle->id ? 'selected' : '' }}>
+                            {{ $vehicle->registration_number }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div>
+                <x-label for="filter_warehouse_id" value="Warehouse" />
+                <select id="filter_warehouse_id" name="filter[warehouse_id]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Warehouses</option>
+                    @foreach($warehouses as $warehouse)
+                        <option value="{{ $warehouse->id }}" {{ request('filter.warehouse_id') == $warehouse->id ? 'selected' : '' }}>
+                            {{ $warehouse->name }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
 
-            <!-- Settlement Number -->
-            <div>
-                <x-label for="filter_settlement_number" value="Settlement #" />
-                <x-input id="filter_settlement_number" name="filter[settlement_number]" type="text"
-                    class="mt-1 block w-full" placeholder="Search Number..."
-                    value="{{ $filters['settlement_number'] ?? '' }}" />
-            </div>
-            
-            <!-- Sort By -->
-            <div>
-                <x-label for="sort" value="Sort By" />
-                <select id="sort" name="sort"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="-settlement_date" {{ request('sort') == '-settlement_date' ? 'selected' : '' }}>Date (Newest First)</option>
-                    <option value="settlement_date" {{ request('sort') == 'settlement_date' ? 'selected' : '' }}>Date (Oldest First)</option>
-                    <option value="-total_sales_amount" {{ request('sort') == '-total_sales_amount' ? 'selected' : '' }}>Total Sales (High to Low)</option>
-                    <option value="total_sales_amount" {{ request('sort') == 'total_sales_amount' ? 'selected' : '' }}>Total Sales (Low to High)</option>
-                    <option value="-expenses_claimed" {{ request('sort') == '-expenses_claimed' ? 'selected' : '' }}>Expenses (High to Low)</option>
-                    <option value="-settlement_number" {{ request('sort') == '-settlement_number' ? 'selected' : '' }}>Number (High to Low)</option>
-                </select>
-            </div>
         </div>
     </x-filter-section>
 
-    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 pb-16">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
-                <p class="text-center font-extrabold mb-2 text-xl report-header text-black">
+                {{-- Report Header --}}
+                <p class="text-center font-extrabold mb-2 text-xl report-header">
                     Moon Traders<br>
-                    <span class="text-lg">Sale Settlement Report</span><br>
-                    <span class="text-xs font-normal">
-                        Period: {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
-                        {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
-                    </span>
-                    @if(isset($filterSummary) && $filterSummary)
+                    <span class="text-lg">Sales Settlements Report</span><br>
+                    @if($startDate || $endDate)
+                        <span class="text-xs font-normal">
+                            Period:
+                            {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
+                            {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
+                        </span>
+                    @endif
+                    @php
+                        $filtersText = [];
+                        if (request('filter.employee_id'))
+                            $filtersText[] = 'Employee: ' . ($employees->firstWhere('id', request('filter.employee_id'))->name ?? '');
+                        if (request('filter.vehicle_id'))
+                            $filtersText[] = 'Vehicle: ' . ($vehicles->firstWhere('id', request('filter.vehicle_id'))->registration_number ?? '');
+                        if (request('filter.warehouse_id'))
+                            $filtersText[] = 'Warehouse: ' . ($warehouses->firstWhere('id', request('filter.warehouse_id'))->name ?? '');
+                        if (request('filter.status'))
+                            $filtersText[] = 'Status: ' . ucfirst(request('filter.status'));
+                    @endphp
+                    @if(count($filtersText) > 0)
                         <br>
                         <span class="text-xs font-normal">
-                            {{ $filterSummary }}
+                            {!! implode(' | ', $filtersText) !!}
                         </span>
                     @endif
                     <br>
@@ -198,83 +252,182 @@
                     </span>
                 </p>
 
-                <table class="report-table">
-                    <thead>
-                        <tr class="bg-gray-100">
-                            <th class="text-center w-12 text-black">Sr#</th>
-                            <th class="text-center w-20 text-black">Date</th>
-                            <th class="text-center w-32 text-black">Settlement #</th>
-                            <th class="text-left text-black">Salesman / Vehicle</th>
-                            <th class="text-right text-black">Total Sales</th>
-                            <th class="text-right text-black">Credit Sale</th>
-                            <th class="text-right text-black">Recovery</th>
-                            <th class="text-right text-black">Expense</th>
-                            <th class="text-right text-black">Net Deposit</th>
-                            <th class="text-right text-black">G. Profit</th>
-                            <th class="text-right text-black">Net Profit</th>
-                            <th class="text-center w-16 text-black">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($settlements as $ss)
-                            @php
-                                $recoveryAmount = $ss->recoveries->sum('amount');
-                                $netProfit = ($ss->gross_profit ?? 0) - ($ss->expenses_claimed ?? 0);
-                            @endphp
-                            <tr>
-                                <td class="text-center text-black">{{ $loop->iteration }}</td>
-                                <td class="text-center text-black">{{ $ss->settlement_date ? $ss->settlement_date->format('d-M-y') : '-' }}</td>
-                                <td class="text-center font-bold font-mono whitespace-nowrap">
-                                    <a href="{{ route('sales-settlements.show', $ss->id) }}" class="text-black hover:underline decoration-1" target="_blank">
-                                        {{ $ss->settlement_number }}
-                                    </a>
-                                </td>
-                                <td class="text-left text-black">
-                                    <div class="font-semibold">{{ $ss->employee->name ?? '-' }}</div>
-                                    <div class="text-xs">{{ $ss->vehicle->registration_number ?? '-' }}</div>
-                                </td>
-                                <td class="text-right font-mono font-bold text-black">{{ number_format($ss->total_sales_amount, 2) }}</td>
-                                <td class="text-right font-mono text-black">{{ number_format($ss->credit_sales_amount, 2) }}</td>
-                                <td class="text-right font-mono text-black">{{ number_format($recoveryAmount, 2) }}</td>
-                                <td class="text-right font-mono text-black">{{ number_format($ss->expenses_claimed, 2) }}</td>
-                                <td class="text-right font-mono font-bold bg-gray-50 print:bg-white text-black">{{ number_format($ss->cash_to_deposit, 2) }}</td>
-                                <td class="text-right font-mono text-black">{{ number_format($ss->gross_profit ?? 0, 2) }}</td>
-                                <td class="text-right font-mono font-bold text-black">{{ number_format($netProfit, 2) }}</td>
-                                <td class="text-center">
-                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full border border-black text-black">
-                                        {{ ucfirst($ss->status) }}
-                                    </span>
-                                </td>
+                @if($settlements->count() > 0)
+                    <table class="report-table">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="text-center">Sr#</th>
+                                <th class="text-center">Date</th>
+                                <th class="text-center">Settlement #</th>
+                                <th class="text-center">Goods Issue #</th>
+                                <th class="text-center">
+                                    <x-tooltip text="Salesman">
+                                        <span class="print:hidden">SM</span>
+                                        <span class="print-only">Salesman</span>
+                                    </x-tooltip>
+                                </th>
+                                <th class="text-center">
+                                    <x-tooltip text="CMV (Commercial Motor Vehicle)">
+                                        <span class="print:hidden">CMV</span>
+                                        <span class="print-only">Vehicle</span>
+                                    </x-tooltip>
+                                </th>
+
+                                <th class="text-center">
+                                    <x-tooltip text="COGS (Cost of Good Sold)">
+                                        <span class="print:hidden">COGS</span>
+                                        <span class="print-only">COGS</span>
+                                    </x-tooltip>
+                                </th>
+                                <th class="text-center">Total Sales</th>
+                                <!-- <th class="text-center">GP</th> -->
+                                <th class="text-center">Expenses</th>
+                                <th class="text-center">Net Profit</th>
+
+                                <th class="text-center no-print">Status</th>
                             </tr>
-                        @empty
+                        </thead>
+                        <tbody>
+                            @foreach ($settlements as $index => $settlement)
+                                <tr>
+                                    <td class="text-center text-black">
+                                        {{ $index + 1 }}
+                                    </td>
+
+                                    <td class="text-center text-black">
+                                        {{ $settlement->settlement_date->format('d-m-y') }}
+                                    </td>
+
+                                    <td class="text-center text-black print:text-black">
+                                        <x-tooltip :text="$settlement->settlement_number">
+                                            <a href="{{ route('sales-settlements.show', $settlement) }}"
+                                                class="text-blue-600 hover:underline print:text-black print:no-underline print:text-xs"
+                                                oncopy="event.preventDefault(); event.clipboardData.setData('text/plain', '{{ $settlement->settlement_number }}');">
+                                                <span class="print:hidden">
+                                                    {{ preg_replace('/^SETTLE-\d{2}(\d{2})-(\d+)$/', 'SI-$1-$2', $settlement->settlement_number) }}
+                                                </span>
+                                                <span class="print-only">
+                                                    {{ preg_replace('/^SETTLE-\d{2}(\d{2})-(\d+)$/', 'SI-$1-$2', $settlement->settlement_number) }}
+                                                </span>
+                                            </a>
+                                        </x-tooltip>
+                                        ({{ str_replace(['Warehouse - I', 'Warehouse - II', 'Warehouse'], ['W-I', 'W-II', 'W'], $settlement->warehouse->warehouse_name) }})
+                                    </td>
+
+                                    <td class="text-center text-black">
+
+                                        @if($settlement->goodsIssue)
+                                            <x-tooltip :text="$settlement->goodsIssue->issue_number">
+                                                <a href="{{ route('goods-issues.show', $settlement->goodsIssue) }}"
+                                                    class="text-blue-600 hover:underline print:text-black print:no-underline print:text-xs"
+                                                    oncopy="event.preventDefault(); event.clipboardData.setData('text/plain', '{{ $settlement->goodsIssue->issue_number }}');">
+                                                    <span class="print:hidden">
+                                                        {{ preg_replace('/^GI-\d{2}(\d{2})-(\d+)$/', 'GI-$1-$2', $settlement->goodsIssue->issue_number) }}
+                                                    </span>
+                                                    <span class="print-only">
+                                                        {{ preg_replace('/^GI-\d{2}(\d{2})-(\d+)$/', 'GI-$1-$2', $settlement->goodsIssue->issue_number) }}
+                                                    </span>
+                                                </a>
+                                            </x-tooltip>
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
+
+
+                                    <td class="text-left text-black">
+
+                                        {{ $settlement->employee->name ?? 'N/A' }}
+
+
+                                    </td>
+
+
+                                    <td class="text-left text-black">
+                                        {{ $settlement->vehicle->registration_number ?? $settlement->vehicle->vehicle_number ?? 'N/A' }}
+                                        <!-- {{ str_replace(['Warehouse - I', 'Warehouse - II', 'Warehouse'], ['W-I', 'W-II', 'W'], $settlement->warehouse->warehouse_name) }} -->
+
+                                    </td>
+
+
+                                    <td class="text-right font-mono text-black-500">
+                                        {{ number_format($settlement->total_cogs, 2) }}
+                                    </td>
+
+                                    <td class="text-right font-mono font-bold">
+                                        {{ number_format($settlement->total_sales_amount, 2) }}
+                                    </td>
+                                    @php
+                                        $netProfit = $settlement->gross_profit - $settlement->expenses_claimed;
+                                    @endphp
+                                    <!-- <td class="text-right font-mono">
+                                                                                                                                                                                                                                                                        {{ number_format($settlement->gross_profit, 2) }}
+                                                                                                                                                                                                                                                                    </td> -->
+                                    <td class="text-right font-mono text-orange-600">
+                                        {{ number_format($settlement->expenses_claimed, 2) }}
+                                    </td>
+                                    <td
+                                        class="text-right font-mono font-bold {{ $netProfit > 0 ? 'text-green-700' : 'text-red-700' }}">
+                                        {{ number_format($netProfit, 2) }}
+                                    </td>
+
+                                    <td class="text-center no-print relative overflow-visible group">
+                                        <x-tooltip :text="ucfirst($settlement->status)">
+                                            <span
+                                                class="cursor-help font-bold {{ $settlement->status === 'posted' ? 'text-green-600' : 'text-gray-600' }}">
+                                                {{ $settlement->status === 'posted' ? 'Posted' : 'Draft' }}
+                                            </span>
+                                        </x-tooltip>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot class="bg-gray-100 font-extrabold sticky bottom-0">
                             <tr>
-                                <td colspan="12" class="text-center py-4 text-gray-500">No records found.</td>
+                                <td colspan="6" class="py-2 px-2 text-right font-mono">
+                                    Total ({{ $settlements->count() }}):
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($totals->total_cogs, 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($totals->total_sales_amount, 2) }}
+                                </td>
+
+                                <!-- <td class="py-2 px-2 text-right font-mono">
+                                                                                                                                                            {{ number_format($totals->total_gross_profit, 2) }}
+                                                                                                                                                        </td> -->
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($totals->total_expenses, 2) }}
+                                </td>
+                                <td class="py-2 px-2 text-right font-mono">
+                                    {{ number_format($totals->total_net_profit, 2) }}
+                                </td>
+
                             </tr>
-                        @endforelse
-                    </tbody>
-                    <tfoot class="bg-gray-100 font-bold sticky bottom-0 text-black">
-                        <tr>
-                            <td colspan="4" class="text-right px-2">Total ({{ $settlements->count() }}):</td>
-                            <td class="text-right font-mono">{{ number_format($totals->total_sales_amount, 2) }}</td>
-                            <td class="text-right font-mono">{{ number_format($totals->credit_sales_amount, 2) }}</td>
-                            <td class="text-right font-mono">{{ number_format($totals->credit_recoveries ?? 0, 2) }}</td>
-                            <td class="text-right font-mono">{{ number_format($totals->expenses_claimed, 2) }}</td>
-                            <td class="text-right font-mono">{{ number_format($totals->cash_to_deposit, 2) }}</td>
-                            <td class="text-right font-mono">{{ number_format($totals->gross_profit ?? 0, 2) }}</td>
-                            <td class="text-right font-mono">{{ number_format($totals->net_profit ?? 0, 2) }}</td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
+                        </tfoot>
+                    </table>
+
+                @else
+                    <div class="p-6 text-center text-gray-500">
+                        No sales settlements found for the selected period.
+                    </div>
+                @endif
             </div>
         </div>
     </div>
     @push('scripts')
         <script>
             $(document).ready(function () {
-                $('.select2').select2({
+                // Re-initialize specific select2s with allowClear to enable resetting
+                $('#filter_employee_id').select2({
                     width: '100%',
-                    placeholder: "Select Option",
+                    placeholder: "All Salesmen",
+                    allowClear: true
+                });
+                $('#filter_vehicle_id').select2({
+                    width: '100%',
+                    placeholder: "All Vehicles",
                     allowClear: true
                 });
             });

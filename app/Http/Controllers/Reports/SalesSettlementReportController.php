@@ -77,6 +77,9 @@ class SalesSettlementReportController extends Controller
             'expenses_claimed' => $settlements->sum('expenses_claimed'),
             'total_quantity_shortage' => $settlements->sum('total_quantity_shortage'),
             'cash_to_deposit' => $settlements->sum('cash_to_deposit'),
+            'credit_recoveries' => $settlements->sum('credit_recoveries'),
+            'gross_profit' => $settlements->sum('gross_profit'),
+            'net_profit' => $settlements->sum('gross_profit') - $settlements->sum('expenses_claimed'),
         ];
 
         // Fetch filter options

@@ -107,9 +107,21 @@ class SalesSettlementController extends Controller implements HasMiddleware
         $netProfit = $totals->total_gross_profit - $totals->total_expenses;
         $totals->total_net_profit = $netProfit;
 
+        // Check if models are imported, if not use FQCN or add imports. 
+        // Existing imports do not show Employee, Vehicle, Warehouse. 
+        // I will use FQCN for safety in this replace block or add imports at the top implies reading the whole file. 
+        // Better to use FQCN here to be safe and cleaner in this specific block without scrolling up.
+
+        $employees = \App\Models\Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        $vehicles = \App\Models\Vehicle::where('is_active', true)->orderBy('registration_number')->get(['id', 'registration_number']);
+        $warehouses = \App\Models\Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']);
+
         return view('sales-settlements.index', [
             'settlements' => $settlements,
             'totals' => $totals,
+            'employees' => $employees,
+            'vehicles' => $vehicles,
+            'warehouses' => $warehouses,
         ]);
     }
 

@@ -1,7 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Sale Settlement Report" :showSearch="true" :showRefresh="true"
-            backRoute="reports.index" />
+        <x-page-header title="Sale Settlement Report" :showSearch="true" :showRefresh="true" backRoute="reports.index" />
     </x-slot>
 
     @push('header')
@@ -10,15 +9,17 @@
                 width: 100%;
                 border-collapse: collapse;
                 border: 1px solid black;
-                font-size: 14px;
+                font-size: 12px;
                 line-height: 1.2;
+                font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                color: black;
             }
 
             .report-table th,
             .report-table td {
                 border: 1px solid black;
-                padding: 3px 4px;
-                word-wrap: break-word;
+                padding: 4px 6px;
+                white-space: nowrap;
             }
 
             .print-only {
@@ -27,89 +28,65 @@
 
             @media print {
                 @page {
-                    margin: 15mm 10mm 20mm 10mm;
+                    margin: 10mm 5mm 10mm 5mm;
+                    size: landscape;
+                }
 
-                    @bottom-center {
-                        content: "Page " counter(page) " of " counter(pages);
-                    }
+                body {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                    background-color: white !important;
                 }
 
                 .no-print {
                     display: none !important;
                 }
 
-                body {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    counter-reset: page 1;
-                }
-
-                .max-w-7xl {
+                .max-w-7xl, .max-w-8xl {
                     max-width: 100% !important;
                     width: 100% !important;
                     margin: 0 !important;
                     padding: 0 !important;
                 }
 
-                .bg-white {
-                    margin: 0 !important;
-                    padding: 10px !important;
+                .bg-white, .bg-gray-100, .bg-gray-50 {
+                    background-color: white !important;
                     box-shadow: none !important;
-                }
-
-                .overflow-x-auto {
-                    overflow: visible !important;
+                    border: none !important;
                 }
 
                 .report-table {
                     font-size: 10px !important;
                     width: 100% !important;
-                    table-layout: auto;
                 }
 
-                .report-table tr {
-                    page-break-inside: avoid;
+                .report-table th, .report-table td {
+                    border: 1px solid black !important;
+                    padding: 2px 4px !important;
+                    color: black !important;
                 }
 
-                .report-table .text-right {
-                    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
+                .text-red-600, .text-green-600, .text-blue-600 {
+                    color: black !important; /* Force black for strict printing if requested, but user said 'font ka color black use karna hai' which generally means main text, usually colors are allowed for indicators unless strictly mono. */
                 }
-
-                .report-table th,
-                .report-table td {
-                    padding: 2px 3px !important;
-                    color: #000 !important;
+                /* User said: "font ka color use karna hai wo black color use karna hai" - defaulting to black everywhere for safety */
+                * {
+                    color: black !important;
                 }
-
-                .text-green-600,
-                .text-red-600 {
-                    color: #000 !important;
-                }
-
-                p {
-                    margin-top: 0 !important;
-                    margin-bottom: 8px !important;
-                }
-
-                .print-info {
-                    font-size: 9px !important;
-                    margin-top: 5px !important;
-                    margin-bottom: 10px !important;
-                    color: #000 !important;
-                }
-
-                .print-only {
+                
+                .report-header {
                     display: block !important;
                 }
-
-                .page-footer {
-                    display: none;
+                
+                a { 
+                    text-decoration: none !important; 
+                    color: black !important; 
                 }
             }
         </style>
     @endpush
 
-    <x-filter-section :action="route('reports.sales-settlement.index')" class="no-print">
+    <x-filter-section :action="route('reports.sales-settlement.index')" class="no-print" maxWidth="max-w-8xl">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Dates -->
             <div>
@@ -124,7 +101,7 @@
             </div>
 
             <!-- Salesman -->
-            <div>
+            <div wire:ignore>
                 <x-label for="filter_employee_id" value="Salesman number" />
                 <select id="filter_employee_id" name="filter[employee_id][]" multiple
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
@@ -137,10 +114,10 @@
             </div>
 
             <!-- Vehicle -->
-            <div>
+            <div wire:ignore>
                 <x-label for="filter_vehicle_id" value="Vehicle" />
                 <select id="filter_vehicle_id" name="filter[vehicle_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Vehicles</option>
                     @foreach($vehicles as $vehicle)
                         <option value="{{ $vehicle->id }}" {{ ($filters['vehicle_id'] ?? '') == $vehicle->id ? 'selected' : '' }}>
@@ -151,10 +128,10 @@
             </div>
 
             <!-- Warehouse -->
-            <div>
+            <div wire:ignore>
                 <x-label for="filter_warehouse_id" value="Warehouse" />
                 <select id="filter_warehouse_id" name="filter[warehouse_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Warehouses</option>
                     @foreach($warehouses as $wh)
                         <option value="{{ $wh->id }}" {{ ($filters['warehouse_id'] ?? '') == $wh->id ? 'selected' : '' }}>
@@ -182,24 +159,41 @@
                     class="mt-1 block w-full" placeholder="Search Number..."
                     value="{{ $filters['settlement_number'] ?? '' }}" />
             </div>
+            
+            <!-- Sort By -->
+            <div>
+                <x-label for="sort" value="Sort By" />
+                <select id="sort" name="sort"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="-settlement_date" {{ request('sort') == '-settlement_date' ? 'selected' : '' }}>Date (Newest First)</option>
+                    <option value="settlement_date" {{ request('sort') == 'settlement_date' ? 'selected' : '' }}>Date (Oldest First)</option>
+                    <option value="-total_sales_amount" {{ request('sort') == '-total_sales_amount' ? 'selected' : '' }}>Total Sales (High to Low)</option>
+                    <option value="total_sales_amount" {{ request('sort') == 'total_sales_amount' ? 'selected' : '' }}>Total Sales (Low to High)</option>
+                    <option value="-expenses_claimed" {{ request('sort') == '-expenses_claimed' ? 'selected' : '' }}>Expenses (High to Low)</option>
+                    <option value="-settlement_number" {{ request('sort') == '-settlement_number' ? 'selected' : '' }}>Number (High to Low)</option>
+                </select>
+            </div>
         </div>
     </x-filter-section>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
-                <p class="text-center font-extrabold mb-2 text-xl">
+                <p class="text-center font-extrabold mb-2 text-xl report-header text-black">
                     Moon Traders<br>
                     <span class="text-lg">Sale Settlement Report</span><br>
                     <span class="text-xs font-normal">
                         Period: {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
                         {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
-                        @if($filterSummary)
-                            <br>{{ $filterSummary }}
-                        @endif
                     </span>
+                    @if(isset($filterSummary) && $filterSummary)
+                        <br>
+                        <span class="text-xs font-normal">
+                            {{ $filterSummary }}
+                        </span>
+                    @endif
                     <br>
-                    <span class="print-only print-info text-xs text-center">
+                    <span class="print-only text-xs text-center hidden">
                         Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
                     </span>
                 </p>
@@ -207,78 +201,67 @@
                 <table class="report-table">
                     <thead>
                         <tr class="bg-gray-100">
-                            <th>Date</th>
-                            <th>Settlement #</th>
-                            <th>Salesman / Vehicle</th>
-                            <th class="text-right">Total Sales</th>
-                            <th class="text-right">Cash Rec.</th>
-                            <th class="text-right">Cheques</th>
-                            <th class="text-right">Bank Trf.</th>
-                            <th class="text-right">Credit Sale</th>
-                            <th class="text-right">Expenses</th>
-                            <th class="text-right">To Deposit</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center">Action</th>
+                            <th class="text-center w-12 text-black">Sr#</th>
+                            <th class="text-center w-20 text-black">Date</th>
+                            <th class="text-center w-32 text-black">Settlement #</th>
+                            <th class="text-left text-black">Salesman / Vehicle</th>
+                            <th class="text-right text-black">Total Sales</th>
+                            <th class="text-right text-black">Credit Sale</th>
+                            <th class="text-right text-black">Recovery</th>
+                            <th class="text-right text-black">Expense</th>
+                            <th class="text-right text-black">Net Deposit</th>
+                            <th class="text-right text-black">G. Profit</th>
+                            <th class="text-right text-black">Net Profit</th>
+                            <th class="text-center w-16 text-black">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($settlements as $ss)
+                            @php
+                                $recoveryAmount = $ss->recoveries->sum('amount');
+                                $netProfit = ($ss->gross_profit ?? 0) - ($ss->expenses_claimed ?? 0);
+                            @endphp
                             <tr>
-                                <td>{{ $ss->settlement_date ? $ss->settlement_date->format('d-M-y') : '-' }}</td>
-                                <td class="font-bold whitespace-nowrap">
-                                    {{ $ss->settlement_number }}
+                                <td class="text-center text-black">{{ $loop->iteration }}</td>
+                                <td class="text-center text-black">{{ $ss->settlement_date ? $ss->settlement_date->format('d-M-y') : '-' }}</td>
+                                <td class="text-center font-bold font-mono whitespace-nowrap">
+                                    <a href="{{ route('sales-settlements.show', $ss->id) }}" class="text-black hover:underline decoration-1" target="_blank">
+                                        {{ $ss->settlement_number }}
+                                    </a>
                                 </td>
-                                <td>
+                                <td class="text-left text-black">
                                     <div class="font-semibold">{{ $ss->employee->name ?? '-' }}</div>
-                                    <div class="text-xs text-gray-500">{{ $ss->vehicle->registration_number ?? '-' }}</div>
+                                    <div class="text-xs">{{ $ss->vehicle->registration_number ?? '-' }}</div>
                                 </td>
-                                <td class="text-right font-bold">{{ number_format($ss->total_sales_amount, 2) }}</td>
-                                <td class="text-right">{{ number_format($ss->cash_collected, 2) }}</td>
-                                <td class="text-right">{{ number_format($ss->cheques_collected, 2) }}</td>
-                                <td class="text-right">{{ number_format($ss->bank_transfer_amount, 2) }}</td>
-                                <td class="text-right">{{ number_format($ss->credit_sales_amount, 2) }}</td>
-                                <td class="text-right">{{ number_format($ss->expenses_claimed, 2) }}</td>
-                                <td class="text-right font-bold bg-gray-50">{{ number_format($ss->cash_to_deposit, 2) }}
-                                </td>
+                                <td class="text-right font-mono font-bold text-black">{{ number_format($ss->total_sales_amount, 2) }}</td>
+                                <td class="text-right font-mono text-black">{{ number_format($ss->credit_sales_amount, 2) }}</td>
+                                <td class="text-right font-mono text-black">{{ number_format($recoveryAmount, 2) }}</td>
+                                <td class="text-right font-mono text-black">{{ number_format($ss->expenses_claimed, 2) }}</td>
+                                <td class="text-right font-mono font-bold bg-gray-50 print:bg-white text-black">{{ number_format($ss->cash_to_deposit, 2) }}</td>
+                                <td class="text-right font-mono text-black">{{ number_format($ss->gross_profit ?? 0, 2) }}</td>
+                                <td class="text-right font-mono font-bold text-black">{{ number_format($netProfit, 2) }}</td>
                                 <td class="text-center">
-                                    <span
-                                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $ss->status === 'posted' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' }}">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full border border-black text-black">
                                         {{ ucfirst($ss->status) }}
                                     </span>
-                                </td>
-                                <td class="text-center whitespace-nowrap text-sm font-medium">
-                                    <a href="{{ route('sales-settlements.show', $ss->id) }}"
-                                        class="text-indigo-600 hover:text-indigo-900 mr-2" title="View">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 inline">
-                                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
-                                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                                        </svg>
-                                    </a>
-                                    <a href="{{ route('reports.sales-settlement.print', $ss->id) }}" target="_blank"
-                                       class="text-gray-600 hover:text-gray-900" title="Print">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 inline">
-                                          <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
-                                        </svg>
-                                    </a>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center py-4 text-gray-500">No records found for the selected
-                                    criteria.</td>
+                                <td colspan="12" class="text-center py-4 text-gray-500">No records found.</td>
                             </tr>
                         @endforelse
                     </tbody>
-                    <tfoot class="bg-gray-100 font-bold">
+                    <tfoot class="bg-gray-100 font-bold sticky bottom-0 text-black">
                         <tr>
-                            <td colspan="3" class="text-right px-2">Grand Totals:</td>
+                            <td colspan="4" class="text-right px-2">Total ({{ $settlements->count() }}):</td>
                             <td class="text-right font-mono">{{ number_format($totals->total_sales_amount, 2) }}</td>
-                            <td class="text-right font-mono">{{ number_format($totals->cash_collected, 2) }}</td>
-                            <td class="text-right font-mono">{{ number_format($totals->cheques_collected, 2) }}</td>
-                            <td class="text-right font-mono">{{ number_format($totals->bank_transfer_amount, 2) }}</td>
                             <td class="text-right font-mono">{{ number_format($totals->credit_sales_amount, 2) }}</td>
+                            <td class="text-right font-mono">{{ number_format($totals->credit_recoveries ?? 0, 2) }}</td>
                             <td class="text-right font-mono">{{ number_format($totals->expenses_claimed, 2) }}</td>
                             <td class="text-right font-mono">{{ number_format($totals->cash_to_deposit, 2) }}</td>
+                            <td class="text-right font-mono">{{ number_format($totals->gross_profit ?? 0, 2) }}</td>
+                            <td class="text-right font-mono">{{ number_format($totals->net_profit ?? 0, 2) }}</td>
                             <td></td>
                         </tr>
                     </tfoot>
@@ -286,4 +269,15 @@
             </div>
         </div>
     </div>
+    @push('scripts')
+        <script>
+            $(document).ready(function () {
+                $('.select2').select2({
+                    width: '100%',
+                    placeholder: "Select Option",
+                    allowClear: true
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>

@@ -34,6 +34,9 @@ class VanStockBatchConsumptionTest extends TestCase
         // Create GL Accounts
         $this->createGlAccounts();
 
+        // Create Cost Centers (required by journal entry creation)
+        $this->createCostCenters();
+
         // Create Accounting Period
         AccountingPeriod::create([
             'name' => 'Test Period',
@@ -43,9 +46,34 @@ class VanStockBatchConsumptionTest extends TestCase
         ]);
     }
 
+    protected function createCostCenters()
+    {
+        // Use DB::table to insert specific IDs, bypassing Eloquent's auto-increment behavior
+        for ($i = 1; $i <= 10; $i++) {
+            \Illuminate\Support\Facades\DB::table('cost_centers')->insertOrIgnore([
+                'id' => $i,
+                'name' => "Cost Center $i",
+                'code' => "CC-$i",
+                'is_active' => true,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+    }
+
     protected function createGlAccounts()
     {
-        $currency = Currency::first() ?? Currency::factory()->create();
+        // Ensure base currency exists for journal entry creation
+        $currency = Currency::firstOrCreate(
+            ['is_base_currency' => true],
+            [
+                'currency_code' => 'USD',
+                'currency_name' => 'US Dollar',
+                'currency_symbol' => '$',
+                'exchange_rate' => 1.0,
+            ]
+        );
+
         $accountType = AccountType::first() ?? AccountType::factory()->create([
             'type_name' => 'Assets',
             'report_group' => 'BalanceSheet'
@@ -73,13 +101,15 @@ class VanStockBatchConsumptionTest extends TestCase
         ];
 
         foreach ($codes as $code) {
-            ChartOfAccount::create([
-                'account_code' => $code,
-                'account_name' => "Account $code",
-                'account_type_id' => $accountType->id,
-                'currency_id' => $currency->id,
-                'is_active' => true,
-            ]);
+            ChartOfAccount::firstOrCreate(
+                ['account_code' => $code],
+                [
+                    'account_name' => "Account $code",
+                    'account_type_id' => $accountType->id,
+                    'currency_id' => $currency->id,
+                    'is_active' => true,
+                ]
+            );
         }
     }
 
@@ -135,29 +165,36 @@ class VanStockBatchConsumptionTest extends TestCase
         $settlement = SalesSettlement::create([
             'settlement_number' => 'SS-TEST-001',
             'settlement_date' => now(),
-            'salesman_id' => $employee->id, // map employee to salesman
+            'employee_id' => $employee->id,
             'vehicle_id' => $vehicle->id,
             'warehouse_id' => $warehouse->id,
-            'goods_issue_id' => $goodsIssue->id, // Linked
+            'goods_issue_id' => $goodsIssue->id,
             'status' => 'draft',
+            'cash_sales_amount' => 3000,
+            'total_sales_amount' => 3000,
+            'cash_collected' => 3000,
         ]);
 
         SalesSettlementItem::create([
             'sales_settlement_id' => $settlement->id,
             'product_id' => $product->id,
+            'quantity_issued' => 20, // Total issued from goods issue
             'quantity_sold' => 15, // Should consume all A (10) and half B (5)
             'quantity_returned' => 0,
             'quantity_shortage' => 0,
-            'unit_price' => 200,
-            'total_amount' => 3000,
+            'unit_selling_price' => 200,
+            'total_sales_value' => 3000,
+            'unit_cost' => 110, // Average of batches A(100) and B(120)
+            'total_cogs' => 1650, // 10*100 + 5*120 = 1000+600 = 1600 (approx)
         ]);
 
         // 5. Run Service
         $service = app(DistributionService::class);
         $result = $service->postSalesSettlement($settlement);
 
-        if (isset($result['status']) && $result['status'] === 'error') {
+        if (!$result['success']) {
             dump($result);
+            $this->fail('Settlement posting failed: ' . ($result['message'] ?? 'Unknown error'));
         }
 
         // 6. Verify Batches

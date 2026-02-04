@@ -30,25 +30,30 @@ it('creates van stock batches when goods issue is posted', function () {
     $uom = \App\Models\Uom::first() ?? \App\Models\Uom::factory()->create();
 
     // Create GL Accounts
-    $currency = \App\Models\Currency::first() ?? \App\Models\Currency::factory()->create();
+    $currency = \App\Models\Currency::where('is_base_currency', true)->first() 
+        ?? \App\Models\Currency::factory()->create(['is_base_currency' => true]);
     $accountType = \App\Models\AccountType::first() ?? \App\Models\AccountType::factory()->create([
         'type_name' => 'Assets',
         'report_group' => 'BalanceSheet'
     ]);
-    \App\Models\ChartOfAccount::create([
-        'account_code' => '1151',
-        'account_name' => 'Stock In Hand',
-        'account_type_id' => $accountType->id,
-        'currency_id' => $currency->id,
-        'is_active' => true,
-    ]);
-    \App\Models\ChartOfAccount::create([
-        'account_code' => '1155',
-        'account_name' => 'Van Stock',
-        'account_type_id' => $accountType->id,
-        'currency_id' => $currency->id,
-        'is_active' => true,
-    ]);
+    \App\Models\ChartOfAccount::firstOrCreate(
+        ['account_code' => '1151'],
+        [
+            'account_name' => 'Stock In Hand',
+            'account_type_id' => $accountType->id,
+            'currency_id' => $currency->id,
+            'is_active' => true,
+        ]
+    );
+    \App\Models\ChartOfAccount::firstOrCreate(
+        ['account_code' => '1155'],
+        [
+            'account_name' => 'Van Stock',
+            'account_type_id' => $accountType->id,
+            'currency_id' => $currency->id,
+            'is_active' => true,
+        ]
+    );
 
     $stockBatch = \App\Models\StockBatch::create([
         'product_id' => $product->id,
@@ -57,6 +62,7 @@ it('creates van stock batches when goods issue is posted', function () {
         'receipt_date' => now(),
         'manufacturing_date' => now()->subMonth(),
         'unit_cost' => 150.00,
+        'selling_price' => 200.00,
         'expiry_date' => now()->addYear(),
         'status' => 'active',
     ]);

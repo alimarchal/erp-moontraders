@@ -312,6 +312,7 @@
                                                 </span>
                                             </a>
                                         </x-tooltip>
+                                        ({{ str_replace(['Warehouse - I', 'Warehouse - II', 'Warehouse'], ['W-I', 'W-II', 'W'], $settlement->warehouse->warehouse_name) }})
                                     </td>
 
                                     <td class="text-center text-black">
@@ -338,7 +339,7 @@
                                     <td class="text-left text-black">
 
                                         {{ $settlement->employee->name ?? 'N/A' }}
-                                        <!-- {{ str_replace(['Warehouse - I', 'Warehouse - II', 'Warehouse'], ['W-I', 'W-II', 'W'], $settlement->warehouse->warehouse_name) }} -->
+
 
                                     </td>
 
@@ -361,8 +362,8 @@
                                         $netProfit = $settlement->gross_profit - $settlement->expenses_claimed;
                                     @endphp
                                     <!-- <td class="text-right font-mono">
-                                                                                        {{ number_format($settlement->gross_profit, 2) }}
-                                                                                    </td> -->
+                                                                                                                                        {{ number_format($settlement->gross_profit, 2) }}
+                                                                                                                                    </td> -->
                                     <td class="text-right font-mono text-orange-600">
                                         {{ number_format($settlement->expenses_claimed, 2) }}
                                     </td>
@@ -395,8 +396,8 @@
                                 </td>
 
                                 <!-- <td class="py-2 px-2 text-right font-mono">
-                                                            {{ number_format($totals->total_gross_profit, 2) }}
-                                                        </td> -->
+                                                                                    {{ number_format($totals->total_gross_profit, 2) }}
+                                                                                </td> -->
                                 <td class="py-2 px-2 text-right font-mono">
                                     {{ number_format($totals->total_expenses, 2) }}
                                 </td>

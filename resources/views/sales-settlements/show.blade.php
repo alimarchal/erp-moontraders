@@ -652,6 +652,10 @@
                         </div>
                     </div>
 
+                    {{-- Expense Details Group --}}
+                    <div class="border-2 border-orange-300 rounded-lg p-2 mt-2">
+                        <h3 class="font-bold text-lg text-center text-orange-700 mb-2 border-b border-orange-300 pb-1">Expense Details</h3>
+
                     {{-- Row 1: AMR Powder | AMR Liquid --}}
                     @php
                         $amrPowderCount = $settlement->amrPowders->count();
@@ -811,29 +815,63 @@
                     </div>
 
                     {{-- Other Expenses --}}
-                    <div>
-                        <h4 class="font-bold text-md mb-2 mt-2 text-center">Expenses</h4>
+                    @php
+                        // Define predefined expense accounts in order (matching create/edit page)
+                        $predefinedExpenses = [
+                            ['id' => 72, 'label' => 'Toll Tax', 'code' => '5272'],
+                            ['id' => 70, 'label' => 'AMR Powder', 'code' => '5252'],
+                            ['id' => 71, 'label' => 'AMR Liquid', 'code' => '5262'],
+                            ['id' => 74, 'label' => 'Scheme Discount Expense', 'code' => '5292'],
+                            ['id' => 20, 'label' => 'Advance Tax', 'code' => '1161'],
+                            ['id' => 73, 'label' => 'Food/Salesman/Loader Charges', 'code' => '5282'],
+                            ['id' => 76, 'label' => 'Percentage Expense', 'code' => '5223'],
+                            ['id' => 58, 'label' => 'Miscellaneous Expenses', 'code' => '5221'],
+                        ];
+                        $predefinedIds = collect($predefinedExpenses)->pluck('id')->toArray();
+                        
+                        // Get saved expense amounts indexed by account ID
+                        $savedExpenseAmounts = $settlement->expenses->keyBy('expense_account_id');
+                        
+                        // Get any additional expenses not in predefined list
+                        $additionalExpenses = $settlement->expenses->filter(function($expense) use ($predefinedIds) {
+                            return !in_array($expense->expense_account_id, $predefinedIds);
+                        });
+                    @endphp
+                    <div class="mt-1">
+                        <h4 class="font-bold text-md mb-2 text-center">Other Expenses</h4>
                         <table class="report-table w-full">
                             <thead>
                                 <tr class="bg-gray-100">
                                     <th class="text-center w-10">Sr.#</th>
-                                    <th class="text-left">Description / Account</th>
+                                    <th class="text-left">Expense Account</th>
                                     <th class="text-left">COA Code</th>
                                     <th class="text-right">Amount</th>
                                 </tr>
                             </thead>
                             <tbody class="tabular-nums">
                                 @php $expCounter = 1; @endphp
-                                @forelse($settlement->expenses as $expense)
+                                {{-- Show predefined expenses in order --}}
+                                @foreach($predefinedExpenses as $predef)
+                                    @php 
+                                        $savedExpense = $savedExpenseAmounts->get($predef['id']);
+                                        $amount = $savedExpense ? $savedExpense->amount : 0;
+                                    @endphp
+                                    <tr>
+                                        <td class="text-center">{{ $expCounter++ }}</td>
+                                        <td>{{ $predef['label'] }}</td>
+                                        <td>{{ $predef['code'] }}</td>
+                                        <td class="text-right">{{ number_format($amount, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                                {{-- Show additional expenses (not in predefined list) --}}
+                                @foreach($additionalExpenses as $expense)
                                     <tr>
                                         <td class="text-center">{{ $expCounter++ }}</td>
                                         <td>{{ $expense->expenseAccount->account_name ?? 'Unknown' }}</td>
                                         <td>{{ $expense->expenseAccount->account_code ?? '-' }}</td>
                                         <td class="text-right">{{ number_format($expense->amount, 2) }}</td>
                                     </tr>
-                                @empty
-                                    <tr><td colspan="4" class="text-center italic text-gray-500">No other expenses recorded</td></tr>
-                                @endforelse
+                                @endforeach
                             </tbody>
                             <tfoot class="bg-gray-50 font-bold tabular-nums">
                                 <tr>
@@ -843,6 +881,7 @@
                             </tfoot>
                         </table>
                     </div>
+                    </div> {{-- End of Expense Details Group --}}
 
                     {{-- Cash Detail & Financial Summary (Side by Side due to smaller width requirement) --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">

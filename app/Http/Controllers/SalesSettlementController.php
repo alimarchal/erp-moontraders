@@ -854,6 +854,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'advanceTaxes.customer',
             'amrPowders.product',
             'amrLiquids.product',
+            'percentageExpenses.customer',
             'expenses',
         ]);
 
@@ -939,6 +940,14 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'amount' => (float) $l->amount,
         ]);
 
+        $percentageExpensesDecoded = $salesSettlement->percentageExpenses->map(fn($p) => [
+            'customer_id' => $p->customer_id,
+            'customer_name' => $p->customer?->customer_name . ' (' . $p->customer?->customer_code . ')' ?? 'Unknown',
+            'invoice_number' => $p->invoice_number,
+            'amount' => (float) $p->amount,
+            'notes' => $p->notes,
+        ]);
+
         $cashDenom = $salesSettlement->cashDenomination;
 
         $savedExpensesData = $salesSettlement->expenses->map(fn($e) => [
@@ -970,6 +979,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'advanceTaxesDecoded' => $advanceTaxesDecoded,
             'amrPowdersDecoded' => $amrPowdersDecoded,
             'amrLiquidsDecoded' => $amrLiquidsDecoded,
+            'percentageExpensesDecoded' => $percentageExpensesDecoded,
             'cashDenom' => $cashDenom,
             'savedExpensesData' => $savedExpensesData,
         ]);
@@ -1132,6 +1142,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $salesSettlement->advanceTaxes()->delete();
             $salesSettlement->amrPowders()->delete();
             $salesSettlement->amrLiquids()->delete();
+            $salesSettlement->percentageExpenses()->delete();
 
             // Create cash denomination record
             SalesSettlementCashDenomination::create([
@@ -1260,6 +1271,19 @@ class SalesSettlementController extends Controller implements HasMiddleware
                         'quantity' => $liquid['quantity'],
                         'amount' => $liquid['amount'],
                         'notes' => $liquid['notes'] ?? null,
+                    ]);
+                }
+            }
+
+            // Create Percentage Expense breakdown records if any
+            if (!empty($request->percentage_expenses) && is_array($request->percentage_expenses)) {
+                foreach ($request->percentage_expenses as $percentageExpense) {
+                    SalesSettlementPercentageExpense::create([
+                        'sales_settlement_id' => $salesSettlement->id,
+                        'customer_id' => $percentageExpense['customer_id'],
+                        'invoice_number' => $percentageExpense['invoice_number'] ?? null,
+                        'amount' => $percentageExpense['amount'],
+                        'notes' => $percentageExpense['notes'] ?? null,
                     ]);
                 }
             }

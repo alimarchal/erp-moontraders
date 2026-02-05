@@ -17,7 +17,14 @@ class ChartOfAccountFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'account_code' => fake()->unique()->numerify('####'),
+            'account_name' => fake()->words(3, true),
+            'description' => fake()->sentence(),
+            'is_group' => false,
+            'is_active' => true,
+            'normal_balance' => fake()->randomElement(['Debit', 'Credit']),
+            'account_type_id' => \App\Models\AccountType::factory(),
+            'currency_id' => \App\Models\Currency::factory(),
         ];
     }
 }

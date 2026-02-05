@@ -17,7 +17,9 @@ class AccountTypeFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'type_name' => fake()->word(),
+            'report_group' => 'BalanceSheet',
+            'description' => fake()->sentence(),
         ];
     }
 }

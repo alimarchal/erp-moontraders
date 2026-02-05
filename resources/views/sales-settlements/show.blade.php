@@ -980,7 +980,7 @@
                                             <td class="px-1 py-0.5">Cash Sale Amount</td>
                                             <td class="text-right px-1 py-0.5 text-emerald-700 font-semibold">{{ number_format($cashSalesAmount, 2) }}</td>
                                         </tr>
-                                        <tr class="bg-gray-50">
+                                        <tr>
                                             <td class="text-center px-1 py-0.5">5</td>
                                             <td class="px-1 py-0.5">Net Sale (Sold Items Value)</td>
                                             <td class="text-right px-1 py-0.5 font-semibold">{{ number_format($netSale, 2) }}</td>
@@ -1005,12 +1005,12 @@
                                             <td class="px-1 py-0.5">Recovery (Bank/Online)</td>
                                             <td class="text-right px-1 py-0.5 text-blue-700 font-semibold">{{ number_format($settlement->recoveries->where('payment_mode', '!=', 'Cash')->sum('amount'), 2) }}</td>
                                         </tr>
-                                        <tr class="bg-blue-50 border-y-2 border-blue-200">
+                                        <tr>
                                             <td class="text-center px-1 py-0.5">10</td>
-                                            <td class="px-1 py-0.5 font-semibold text-blue-900">Total Sale Amount</td>
-                                            <td class="text-right px-1 py-0.5 font-bold text-blue-800">{{ number_format($totalSaleAmount, 2) }}</td>
+                                            <td class="px-1 py-0.5 font-semibold">Total Sale Amount</td>
+                                            <td class="text-right px-1 py-0.5 font-bold">{{ number_format($totalSaleAmount, 2) }}</td>
                                         </tr>
-                                        <tr class="bg-gray-50">
+                                        <tr>
                                             <td class="text-center px-1 py-0.5">11</td>
                                             <td class="px-1 py-0.5">Expected Cash (Sales + Cash Recoveries)</td>
                                             <td class="text-right px-1 py-0.5 font-semibold">{{ number_format($expectedCashGross, 2) }}</td>
@@ -1020,19 +1020,19 @@
                                             <td class="px-1 py-0.5 text-red-700">Less: Expenses</td>
                                             <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($totalDeductions, 2) }}</td>
                                         </tr>
-                                        <tr class="bg-indigo-50 border-y-2 border-indigo-200">
+                                        <tr>
                                             <td class="text-center px-1 py-0.5">13</td>
-                                            <td class="px-1 py-0.5 font-semibold text-indigo-900">Expected Cash (After Expenses)</td>
-                                            <td class="text-right px-1 py-0.5 font-bold text-indigo-900">{{ number_format($expectedCashNet, 2) }}</td>
+                                            <td class="px-1 py-0.5 font-semibold">Expected Cash (After Expenses)</td>
+                                            <td class="text-right px-1 py-0.5 font-bold">{{ number_format($expectedCashNet, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">14</td>
                                             <td class="px-1 py-0.5">Physical Cash Submitted (Denominations)</td>
                                             <td class="text-right px-1 py-0.5 text-emerald-700 font-semibold">{{ number_format($actualPhysicalCash, 2) }}</td>
                                         </tr>
-                                        <tr class="bg-purple-50 border-y-2 border-purple-200">
+                                        <tr>
                                             <td class="text-center px-1 py-0.5">15</td>
-                                            <td class="px-1 py-0.5 font-semibold text-purple-900">Short/Excess</td>
+                                            <td class="px-1 py-0.5 font-semibold">Short/Excess</td>
                                             <td class="text-right px-1 py-0.5 font-bold {{ $shortExcess < 0 ? 'text-red-700' : 'text-green-700' }}">{{ number_format($shortExcess, 2) }}</td>
                                         </tr>
                                     </tbody>
@@ -1060,12 +1060,12 @@
                                             <td class="px-1 py-0.5 text-red-700">Less: Cost of Goods Sold (COGS)</td>
                                             <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($totalCOGS, 2) }}</td>
                                         </tr>
-                                        <tr class="bg-green-50 border-y border-green-200">
+                                        <tr>
                                             <td class="text-center px-1 py-0.5">3</td>
-                                            <td class="px-1 py-0.5 font-semibold text-green-800">Gross Profit (Sales - COGS)</td>
+                                            <td class="px-1 py-0.5 font-semibold text-green-700">Gross Profit (Sales - COGS)</td>
                                             <td class="text-right px-1 py-0.5 font-bold text-green-700">{{ number_format($grossProfit, 2) }}</td>
                                         </tr>
-                                        <tr class="bg-gray-50">
+                                        <tr>
                                             <td class="text-center px-1 py-0.5">4</td>
                                             <td class="px-1 py-0.5 text-gray-600 pl-4">Gross Margin %</td>
                                             <td class="text-right px-1 py-0.5 font-semibold">{{ number_format($grossMargin, 2) }}%</td>
@@ -1075,15 +1075,15 @@
                                             <td class="px-1 py-0.5 text-red-700">Less: Operating Expenses</td>
                                             <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($totalExpenses, 2) }}</td>
                                         </tr>
-                                        <tr class="bg-gradient-to-r from-emerald-50 to-teal-50 border-y-2 border-emerald-300">
+                                        <tr>
                                             <td class="text-center px-1 py-0.5">6</td>
-                                            <td class="px-1 py-0.5 font-semibold text-emerald-900">Net Profit (After Expenses)</td>
-                                            <td class="text-right px-1 py-0.5 font-bold {{ $netProfit >= 0 ? 'text-emerald-700' : 'text-red-700' }}">{{ number_format($netProfit, 2) }}</td>
+                                            <td class="px-1 py-0.5 font-semibold {{ $netProfit >= 0 ? 'text-green-700' : 'text-red-700' }}">Net Profit (After Expenses)</td>
+                                            <td class="text-right px-1 py-0.5 font-bold {{ $netProfit >= 0 ? 'text-green-700' : 'text-red-700' }}">{{ number_format($netProfit, 2) }}</td>
                                         </tr>
-                                        <tr class="bg-gray-50">
+                                        <tr>
                                             <td class="text-center px-1 py-0.5">7</td>
                                             <td class="px-1 py-0.5 text-gray-600 pl-4">Net Margin %</td>
-                                            <td class="text-right px-1 py-0.5 font-semibold {{ $netMargin >= 0 ? 'text-emerald-700' : 'text-red-700' }}">{{ number_format($netMargin, 2) }}%</td>
+                                            <td class="text-right px-1 py-0.5 font-semibold {{ $netMargin >= 0 ? 'text-green-700' : 'text-red-700' }}">{{ number_format($netMargin, 2) }}%</td>
                                         </tr>
                                     </tbody>
                                 </table>

@@ -398,7 +398,7 @@
                 </table>
 
                 {{-- Full Width Financial Tables --}}
-                <div class="space-y-6 text-black">
+                <div class="space-y-1 text-black">
                     
                     @php
                         $csCount = $settlement->creditSales->count();
@@ -652,14 +652,173 @@
                         </div>
                     </div>
 
-                    {{-- Expenses --}}
+                    {{-- Row 1: AMR Powder | AMR Liquid --}}
+                    @php
+                        $amrPowderCount = $settlement->amrPowders->count();
+                        $amrLiquidCount = $settlement->amrLiquids->count();
+                        $maxRowsAmr = max($amrPowderCount, $amrLiquidCount, 1);
+                    @endphp
+
+                    <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2">
+                        {{-- AMR Powder --}}
+                        <div>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">AMR Powder</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center w-6 px-1 py-0.5">#</th>
+                                        <th class="text-left px-1 py-0.5">
+                                            <span class="print:hidden"><x-tooltip text="Product Name">SKU</x-tooltip></span>
+                                            <span class="hidden print:inline">Product</span>
+                                        </th>
+                                        <th class="text-right px-1 py-0.5">Qty</th>
+                                        <th class="text-right px-1 py-0.5">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @for($i = 0; $i < $maxRowsAmr; $i++)
+                                        @php $powder = $settlement->amrPowders->get($i); @endphp
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
+                                            <td class="px-1 py-0.5">{{ $powder?->product->product_name ?? '-' }}</td>
+                                            <td class="text-right px-1 py-0.5">{{ $powder ? number_format($powder->quantity, 2) : '-' }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ $powder ? number_format($powder->amount, 2) : '-' }}</td>
+                                        </tr>
+                                    @endfor
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                    <tr>
+                                        <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
+                                        <td class="text-right px-1 py-0.5">{{ number_format($settlement->amrPowders->sum('amount'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        {{-- AMR Liquid --}}
+                        <div>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">AMR Liquid</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center w-6 px-1 py-0.5">#</th>
+                                        <th class="text-left px-1 py-0.5">
+                                            <span class="print:hidden"><x-tooltip text="Product Name">SKU</x-tooltip></span>
+                                            <span class="hidden print:inline">Product</span>
+                                        </th>
+                                        <th class="text-right px-1 py-0.5">Qty</th>
+                                        <th class="text-right px-1 py-0.5">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @for($i = 0; $i < $maxRowsAmr; $i++)
+                                        @php $liquid = $settlement->amrLiquids->get($i); @endphp
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
+                                            <td class="px-1 py-0.5">{{ $liquid?->product->product_name ?? '-' }}</td>
+                                            <td class="text-right px-1 py-0.5">{{ $liquid ? number_format($liquid->quantity, 2) : '-' }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ $liquid ? number_format($liquid->amount, 2) : '-' }}</td>
+                                        </tr>
+                                    @endfor
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                    <tr>
+                                        <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
+                                        <td class="text-right px-1 py-0.5">{{ number_format($settlement->amrLiquids->sum('amount'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Row 2: Advance Tax | Percentage Expense --}}
+                    @php
+                        $advTaxCount = $settlement->advanceTaxes->count();
+                        $pctExpCount = $settlement->percentageExpenses->count();
+                        $maxRowsTax = max($advTaxCount, $pctExpCount, 1);
+                    @endphp
+
+                    <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2 mt-1">
+                        {{-- Advance Tax --}}
+                        <div>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Advance Tax</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center w-6 px-1 py-0.5">#</th>
+                                        <th class="text-left px-1 py-0.5">
+                                            <span class="print:hidden"><x-tooltip text="Customer Name (Code)">Customer</x-tooltip></span>
+                                            <span class="hidden print:inline">Customer</span>
+                                        </th>
+                                        <th class="text-right px-1 py-0.5">Sale</th>
+                                        <th class="text-right px-1 py-0.5">Tax</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @for($i = 0; $i < $maxRowsTax; $i++)
+                                        @php $tax = $settlement->advanceTaxes->get($i); @endphp
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
+                                            <td class="px-1 py-0.5">{{ $tax ? $tax->customer->customer_name . ' (' . $tax->customer->customer_code . ')' : '-' }}</td>
+                                            <td class="text-right px-1 py-0.5">{{ $tax ? number_format($tax->sale_amount, 2) : '-' }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ $tax ? number_format($tax->tax_amount, 2) : '-' }}</td>
+                                        </tr>
+                                    @endfor
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                    <tr>
+                                        <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
+                                        <td class="text-right px-1 py-0.5">{{ number_format($settlement->advanceTaxes->sum('tax_amount'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        {{-- Percentage Expense --}}
+                        <div>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">% Expense</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center w-6 px-1 py-0.5">#</th>
+                                        <th class="text-left px-1 py-0.5">
+                                            <span class="print:hidden"><x-tooltip text="Customer Name (Code)">Customer</x-tooltip></span>
+                                            <span class="hidden print:inline">Customer</span>
+                                        </th>
+                                        <th class="text-left px-1 py-0.5">Inv #</th>
+                                        <th class="text-right px-1 py-0.5">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @for($i = 0; $i < $maxRowsTax; $i++)
+                                        @php $pctExp = $settlement->percentageExpenses->get($i); @endphp
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
+                                            <td class="px-1 py-0.5">{{ $pctExp ? $pctExp->customer->customer_name . ' (' . $pctExp->customer->customer_code . ')' : '-' }}</td>
+                                            <td class="px-1 py-0.5">{{ $pctExp?->invoice_number ?? '-' }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ $pctExp ? number_format($pctExp->amount, 2) : '-' }}</td>
+                                        </tr>
+                                    @endfor
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                    <tr>
+                                        <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
+                                        <td class="text-right px-1 py-0.5">{{ number_format($settlement->percentageExpenses->sum('amount'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+
+                    {{-- Other Expenses --}}
                     <div>
-                        <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Expenses Breakdown</h4>
+                        <h4 class="font-bold text-md mb-2 mt-2 text-center">Expenses</h4>
                         <table class="report-table w-full">
                             <thead>
                                 <tr class="bg-gray-100">
                                     <th class="text-center w-10">Sr.#</th>
                                     <th class="text-left">Description / Account</th>
+                                    <th class="text-left">COA Code</th>
                                     <th class="text-right">Amount</th>
                                 </tr>
                             </thead>
@@ -669,26 +828,17 @@
                                     <tr>
                                         <td class="text-center">{{ $expCounter++ }}</td>
                                         <td>{{ $expense->expenseAccount->account_name ?? 'Unknown' }}</td>
+                                        <td>{{ $expense->expenseAccount->account_code ?? '-' }}</td>
                                         <td class="text-right">{{ number_format($expense->amount, 2) }}</td>
                                     </tr>
                                 @empty
-                                    @if($settlement->advanceTaxes->count() == 0)
-                                        <tr><td colspan="3" class="text-center italic text-gray-500">No expenses recorded</td></tr>
-                                    @endif
+                                    <tr><td colspan="4" class="text-center italic text-gray-500">No other expenses recorded</td></tr>
                                 @endforelse
-                                
-                                @foreach($settlement->advanceTaxes as $tax)
-                                    <tr>
-                                        <td class="text-center">{{ $expCounter++ }}</td>
-                                        <td>Adv Tax: {{ $tax->customer->customer_name }} @if($tax->invoice_number) ({{$tax->invoice_number}}) @endif</td>
-                                        <td class="text-right">{{ number_format($tax->tax_amount, 2) }}</td>
-                                    </tr>
-                                @endforeach
                             </tbody>
                             <tfoot class="bg-gray-50 font-bold tabular-nums">
                                 <tr>
-                                    <td colspan="2" class="text-right">Total Expenses:</td>
-                                    <td class="text-right">{{ number_format($totalExpenses + $advanceTaxTotal, 2) }}</td>
+                                    <td colspan="3" class="text-right">Total:</td>
+                                    <td class="text-right">{{ number_format($settlement->expenses->sum('amount'), 2) }}</td>
                                 </tr>
                             </tfoot>
                         </table>

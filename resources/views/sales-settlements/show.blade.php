@@ -666,7 +666,7 @@
                     <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2">
                         {{-- AMR Powder --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">AMR Powder</h4>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">AMR Powder (5252)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -701,7 +701,7 @@
 
                         {{-- AMR Liquid --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">AMR Liquid</h4>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">AMR Liquid (5262)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -745,7 +745,7 @@
                     <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2 mt-1">
                         {{-- Advance Tax --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Advance Tax</h4>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Advance Tax (1161)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -862,7 +862,14 @@
                                         <tr>
                                             <td class="text-center px-1 py-0.5">{{ $expCounter++ }}</td>
                                             <td class="px-1 py-0.5">{{ $predef['label'] }}</td>
-                                            <td class="px-1 py-0.5">{{ $predef['code'] }}</td>
+                                            <td class="px-1 py-0.5">
+                                                @if(in_array($predef['id'], [70, 71, 20, 76]))
+                                                    <span class="print:hidden underline decoration-dotted cursor-help"><x-tooltip text="See detailed breakdown in the table above">{{ $predef['code'] }}</x-tooltip></span>
+                                                    <span class="hidden print:inline">{{ $predef['code'] }}</span>
+                                                @else
+                                                    {{ $predef['code'] }}
+                                                @endif
+                                            </td>
                                             <td class="text-right font-bold px-1 py-0.5">{{ number_format($amount, 2) }}</td>
                                         </tr>
                                     @endforeach

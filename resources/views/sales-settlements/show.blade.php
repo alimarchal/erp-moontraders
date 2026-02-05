@@ -302,12 +302,14 @@
                 
                 {{-- Report Header --}}
                 <div class="mb-2 report-header">
-                    <table class="report-table w-full text-sm">
+                    <table class="w-full text-sm">
                         <tr>
                             <td class="text-center font-extrabold text-xl" colspan="8">Moon Traders</td>
                         </tr>
                         <tr>
-                            <td class="text-center font-bold text-lg" colspan="8">Sales Settlement</td>
+                            <td class="text-center font-bold text-lg" colspan="8">
+                                Sales Settlement <span class="text-sm font-normal">({{ $settlement->status }})</span>
+                            </td>
                         </tr>
                         <tr>
                             <td class="text-left font-semibold">Settlement #:</td>
@@ -326,12 +328,10 @@
                             <td class="text-left" colspan="3">{{ $settlement->warehouse->warehouse_name }}</td>
                         </tr>
                         <tr>
-                            <td class="text-left font-semibold">Status:</td>
-                            <td class="text-left capitalize">{{ $settlement->status }}</td>
                             <td class="text-left font-semibold">Goods Issue:</td>
                             <td class="text-left">{{ $settlement->goodsIssue->issue_number }}</td>
                             <td class="text-left font-semibold">GI Date/Time:</td>
-                            <td class="text-left" colspan="3">{{ $settlement->goodsIssue->issue_date ? \Carbon\Carbon::parse($settlement->goodsIssue->issue_date)->format('d-M-Y') : '' }} {{ $settlement->goodsIssue->created_at ? $settlement->goodsIssue->created_at->format('h:i A') : '' }}</td>
+                            <td class="text-left" colspan="5">{{ $settlement->goodsIssue->issue_date ? \Carbon\Carbon::parse($settlement->goodsIssue->issue_date)->format('d-M-Y') : '' }} {{ $settlement->goodsIssue->created_at ? $settlement->goodsIssue->created_at->format('h:i A') : '' }}</td>
                         </tr>
                         <tr>
                             <td class="text-left font-semibold">GI Issued By:</td>
@@ -345,7 +345,7 @@
                     <thead>
                         <tr class="bg-gray-100">
                             <th class="text-center w-10">Sr#</th>
-                            <th class="text-left">SKU / Batch / Code</th>
+                            <th class="text-left">SKU</th>
                             <th class="text-right">B/F (In)</th>
                             <th class="text-right">Qty Issued</th>
                             <th class="text-left">Batch Breakdown</th>
@@ -361,8 +361,8 @@
                             <tr>
                                 <td class="text-center">{{ $index + 1 }}</td>
                                 <td>
-                                    <div class="font-semibold">{{ $item->product->product_code }}</div>
-                                    <div class="text-xs">{{ $item->product->product_name }}</div>
+                                    <div class="font-semibold">{{ $item->product->product_name }}</div>
+                                    <!-- <div class="text-xs">{{ $item->product->product_name }}</div> -->
 
                                 </td>
                                 <td class="text-right">
@@ -375,13 +375,11 @@
                                         <div class="text-xs space-y-1">
 
                                             @foreach($item->batches as $b)
-                                            <span class="tabular-nums rounded">{{ $b->batch_code ?? 'N/A' }}</span><br>
-                                            <span>
+                                            <span class="tabular-nums text-black font-bold">{{ $b->batch_code ?? 'N/A' }}
                                                 {{ number_format($b->quantity_issued, 0) }} × {{ number_format($b->selling_price, 2) }}
                                                 ({{  $item->product->uom->symbol }}) / 
                                                 @if($b->is_promotional) (Promo) @endif
-                                                = <span class="text-black font-bold">{{ number_format($b->quantity_issued * $b->selling_price, 2) }}</span>
-                                            </span>
+                                                = {{ number_format($b->quantity_issued * $b->selling_price, 2) }}</span><br>
                                             @endforeach
                                         </div>
                                     @else

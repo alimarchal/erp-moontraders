@@ -301,15 +301,43 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0 p-4">
                 
                 {{-- Report Header --}}
-                <div class="text-center font-extrabold mb-4 report-header">
-                    <h1 class="text-xl">Moon Traders</h1>
-                    <h2 class="text-lg">Sales Settlement</h2>
-                    <div class="mt-2 text-sm font-normal">
-                        <p><strong>Settlement #:</strong> {{ $settlement->settlement_number }} | <strong>Date:</strong> {{ \Carbon\Carbon::parse($settlement->settlement_date)->format('d-M-Y') }}</p>
-                        <p><strong>Salesman:</strong> {{ $settlement->employee->name }} | <strong>Vehicle:</strong> {{ $settlement->vehicle->registration_number }}</p>
-                        <p><strong>Warehouse:</strong> {{ $settlement->warehouse->warehouse_name }} | <strong>Goods Issue:</strong> {{ $settlement->goodsIssue->issue_number }}</p>
-                        <p><strong>Status:</strong> <span class="capitalize">{{ $settlement->status }}</span></p>
-                    </div>
+                <div class="mb-2 report-header">
+                    <table class="report-table w-full text-sm">
+                        <tr>
+                            <td class="text-center font-extrabold text-xl" colspan="8">Moon Traders</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center font-bold text-lg" colspan="8">Sales Settlement</td>
+                        </tr>
+                        <tr>
+                            <td class="text-left font-semibold">Settlement #:</td>
+                            <td class="text-left">{{ $settlement->settlement_number }}</td>
+                            <td class="text-left font-semibold">Date/Time:</td>
+                            <td class="text-left">{{ \Carbon\Carbon::parse($settlement->settlement_date)->format('d-M-Y') }} {{ $settlement->created_at ? $settlement->created_at->format('h:i A') : '' }}</td>
+                            <td class="text-left font-semibold">Created By:</td>
+                            <td class="text-left" colspan="3">{{ $settlement->creator->name ?? '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-left font-semibold">Salesman:</td>
+                            <td class="text-left">{{ $settlement->employee->name }}</td>
+                            <td class="text-left font-semibold">Vehicle:</td>
+                            <td class="text-left">{{ $settlement->vehicle->registration_number }}</td>
+                            <td class="text-left font-semibold">Warehouse:</td>
+                            <td class="text-left" colspan="3">{{ $settlement->warehouse->warehouse_name }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-left font-semibold">Status:</td>
+                            <td class="text-left capitalize">{{ $settlement->status }}</td>
+                            <td class="text-left font-semibold">Goods Issue:</td>
+                            <td class="text-left">{{ $settlement->goodsIssue->issue_number }}</td>
+                            <td class="text-left font-semibold">GI Date/Time:</td>
+                            <td class="text-left" colspan="3">{{ $settlement->goodsIssue->issue_date ? \Carbon\Carbon::parse($settlement->goodsIssue->issue_date)->format('d-M-Y') : '' }} {{ $settlement->goodsIssue->created_at ? $settlement->goodsIssue->created_at->format('h:i A') : '' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-left font-semibold">GI Issued By:</td>
+                            <td class="text-left" colspan="7">{{ $settlement->goodsIssue->creator->name ?? $settlement->goodsIssue->issuedBy->name ?? '-' }}</td>
+                        </tr>
+                    </table>
                 </div>
 
                 {{-- Product Table --}}

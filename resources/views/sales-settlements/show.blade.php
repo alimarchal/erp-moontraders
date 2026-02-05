@@ -70,7 +70,7 @@
 
             @media print {
                 @page {
-                    margin: 15mm 5mm 20mm 5mm;
+                    margin: 5mm 5mm 15mm 5mm;
 
                     @bottom-center {
                         content: "Page " counter(page) " of " counter(pages);

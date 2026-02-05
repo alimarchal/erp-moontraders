@@ -17,6 +17,7 @@ use App\Models\SalesSettlementCreditSale;
 use App\Models\SalesSettlementExpense;
 use App\Models\SalesSettlementItem;
 use App\Models\SalesSettlementItemBatch;
+use App\Models\SalesSettlementPercentageExpense;
 use App\Models\SalesSettlementRecovery;
 use App\Models\StockBatch;
 use App\Models\VanStockBalance;
@@ -703,6 +704,19 @@ class SalesSettlementController extends Controller implements HasMiddleware
                         'quantity' => $liquid['quantity'],
                         'amount' => $liquid['amount'],
                         'notes' => $liquid['notes'] ?? null,
+                    ]);
+                }
+            }
+
+            // Create Percentage Expense breakdown records if any
+            if (!empty($request->percentage_expenses) && is_array($request->percentage_expenses)) {
+                foreach ($request->percentage_expenses as $percentageExpense) {
+                    SalesSettlementPercentageExpense::create([
+                        'sales_settlement_id' => $settlement->id,
+                        'customer_id' => $percentageExpense['customer_id'],
+                        'invoice_number' => $percentageExpense['invoice_number'] ?? null,
+                        'amount' => $percentageExpense['amount'],
+                        'notes' => $percentageExpense['notes'] ?? null,
                     ]);
                 }
             }
@@ -1394,6 +1408,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
             $salesSettlement->creditSales()->forceDelete();
             $salesSettlement->advanceTaxes()->forceDelete();
+            $salesSettlement->percentageExpenses()->forceDelete();
             $salesSettlement->expenses()->forceDelete();
             $salesSettlement->bankTransfers()->forceDelete();
             $salesSettlement->cheques()->forceDelete();

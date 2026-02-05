@@ -128,6 +128,17 @@
 
                 .report-table tr {
                     page-break-inside: avoid;
+                    break-inside: avoid;
+                }
+                
+                tr {
+                    page-break-inside: avoid !important;
+                    break-inside: avoid !important;
+                }
+                
+                td, th {
+                    page-break-inside: avoid !important; 
+                    break-inside: avoid !important;
                 }
 
                 .report-table th,
@@ -973,7 +984,7 @@
                     </div> {{-- End of Expense Details Group --}}
 
                     {{-- Financial Summary --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                    <div class="grid grid-cols-2 md:grid-cols-2 gap-2 pt-2">
                             {{-- Sales Summary (Matching Create/Edit Sequence) --}}
                             <div>
                                 <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Sales Summary</h4>

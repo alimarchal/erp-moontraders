@@ -362,8 +362,8 @@
                                         $netProfit = $settlement->gross_profit - $settlement->expenses_claimed;
                                     @endphp
                                     <!-- <td class="text-right tabular-nums">
-                                                                                                                                                                                                {{ number_format($settlement->gross_profit, 2) }}
-                                                                                                                                                                                            </td> -->
+                                                                                                                                                                                                        {{ number_format($settlement->gross_profit, 2) }}
+                                                                                                                                                                                                    </td> -->
                                     <td class="text-right tabular-nums text-orange-600">
                                         {{ number_format($settlement->expenses_claimed, 2) }}
                                     </td>
@@ -396,8 +396,8 @@
                                 </td>
 
                                 <!-- <td class="py-2 px-2 text-right tabular-nums">
-                                                                                                                {{ number_format($totals->total_gross_profit, 2) }}
-                                                                                                            </td> -->
+                                                                                                                    {{ number_format($totals->total_gross_profit, 2) }}
+                                                                                                                </td> -->
                                 <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals->total_expenses, 2) }}
                                 </td>

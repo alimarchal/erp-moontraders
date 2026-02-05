@@ -847,7 +847,7 @@
                                     <tr class="bg-gray-100">
                                         <th class="text-center w-6 px-1 py-0.5">#</th>
                                         <th class="text-left px-1 py-0.5">Expense Account</th>
-                                        <th class="text-left px-1 py-0.5">COA Code</th>
+                                        <th class="text-center px-1 py-0.5">COA Code</th>
                                         <th class="text-right px-1 py-0.5">Amount</th>
                                     </tr>
                                 </thead>
@@ -862,7 +862,7 @@
                                         <tr>
                                             <td class="text-center px-1 py-0.5">{{ $expCounter++ }}</td>
                                             <td class="px-1 py-0.5">{{ $predef['label'] }}</td>
-                                            <td class="px-1 py-0.5">
+                                            <td class="text-center px-1 py-0.5">
                                                 @if(in_array($predef['id'], [70, 71, 20, 76]))
                                                     <span class="print:hidden underline decoration-dotted cursor-help"><x-tooltip text="See detailed breakdown in the table above">{{ $predef['code'] }}</x-tooltip></span>
                                                     <span class="hidden print:inline">{{ $predef['code'] }}</span>
@@ -878,7 +878,7 @@
                                         <tr>
                                             <td class="text-center px-1 py-0.5">{{ $expCounter++ }}</td>
                                             <td class="px-1 py-0.5">{{ $expense->expenseAccount->account_name ?? 'Unknown' }}</td>
-                                            <td class="px-1 py-0.5">{{ $expense->expenseAccount->account_code ?? '-' }}</td>
+                                            <td class="text-center px-1 py-0.5">{{ $expense->expenseAccount->account_code ?? '-' }}</td>
                                             <td class="text-right font-bold px-1 py-0.5">{{ number_format($expense->amount, 2) }}</td>
                                         </tr>
                                     @endforeach
@@ -907,13 +907,13 @@
                                 <tbody class="tabular-nums">
                                     @php
                                         $denominations = [
-                                            ['label' => '5000', 'qty' => $cashDenominations?->denom_5000 ?? 0, 'value' => 5000],
-                                            ['label' => '1000', 'qty' => $cashDenominations?->denom_1000 ?? 0, 'value' => 1000],
-                                            ['label' => '500', 'qty' => $cashDenominations?->denom_500 ?? 0, 'value' => 500],
-                                            ['label' => '100', 'qty' => $cashDenominations?->denom_100 ?? 0, 'value' => 100],
-                                            ['label' => '50', 'qty' => $cashDenominations?->denom_50 ?? 0, 'value' => 50],
-                                            ['label' => '20', 'qty' => $cashDenominations?->denom_20 ?? 0, 'value' => 20],
-                                            ['label' => '10', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 10],
+                                            ['label' => '5000 (Five Thousand Rupees)', 'qty' => $cashDenominations?->denom_5000 ?? 0, 'value' => 5000],
+                                            ['label' => '1000 (One Thousand Rupees)', 'qty' => $cashDenominations?->denom_1000 ?? 0, 'value' => 1000],
+                                            ['label' => '500 (Five Hundred Rupees)', 'qty' => $cashDenominations?->denom_500 ?? 0, 'value' => 500],
+                                            ['label' => '100 (One Hundred Rupees)', 'qty' => $cashDenominations?->denom_100 ?? 0, 'value' => 100],
+                                            ['label' => '50 (Fifty Rupees)', 'qty' => $cashDenominations?->denom_50 ?? 0, 'value' => 50],
+                                            ['label' => '20 (Twenty Rupees)', 'qty' => $cashDenominations?->denom_20 ?? 0, 'value' => 20],
+                                            ['label' => '10 (Ten Rupees)', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 10],
                                         ];
                                         $calculatedCash = 0;
                                         $denomCounter = 1;

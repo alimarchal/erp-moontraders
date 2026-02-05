@@ -948,87 +948,144 @@
 
                     {{-- Financial Summary --}}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                            {{-- Sales Summary --}}
+                            {{-- Sales Summary (Matching Create/Edit Sequence) --}}
                             <div>
                                 <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Sales Summary</h4>
                                 <table class="report-table w-full tabular-nums">
-                                    <tr>
-                                        <td class="font-semibold">Total Sale Amount</td>
-                                        <td class="text-right">{{ number_format($totalSaleAmount, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Using: Credit</td>
-                                        <td class="text-right">{{ number_format($creditSalesAmount, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Using: Cheque</td>
-                                        <td class="text-right">{{ number_format($chequeSalesAmount, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Using: Bank</td>
-                                        <td class="text-right">{{ number_format($bankSalesAmount, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Using: Cash</td>
-                                        <td class="text-right">{{ number_format($cashSalesAmount, 2) }}</td>
-                                    </tr>
-                                    <tr class="bg-gray-50 font-bold">
-                                        <td>Net Sale (Items)</td>
-                                        <td class="text-right">{{ number_format($netSale, 2) }}</td>
-                                    </tr>
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="text-center w-6 px-1 py-0.5">#</th>
+                                            <th class="text-left px-1 py-0.5">Description</th>
+                                            <th class="text-right px-1 py-0.5">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">1</td>
+                                            <td class="px-1 py-0.5">Credit Sale Amount</td>
+                                            <td class="text-right px-1 py-0.5 text-orange-700 font-semibold">{{ number_format($creditSalesAmount, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">2</td>
+                                            <td class="px-1 py-0.5">Cheque Sale Amount</td>
+                                            <td class="text-right px-1 py-0.5 text-blue-700 font-semibold">{{ number_format($chequeSalesAmount, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">3</td>
+                                            <td class="px-1 py-0.5">Bank Transfer Amount</td>
+                                            <td class="text-right px-1 py-0.5 text-indigo-700 font-semibold">{{ number_format($bankSalesAmount, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">4</td>
+                                            <td class="px-1 py-0.5">Cash Sale Amount</td>
+                                            <td class="text-right px-1 py-0.5 text-emerald-700 font-semibold">{{ number_format($cashSalesAmount, 2) }}</td>
+                                        </tr>
+                                        <tr class="bg-gray-50">
+                                            <td class="text-center px-1 py-0.5">5</td>
+                                            <td class="px-1 py-0.5">Net Sale (Sold Items Value)</td>
+                                            <td class="text-right px-1 py-0.5 font-semibold">{{ number_format($netSale, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">6</td>
+                                            <td class="px-1 py-0.5">Return Value</td>
+                                            <td class="text-right px-1 py-0.5 text-blue-700 font-semibold">{{ number_format($settlement->goodsIssue?->items->where('status', 'Return')->sum(fn($i) => $i->quantity * $i->sale_price) ?? 0, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">7</td>
+                                            <td class="px-1 py-0.5">Shortage Value</td>
+                                            <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($settlement->goodsIssue?->items->where('status', 'Shortage')->sum(fn($i) => $i->quantity * $i->sale_price) ?? 0, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">8</td>
+                                            <td class="px-1 py-0.5">Recovery (Cash)</td>
+                                            <td class="text-right px-1 py-0.5 text-teal-700 font-semibold">{{ number_format($settlement->recoveries->where('payment_mode', 'Cash')->sum('amount'), 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">9</td>
+                                            <td class="px-1 py-0.5">Recovery (Bank/Online)</td>
+                                            <td class="text-right px-1 py-0.5 text-blue-700 font-semibold">{{ number_format($settlement->recoveries->where('payment_mode', '!=', 'Cash')->sum('amount'), 2) }}</td>
+                                        </tr>
+                                        <tr class="bg-blue-50 border-y-2 border-blue-200">
+                                            <td class="text-center px-1 py-0.5">10</td>
+                                            <td class="px-1 py-0.5 font-semibold text-blue-900">Total Sale Amount</td>
+                                            <td class="text-right px-1 py-0.5 font-bold text-blue-800">{{ number_format($totalSaleAmount, 2) }}</td>
+                                        </tr>
+                                        <tr class="bg-gray-50">
+                                            <td class="text-center px-1 py-0.5">11</td>
+                                            <td class="px-1 py-0.5">Expected Cash (Sales + Cash Recoveries)</td>
+                                            <td class="text-right px-1 py-0.5 font-semibold">{{ number_format($expectedCashGross, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">12</td>
+                                            <td class="px-1 py-0.5 text-red-700">Less: Expenses</td>
+                                            <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($totalDeductions, 2) }}</td>
+                                        </tr>
+                                        <tr class="bg-indigo-50 border-y-2 border-indigo-200">
+                                            <td class="text-center px-1 py-0.5">13</td>
+                                            <td class="px-1 py-0.5 font-semibold text-indigo-900">Expected Cash (After Expenses)</td>
+                                            <td class="text-right px-1 py-0.5 font-bold text-indigo-900">{{ number_format($expectedCashNet, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">14</td>
+                                            <td class="px-1 py-0.5">Physical Cash Submitted (Denominations)</td>
+                                            <td class="text-right px-1 py-0.5 text-emerald-700 font-semibold">{{ number_format($actualPhysicalCash, 2) }}</td>
+                                        </tr>
+                                        <tr class="bg-purple-50 border-y-2 border-purple-200">
+                                            <td class="text-center px-1 py-0.5">15</td>
+                                            <td class="px-1 py-0.5 font-semibold text-purple-900">Short/Excess</td>
+                                            <td class="text-right px-1 py-0.5 font-bold {{ $shortExcess < 0 ? 'text-red-700' : 'text-green-700' }}">{{ number_format($shortExcess, 2) }}</td>
+                                        </tr>
+                                    </tbody>
                                 </table>
                             </div>
-
-                            {{-- Cash Flow --}}
+                            {{-- Profitability Analysis --}}
                             <div>
-                                <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Cash Flow</h4>
+                                <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Profit Analysis</h4>
                                 <table class="report-table w-full tabular-nums">
-                                    <tr>
-                                        <td>Expected Cash<br><span class="text-xs text-gray-500">(Sales + Rec)</span></td>
-                                        <td class="text-right font-semibold">{{ number_format($expectedCashGross, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-red-600">Less: Exp & Tax</td>
-                                        <td class="text-right text-red-600 font-semibold">{{ number_format($totalDeductions, 2) }}</td>
-                                    </tr>
-                                    <tr class="bg-gray-50">
-                                        <td class="font-bold">Net Target</td>
-                                        <td class="text-right font-bold">{{ number_format($expectedCashNet, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Physical Cash</td>
-                                        <td class="text-right font-semibold">{{ number_format($actualPhysicalCash, 2) }}</td>
-                                    </tr>
-                                    <tr class="{{ $shortExcess < 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700' }} font-bold">
-                                        <td>{{ $shortExcess < 0 ? 'Shortage' : 'Excess' }}</td>
-                                        <td class="text-right">{{ number_format($shortExcess, 2) }}</td>
-                                    </tr>
-                                </table>
-                            </div>
-                            {{-- Profitability --}}
-                            <div>
-                                <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Profitability</h4>
-                                <table class="report-table w-full tabular-nums">
-                                    <tr>
-                                        <td>Net Sales Revenue</td>
-                                        <td class="text-right font-semibold">{{ number_format($netSale, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-red-700">Less: COGS</td>
-                                        <td class="text-right text-red-700 font-semibold">{{ number_format($totalCOGS, 2) }}</td>
-                                    </tr>
-                                    <tr class="bg-blue-50">
-                                        <td class="font-bold">Gross Profit</td>
-                                        <td class="text-right font-bold">{{ number_format($grossProfit, 2) }} <span class="text-xs font-normal">({{ number_format($grossMargin, 1) }}%)</span></td>
-                                    </tr>
-                                    <tr>
-                                        <td class="text-red-700">Less: Expenses</td>
-                                        <td class="text-right text-red-700 font-semibold">{{ number_format($totalExpenses, 2) }}</td>
-                                    </tr>
-                                    <tr class="{{ $netProfit >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }} font-bold">
-                                        <td>Net Profit</td>
-                                        <td class="text-right">{{ number_format($netProfit, 2) }} <span class="text-xs font-normal">({{ number_format($netMargin, 1) }}%)</span></td>
-                                    </tr>
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="text-center w-6 px-1 py-0.5">#</th>
+                                            <th class="text-left px-1 py-0.5">Description</th>
+                                            <th class="text-right px-1 py-0.5">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">1</td>
+                                            <td class="px-1 py-0.5">Net Sales Revenue (Sold Items)</td>
+                                            <td class="text-right px-1 py-0.5 font-semibold">{{ number_format($netSale, 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">2</td>
+                                            <td class="px-1 py-0.5 text-red-700">Less: Cost of Goods Sold (COGS)</td>
+                                            <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($totalCOGS, 2) }}</td>
+                                        </tr>
+                                        <tr class="bg-green-50 border-y border-green-200">
+                                            <td class="text-center px-1 py-0.5">3</td>
+                                            <td class="px-1 py-0.5 font-semibold text-green-800">Gross Profit (Sales - COGS)</td>
+                                            <td class="text-right px-1 py-0.5 font-bold text-green-700">{{ number_format($grossProfit, 2) }}</td>
+                                        </tr>
+                                        <tr class="bg-gray-50">
+                                            <td class="text-center px-1 py-0.5">4</td>
+                                            <td class="px-1 py-0.5 text-gray-600 pl-4">Gross Margin %</td>
+                                            <td class="text-right px-1 py-0.5 font-semibold">{{ number_format($grossMargin, 2) }}%</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">5</td>
+                                            <td class="px-1 py-0.5 text-red-700">Less: Operating Expenses</td>
+                                            <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($totalExpenses, 2) }}</td>
+                                        </tr>
+                                        <tr class="bg-gradient-to-r from-emerald-50 to-teal-50 border-y-2 border-emerald-300">
+                                            <td class="text-center px-1 py-0.5">6</td>
+                                            <td class="px-1 py-0.5 font-semibold text-emerald-900">Net Profit (After Expenses)</td>
+                                            <td class="text-right px-1 py-0.5 font-bold {{ $netProfit >= 0 ? 'text-emerald-700' : 'text-red-700' }}">{{ number_format($netProfit, 2) }}</td>
+                                        </tr>
+                                        <tr class="bg-gray-50">
+                                            <td class="text-center px-1 py-0.5">7</td>
+                                            <td class="px-1 py-0.5 text-gray-600 pl-4">Net Margin %</td>
+                                            <td class="text-right px-1 py-0.5 font-semibold {{ $netMargin >= 0 ? 'text-emerald-700' : 'text-red-700' }}">{{ number_format($netMargin, 2) }}%</td>
+                                        </tr>
+                                    </tbody>
                                 </table>
                             </div>
                         </div>

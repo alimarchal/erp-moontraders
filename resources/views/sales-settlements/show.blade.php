@@ -313,28 +313,29 @@
                 </div>
 
                 {{-- Product Table --}}
-                <table class="report-table mb-6">
+                <table class="report-table mb-6 text-black">
                     <thead>
                         <tr class="bg-gray-100">
                             <th class="text-center w-10">Sr#</th>
-                            <th class="text-left">SKU</th>
-                            <th class="text-right">BF In</th>
-                            <th class="text-right">Issued</th>
+                            <th class="text-left">SKU / Batch / Code</th>
+                            <th class="text-right">B/F (In)</th>
+                            <th class="text-right">Qty Issued</th>
                             <th class="text-left">Batch Breakdown</th>
                             <th class="text-right">Sold</th>
                             <th class="text-right">Returned</th>
                             <th class="text-right">Shortage</th>
-                            <th class="text-right">BF Out</th>
+                            <th class="text-right">B/F (Out)</th>
                             <th class="text-right">Sales Value</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach ($settlement->items as $item)
+                    <tbody class="tabular-nums">
+                        @foreach ($settlement->items as $index => $item)
                             <tr>
-                                <td class="text-center">{{ $item->line_no }}</td>
+                                <td class="text-center">{{ $index + 1 }}</td>
                                 <td>
                                     <div class="font-semibold">{{ $item->product->product_code }}</div>
                                     <div class="text-xs">{{ $item->product->product_name }}</div>
+
                                 </td>
                                 <td class="text-right">
                                     @php $bfIn = 0; @endphp
@@ -344,17 +345,15 @@
                                 <td>
                                     @if($item->batches->count() > 0)
                                         <div class="text-xs space-y-1">
+
                                             @foreach($item->batches as $b)
-                                                <div class="flex justify-between items-center {{ $b->is_promotional ? 'text-orange-600 font-bold' : '' }}">
-                                                    <span>
-                                                        {{ number_format($b->quantity_issued, 0) }} × {{ number_format($b->selling_price, 2) }}
-                                                        @if($b->is_promotional) (Promo) @endif
-                                                    </span>
-                                                    <span>= {{ number_format($b->quantity_issued * $b->selling_price, 2) }}</span>
-                                                </div>
-                                                <div class="text-[10px] text-gray-500">
-                                                    S:{{ number_format($b->quantity_sold, 0) }} R:{{ number_format($b->quantity_returned, 0) }} Sh:{{ number_format($b->quantity_shortage, 0) }}
-                                                </div>
+                                            <span class="tabular-nums rounded">{{ $b->batch_code ?? 'N/A' }}</span><br>
+                                            <span>
+                                                {{ number_format($b->quantity_issued, 0) }} × {{ number_format($b->selling_price, 2) }}
+                                                ({{  $item->product->uom->symbol }}) / 
+                                                @if($b->is_promotional) (Promo) @endif
+                                                = <span class="text-black font-bold">{{ number_format($b->quantity_issued * $b->selling_price, 2) }}</span>
+                                            </span>
                                             @endforeach
                                         </div>
                                     @else
@@ -374,7 +373,7 @@
                             </tr>
                         @endforeach
                     </tbody>
-                    <tfoot class="bg-gray-100 font-bold">
+                    <tfoot class="bg-gray-100 font-bold tabular-nums">
                         <tr>
                             <td colspan="3" class="text-right">Totals:</td>
                             <td class="text-right">{{ number_format($settlement->items->sum('quantity_issued'), 2) }}</td>
@@ -382,10 +381,7 @@
                             <td class="text-right">{{ number_format($settlement->total_quantity_sold, 2) }}</td>
                             <td class="text-right">{{ number_format($settlement->total_quantity_returned, 2) }}</td>
                             <td class="text-right">{{ number_format($settlement->total_quantity_shortage, 2) }}</td>
-                            <td class="text-right">
-                                <!-- BF Out Total technically confusing to sum, maybe just show dash -->
-                                -
-                            </td>
+                            <td class="text-right">-</td>
                             <td class="text-right">{{ number_format($settlement->items->sum('total_sales_value'), 2) }}</td>
                         </tr>
                         <tr class="bg-gray-50 text-xs text-gray-600">
@@ -401,303 +397,441 @@
                     </tfoot>
                 </table>
 
-                {{-- Summaries Grid --}}
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 summary-grid align-top">
+                {{-- Full Width Financial Tables --}}
+                <div class="space-y-6 text-black">
                     
-                    {{-- Credit Sales --}}
-                    <div class="break-inside-avoid">
-                        <h4 class="font-bold text-md mb-2 text-center border-b pb-1">Credit Sales</h4>
-                        <table class="report-table w-full">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="text-left">Customer</th>
-                                    <th class="text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($settlement->creditSales as $creditSale)
-                                    <tr>
-                                        <td>{{ $creditSale->customer->customer_name ?? 'N/A' }}</td>
-                                        <td class="text-right">{{ number_format($creditSale->sale_amount, 2) }}</td>
+                    @php
+                        $csCount = $settlement->creditSales->count();
+                        $recCount = $settlement->recoveries->count();
+                        $maxRows = max($csCount, $recCount);
+                    @endphp
+
+                    <div class="grid grid-cols-2 lg:grid-cols-2 gap-1 items-start print:grid-cols-2">
+                        {{-- Credit Sales --}}
+                        <div>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Credit Sales Breakdown</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center w-10">#</th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Customer Name">Customer Name</x-tooltip></span>
+                                            <span class="hidden print:inline">Name</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Invoice Number">Inv #</x-tooltip></span>
+                                            <span class="hidden print:inline">Inv #</span>
+                                        </th>
+                                        <th class="text-right">
+                                            <span class="print:hidden"><x-tooltip text="Previous Balance">PB</x-tooltip></span>
+                                            <span class="hidden print:inline">Pre Bal</span>
+                                        </th>
+                                        <th class="text-right">
+                                            <span class="print:hidden"><x-tooltip text="Credit Sale">Sale</x-tooltip></span>
+                                            <span class="hidden print:inline">Credit</span>
+                                        </th>
+                                        <th class="text-right">
+                                            <span class="print:hidden"><x-tooltip text="New Balance">NB</x-tooltip></span>
+                                            <span class="hidden print:inline">Balance</span>
+                                        </th>
+                                        <th class="text-left">Notes</th>
                                     </tr>
-                                @empty
-                                    <tr><td colspan="2" class="text-center italic text-gray-500">No credit sales</td></tr>
-                                @endforelse
-                            </tbody>
-                            <tfoot class="bg-gray-50 font-bold">
-                                <tr>
-                                    <td class="text-right">Total:</td>
-                                    <td class="text-right">{{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @if($maxRows > 0)
+                                        @for($i = 0; $i < $maxRows; $i++)
+                                            @php $creditSale = $settlement->creditSales->get($i); @endphp
+                                            <tr>
+                                                <td class="text-center">{{ $i + 1 }}</td>
+                                                <td>{{ $creditSale?->customer->customer_name ?? '-' }}</td>
+                                                <td>{{ $creditSale?->invoice_number ?? '-' }}</td>
+                                                <td class="text-right">{{ $creditSale ? number_format($creditSale->previous_balance, 2) : '-' }}</td>
+                                                <td class="text-right font-bold">{{ $creditSale ? number_format($creditSale->sale_amount, 2) : '-' }}</td>
+                                                <td class="text-right">{{ $creditSale ? number_format($creditSale->new_balance, 2) : '-' }}</td>
+                                                <td class="text-xs italic">{!! $creditSale?->notes ?? '-' !!}</td>
+                                            </tr>
+                                        @endfor
+                                    @else
+                                        <tr><td colspan="7" class="text-center italic text-gray-500">No credit sales recorded</td></tr>
+                                    @endif
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                    <tr>
+                                        <td colspan="4" class="text-right">Total:</td>
+                                        <td class="text-right">{{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}</td>
+                                        <td colspan="2"></td>
+                                    </tr>
+                                </tfoot>    
+                            </table>
+                        </div>
+
+                        {{-- Recoveries --}}
+                        <div>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Recoveries Breakdown</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center w-10">#</th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Customer Name">CN</x-tooltip></span>
+                                            <span class="hidden print:inline">Name</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Recovery Number">Rec #</x-tooltip></span>
+                                            <span class="hidden print:inline">Rec #/span>
+                                        </th>
+                                        <th class="text-right">
+                                            <span class="print:hidden"><x-tooltip text="Previous Balance">PB</x-tooltip></span>
+                                            <span class="hidden print:inline">Prev Bal.</span>
+                                        </th>
+                                        <th class="text-right">
+                                            <span class="print:hidden"><x-tooltip text="Recovery Amount">Amt</x-tooltip></span>
+                                            <span class="hidden print:inline">Rec Amt</span>
+                                        </th>
+                                        <th class="text-center">
+                                            <span class="print:hidden"><x-tooltip text="Payment Method">Method</x-tooltip></span>
+                                            <span class="hidden print:inline">Mtd</span>
+                                        </th>
+                                        <th class="text-right">
+                                            <span class="print:hidden"><x-tooltip text="New Balance">NB</x-tooltip></span>
+                                            <span class="hidden print:inline">Balance</span>
+                                        </th>
+                                        <th class="text-left">Notes</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @if($maxRows > 0)
+                                        @for($i = 0; $i < $maxRows; $i++)
+                                            @php $recovery = $settlement->recoveries->get($i); @endphp
+                                            <tr>
+                                                <td class="text-center">{{ $i + 1 }}</td>
+                                                <td>{{ $recovery?->customer->customer_name ?? '-' }}</td>
+                                                <td>{{ $recovery?->recovery_number ?? '-' }}</td>
+                                                <td class="text-right">{{ $recovery ? number_format($recovery->previous_balance, 2) : '-' }}</td>
+                                                <td class="text-right font-bold">{{ $recovery ? number_format($recovery->amount, 2) : '-' }}</td>
+                                                <td class="text-center text-xs uppercase">
+                                                    @if($recovery)
+                                                        {{ $recovery->payment_method === 'cash' ? 'Cash' : 'Bank' }}
+                                                    @else
+                                                        -
+                                                    @endif
+                                                </td>
+                                                <td class="text-right">{{ $recovery ? number_format($recovery->new_balance, 2) : '-' }}</td>
+                                                <td class="text-xs italic">{!! $recovery?->notes ?? '-' !!}</td>
+                                            </tr>
+                                        @endfor
+                                    @else
+                                        <tr><td colspan="8" class="text-center italic text-gray-500">No recoveries recorded</td></tr>
+                                    @endif
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                    <tr>
+                                        <td colspan="4" class="text-right">Total:</td>
+                                        <td class="text-right">{{ number_format($settlement->recoveries->sum('amount'), 2) }}</td>
+                                        <td colspan="3"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
 
-                    {{-- Recoveries --}}
-                    <div class="break-inside-avoid">
-                        <h4 class="font-bold text-md mb-2 text-center border-b pb-1">Recoveries</h4>
-                        <table class="report-table w-full">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="text-left">Customer</th>
-                                    <th class="text-center">Type</th>
-                                    <th class="text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($settlement->recoveries as $recovery)
-                                    <tr>
-                                        <td>{{ $recovery->customer->customer_name ?? 'N/A' }}</td>
-                                        <td class="text-center text-xs uppercase">{{ $recovery->payment_method === 'cash' ? 'Cash' : 'Bank' }}</td>
-                                        <td class="text-right">{{ number_format($recovery->amount, 2) }}</td>
+                    @php
+                        $chequeCount = $settlement->cheques->count();
+                        $bankCount = $settlement->bankTransfers->count();
+                        $maxRows2 = max($chequeCount, $bankCount);
+                    @endphp
+
+                    <div class="grid grid-cols-2 lg:grid-cols-2 gap-1 items-start print:grid-cols-2">
+                        {{-- Cheque Payments --}}
+                        <div>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Cheque Payments</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center w-10">#</th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Cheque Date">Date</x-tooltip></span>
+                                            <span class="hidden print:inline">Date</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Cheque Number">Chq #</x-tooltip></span>
+                                            <span class="hidden print:inline">Chq #</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Customer Name">CN</x-tooltip></span>
+                                            <span class="hidden print:inline">Customer</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Bank Name">Bank</x-tooltip></span>
+                                            <span class="hidden print:inline">Bank</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Deposit Bank">Dep Bank</x-tooltip></span>
+                                            <span class="hidden print:inline">Dep Bank</span>
+                                        </th>
+                                        <th class="text-right">Amount</th>
                                     </tr>
-                                @empty
-                                    <tr><td colspan="3" class="text-center italic text-gray-500">No recoveries</td></tr>
-                                @endforelse
-                            </tbody>
-                            <tfoot class="bg-gray-50 font-bold">
-                                <tr>
-                                    <td colspan="2" class="text-right">Total:</td>
-                                    <td class="text-right">{{ number_format($settlement->recoveries->sum('amount'), 2) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @if($maxRows2 > 0)
+                                        @for($i = 0; $i < $maxRows2; $i++)
+                                            @php $cheque = $settlement->cheques->get($i); @endphp
+                                            <tr>
+                                                <td class="text-center">{{ $i + 1 }}</td>
+                                                <td>{{ $cheque && $cheque->cheque_date ? \Carbon\Carbon::parse($cheque->cheque_date)->format('d-M-y') : '-' }}</td>
+                                                <td>{{ $cheque->cheque_number ?? '-' }}</td>
+                                                <td>{{ $cheque->customer->customer_name ?? '-' }}</td>
+                                                <td>{{ $cheque->bank_name ?? '-' }}</td>
+                                                <td>{{ $cheque->bankAccount->account_name ?? '-' }}</td>
+                                                <td class="text-right font-bold">{{ $cheque ? number_format($cheque->amount, 2) : '-' }}</td>
+                                            </tr>
+                                        @endfor
+                                    @else
+                                        <tr><td colspan="7" class="text-center italic text-gray-500">No cheques recorded</td></tr>
+                                    @endif
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                    <tr>
+                                        <td colspan="6" class="text-right">Total:</td>
+                                        <td class="text-right">{{ number_format($settlement->cheques->sum('amount'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        {{-- Bank Transfers --}}
+                        <div>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Bank Transfers / Online</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center w-10">#</th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Transfer Date">Date</x-tooltip></span>
+                                            <span class="hidden print:inline">Date</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Customer Name">CN</x-tooltip></span>
+                                            <span class="hidden print:inline">Customer</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Bank Account">Bank</x-tooltip></span>
+                                            <span class="hidden print:inline">Bank</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Reference Number">Ref #</x-tooltip></span>
+                                            <span class="hidden print:inline">Ref #</span>
+                                        </th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @if($maxRows2 > 0)
+                                        @for($i = 0; $i < $maxRows2; $i++)
+                                            @php $transfer = $settlement->bankTransfers->get($i); @endphp
+                                            <tr>
+                                                <td class="text-center">{{ $i + 1 }}</td>
+                                                <td>{{ $transfer && $transfer->transfer_date ? \Carbon\Carbon::parse($transfer->transfer_date)->format('d-M-y') : '-' }}</td>
+                                                <td>{{ $transfer->customer->customer_name ?? '-' }}</td>
+                                                <td>{{ $transfer->bankAccount->account_name ?? '-' }}</td>
+                                                <td>{{ $transfer->reference_number ?? '-' }}</td>
+                                                <td class="text-right font-bold">{{ $transfer ? number_format($transfer->amount, 2) : '-' }}</td>
+                                            </tr>
+                                        @endfor
+                                    @else
+                                        <tr><td colspan="6" class="text-center italic text-gray-500">No bank transfers recorded</td></tr>
+                                    @endif
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                    <tr>
+                                        <td colspan="5" class="text-right">Total:</td>
+                                        <td class="text-right">{{ number_format($settlement->bankTransfers->sum('amount'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
 
                     {{-- Expenses --}}
-                    <div class="break-inside-avoid">
-                        <h4 class="font-bold text-md mb-2 text-center border-b pb-1">Expenses</h4>
+                    <div>
+                        <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Expenses Breakdown</h4>
                         <table class="report-table w-full">
                             <thead>
                                 <tr class="bg-gray-100">
-                                    <th class="text-left">Description</th>
+                                    <th class="text-center w-10">Sr.#</th>
+                                    <th class="text-left">Description / Account</th>
                                     <th class="text-right">Amount</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody class="tabular-nums">
+                                @php $expCounter = 1; @endphp
                                 @forelse($settlement->expenses as $expense)
                                     <tr>
-                                        <td>
-                                            {{ $expense->expenseAccount->account_name ?? 'Unknown' }}
-                                        </td>
+                                        <td class="text-center">{{ $expCounter++ }}</td>
+                                        <td>{{ $expense->expenseAccount->account_name ?? 'Unknown' }}</td>
                                         <td class="text-right">{{ number_format($expense->amount, 2) }}</td>
                                     </tr>
                                 @empty
                                     @if($settlement->advanceTaxes->count() == 0)
-                                        <tr><td colspan="2" class="text-center italic text-gray-500">No expenses</td></tr>
+                                        <tr><td colspan="3" class="text-center italic text-gray-500">No expenses recorded</td></tr>
                                     @endif
                                 @endforelse
                                 
                                 @foreach($settlement->advanceTaxes as $tax)
                                     <tr>
-                                        <td>Adv Tax: {{ $tax->customer->customer_name }}</td>
+                                        <td class="text-center">{{ $expCounter++ }}</td>
+                                        <td>Adv Tax: {{ $tax->customer->customer_name }} @if($tax->invoice_number) ({{$tax->invoice_number}}) @endif</td>
                                         <td class="text-right">{{ number_format($tax->tax_amount, 2) }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
-                            <tfoot class="bg-gray-50 font-bold">
+                            <tfoot class="bg-gray-50 font-bold tabular-nums">
                                 <tr>
-                                    <td class="text-right">Total:</td>
+                                    <td colspan="2" class="text-right">Total Expenses:</td>
                                     <td class="text-right">{{ number_format($totalExpenses + $advanceTaxTotal, 2) }}</td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
 
-                    {{-- Cheques --}}
-                    <div class="break-inside-avoid">
-                        <h4 class="font-bold text-md mb-2 text-center border-b pb-1">Cheques</h4>
-                        <table class="report-table w-full">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="text-left">Date</th>
-                                    <th class="text-left">Bank</th>
-                                    <th class="text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($settlement->cheques as $cheque)
-                                    <tr>
-                                        <td>{{ $cheque->cheque_date ? \Carbon\Carbon::parse($cheque->cheque_date)->format('d-M') : '-' }}</td>
-                                        <td>{{ $cheque->bank_name ?? 'N/A' }}</td>
-                                        <td class="text-right">{{ number_format($cheque->amount, 2) }}</td>
+                    {{-- Cash Detail & Financial Summary (Side by Side due to smaller width requirement) --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+                        
+                        {{-- Cash Denominations --}}
+                        <div>
+                            <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Cash Detail</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-left">Note</th>
+                                        <th class="text-right">Qty</th>
+                                        <th class="text-right">Value</th>
                                     </tr>
-                                @empty
-                                    <tr><td colspan="3" class="text-center italic text-gray-500">No cheques</td></tr>
-                                @endforelse
-                            </tbody>
-                            <tfoot class="bg-gray-50 font-bold">
-                                <tr>
-                                    <td colspan="2" class="text-right">Total:</td>
-                                    <td class="text-right">{{ number_format($settlement->cheques->sum('amount'), 2) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                    {{-- Bank Transfers --}}
-                    <div class="break-inside-avoid">
-                        <h4 class="font-bold text-md mb-2 text-center border-b pb-1">Bank Transfers</h4>
-                        <table class="report-table w-full">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="text-left">Ref #</th>
-                                    <th class="text-left">Bank</th>
-                                    <th class="text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($settlement->bankTransfers as $transfer)
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @php
+                                        $denominations = [
+                                            ['label' => '5000', 'qty' => $cashDenominations?->denom_5000 ?? 0, 'value' => 5000],
+                                            ['label' => '1000', 'qty' => $cashDenominations?->denom_1000 ?? 0, 'value' => 1000],
+                                            ['label' => '500', 'qty' => $cashDenominations?->denom_500 ?? 0, 'value' => 500],
+                                            ['label' => '100', 'qty' => $cashDenominations?->denom_100 ?? 0, 'value' => 100],
+                                            ['label' => '50', 'qty' => $cashDenominations?->denom_50 ?? 0, 'value' => 50],
+                                            ['label' => '20', 'qty' => $cashDenominations?->denom_20 ?? 0, 'value' => 20],
+                                            ['label' => '10', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 10],
+                                        ];
+                                        $calculatedCash = 0;
+                                    @endphp
+                                    @foreach($denominations as $d)
+                                        @php $rowVal = $d['qty'] * $d['value']; $calculatedCash += $rowVal; @endphp
+                                        <tr>
+                                            <td>{{ $d['label'] }}</td>
+                                            <td class="text-right">{{ $d['qty'] }}</td>
+                                            <td class="text-right">{{ number_format($rowVal, 0) }}</td>
+                                        </tr>
+                                    @endforeach
                                     <tr>
-                                        <td>{{ $transfer->reference_number ?? '-' }}</td>
-                                        <td>{{ $transfer->bankAccount->account_name ?? 'N/A' }}</td>
-                                        <td class="text-right">{{ number_format($transfer->amount, 2) }}</td>
+                                        <td>Coins/Loose</td>
+                                        <td class="text-right">-</td>
+                                        <td class="text-right">{{ number_format($coins, 2) }}</td>
                                     </tr>
-                                @empty
-                                    <tr><td colspan="3" class="text-center italic text-gray-500">No transfers</td></tr>
-                                @endforelse
-                            </tbody>
-                            <tfoot class="bg-gray-50 font-bold">
-                                <tr>
-                                    <td colspan="2" class="text-right">Total:</td>
-                                    <td class="text-right">{{ number_format($settlement->bankTransfers->sum('amount'), 2) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                    {{-- Cash Denominations --}}
-                    <div class="break-inside-avoid">
-                        <h4 class="font-bold text-md mb-2 text-center border-b pb-1">Cash Detail</h4>
-                        <table class="report-table w-full">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="text-left">Note</th>
-                                    <th class="text-right">Qty</th>
-                                    <th class="text-right">Value</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php
-                                    $denominations = [
-                                        ['label' => '5000', 'qty' => $cashDenominations?->denom_5000 ?? 0, 'value' => 5000],
-                                        ['label' => '1000', 'qty' => $cashDenominations?->denom_1000 ?? 0, 'value' => 1000],
-                                        ['label' => '500', 'qty' => $cashDenominations?->denom_500 ?? 0, 'value' => 500],
-                                        ['label' => '100', 'qty' => $cashDenominations?->denom_100 ?? 0, 'value' => 100],
-                                        ['label' => '50', 'qty' => $cashDenominations?->denom_50 ?? 0, 'value' => 50],
-                                        ['label' => '20', 'qty' => $cashDenominations?->denom_20 ?? 0, 'value' => 20],
-                                        ['label' => '10', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 10],
-                                    ];
-                                    $calculatedCash = 0;
-                                @endphp
-                                @foreach($denominations as $d)
-                                    @php $rowVal = $d['qty'] * $d['value'];
-                                    $calculatedCash += $rowVal; @endphp
+                                    @php $calculatedCash += $coins; @endphp
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
                                     <tr>
-                                        <td>{{ $d['label'] }}</td>
-                                        <td class="text-right">{{ $d['qty'] }}</td>
-                                        <td class="text-right">{{ number_format($rowVal, 0) }}</td>
+                                        <td colspan="2" class="text-right">Total Physical Cash:</td>
+                                        <td class="text-right">{{ number_format($calculatedCash, 2) }}</td>
                                     </tr>
-                                @endforeach
-                                <tr>
-                                    <td>Coins/Loose</td>
-                                    <td class="text-right">-</td>
-                                    <td class="text-right">{{ number_format($coins, 2) }}</td>
-                                </tr>
-                                @php $calculatedCash += $coins; @endphp
-                            </tbody>
-                            <tfoot class="bg-gray-50 font-bold">
-                                <tr>
-                                    <td colspan="2" class="text-right">Total:</td>
-                                    <td class="text-right">{{ number_format($calculatedCash, 2) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                                </tfoot>
+                            </table>
+                        </div>
 
-                    {{-- Sales Summary (Final) --}}
-                    <div class="break-inside-avoid">
-                        <h4 class="font-bold text-md mb-2 text-center border-b pb-1">Sales Summary</h4>
-                        <table class="report-table w-full">
-                            <tr>
-                                <td class="font-semibold">Total Sale Amount</td>
-                                <td class="text-right">{{ number_format($totalSaleAmount, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td>Using: Credit</td>
-                                <td class="text-right">{{ number_format($creditSalesAmount, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td>Using: Cheque</td>
-                                <td class="text-right">{{ number_format($chequeSalesAmount, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td>Using: Bank</td>
-                                <td class="text-right">{{ number_format($bankSalesAmount, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td>Using: Cash</td>
-                                <td class="text-right">{{ number_format($cashSalesAmount, 2) }}</td>
-                            </tr>
-                            <tr class="bg-gray-50 font-bold">
-                                <td>Net Sale (Items)</td>
-                                <td class="text-right">{{ number_format($netSale, 2) }}</td>
-                            </tr>
-                        </table>
-                    </div>
+                        {{-- Final Summaries Stacked --}}
+                        <div class="space-y-6">
+                            {{-- Sales Summary --}}
+                            <div>
+                                <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Sales Summary</h4>
+                                <table class="report-table w-full tabular-nums">
+                                    <tr>
+                                        <td class="font-semibold">Total Sale Amount</td>
+                                        <td class="text-right">{{ number_format($totalSaleAmount, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Using: Credit</td>
+                                        <td class="text-right">{{ number_format($creditSalesAmount, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Using: Cheque</td>
+                                        <td class="text-right">{{ number_format($chequeSalesAmount, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Using: Bank</td>
+                                        <td class="text-right">{{ number_format($bankSalesAmount, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Using: Cash</td>
+                                        <td class="text-right">{{ number_format($cashSalesAmount, 2) }}</td>
+                                    </tr>
+                                    <tr class="bg-gray-50 font-bold">
+                                        <td>Net Sale (Items)</td>
+                                        <td class="text-right">{{ number_format($netSale, 2) }}</td>
+                                    </tr>
+                                </table>
+                            </div>
 
-                    {{-- Cash Flow --}}
-                    <div class="break-inside-avoid">
-                        <h4 class="font-bold text-md mb-2 text-center border-b pb-1">Cash Flow</h4>
-                        <table class="report-table w-full">
-                            <tr>
-                                <td>Expected Cash<br><span class="text-xs text-gray-500">(Sales + Rec)</span></td>
-                                <td class="text-right font-semibold">{{ number_format($expectedCashGross, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="text-red-600">Less: Exp & Tax</td>
-                                <td class="text-right text-red-600 font-semibold">{{ number_format($totalDeductions, 2) }}</td>
-                            </tr>
-                             <tr class="bg-gray-50">
-                                <td class="font-bold">Net Target</td>
-                                <td class="text-right font-bold">{{ number_format($expectedCashNet, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td>Physical Cash</td>
-                                <td class="text-right font-semibold">{{ number_format($actualPhysicalCash, 2) }}</td>
-                            </tr>
-                            <tr class="{{ $shortExcess < 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700' }} font-bold">
-                                <td>{{ $shortExcess < 0 ? 'Shortage' : 'Excess' }}</td>
-                                <td class="text-right">{{ number_format($shortExcess, 2) }}</td>
-                            </tr>
-                        </table>
-                    </div>
+                            {{-- Cash Flow --}}
+                            <div>
+                                <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Cash Flow</h4>
+                                <table class="report-table w-full tabular-nums">
+                                    <tr>
+                                        <td>Expected Cash<br><span class="text-xs text-gray-500">(Sales + Rec)</span></td>
+                                        <td class="text-right font-semibold">{{ number_format($expectedCashGross, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-red-600">Less: Exp & Tax</td>
+                                        <td class="text-right text-red-600 font-semibold">{{ number_format($totalDeductions, 2) }}</td>
+                                    </tr>
+                                    <tr class="bg-gray-50">
+                                        <td class="font-bold">Net Target</td>
+                                        <td class="text-right font-bold">{{ number_format($expectedCashNet, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Physical Cash</td>
+                                        <td class="text-right font-semibold">{{ number_format($actualPhysicalCash, 2) }}</td>
+                                    </tr>
+                                    <tr class="{{ $shortExcess < 0 ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700' }} font-bold">
+                                        <td>{{ $shortExcess < 0 ? 'Shortage' : 'Excess' }}</td>
+                                        <td class="text-right">{{ number_format($shortExcess, 2) }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            {{-- Profitability --}}
+                            <div>
+                                <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Profitability</h4>
+                                <table class="report-table w-full tabular-nums">
+                                    <tr>
+                                        <td>Net Sales Revenue</td>
+                                        <td class="text-right font-semibold">{{ number_format($netSale, 2) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-red-700">Less: COGS</td>
+                                        <td class="text-right text-red-700 font-semibold">{{ number_format($totalCOGS, 2) }}</td>
+                                    </tr>
+                                    <tr class="bg-blue-50">
+                                        <td class="font-bold">Gross Profit</td>
+                                        <td class="text-right font-bold">{{ number_format($grossProfit, 2) }} <span class="text-xs font-normal">({{ number_format($grossMargin, 1) }}%)</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-red-700">Less: Expenses</td>
+                                        <td class="text-right text-red-700 font-semibold">{{ number_format($totalExpenses, 2) }}</td>
+                                    </tr>
+                                    <tr class="{{ $netProfit >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }} font-bold">
+                                        <td>Net Profit</td>
+                                        <td class="text-right">{{ number_format($netProfit, 2) }} <span class="text-xs font-normal">({{ number_format($netMargin, 1) }}%)</span></td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
 
-                     {{-- Profitability --}}
-                    <div class="break-inside-avoid">
-                        <h4 class="font-bold text-md mb-2 text-center border-b pb-1">Profitability</h4>
-                        <table class="report-table w-full">
-                            <tr>
-                                <td>Net Sales Revenue</td>
-                                <td class="text-right font-semibold">{{ number_format($netSale, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="text-red-700">Less: COGS</td>
-                                <td class="text-right text-red-700 font-semibold">{{ number_format($totalCOGS, 2) }}</td>
-                            </tr>
-                            <tr class="bg-blue-50">
-                                <td class="font-bold">Gross Profit</td>
-                                <td class="text-right font-bold">{{ number_format($grossProfit, 2) }} <span class="text-xs font-normal">({{ number_format($grossMargin, 1) }}%)</span></td>
-                            </tr>
-                            <tr>
-                                <td class="text-red-700">Less: Expenses</td>
-                                <td class="text-right text-red-700 font-semibold">{{ number_format($totalExpenses, 2) }}</td>
-                            </tr>
-                            <tr class="{{ $netProfit >= 0 ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700' }} font-bold">
-                                <td>Net Profit</td>
-                                <td class="text-right">{{ number_format($netProfit, 2) }} <span class="text-xs font-normal">({{ number_format($netMargin, 1) }}%)</span></td>
-                            </tr>
-                        </table>
                     </div>
 
                 </div>

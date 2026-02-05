@@ -780,7 +780,7 @@
 
                         {{-- Percentage Expense --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">% Expense</h4>
+                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Percentage Expense (5223)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -837,64 +837,64 @@
                             return !in_array($expense->expense_account_id, $predefinedIds);
                         });
                     @endphp
-                    <div class="mt-1">
-                        <h4 class="font-bold text-md mb-2 text-center">Other Expenses</h4>
-                        <table class="report-table w-full">
-                            <thead>
-                                <tr class="bg-gray-100">
-                                    <th class="text-center w-10">Sr.#</th>
-                                    <th class="text-left">Expense Account</th>
-                                    <th class="text-left">COA Code</th>
-                                    <th class="text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody class="tabular-nums">
-                                @php $expCounter = 1; @endphp
-                                {{-- Show predefined expenses in order --}}
-                                @foreach($predefinedExpenses as $predef)
-                                    @php 
-                                        $savedExpense = $savedExpenseAmounts->get($predef['id']);
-                                        $amount = $savedExpense ? $savedExpense->amount : 0;
-                                    @endphp
-                                    <tr>
-                                        <td class="text-center">{{ $expCounter++ }}</td>
-                                        <td>{{ $predef['label'] }}</td>
-                                        <td>{{ $predef['code'] }}</td>
-                                        <td class="text-right">{{ number_format($amount, 2) }}</td>
-                                    </tr>
-                                @endforeach
-                                {{-- Show additional expenses (not in predefined list) --}}
-                                @foreach($additionalExpenses as $expense)
-                                    <tr>
-                                        <td class="text-center">{{ $expCounter++ }}</td>
-                                        <td>{{ $expense->expenseAccount->account_name ?? 'Unknown' }}</td>
-                                        <td>{{ $expense->expenseAccount->account_code ?? '-' }}</td>
-                                        <td class="text-right">{{ number_format($expense->amount, 2) }}</td>
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                <tr>
-                                    <td colspan="3" class="text-right">Total:</td>
-                                    <td class="text-right">{{ number_format($settlement->expenses->sum('amount'), 2) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                    </div> {{-- End of Expense Details Group --}}
-
-                    {{-- Cash Detail & Financial Summary (Side by Side due to smaller width requirement) --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                        
-                        {{-- Cash Denominations --}}
+                    {{-- Other Expenses & Cash Detail Row --}}
+                    <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2 mt-1">
+                        {{-- Other Expenses --}}
                         <div>
-                            <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Cash Detail</h4>
+                            <h4 class="font-bold text-lg mb-1 pb-0 text-center">Group Expenses</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
-                                        <th class="text-left">Note</th>
-                                        <th class="text-right">Qty</th>
-                                        <th class="text-right">Value</th>
+                                        <th class="text-center w-6 px-1 py-0.5">#</th>
+                                        <th class="text-left px-1 py-0.5">Expense Account</th>
+                                        <th class="text-left px-1 py-0.5">COA Code</th>
+                                        <th class="text-right px-1 py-0.5">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @php $expCounter = 1; @endphp
+                                    {{-- Show predefined expenses in order --}}
+                                    @foreach($predefinedExpenses as $predef)
+                                        @php 
+                                            $savedExpense = $savedExpenseAmounts->get($predef['id']);
+                                            $amount = $savedExpense ? $savedExpense->amount : 0;
+                                        @endphp
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">{{ $expCounter++ }}</td>
+                                            <td class="px-1 py-0.5">{{ $predef['label'] }}</td>
+                                            <td class="px-1 py-0.5">{{ $predef['code'] }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ number_format($amount, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                    {{-- Show additional expenses (not in predefined list) --}}
+                                    @foreach($additionalExpenses as $expense)
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">{{ $expCounter++ }}</td>
+                                            <td class="px-1 py-0.5">{{ $expense->expenseAccount->account_name ?? 'Unknown' }}</td>
+                                            <td class="px-1 py-0.5">{{ $expense->expenseAccount->account_code ?? '-' }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ number_format($expense->amount, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                    <tr>
+                                        <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
+                                        <td class="text-right px-1 py-0.5">{{ number_format($settlement->expenses->sum('amount'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        {{-- Cash Denominations --}}
+                        <div>
+                            <h4 class="font-bold text-lg mb-1 pb-0 text-center">Cash Detail</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center w-6 px-1 py-0.5">#</th>
+                                        <th class="text-left px-1 py-0.5">Note</th>
+                                        <th class="text-right px-1 py-0.5">Qty</th>
+                                        <th class="text-right px-1 py-0.5">Value</th>
                                     </tr>
                                 </thead>
                                 <tbody class="tabular-nums">
@@ -909,33 +909,38 @@
                                             ['label' => '10', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 10],
                                         ];
                                         $calculatedCash = 0;
+                                        $denomCounter = 1;
                                     @endphp
                                     @foreach($denominations as $d)
                                         @php $rowVal = $d['qty'] * $d['value']; $calculatedCash += $rowVal; @endphp
                                         <tr>
-                                            <td>{{ $d['label'] }}</td>
-                                            <td class="text-right">{{ $d['qty'] }}</td>
-                                            <td class="text-right">{{ number_format($rowVal, 0) }}</td>
+                                            <td class="text-center px-1 py-0.5">{{ $denomCounter++ }}</td>
+                                            <td class="px-1 py-0.5">{{ $d['label'] }}</td>
+                                            <td class="text-right px-1 py-0.5">{{ $d['qty'] }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ number_format($rowVal, 0) }}</td>
                                         </tr>
                                     @endforeach
                                     <tr>
-                                        <td>Coins/Loose</td>
-                                        <td class="text-right">-</td>
-                                        <td class="text-right">{{ number_format($coins, 2) }}</td>
+                                        <td class="text-center px-1 py-0.5">{{ $denomCounter++ }}</td>
+                                        <td class="px-1 py-0.5">Coins/Loose</td>
+                                        <td class="text-right px-1 py-0.5">-</td>
+                                        <td class="text-right font-bold px-1 py-0.5">{{ number_format($coins, 2) }}</td>
                                     </tr>
                                     @php $calculatedCash += $coins; @endphp
                                 </tbody>
                                 <tfoot class="bg-gray-50 font-bold tabular-nums">
                                     <tr>
-                                        <td colspan="2" class="text-right">Total Physical Cash:</td>
-                                        <td class="text-right">{{ number_format($calculatedCash, 2) }}</td>
+                                        <td colspan="3" class="text-right px-1 py-0.5">Total Physical Cash:</td>
+                                        <td class="text-right px-1 py-0.5">{{ number_format($calculatedCash, 2) }}</td>
                                     </tr>
                                 </tfoot>
                             </table>
                         </div>
+                    </div>
+                    </div> {{-- End of Expense Details Group --}}
 
-                        {{-- Final Summaries Stacked --}}
-                        <div class="space-y-6">
+                    {{-- Financial Summary --}}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                             {{-- Sales Summary --}}
                             <div>
                                 <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Sales Summary</h4>

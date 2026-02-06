@@ -714,12 +714,12 @@
                                 <thead>
                                     <tr class="bg-gray-100">
                                         <th class="text-center w-6 px-1 py-0.5">#</th>
-                                        <th class="text-left px-1 py-0.5">
+                                        <th class="text-center px-1 py-0.5">
                                             <span class="print:hidden"><x-tooltip text="Product Name">SKU</x-tooltip></span>
                                             <span class="hidden print:inline">Product</span>
                                         </th>
-                                        <th class="text-right px-1 py-0.5">Qty</th>
-                                        <th class="text-right px-1 py-0.5">Amount</th>
+                                        <th class="text-center px-1 py-0.5">Qty</th>
+                                        <th class="text-center px-1 py-0.5">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody class="tabular-nums">
@@ -749,12 +749,12 @@
                                 <thead>
                                     <tr class="bg-gray-100">
                                         <th class="text-center w-6 px-1 py-0.5">#</th>
-                                        <th class="text-left px-1 py-0.5">
+                                        <th class="text-center px-1 py-0.5">
                                             <span class="print:hidden"><x-tooltip text="Product Name">SKU</x-tooltip></span>
                                             <span class="hidden print:inline">Product</span>
                                         </th>
-                                        <th class="text-right px-1 py-0.5">Qty</th>
-                                        <th class="text-right px-1 py-0.5">Amount</th>
+                                        <th class="text-center px-1 py-0.5">Qty</th>
+                                        <th class="text-center px-1 py-0.5">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody class="tabular-nums">
@@ -793,12 +793,12 @@
                                 <thead>
                                     <tr class="bg-gray-100">
                                         <th class="text-center w-6 px-1 py-0.5">#</th>
-                                        <th class="text-left px-1 py-0.5">
+                                        <th class="text-center px-1 py-0.5">
                                             <span class="print:hidden"><x-tooltip text="Customer Name (Code)">Customer</x-tooltip></span>
                                             <span class="hidden print:inline">Customer</span>
                                         </th>
-                                        <th class="text-right px-1 py-0.5">Inv #</th>
-                                        <th class="text-right px-1 py-0.5">Tax</th>
+                                        <th class="text-center px-1 py-0.5">Inv #</th>
+                                        <th class="text-center px-1 py-0.5">Tax</th>
                                     </tr>
                                 </thead>
                                 <tbody class="tabular-nums">
@@ -828,12 +828,12 @@
                                 <thead>
                                     <tr class="bg-gray-100">
                                         <th class="text-center w-6 px-1 py-0.5">#</th>
-                                        <th class="text-left px-1 py-0.5">
+                                        <th class="text-center px-1 py-0.5">
                                             <span class="print:hidden"><x-tooltip text="Customer Name (Code)">Customer</x-tooltip></span>
                                             <span class="hidden print:inline">Customer</span>
                                         </th>
-                                        <th class="text-left px-1 py-0.5">Inv #</th>
-                                        <th class="text-right px-1 py-0.5">Amount</th>
+                                        <th class="text-center px-1 py-0.5">Inv #</th>
+                                        <th class="text-center px-1 py-0.5">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody class="tabular-nums">
@@ -944,7 +944,7 @@
                     <div class="grid grid-cols-2 gap-1 items-start print:block mt-2 clearfix" style="page-break-inside: auto; break-inside: auto;">
                         {{-- Other Expenses --}}
                         <div class="print:w-1/2 print:float-left print:pr-1" style="page-break-inside: auto; break-inside: auto;">
-                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Group Expenses</h4>
+                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Group Expenses</h4>
                             <table class="report-table w-full" style="page-break-inside: auto; break-inside: auto;">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -991,7 +991,7 @@
 
                         {{-- Cash Denominations --}}
                         <div class="print:w-1/2 print:float-left print:pl-1">
-                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Cash Detail</h4>
+                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Cash Detail</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -1035,7 +1035,7 @@
                     <div class="grid grid-cols-2 md:grid-cols-2 gap-1 pt-0 print:block clearfix" style="page-break-inside: auto; break-inside: auto;">
                             {{-- Sales Summary (Matching Create/Edit Sequence) --}}
                             <div class="print:w-1/2 print:float-left print:pr-1">
-                                <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Sales Summary</h4>
+                                <h4 class="font-bold text-sm border-x border-t border-black text-center mt-2">Sales Summary</h4>
                                 <table class="report-table w-full tabular-nums">
                                     <thead>
                                         <tr class="bg-gray-100">
@@ -1125,7 +1125,7 @@
                             </div>
                             {{-- Profitability Analysis --}}
                             <div class="print:w-1/2 print:float-left print:pl-1">
-                                <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Profit Analysis</h4>
+                                <h4 class="font-bold text-sm border-x border-t border-black text-center mt-2">Profit Analysis</h4>
                                 <table class="report-table w-full tabular-nums">
                                     <thead>
                                         <tr class="bg-gray-100">

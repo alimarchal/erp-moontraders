@@ -225,6 +225,20 @@
                 </select>
             </div>
 
+            <!-- Supplier Filter -->
+            <div class="md:col-span-2 lg:col-span-1">
+                <x-label for="filter_supplier_id" value="Supplier" />
+                <select id="filter_supplier_id" name="filter[supplier_id]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Suppliers</option>
+                    @foreach($suppliers as $supplier)
+                        <option value="{{ $supplier->id }}" {{ ($filters['supplier_id'] ?? '') == $supplier->id ? 'selected' : '' }}>
+                            {{ $supplier->supplier_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             <!-- Product/SKU Filter -->
             <div class="md:col-span-2 lg:col-span-1">
                 <x-label for="filter_product_id" value="Product / SKU" />

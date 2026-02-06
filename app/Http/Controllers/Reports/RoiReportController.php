@@ -28,10 +28,14 @@ class RoiReportController extends Controller
         $startDate = \Carbon\Carbon::parse($request->input('filter.start_date'));
         $endDate = \Carbon\Carbon::parse($request->input('filter.end_date'));
         $employeeIds = $request->input('filter.employee_id');
+        $supplierId = $request->input('filter.supplier_id');
 
         // 2. Fetch All Products
         $products = \App\Models\Product::with('category')
             ->where('is_active', true)
+            ->when($supplierId, function ($q) use ($supplierId) {
+                $q->where('supplier_id', $supplierId);
+            })
             ->get()
             ->sortBy(['category.name', 'product_name']);
 
@@ -110,48 +114,86 @@ class RoiReportController extends Controller
             $matrixData['dates'][] = $date->format('Y-m-d');
         }
 
-        // Calculate Global Expenses Allocation
-        // Fetch total expenses and sales for the period to calculate allocation ratio
-        $globalFinancials = DB::table('sales_settlements')
-            ->whereBetween('settlement_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->where('status', 'posted') // Match query logic above
+        // Calculate Global Expenses Allocation (ROBUST METHOD)
+        // We calculate global totals directly from detailed tables (items & expenses)
+        // to avoid issues where sales_settlements.total_sales_amount/expenses_claimed might be zero/outdated.
+
+        // 1. Calculate Global Sales & COGS from ITEMS
+        $globalItemsStats = DB::table('sales_settlement_items')
+            ->join('sales_settlements', 'sales_settlement_items.sales_settlement_id', '=', 'sales_settlements.id')
+            ->whereBetween('sales_settlements.settlement_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->when($request->input('filter.status'), function ($query, $status) {
                 if ($status === 'draft' || $status === 'posted') {
-                    $query->where('status', $status);
+                    $query->where('sales_settlements.status', $status);
                 }
+            }, function ($query) {
+                $query->where('sales_settlements.status', 'posted');
             })
             ->when($employeeIds, function ($query) use ($employeeIds) {
-                $query->whereIn('employee_id', (array) $employeeIds);
+                $query->whereIn('sales_settlements.employee_id', (array) $employeeIds);
             })
             ->when($request->input('filter.vehicle_id'), function ($query) use ($request) {
-                $query->where('vehicle_id', $request->input('filter.vehicle_id'));
+                $query->where('sales_settlements.vehicle_id', $request->input('filter.vehicle_id'));
             })
             ->when($request->input('filter.warehouse_id'), function ($query) use ($request) {
-                $query->where('warehouse_id', $request->input('filter.warehouse_id'));
+                $query->where('sales_settlements.warehouse_id', $request->input('filter.warehouse_id'));
             })
             ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
-                $query->where('settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
+                $query->where('sales_settlements.settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
             })
-            // Note: Expenses are usually trip-based (Global), so filtering by Product ID
-            // strictly for expenses might not be standard logic unless user wants to see expenses *allocated* to that product.
-            // Our allocation logic uses Ratio (Product Sales / Total Sales).
-            // If we filter by Product, the "Total Sales" for ratio should probably be the filtered sales? 
-            // OR should it be Global Sales to get the fair share?
-            // Usually: Expenses are allocated to products based on their contribution to total revenue.
-            // If viewing Single Product, we just want to see that product's share of expenses.
-            // So logic below (Ratio * RowSales) works fine regardless of filter.
-            // We just need to make sure the "Total Expenses" and "Total Sales" used for the ratio are correct.
-            // If I filter by Product ID, the "Total Sales Global" should logic stay "All Sales" or "Filtered Sales"?
-            // If I change the global query to filter by Product, "Total Sales" becomes just that product's sales.
-            // "Total Expenses" (Trip expenses) wouldn't change just because I filtered a product view.
-            // So: Expense Ratio = (Total Trip Expenses) / (Total Trip Sales).
-            // This ratio is then applied to the Product Row.
-            // So do NOT apply product_id filter to the global financials query.
-            ->selectRaw('SUM(expenses_claimed) as total_expenses, SUM(total_sales_amount) as total_sales')
+            ->selectRaw('
+                SUM(sales_settlement_items.total_sales_value) as total_sales,
+                SUM(sales_settlement_items.total_cogs) as total_cogs
+            ')
             ->first();
 
-        $totalExpenses = $globalFinancials->total_expenses ?? 0;
-        $totalSalesGlobal = $globalFinancials->total_sales ?? 0;
+        $totalSalesGlobal = $globalItemsStats->total_sales ?? 0;
+        $totalCogsGlobal = $globalItemsStats->total_cogs ?? 0;
+
+        // 2. Fetch Detailed All Expenses & Calculate Global Expenses Sum
+        // Optimization: We fetch the breakdown first and sum it to get the global total, saving a query.
+        $fetchedExpensesCollection = DB::table('sales_settlement_expenses')
+            ->join('sales_settlements', 'sales_settlement_expenses.sales_settlement_id', '=', 'sales_settlements.id')
+            ->join('chart_of_accounts', 'sales_settlement_expenses.expense_account_id', '=', 'chart_of_accounts.id')
+            ->whereBetween('sales_settlements.settlement_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->when($request->input('filter.status'), function ($query, $status) {
+                if ($status === 'draft' || $status === 'posted') {
+                    $query->where('sales_settlements.status', $status);
+                }
+            }, function ($query) {
+                $query->where('sales_settlements.status', 'posted');
+            })
+            ->when($employeeIds, function ($query) use ($employeeIds) {
+                $query->whereIn('sales_settlements.employee_id', (array) $employeeIds);
+            })
+            ->when($request->input('filter.vehicle_id'), function ($query) use ($request) {
+                $query->where('sales_settlements.vehicle_id', $request->input('filter.vehicle_id'));
+            })
+            ->when($request->input('filter.warehouse_id'), function ($query) use ($request) {
+                $query->where('sales_settlements.warehouse_id', $request->input('filter.warehouse_id'));
+            })
+            ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
+                $query->where('sales_settlements.settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
+            })
+            ->selectRaw('
+                chart_of_accounts.id as account_id,
+                chart_of_accounts.account_code,
+                chart_of_accounts.account_name,
+                SUM(sales_settlement_expenses.amount) as total_amount
+            ')
+            ->groupBy('chart_of_accounts.id', 'chart_of_accounts.account_code', 'chart_of_accounts.account_name')
+            // Remove having > 0 check to ensure we catch even small aggregated amounts
+            ->having('total_amount', '>', 0)
+            ->orderBy('chart_of_accounts.account_code')
+            ->get();
+
+        // Calculate Global Expenses from the breakdown
+        $totalExpensesGlobal = $fetchedExpensesCollection->sum('total_amount');
+
+        // Use these robust values
+        $totalExpenses = $totalExpensesGlobal;
+        // $totalSalesGlobal is already set above
+
         $expenseRatio = $totalSalesGlobal > 0 ? ($totalExpenses / $totalSalesGlobal) : 0;
 
         // Initialize Grand Totals Expenses Logic
@@ -228,47 +270,6 @@ class RoiReportController extends Controller
             }
         }
 
-        // Fetch Detailed Expense Breakdown (COA-wise)
-        // We fetch the GLOBAL breakdown first.
-        // Fetch Detailed Expense Breakdown (COA-wise)
-        // We fetch the GLOBAL breakdown first.
-        $expenseBreakdownQuery = DB::table('sales_settlement_expenses')
-            ->join('sales_settlements', 'sales_settlement_expenses.sales_settlement_id', '=', 'sales_settlements.id')
-            ->join('chart_of_accounts', 'sales_settlement_expenses.expense_account_id', '=', 'chart_of_accounts.id')
-            ->whereBetween('sales_settlements.settlement_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
-            ->when($request->input('filter.status'), function ($query, $status) {
-                if ($status === 'draft' || $status === 'posted') {
-                    $query->where('sales_settlements.status', $status);
-                }
-            }, function ($query) {
-                # Default to posted if not provided, consistent with global expenses query
-                $query->where('sales_settlements.status', 'posted');
-            })
-            ->when($employeeIds, function ($query) use ($employeeIds) {
-                $query->whereIn('sales_settlements.employee_id', (array) $employeeIds);
-            })
-            ->when($request->input('filter.vehicle_id'), function ($query) use ($request) {
-                $query->where('sales_settlements.vehicle_id', $request->input('filter.vehicle_id'));
-            })
-            ->when($request->input('filter.warehouse_id'), function ($query) use ($request) {
-                $query->where('sales_settlements.warehouse_id', $request->input('filter.warehouse_id'));
-            })
-            ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
-                $query->where('sales_settlements.settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
-            })
-            ->selectRaw('
-                chart_of_accounts.id as account_id,
-                chart_of_accounts.account_code,
-                chart_of_accounts.account_name,
-                SUM(sales_settlement_expenses.amount) as total_amount
-            ')
-            ->groupBy('chart_of_accounts.id', 'chart_of_accounts.account_code', 'chart_of_accounts.account_name')
-            // Remove having > 0 check to ensure we catch even small aggregated amounts, 
-            // though practically 0s are fine to filter, but since we default 0s anyway, let's keep consistent.
-            ->having('total_amount', '>', 0)
-            ->orderBy('chart_of_accounts.account_code')
-            ->get();
-
         // Calculate Allocation Factor
         $viewedSales = $matrixData['grand_totals']['sale_amount'];
         $allocationFactor = $totalSalesGlobal > 0 ? ($viewedSales / $totalSalesGlobal) : 0;
@@ -286,7 +287,7 @@ class RoiReportController extends Controller
         ];
 
         // Key fetched expenses by Account ID for easy lookup
-        $fetchedExpenses = $expenseBreakdownQuery->keyBy('account_id');
+        $fetchedExpenses = $fetchedExpensesCollection->keyBy('account_id');
 
         // Build Optimized Breakdown List
         $finalBreakdown = collect();
@@ -330,6 +331,12 @@ class RoiReportController extends Controller
 
         $vehicles = Vehicle::where('is_active', true)->orderBy('registration_number', 'asc')->get(['id', 'registration_number']);
         $warehouses = Warehouse::orderBy('warehouse_name', 'asc')->get(['id', 'warehouse_name as name']);
+
+        // Fetch Suppliers for Filter
+        $suppliers = \App\Models\Supplier::where('disabled', false)
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
+
         // Fetch Product List for Filter
         $productList = \App\Models\Product::where('is_active', true)
             ->orderBy('product_name')
@@ -374,6 +381,12 @@ class RoiReportController extends Controller
                 $filterSummary[] = "Product: {$p->product_name}";
         }
 
+        if ($request->input('filter.supplier_id')) {
+            $s = $suppliers->firstWhere('id', $request->input('filter.supplier_id'));
+            if ($s)
+                $filterSummary[] = "Supplier: {$s->supplier_name}";
+        }
+
 
         // Prepare Category Summary
         $categorySummary = $matrixData['products']->groupBy('category_name')->map(function ($products, $categoryName) {
@@ -390,6 +403,7 @@ class RoiReportController extends Controller
             'employees' => $employees,
             'vehicles' => $vehicles,
             'warehouses' => $warehouses,
+            'suppliers' => $suppliers,
             'productList' => $productList,
             'startDate' => $startDate->format('Y-m-d'),
             'endDate' => $endDate->format('Y-m-d'),

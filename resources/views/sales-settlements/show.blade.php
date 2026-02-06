@@ -359,10 +359,10 @@
                             <th class="text-center">SKU</th>
                             <th class="text-center">B/F (In)</th>
                             <th class="text-center">Qty Issued</th>
-                            <th class="text-center">Batch Breakdown</th>
+                            <th class="text-center">Batch (TP)</th>
                             <th class="text-center">Sold</th>
-                            <th class="text-center">Returned</th>
-                            <th class="text-center">Shortage</th>
+                            <th class="text-center">Return</th>
+                            <th class="text-center">Short</th>
                             <th class="text-center">B/F (Out)</th>
                             <th class="text-center">Sales Value</th>
                         </tr>
@@ -387,11 +387,11 @@
 
                                             @foreach($item->batches as $b)
                                             <span class="tabular-nums text-black font-bold">
-                                            <!-- {{ $b->batch_code ?? 'N/A' }} -->
+                                            
                                                 {{ number_format($b->quantity_issued, 0) }} × {{ number_format($b->selling_price, 2) }}
                                                 
                                                 @if($b->is_promotional) (Promo) @endif
-                                                = {{ number_format($b->quantity_issued * $b->selling_price, 2) }}</span><br>
+                                                = {{ number_format($b->quantity_issued * $b->selling_price, 2) }} ({{ $b->batch_code ?? 'N/A' }})</span><br>
                                             @endforeach
                                         </div>
                                     @else

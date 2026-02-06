@@ -444,255 +444,260 @@
                         $maxRows = max($csCount, $recCount);
                     @endphp
 
-                    <div class="grid grid-cols-2 lg:grid-cols-2 gap-1 items-start print:grid-cols-2">
-                        {{-- Credit Sales --}}
-                        <div>
-                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Credit Sales Breakdown</h4>
-                            <table class="report-table w-full">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="text-center w-10">#</th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Customer Name">Customer Name</x-tooltip></span>
-                                            <span class="hidden print:inline">Name</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Invoice Number">Inv #</x-tooltip></span>
-                                            <span class="hidden print:inline">Inv #</span>
-                                        </th>
-                                        <th class="text-right">
-                                            <span class="print:hidden"><x-tooltip text="Previous Balance">PB</x-tooltip></span>
-                                            <span class="hidden print:inline">Pre Bal</span>
-                                        </th>
-                                        <th class="text-right">
-                                            <span class="print:hidden"><x-tooltip text="Credit Sale">Sale</x-tooltip></span>
-                                            <span class="hidden print:inline">Credit</span>
-                                        </th>
-                                        <th class="text-right">
-                                            <span class="print:hidden"><x-tooltip text="New Balance">NB</x-tooltip></span>
-                                            <span class="hidden print:inline">Balance</span>
-                                        </th>
-                                        <th class="text-left">Notes</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="tabular-nums">
-                                    @if($maxRows > 0)
-                                        @for($i = 0; $i < $maxRows; $i++)
-                                            @php $creditSale = $settlement->creditSales->get($i); @endphp
-                                            <tr>
-                                                <td class="text-center">{{ $i + 1 }}</td>
-                                                <td>{{ $creditSale?->customer->customer_name ?? '-' }}</td>
-                                                <td>{{ $creditSale?->invoice_number ?? '-' }}</td>
-                                                <td class="text-right">{{ $creditSale ? number_format($creditSale->previous_balance, 2) : '-' }}</td>
-                                                <td class="text-right font-bold">{{ $creditSale ? number_format($creditSale->sale_amount, 2) : '-' }}</td>
-                                                <td class="text-right">{{ $creditSale ? number_format($creditSale->new_balance, 2) : '-' }}</td>
-                                                <td class="text-xs italic">{!! $creditSale?->notes ?? '-' !!}</td>
-                                            </tr>
-                                        @endfor
-                                    @else
-                                        <tr><td colspan="7" class="text-center italic text-gray-500">No credit sales recorded</td></tr>
-                                    @endif
-                                </tbody>
-                                <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                    <tr>
-                                        <td colspan="4" class="text-right">Total:</td>
-                                        <td class="text-right">{{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}</td>
-                                        <td colspan="2"></td>
-                                    </tr>
-                                </tfoot>    
-                            </table>
+                    {{-- Sales & Collection Details Group --}}
+                    <div class="border-2 border-black rounded-lg px-2 pb-2 mt-2">
+                        <h3 class="font-bold text-md text-center text-black  pb-1">Sales & Collection Details</h3>
+
+                        <div class="grid grid-cols-2 lg:grid-cols-2 gap-1 items-start print:grid-cols-2">
+                            {{-- Credit Sales --}}
+                            <div>
+                                <h4 class="font-bold text-sm border-x border-t border-black  text-center">Credit Sales Breakdown</h4>
+                                <table class="report-table w-full">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="text-center w-10">#</th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Customer Name">Customer Name</x-tooltip></span>
+                                                <span class="hidden print:inline">Name</span>
+                                            </th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Invoice Number">Inv #</x-tooltip></span>
+                                                <span class="hidden print:inline">Inv #</span>
+                                            </th>
+                                            <th class="text-right">
+                                                <span class="print:hidden"><x-tooltip text="Previous Balance">PB</x-tooltip></span>
+                                                <span class="hidden print:inline">Pre Bal</span>
+                                            </th>
+                                            <th class="text-right">
+                                                <span class="print:hidden"><x-tooltip text="Credit Sale">Sale</x-tooltip></span>
+                                                <span class="hidden print:inline">Credit</span>
+                                            </th>
+                                            <th class="text-right">
+                                                <span class="print:hidden"><x-tooltip text="New Balance">NB</x-tooltip></span>
+                                                <span class="hidden print:inline">Balance</span>
+                                            </th>
+                                            <th class="text-left">Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="tabular-nums">
+                                        @if($maxRows > 0)
+                                            @for($i = 0; $i < $maxRows; $i++)
+                                                @php $creditSale = $settlement->creditSales->get($i); @endphp
+                                                <tr>
+                                                    <td class="text-center">{{ $i + 1 }}</td>
+                                                    <td>{{ $creditSale?->customer->customer_name ?? '-' }}</td>
+                                                    <td>{{ $creditSale?->invoice_number ?? '-' }}</td>
+                                                    <td class="text-right">{{ $creditSale ? number_format($creditSale->previous_balance, 2) : '-' }}</td>
+                                                    <td class="text-right font-bold">{{ $creditSale ? number_format($creditSale->sale_amount, 2) : '-' }}</td>
+                                                    <td class="text-right">{{ $creditSale ? number_format($creditSale->new_balance, 2) : '-' }}</td>
+                                                    <td class="text-xs italic">{!! $creditSale?->notes ?? '-' !!}</td>
+                                                </tr>
+                                            @endfor
+                                        @else
+                                            <tr><td colspan="7" class="text-center italic text-gray-500">No credit sales recorded</td></tr>
+                                        @endif
+                                    </tbody>
+                                    <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                        <tr>
+                                            <td colspan="4" class="text-right">Total:</td>
+                                            <td class="text-right">{{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}</td>
+                                            <td colspan="2"></td>
+                                        </tr>
+                                    </tfoot>    
+                                </table>
+                            </div>
+    
+                            {{-- Recoveries --}}
+                            <div>
+                                <h4 class="ffont-bold text-sm border-x border-t border-black  text-center">Recoveries Breakdown</h4>
+                                <table class="report-table w-full">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="text-center w-10">#</th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Customer Name">CN</x-tooltip></span>
+                                                <span class="hidden print:inline">Name</span>
+                                            </th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Recovery Number">Rec #</x-tooltip></span>
+                                                <span class="hidden print:inline">Rec #</span>
+                                            </th>
+                                            <th class="text-right">
+                                                <span class="print:hidden"><x-tooltip text="Previous Balance">PB</x-tooltip></span>
+                                                <span class="hidden print:inline">Prev Bal.</span>
+                                            </th>
+                                            <th class="text-right">
+                                                <span class="print:hidden"><x-tooltip text="Recovery Amount">Amt</x-tooltip></span>
+                                                <span class="hidden print:inline">Rec Amt</span>
+                                            </th>
+                                            <th class="text-center">
+                                                <span class="print:hidden"><x-tooltip text="Payment Method">Method</x-tooltip></span>
+                                                <span class="hidden print:inline">Mtd</span>
+                                            </th>
+                                            <th class="text-right">
+                                                <span class="print:hidden"><x-tooltip text="New Balance">NB</x-tooltip></span>
+                                                <span class="hidden print:inline">Balance</span>
+                                            </th>
+                                            <th class="text-left">Notes</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="tabular-nums">
+                                        @if($maxRows > 0)
+                                            @for($i = 0; $i < $maxRows; $i++)
+                                                @php $recovery = $settlement->recoveries->get($i); @endphp
+                                                <tr>
+                                                    <td class="text-center">{{ $i + 1 }}</td>
+                                                    <td>{{ $recovery?->customer->customer_name ?? '-' }}</td>
+                                                    <td>{{ $recovery?->recovery_number ?? '-' }}</td>
+                                                    <td class="text-right">{{ $recovery ? number_format($recovery->previous_balance, 2) : '-' }}</td>
+                                                    <td class="text-right font-bold">{{ $recovery ? number_format($recovery->amount, 2) : '-' }}</td>
+                                                    <td class="text-center text-xs uppercase">
+                                                        @if($recovery)
+                                                            {{ $recovery->payment_method === 'cash' ? 'Cash' : 'Bank' }}
+                                                        @else
+                                                            -
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-right">{{ $recovery ? number_format($recovery->new_balance, 2) : '-' }}</td>
+                                                    <td class="text-xs italic">{!! $recovery?->notes ?? '-' !!}</td>
+                                                </tr>
+                                            @endfor
+                                        @else
+                                            <tr><td colspan="8" class="text-center italic text-gray-500">No recoveries recorded</td></tr>
+                                        @endif
+                                    </tbody>
+                                    <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                        <tr>
+                                            <td colspan="4" class="text-right">Total:</td>
+                                            <td class="text-right">{{ number_format($settlement->recoveries->sum('amount'), 2) }}</td>
+                                            <td colspan="3"></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
-
-                        {{-- Recoveries --}}
-                        <div>
-                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Recoveries Breakdown</h4>
-                            <table class="report-table w-full">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="text-center w-10">#</th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Customer Name">CN</x-tooltip></span>
-                                            <span class="hidden print:inline">Name</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Recovery Number">Rec #</x-tooltip></span>
-                                            <span class="hidden print:inline">Rec #</span>
-                                        </th>
-                                        <th class="text-right">
-                                            <span class="print:hidden"><x-tooltip text="Previous Balance">PB</x-tooltip></span>
-                                            <span class="hidden print:inline">Prev Bal.</span>
-                                        </th>
-                                        <th class="text-right">
-                                            <span class="print:hidden"><x-tooltip text="Recovery Amount">Amt</x-tooltip></span>
-                                            <span class="hidden print:inline">Rec Amt</span>
-                                        </th>
-                                        <th class="text-center">
-                                            <span class="print:hidden"><x-tooltip text="Payment Method">Method</x-tooltip></span>
-                                            <span class="hidden print:inline">Mtd</span>
-                                        </th>
-                                        <th class="text-right">
-                                            <span class="print:hidden"><x-tooltip text="New Balance">NB</x-tooltip></span>
-                                            <span class="hidden print:inline">Balance</span>
-                                        </th>
-                                        <th class="text-left">Notes</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="tabular-nums">
-                                    @if($maxRows > 0)
-                                        @for($i = 0; $i < $maxRows; $i++)
-                                            @php $recovery = $settlement->recoveries->get($i); @endphp
-                                            <tr>
-                                                <td class="text-center">{{ $i + 1 }}</td>
-                                                <td>{{ $recovery?->customer->customer_name ?? '-' }}</td>
-                                                <td>{{ $recovery?->recovery_number ?? '-' }}</td>
-                                                <td class="text-right">{{ $recovery ? number_format($recovery->previous_balance, 2) : '-' }}</td>
-                                                <td class="text-right font-bold">{{ $recovery ? number_format($recovery->amount, 2) : '-' }}</td>
-                                                <td class="text-center text-xs uppercase">
-                                                    @if($recovery)
-                                                        {{ $recovery->payment_method === 'cash' ? 'Cash' : 'Bank' }}
-                                                    @else
-                                                        -
-                                                    @endif
-                                                </td>
-                                                <td class="text-right">{{ $recovery ? number_format($recovery->new_balance, 2) : '-' }}</td>
-                                                <td class="text-xs italic">{!! $recovery?->notes ?? '-' !!}</td>
-                                            </tr>
-                                        @endfor
-                                    @else
-                                        <tr><td colspan="8" class="text-center italic text-gray-500">No recoveries recorded</td></tr>
-                                    @endif
-                                </tbody>
-                                <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                    <tr>
-                                        <td colspan="4" class="text-right">Total:</td>
-                                        <td class="text-right">{{ number_format($settlement->recoveries->sum('amount'), 2) }}</td>
-                                        <td colspan="3"></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-
-                    @php
-                        $chequeCount = $settlement->cheques->count();
-                        $bankCount = $settlement->bankTransfers->count();
-                        $maxRows2 = max($chequeCount, $bankCount);
-                    @endphp
-
-                    <div class="grid grid-cols-2 lg:grid-cols-2 gap-1 items-start print:grid-cols-2">
-                        {{-- Cheque Payments --}}
-                        <div>
-                            <h4 class="font-bold text-sm     mb-1 pb-0 text-center">Cheque Payments</h4>
-                            <table class="report-table w-full">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="text-center w-10">#</th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Cheque Date">Date</x-tooltip></span>
-                                            <span class="hidden print:inline">Date</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Cheque Number">Chq #</x-tooltip></span>
-                                            <span class="hidden print:inline">Chq #</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Customer Name">CN</x-tooltip></span>
-                                            <span class="hidden print:inline">Customer</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Bank Name">Bank</x-tooltip></span>
-                                            <span class="hidden print:inline">Bank</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Deposit Bank">Dep Bank</x-tooltip></span>
-                                            <span class="hidden print:inline">Dep Bank</span>
-                                        </th>
-                                        <th class="text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="tabular-nums">
-                                    @if($maxRows2 > 0)
-                                        @for($i = 0; $i < $maxRows2; $i++)
-                                            @php $cheque = $settlement->cheques->get($i); @endphp
-                                            <tr>
-                                                <td class="text-center">{{ $i + 1 }}</td>
-                                                <td>{{ $cheque && $cheque->cheque_date ? \Carbon\Carbon::parse($cheque->cheque_date)->format('d-M-y') : '-' }}</td>
-                                                <td>{{ $cheque->cheque_number ?? '-' }}</td>
-                                                <td>{{ $cheque->customer->customer_name ?? '-' }}</td>
-                                                <td>{{ $cheque->bank_name ?? '-' }}</td>
-                                                <td>{{ $cheque->bankAccount->account_name ?? '-' }}</td>
-                                                <td class="text-right font-bold">{{ $cheque ? number_format($cheque->amount, 2) : '-' }}</td>
-                                            </tr>
-                                        @endfor
-                                    @else
-                                        <tr><td colspan="7" class="text-center italic text-gray-500">No cheques recorded</td></tr>
-                                    @endif
-                                </tbody>
-                                <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                    <tr>
-                                        <td colspan="6" class="text-right">Total:</td>
-                                        <td class="text-right">{{ number_format($settlement->cheques->sum('amount'), 2) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-
-                        {{-- Bank Transfers --}}
-                        <div>
-                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Bank Transfers / Online</h4>
-                            <table class="report-table w-full">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="text-center w-10">#</th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Transfer Date">Date</x-tooltip></span>
-                                            <span class="hidden print:inline">Date</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Customer Name">CN</x-tooltip></span>
-                                            <span class="hidden print:inline">Customer</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Bank Account">Bank</x-tooltip></span>
-                                            <span class="hidden print:inline">Bank</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Reference Number">Ref #</x-tooltip></span>
-                                            <span class="hidden print:inline">Ref #</span>
-                                        </th>
-                                        <th class="text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="tabular-nums">
-                                    @if($maxRows2 > 0)
-                                        @for($i = 0; $i < $maxRows2; $i++)
-                                            @php $transfer = $settlement->bankTransfers->get($i); @endphp
-                                            <tr>
-                                                <td class="text-center">{{ $i + 1 }}</td>
-                                                <td>{{ $transfer && $transfer->transfer_date ? \Carbon\Carbon::parse($transfer->transfer_date)->format('d-M-y') : '-' }}</td>
-                                                <td>{{ $transfer->customer->customer_name ?? '-' }}</td>
-                                                <td>{{ $transfer->bankAccount->account_name ?? '-' }}</td>
-                                                <td>{{ $transfer->reference_number ?? '-' }}</td>
-                                                <td class="text-right font-bold">{{ $transfer ? number_format($transfer->amount, 2) : '-' }}</td>
-                                            </tr>
-                                        @endfor
-                                    @else
-                                        <tr><td colspan="6" class="text-center italic text-gray-500">No bank transfers recorded</td></tr>
-                                    @endif
-                                </tbody>
-                                <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                    <tr>
-                                        <td colspan="5" class="text-right">Total:</td>
-                                        <td class="text-right">{{ number_format($settlement->bankTransfers->sum('amount'), 2) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+    
+                        @php
+                            $chequeCount = $settlement->cheques->count();
+                            $bankCount = $settlement->bankTransfers->count();
+                            $maxRows2 = max($chequeCount, $bankCount);
+                        @endphp
+    
+                        <div class="grid grid-cols-2 lg:grid-cols-2 gap-1 items-start print:grid-cols-2 mt-1">
+                            {{-- Cheque Payments --}}
+                            <div>
+                                <h4 class="font-bold text-sm border-x border-t border-black  text-center">Cheque Payments</h4>
+                                <table class="report-table w-full">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="text-center w-10">#</th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Cheque Date">Date</x-tooltip></span>
+                                                <span class="hidden print:inline">Date</span>
+                                            </th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Cheque Number">Chq #</x-tooltip></span>
+                                                <span class="hidden print:inline">Chq #</span>
+                                            </th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Customer Name">CN</x-tooltip></span>
+                                                <span class="hidden print:inline">Customer</span>
+                                            </th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Bank Name">Bank</x-tooltip></span>
+                                                <span class="hidden print:inline">Bank</span>
+                                            </th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Deposit Bank">Dep Bank</x-tooltip></span>
+                                                <span class="hidden print:inline">Dep Bank</span>
+                                            </th>
+                                            <th class="text-right">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="tabular-nums">
+                                        @if($maxRows2 > 0)
+                                            @for($i = 0; $i < $maxRows2; $i++)
+                                                @php $cheque = $settlement->cheques->get($i); @endphp
+                                                <tr>
+                                                    <td class="text-center">{{ $i + 1 }}</td>
+                                                    <td>{{ $cheque && $cheque->cheque_date ? \Carbon\Carbon::parse($cheque->cheque_date)->format('d-M-y') : '-' }}</td>
+                                                    <td>{{ $cheque->cheque_number ?? '-' }}</td>
+                                                    <td>{{ $cheque->customer->customer_name ?? '-' }}</td>
+                                                    <td>{{ $cheque->bank_name ?? '-' }}</td>
+                                                    <td>{{ $cheque->bankAccount->account_name ?? '-' }}</td>
+                                                    <td class="text-right font-bold">{{ $cheque ? number_format($cheque->amount, 2) : '-' }}</td>
+                                                </tr>
+                                            @endfor
+                                        @else
+                                            <tr><td colspan="7" class="text-center italic text-gray-500">No cheques recorded</td></tr>
+                                        @endif
+                                    </tbody>
+                                    <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                        <tr>
+                                            <td colspan="6" class="text-right">Total:</td>
+                                            <td class="text-right">{{ number_format($settlement->cheques->sum('amount'), 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+    
+                            {{-- Bank Transfers --}}
+                            <div>
+                                <h4 class="font-bold text-sm border-x border-t border-black  text-center">Bank Transfers / Online</h4>
+                                <table class="report-table w-full">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="text-center w-10">#</th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Transfer Date">Date</x-tooltip></span>
+                                                <span class="hidden print:inline">Date</span>
+                                            </th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Customer Name">CN</x-tooltip></span>
+                                                <span class="hidden print:inline">Customer</span>
+                                            </th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Bank Account">Bank</x-tooltip></span>
+                                                <span class="hidden print:inline">Bank</span>
+                                            </th>
+                                            <th class="text-left">
+                                                <span class="print:hidden"><x-tooltip text="Reference Number">Ref #</x-tooltip></span>
+                                                <span class="hidden print:inline">Ref #</span>
+                                            </th>
+                                            <th class="text-right">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="tabular-nums">
+                                        @if($maxRows2 > 0)
+                                            @for($i = 0; $i < $maxRows2; $i++)
+                                                @php $transfer = $settlement->bankTransfers->get($i); @endphp
+                                                <tr>
+                                                    <td class="text-center">{{ $i + 1 }}</td>
+                                                    <td>{{ $transfer && $transfer->transfer_date ? \Carbon\Carbon::parse($transfer->transfer_date)->format('d-M-y') : '-' }}</td>
+                                                    <td>{{ $transfer->customer->customer_name ?? '-' }}</td>
+                                                    <td>{{ $transfer->bankAccount->account_name ?? '-' }}</td>
+                                                    <td>{{ $transfer->reference_number ?? '-' }}</td>
+                                                    <td class="text-right font-bold">{{ $transfer ? number_format($transfer->amount, 2) : '-' }}</td>
+                                                </tr>
+                                            @endfor
+                                        @else
+                                            <tr><td colspan="6" class="text-center italic text-gray-500">No bank transfers recorded</td></tr>
+                                        @endif
+                                    </tbody>
+                                    <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                        <tr>
+                                            <td colspan="5" class="text-right">Total:</td>
+                                            <td class="text-right">{{ number_format($settlement->bankTransfers->sum('amount'), 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
                     {{-- Expense Details Group --}}
                     <div class="border-2 border-black rounded-lg px-2 pb-2 mt-2">
-                        <h3 class="font-bold text-md text-center text-black mb-1 border-b border-black pb-1">Expense Details</h3>
+                        <h3 class="font-bold text-md text-center text-black  pb-1">Expense Details</h3>
 
                     {{-- Row 1: AMR Powder | AMR Liquid --}}
                     @php
@@ -704,7 +709,7 @@
                     <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2">
                         {{-- AMR Powder --}}
                         <div>
-                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">AMR Powder (5252)</h4>
+                            <h4 class="font-bold text-sm border-x border-t border-black  text-center">AMR Powder (5252)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -739,7 +744,7 @@
 
                         {{-- AMR Liquid --}}
                         <div>
-                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">AMR Liquid (5262)</h4>
+                            <h4 class="font-bold text-sm border-x border-t border-black   text-center">AMR Liquid (5262)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -783,7 +788,7 @@
                     <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2 mt-1">
                         {{-- Advance Tax --}}
                         <div>
-                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Advance Tax (1161)</h4>
+                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Advance Tax (1161)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -818,7 +823,7 @@
 
                         {{-- Percentage Expense --}}
                         <div>
-                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Percentage Expense (5223)</h4>
+                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Percentage Expense (5223)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -874,6 +879,63 @@
                         $additionalExpenses = $settlement->expenses->filter(function($expense) use ($predefinedIds) {
                             return !in_array($expense->expense_account_id, $predefinedIds);
                         });
+
+                        // Prepare Group Expenses Rows
+                        $groupExpenseRows = [];
+                        foreach($predefinedExpenses as $predef) {
+                            $savedExpense = $savedExpenseAmounts->get($predef['id']);
+                            $amount = $savedExpense ? $savedExpense->amount : 0;
+                            $groupExpenseRows[] = [
+                                'label' => $predef['label'],
+                                'code' => $predef['code'],
+                                'amount' => $amount,
+                                'is_predefined' => true,
+                                'id' => $predef['id']
+                            ];
+                        }
+                        foreach($additionalExpenses as $expense) {
+                            $groupExpenseRows[] = [
+                                'label' => $expense->expenseAccount->account_name ?? 'Unknown',
+                                'code' => $expense->expenseAccount->account_code ?? '-',
+                                'amount' => $expense->amount,
+                                'is_predefined' => false
+                            ];
+                        }
+
+                        // Prepare Cash Detail Rows
+                        $cashDetailRows = [];
+                        $denominations = [
+                            ['label' => '5000 (Five Thousand Rupees)', 'qty' => $cashDenominations?->denom_5000 ?? 0, 'value' => 5000],
+                            ['label' => '1000 (One Thousand Rupees)', 'qty' => $cashDenominations?->denom_1000 ?? 0, 'value' => 1000],
+                            ['label' => '500 (Five Hundred Rupees)', 'qty' => $cashDenominations?->denom_500 ?? 0, 'value' => 500],
+                            ['label' => '100 (One Hundred Rupees)', 'qty' => $cashDenominations?->denom_100 ?? 0, 'value' => 100],
+                            ['label' => '50 (Fifty Rupees)', 'qty' => $cashDenominations?->denom_50 ?? 0, 'value' => 50],
+                            ['label' => '20 (Twenty Rupees)', 'qty' => $cashDenominations?->denom_20 ?? 0, 'value' => 20],
+                            ['label' => '10 (Ten Rupees)', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 10],
+                        ];
+                        
+                        $calculatedCash = 0;
+                        foreach($denominations as $d) {
+                            $rowVal = $d['qty'] * $d['value'];
+                            $calculatedCash += $rowVal;
+                            $cashDetailRows[] = [
+                                'label' => $d['label'],
+                                'qty' => $d['qty'],
+                                'value' => $rowVal, 
+                                'is_coin' => false
+                            ];
+                        }
+                        // Add Coins
+                        $cashDetailRows[] = [
+                            'label' => 'Coins/Loose',
+                            'qty' => '-',
+                            'value' => $coins,
+                            'is_coin' => true
+                        ];
+                        $calculatedCash += $coins;
+
+                        // Max Rows for Equal Height
+                        $maxRowsExp = max(count($groupExpenseRows), count($cashDetailRows));
                     @endphp
 
                     </div> {{-- End of Expense Details Group --}}
@@ -893,36 +955,30 @@
                                     </tr>
                                 </thead>
                                 <tbody class="tabular-nums">
-                                    @php $expCounter = 1; @endphp
-                                    {{-- Show predefined expenses in order --}}
-                                    @foreach($predefinedExpenses as $predef)
+                                    @for($i = 0; $i < $maxRowsExp; $i++)
                                         @php 
-                                            $savedExpense = $savedExpenseAmounts->get($predef['id']);
-                                            $amount = $savedExpense ? $savedExpense->amount : 0;
+                                            $expRow = $groupExpenseRows[$i] ?? null;
                                         @endphp
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">{{ $expCounter++ }}</td>
-                                            <td class="px-1 py-0.5">{{ $predef['label'] }}</td>
-                                            <td class="text-center px-1 py-0.5">
-                                                @if(in_array($predef['id'], [70, 71, 20, 76]))
-                                                    <span class="print:hidden underline decoration-dotted cursor-help"><x-tooltip text="See detailed breakdown in the table above">{{ $predef['code'] }}</x-tooltip></span>
-                                                    <span class="hidden print:inline">{{ $predef['code'] }}</span>
-                                                @else
-                                                    {{ $predef['code'] }}
-                                                @endif
-                                            </td>
-                                            <td class="text-right font-bold px-1 py-0.5">{{ number_format($amount, 2) }}</td>
+                                            <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
+                                            @if($expRow)
+                                                <td class="px-1 py-0.5">{{ $expRow['label'] }}</td>
+                                                <td class="text-center px-1 py-0.5">
+                                                    @if(isset($expRow['is_predefined']) && $expRow['is_predefined'] && in_array($expRow['id'], [70, 71, 20, 76]))
+                                                        <span class="print:hidden underline decoration-dotted cursor-help"><x-tooltip text="See detailed breakdown in the table above">{{ $expRow['code'] }}</x-tooltip></span>
+                                                        <span class="hidden print:inline">{{ $expRow['code'] }}</span>
+                                                    @else
+                                                        {{ $expRow['code'] }}
+                                                    @endif
+                                                </td>
+                                                <td class="text-right font-bold px-1 py-0.5">{{ number_format($expRow['amount'], 2) }}</td>
+                                            @else
+                                                <td class="px-1 py-0.5">-</td>
+                                                <td class="text-center px-1 py-0.5">-</td>
+                                                <td class="text-right font-bold px-1 py-0.5">-</td>
+                                            @endif
                                         </tr>
-                                    @endforeach
-                                    {{-- Show additional expenses (not in predefined list) --}}
-                                    @foreach($additionalExpenses as $expense)
-                                        <tr>
-                                            <td class="text-center px-1 py-0.5">{{ $expCounter++ }}</td>
-                                            <td class="px-1 py-0.5">{{ $expense->expenseAccount->account_name ?? 'Unknown' }}</td>
-                                            <td class="text-center px-1 py-0.5">{{ $expense->expenseAccount->account_code ?? '-' }}</td>
-                                            <td class="text-right font-bold px-1 py-0.5">{{ number_format($expense->amount, 2) }}</td>
-                                        </tr>
-                                    @endforeach
+                                    @endfor
                                 </tbody>
                                 <tfoot class="bg-gray-50 font-bold tabular-nums">
                                     <tr>
@@ -946,35 +1002,23 @@
                                     </tr>
                                 </thead>
                                 <tbody class="tabular-nums">
-                                    @php
-                                        $denominations = [
-                                            ['label' => '5000 (Five Thousand Rupees)', 'qty' => $cashDenominations?->denom_5000 ?? 0, 'value' => 5000],
-                                            ['label' => '1000 (One Thousand Rupees)', 'qty' => $cashDenominations?->denom_1000 ?? 0, 'value' => 1000],
-                                            ['label' => '500 (Five Hundred Rupees)', 'qty' => $cashDenominations?->denom_500 ?? 0, 'value' => 500],
-                                            ['label' => '100 (One Hundred Rupees)', 'qty' => $cashDenominations?->denom_100 ?? 0, 'value' => 100],
-                                            ['label' => '50 (Fifty Rupees)', 'qty' => $cashDenominations?->denom_50 ?? 0, 'value' => 50],
-                                            ['label' => '20 (Twenty Rupees)', 'qty' => $cashDenominations?->denom_20 ?? 0, 'value' => 20],
-                                            ['label' => '10 (Ten Rupees)', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 100],
-                                        ];
-                                        $calculatedCash = 0;
-                                        $denomCounter = 1;
-                                    @endphp
-                                    @foreach($denominations as $d)
-                                        @php $rowVal = $d['qty'] * $d['value']; $calculatedCash += $rowVal; @endphp
+                                    @for($i = 0; $i < $maxRowsExp; $i++)
+                                        @php 
+                                            $cashRow = $cashDetailRows[$i] ?? null;
+                                        @endphp
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">{{ $denomCounter++ }}</td>
-                                            <td class="px-1 py-0.5">{{ $d['label'] }}</td>
-                                            <td class="text-right px-1 py-0.5">{{ $d['qty'] }}</td>
-                                            <td class="text-right font-bold px-1 py-0.5">{{ number_format($rowVal, 0) }}</td>
+                                            <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
+                                            @if($cashRow)
+                                                <td class="px-1 py-0.5">{{ $cashRow['label'] }}</td>
+                                                <td class="text-right px-1 py-0.5">{{ $cashRow['qty'] }}</td>
+                                                <td class="text-right font-bold px-1 py-0.5">{{ number_format($cashRow['value'], isset($cashRow['is_coin']) && $cashRow['is_coin'] ? 2 : 0) }}</td>
+                                            @else
+                                                <td class="px-1 py-0.5">-</td>
+                                                <td class="text-right px-1 py-0.5">-</td>
+                                                <td class="text-right font-bold px-1 py-0.5">-</td>
+                                            @endif
                                         </tr>
-                                    @endforeach
-                                    <tr>
-                                        <td class="text-center px-1 py-0.5">{{ $denomCounter++ }}</td>
-                                        <td class="px-1 py-0.5">Coins/Loose</td>
-                                        <td class="text-right px-1 py-0.5">-</td>
-                                        <td class="text-right font-bold px-1 py-0.5">{{ number_format($coins, 2) }}</td>
-                                    </tr>
-                                    @php $calculatedCash += $coins; @endphp
+                                    @endfor
                                 </tbody>
                                 <tfoot class="bg-gray-50 font-bold tabular-nums">
                                     <tr>

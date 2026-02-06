@@ -1031,8 +1031,9 @@
                     </div>
                     
 
+
                     {{-- Financial Summary --}}
-                    <div class="grid grid-cols-2 md:grid-cols-2 gap-1 pt-0 print:block clearfix" style="page-break-inside: auto; break-inside: auto;">
+                    <div class="grid grid-cols-2 md:grid-cols-2 gap-1 mt-4 pt-0 print:block clearfix" style="page-break-inside: auto; break-inside: auto;">
                             {{-- Sales Summary (Matching Create/Edit Sequence) --}}
                             <div class="print:w-1/2 print:float-left print:pr-1">
                                 <h4 class="font-bold text-sm border-x border-t border-black text-center mt-2">Sales Summary</h4>
@@ -1048,72 +1049,72 @@
                                         <tr>
                                             <td class="text-center px-1 py-0.5">1</td>
                                             <td class="px-1 py-0.5">Credit Sale Amount</td>
-                                            <td class="text-right px-1 py-0.5 text-orange-700 font-semibold">{{ number_format($creditSalesAmount, 2) }}</td>
+                                            <td class="text-right px-1 py-0.5 font-bold">{{ number_format($settlement->credit_sales_amount, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">2</td>
                                             <td class="px-1 py-0.5">Cheque Sale Amount</td>
-                                            <td class="text-right px-1 py-0.5 text-blue-700 font-semibold">{{ number_format($chequeSalesAmount, 2) }}</td>
+                                            <td class="text-right px-1 py-0.5 font-bold">{{ number_format($settlement->cheque_sales_amount, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">3</td>
                                             <td class="px-1 py-0.5">Bank Transfer Amount</td>
-                                            <td class="text-right px-1 py-0.5 text-indigo-700 font-semibold">{{ number_format($bankSalesAmount, 2) }}</td>
+                                            <td class="text-right px-1 py-0.5 font-bold">{{ number_format($settlement->bank_transfer_amount, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">4</td>
                                             <td class="px-1 py-0.5">Cash Sale Amount</td>
-                                            <td class="text-right px-1 py-0.5 text-emerald-700 font-semibold">{{ number_format($cashSalesAmount, 2) }}</td>
+                                            <td class="text-right px-1 py-0.5 font-bold">{{ number_format($settlement->cash_sales_amount, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">5</td>
-                                            <td class="px-1 py-0.5">Net Sale (Sold Items Value)</td>
-                                            <td class="text-right px-1 py-0.5 font-semibold">{{ number_format($netSale, 2) }}</td>
+                                            <td class="px-1 py-0.5 font-bold">Net Sale (Sold Items Value)</td>
+                                            <td class="text-right px-1 py-0.5 font-black border-t border-black">{{ number_format($netSale, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">6</td>
                                             <td class="px-1 py-0.5">Return Value</td>
-                                            <td class="text-right px-1 py-0.5 text-blue-700 font-semibold">{{ number_format($settlement->goodsIssue?->items->where('status', 'Return')->sum(fn($i) => $i->quantity * $i->sale_price) ?? 0, 2) }}</td>
+                                            <td class="text-right px-1 py-0.5">{{ number_format($settlement->sales_return_amount, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">7</td>
                                             <td class="px-1 py-0.5">Shortage Value</td>
-                                            <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($settlement->goodsIssue?->items->where('status', 'Shortage')->sum(fn($i) => $i->quantity * $i->sale_price) ?? 0, 2) }}</td>
+                                            <td class="text-right px-1 py-0.5">{{ number_format($settlement->shortage_amount, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">8</td>
                                             <td class="px-1 py-0.5">Recovery (Cash)</td>
-                                            <td class="text-right px-1 py-0.5 text-teal-700 font-semibold">{{ number_format($settlement->recoveries->where('payment_mode', 'Cash')->sum('amount'), 2) }}</td>
+                                            <td class="text-right px-1 py-0.5">{{ number_format($recoveryCash, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">9</td>
                                             <td class="px-1 py-0.5">Recovery (Bank/Online)</td>
-                                            <td class="text-right px-1 py-0.5 text-blue-700 font-semibold">{{ number_format($settlement->recoveries->where('payment_mode', '!=', 'Cash')->sum('amount'), 2) }}</td>
+                                            <td class="text-right px-1 py-0.5">{{ number_format($recoveryBank, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">10</td>
-                                            <td class="px-1 py-0.5 font-semibold">Total Sale Amount</td>
-                                            <td class="text-right px-1 py-0.5 font-bold">{{ number_format($totalSaleAmount, 2) }}</td>
+                                            <td class="px-1 py-0.5 font-bold">Total Sale Amount</td>
+                                            <td class="text-right px-1 py-0.5 font-black border-t border-black">{{ number_format($netSale, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">11</td>
-                                            <td class="px-1 py-0.5">Expected Cash (Sales + Cash Recoveries)</td>
-                                            <td class="text-right px-1 py-0.5 font-semibold">{{ number_format($expectedCashGross, 2) }}</td>
+                                            <td class="px-1 py-0.5 font-semibold text-blue-700">Expected Cash (Sales + Cash Recoveries)</td>
+                                            <td class="text-right px-1 py-0.5 font-bold text-blue-700">{{ number_format($expectedCashGross, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">12</td>
                                             <td class="px-1 py-0.5 text-red-700">Less: Expenses</td>
-                                            <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($totalDeductions, 2) }}</td>
+                                            <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($totalExpenses, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">13</td>
-                                            <td class="px-1 py-0.5 font-semibold">Expected Cash (After Expenses)</td>
-                                            <td class="text-right px-1 py-0.5 font-bold">{{ number_format($expectedCashNet, 2) }}</td>
+                                            <td class="px-1 py-0.5 font-bold text-blue-900 bg-blue-50">Expected Cash (After Expenses)</td>
+                                            <td class="text-right px-1 py-0.5 font-black text-blue-900 bg-blue-50 border-t border-blue-900">{{ number_format($expectedCashNet, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">14</td>
-                                            <td class="px-1 py-0.5">Physical Cash Submitted (Denominations)</td>
-                                            <td class="text-right px-1 py-0.5 text-emerald-700 font-semibold">{{ number_format($actualPhysicalCash, 2) }}</td>
+                                            <td class="px-1 py-0.5 font-bold">Physical Cash Submitted (Denominations)</td>
+                                            <td class="text-right px-1 py-0.5 font-black border-2 border-black">{{ number_format($calculatedCash, 2) }}</td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">15</td>
@@ -1170,6 +1171,14 @@
                                             <td class="px-1 py-0.5 text-gray-600 pl-4">Net Margin %</td>
                                             <td class="text-right px-1 py-0.5 font-semibold {{ $netMargin >= 0 ? 'text-green-700' : 'text-red-700' }}">{{ number_format($netMargin, 2) }}%</td>
                                         </tr>
+                                        {{-- Spacer Rows to match Sales Summary Height (15 rows total) --}}
+                                        @for($i = 8; $i <= 15; $i++)
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
+                                            <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                            <td class="text-right px-1 py-0.5 border-none">&nbsp;</td>
+                                        </tr>
+                                        @endfor
                                     </tbody>
                                 </table>
                             </div>
@@ -1177,7 +1186,112 @@
 
                     </div>
 
-                </div>
+
+
+                    {{-- Credit Report Section --}}
+                    <div class="w-full clear-both mt-12 print:mt-12 block h-4"></div>
+                    
+                    @php
+                        // Fetch all accounts for this employee to generate the Credit Report
+                        // We need: Customer Name, Date (Settlement Date), Credit (Today), Recovery (Today), Closing Balance (As of Date)
+                        
+                        $employeeId = $settlement->employee_id;
+                        $settlementDate = $settlement->settlement_date; // Assuming Y-m-d format
+                        
+                        // Get all customer accounts for this employee that are active
+                        $customerAccounts = \App\Models\CustomerEmployeeAccount::with(['customer', 'transactions' => function($q) use ($settlementDate) {
+                            // Link transactions up to the settlement date for balance calc
+                            $q->whereDate('transaction_date', '<=', $settlementDate);
+                        }])
+                        ->where('employee_id', $employeeId)
+                        ->where('status', 'active')
+                        ->get();
+
+                        // Process data
+                        $creditReportData = $customerAccounts->map(function($account) use ($settlementDate) {
+                            $transactions = $account->transactions;
+                            
+                            // Today's activity
+                            $todayTrans = $transactions->filter(function($t) use ($settlementDate) {
+                                return $t->transaction_date->format('Y-m-d') === $settlementDate->format('Y-m-d');
+                            });
+                            
+                            // Assuming:
+                            // Debit = Sale/Credit Given to Customer
+                            // Credit = Recovery/Payment Received from Customer
+                            $todayCredit = $todayTrans->sum('debit');
+                            $todayRecovery = $todayTrans->sum('credit');
+                            
+                            // Historical Balance as of Settlement Date
+                            // Balance = Sum(Debit) - Sum(Credit) up to that date
+                            $closingBalance = $transactions->sum('debit') - $transactions->sum('credit');
+                            
+                            return (object) [
+                                'customer_name' => $account->customer->customer_name,
+                                'customer_code' => $account->customer->customer_code,
+                                'date' => $settlementDate,
+                                'credit_amount' => $todayCredit,
+                                'recovery_amount' => $todayRecovery,
+                                'balance' => $closingBalance,
+                                'has_activity' => ($todayCredit > 0 || $todayRecovery > 0 || abs($closingBalance) > 0.01)
+                            ];
+                        })->filter(function($row) {
+                            // "Salesman k jo creditors honge" -> Include anyone with activity today OR non-zero balance
+                            return $row->has_activity;
+                        })->sortBy('customer_name');
+                        
+                        $totalCreditGiven = $creditReportData->sum('credit_amount');
+                        $totalRecoveryReceived = $creditReportData->sum('recovery_amount');
+                        $totalClosingBalance = $creditReportData->sum('balance');
+                    @endphp
+
+                    <div class="border-2 border-black rounded-lg px-2 pb-2 mt-6 w-full clear-both print:block " style="page-break-inside: auto;">
+                        <h3 class="font-bold text-md text-center text-black pb-1  border-b border-black mb-1">Credit Report: {{ $settlement->employee->name ?? 'Salesman' }} ({{ \Carbon\Carbon::parse($settlementDate)->format('d-M-Y') }})</h3>
+                        
+                        <table class="report-table w-full tabular-nums text-sm">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="text-center w-10 border-b border-black">#</th>
+                                    <th class="text-left border-b border-black">Party Name</th>
+                                    <th class="text-left border-b border-black">
+                                        <span class="print:hidden"><x-tooltip text="Customer Code">Code</x-tooltip></span>
+                                        <span class="hidden print:inline">Code</span>
+                                    </th>
+                                    <th class="text-center w-24 border-b border-black">Date</th>
+                                    <th class="text-right w-24 border-b border-black">Credit</th>
+                                    <th class="text-right w-24 border-b border-black">Recovery</th>
+                                    <th class="text-right w-28 border-b border-black">Balance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse($creditReportData as $index => $row)
+                                    <tr>
+                                        <td class="text-center py-1">{{ $loop->iteration }}</td>
+                                        <td class="py-1 font-bold">{{ $row->customer_name }}</td>
+                                        <td class="py-1 text-center">{{ $row->customer_code }}</td>
+                                        <td class="text-center py-1">{{ \Carbon\Carbon::parse($row->date)->format('d-M-y') }}</td>
+                                        <td class="text-right py-1 font-bold">{{ $row->credit_amount > 0 ? number_format($row->credit_amount, 2) : '-' }}</td>
+                                        <td class="text-right py-1 font-bold">{{ $row->recovery_amount > 0 ? number_format($row->recovery_amount, 2) : '-' }}</td>
+                                        <td class="text-right py-1 font-bold">{{ number_format($row->balance, 2) }}</td>
+                                    </tr>
+                                @empty
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4 italic text-gray-500">No active creditors found for this date.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                            <tfoot class="bg-gray-50 font-bold border-t-2 border-black">
+                                <tr>
+                                    <td colspan="4" class="text-right py-1 pr-2">Total:</td>
+                                    <td class="text-right py-1">{{ number_format($totalCreditGiven, 2) }}</td>
+                                    <td class="text-right py-1">{{ number_format($totalRecoveryReceived, 2) }}</td>
+                                    <td class="text-right py-1">{{ number_format($totalClosingBalance, 2) }}</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+
 
                 @if ($settlement->notes)
                     <div class="mt-6 border p-2">
@@ -1194,6 +1308,29 @@
                         @endif
                     </div>
                 @endif
+
+                
+
+
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+
+
+                                    {{-- Final Signature Area --}}
+                    <div class="mt-4 grid grid-cols-3 gap-8 text-center print:flex print:justify-between print:mt-16" style="page-break-inside: avoid;">
+                        <div class="border-t border-black pt-2">
+                            <p class="font-bold text-sm">Prepared By</p>
+                        </div>
+                        <div class="border-t border-black pt-2">
+                            <p class="font-bold text-sm">Checked By</p>
+                        </div>
+                        <div class="border-t border-black pt-2">
+                            <p class="font-bold text-sm">Authorized Signature</p>
+                        </div>
+                    </div>
 
             </div>
         </div>

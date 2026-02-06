@@ -941,7 +941,8 @@
                     </div> {{-- End of Expense Details Group --}}
 
                     {{-- Other Expenses & Cash Detail Row --}}
-                    <div class="grid grid-cols-2 gap-1 items-start print:block mt-2 clearfix" style="page-break-inside: auto; break-inside: auto;">
+                    {{-- Other Expenses & Cash Detail Row --}}
+                    <div class="grid grid-cols-2 gap-1 items-start print:block mt-2 clearfix" style="page-break-inside: avoid; break-inside: avoid;">
                         {{-- Other Expenses --}}
                         <div class="print:w-1/2 print:float-left print:pr-1" style="page-break-inside: auto; break-inside: auto;">
                             <h4 class="font-bold text-sm border-x border-t border-black text-center">Group Expenses</h4>
@@ -1033,7 +1034,8 @@
 
 
                     {{-- Financial Summary --}}
-                    <div class="grid grid-cols-2 md:grid-cols-2 gap-1 mt-4 pt-0 print:block clearfix" style="page-break-inside: auto; break-inside: auto;">
+                    {{-- Financial Summary --}}
+                    <div class="grid grid-cols-2 md:grid-cols-2 gap-1 mt-4 pt-0 print:block clearfix" style="page-break-inside: avoid; break-inside: avoid;">
                             {{-- Sales Summary (Matching Create/Edit Sequence) --}}
                             <div class="print:w-1/2 print:float-left print:pr-1">
                                 <h4 class="font-bold text-sm border-x border-t border-black text-center mt-2">Sales Summary</h4>
@@ -1189,7 +1191,7 @@
 
 
                     {{-- Credit Report Section --}}
-                    <div class="w-full clear-both mt-12 print:mt-12 block h-4"></div>
+                    <div class="w-full clear-both mt-8 print:mt-16 block h-8 print:h-16" style="clear: both;">&nbsp;</div>
                     
                     @php
                         // Fetch all accounts for this employee to generate the Credit Report
@@ -1245,8 +1247,8 @@
                         $totalClosingBalance = $creditReportData->sum('balance');
                     @endphp
 
-                    <div class="border-2 border-black rounded-lg px-2 pb-2 mt-6 w-full clear-both print:block " style="page-break-inside: auto;">
-                        <h3 class="font-bold text-md text-center text-black pb-1  border-b border-black mb-1">Credit Report: {{ $settlement->employee->name ?? 'Salesman' }} ({{ \Carbon\Carbon::parse($settlementDate)->format('d-M-Y') }})</h3>
+                    <div class=" rounded-lg pb-2 mt-2 w-full clear-both print:block " style="page-break-inside: auto;">
+                        <h3 class="font-bold text-md text-center text-black  border-x border-t border-black">Credit Report: {{ $settlement->employee->name ?? 'Salesman' }} ({{ \Carbon\Carbon::parse($settlementDate)->format('d-M-Y') }})</h3>
                         
                         <table class="report-table w-full tabular-nums text-sm">
                             <thead>
@@ -1312,15 +1314,8 @@
                 
 
 
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-                    <br>
-
-
                                     {{-- Final Signature Area --}}
-                    <div class="mt-4 grid grid-cols-3 gap-8 text-center print:flex print:justify-between print:mt-16" style="page-break-inside: avoid;">
+                    <div class="mt-16 grid grid-cols-3 gap-8 text-center print:flex print:justify-between print:mt-32" style="page-break-inside: avoid;">
                         <div class="border-t border-black pt-2">
                             <p class="font-bold text-sm">Prepared By</p>
                         </div>

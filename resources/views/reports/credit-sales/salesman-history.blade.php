@@ -121,7 +121,7 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
                     @foreach($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}" {{ request('filter.supplier_id')==(string)$supplier->id ? 'selected' : '' }}>
+                        <option value="{{ $supplier->id }}" {{ request('filter.supplier_id') == (string) $supplier->id ? 'selected' : '' }}>
                             {{ $supplier->supplier_name }}
                         </option>
                     @endforeach
@@ -144,13 +144,17 @@
                 <x-label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="-credit_sales" {{ request('sort', '-credit_sales')==='-credit_sales' ? 'selected' : '' }}>Credit Sales (High to Low)</option>
-                    <option value="credit_sales" {{ request('sort')==='credit_sales' ? 'selected' : '' }}>Credit Sales (Low to High)</option>
-                    <option value="-balance" {{ request('sort')==='-balance' ? 'selected' : '' }}>Balance (High to Low)</option>
-                    <option value="name" {{ request('sort')==='name' ? 'selected' : '' }}>Name (A-Z)</option>
-                    <option value="-name" {{ request('sort')==='-name' ? 'selected' : '' }}>Name (Z-A)</option>
-                    <option value="-customers_count" {{ request('sort')==='-customers_count' ? 'selected' : '' }}>Customers (Most)</option>
-                    <option value="-sales_count" {{ request('sort')==='-sales_count' ? 'selected' : '' }}>Sales Count (High)</option>
+                    <option value="-credit_sales" {{ request('sort', '-credit_sales') === '-credit_sales' ? 'selected' : '' }}>Credit Sales (High to Low)</option>
+                    <option value="credit_sales" {{ request('sort') === 'credit_sales' ? 'selected' : '' }}>Credit Sales
+                        (Low to High)</option>
+                    <option value="-balance" {{ request('sort') === '-balance' ? 'selected' : '' }}>Balance (High to Low)
+                    </option>
+                    <option value="name" {{ request('sort') === 'name' ? 'selected' : '' }}>Name (A-Z)</option>
+                    <option value="-name" {{ request('sort') === '-name' ? 'selected' : '' }}>Name (Z-A)</option>
+                    <option value="-customers_count" {{ request('sort') === '-customers_count' ? 'selected' : '' }}>
+                        Customers (Most)</option>
+                    <option value="-sales_count" {{ request('sort') === '-sales_count' ? 'selected' : '' }}>Sales Count
+                        (High)</option>
                 </select>
             </div>
 
@@ -158,10 +162,10 @@
                 <x-label for="per_page" value="Records Per Page" />
                 <select id="per_page" name="per_page"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
+                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', 50) == 50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page') == 250 ? 'selected' : '' }}>250</option>
                 </select>
             </div>
         </div>
@@ -172,15 +176,18 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
                 <div class="text-sm text-gray-500">Total Credit Sales</div>
-                <div class="text-2xl font-bold text-blue-700">{{ number_format($totals->total_credit_sales ?? 0, 2) }}</div>
+                <div class="text-2xl font-bold text-blue-700">{{ number_format($totals->total_credit_sales ?? 0, 2) }}
+                </div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
                 <div class="text-sm text-gray-500">Total Recoveries</div>
-                <div class="text-2xl font-bold text-green-700">{{ number_format($totals->total_recoveries ?? 0, 2) }}</div>
+                <div class="text-2xl font-bold text-green-700">{{ number_format($totals->total_recoveries ?? 0, 2) }}
+                </div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
                 <div class="text-sm text-gray-500">Outstanding Balance</div>
-                <div class="text-2xl font-bold text-orange-700">{{ number_format(($totals->total_credit_sales ?? 0) - ($totals->total_recoveries ?? 0), 2) }}</div>
+                <div class="text-2xl font-bold text-orange-700">
+                    {{ number_format(($totals->total_credit_sales ?? 0) - ($totals->total_recoveries ?? 0), 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
                 <div class="text-sm text-gray-500">Total Salesmen</div>
@@ -196,7 +203,8 @@
                     Moon Traders<br>
                     Salesman Credit Sales History<br>
                     Total Salesmen: {{ number_format($salesmen->total()) }} |
-                    Outstanding: {{ number_format(($totals->total_credit_sales ?? 0) - ($totals->total_recoveries ?? 0), 2) }}
+                    Outstanding:
+                    {{ number_format(($totals->total_credit_sales ?? 0) - ($totals->total_recoveries ?? 0), 2) }}
                     <br>
                     <span class="print-only print-info text-xs text-center">
                         Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
@@ -224,16 +232,17 @@
                                 $balance = ($salesman->credit_sales_sum_sale_amount ?? 0) - ($salesman->recoveries_sum_amount ?? 0);
                             @endphp
                             <tr>
-                                <td class="text-center" style="vertical-align: middle;">{{ $salesmen->firstItem() + $index }}</td>
+                                <td class="text-center" style="vertical-align: middle;">
+                                    {{ $salesmen->firstItem() + $index }}</td>
                                 <td class="font-mono" style="vertical-align: middle;">{{ $salesman->employee_code }}</td>
                                 <td style="vertical-align: middle;">
                                     {{ $salesman->full_name }}
                                 </td>
                                 <td style="vertical-align: middle;">
                                     {{ $salesman->supplier->supplier_name ?? 'N/A' }}
-                                    @if($salesman->supplier->short_name ?? null)
-                                        <div class="text-xs text-gray-500">{{ $salesman->supplier->short_name }}</div>
-                                    @endif
+                                    <!-- @if($salesman->supplier->short_name ?? null)
+                                            <div class="text-xs text-gray-500">{{ $salesman->supplier->short_name }}</div>
+                                        @endif -->
                                 </td>
                                 <td class="text-right font-mono text-blue-700" style="vertical-align: middle;">
                                     {{ number_format($salesman->credit_sales_sum_sale_amount ?? 0, 2) }}
@@ -241,7 +250,8 @@
                                 <td class="text-right font-mono text-green-700" style="vertical-align: middle;">
                                     {{ number_format($salesman->recoveries_sum_amount ?? 0, 2) }}
                                 </td>
-                                <td class="text-right font-mono font-bold {{ $balance > 0 ? 'text-orange-700' : 'text-green-700' }}" style="vertical-align: middle;">
+                                <td class="text-right font-mono font-bold {{ $balance > 0 ? 'text-orange-700' : 'text-green-700' }}"
+                                    style="vertical-align: middle;">
                                     {{ number_format($balance, 2) }}
                                 </td>
                                 <td class="text-center" style="vertical-align: middle;">
@@ -265,13 +275,15 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center py-4 text-gray-500">No credit sales found for any salesman.</td>
+                                <td colspan="10" class="text-center py-4 text-gray-500">No credit sales found for any
+                                    salesman.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
-                            <td colspan="4" class="text-center px-2 py-1">Page Total ({{ $salesmen->count() }} salesmen)</td>
+                            <td colspan="4" class="text-center px-2 py-1">Page Total ({{ $salesmen->count() }} salesmen)
+                            </td>
                             <td class="text-right font-mono px-2 py-1 text-blue-700">
                                 {{ number_format($salesmen->sum('credit_sales_sum_sale_amount'), 2) }}
                             </td>

@@ -75,6 +75,7 @@ return new class extends Migration {
             $table->integer('denom_10')->default(0);
             $table->decimal('denom_coins', 10, 2)->default(0);
             $table->decimal('total_amount', 15, 2)->default(0);
+            $table->userTracking();
             $table->timestamps();
 
             $table->index('sales_settlement_id');

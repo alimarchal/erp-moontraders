@@ -130,12 +130,12 @@
                     page-break-inside: avoid;
                     break-inside: avoid;
                 }
-                
+
                 tr {
                     page-break-inside: avoid !important;
                     break-inside: avoid !important;
                 }
-                
+
                 td, th {
                     page-break-inside: avoid !important; 
                     break-inside: avoid !important;
@@ -319,7 +319,7 @@
                         </tr>
                         <tr>
                             <td class="text-center font-bold text-lg" colspan="8">
-                                Sales Settlement <span class="text-sm font-normal">({{ $settlement->status }})</span>
+                                Sales Settlement <span class="text-sm font-normal">({{ strtoupper($settlement->status) }})</span>
                             </td>
                         </tr>
                         <tr>
@@ -386,12 +386,12 @@
                                         <div class="text-xs space-y-1">
 
                                             @foreach($item->batches as $b)
-                                            <span class="tabular-nums text-black font-bold">
-                                            
-                                                {{ number_format($b->quantity_issued, 0) }} × {{ number_format($b->selling_price, 2) }}
-                                                
-                                                @if($b->is_promotional) (Promo) @endif
-                                                = {{ number_format($b->quantity_issued * $b->selling_price, 2) }} ({{ $b->batch_code ?? 'N/A' }})</span><br>
+                                                <span class="tabular-nums text-black font-bold">
+
+                                                    {{ number_format($b->quantity_issued, 0) }} × {{ number_format($b->selling_price, 2) }}
+
+                                                    @if($b->is_promotional) (Promo) @endif
+                                                    = {{ number_format($b->quantity_issued * $b->selling_price, 2) }} ({{ $b->batch_code ?? 'N/A' }})</span><br>
                                             @endforeach
                                         </div>
                                     @else
@@ -871,18 +871,18 @@
                             ['id' => 58, 'label' => 'Miscellaneous Expenses', 'code' => '5221'],
                         ];
                         $predefinedIds = collect($predefinedExpenses)->pluck('id')->toArray();
-                        
+
                         // Get saved expense amounts indexed by account ID
                         $savedExpenseAmounts = $settlement->expenses->keyBy('expense_account_id');
-                        
+
                         // Get any additional expenses not in predefined list
-                        $additionalExpenses = $settlement->expenses->filter(function($expense) use ($predefinedIds) {
+                        $additionalExpenses = $settlement->expenses->filter(function ($expense) use ($predefinedIds) {
                             return !in_array($expense->expense_account_id, $predefinedIds);
                         });
 
                         // Prepare Group Expenses Rows
                         $groupExpenseRows = [];
-                        foreach($predefinedExpenses as $predef) {
+                        foreach ($predefinedExpenses as $predef) {
                             $savedExpense = $savedExpenseAmounts->get($predef['id']);
                             $amount = $savedExpense ? $savedExpense->amount : 0;
                             $groupExpenseRows[] = [
@@ -893,7 +893,7 @@
                                 'id' => $predef['id']
                             ];
                         }
-                        foreach($additionalExpenses as $expense) {
+                        foreach ($additionalExpenses as $expense) {
                             $groupExpenseRows[] = [
                                 'label' => $expense->expenseAccount->account_name ?? 'Unknown',
                                 'code' => $expense->expenseAccount->account_code ?? '-',
@@ -913,15 +913,15 @@
                             ['label' => '20 (Twenty Rupees)', 'qty' => $cashDenominations?->denom_20 ?? 0, 'value' => 20],
                             ['label' => '10 (Ten Rupees)', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 10],
                         ];
-                        
+
                         $calculatedCash = 0;
-                        foreach($denominations as $d) {
+                        foreach ($denominations as $d) {
                             $rowVal = $d['qty'] * $d['value'];
                             $calculatedCash += $rowVal;
                             $cashDetailRows[] = [
                                 'label' => $d['label'],
                                 'qty' => $d['qty'],
-                                'value' => $rowVal, 
+                                'value' => $rowVal,
                                 'is_coin' => false
                             ];
                         }
@@ -1175,11 +1175,11 @@
                                         </tr>
                                         {{-- Spacer Rows to match Sales Summary Height (15 rows total) --}}
                                         @for($i = 8; $i <= 15; $i++)
-                                        <tr>
-                                            <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
-                                            <td class="px-1 py-0.5 border-none">&nbsp;</td>
-                                            <td class="text-right px-1 py-0.5 border-none">&nbsp;</td>
-                                        </tr>
+                                            <tr>
+                                                <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
+                                                <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                                <td class="text-right px-1 py-0.5 border-none">&nbsp;</td>
+                                            </tr>
                                         @endfor
                                     </tbody>
                                 </table>
@@ -1196,59 +1196,93 @@
                     @php
                         // Fetch all accounts for this employee to generate the Credit Report
                         // We need: Customer Name, Date (Settlement Date), Credit (Today), Recovery (Today), Closing Balance (As of Date)
-                        
+
                         $employeeId = $settlement->employee_id;
                         $settlementDate = $settlement->settlement_date; // Assuming Y-m-d format
-                        
-                        // Get all customer accounts for this employee that are active
-                        $customerAccounts = \App\Models\CustomerEmployeeAccount::with(['customer', 'transactions' => function($q) use ($settlementDate) {
-                            // Link transactions up to the settlement date for balance calc
-                            $q->whereDate('transaction_date', '<=', $settlementDate);
-                        }])
-                        ->where('employee_id', $employeeId)
-                        ->where('status', 'active')
-                        ->get();
 
-                        // Process data
-                        $creditReportData = $customerAccounts->map(function($account) use ($settlementDate) {
-                            $transactions = $account->transactions;
-                            
-                            // Today's activity
-                            $todayTrans = $transactions->filter(function($t) use ($settlementDate) {
-                                return $t->transaction_date->format('Y-m-d') === $settlementDate->format('Y-m-d');
-                            });
-                            
-                            // Assuming:
-                            // Debit = Sale/Credit Given to Customer
-                            // Credit = Recovery/Payment Received from Customer
-                            $todayCredit = $todayTrans->sum('debit');
-                            $todayRecovery = $todayTrans->sum('credit');
-                            
-                            // Historical Balance as of Settlement Date
-                            // Balance = Sum(Debit) - Sum(Credit) up to that date
-                            $closingBalance = $transactions->sum('debit') - $transactions->sum('credit');
-                            
+                        // 1. Get all active customers for this salesman
+                        $customerAccounts = \App\Models\CustomerEmployeeAccount::with('customer')
+                            ->where('employee_id', $employeeId)
+                            ->where('status', 'active')
+                            ->get();
+
+                        // 2. Pre-fetch this settlement's Credit Sales and Recoveries
+                        $settlementCredits = $settlement->creditSales->groupBy('customer_id');
+                        $settlementRecoveries = $settlement->recoveries->groupBy('customer_id');
+
+                        // 3. Process data
+                        $creditReportData = $customerAccounts->map(function ($account) use ($settlementDate, $settlementCredits, $settlementRecoveries) {
+                            $customerId = $account->customer_id;
+
+                            // A. Get Activity strictly for THIS settlement
+                            $myCredits = $settlementCredits->get($customerId); // Collection of credit sales
+                            $myRecoveries = $settlementRecoveries->get($customerId); // Collection of recoveries
+
+                            $creditAmount = $myCredits ? $myCredits->sum('sale_amount') : 0;
+                            $recoveryAmount = $myRecoveries ? $myRecoveries->sum('amount') : 0;
+                            $hasActivity = ($creditAmount > 0 || $recoveryAmount > 0);
+
+                            // B. Determine Closing Balance (Post-Settlement)
+                            // If we have activity, the reliable "Closing Balance" for this settlement is the 'new_balance' of the LAST transaction in this set.
+                            // If no activity, we fall back to the account's current ledger balance (as best effort).
+
+                            $closingBalance = 0;
+
+                            if ($hasActivity) {
+                                // Find the very last transaction in this settlement to get the final "NB"
+                                $lastCredit = $myCredits ? $myCredits->sortByDesc('id')->first() : null;
+                                $lastRec = $myRecoveries ? $myRecoveries->sortByDesc('id')->first() : null;
+
+                                if ($lastCredit && $lastRec) {
+                                    // Whichever has higher ID (created later) wins
+                                    $closingBalance = ($lastCredit->id > $lastRec->id) ? $lastCredit->new_balance : $lastRec->new_balance;
+                                } elseif ($lastCredit) {
+                                    $closingBalance = $lastCredit->new_balance;
+                                } elseif ($lastRec) {
+                                    $closingBalance = $lastRec->new_balance;
+                                }
+                            } else {
+                                // Fallback: Calculate balance up to this settlement date (start of day + all day activity)
+                                // Ideally, we should fetch the ledger balance as of EOD of settlement date.
+                                // Because we can't easily isolate "inter-settlement" balance without complex queries,
+                                // we'll use the transactions-based sum up to EOD.
+                                // Note: This might match Settlement #14's ending if this is Settlement #13, 
+                                // but for a "No Activity" row, showing EOD balance is acceptable standard practice.
+                                $closingBalance = $account->transactions()
+                                    ->whereDate('transaction_date', '<=', $settlementDate)
+                                    ->sum(\DB::raw('debit - credit'));
+                            }
+
+                            // C. Back-Calculate Opening Balance for THIS settlement
+                            // Op + Credit - Rec = Closing
+                            // => Op = Closing - Credit + Rec
+                            $openingBalance = $closingBalance - $creditAmount + $recoveryAmount;
+
                             return (object) [
                                 'customer_name' => $account->customer->customer_name,
                                 'customer_code' => $account->customer->customer_code,
                                 'date' => $settlementDate,
-                                'credit_amount' => $todayCredit,
-                                'recovery_amount' => $todayRecovery,
+                                'opening_balance' => $openingBalance,
+                                'credit_amount' => $creditAmount,
+                                'recovery_amount' => $recoveryAmount,
                                 'balance' => $closingBalance,
-                                'has_activity' => ($todayCredit > 0 || $todayRecovery > 0 || abs($closingBalance) > 0.01)
+                                'has_activity' => $hasActivity || abs($closingBalance) > 1
                             ];
-                        })->filter(function($row) {
-                            // "Salesman k jo creditors honge" -> Include anyone with activity today OR non-zero balance
+                        })->filter(function ($row) {
+                            // Show if there is activity OR non-zero balance
                             return $row->has_activity;
                         })->sortBy('customer_name');
-                        
+
                         $totalCreditGiven = $creditReportData->sum('credit_amount');
                         $totalRecoveryReceived = $creditReportData->sum('recovery_amount');
+                        // Closing balance total is sum of all individual closing balances
                         $totalClosingBalance = $creditReportData->sum('balance');
                     @endphp
 
-                    <div class=" rounded-lg pb-2 mt-2 w-full clear-both print:block " style="page-break-inside: auto;">
-                        <h3 class="font-bold text-md text-center text-black  border-x border-t border-black">Credit Report: {{ $settlement->employee->name ?? 'Salesman' }} ({{ \Carbon\Carbon::parse($settlementDate)->format('d-M-Y') }})</h3>
+                    <div class="rounded-lg pb-2 mt-2 w-full clear-both print:block" style="page-break-inside: auto;">
+                        <h3 class="font-bold text-md text-center text-black border-x border-t border-black">
+                            Credit Report: {{ $settlement->employee->name ?? 'Salesman' }} ({{ \Carbon\Carbon::parse($settlementDate)->format('d-M-Y') }})
+                        </h3>
                         
                         <table class="report-table w-full tabular-nums text-sm">
                             <thead>
@@ -1259,10 +1293,10 @@
                                         <span class="print:hidden"><x-tooltip text="Customer Code">Code</x-tooltip></span>
                                         <span class="hidden print:inline">Code</span>
                                     </th>
-                                    <th class="text-center w-24 border-b border-black">Date</th>
-                                    <th class="text-right w-24 border-b border-black">Credit</th>
-                                    <th class="text-right w-24 border-b border-black">Recovery</th>
-                                    <th class="text-right w-28 border-b border-black">Balance</th>
+                                    <th class="text-right w-24 border-b border-black">Opening Balance</th>
+                                    <th class="text-right w-24 border-b border-black">Credit Amount</th>
+                                    <th class="text-right w-24 border-b border-black">Recovery Amount</th>
+                                    <th class="text-right w-28 border-b border-black">Closing Balance</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1271,7 +1305,7 @@
                                         <td class="text-center py-1">{{ $loop->iteration }}</td>
                                         <td class="py-1 font-bold">{{ $row->customer_name }}</td>
                                         <td class="py-1 text-center">{{ $row->customer_code }}</td>
-                                        <td class="text-center py-1">{{ \Carbon\Carbon::parse($row->date)->format('d-M-y') }}</td>
+                                        <td class="text-right py-1 text-gray-600">{{ number_format($row->opening_balance, 2) }}</td>
                                         <td class="text-right py-1 font-bold">{{ $row->credit_amount > 0 ? number_format($row->credit_amount, 2) : '-' }}</td>
                                         <td class="text-right py-1 font-bold">{{ $row->recovery_amount > 0 ? number_format($row->recovery_amount, 2) : '-' }}</td>
                                         <td class="text-right py-1 font-bold">{{ number_format($row->balance, 2) }}</td>
@@ -1284,7 +1318,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50 font-bold border-t-2 border-black">
                                 <tr>
-                                    <td colspan="4" class="text-right py-1 pr-2">Total:</td>
+                                    <td colspan="4" class="text-right py-1 pr-2">Total (This Settlement):</td>
                                     <td class="text-right py-1">{{ number_format($totalCreditGiven, 2) }}</td>
                                     <td class="text-right py-1">{{ number_format($totalRecoveryReceived, 2) }}</td>
                                     <td class="text-right py-1">{{ number_format($totalClosingBalance, 2) }}</td>

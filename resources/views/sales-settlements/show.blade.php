@@ -352,19 +352,19 @@
                 </div>
 
                 {{-- Product Table --}}
-                <table class="report-table mb-6 text-black">
+                <table class="report-table mb-1 text-black">
                     <thead>
                         <tr class="bg-gray-100">
                             <th class="text-center w-10">Sr#</th>
-                            <th class="text-left">SKU</th>
-                            <th class="text-right">B/F (In)</th>
-                            <th class="text-right">Qty Issued</th>
-                            <th class="text-left">Batch Breakdown</th>
-                            <th class="text-right">Sold</th>
-                            <th class="text-right">Returned</th>
-                            <th class="text-right">Shortage</th>
-                            <th class="text-right">B/F (Out)</th>
-                            <th class="text-right">Sales Value</th>
+                            <th class="text-center">SKU</th>
+                            <th class="text-center">B/F (In)</th>
+                            <th class="text-center">Qty Issued</th>
+                            <th class="text-center">Batch Breakdown</th>
+                            <th class="text-center">Sold</th>
+                            <th class="text-center">Returned</th>
+                            <th class="text-center">Shortage</th>
+                            <th class="text-center">B/F (Out)</th>
+                            <th class="text-center">Sales Value</th>
                         </tr>
                     </thead>
                     <tbody class="tabular-nums">
@@ -386,9 +386,10 @@
                                         <div class="text-xs space-y-1">
 
                                             @foreach($item->batches as $b)
-                                            <span class="tabular-nums text-black font-bold">{{ $b->batch_code ?? 'N/A' }}
+                                            <span class="tabular-nums text-black font-bold">
+                                            <!-- {{ $b->batch_code ?? 'N/A' }} -->
                                                 {{ number_format($b->quantity_issued, 0) }} × {{ number_format($b->selling_price, 2) }}
-                                                ({{  $item->product->uom->symbol }}) / 
+                                                
                                                 @if($b->is_promotional) (Promo) @endif
                                                 = {{ number_format($b->quantity_issued * $b->selling_price, 2) }}</span><br>
                                             @endforeach
@@ -446,7 +447,7 @@
                     <div class="grid grid-cols-2 lg:grid-cols-2 gap-1 items-start print:grid-cols-2">
                         {{-- Credit Sales --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Credit Sales Breakdown</h4>
+                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Credit Sales Breakdown</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -504,7 +505,7 @@
 
                         {{-- Recoveries --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Recoveries Breakdown</h4>
+                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Recoveries Breakdown</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -515,7 +516,7 @@
                                         </th>
                                         <th class="text-left">
                                             <span class="print:hidden"><x-tooltip text="Recovery Number">Rec #</x-tooltip></span>
-                                            <span class="hidden print:inline">Rec #/span>
+                                            <span class="hidden print:inline">Rec #</span>
                                         </th>
                                         <th class="text-right">
                                             <span class="print:hidden"><x-tooltip text="Previous Balance">PB</x-tooltip></span>
@@ -581,7 +582,7 @@
                     <div class="grid grid-cols-2 lg:grid-cols-2 gap-1 items-start print:grid-cols-2">
                         {{-- Cheque Payments --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Cheque Payments</h4>
+                            <h4 class="font-bold text-sm     mb-1 pb-0 text-center">Cheque Payments</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -638,7 +639,7 @@
 
                         {{-- Bank Transfers --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Bank Transfers / Online</h4>
+                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Bank Transfers / Online</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -690,8 +691,8 @@
                     </div>
 
                     {{-- Expense Details Group --}}
-                    <div class="border-2 border-orange-300 rounded-lg p-2 mt-2">
-                        <h3 class="font-bold text-lg text-center text-orange-700 mb-2 border-b border-orange-300 pb-1">Expense Details</h3>
+                    <div class="border-2 border-black rounded-lg px-2 pb-2 mt-2">
+                        <h3 class="font-bold text-md text-center text-black mb-1 border-b border-black pb-1">Expense Details</h3>
 
                     {{-- Row 1: AMR Powder | AMR Liquid --}}
                     @php
@@ -703,7 +704,7 @@
                     <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2">
                         {{-- AMR Powder --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">AMR Powder (5252)</h4>
+                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">AMR Powder (5252)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -738,7 +739,7 @@
 
                         {{-- AMR Liquid --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">AMR Liquid (5262)</h4>
+                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">AMR Liquid (5262)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -782,7 +783,7 @@
                     <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2 mt-1">
                         {{-- Advance Tax --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Advance Tax (1161)</h4>
+                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Advance Tax (1161)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -817,7 +818,7 @@
 
                         {{-- Percentage Expense --}}
                         <div>
-                            <h4 class="font-bold text-md mb-1 pb-0 text-center">Percentage Expense (5223)</h4>
+                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Percentage Expense (5223)</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -874,12 +875,15 @@
                             return !in_array($expense->expense_account_id, $predefinedIds);
                         });
                     @endphp
+
+                    </div> {{-- End of Expense Details Group --}}
+
                     {{-- Other Expenses & Cash Detail Row --}}
-                    <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2 mt-1">
+                    <div class="grid grid-cols-2 gap-1 items-start print:block mt-2 clearfix" style="page-break-inside: auto; break-inside: auto;">
                         {{-- Other Expenses --}}
-                        <div>
-                            <h4 class="font-bold text-lg mb-1 pb-0 text-center">Group Expenses</h4>
-                            <table class="report-table w-full">
+                        <div class="print:w-1/2 print:float-left print:pr-1" style="page-break-inside: auto; break-inside: auto;">
+                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Group Expenses</h4>
+                            <table class="report-table w-full" style="page-break-inside: auto; break-inside: auto;">
                                 <thead>
                                     <tr class="bg-gray-100">
                                         <th class="text-center w-6 px-1 py-0.5">#</th>
@@ -930,8 +934,8 @@
                         </div>
 
                         {{-- Cash Denominations --}}
-                        <div>
-                            <h4 class="font-bold text-lg mb-1 pb-0 text-center">Cash Detail</h4>
+                        <div class="print:w-1/2 print:float-left print:pl-1">
+                            <h4 class="font-bold text-sm mb-1 pb-0 text-center">Cash Detail</h4>
                             <table class="report-table w-full">
                                 <thead>
                                     <tr class="bg-gray-100">
@@ -950,7 +954,7 @@
                                             ['label' => '100 (One Hundred Rupees)', 'qty' => $cashDenominations?->denom_100 ?? 0, 'value' => 100],
                                             ['label' => '50 (Fifty Rupees)', 'qty' => $cashDenominations?->denom_50 ?? 0, 'value' => 50],
                                             ['label' => '20 (Twenty Rupees)', 'qty' => $cashDenominations?->denom_20 ?? 0, 'value' => 20],
-                                            ['label' => '10 (Ten Rupees)', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 10],
+                                            ['label' => '10 (Ten Rupees)', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 100],
                                         ];
                                         $calculatedCash = 0;
                                         $denomCounter = 1;
@@ -981,12 +985,12 @@
                             </table>
                         </div>
                     </div>
-                    </div> {{-- End of Expense Details Group --}}
+                    
 
                     {{-- Financial Summary --}}
-                    <div class="grid grid-cols-2 md:grid-cols-2 gap-2 pt-2">
+                    <div class="grid grid-cols-2 md:grid-cols-2 gap-1 pt-0 print:block clearfix" style="page-break-inside: auto; break-inside: auto;">
                             {{-- Sales Summary (Matching Create/Edit Sequence) --}}
-                            <div>
+                            <div class="print:w-1/2 print:float-left print:pr-1">
                                 <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Sales Summary</h4>
                                 <table class="report-table w-full tabular-nums">
                                     <thead>
@@ -1076,7 +1080,7 @@
                                 </table>
                             </div>
                             {{-- Profitability Analysis --}}
-                            <div>
+                            <div class="print:w-1/2 print:float-left print:pl-1">
                                 <h4 class="font-bold text-md mb-2 border-b border-black pb-1">Profit Analysis</h4>
                                 <table class="report-table w-full tabular-nums">
                                     <thead>

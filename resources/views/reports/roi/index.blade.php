@@ -388,20 +388,26 @@
                                     <tr>
                                         <th class="text-left p-1 w-10 text-black">Sr #</th>
                                         <th class="text-left p-1 text-black">Category</th>
-                                        <th class="text-right p-1 text-black">Qty</th>
+                                        <th class="text-center p-1 text-black">Qty</th>
                                         <th class="text-right p-1 text-black">Sale</th>
+                                        <th class="text-right p-1 text-black">Share %</th>
                                         <th class="text-right p-1 text-black">Profit</th>
+                                        <th class="text-right p-1 text-black">Mrg %</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($categorySummary as $cat)
                                         <tr>
                                             <td class="p-1 text-center font-mono text-black">{{ $loop->iteration }}</td>
-                                            <td class="p-1 text-black">{{ $cat['name'] }}</td>
+                                            <td class="p-1 text-black font-medium">{{ $cat['name'] }}</td>
                                             <td class="p-1 text-center font-mono text-black">{{ $cat['count'] }}</td>
                                             <td class="p-1 text-right font-mono text-black">{{ number_format($cat['total_sale'], 2) }}</td>
+                                            <td class="p-1 text-right font-mono text-gray-600 text-xs">{{ number_format($cat['sales_share'], 1) }}%</td>
                                             <td class="p-1 text-right font-mono font-bold {{ $cat['total_profit'] >= 0 ? 'text-green-700' : 'text-red-700' }} text-black">
                                                 {{ number_format($cat['total_profit'], 2) }}
+                                            </td>
+                                            <td class="p-1 text-right font-mono text-xs {{ $cat['profit_margin'] >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                                {{ number_format($cat['profit_margin'], 1) }}%
                                             </td>
                                         </tr>
                                     @endforeach
@@ -464,32 +470,76 @@
                                     </tr>
                                 </thead>
                                 <tbody>
+                                    @php
+                                        $gt = $matrixData['grand_totals'];
+                                        $sales = $gt['sale_amount'];
+                                        $cogs = $gt['cogs'];
+                                        $gp = $gt['gross_profit'];
+                                        $exp = $gt['expenses'];
+                                        $np = $gt['net_profit'];
+                                        $qty = $gt['sold_qty'];
+
+                                        $gpMargin = $sales > 0 ? ($gp / $sales) * 100 : 0;
+                                        $npMargin = $sales > 0 ? ($np / $sales) * 100 : 0;
+                                        $expRatio = $sales > 0 ? ($exp / $sales) * 100 : 0;
+                                        
+                                        $avgTxnValue = $qty > 0 ? ($sales / $qty) : 0;
+                                        $costPerUnit = $qty > 0 ? ($exp / $qty) : 0; 
+                                        // OR maybe Cost Per Unit = COGS / Qty? Usually Cost per Unit implies COGS.
+                                        // Let's call it "Exp / Unit" for clarity if referring to expenses.
+                                        // User asked "Cost Per Unit" in plan -> usually COGS per unit.
+                                        // Let's add "Avg Item Price" (TP) and "Avg Item Cost" (IP)
+                                        $avgPrice = $qty > 0 ? ($sales / $qty) : 0; 
+                                        $avgCost = $qty > 0 ? ($cogs / $qty) : 0;
+                                    @endphp
+
                                     <tr>
                                         <td class="p-1 text-center font-mono text-black">1</td>
                                         <td class="p-1 font-semibold text-black">Total Sales</td>
-                                        <td class="p-1 text-right font-mono font-bold text-black">{{ number_format($matrixData['grand_totals']['sale_amount'], 2) }}</td>
+                                        <td class="p-1 text-right font-mono font-bold text-black">{{ number_format($sales, 2) }}</td>
                                     </tr>
                                     <tr>
                                         <td class="p-1 text-center font-mono text-black">2</td>
                                         <td class="p-1 font-semibold text-black">Total COGS</td>
-                                        <td class="p-1 text-right font-mono text-black">({{ number_format($matrixData['grand_totals']['cogs'], 2) }})</td>
+                                        <td class="p-1 text-right font-mono text-black">({{ number_format($cogs, 2) }})</td>
                                     </tr>
                                     <tr class="bg-gray-100">
                                         <td class="p-1 text-center font-mono text-black border-t">3</td>
                                         <td class="p-1 font-bold text-black border-t">Gross Profit</td>
-                                        <td class="p-1 text-right font-mono font-bold text-black border-t">{{ number_format($matrixData['grand_totals']['gross_profit'], 2) }}</td>
+                                        <td class="p-1 text-right font-mono font-bold text-black border-t">
+                                            {{ number_format($gp, 2) }}
+                                            <span class="text-xs font-normal text-gray-600 block">({{ number_format($gpMargin, 1) }}%)</span>
+                                        </td>
                                     </tr>
                                     <tr>
                                         <td class="p-1 text-center font-mono text-black">4</td>
                                         <td class="p-1 font-semibold text-black">Allocated Expenses</td>
-                                        <td class="p-1 text-right font-mono text-black">({{ number_format($matrixData['grand_totals']['expenses'], 2) }})</td>
+                                        <td class="p-1 text-right font-mono text-black">
+                                            ({{ number_format($exp, 2) }})
+                                            <span class="text-xs text-gray-600 block">({{ number_format($expRatio, 1) }}%)</span>
+                                        </td>
                                     </tr>
                                     <tr class="bg-green-100">
                                         <td class="p-1 text-center font-mono font-extrabold text-lg border-t-2 border-black text-black">5</td>
                                         <td class="p-1 font-extrabold text-lg text-black border-t-2 border-black">Net Profit</td>
                                         <td class="p-1 text-right font-mono font-extrabold text-lg border-t-2 border-black text-black">
-                                            {{ number_format($matrixData['grand_totals']['net_profit'], 2) }}
+                                            {{ number_format($np, 2) }}
+                                            <span class="text-xs font-normal text-black block">({{ number_format($npMargin, 1) }}%)</span>
                                         </td>
+                                    </tr>
+                                    
+                                    <!-- Efficiency Metrics Spacer -->
+                                    <tr><td colspan="3" class="p-1"></td></tr>
+                                    
+                                     <tr class="bg-gray-50">
+                                        <td class="p-1 text-center font-mono text-gray-500 text-xs">A</td>
+                                        <td class="p-1 text-xs text-gray-600">Avg Selling Price</td>
+                                        <td class="p-1 text-right font-mono text-xs text-black">{{ number_format($avgPrice, 2) }}</td>
+                                    </tr>
+                                     <tr class="bg-gray-50">
+                                        <td class="p-1 text-center font-mono text-gray-500 text-xs">B</td>
+                                        <td class="p-1 text-xs text-gray-600">Avg Cost Price</td>
+                                        <td class="p-1 text-right font-mono text-xs text-black">{{ number_format($avgCost, 2) }}</td>
                                     </tr>
                                 </tbody>
                              </table>

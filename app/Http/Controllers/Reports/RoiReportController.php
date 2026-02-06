@@ -346,8 +346,8 @@ class RoiReportController extends Controller
         // Prepare Filter Summary
         $filterSummary = [];
 
-        // Date Range
-        $filterSummary[] = "Period: " . $startDate->format('d-M-Y') . " to " . $endDate->format('d-M-Y');
+        // Date Range - Removed as requested (it's duplicated in header)
+        // $filterSummary[] = "Period: " . $startDate->format('d-M-Y') . " to " . $endDate->format('d-M-Y');
 
         if ($request->input('filter.settlement_number')) {
             $filterSummary[] = "Settlement #: " . $request->input('filter.settlement_number');
@@ -389,12 +389,18 @@ class RoiReportController extends Controller
 
 
         // Prepare Category Summary
-        $categorySummary = $matrixData['products']->groupBy('category_name')->map(function ($products, $categoryName) {
+        $categorySummary = $matrixData['products']->groupBy('category_name')->map(function ($products, $categoryName) use ($matrixData) {
+            $catTotalSale = $products->sum('totals.total_sale');
+            $catTotalProfit = $products->sum('totals.net_profit');
+            $globalTotalSale = $matrixData['grand_totals']['sale_amount'];
+
             return [
                 'name' => $categoryName,
-                'total_sale' => $products->sum('totals.total_sale'),
-                'total_profit' => $products->sum('totals.net_profit'),
+                'total_sale' => $catTotalSale,
+                'total_profit' => $catTotalProfit,
                 'count' => $products->sum('totals.total_sold_qty'),
+                'sales_share' => $globalTotalSale > 0 ? ($catTotalSale / $globalTotalSale) * 100 : 0,
+                'profit_margin' => $catTotalSale > 0 ? ($catTotalProfit / $catTotalSale) * 100 : 0,
             ];
         })->sortByDesc('total_sale');
 

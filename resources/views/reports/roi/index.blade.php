@@ -372,6 +372,7 @@
                             <table class="report-table">
                                 <thead class="bg-gray-200">
                                     <tr>
+                                        <th class="text-left p-1 w-10 text-black">Sr #</th>
                                         <th class="text-left p-1 text-black">Category</th>
                                         <th class="text-right p-1 text-black">Qty</th>
                                         <th class="text-right p-1 text-black">Sale</th>
@@ -381,6 +382,7 @@
                                 <tbody>
                                     @foreach($categorySummary as $cat)
                                         <tr>
+                                            <td class="p-1 text-center font-mono text-black">{{ $loop->iteration }}</td>
                                             <td class="p-1 text-black">{{ $cat['name'] }}</td>
                                             <td class="p-1 text-center font-mono text-black">{{ $cat['count'] }}</td>
                                             <td class="p-1 text-right font-mono text-black">{{ number_format($cat['total_sale'], 2) }}</td>
@@ -401,6 +403,7 @@
                             <table class="report-table">
                                 <thead class="bg-gray-200">
                                     <tr>
+                                        <th class="text-left p-1 w-10 text-black">Sr #</th>
                                         <th class="text-left p-1 text-black">Account</th>
                                         <th class="text-center p-1 text-black">Code</th>
                                         <th class="text-right p-1 text-black">Amount</th>
@@ -409,6 +412,7 @@
                                 <tbody>
                                     @forelse($expenseBreakdown as $expense)
                                         <tr>
+                                            <td class="p-1 text-center font-mono text-black">{{ $loop->iteration }}</td>
                                             <td class="p-1 text-black font-semibold">{{ $expense->account_name }}</td>
                                             <td class="p-1 text-center text-xs font-mono text-black">{{ $expense->account_code }}</td>
                                             <td class="p-1 text-right font-mono text-red-600 text-black">
@@ -417,13 +421,13 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="p-2 text-center italic text-black">No Expenses Recorded</td>
+                                            <td colspan="4" class="p-2 text-center italic text-black">No Expenses Recorded</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
                                 <tfoot class="bg-gray-100 font-bold border-t-2 border-black">
                                     <tr>
-                                        <td colspan="2" class="p-1 text-right text-black">Total Expenses:</td>
+                                        <td colspan="3" class="p-1 text-right text-black">Total Expenses:</td>
                                         <td class="p-1 text-right font-mono text-red-700 text-black">
                                             {{ number_format($matrixData['grand_totals']['expenses'], 2) }}
                                         </td>
@@ -440,28 +444,34 @@
                              <table class="report-table">
                                 <thead class="bg-gray-200">
                                     <tr>
+                                        <th class="text-left p-1 w-10 text-black">Sr #</th>
                                         <th class="text-left p-1 text-black">Metric</th>
                                         <th class="text-right p-1 text-black">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr>
+                                        <td class="p-1 text-center font-mono text-black">1</td>
                                         <td class="p-1 font-semibold text-black">Total Sales</td>
                                         <td class="p-1 text-right font-mono font-bold text-black">{{ number_format($matrixData['grand_totals']['sale_amount'], 2) }}</td>
                                     </tr>
                                     <tr>
+                                        <td class="p-1 text-center font-mono text-black">2</td>
                                         <td class="p-1 font-semibold text-black">Total COGS</td>
                                         <td class="p-1 text-right font-mono text-black">({{ number_format($matrixData['grand_totals']['cogs'], 2) }})</td>
                                     </tr>
                                     <tr class="bg-gray-100">
+                                        <td class="p-1 text-center font-mono text-black border-t">3</td>
                                         <td class="p-1 font-bold text-black border-t">Gross Profit</td>
                                         <td class="p-1 text-right font-mono font-bold text-black border-t">{{ number_format($matrixData['grand_totals']['gross_profit'], 2) }}</td>
                                     </tr>
                                     <tr>
+                                        <td class="p-1 text-center font-mono text-black">4</td>
                                         <td class="p-1 font-semibold text-black">Allocated Expenses</td>
                                         <td class="p-1 text-right font-mono text-black">({{ number_format($matrixData['grand_totals']['expenses'], 2) }})</td>
                                     </tr>
                                     <tr class="bg-green-100">
+                                        <td class="p-1 text-center font-mono font-extrabold text-lg border-t-2 border-black text-black">5</td>
                                         <td class="p-1 font-extrabold text-lg text-black border-t-2 border-black">Net Profit</td>
                                         <td class="p-1 text-right font-mono font-extrabold text-lg border-t-2 border-black text-black">
                                             {{ number_format($matrixData['grand_totals']['net_profit'], 2) }}

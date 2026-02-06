@@ -230,6 +230,8 @@ class RoiReportController extends Controller
 
         // Fetch Detailed Expense Breakdown (COA-wise)
         // We fetch the GLOBAL breakdown first.
+        // Fetch Detailed Expense Breakdown (COA-wise)
+        // We fetch the GLOBAL breakdown first.
         $expenseBreakdownQuery = DB::table('sales_settlement_expenses')
             ->join('sales_settlements', 'sales_settlement_expenses.sales_settlement_id', '=', 'sales_settlements.id')
             ->join('chart_of_accounts', 'sales_settlement_expenses.expense_account_id', '=', 'chart_of_accounts.id')
@@ -255,26 +257,71 @@ class RoiReportController extends Controller
                 $query->where('sales_settlements.settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
             })
             ->selectRaw('
+                chart_of_accounts.id as account_id,
                 chart_of_accounts.account_code,
                 chart_of_accounts.account_name,
                 SUM(sales_settlement_expenses.amount) as total_amount
             ')
             ->groupBy('chart_of_accounts.id', 'chart_of_accounts.account_code', 'chart_of_accounts.account_name')
+            // Remove having > 0 check to ensure we catch even small aggregated amounts, 
+            // though practically 0s are fine to filter, but since we default 0s anyway, let's keep consistent.
             ->having('total_amount', '>', 0)
             ->orderBy('chart_of_accounts.account_code')
             ->get();
 
         // Calculate Allocation Factor
-        // Factor = (Sales displayed in Report / Total Global Sales)
-        // This ensures the Expense Breakdown Card matches the "Allocated Expenses" total.
         $viewedSales = $matrixData['grand_totals']['sale_amount'];
         $allocationFactor = $totalSalesGlobal > 0 ? ($viewedSales / $totalSalesGlobal) : 0;
 
-        // Apply Factor to Expense Breakdown
-        $expenseBreakdown = $expenseBreakdownQuery->map(function ($item) use ($allocationFactor) {
-            $item->total_amount = $item->total_amount * $allocationFactor;
-            return $item;
-        });
+        // Define Predefined Expenses (Sequence matters)
+        $predefinedExpenses = [
+            ['id' => 72, 'label' => 'Toll Tax', 'code' => '5272'],
+            ['id' => 70, 'label' => 'AMR Powder', 'code' => '5252'],
+            ['id' => 71, 'label' => 'AMR Liquid', 'code' => '5262'],
+            ['id' => 74, 'label' => 'Scheme Discount Expense', 'code' => '5292'],
+            ['id' => 20, 'label' => 'Advance Tax', 'code' => '1161'],
+            ['id' => 73, 'label' => 'Food/Salesman/Loader Charges', 'code' => '5282'],
+            ['id' => 76, 'label' => 'Percentage Expense', 'code' => '5223'],
+            ['id' => 58, 'label' => 'Miscellaneous Expenses', 'code' => '5221'],
+        ];
+
+        // Key fetched expenses by Account ID for easy lookup
+        $fetchedExpenses = $expenseBreakdownQuery->keyBy('account_id');
+
+        // Build Optimized Breakdown List
+        $finalBreakdown = collect();
+
+        // 1. Add Predefined Expenses (Defaults)
+        foreach ($predefinedExpenses as $def) {
+            $existing = $fetchedExpenses->get($def['id']);
+            $amount = $existing ? $existing->total_amount : 0;
+
+            // Remove from fetched list so we don't duplicate
+            if ($existing) {
+                $fetchedExpenses->forget($def['id']);
+            }
+
+            // Apply Allocation Factor immediately
+            $allocatedAmount = $amount * $allocationFactor;
+
+            $finalBreakdown->push((object) [
+                'account_code' => $def['code'],
+                'account_name' => $def['label'],
+                'total_amount' => $allocatedAmount
+            ]);
+        }
+
+        // 2. Add Remaining (Extra) Expenses
+        foreach ($fetchedExpenses as $extra) {
+            $allocatedAmount = $extra->total_amount * $allocationFactor;
+            $finalBreakdown->push((object) [
+                'account_code' => $extra->account_code,
+                'account_name' => $extra->account_name,
+                'total_amount' => $allocatedAmount
+            ]);
+        }
+
+        $expenseBreakdown = $finalBreakdown;
 
         // Fetch Filter Options
         $employees = Employee::where('is_active', true)

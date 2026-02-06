@@ -121,7 +121,7 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Customers</option>
                     @foreach($customers as $customer)
-                        <option value="{{ $customer->id }}" {{ request('filter.customer_id')==(string)$customer->id ? 'selected' : '' }}>
+                        <option value="{{ $customer->id }}" {{ request('filter.customer_id') == (string) $customer->id ? 'selected' : '' }}>
                             {{ $customer->customer_name }} ({{ $customer->customer_code }})
                         </option>
                     @endforeach
@@ -132,10 +132,10 @@
                 <x-label for="per_page" value="Records Per Page" />
                 <select id="per_page" name="per_page"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
+                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', 50) == 50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page') == 250 ? 'selected' : '' }}>250</option>
                 </select>
             </div>
         </div>
@@ -146,7 +146,8 @@
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
                 <div class="text-sm text-gray-500">Total Credit Sales</div>
-                <div class="text-xl font-bold text-blue-700">{{ number_format($summary['total_credit_sales'], 2) }}</div>
+                <div class="text-xl font-bold text-blue-700">{{ number_format($summary['total_credit_sales'], 2) }}
+                </div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
                 <div class="text-sm text-gray-500">Total Recoveries</div>
@@ -205,7 +206,8 @@
                         </tbody>
                         <tfoot class="bg-gray-100 font-extrabold">
                             <tr>
-                                <td colspan="3" class="text-center px-2 py-1">Total ({{ $customerSummaries->count() }} customers)</td>
+                                <td colspan="3" class="text-center px-2 py-1">Total ({{ $customerSummaries->count() }}
+                                    customers)</td>
                                 <td class="text-center px-2 py-1">
                                     {{ $customerSummaries->sum('sales_count') }}
                                 </td>
@@ -231,7 +233,8 @@
                         Supplier: {{ $employee->supplier->supplier_name }}<br>
                     @endif
                     @if(request('filter.date_from') && request('filter.date_to'))
-                        For the period {{ \Carbon\Carbon::parse(request('filter.date_from'))->format('d-M-Y') }} to {{ \Carbon\Carbon::parse(request('filter.date_to'))->format('d-M-Y') }}
+                        For the period {{ \Carbon\Carbon::parse(request('filter.date_from'))->format('d-M-Y') }} to
+                        {{ \Carbon\Carbon::parse(request('filter.date_to'))->format('d-M-Y') }}
                     @else
                         All Transactions
                     @endif
@@ -246,8 +249,9 @@
                         <tr class="bg-gray-50">
                             <th style="width: 40px;">Sr#</th>
                             <th style="width: 90px;">Date</th>
-                            <th style="width: 100px;">Settlement</th>
+                            <th style="width: 150px;">Settlement</th>
                             <th style="width: 150px;">Customer</th>
+                            <th style="width: 150px;">Code</th>
                             <th style="width: 100px;">Invoice #</th>
                             <th style="width: 100px;">Amount</th>
                             <th style="width: 150px;">Notes</th>
@@ -256,8 +260,12 @@
                     <tbody>
                         @forelse ($creditSales as $index => $sale)
                             <tr>
-                                <td class="text-center" style="vertical-align: middle;">{{ $creditSales->firstItem() + $index }}</td>
-                                <td style="vertical-align: middle;">{{ \Carbon\Carbon::parse($sale->transaction_date)->format('d-m-Y') }}</td>
+                                <td class="text-center" style="vertical-align: middle;">
+                                    {{ $creditSales->firstItem() + $index }}
+                                </td>
+                                <td style="vertical-align: middle;">
+                                    {{ \Carbon\Carbon::parse($sale->transaction_date)->format('d-m-Y') }}
+                                </td>
                                 <td style="vertical-align: middle;">
                                     @if($sale->salesSettlement)
                                         <a href="{{ route('sales-settlements.show', $sale->salesSettlement) }}"
@@ -271,11 +279,15 @@
                                 </td>
                                 <td style="vertical-align: middle;">
                                     {{ $sale->account->customer->customer_name ?? 'N/A' }}
-                                    @if($sale->account->customer->customer_code ?? null)
-                                        <div class="text-xs text-gray-500">{{ $sale->account->customer->customer_code }}</div>
-                                    @endif
+
                                 </td>
-                                <td class="font-mono" style="vertical-align: middle;">{{ $sale->invoice_number ?? '-' }}</td>
+
+                                <td style="vertical-align: middle;">
+                                    {{ $sale->account->customer->customer_code }}
+
+                                </td>
+                                <td class="font-mono" style="vertical-align: middle;">{{ $sale->invoice_number ?? '-' }}
+                                </td>
                                 <td class="text-right font-mono font-bold text-blue-700" style="vertical-align: middle;">
                                     {{ number_format($sale->debit, 2) }}
                                 </td>
@@ -289,7 +301,8 @@
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
-                            <td colspan="5" class="text-center px-2 py-1">Page Total ({{ $creditSales->count() }} entries)</td>
+                            <td colspan="5" class="text-center px-2 py-1">Page Total ({{ $creditSales->count() }}
+                                entries)</td>
                             <td class="text-right font-mono px-2 py-1 text-blue-700">
                                 {{ number_format($creditSales->sum('debit'), 2) }}
                             </td>

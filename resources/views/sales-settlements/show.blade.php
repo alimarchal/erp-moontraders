@@ -456,27 +456,27 @@
                                     <thead>
                                         <tr class="bg-gray-100">
                                             <th class="text-center w-10">#</th>
-                                            <th class="text-left">
+                                            <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip text="Customer Name">Customer Name</x-tooltip></span>
                                                 <span class="hidden print:inline">Name</span>
                                             </th>
-                                            <th class="text-left">
+                                            <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip text="Invoice Number">Inv #</x-tooltip></span>
                                                 <span class="hidden print:inline">Inv #</span>
                                             </th>
-                                            <th class="text-right">
+                                            <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip text="Previous Balance">PB</x-tooltip></span>
                                                 <span class="hidden print:inline">Pre Bal</span>
                                             </th>
-                                            <th class="text-right">
+                                            <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip text="Credit Sale">Sale</x-tooltip></span>
                                                 <span class="hidden print:inline">Credit</span>
                                             </th>
-                                            <th class="text-right">
+                                            <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip text="New Balance">NB</x-tooltip></span>
-                                                <span class="hidden print:inline">Balance</span>
+                                                <span class="hidden print:inline">Bal</span>
                                             </th>
-                                            <th class="text-left">Notes</th>
+                                            <th class="text-center print:hidden">Notes</th>
                                         </tr>
                                     </thead>
                                     <tbody class="tabular-nums">
@@ -490,7 +490,7 @@
                                                     <td class="text-right">{{ $creditSale ? number_format($creditSale->previous_balance, 2) : '-' }}</td>
                                                     <td class="text-right font-bold">{{ $creditSale ? number_format($creditSale->sale_amount, 2) : '-' }}</td>
                                                     <td class="text-right">{{ $creditSale ? number_format($creditSale->new_balance, 2) : '-' }}</td>
-                                                    <td class="text-xs italic">{!! $creditSale?->notes ?? '-' !!}</td>
+                                                    <td class="text-xs italic print:hidden">{!! $creditSale?->notes ?? '-' !!}</td>
                                                 </tr>
                                             @endfor
                                         @else
@@ -514,19 +514,19 @@
                                     <thead>
                                         <tr class="bg-gray-100">
                                             <th class="text-center w-10">#</th>
-                                            <th class="text-left">
+                                            <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip text="Customer Name">CN</x-tooltip></span>
                                                 <span class="hidden print:inline">Name</span>
                                             </th>
-                                            <th class="text-left">
+                                            <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip text="Recovery Number">Rec #</x-tooltip></span>
                                                 <span class="hidden print:inline">Rec #</span>
                                             </th>
-                                            <th class="text-right">
+                                            <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip text="Previous Balance">PB</x-tooltip></span>
                                                 <span class="hidden print:inline">Prev Bal.</span>
                                             </th>
-                                            <th class="text-right">
+                                            <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip text="Recovery Amount">Amt</x-tooltip></span>
                                                 <span class="hidden print:inline">Rec Amt</span>
                                             </th>
@@ -534,11 +534,11 @@
                                                 <span class="print:hidden"><x-tooltip text="Payment Method">Method</x-tooltip></span>
                                                 <span class="hidden print:inline">Mtd</span>
                                             </th>
-                                            <th class="text-right">
+                                            <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip text="New Balance">NB</x-tooltip></span>
-                                                <span class="hidden print:inline">Balance</span>
+                                                <span class="hidden print:inline">Bal</span>
                                             </th>
-                                            <th class="text-left">Notes</th>
+                                            <th class="text-center print:hidden">Notes</th>
                                         </tr>
                                     </thead>
                                     <tbody class="tabular-nums">
@@ -559,7 +559,7 @@
                                                         @endif
                                                     </td>
                                                     <td class="text-right">{{ $recovery ? number_format($recovery->new_balance, 2) : '-' }}</td>
-                                                    <td class="text-xs italic">{!! $recovery?->notes ?? '-' !!}</td>
+                                                    <td class="text-xs italic print:hidden">{!! $recovery?->notes ?? '-' !!}</td>
                                                 </tr>
                                             @endfor
                                         @else
@@ -797,7 +797,7 @@
                                             <span class="print:hidden"><x-tooltip text="Customer Name (Code)">Customer</x-tooltip></span>
                                             <span class="hidden print:inline">Customer</span>
                                         </th>
-                                        <th class="text-right px-1 py-0.5">Sale</th>
+                                        <th class="text-right px-1 py-0.5">Inv #</th>
                                         <th class="text-right px-1 py-0.5">Tax</th>
                                     </tr>
                                 </thead>
@@ -807,7 +807,7 @@
                                         <tr>
                                             <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
                                             <td class="px-1 py-0.5">{{ $tax ? $tax->customer->customer_name . ' (' . $tax->customer->customer_code . ')' : '-' }}</td>
-                                            <td class="text-right px-1 py-0.5">{{ $tax ? number_format($tax->sale_amount, 2) : '-' }}</td>
+                                            <td class="text-right px-1 py-0.5">{{ $tax?->invoice_number ?? '-' }}</td>
                                             <td class="text-right font-bold px-1 py-0.5">{{ $tax ? number_format($tax->tax_amount, 2) : '-' }}</td>
                                         </tr>
                                     @endfor

@@ -276,14 +276,14 @@ class RoiReportController extends Controller
 
         // Define Predefined Expenses (Sequence matters)
         $predefinedExpenses = [
-            ['id' => 72, 'label' => 'Toll Tax', 'code' => '5272'],
-            ['id' => 70, 'label' => 'AMR Powder', 'code' => '5252'],
-            ['id' => 71, 'label' => 'AMR Liquid', 'code' => '5262'],
-            ['id' => 74, 'label' => 'Scheme Discount Expense', 'code' => '5292'],
-            ['id' => 20, 'label' => 'Advance Tax', 'code' => '1161'],
-            ['id' => 73, 'label' => 'Food/Salesman/Loader Charges', 'code' => '5282'],
-            ['id' => 76, 'label' => 'Percentage Expense', 'code' => '5223'],
-            ['id' => 58, 'label' => 'Miscellaneous Expenses', 'code' => '5221'],
+            ['id' => 73, 'label' => 'Toll Tax', 'code' => '5272'],
+            ['id' => 71, 'label' => 'AMR Powder', 'code' => '5252'],
+            ['id' => 72, 'label' => 'AMR Liquid', 'code' => '5262'],
+            ['id' => 75, 'label' => 'Scheme Discount Expense', 'code' => '5292'],
+            ['id' => 21, 'label' => 'Advance Tax', 'code' => '1161'],
+            ['id' => 74, 'label' => 'Food/Salesman/Loader Charges', 'code' => '5282'],
+            ['id' => 77, 'label' => 'Percentage Expense', 'code' => '5223'],
+            ['id' => 59, 'label' => 'Miscellaneous Expenses', 'code' => '5221'],
         ];
 
         // Key fetched expenses by Account ID for easy lookup
@@ -302,23 +302,23 @@ class RoiReportController extends Controller
                 $fetchedExpenses->forget($def['id']);
             }
 
-            // Apply Allocation Factor immediately
-            $allocatedAmount = $amount * $allocationFactor;
+            // Show ACTUAL Total Amount (As per user request) instead of allocated
+            // The allocation factor is for the Financial Summary (Allocated Expenses line).
+            // The breakdown list should show the actual incurred expenses for transparency.
 
             $finalBreakdown->push((object) [
                 'account_code' => $def['code'],
                 'account_name' => $def['label'],
-                'total_amount' => $allocatedAmount
+                'total_amount' => $amount
             ]);
         }
 
         // 2. Add Remaining (Extra) Expenses
         foreach ($fetchedExpenses as $extra) {
-            $allocatedAmount = $extra->total_amount * $allocationFactor;
             $finalBreakdown->push((object) [
                 'account_code' => $extra->account_code,
                 'account_name' => $extra->account_name,
-                'total_amount' => $allocatedAmount
+                'total_amount' => $extra->total_amount
             ]);
         }
 

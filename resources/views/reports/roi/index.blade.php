@@ -152,8 +152,9 @@
         </style>
     @endpush
 
-    <x-filter-section :action="route('reports.roi.index')" class="no-print">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+
+    <x-filter-section :action="route('reports.roi.index')" class="no-print " :maxWidth="'max-w-8xl'">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <!-- Dates -->
             <div>
                 <x-label for="filter_start_date" value="Start Date" />

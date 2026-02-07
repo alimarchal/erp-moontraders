@@ -8,25 +8,19 @@ use App\Models\Vehicle;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\QueryBuilder;
 
 class RoiReportController extends Controller
 {
     public function index(Request $request)
     {
         // 1. Initial Setup & Validation
-        if (!$request->has('filter.start_date')) {
-            $request->merge([
-                'filter' => array_merge($request->input('filter', []), [
-                    'start_date' => now()->startOfMonth()->format('Y-m-d'),
-                    'end_date' => now()->format('Y-m-d'),
-                ])
-            ]);
+        if (! $request->has('filter.start_date')) {
+            $startDate = \Carbon\Carbon::now()->startOfMonth();
+            $endDate = \Carbon\Carbon::now();
+        } else {
+            $startDate = \Carbon\Carbon::parse($request->input('filter.start_date'));
+            $endDate = \Carbon\Carbon::parse($request->input('filter.end_date'));
         }
-
-        $startDate = \Carbon\Carbon::parse($request->input('filter.start_date'));
-        $endDate = \Carbon\Carbon::parse($request->input('filter.end_date'));
         $employeeIds = $request->input('filter.employee_id');
         $supplierId = $request->input('filter.supplier_id');
 
@@ -79,7 +73,7 @@ class RoiReportController extends Controller
                 $query->where('sales_settlements.warehouse_id', $request->input('filter.warehouse_id'));
             })
             ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
-                $query->where('sales_settlements.settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
+                $query->where('sales_settlements.settlement_number', 'like', '%'.$request->input('filter.settlement_number').'%');
             })
             ->when($request->input('filter.product_id'), function ($query) use ($request) {
                 $query->where('product_id', $request->input('filter.product_id'));
@@ -105,7 +99,7 @@ class RoiReportController extends Controller
                 'gross_profit' => 0, // Margin Total
                 'expenses' => 0,
                 'net_profit' => 0,
-            ]
+            ],
         ];
 
         // Generate Date Columns
@@ -139,7 +133,7 @@ class RoiReportController extends Controller
                 $query->where('sales_settlements.warehouse_id', $request->input('filter.warehouse_id'));
             })
             ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
-                $query->where('sales_settlements.settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
+                $query->where('sales_settlements.settlement_number', 'like', '%'.$request->input('filter.settlement_number').'%');
             })
             ->selectRaw('
                 SUM(sales_settlement_items.total_sales_value) as total_sales,
@@ -173,7 +167,7 @@ class RoiReportController extends Controller
                 $query->where('sales_settlements.warehouse_id', $request->input('filter.warehouse_id'));
             })
             ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
-                $query->where('sales_settlements.settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
+                $query->where('sales_settlements.settlement_number', 'like', '%'.$request->input('filter.settlement_number').'%');
             })
             ->selectRaw('
                 chart_of_accounts.id as account_id,
@@ -227,7 +221,7 @@ class RoiReportController extends Controller
                 $margin = $avgTp - $avgIp;
             } else {
                 // If no sales, get current product cost/price as fallback or 0
-                // For accurate report, if 0 sales, we can show 0 or master data. 
+                // For accurate report, if 0 sales, we can show 0 or master data.
                 // Let's use 0 to avoid confusion if it wasn't sold.
                 $avgIp = 0;
                 $avgTp = 0;
@@ -240,7 +234,6 @@ class RoiReportController extends Controller
             // Use the GLOBAL Expense Ratio for allocation
             $rowExpenses = $rowTotalSalesValue * $expenseRatio;
             $rowNetProfit = $rowGrossProfit - $rowExpenses;
-
 
             if ($rowTotalSoldQty > 0) {
                 $matrixData['products']->push([
@@ -258,7 +251,7 @@ class RoiReportController extends Controller
                         'gross_profit' => $rowGrossProfit,
                         'expenses' => $rowExpenses,
                         'net_profit' => $rowNetProfit,
-                    ]
+                    ],
                 ]);
 
                 $matrixData['grand_totals']['sold_qty'] += $rowTotalSoldQty;
@@ -309,7 +302,7 @@ class RoiReportController extends Controller
             $finalBreakdown->push((object) [
                 'account_code' => $def['code'],
                 'account_name' => $def['label'],
-                'total_amount' => $amount
+                'total_amount' => $amount,
             ]);
         }
 
@@ -318,7 +311,7 @@ class RoiReportController extends Controller
             $finalBreakdown->push((object) [
                 'account_code' => $extra->account_code,
                 'account_name' => $extra->account_name,
-                'total_amount' => $extra->total_amount
+                'total_amount' => $extra->total_amount,
             ]);
         }
 
@@ -342,7 +335,6 @@ class RoiReportController extends Controller
             ->orderBy('product_name')
             ->get(['id', 'product_name', 'product_code']);
 
-
         // Prepare Filter Summary
         $filterSummary = [];
 
@@ -350,7 +342,7 @@ class RoiReportController extends Controller
         // $filterSummary[] = "Period: " . $startDate->format('d-M-Y') . " to " . $endDate->format('d-M-Y');
 
         if ($request->input('filter.settlement_number')) {
-            $filterSummary[] = "Settlement #: " . $request->input('filter.settlement_number');
+            $filterSummary[] = 'Settlement #: '.$request->input('filter.settlement_number');
         }
 
         if ($employeeIds) {
@@ -361,32 +353,35 @@ class RoiReportController extends Controller
 
         if ($request->input('filter.vehicle_id')) {
             $v = $vehicles->firstWhere('id', $request->input('filter.vehicle_id'));
-            if ($v)
+            if ($v) {
                 $filterSummary[] = "Vehicle: {$v->registration_number}";
+            }
         }
 
         if ($request->input('filter.warehouse_id')) {
             $w = $warehouses->firstWhere('id', $request->input('filter.warehouse_id'));
-            if ($w)
+            if ($w) {
                 $filterSummary[] = "Warehouse: {$w->name}";
+            }
         }
 
         if ($request->input('filter.status')) {
-            $filterSummary[] = "Status: " . ucfirst($request->input('filter.status'));
+            $filterSummary[] = 'Status: '.ucfirst($request->input('filter.status'));
         }
 
         if ($request->input('filter.product_id')) {
             $p = $productList->firstWhere('id', $request->input('filter.product_id'));
-            if ($p)
+            if ($p) {
                 $filterSummary[] = "Product: {$p->product_name}";
+            }
         }
 
         if ($request->input('filter.supplier_id')) {
             $s = $suppliers->firstWhere('id', $request->input('filter.supplier_id'));
-            if ($s)
+            if ($s) {
                 $filterSummary[] = "Supplier: {$s->supplier_name}";
+            }
         }
-
 
         // Prepare Category Summary
         $categorySummary = $matrixData['products']->groupBy('category_name')->map(function ($products, $categoryName) use ($matrixData) {

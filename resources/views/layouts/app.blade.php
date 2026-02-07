@@ -84,11 +84,11 @@
 
         <!-- Page Heading -->
         @if (isset($header))
-        <header class="bg-white shadow print:hidden">
-            <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                {{ $header }}
-            </div>
-        </header>
+            <header class="bg-white shadow print:hidden">
+                <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                    {{ $header }}
+                </div>
+            </header>
         @endif
 
         <!-- Page Content -->
@@ -100,14 +100,14 @@
     <script src="{{ url('select2/select2.min.js') }}" defer></script>
     <script>
         $(document).ready(function () {
-                $('.select2').select2({
+            $('.select2').select2({
                 width: '100%',
                 placeholder: 'Select an option',
                 allowClear: false,
             });
 
             // Handle label clicks for Select2 elements
-            $('label').on('click', function(e) {
+            $('label').on('click', function (e) {
                 var forId = $(this).attr('for');
                 if (forId) {
                     var $element = $('#' + forId);
@@ -119,10 +119,10 @@
             });
         });
 
-            $('form').submit(function(){
-                // If x-button does not render as a traditional submit button, target it directly by ID or class
-                $('#submit-btn').attr('disabled', 'disabled');
-            });
+        $('form').submit(function () {
+            // If x-button does not render as a traditional submit button, target it directly by ID or class
+            $('#submit-btn').attr('disabled', 'disabled');
+        });
     </script>
     @stack('modals')
 

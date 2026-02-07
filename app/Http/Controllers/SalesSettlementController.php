@@ -50,7 +50,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function index()
     {
-        $settlements = QueryBuilder::for(
+        $settlementsQuery = QueryBuilder::for(
             SalesSettlement::query()->with(['employee', 'vehicle', 'warehouse', 'goodsIssue'])
         )
             ->allowedFilters([
@@ -68,11 +68,22 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 }),
             ])
             ->defaultSort('-settlement_date')
-            ->paginate(20)
-            ->withQueryString();
+            ->withSum('items', 'total_sales_value') // For total sales
+            ->withSum('items', 'total_cogs')        // For COGS
+            ->withSum('expenses', 'amount')         // Expense 1
+            ->withSum('advanceTaxes', 'tax_amount') // Expense 2
+            ->withSum('amrPowders', 'amount')       // Expense 3
+            ->withSum('amrLiquids', 'amount')       // Expense 4
+            ->withSum('percentageExpenses', 'amount') // Expense 5
+            ->withSum('items as total_quantity_sold_sum', 'quantity_sold')
+            ->withSum('items as total_quantity_returned_sum', 'quantity_returned')
+            ->withSum('items as total_quantity_shortage_sum', 'quantity_shortage');
 
-        // Calculate totals for the filtered results
-        $totals = QueryBuilder::for(SalesSettlement::class)
+        $settlements = $settlementsQuery->paginate(20)->withQueryString();
+
+        // Calculate Totals Helper
+        // We reuse the allowed filters logic to get the constrained query for aggregation
+        $filterQuery = QueryBuilder::for(SalesSettlement::class)
             ->allowedFilters([
                 AllowedFilter::partial('settlement_number'),
                 AllowedFilter::exact('employee_id'),
@@ -87,31 +98,71 @@ class SalesSettlementController extends Controller implements HasMiddleware
                     });
                 }),
             ])
-            ->selectRaw('
-                SUM(total_quantity_sold) as total_sold_qty,
-                SUM(total_quantity_returned) as total_returned_qty,
-                SUM(total_quantity_shortage) as total_shortage_qty,
-                SUM(total_sales_amount) as total_sales_amount,
-                SUM(credit_sales_amount) as total_credit_sales,
-                SUM(cheque_sales_amount) as total_cheque_sales,
-                SUM(bank_transfer_amount) as total_bank_transfer,
-                SUM(cash_sales_amount) as total_cash_sales,
-                SUM(credit_recoveries) as total_recoveries,
-                SUM(expenses_claimed) as total_expenses,
-                SUM(gross_profit) as total_gross_profit,
-                SUM(total_cogs) as total_cogs,
-                SUM(cash_to_deposit) as total_cash_deposit
-            ')
-            ->first();
+            ->select('id');
 
-        // Calculate Net Profit
-        $netProfit = $totals->total_gross_profit - $totals->total_expenses;
-        $totals->total_net_profit = $netProfit;
+        // We use the filter query as a subquery constraint
+        // Note: Using clone logic or re-instantiating is safer to avoid modifying the reference if used multiple times, 
+        // but here we just pass the builder/query object to whereIn which compiles it to a subquery.
 
-        // Check if models are imported, if not use FQCN or add imports.
-        // Existing imports do not show Employee, Vehicle, Warehouse.
-        // I will use FQCN for safety in this replace block or add imports at the top implies reading the whole file.
-        // Better to use FQCN here to be safe and cleaner in this specific block without scrolling up.
+        $totalSales = \App\Models\SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
+            ->sum('total_sales_value');
+
+        $totalCogs = \App\Models\SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
+            ->sum('total_cogs');
+
+        $totalSoldQty = \App\Models\SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
+            ->sum('quantity_sold');
+
+        $totalReturnedQty = \App\Models\SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
+            ->sum('quantity_returned');
+
+        $totalShortageQty = \App\Models\SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
+            ->sum('quantity_shortage');
+
+        // Expenses Summation
+        // The sales_settlement_expenses table contains ALL expenses including the totals of the breakdown tables.
+        // So we only need to sum this one table to avoid double counting.
+        $totalExpenses = \App\Models\SalesSettlementExpense::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
+
+        $totalGrossProfit = $totalSales - $totalCogs;
+        $totalNetProfit = $totalGrossProfit - $totalExpenses;
+
+        // Cash/Bank details still need to be summed. For accuracy, we should sum from their respective tables too if possible,
+        // or rely on the cached columns if we trust them. 
+        // User asked to verify tables. Let's try to sum tables if they exist.
+        // sales_settlement_cash_denominations (total_amount), bank_transfers, cheques, recoveries, credit_sales.
+
+        $totalCashCollected = \App\Models\SalesSettlementCashDenomination::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('total_amount');
+        $totalBankTransfers = \App\Models\SalesSettlementBankTransfer::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
+        $totalCheques = \App\Models\SalesSettlementCheque::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
+        $totalRecoveries = \App\Models\SalesSettlementRecovery::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
+        $totalCreditSales = \App\Models\SalesSettlementCreditSale::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('sale_amount');
+
+        // Cash Sales (Gross) = Total Sales - Credit - Cheque - Bank
+        // Note: This logic depends on business rule. Usually Cash Sales is stored.
+        // But if we want to calculate it:
+        // Cash Sales = Total Sales - Credit Sales - Bank Transfers - Cheques
+        $totalCashSales = $totalSales - $totalCreditSales - $totalBankTransfers - $totalCheques;
+
+        // Cash To Deposit = Cash Collected
+        $totalCashDeposit = $totalCashCollected;
+
+        $totals = (object) [
+            'total_sold_qty' => $totalSoldQty,
+            'total_returned_qty' => $totalReturnedQty,
+            'total_shortage_qty' => $totalShortageQty,
+            'total_sales_amount' => $totalSales,
+            'total_cogs' => $totalCogs,
+            'total_expenses' => $totalExpenses,
+            'total_gross_profit' => $totalGrossProfit,
+            'total_net_profit' => $totalNetProfit,
+            'total_cash_sales' => $totalCashSales,
+            'total_credit_sales' => $totalCreditSales,
+            'total_cheque_sales' => $totalCheques,
+            'total_bank_transfer' => $totalBankTransfers,
+            'total_recoveries' => $totalRecoveries,
+            'total_cash_deposit' => $totalCashDeposit,
+        ];
 
         $employees = \App\Models\Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']);
         $vehicles = \App\Models\Vehicle::where('is_active', true)->orderBy('registration_number')->get(['id', 'registration_number']);
@@ -189,6 +240,24 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->orderBy('account_code')
             ->get(['id', 'account_code', 'account_name']);
 
+        // Dynamically resolve predefined expense account IDs from account codes
+        $predefinedExpenseAccountCodes = ['5272', '5252', '5262', '5292', '1161', '5282', '5223', '5221'];
+        $predefinedAccountsMap = \App\Models\ChartOfAccount::whereIn('account_code', $predefinedExpenseAccountCodes)
+            ->pluck('id', 'account_code')
+            ->toArray();
+
+        // Build the complete predefined expenses array for the view
+        $predefinedExpenses = [
+            ['id' => 1, 'label' => 'Toll Tax', 'account_code' => '5272', 'expense_account_id' => $predefinedAccountsMap['5272'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 2, 'label' => 'AMR Powder', 'account_code' => '5252', 'expense_account_id' => $predefinedAccountsMap['5252'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 3, 'label' => 'AMR Liquid', 'account_code' => '5262', 'expense_account_id' => $predefinedAccountsMap['5262'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 4, 'label' => 'Scheme Discount Expense', 'account_code' => '5292', 'expense_account_id' => $predefinedAccountsMap['5292'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 5, 'label' => 'Advance Tax', 'account_code' => '1161', 'expense_account_id' => $predefinedAccountsMap['1161'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 6, 'label' => 'Food/Salesman/Loader Charges', 'account_code' => '5282', 'expense_account_id' => $predefinedAccountsMap['5282'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 7, 'label' => 'Percentage Expense', 'account_code' => '5223', 'expense_account_id' => $predefinedAccountsMap['5223'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 8, 'label' => 'Miscellaneous Expenses', 'account_code' => '5221', 'expense_account_id' => $predefinedAccountsMap['5221'] ?? null, 'is_predefined' => true, 'amount' => 0],
+        ];
+
         return view('sales-settlements.create', [
             'customers' => Customer::where('is_active', true)
                 ->orderBy('customer_name')
@@ -205,6 +274,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 ->where('is_active', true)
                 ->orderBy('product_name')
                 ->get(['id', 'product_code', 'product_name']),
+            'predefinedExpenses' => $predefinedExpenses,
         ]);
     }
 
@@ -957,11 +1027,30 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         $cashDenom = $salesSettlement->cashDenomination;
 
-        $savedExpensesData = $salesSettlement->expenses->map(fn($e) => [
+        $savedExpensesData = $salesSettlement->expenses->load('expenseAccount')->map(fn($e) => [
             'expense_account_id' => $e->expense_account_id,
+            'account_code' => $e->expenseAccount?->account_code ?? '',
             'amount' => (float) $e->amount,
             'description' => $e->description,
         ]);
+
+        // Dynamically resolve predefined expense account IDs from account codes
+        $predefinedExpenseAccountCodes = ['5272', '5252', '5262', '5292', '1161', '5282', '5223', '5221'];
+        $predefinedAccountsMap = \App\Models\ChartOfAccount::whereIn('account_code', $predefinedExpenseAccountCodes)
+            ->pluck('id', 'account_code')
+            ->toArray();
+
+        // Build the complete predefined expenses array for the view
+        $predefinedExpenses = [
+            ['id' => 1, 'label' => 'Toll Tax', 'account_code' => '5272', 'expense_account_id' => $predefinedAccountsMap['5272'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 2, 'label' => 'AMR Powder', 'account_code' => '5252', 'expense_account_id' => $predefinedAccountsMap['5252'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 3, 'label' => 'AMR Liquid', 'account_code' => '5262', 'expense_account_id' => $predefinedAccountsMap['5262'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 4, 'label' => 'Scheme Discount Expense', 'account_code' => '5292', 'expense_account_id' => $predefinedAccountsMap['5292'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 5, 'label' => 'Advance Tax', 'account_code' => '1161', 'expense_account_id' => $predefinedAccountsMap['1161'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 6, 'label' => 'Food/Salesman/Loader Charges', 'account_code' => '5282', 'expense_account_id' => $predefinedAccountsMap['5282'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 7, 'label' => 'Percentage Expense', 'account_code' => '5223', 'expense_account_id' => $predefinedAccountsMap['5223'] ?? null, 'is_predefined' => true, 'amount' => 0],
+            ['id' => 8, 'label' => 'Miscellaneous Expenses', 'account_code' => '5221', 'expense_account_id' => $predefinedAccountsMap['5221'] ?? null, 'is_predefined' => true, 'amount' => 0],
+        ];
 
         return view('sales-settlements.edit', [
             'settlement' => $salesSettlement,
@@ -989,6 +1078,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'percentageExpensesDecoded' => $percentageExpensesDecoded,
             'cashDenom' => $cashDenom,
             'savedExpensesData' => $savedExpensesData,
+            'predefinedExpenses' => $predefinedExpenses,
         ]);
     }
 
@@ -1096,6 +1186,17 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 }
             }
 
+            // Calculate total expenses (Only from expenses array as it contains all group expenses)
+            $totalExpenses = 0;
+
+            if (!empty($request->expenses) && is_array($request->expenses)) {
+                foreach ($request->expenses as $expense) {
+                    if (!empty($expense['expense_account_id'])) {
+                        $totalExpenses += floatval($expense['amount'] ?? 0);
+                    }
+                }
+            }
+
             // Cash sales include only physical cash from denominations
             $cashSalesAmount = $denomTotal;
 
@@ -1109,7 +1210,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $cashCollected = $denomTotal;
 
             // Cash to deposit includes cash recoveries, minus expenses paid from cash
-            $cashToDeposit = $cashCollected + $cashRecoveries - ($request->expenses_claimed ?? 0);
+            // Assumes all expenses are paid from cash collected
+            $cashToDeposit = $cashCollected + $cashRecoveries - $totalExpenses;
 
             // Update sales settlement
             $salesSettlement->update([
@@ -1131,7 +1233,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'total_quantity_shortage' => $totalQuantityShortage,
                 'cash_collected' => $cashCollected,
                 'cheques_collected' => $totalCheques,
-                'expenses_claimed' => $request->expenses_claimed ?? 0,
+                'expenses_claimed' => $totalExpenses,
                 'cash_to_deposit' => $cashToDeposit,
                 'gross_profit' => $grossProfit,
                 'total_cogs' => $totalCogs,

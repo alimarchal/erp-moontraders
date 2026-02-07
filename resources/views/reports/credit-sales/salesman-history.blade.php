@@ -74,7 +74,8 @@
 
                 .text-green-700,
                 .text-blue-700,
-                .text-orange-700 {
+                .text-orange-700,
+                .text-purple-700 {
                     color: #000 !important;
                 }
 
@@ -98,57 +99,74 @@
                     display: none;
                 }
             }
+
+            /* Select2 Styling to match Tailwind Inputs */
+            .select2-container .select2-selection--multiple {
+                min-height: 42px !important;
+                border-color: #d1d5db !important;
+                /* gray-300 */
+                border-radius: 0.375rem !important;
+                /* rounded-md */
+                padding-top: 4px !important;
+                padding-bottom: 4px !important;
+            }
+
+            .select2-container--default.select2-container--focus .select2-selection--multiple {
+                border-color: #6366f1 !important;
+                /* indigo-500 */
+                box-shadow: 0 0 0 1px #6366f1 !important;
+            }
         </style>
     @endpush
 
     <x-filter-section :action="route('reports.credit-sales.salesman-history')" class="no-print">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {{-- Date Range --}}
             <div>
-                <x-label for="filter_name" value="Salesman Name" />
-                <x-input id="filter_name" name="filter[name]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.name')" placeholder="Salesman name..." />
+                <x-label for="filter_start_date" value="Start Date (From)" />
+                <x-input id="filter_start_date" name="filter[start_date]" type="date" class="mt-1 block w-full"
+                    :value="$startDate" />
             </div>
 
             <div>
-                <x-label for="filter_employee_code" value="Employee Code" />
-                <x-input id="filter_employee_code" name="filter[employee_code]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.employee_code')" placeholder="EMP-001..." />
+                <x-label for="filter_end_date" value="End Date (To)" />
+                <x-input id="filter_end_date" name="filter[end_date]" type="date" class="mt-1 block w-full"
+                    :value="$endDate" />
             </div>
 
+            {{-- Multi-Select Salesman --}}
             <div>
-                <x-label for="filter_supplier_id" value="Supplier" />
-                <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Suppliers</option>
-                    @foreach($suppliers as $supplier)
-                        <option value="{{ $supplier->id }}" {{ request('filter.supplier_id') == (string) $supplier->id ? 'selected' : '' }}>
-                            {{ $supplier->supplier_name }}
+                <x-label for="filter_employee_ids" value="Salesman (Multi-Select)" />
+                <select id="filter_employee_ids" name="filter[employee_ids][]" multiple
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    @foreach($employees as $employee)
+                        <option value="{{ $employee->id }}" {{ in_array($employee->id, $selectedEmployeeIds) ? 'selected' : '' }}>
+                            {{ $employee->name }} ({{ $employee->employee_code }})
                         </option>
                     @endforeach
                 </select>
             </div>
 
-            <div>
-                <x-label for="filter_balance_min" value="Balance (Min)" />
-                <x-input id="filter_balance_min" name="filter[balance_min]" type="number" step="0.01"
-                    class="mt-1 block w-full" :value="request('filter.balance_min')" placeholder="0.00" />
-            </div>
-
-            <div>
-                <x-label for="filter_balance_max" value="Balance (Max)" />
-                <x-input id="filter_balance_max" name="filter[balance_max]" type="number" step="0.01"
-                    class="mt-1 block w-full" :value="request('filter.balance_max')" placeholder="Any" />
-            </div>
-
+            {{-- Sort By --}}
             <div>
                 <x-label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="-credit_sales" {{ request('sort', '-credit_sales') === '-credit_sales' ? 'selected' : '' }}>Credit Sales (High to Low)</option>
+                    <option value="-closing_balance" {{ request('sort', '-closing_balance') === '-closing_balance' ? 'selected' : '' }}>Closing Balance (High to Low)</option>
+                    <option value="closing_balance" {{ request('sort') === 'closing_balance' ? 'selected' : '' }}>Closing
+                        Balance (Low to High)</option>
+                    <option value="-credit_sales" {{ request('sort') === '-credit_sales' ? 'selected' : '' }}>Credit Sales
+                        (High to Low)</option>
                     <option value="credit_sales" {{ request('sort') === 'credit_sales' ? 'selected' : '' }}>Credit Sales
                         (Low to High)</option>
-                    <option value="-balance" {{ request('sort') === '-balance' ? 'selected' : '' }}>Balance (High to Low)
-                    </option>
+                    <option value="-recoveries" {{ request('sort') === '-recoveries' ? 'selected' : '' }}>Recoveries (High
+                        to Low)</option>
+                    <option value="recoveries" {{ request('sort') === 'recoveries' ? 'selected' : '' }}>Recoveries (Low to
+                        High)</option>
+                    <option value="-opening_balance" {{ request('sort') === '-opening_balance' ? 'selected' : '' }}>
+                        Opening Balance (High to Low)</option>
+                    <option value="opening_balance" {{ request('sort') === 'opening_balance' ? 'selected' : '' }}>Opening
+                        Balance (Low to High)</option>
                     <option value="name" {{ request('sort') === 'name' ? 'selected' : '' }}>Name (A-Z)</option>
                     <option value="-name" {{ request('sort') === '-name' ? 'selected' : '' }}>Name (Z-A)</option>
                     <option value="-customers_count" {{ request('sort') === '-customers_count' ? 'selected' : '' }}>
@@ -158,6 +176,7 @@
                 </select>
             </div>
 
+            {{-- Per Page --}}
             <div>
                 <x-label for="per_page" value="Records Per Page" />
                 <select id="per_page" name="per_page"
@@ -174,24 +193,27 @@
     {{-- Summary Cards --}}
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+                <div class="text-sm text-gray-500">Opening Balance (Total)</div>
+                <div class="text-2xl font-bold text-purple-700">
+                    {{ number_format($totals->total_opening_balance ?? 0, 2) }}
+                </div>
+            </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-                <div class="text-sm text-gray-500">Total Credit Sales</div>
+                <div class="text-sm text-gray-500">Credit Sales (Period)</div>
                 <div class="text-2xl font-bold text-blue-700">{{ number_format($totals->total_credit_sales ?? 0, 2) }}
                 </div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-                <div class="text-sm text-gray-500">Total Recoveries</div>
+                <div class="text-sm text-gray-500">Recoveries (Period)</div>
                 <div class="text-2xl font-bold text-green-700">{{ number_format($totals->total_recoveries ?? 0, 2) }}
                 </div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
-                <div class="text-sm text-gray-500">Outstanding Balance</div>
+                <div class="text-sm text-gray-500">Closing Balance (Total)</div>
                 <div class="text-2xl font-bold text-orange-700">
-                    {{ number_format(($totals->total_credit_sales ?? 0) - ($totals->total_recoveries ?? 0), 2) }}</div>
-            </div>
-            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
-                <div class="text-sm text-gray-500">Total Salesmen</div>
-                <div class="text-2xl font-bold text-purple-700">{{ $salesmen->total() }}</div>
+                    {{ number_format(($totals->total_opening_balance ?? 0) + ($totals->total_credit_sales ?? 0) - ($totals->total_recoveries ?? 0), 2) }}
+                </div>
             </div>
         </div>
     </div>
@@ -202,9 +224,15 @@
                 <p class="text-center font-extrabold mb-2">
                     Moon Traders<br>
                     Salesman Credit Sales History<br>
-                    Total Salesmen: {{ number_format($salesmen->total()) }} |
-                    Outstanding:
-                    {{ number_format(($totals->total_credit_sales ?? 0) - ($totals->total_recoveries ?? 0), 2) }}
+                    <span class="text-sm font-semibold">Salesman: {{ $selectedEmployeeNames }}</span><br>
+                    For the period {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
+                    {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
+                    <br>
+                    <span class="text-xs font-normal">
+                        Total Salesmen: {{ number_format($salesmen->total()) }} |
+                        Closing Balance:
+                        {{ number_format(($totals->total_opening_balance ?? 0) + ($totals->total_credit_sales ?? 0) - ($totals->total_recoveries ?? 0), 2) }}
+                    </span>
                     <br>
                     <span class="print-only print-info text-xs text-center">
                         Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
@@ -215,12 +243,12 @@
                     <thead>
                         <tr class="bg-gray-50">
                             <th style="width: 40px;">Sr#</th>
-                            <th style="width: 100px;">Code</th>
+                            <th style="width: 90px;">Code</th>
                             <th style="width: 150px;">Salesman Name</th>
-                            <th style="width: 120px;">Supplier</th>
+                            <th style="width: 100px;">Opening Bal.</th>
                             <th style="width: 100px;">Credit Sales</th>
                             <th style="width: 100px;">Recoveries</th>
-                            <th style="width: 100px;">Balance</th>
+                            <th style="width: 100px;">Closing Bal.</th>
                             <th style="width: 60px;">Customers</th>
                             <th style="width: 60px;">Sales</th>
                             <th style="width: 80px;" class="no-print">Actions</th>
@@ -229,30 +257,31 @@
                     <tbody>
                         @forelse ($salesmen as $index => $salesman)
                             @php
-                                $balance = ($salesman->credit_sales_sum_sale_amount ?? 0) - ($salesman->recoveries_sum_amount ?? 0);
+                                $openingBalance = $salesman->opening_balance ?? 0;
+                                $creditSales = $salesman->credit_sales_amount ?? 0;
+                                $recoveries = $salesman->recoveries_amount ?? 0;
+                                $closingBalance = $openingBalance + $creditSales - $recoveries;
                             @endphp
                             <tr>
                                 <td class="text-center" style="vertical-align: middle;">
-                                    {{ $salesmen->firstItem() + $index }}</td>
+                                    {{ $salesmen->firstItem() + $index }}
+                                </td>
                                 <td class="font-mono" style="vertical-align: middle;">{{ $salesman->employee_code }}</td>
                                 <td style="vertical-align: middle;">
                                     {{ $salesman->full_name }}
                                 </td>
-                                <td style="vertical-align: middle;">
-                                    {{ $salesman->supplier->supplier_name ?? 'N/A' }}
-                                    <!-- @if($salesman->supplier->short_name ?? null)
-                                            <div class="text-xs text-gray-500">{{ $salesman->supplier->short_name }}</div>
-                                        @endif -->
+                                <td class="text-right font-mono text-purple-700" style="vertical-align: middle;">
+                                    {{ number_format($openingBalance, 2) }}
                                 </td>
                                 <td class="text-right font-mono text-blue-700" style="vertical-align: middle;">
-                                    {{ number_format($salesman->credit_sales_sum_sale_amount ?? 0, 2) }}
+                                    {{ number_format($creditSales, 2) }}
                                 </td>
                                 <td class="text-right font-mono text-green-700" style="vertical-align: middle;">
-                                    {{ number_format($salesman->recoveries_sum_amount ?? 0, 2) }}
+                                    {{ number_format($recoveries, 2) }}
                                 </td>
-                                <td class="text-right font-mono font-bold {{ $balance > 0 ? 'text-orange-700' : 'text-green-700' }}"
+                                <td class="text-right font-mono font-bold {{ $closingBalance > 0 ? 'text-orange-700' : 'text-green-700' }}"
                                     style="vertical-align: middle;">
-                                    {{ number_format($balance, 2) }}
+                                    {{ number_format($closingBalance, 2) }}
                                 </td>
                                 <td class="text-center" style="vertical-align: middle;">
                                     {{ $salesman->customers_count }}
@@ -275,23 +304,26 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center py-4 text-gray-500">No credit sales found for any
-                                    salesman.</td>
+                                <td colspan="10" class="text-center py-4 text-gray-500">No credit sales found for the
+                                    selected period.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
-                            <td colspan="4" class="text-center px-2 py-1">Page Total ({{ $salesmen->count() }} salesmen)
+                            <td colspan="3" class="text-center px-2 py-1">Page Total ({{ $salesmen->count() }} salesmen)
+                            </td>
+                            <td class="text-right font-mono px-2 py-1 text-purple-700">
+                                {{ number_format($salesmen->sum('opening_balance'), 2) }}
                             </td>
                             <td class="text-right font-mono px-2 py-1 text-blue-700">
-                                {{ number_format($salesmen->sum('credit_sales_sum_sale_amount'), 2) }}
+                                {{ number_format($salesmen->sum('credit_sales_amount'), 2) }}
                             </td>
                             <td class="text-right font-mono px-2 py-1 text-green-700">
-                                {{ number_format($salesmen->sum('recoveries_sum_amount'), 2) }}
+                                {{ number_format($salesmen->sum('recoveries_amount'), 2) }}
                             </td>
                             <td class="text-right font-mono px-2 py-1 text-orange-700">
-                                {{ number_format($salesmen->sum('credit_sales_sum_sale_amount') - $salesmen->sum('recoveries_sum_amount'), 2) }}
+                                {{ number_format($salesmen->sum('opening_balance') + $salesmen->sum('credit_sales_amount') - $salesmen->sum('recoveries_amount'), 2) }}
                             </td>
                             <td class="text-center px-2 py-1">
                                 {{ $salesmen->sum('customers_count') }}

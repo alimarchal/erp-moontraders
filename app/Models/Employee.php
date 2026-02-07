@@ -87,4 +87,9 @@ class Employee extends Model
     {
         return $this->name;
     }
+
+    public function salesSettlements(): HasMany
+    {
+        return $this->hasMany(SalesSettlement::class);
+    }
 }

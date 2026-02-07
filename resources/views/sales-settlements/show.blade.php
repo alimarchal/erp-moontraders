@@ -859,18 +859,27 @@
 
                     {{-- Other Expenses --}}
                     @php
+                        // Dynamically resolve predefined expense account IDs from account codes
+                        $predefinedExpenseCodes = ['5272', '5252', '5262', '5292', '1161', '5282', '5223', '5221'];
+                        $predefinedAccountsMap = \App\Models\ChartOfAccount::whereIn('account_code', $predefinedExpenseCodes)
+                            ->pluck('id', 'account_code')
+                            ->toArray();
+
                         // Define predefined expense accounts in order (matching create/edit page)
                         $predefinedExpenses = [
-                            ['id' => 72, 'label' => 'Toll Tax', 'code' => '5272'],
-                            ['id' => 70, 'label' => 'AMR Powder', 'code' => '5252'],
-                            ['id' => 71, 'label' => 'AMR Liquid', 'code' => '5262'],
-                            ['id' => 74, 'label' => 'Scheme Discount Expense', 'code' => '5292'],
-                            ['id' => 20, 'label' => 'Advance Tax', 'code' => '1161'],
-                            ['id' => 73, 'label' => 'Food/Salesman/Loader Charges', 'code' => '5282'],
-                            ['id' => 76, 'label' => 'Percentage Expense', 'code' => '5223'],
-                            ['id' => 58, 'label' => 'Miscellaneous Expenses', 'code' => '5221'],
+                            ['id' => $predefinedAccountsMap['5272'] ?? null, 'label' => 'Toll Tax', 'code' => '5272'],
+                            ['id' => $predefinedAccountsMap['5252'] ?? null, 'label' => 'AMR Powder', 'code' => '5252'],
+                            ['id' => $predefinedAccountsMap['5262'] ?? null, 'label' => 'AMR Liquid', 'code' => '5262'],
+                            ['id' => $predefinedAccountsMap['5292'] ?? null, 'label' => 'Scheme Discount Expense', 'code' => '5292'],
+                            ['id' => $predefinedAccountsMap['1161'] ?? null, 'label' => 'Advance Tax', 'code' => '1161'],
+                            ['id' => $predefinedAccountsMap['5282'] ?? null, 'label' => 'Food/Salesman/Loader Charges', 'code' => '5282'],
+                            ['id' => $predefinedAccountsMap['5223'] ?? null, 'label' => 'Percentage Expense', 'code' => '5223'],
+                            ['id' => $predefinedAccountsMap['5221'] ?? null, 'label' => 'Miscellaneous Expenses', 'code' => '5221'],
                         ];
-                        $predefinedIds = collect($predefinedExpenses)->pluck('id')->toArray();
+                        $predefinedIds = collect($predefinedExpenses)->pluck('id')->filter()->toArray();
+
+                        // Codes that have detailed breakdowns shown in tables above
+                        $detailedBreakdownCodes = ['5252', '5262', '1161', '5223'];
 
                         // Get saved expense amounts indexed by account ID
                         $savedExpenseAmounts = $settlement->expenses->keyBy('expense_account_id');
@@ -965,7 +974,7 @@
                                             @if($expRow)
                                                 <td class="px-1 py-0.5">{{ $expRow['label'] }}</td>
                                                 <td class="text-center px-1 py-0.5">
-                                                    @if(isset($expRow['is_predefined']) && $expRow['is_predefined'] && in_array($expRow['id'], [70, 71, 20, 76]))
+                                                @if(isset($expRow['is_predefined']) && $expRow['is_predefined'] && in_array($expRow['code'], $detailedBreakdownCodes))
                                                         <span class="print:hidden underline decoration-dotted cursor-help"><x-tooltip text="See detailed breakdown in the table above">{{ $expRow['code'] }}</x-tooltip></span>
                                                         <span class="hidden print:inline">{{ $expRow['code'] }}</span>
                                                     @else

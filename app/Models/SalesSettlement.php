@@ -223,4 +223,57 @@ class SalesSettlement extends Model
     {
         return $query->where('settlement_date', '<=', $date);
     }
+
+    /**
+     * Get calculated total expenses from loaded sums (or relationships if not loaded)
+     */
+    public function getCalculatedTotalExpensesAttribute(): float
+    {
+        // Try to use loaded sums first (fastest for index page)
+        $expensesSum = $this->getAttribute('expenses_sum_amount');
+        $advanceTaxSum = $this->getAttribute('advance_taxes_sum_tax_amount');
+        $amrPowderSum = $this->getAttribute('amr_powders_sum_amount');
+        $amrLiquidSum = $this->getAttribute('amr_liquids_sum_amount');
+        $percentageExpenseSum = $this->getAttribute('percentage_expenses_sum_amount');
+
+        // If any sum is null (not loaded), we might want to lazy load or return 0 if we expect them to be loaded.
+        // For robustness, if they are not set, we fall back to relationship aggregation (slower, but correct)
+        // However, standard eloquent 'withSum' returns null if no rows, so we treat null as 0.
+        // If the key doesn't exist at all in attributes, we should load it.
+
+        $hasLoadedSums = array_key_exists('expenses_sum_amount', $this->getAttributes());
+
+        if ($hasLoadedSums) {
+            return (float) ($expensesSum ?? 0);
+        }
+
+        // Fallback: Calculate from relationships (N+1 risk if used in loop without eager load, but safe)
+        return (float) $this->expenses()->sum('amount');
+    }
+
+    public function getCalculatedTotalSalesAmountAttribute(): float
+    {
+        if (array_key_exists('items_sum_total_sales_value', $this->getAttributes())) {
+            return (float) ($this->getAttribute('items_sum_total_sales_value') ?? 0);
+        }
+        return (float) $this->items()->sum('total_sales_value');
+    }
+
+    public function getCalculatedTotalCogsAttribute(): float
+    {
+        if (array_key_exists('items_sum_total_cogs', $this->getAttributes())) {
+            return (float) ($this->getAttribute('items_sum_total_cogs') ?? 0);
+        }
+        return (float) $this->items()->sum('total_cogs');
+    }
+
+    public function getCalculatedNetProfitAttribute(): float
+    {
+        // Gross Profit = Sales - COGS
+        $grossProfit = $this->calculated_total_sales_amount - $this->calculated_total_cogs;
+
+        // Net Profit = Gross Profit - Expenses
+        return $grossProfit - $this->calculated_total_expenses;
+    }
 }
+

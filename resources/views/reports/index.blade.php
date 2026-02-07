@@ -273,6 +273,22 @@
                             </svg>
                         </div>
                     </a>
+
+                    <!-- Scheme Discount Report Card -->
+                    <a href="{{ route('reports.scheme-discount.index') }}"
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8 text-gray-800">SD</div>
+                                <div class="mt-1 text-base font-extrabold text-gray-700">Scheme Discount</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-pink-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                            </svg>
+                        </div>
+                    </a>
                 </div>
             </div>
 

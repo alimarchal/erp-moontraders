@@ -106,8 +106,16 @@
 
     <x-filter-section :action="route('reports.scheme-discount.index')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-            <div>
-                <x-label for="filter_supplier_id" value="Supplier" />
+            <div class="relative">
+                <div class="flex justify-between items-center">
+                    <x-label for="filter_supplier_id" value="Supplier" />
+                    @if($selectedSupplierId)
+                        <a href="{{ route('reports.scheme-discount.index', array_merge(request()->except(['filter.supplier_id', 'page']), ['filter[supplier_id]' => ''])) }}" 
+                           class="text-xs text-red-600 hover:text-red-800 underline">
+                            Clear
+                        </a>
+                    @endif
+                </div>
                 <select id="filter_supplier_id" name="filter[supplier_id]"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
@@ -175,43 +183,48 @@
                 <table class="report-table">
                     <thead>
                         <tr class="bg-gray-50">
-                            <th style="width: 100px;">Date</th>
-                            @foreach($reportSalesmen as $salesman)
-                                <th class="text-center">{{ $salesman->name }}</th>
+                            <th class="w-10 text-center border font-bold">#</th>
+                            <th class="text-left border font-bold px-2 whitespace-nowrap">Employee Name</th>
+                            @foreach($dates as $date)
+                                <th class="text-center w-10 border font-bold px-1">
+                                    {{ \Carbon\Carbon::parse($date)->format('d') }}
+                                </th>
                             @endforeach
-                            <th style="width: 100px;">Total</th>
+                            <th class="w-20 text-center border font-bold px-2">Total</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($dates as $date)
+                        @foreach ($reportSalesmen as $salesman)
                             <tr>
-                                <td class="text-center" style="vertical-align: middle;">
-                                    {{ \Carbon\Carbon::parse($date)->format('d-M-Y') }}
+                                <td class="text-center border">{{ $loop->iteration }}</td>
+                                <td class="text-left font-semibold border px-2 whitespace-nowrap">
+                                    {{ $salesman->name }}
                                 </td>
-                                @foreach($reportSalesmen as $salesman)
+                                @foreach($dates as $date)
                                     @php
-                                        $amount = $matrix[$date][$salesman->id] ?? 0;
+                                        // Matrix is now [employee_id][date]
+                                        $amount = $matrix[$salesman->id][$date] ?? 0;
                                     @endphp
-                                    <td class="text-right font-mono" style="vertical-align: middle;">
-                                        {{ $amount > 0 ? number_format($amount, 2) : '-' }}
+                                    <td class="text-center font-mono border px-1 text-sm" style="vertical-align: middle;">
+                                        {{ number_format($amount, 0) }}
                                     </td>
                                 @endforeach
-                                <td class="text-right font-mono font-bold" style="vertical-align: middle;">
-                                    {{ $dateTotals[$date] > 0 ? number_format($dateTotals[$date], 2) : '-' }}
+                                <td class="text-center font-mono font-bold bg-gray-50 border px-2">
+                                    {{ number_format($salesmanTotals[$salesman->id] ?? 0, 0) }}
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
-                            <td class="text-center px-2 py-1">Grand Total</td>
-                            @foreach($reportSalesmen as $salesman)
-                                <td class="text-right font-mono px-2 py-1">
-                                    {{ $salesmanTotals[$salesman->id] > 0 ? number_format($salesmanTotals[$salesman->id], 2) : '-' }}
+                            <td colspan="2" class="text-right px-2 py-1">Grand Total</td>
+                            @foreach($dates as $date)
+                                <td class="text-center font-mono px-2 py-1 border">
+                                    {{ number_format($dateTotals[$date] ?? 0, 0) }}
                                 </td>
                             @endforeach
-                            <td class="text-right font-mono px-2 py-1">
-                                {{ number_format($grandTotal, 2) }}
+                            <td class="text-center font-mono px-2 py-1 border">
+                                {{ number_format($grandTotal, 0) }}
                             </td>
                         </tr>
                     </tfoot>

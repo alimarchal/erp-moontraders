@@ -114,19 +114,24 @@ class SchemeDiscountReportController extends Controller
         }
 
         // 3. Build Matrix Data
-        // Structure: $matrix[date][employee_id] = amount
+        // Structure: $matrix[employee_id][date] = amount (Inverted per user request)
         $matrix = [];
         $dateTotals = [];
         $salesmanTotals = [];
         $grandTotal = 0;
 
-        // Initialize totals
+        // Initialize totals and matrix
         foreach ($dates as $date) {
             $dateTotals[$date] = 0;
-            $matrix[$date] = [];
         }
         foreach ($reportSalesmen as $salesman) {
             $salesmanTotals[$salesman->id] = 0;
+            // Initialize each date for each salesman to ensure 0s are present if needed,
+            // though keeping it sparse or checking isset in view is also fine.
+            // Initializing helps with 0 display.
+            foreach ($dates as $date) {
+                $matrix[$salesman->id][$date] = 0;
+            }
         }
 
         // Populate matrix
@@ -138,10 +143,11 @@ class SchemeDiscountReportController extends Controller
             $empId = $expense->employee_id;
             $amount = (float) $expense->amount;
 
-            if (! isset($matrix[$date][$empId])) {
-                $matrix[$date][$empId] = 0;
+            // Update Matrix (Rows: Salesman, Cols: Date)
+            // Ensure the salesman is in our report scope (it should be if logic is correct)
+            if (isset($matrix[$empId])) {
+                $matrix[$empId][$date] += $amount;
             }
-            $matrix[$date][$empId] += $amount;
 
             // Update totals
             if (isset($dateTotals[$date])) {

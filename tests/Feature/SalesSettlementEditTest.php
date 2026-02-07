@@ -67,7 +67,7 @@ test('can update sales settlement with percentage expenses', function () {
     $warehouse = Warehouse::factory()->create();
     $customer = Customer::factory()->create([
         'customer_code' => 'C001',
-        'customer_name' => 'Test Customer'
+        'customer_name' => 'Test Customer',
     ]);
 
     $uom = Uom::factory()->create();
@@ -102,7 +102,10 @@ test('can update sales settlement with percentage expenses', function () {
     ]);
 
     $accountType = AccountType::factory()->create();
-    $currency = Currency::factory()->create();
+    $currency = Currency::firstOrCreate(
+        ['currency_code' => 'TST'],
+        ['currency_name' => 'Test Currency', 'currency_symbol' => 'T', 'exchange_rate' => 1, 'is_base_currency' => false, 'is_active' => true]
+    );
 
     // Create correct expense accounts
     $percentageAccount = ChartOfAccount::factory()->create([
@@ -112,7 +115,7 @@ test('can update sales settlement with percentage expenses', function () {
         'is_group' => false,
         'is_active' => true,
         'account_type_id' => $accountType->id,
-        'currency_id' => $currency->id
+        'currency_id' => $currency->id,
     ]);
 
     $itemData = [
@@ -135,7 +138,7 @@ test('can update sales settlement with percentage expenses', function () {
                     'expense_account_id' => 76,
                     'amount' => 500,
                     'description' => 'Percentage Expense Total',
-                ]
+                ],
             ],
             'percentage_expenses' => [
                 [

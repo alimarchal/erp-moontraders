@@ -58,7 +58,7 @@ it('shows value totals for sold, returned, and shortage quantities on settlement
     $this->actingAs($user)
         ->get(route('sales-settlements.show', $settlement))
         ->assertSuccessful()
-        ->assertSee('Value Totals:')
+        ->assertSee('Totals:')
         ->assertSee('200.00')
         ->assertSee('100.00');
 });

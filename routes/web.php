@@ -241,6 +241,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('goods-issue', [\App\Http\Controllers\Reports\GoodsIssueReportController::class, 'index'])->name('goods-issue.index');
         Route::get('roi', [\App\Http\Controllers\Reports\RoiReportController::class, 'index'])->name('roi.index');
         Route::get('daily-stock-register', [\App\Http\Controllers\Reports\DailyStockRegisterController::class, 'index'])->name('daily-stock-register.index');
+        Route::get('salesman-stock-register', [\App\Http\Controllers\Reports\SalesmanStockRegisterController::class, 'index'])->name('salesman-stock-register.index');
         Route::get('scheme-discount', [\App\Http\Controllers\Reports\SchemeDiscountReportController::class, 'index'])->name('scheme-discount.index');
         Route::get('inventory-ledger', [\App\Http\Controllers\Reports\InventoryLedgerReportController::class, 'index'])->name('inventory-ledger.index');
     });

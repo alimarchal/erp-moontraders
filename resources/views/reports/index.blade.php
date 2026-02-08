@@ -296,9 +296,26 @@
             <div class="mb-6">
                 <h3 class="text-lg font-semibold text-gray-700 mb-3">Inventory & Stock Reports</h3>
                 <div class="grid grid-cols-12 gap-6">
+                    <!-- Inventory Ledger Report Card -->
+                    <a href="{{ route('reports.inventory-ledger.index') }}"
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8 text-gray-800">IL</div>
+                                <div class="mt-1 text-base font-extrabold text-gray-700">Inventory Ledger</div>
+                                <div class="text-xs text-gray-500 mt-1">Double-Entry Tracking</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-emerald-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+                            </svg>
+                        </div>
+                    </a>
+
                     <!-- Van Stock Ledger Report Card -->
                     <a href="{{ route('reports.van-stock-ledger.index') }}"
-                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-4 intro-y bg-white block">
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
                         <div class="p-5 flex justify-between">
                             <div>
                                 <div class="text-3xl font-bold leading-8 text-gray-800">VSL</div>
@@ -315,7 +332,7 @@
 
                     <!-- Van Stock by Batch Report Card -->
                     <a href="{{ route('reports.van-stock-batch.index') }}"
-                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-4 intro-y bg-white block">
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
                         <div class="p-5 flex justify-between">
                             <div>
                                 <div class="text-3xl font-bold leading-8 text-gray-800">📦</div>

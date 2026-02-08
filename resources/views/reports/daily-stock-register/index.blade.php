@@ -141,35 +141,20 @@
 
                 <table class="report-table">
                     <thead>
-                        <tr class="bg-gray-200">
-                            <th colspan="2" class="border p-1"></th>
-                            <th colspan="6" class="text-center border p-1 font-bold text-lg">WAREHOUSE STOCK</th>
-                            <th colspan="7" class="text-center border p-1 font-bold text-lg">VAN STOCK</th>
-                        </tr>
                         <tr class="bg-gray-50">
                             <th class="w-10 text-center font-bold">#</th>
                             <th class="text-left font-bold px-2 whitespace-nowrap">SKU</th>
-
-                            <!-- Warehouse -->
-                            <th class="w-20 text-center font-bold" title="Opening Stock in Warehouse">Opening</th>
-                            <th class="w-20 text-center font-bold" title="New Purchases (GRN)">Purchase</th>
-                            <th class="w-20 text-center font-bold" title="Returns Received from Vans">Ret. In</th>
-                            <th class="w-20 text-center font-bold bg-green-50"
-                                title="Total Available (Op + Purch + Ret In)">Total Avail</th>
+                            <th class="w-20 text-center font-bold" title="Opening Stock">Opening</th>
+                            <th class="w-20 text-center font-bold" title="New Purchases">Purchase</th>
+                            <th class="w-20 text-center font-bold" title="Brought Forward">BF</th>
                             <th class="w-20 text-center font-bold" title="Issued to Vans">Issue</th>
-                            <th class="w-20 text-center font-bold bg-gray-100" title="Warehouse Closing Stock">Closing
-                            </th>
-
-                            <!-- Van -->
-                            <th class="w-20 text-center font-bold" title="Van Opening (Brought Forward)">BF</th>
-                            <th class="w-20 text-center font-bold" title="Received from Warehouse">Recvd</th>
-                            <th class="w-20 text-center font-bold bg-green-50" title="Total Van Stock (BF + Recvd)">
-                                Total Van</th>
-                            <th class="w-20 text-center font-bold">Sale</th>
-                            <th class="w-20 text-center font-bold" title="Returned to Warehouse">Ret. Out</th>
-                            <th class="w-20 text-center font-bold">Short</th>
-                            <th class="w-20 text-center font-bold bg-gray-100" title="Van Closing (In Hand)">In Hand
-                            </th>
+                            <th class="w-20 text-center font-bold bg-green-50" title="Total Issue (BF + Issue)">Total
+                                Issue</th>
+                            <th class="w-20 text-center font-bold" title="Returns">Return</th>
+                            <th class="w-20 text-center font-bold" title="Sales">Sales</th>
+                            <th class="w-20 text-center font-bold" title="Shortage">Shortage</th>
+                            <th class="w-20 text-center font-bold" title="In Hand Stock (System Total: WH + Van)">In
+                                Hand</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -177,70 +162,45 @@
                             <tr>
                                 <td class="text-center">{{ $loop->iteration }}</td>
                                 <td class="text-left font-semibold px-2 whitespace-nowrap">{{ $row->sku }}</td>
-
-                                <!-- WH -->
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->wh_opening, 2), '0'), '.') }}
-                                </td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->wh_purchase, 2), '0'), '.') }}
-                                </td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->wh_return, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->opening, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->purchase, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->bf, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->issue, 2), '0'), '.') }}</td>
                                 <td class="text-center bg-green-50 font-semibold">
-                                    {{ rtrim(rtrim(number_format($row->wh_total, 2), '0'), '.') }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->wh_issue, 2), '0'), '.') }}</td>
+                                    {{ rtrim(rtrim(number_format($row->total_issue, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->return, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->sale, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->shortage, 2), '0'), '.') }}</td>
                                 <td class="text-center bg-gray-100 font-bold">
-                                    {{ rtrim(rtrim(number_format($row->wh_closing, 2), '0'), '.') }}</td>
-
-                                <!-- Van -->
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->van_bf, 2), '0'), '.') }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->van_issue, 2), '0'), '.') }}</td>
-                                <td class="text-center bg-green-50 font-semibold">
-                                    {{ rtrim(rtrim(number_format($row->van_total, 2), '0'), '.') }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->van_sale, 2), '0'), '.') }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->van_return, 2), '0'), '.') }}
-                                </td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->van_short, 2), '0'), '.') }}</td>
-                                <td class="text-center bg-gray-100 font-bold">
-                                    {{ rtrim(rtrim(number_format($row->van_closing, 2), '0'), '.') }}</td>
+                                    {{ rtrim(rtrim(number_format($row->in_hand, 2), '0'), '.') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="15" class="text-center py-4">No data found based on filters.</td>
+                                <td colspan="11" class="text-center py-4">No data found based on filters.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot>
                         <tr class="bg-gray-100 font-bold border-t-2 border-black">
                             <td colspan="2" class="text-right px-2">Grand Total:</td>
-
-                            <!-- WH -->
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('wh_opening'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('opening'), 2), '0'), '.') }}</td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('wh_purchase'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('purchase'), 2), '0'), '.') }}</td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('wh_return'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('bf'), 2), '0'), '.') }}</td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('wh_total'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('issue'), 2), '0'), '.') }}</td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('wh_issue'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('total_issue'), 2), '0'), '.') }}</td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('wh_closing'), 2), '0'), '.') }}</td>
-
-                            <!-- Van -->
+                                {{ rtrim(rtrim(number_format($reportData->sum('return'), 2), '0'), '.') }}</td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('van_bf'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('sale'), 2), '0'), '.') }}</td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('van_issue'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('shortage'), 2), '0'), '.') }}</td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('van_total'), 2), '0'), '.') }}</td>
-                            <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('van_sale'), 2), '0'), '.') }}</td>
-                            <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('van_return'), 2), '0'), '.') }}</td>
-                            <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('van_short'), 2), '0'), '.') }}</td>
-                            <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('van_closing'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('in_hand'), 2), '0'), '.') }}</td>
                         </tr>
                     </tfoot>
                 </table>

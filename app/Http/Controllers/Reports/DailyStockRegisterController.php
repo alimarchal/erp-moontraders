@@ -74,69 +74,46 @@ class DailyStockRegisterController extends Controller
             ->groupBy('product_id')
             ->pluck('qty', 'product_id');
 
-        // 4. Warehouse Issue (Outflow to Van/Others)
-        // This should match Van "Issue" (Transfer In) mostly, but tracking WH Out is accurate.
-        $whIssue = InventoryLedgerEntry::query()
-            ->whereIn('product_id', $productIds)
-            ->whereNotNull('warehouse_id')
-            ->whereDate('date', $date)
-            ->where('transaction_type', 'transfer_out')
-            ->select('product_id', DB::raw('SUM(credit_qty) as qty'))
-            ->groupBy('product_id')
-            ->pluck('qty', 'product_id');
-
         // 3. Van Brought Forward (Before Date)
         $vanBf = InventoryLedgerEntry::query()
             ->whereIn('product_id', $productIds)
-            ->whereNotNull('vehicle_id') // Van context
+            ->whereNotNull('vehicle_id')
             ->whereDate('date', '<', $date)
             ->select('product_id', DB::raw('SUM(debit_qty - credit_qty) as qty'))
             ->groupBy('product_id')
             ->pluck('qty', 'product_id');
 
-        // 4. Issue (WH -> Van) (On Date)
-        // Viewed from Van side: Debit, Type 'transfer_in' OR 'issue'
-        // Viewed from WH side: Credit, Type 'transfer_out' OR 'issue'
-        // Backfill uses: WH Credit (issue), Van Debit (issue).
-        // Wait, did I use 'issue' or 'transfer'?
-        // InventoryLedgerService::recordIssue uses $type = 'issue' (default) or 'transfer'?
-        // Let's check InventoryLedgerService.php to be sure of types.
-        // Assuming 'issue' represents Goods Issue.
+        // 4. Van Issue (Transfer In from WH)
         $vanIssue = InventoryLedgerEntry::query()
             ->whereIn('product_id', $productIds)
-            ->whereNotNull('vehicle_id')
             ->whereDate('date', $date)
-            ->where('transaction_type', 'transfer_in') // Checking type 'transfer_in' (Van Debit)
+            ->where('transaction_type', 'transfer_in')
+            ->whereNotNull('vehicle_id')
             ->select('product_id', DB::raw('SUM(debit_qty) as qty'))
             ->groupBy('product_id')
             ->pluck('qty', 'product_id');
 
-        // 5. Sales (On Date)
-        $vanSales = InventoryLedgerEntry::query()
+        // 5. Sales (Global)
+        $sales = InventoryLedgerEntry::query()
             ->whereIn('product_id', $productIds)
-            ->whereNotNull('vehicle_id')
             ->whereDate('date', $date)
             ->where('transaction_type', 'sale')
             ->select('product_id', DB::raw('SUM(credit_qty) as qty'))
             ->groupBy('product_id')
             ->pluck('qty', 'product_id');
 
-        // 6. Returns (Van -> WH) (On Date)
-        // Van Credit, Type 'return'
-        $vanReturns = InventoryLedgerEntry::query()
+        // 6. Returns (Global - usually Van to WH)
+        $returns = InventoryLedgerEntry::query()
             ->whereIn('product_id', $productIds)
-            ->whereNotNull('vehicle_id')
             ->whereDate('date', $date)
             ->where('transaction_type', 'return')
             ->select('product_id', DB::raw('SUM(credit_qty) as qty'))
             ->groupBy('product_id')
             ->pluck('qty', 'product_id');
 
-        // 7. Shortage (On Date)
-        // Van Credit, Type 'shortage'
-        $vanShortage = InventoryLedgerEntry::query()
+        // 7. Shortage (Global)
+        $shortage = InventoryLedgerEntry::query()
             ->whereIn('product_id', $productIds)
-            ->whereNotNull('vehicle_id')
             ->whereDate('date', $date)
             ->where('transaction_type', 'shortage')
             ->select('product_id', DB::raw('SUM(credit_qty) as qty'))
@@ -144,56 +121,51 @@ class DailyStockRegisterController extends Controller
             ->pluck('qty', 'product_id');
 
         // Assemble Data
-        $reportData = $products->map(function ($product) use ($whOpening, $whPurchase, $whReturns, $whIssue, $vanBf, $vanIssue, $vanSales, $vanReturns, $vanShortage) {
+        $reportData = $products->map(function ($product) use ($whOpening, $whPurchase, $vanBf, $vanIssue, $sales, $returns, $shortage) {
             $pId = $product->id;
 
-            // Warehouse Side
-            $openStock = $whOpening[$pId] ?? 0;
-            $purchase = $whPurchase[$pId] ?? 0;
-            $whReturnIn = $whReturns[$pId] ?? 0; // New Column
-            $whOut = $whIssue[$pId] ?? 0;        // Warehouse Issue Out
+            // 1. Opening
+            $open = $whOpening[$pId] ?? 0;
+            // 2. Purchase
+            $purch = $whPurchase[$pId] ?? 0;
 
-            // "Total Available" = Opening + Purchase + Returns
-            // This is the pool from which we issue.
-            $totalAvailable = $openStock + $purchase + $whReturnIn;
+            // 3. Brought Forward (Van)
+            $bf = $vanBf[$pId] ?? 0;
 
-            // Warehouse Closing
-            $whClosing = $totalAvailable - $whOut;
+            // 4. Issue (Van In)
+            $issue = $vanIssue[$pId] ?? 0;
 
-            // Van Side
-            $broughtForward = $vanBf[$pId] ?? 0;
-            $issue = $vanIssue[$pId] ?? 0; // Van In (Should match whOut ideally)
-            // Note: whOut and issue might differ if stock in transit? Usually same day transfer is instant.
+            // 5. Total Issue
+            $totalIssue = $bf + $issue;
 
-            $totalIssue = $broughtForward + $issue;
+            // 6. Returns
+            $ret = $returns[$pId] ?? 0;
 
-            $sale = $vanSales[$pId] ?? 0;
-            $return = $vanReturns[$pId] ?? 0; // Return Out from Van
-            $short = $vanShortage[$pId] ?? 0;
+            // 7. Sales
+            $sale = $sales[$pId] ?? 0;
 
-            // Closing (In Hand)
-            // Van Closing = Total Issue - (Sale + Return + Short)
-            $inHand = $totalIssue - $sale - $return - $short;
+            // 8. Shortage
+            $short = $shortage[$pId] ?? 0;
+
+            // 9. In Hand (Closing) -> System Stock (WH + Van)
+            // Logic: Opening (WH) + Purchase (WH) + BF (Van) - Sales (Van) - Shortage (Van).
+            // This represents the total physical stock available in the company (Warhouse + Van).
+            // Note: 'Issue' and 'Return' are internal transfers and do not change the System Stock total.
+            $inHand = $open + $purch + $bf - $sale - $short;
 
             return (object) [
                 'id' => $product->id,
                 'sku' => $product->product_name,
                 'code' => $product->product_code,
-                // WH Section
-                'wh_opening' => $openStock,
-                'wh_purchase' => $purchase,
-                'wh_return' => $whReturnIn,
-                'wh_total' => $totalAvailable, // "Total Stock"
-                'wh_issue' => $whOut,          // Issued from WH
-                'wh_closing' => $whClosing,
-                // Van Section
-                'van_bf' => $broughtForward,
-                'van_issue' => $issue,         // Received by Van (should match wh_issue)
-                'van_total' => $totalIssue,
-                'van_sale' => $sale,
-                'van_return' => $return,      // Returned by Van (should match wh_return)
-                'van_short' => $short,
-                'van_closing' => $inHand,
+                'opening' => $open,
+                'purchase' => $purch,
+                'bf' => $bf,
+                'issue' => $issue,
+                'total_issue' => $totalIssue,
+                'return' => $ret,
+                'sale' => $sale,
+                'shortage' => $short,
+                'in_hand' => $inHand,
             ];
         });
 

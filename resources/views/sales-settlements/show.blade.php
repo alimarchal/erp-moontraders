@@ -377,7 +377,9 @@
 
                                 </td>
                                 <td class="text-right">
-                                    @php $bfIn = 0; @endphp
+                                    @php
+$bfIn = $bfMap[$item->product_id] ?? 0;
+@endphp
                                     {{ number_format($bfIn, 2) }}
                                 </td>
                                 <td class="text-right">{{ number_format($item->quantity_issued, 2) }}</td>

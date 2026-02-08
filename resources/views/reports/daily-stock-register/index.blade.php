@@ -86,7 +86,7 @@
                 <div class="flex justify-between items-center">
                     <x-label for="supplier_id" value="Supplier" />
                     @if($selectedSupplierId)
-                        <a href="{{ route('reports.daily-stock-register.index', array_merge(request()->except(['supplier_id', 'page']), ['supplier_id' => ''])) }}"
+                        <a href="{{ route('reports.daily-stock-register.index', array_merge(request()->except(['supplier_id', 'product_id', 'page']), ['supplier_id' => ''])) }}"
                             class="text-xs text-red-600 hover:text-red-800 underline">
                             Clear
                         </a>
@@ -98,6 +98,27 @@
                     @foreach($suppliers as $supplier)
                         <option value="{{ $supplier->id }}" {{ $selectedSupplierId == $supplier->id ? 'selected' : '' }}>
                             {{ $supplier->supplier_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="relative">
+                <div class="flex justify-between items-center">
+                    <x-label for="product_id" value="Product" />
+                    @if($selectedProductId)
+                        <a href="{{ route('reports.daily-stock-register.index', array_merge(request()->except(['product_id', 'page']), ['product_id' => ''])) }}"
+                            class="text-xs text-red-600 hover:text-red-800 underline">
+                            Clear
+                        </a>
+                    @endif
+                </div>
+                <select id="product_id" name="product_id"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Products</option>
+                    @foreach($products as $product)
+                        <option value="{{ $product->id }}" {{ $selectedProductId == $product->id ? 'selected' : '' }}>
+                            {{ $product->product_name }}
                         </option>
                     @endforeach
                 </select>
@@ -120,18 +141,35 @@
 
                 <table class="report-table">
                     <thead>
+                        <tr class="bg-gray-200">
+                            <th colspan="2" class="border p-1"></th>
+                            <th colspan="6" class="text-center border p-1 font-bold text-lg">WAREHOUSE STOCK</th>
+                            <th colspan="7" class="text-center border p-1 font-bold text-lg">VAN STOCK</th>
+                        </tr>
                         <tr class="bg-gray-50">
                             <th class="w-10 text-center font-bold">#</th>
-                            <th class="text-left font-bold px-2 whitespace-nowrap">SKU (Product Name)</th>
-                            <th class="w-20 text-center font-bold">Opening Stock</th>
-                            <th class="w-20 text-center font-bold">Total Stock</th>
-                            <th class="w-20 text-center font-bold">Brought Forward</th>
-                            <th class="w-20 text-center font-bold">Issue</th>
-                            <th class="w-20 text-center font-bold">Total Issue</th>
-                            <th class="w-20 text-center font-bold">Return</th>
-                            <th class="w-20 text-center font-bold">Short</th>
+                            <th class="text-left font-bold px-2 whitespace-nowrap">SKU</th>
+
+                            <!-- Warehouse -->
+                            <th class="w-20 text-center font-bold" title="Opening Stock in Warehouse">Opening</th>
+                            <th class="w-20 text-center font-bold" title="New Purchases (GRN)">Purchase</th>
+                            <th class="w-20 text-center font-bold" title="Returns Received from Vans">Ret. In</th>
+                            <th class="w-20 text-center font-bold bg-green-50"
+                                title="Total Available (Op + Purch + Ret In)">Total Avail</th>
+                            <th class="w-20 text-center font-bold" title="Issued to Vans">Issue</th>
+                            <th class="w-20 text-center font-bold bg-gray-100" title="Warehouse Closing Stock">Closing
+                            </th>
+
+                            <!-- Van -->
+                            <th class="w-20 text-center font-bold" title="Van Opening (Brought Forward)">BF</th>
+                            <th class="w-20 text-center font-bold" title="Received from Warehouse">Recvd</th>
+                            <th class="w-20 text-center font-bold bg-green-50" title="Total Van Stock (BF + Recvd)">
+                                Total Van</th>
                             <th class="w-20 text-center font-bold">Sale</th>
-                            <th class="w-20 text-center font-bold">In Hand Stock</th>
+                            <th class="w-20 text-center font-bold" title="Returned to Warehouse">Ret. Out</th>
+                            <th class="w-20 text-center font-bold">Short</th>
+                            <th class="w-20 text-center font-bold bg-gray-100" title="Van Closing (In Hand)">In Hand
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -139,27 +177,72 @@
                             <tr>
                                 <td class="text-center">{{ $loop->iteration }}</td>
                                 <td class="text-left font-semibold px-2 whitespace-nowrap">{{ $row->sku }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->opening_stock, 2), '0'), '.') }}
+
+                                <!-- WH -->
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->wh_opening, 2), '0'), '.') }}
                                 </td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->total_stock, 2), '0'), '.') }}
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->wh_purchase, 2), '0'), '.') }}
                                 </td>
-                                <td class="text-center">
-                                    {{ rtrim(rtrim(number_format($row->brought_forward, 2), '0'), '.') }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->issue, 2), '0'), '.') }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->total_issue, 2), '0'), '.') }}
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->wh_return, 2), '0'), '.') }}</td>
+                                <td class="text-center bg-green-50 font-semibold">
+                                    {{ rtrim(rtrim(number_format($row->wh_total, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->wh_issue, 2), '0'), '.') }}</td>
+                                <td class="text-center bg-gray-100 font-bold">
+                                    {{ rtrim(rtrim(number_format($row->wh_closing, 2), '0'), '.') }}</td>
+
+                                <!-- Van -->
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->van_bf, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->van_issue, 2), '0'), '.') }}</td>
+                                <td class="text-center bg-green-50 font-semibold">
+                                    {{ rtrim(rtrim(number_format($row->van_total, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->van_sale, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->van_return, 2), '0'), '.') }}
                                 </td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->return, 2), '0'), '.') }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->short, 2), '0'), '.') }}</td>
-                                <td class="text-center">{{ rtrim(rtrim(number_format($row->sale, 2), '0'), '.') }}</td>
-                                <td class="text-center font-bold">
-                                    {{ rtrim(rtrim(number_format($row->in_hand, 2), '0'), '.') }}</td>
+                                <td class="text-center">{{ rtrim(rtrim(number_format($row->van_short, 2), '0'), '.') }}</td>
+                                <td class="text-center bg-gray-100 font-bold">
+                                    {{ rtrim(rtrim(number_format($row->van_closing, 2), '0'), '.') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center py-4">No data found based on filters.</td>
+                                <td colspan="15" class="text-center py-4">No data found based on filters.</td>
                             </tr>
                         @endforelse
                     </tbody>
+                    <tfoot>
+                        <tr class="bg-gray-100 font-bold border-t-2 border-black">
+                            <td colspan="2" class="text-right px-2">Grand Total:</td>
+
+                            <!-- WH -->
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('wh_opening'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('wh_purchase'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('wh_return'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('wh_total'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('wh_issue'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('wh_closing'), 2), '0'), '.') }}</td>
+
+                            <!-- Van -->
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('van_bf'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('van_issue'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('van_total'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('van_sale'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('van_return'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('van_short'), 2), '0'), '.') }}</td>
+                            <td class="text-center">
+                                {{ rtrim(rtrim(number_format($reportData->sum('van_closing'), 2), '0'), '.') }}</td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>

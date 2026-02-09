@@ -134,9 +134,23 @@
                     :value="$endDate" />
             </div>
 
+            {{-- Supplier Filter --}}
+            <div>
+                <x-label for="filter_supplier_id" value="Supplier" />
+                <select id="filter_supplier_id" name="filter[supplier_id]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Suppliers</option>
+                    @foreach($suppliers as $supplier)
+                        <option value="{{ $supplier->id }}" {{ $selectedSupplierId == $supplier->id ? 'selected' : '' }}>
+                            {{ $supplier->supplier_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             {{-- Multi-Select Salesman --}}
             <div>
-                <x-label for="filter_employee_ids" value="Salesman (Multi-Select)" />
+                <x-label for="filter_employee_ids" value="Salesman (Multi-Select)" class="pb-1" />
                 <select id="filter_employee_ids" name="filter[employee_ids][]" multiple
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     @foreach($employees as $employee)
@@ -224,7 +238,10 @@
                 <p class="text-center font-extrabold mb-2">
                     Moon Traders<br>
                     Salesman Credit Sales History<br>
-                    <span class="text-sm font-semibold">Salesman: {{ $selectedEmployeeNames }}</span><br>
+                    <span class="text-sm font-semibold">
+                        Salesman: {{ $selectedEmployeeNames }}
+                        @if($selectedSupplierName) | Supplier: {{ $selectedSupplierName }} @endif
+                    </span><br>
                     For the period {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
                     {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
                     <br>
@@ -344,4 +361,24 @@
             </div>
         </div>
     </div>
+    </div>
+
+    @push('scripts')
+        <script>
+            $(document).ready(function () {
+                $('#filter_supplier_id').select2({
+                    width: '100%',
+                    placeholder: 'All Suppliers',
+                    allowClear: true
+                });
+
+                // Also ensure employee filter is initialized nicely if not already
+                $('#filter_employee_ids').select2({
+                    width: '100%',
+                    placeholder: 'Select Salesmen',
+                    allowClear: true
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>

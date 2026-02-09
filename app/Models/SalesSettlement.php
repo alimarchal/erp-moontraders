@@ -20,12 +20,14 @@ class SalesSettlement extends Model
         'employee_id',
         'vehicle_id',
         'warehouse_id',
+        'supplier_id',
         'total_quantity_issued',
         'total_value_issued',
         'total_sales_amount',
         'cash_sales_amount',
         'cheque_sales_amount',
         'bank_transfer_amount',
+        'bank_slips_amount',
         'credit_sales_amount',
         'credit_recoveries',
         'total_quantity_sold',
@@ -56,6 +58,7 @@ class SalesSettlement extends Model
         'cash_sales_amount' => 'decimal:2',
         'cheque_sales_amount' => 'decimal:2',
         'bank_transfer_amount' => 'decimal:2',
+        'bank_slips_amount' => 'decimal:2',
         'credit_sales_amount' => 'decimal:2',
         'credit_recoveries' => 'decimal:2',
         'total_quantity_sold' => 'decimal:3',
@@ -98,6 +101,11 @@ class SalesSettlement extends Model
     public function journalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class);
+    }
+
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
     }
 
     public function items(): HasMany
@@ -163,6 +171,11 @@ class SalesSettlement extends Model
     public function customerEmployeeTransactions(): HasMany
     {
         return $this->hasMany(CustomerEmployeeAccountTransaction::class);
+    }
+
+    public function bankSlips(): HasMany
+    {
+        return $this->hasMany(SalesSettlementBankSlip::class);
     }
 
     /**

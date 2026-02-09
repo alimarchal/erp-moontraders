@@ -61,6 +61,12 @@ class StoreSalesSettlementRequest extends FormRequest
                 'recoveries_entries' => json_decode($this->recoveries_entries, true),
             ]);
         }
+
+        if ($this->has('bank_slips') && is_string($this->bank_slips)) {
+            $this->merge([
+                'bank_slips' => json_decode($this->bank_slips, true),
+            ]);
+        }
     }
 
     /**
@@ -117,13 +123,6 @@ class StoreSalesSettlementRequest extends FormRequest
             'credit_sales.*.sale_amount' => 'required_with:credit_sales|numeric|min:0',
             'sales.*.payment_type' => 'required_with:sales|in:cash,cheque,credit',
 
-            // Credit sales breakdown
-            'credit_sales' => 'nullable|array',
-            'credit_sales.*.customer_id' => 'required_with:credit_sales|exists:customers,id',
-            'credit_sales.*.invoice_number' => 'nullable|string|max:100',
-            'credit_sales.*.sale_amount' => 'required_with:credit_sales|numeric|min:0',
-            'credit_sales.*.notes' => 'nullable|string',
-
             // Recoveries breakdown
             'recoveries_entries' => 'nullable|array',
             'recoveries_entries.*.customer_id' => 'required_with:recoveries_entries|exists:customers,id',
@@ -163,6 +162,14 @@ class StoreSalesSettlementRequest extends FormRequest
             'bank_transfers.*.customer_id' => 'nullable|exists:customers,id',
             'bank_transfers.*.amount' => 'required_with:bank_transfers|numeric|min:0',
             'bank_transfers.*.reference' => 'nullable|string|max:100',
+
+            // Bank slips
+            'total_bank_slips' => 'nullable|numeric|min:0',
+            'bank_slips' => 'nullable|array',
+            'bank_slips.*.bank_account_id' => 'required_with:bank_slips|exists:bank_accounts,id',
+            'bank_slips.*.amount' => 'required_with:bank_slips|numeric|min:0',
+            'bank_slips.*.reference_number' => 'nullable|string|max:100',
+            'bank_slips.*.deposit_date' => 'nullable|date',
 
             // Cheques
             'cheques' => 'nullable|array',

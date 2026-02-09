@@ -524,6 +524,24 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 }
             }
 
+            // Prepare bank slips details
+            $bankSlipsData = [];
+            $totalBankSlips = 0;
+            if ($request->has('bank_slips')) {
+                $entries = is_array($request->bank_slips)
+                    ? $request->bank_slips
+                    : json_decode($request->bank_slips, true);
+
+                if (is_array($entries)) {
+                    foreach ($entries as $slip) {
+                        if (!empty($slip['bank_account_id']) && floatval($slip['amount'] ?? 0) > 0) {
+                            $bankSlipsData[] = $slip;
+                            $totalBankSlips += floatval($slip['amount'] ?? 0);
+                        }
+                    }
+                }
+            }
+
             // Prepare recoveries details
             $recoveriesData = [];
             $totalRecoveries = 0;
@@ -599,12 +617,14 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'employee_id' => $goodsIssue->employee_id,
                 'vehicle_id' => $goodsIssue->vehicle_id,
                 'warehouse_id' => $goodsIssue->warehouse_id,
+                'supplier_id' => $goodsIssue->employee->supplier_id ?? null,
                 'total_quantity_issued' => $totalQuantityIssued,
                 'total_value_issued' => $totalValueIssued,
                 'total_sales_amount' => $totalSalesAmount,
                 'cash_sales_amount' => $cashSalesAmount,
                 'cheque_sales_amount' => $totalCheques,
                 'bank_transfer_amount' => $totalBankTransfers,
+                'bank_slips_amount' => $totalBankSlips,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
                 'credit_recoveries' => $totalRecoveries,
                 'total_quantity_sold' => $totalQuantitySold,
@@ -670,6 +690,19 @@ class SalesSettlementController extends Controller implements HasMiddleware
                         'notes' => $cheque['notes'] ?? null,
                     ]);
                 }
+            }
+
+            // Create bank slip records
+            foreach ($bankSlipsData as $slip) {
+                \App\Models\SalesSettlementBankSlip::create([
+                    'sales_settlement_id' => $settlement->id,
+                    'employee_id' => $goodsIssue->employee_id,
+                    'bank_account_id' => $slip['bank_account_id'],
+                    'deposit_date' => $slip['deposit_date'] ?? $request->settlement_date,
+                    'reference_number' => $slip['reference_number'] ?? null,
+                    'amount' => floatval($slip['amount'] ?? 0),
+                    'notes' => $slip['note'] ?? null,
+                ]);
             }
 
             // Create settlement items with batch breakdown
@@ -906,7 +939,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'expenses.expenseAccount',
             'cheques.bankAccount',
             'creditSales.customer',
+            'creditSales.customer',
             'recoveries.customer',
+            'bankSlips.bankAccount',
         ]);
 
         // Calculate BF (In) for each product
@@ -975,6 +1010,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'amrLiquids.product',
             'percentageExpenses.customer',
             'expenses',
+            'bankSlips.bankAccount',
         ]);
 
         // Get expense posting accounts (accounts starting with 5, non-group, active)
@@ -1031,6 +1067,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'amount' => (float) $t->amount,
             'reference_number' => $t->reference_number,
             'transfer_date' => $t->transfer_date,
+        ]);
+
+        $bankSlipsDecoded = $salesSettlement->bankSlips->map(fn($s) => [
+            'bank_account_id' => $s->bank_account_id,
+            'bank_account_name' => $s->bankAccount?->account_name . ' (' . $s->bankAccount?->bank_name . ')',
+            'deposit_date' => $s->deposit_date,
+            'reference_number' => $s->reference_number,
+            'amount' => (float) $s->amount,
+            'note' => $s->notes,
         ]);
 
         $chequesDecoded = $salesSettlement->cheques->map(fn($c) => [
@@ -1119,6 +1164,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'creditSalesDecoded' => $creditSalesDecoded,
             'recoveriesDecoded' => $recoveriesDecoded,
             'bankTransfersDecoded' => $bankTransfersDecoded,
+            'bankSlipsDecoded' => $bankSlipsDecoded,
             'chequesDecoded' => $chequesDecoded,
             'advanceTaxesDecoded' => $advanceTaxesDecoded,
             'amrPowdersDecoded' => $amrPowdersDecoded,
@@ -1209,6 +1255,24 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 }
             }
 
+            // Prepare bank slips totals
+            $totalBankSlips = 0;
+            $bankSlipsData = [];
+            if ($request->has('bank_slips')) {
+                $entries = is_array($request->bank_slips)
+                    ? $request->bank_slips
+                    : json_decode($request->bank_slips, true);
+
+                if (is_array($entries)) {
+                    foreach ($entries as $slip) {
+                        if (!empty($slip['bank_account_id']) && floatval($slip['amount'] ?? 0) > 0) {
+                            $bankSlipsData[] = $slip;
+                            $totalBankSlips += floatval($slip['amount'] ?? 0);
+                        }
+                    }
+                }
+            }
+
             // Prepare cheque totals
             $totalCheques = 0;
             if ($request->has('cheques') && is_array($request->cheques)) {
@@ -1268,12 +1332,14 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'employee_id' => $goodsIssue->employee_id,
                 'vehicle_id' => $goodsIssue->vehicle_id,
                 'warehouse_id' => $goodsIssue->warehouse_id,
+                'supplier_id' => $goodsIssue->employee->supplier_id ?? null,
                 'total_quantity_issued' => $totalQuantityIssued,
                 'total_value_issued' => $totalValueIssued,
                 'total_sales_amount' => $totalSalesAmount,
                 'cash_sales_amount' => $cashSalesAmount,
                 'cheque_sales_amount' => $totalCheques,
                 'bank_transfer_amount' => $totalBankTransfers,
+                'bank_slips_amount' => $totalBankSlips,
                 'credit_sales_amount' => $request->credit_sales_amount ?? 0,
                 'credit_recoveries' => $totalRecoveries,
                 'total_quantity_sold' => $totalQuantitySold,
@@ -1295,6 +1361,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $salesSettlement->cashDenominations()->delete();
             $salesSettlement->expenses()->delete();
             $salesSettlement->bankTransfers()->delete();
+            $salesSettlement->bankSlips()->delete();
+            $salesSettlement->cheques()->delete();
             $salesSettlement->cheques()->delete();
             $salesSettlement->advanceTaxes()->delete();
             $salesSettlement->amrPowders()->delete();
@@ -1529,6 +1597,20 @@ class SalesSettlementController extends Controller implements HasMiddleware
                             'notes' => $transfer['notes'] ?? null,
                         ]);
                     }
+                }
+            }
+
+            if (!empty($bankSlipsData)) {
+                foreach ($bankSlipsData as $slip) {
+                    \App\Models\SalesSettlementBankSlip::create([
+                        'sales_settlement_id' => $salesSettlement->id,
+                        'employee_id' => $salesSettlement->employee_id,
+                        'bank_account_id' => $slip['bank_account_id'],
+                        'deposit_date' => $slip['deposit_date'] ?? $request->settlement_date,
+                        'reference_number' => $slip['reference_number'] ?? null,
+                        'amount' => floatval($slip['amount'] ?? 0),
+                        'notes' => $slip['note'] ?? null,
+                    ]);
                 }
             }
 

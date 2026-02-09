@@ -43,8 +43,8 @@ class DistributionService
                     ->lockForUpdate()
                     ->first();
 
-                if (! $warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
-                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: ".($warehouseStock->quantity_on_hand ?? 0).", Required: {$item->quantity_issued}");
+                if (!$warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
+                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: " . ($warehouseStock->quantity_on_hand ?? 0) . ", Required: {$item->quantity_issued}");
                 }
 
                 // Allocate stock from batches with PROMOTIONAL PRIORITY
@@ -144,7 +144,7 @@ class DistributionService
                 ]);
 
                 // Set opening balance if this is first issue of the day
-                if ($vanStock->quantity_on_hand == 0 && ! $vanStock->exists) {
+                if ($vanStock->quantity_on_hand == 0 && !$vanStock->exists) {
                     $vanStock->opening_balance = 0;
                 }
 
@@ -203,14 +203,14 @@ class DistributionService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to post goods issue: '.$e->getMessage(), [
+            Log::error('Failed to post goods issue: ' . $e->getMessage(), [
                 'goods_issue_id' => $goodsIssue->id ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to post Goods Issue: '.$e->getMessage(),
+                'message' => 'Failed to post Goods Issue: ' . $e->getMessage(),
                 'data' => null,
             ];
         }
@@ -238,7 +238,7 @@ class DistributionService
             $vanStock = $goodsIssue->vanStockAccount;
 
             // Fallback: resolve defaults by account_code if not already set on the record (keeps legacy data/tests working)
-            if (! $stockInHand) {
+            if (!$stockInHand) {
                 $stockInHand = ChartOfAccount::where('account_code', '1151')->first();
                 if ($stockInHand) {
                     $goodsIssue->stock_in_hand_account_id = $stockInHand->id;
@@ -246,7 +246,7 @@ class DistributionService
                 }
             }
 
-            if (! $vanStock) {
+            if (!$vanStock) {
                 $vanStock = ChartOfAccount::where('account_code', '1155')->first();
                 if ($vanStock) {
                     $goodsIssue->van_stock_account_id = $vanStock->id;
@@ -254,7 +254,7 @@ class DistributionService
                 }
             }
 
-            if (! $stockInHand || ! $vanStock) {
+            if (!$stockInHand || !$vanStock) {
                 Log::error('Goods Issue missing configured GL accounts', [
                     'goods_issue_id' => $goodsIssue->id,
                     'stock_in_hand_account_id' => $goodsIssue->stock_in_hand_account_id,
@@ -276,7 +276,7 @@ class DistributionService
                     'account_id' => $vanStock->id,
                     'debit' => $totalIssueCost,
                     'credit' => 0,
-                    'description' => 'Transfer to van stock (vehicle '.$vehicleNumber.'; salesman '.$employeeName.')',
+                    'description' => 'Transfer to van stock (vehicle ' . $vehicleNumber . '; salesman ' . $employeeName . ')',
                     'cost_center_id' => $costCenterId,
                 ],
                 [
@@ -284,7 +284,7 @@ class DistributionService
                     'account_id' => $stockInHand->id,
                     'debit' => 0,
                     'credit' => $totalIssueCost,
-                    'description' => 'Transfer from warehouse stock (issued by '.$createdBy.')',
+                    'description' => 'Transfer from warehouse stock (issued by ' . $createdBy . ')',
                     'cost_center_id' => $costCenterId,
                 ],
             ];
@@ -292,7 +292,7 @@ class DistributionService
             $journalEntryData = [
                 'entry_date' => $goodsIssue->issue_date,
                 'reference' => $goodsIssue->issue_number,
-                'description' => 'Goods Issue #'.$goodsIssue->issue_number.' - Transfer to vehicle '.$vehicleNumber.' (Salesman: '.$employeeName.'; Created by: '.$createdBy.')',
+                'description' => 'Goods Issue #' . $goodsIssue->issue_number . ' - Transfer to vehicle ' . $vehicleNumber . ' (Salesman: ' . $employeeName . '; Created by: ' . $createdBy . ')',
                 'lines' => $lines,
                 'auto_post' => true,
             ];
@@ -300,7 +300,7 @@ class DistributionService
             $accountingService = app(AccountingService::class);
             $result = $accountingService->createJournalEntry($journalEntryData);
 
-            if (! $result['success']) {
+            if (!$result['success']) {
                 throw new \Exception($result['message'] ?? 'Failed to create journal entry for goods issue');
             }
 
@@ -312,7 +312,7 @@ class DistributionService
 
             return $result['data'];
         } catch (\Exception $e) {
-            Log::error('Error creating Goods Issue JE: '.$e->getMessage(), [
+            Log::error('Error creating Goods Issue JE: ' . $e->getMessage(), [
                 'goods_issue_id' => $goodsIssue->id ?? null,
             ]);
 
@@ -461,7 +461,7 @@ class DistributionService
                     ->where('product_id', $item->product_id)
                     ->first();
 
-                if (! $vanStock) {
+                if (!$vanStock) {
                     throw new \Exception("No van stock found for product ID {$item->product_id}");
                 }
 
@@ -486,7 +486,7 @@ class DistributionService
                 $isFirstBatch = true;
                 foreach ($item->batches as $itemBatch) {
                     $batch = $itemBatch->stockBatch;
-                    if (! $batch) {
+                    if (!$batch) {
                         continue;
                     }
 
@@ -686,7 +686,7 @@ class DistributionService
 
             // Create accounting journal entry
             $journalEntry = $this->createSalesJournalEntry($settlement);
-            if (! $journalEntry) {
+            if (!$journalEntry) {
                 throw new \Exception('Failed to create journal entry for Sales Settlement.');
             }
 
@@ -714,14 +714,14 @@ class DistributionService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to post sales settlement: '.$e->getMessage(), [
+            Log::error('Failed to post sales settlement: ' . $e->getMessage(), [
                 'settlement_id' => $settlement->id ?? null,
                 'trace' => $e->getTraceAsString(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Failed to post Sales Settlement: '.$e->getMessage(),
+                'message' => 'Failed to post Sales Settlement: ' . $e->getMessage(),
                 'data' => null,
             ];
         }
@@ -749,11 +749,12 @@ class DistributionService
                 'bankTransfers.bankAccount.chartOfAccount',
                 'expenses.expenseAccount',
                 'advanceTaxes',
+                'bankSlips.bankAccount.chartOfAccount',
             ]);
 
             $accounts = $this->getAccountingAccounts();
 
-            if (! $this->validateRequiredAccounts($accounts)) {
+            if (!$this->validateRequiredAccounts($accounts)) {
                 Log::warning('Required accounts not found for sales journal entry', [
                     'settlement_id' => $settlement->id,
                     'missing_accounts' => $this->getMissingAccounts($accounts),
@@ -835,7 +836,7 @@ class DistributionService
 
             // Recoveries - bank/online
             $settlement->recoveries
-                ->reject(fn ($recovery) => $recovery->payment_method === 'cash')
+                ->reject(fn($recovery) => $recovery->payment_method === 'cash')
                 ->groupBy('bank_account_id')
                 ->each(function ($group) use (&$addLine, $accounts, $employeeLabel, $settlementReference, $settlementDateFormatted): void {
                     $amount = $group->sum('amount');
@@ -977,7 +978,12 @@ class DistributionService
             // Note: settlement->expenses->sum('amount') already includes Advance Tax and AMR from the UI
             $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries - $settlement->expenses->sum('amount');
             $actualPhysicalCash = (float) $settlement->cash_collected;
-            $cashDifference = round($actualPhysicalCash - $expectedClearingBalance, 2);
+            $bankSlipsTotal = $settlement->bankSlips->sum('amount');
+
+            // Total handed over by salesman = Physical Cash + Bank Slips (deposited directly)
+            $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal;
+
+            $cashDifference = round($totalSubmitted - $expectedClearingBalance, 2);
 
             if ($cashDifference < 0) {
                 // Shortage: Dr Write Off / Expense, Cr Salesman Clearing
@@ -985,7 +991,7 @@ class DistributionService
                     $accounts['misc_expense']->id,
                     abs($cashDifference),
                     0,
-                    "Cash Shortage (Expected: {$expectedClearingBalance}, Actual: {$actualPhysicalCash}) - {$employeeLabel} - {$settlementReference}"
+                    "Cash Shortage (Expected: {$expectedClearingBalance}, Actual: {$totalSubmitted}) - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['salesman_clearing']->id,
@@ -999,7 +1005,7 @@ class DistributionService
                     $accounts['salesman_clearing']->id,
                     $cashDifference,
                     0,
-                    "Cash Excess (Expected: {$expectedClearingBalance}, Actual: {$actualPhysicalCash}) - {$employeeLabel} - {$settlementReference}"
+                    "Cash Excess (Expected: {$expectedClearingBalance}, Actual: {$totalSubmitted}) - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
                     $accounts['misc_expense']->id, // Ideally a Misc Income account
@@ -1026,6 +1032,30 @@ class DistributionService
                     "Final Cash Deposit (Physical cash submitted) - {$employeeLabel} - {$settlementReference}"
                 );
             }
+
+            // 8a. Bank Slips / Deposits (Cash deposited directly to bank by salesman)
+            // Treated as transfer from Salesman Clearing to Bank
+            $settlement->bankSlips
+                ->groupBy('bank_account_id')
+                ->each(function ($slips) use (&$addLine, $accounts, $employeeLabel, $settlementReference): void {
+                    $amount = $slips->sum('amount');
+                    $bankAccount = $slips->first()->bankAccount;
+                    $bankAccountId = $bankAccount?->chart_of_account_id ?? $accounts['bank_fallback']->id;
+                    $bankName = $bankAccount?->bank_name ?? 'Bank (Unallocated)';
+
+                    $addLine(
+                        $bankAccountId,
+                        $amount,
+                        0,
+                        "Bank Deposit (Slip) - {$bankName} - {$employeeLabel} - {$settlementReference}"
+                    );
+                    $addLine(
+                        $accounts['salesman_clearing']->id,
+                        0,
+                        $amount,
+                        "Bank Deposit (Slip) - {$bankName} - {$employeeLabel} - {$settlementReference}"
+                    );
+                });
 
             // 9. COGS (Moved to end)
             $totalCogsForGl = $settlement->items->reduce(function ($carry, $item) {
@@ -1100,7 +1130,7 @@ class DistributionService
             }, 0);
 
             if ($totalShortageValue > 0) {
-                if (! $accounts['misc_expense']) {
+                if (!$accounts['misc_expense']) {
                     throw new \Exception('Inventory Shortage account (5213) not found.');
                 }
 
@@ -1183,7 +1213,7 @@ class DistributionService
     {
         $required = ['cash', 'debtors', 'stock_in_hand', 'inventory', 'sales', 'cogs', 'salesman_clearing'];
         foreach ($required as $key) {
-            if (! isset($accounts[$key]) || ! $accounts[$key]) {
+            if (!isset($accounts[$key]) || !$accounts[$key]) {
                 return false;
             }
         }
@@ -1198,7 +1228,7 @@ class DistributionService
     {
         $missing = [];
         foreach ($accounts as $key => $account) {
-            if (! $account) {
+            if (!$account) {
                 $missing[] = $key;
             }
         }

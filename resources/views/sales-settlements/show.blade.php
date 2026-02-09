@@ -238,9 +238,10 @@
 
         // Actual Physical Cash Collected
         $actualPhysicalCash = $cashDenominationTotal > 0 ? $cashDenominationTotal : (float) $settlement->cash_collected;
+        $bankSlipsTotal = (float) $settlement->bankSlips->sum('amount');
 
-        // Shortage/Excess (Physical Cash vs Expected Cash)
-        $shortExcess = $actualPhysicalCash - $expectedCashNet;
+        // Shortage/Excess (Physical Cash + Bank Slips vs Expected Cash)
+        $shortExcess = ($actualPhysicalCash + $bankSlipsTotal) - $expectedCashNet;
 
         // Profit Analysis
         $totalCOGS = (float) ($settlement->items->sum('total_cogs') ?? 0);
@@ -695,6 +696,50 @@ $bfIn = $bfMap[$item->product_id] ?? 0;
                                 </table>
                             </div>
                         </div>
+
+                        {{-- Bank Slips Details --}}
+                        <div class="mt-1">
+                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Bank Slips / Deposits</h4>
+                            <table class="report-table w-full">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center w-10">#</th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Bank Account">Bank</x-tooltip></span>
+                                            <span class="hidden print:inline">Bank</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Deposit Date">Date</x-tooltip></span>
+                                            <span class="hidden print:inline">Date</span>
+                                        </th>
+                                        <th class="text-left">
+                                            <span class="print:hidden"><x-tooltip text="Reference Number">Ref #</x-tooltip></span>
+                                            <span class="hidden print:inline">Ref #</span>
+                                        </th>
+                                        <th class="text-right">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tabular-nums">
+                                    @forelse($settlement->bankSlips as $index => $slip)
+                                        <tr>
+                                            <td class="text-center">{{ $index + 1 }}</td>
+                                            <td>{{ $slip->bankAccount->account_name ?? '-' }}</td>
+                                            <td>{{ $slip->deposit_date ? \Carbon\Carbon::parse($slip->deposit_date)->format('d-M-y') : '-' }}</td>
+                                            <td>{{ $slip->reference_number ?? '-' }}</td>
+                                            <td class="text-right font-bold">{{ number_format($slip->amount, 2) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="5" class="text-center italic text-gray-500">No bank slips recorded</td></tr>
+                                    @endforelse
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold tabular-nums">
+                                    <tr>
+                                        <td colspan="4" class="text-right">Total:</td>
+                                        <td class="text-right">{{ number_format($settlement->bankSlips->sum('amount'), 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
 
                     {{-- Expense Details Group --}}
@@ -1081,56 +1126,61 @@ $bfIn = $bfMap[$item->product_id] ?? 0;
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">5</td>
+                                            <td class="px-1 py-0.5">Bank Slips / Deposits</td>
+                                            <td class="text-right px-1 py-0.5 font-bold">{{ number_format($settlement->bankSlips->sum('amount'), 2) }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="text-center px-1 py-0.5">6</td>
                                             <td class="px-1 py-0.5 font-bold">Net Sale (Sold Items Value)</td>
                                             <td class="text-right px-1 py-0.5 font-black border-t border-black">{{ number_format($netSale, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">6</td>
+                                            <td class="text-center px-1 py-0.5">7</td>
                                             <td class="px-1 py-0.5">Return Value</td>
                                             <td class="text-right px-1 py-0.5">{{ number_format($settlement->sales_return_amount, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">7</td>
+                                            <td class="text-center px-1 py-0.5">8</td>
                                             <td class="px-1 py-0.5">Shortage Value</td>
                                             <td class="text-right px-1 py-0.5">{{ number_format($settlement->shortage_amount, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">8</td>
+                                            <td class="text-center px-1 py-0.5">9</td>
                                             <td class="px-1 py-0.5">Recovery (Cash)</td>
                                             <td class="text-right px-1 py-0.5">{{ number_format($recoveryCash, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">9</td>
+                                            <td class="text-center px-1 py-0.5">10</td>
                                             <td class="px-1 py-0.5">Recovery (Bank/Online)</td>
                                             <td class="text-right px-1 py-0.5">{{ number_format($recoveryBank, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">10</td>
+                                            <td class="text-center px-1 py-0.5">11</td>
                                             <td class="px-1 py-0.5 font-bold">Total Sale Amount</td>
                                             <td class="text-right px-1 py-0.5 font-black border-t border-black">{{ number_format($netSale, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">11</td>
+                                            <td class="text-center px-1 py-0.5">12</td>
                                             <td class="px-1 py-0.5 font-semibold text-blue-700">Expected Cash (Sales + Cash Recoveries)</td>
                                             <td class="text-right px-1 py-0.5 font-bold text-blue-700">{{ number_format($expectedCashGross, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">12</td>
+                                            <td class="text-center px-1 py-0.5">13</td>
                                             <td class="px-1 py-0.5 text-red-700">Less: Expenses</td>
                                             <td class="text-right px-1 py-0.5 text-red-700 font-semibold">{{ number_format($totalExpenses, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">13</td>
+                                            <td class="text-center px-1 py-0.5">14</td>
                                             <td class="px-1 py-0.5 font-bold text-blue-900 bg-blue-50">Expected Cash (After Expenses)</td>
                                             <td class="text-right px-1 py-0.5 font-black text-blue-900 bg-blue-50 border-t border-blue-900">{{ number_format($expectedCashNet, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">14</td>
+                                            <td class="text-center px-1 py-0.5">15</td>
                                             <td class="px-1 py-0.5 font-bold">Physical Cash Submitted (Denominations)</td>
                                             <td class="text-right px-1 py-0.5 font-black border-2 border-black">{{ number_format($calculatedCash, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">15</td>
+                                            <td class="text-center px-1 py-0.5">16</td>
                                             <td class="px-1 py-0.5 font-semibold">Short/Excess</td>
                                             <td class="text-right px-1 py-0.5 font-bold {{ $shortExcess < 0 ? 'text-red-700' : 'text-green-700' }}">{{ number_format($shortExcess, 2) }}</td>
                                         </tr>

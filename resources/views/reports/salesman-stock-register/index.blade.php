@@ -222,18 +222,19 @@
 
                 <table class="report-table">
                     <thead>
-                        <tr class="bg-gray-50">
+                        <tr class="bg-gray-50 text-xs">
                             <th class="text-center w-8">#</th>
                             <th class="text-left">SKU</th>
-                            <th class="text-left ">Brand</th>
-                            <th class="text-center ">TP</th>
-                            <th class="text-center ">B/F</th>
-                            <th class="text-center  bg-blue-50">Issue</th>
-                            <th class="text-center  bg-blue-100">Total</th>
+                            <th class="text-left font-normal">Brand</th>
+                            <th class="text-center font-normal">TP</th>
+                            <th class="text-center font-bold bg-yellow-50">B/F In</th>
+                            <th class="text-center bg-blue-50">Issue</th>
+                            <th class="text-center bg-blue-100 font-bold">Total</th>
                             <th class="text-center text-red-600">Return</th>
-                            <th class="text-center  text-red-600">Short</th>
-                            <th class="text-center  bg-green-50">Sale</th>
-                            <th class="text-right bg-green-100">Amount</th>
+                            <th class="text-center text-red-600">Short</th>
+                            <th class="text-center bg-green-50 font-bold">Sale</th>
+                            <th class="text-right bg-green-100 font-bold">Amount</th>
+                            <th class="text-center font-bold bg-gray-50">B/F Out</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -242,6 +243,7 @@
                             $totalSaleQty = 0; 
                             $totalLoad = 0;
                             $totalReturn = 0;
+                            $bgColors = ['bg-white', 'bg-gray-50'];
                         @endphp
                         @forelse ($reportData as $row)
                             @php 
@@ -249,38 +251,44 @@
                                 $totalSaleQty += $row->sale;
                                 $totalLoad += $row->load;
                                 $totalReturn += $row->return;
+                                
+                                // Calculate Closing (B/F Out)
+                                // Formula: B/F In + Issue - Sale - Return - Short
+                                $bfOut = $row->bf + $row->load - $row->sale - $row->return - $row->short;
                             @endphp
-                            <tr>
-                                <td class="text-center">{{ $loop->iteration }}</td>
-                                <td class="font-semibold">{{ $row->sku }}</td>
-                                <td class="text-gray-600 text-[10px]">{{ $row->category }}</td>
-                                <td class="text-center">{{ number_format($row->tp, 2) }}</td>
-                                <td class="text-center">{{ number_format($row->bf, 0) }}</td>
-                                <td class="text-center bg-blue-50">{{ number_format($row->load, 0) }}</td>
-                                <td class="text-center bg-blue-100 font-bold">{{ number_format($row->total, 0) }}</td>
-                                <td class="text-center text-red-600">{{ number_format($row->return, 0) }}</td>
+                            <tr class="{{ $bgColors[$loop->remaining % 2] }} hover:bg-yellow-50 transition-colors">
+                                <td class="text-center text-gray-400">{{ $loop->iteration }}</td>
+                                <td class="font-bold text-gray-800">{{ $row->sku }}</td>
+                                <td class="text-gray-500 text-[10px]">{{ $row->category }}</td>
+                                <td class="text-center text-gray-500">{{ number_format($row->tp, 2) }}</td>
+                                <td class="text-center font-bold bg-yellow-50 text-yellow-900 border-l border-r border-yellow-200">{{ number_format($row->bf, 0) }}</td>
+                                <td class="text-center bg-blue-50 text-blue-900">{{ number_format($row->load, 0) }}</td>
+                                <td class="text-center bg-blue-100 font-extrabold text-blue-900">{{ number_format($row->total, 0) }}</td>
+                                <td class="text-center text-red-600 font-medium">{{ number_format($row->return, 0) }}</td>
                                 <td class="text-center text-red-600">{{ number_format($row->short, 0) }}</td>
-                                <td class="text-center bg-green-50 font-bold">{{ number_format($row->sale, 0) }}</td>
-                                <td class="text-right bg-green-100 font-bold">{{ number_format($row->amount, 2) }}</td>
+                                <td class="text-center bg-green-50 font-bold text-green-900 border-l border-green-200">{{ number_format($row->sale, 0) }}</td>
+                                <td class="text-right bg-green-100 font-bold text-green-900">{{ number_format($row->amount, 2) }}</td>
+                                <td class="text-center font-bold bg-gray-100 text-gray-700 border-l border-gray-200">{{ number_format($bfOut, 0) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center p-4 text-gray-500">
-                                    No data found for this selection.
+                                <td colspan="12" class="text-center p-8 text-gray-400 italic">
+                                    No stock data found for the selected criteria.
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
-                    <tfoot class="bg-gray-100 font-bold">
+                    <tfoot class="bg-gray-100 font-bold border-t-2 border-gray-300">
                         <tr>
-                            <td colspan="4" class="text-right pr-2">Grand Total:</td>
-                            <td class="text-center">-</td>
-                            <td class="text-center">{{ number_format($totalLoad, 0) }}</td>
-                            <td class="text-center">-</td>
-                            <td class="text-center">{{ number_format($totalReturn, 0) }}</td>
-                            <td class="text-center">-</td>
-                            <td class="text-center font-bold">{{ number_format($totalSaleQty, 0) }}</td>
-                            <td class="text-right font-bold">{{ number_format($totalAmount, 2) }}</td>
+                            <td colspan="4" class="text-right pr-2 text-gray-600 uppercase text-xs tracking-wider">Grand Total:</td>
+                            <td class="text-center text-gray-500">-</td>
+                            <td class="text-center text-blue-800">{{ number_format($totalLoad, 0) }}</td>
+                            <td class="text-center text-gray-500">-</td>
+                            <td class="text-center text-red-800">{{ number_format($totalReturn, 0) }}</td>
+                            <td class="text-center text-gray-500">-</td>
+                            <td class="text-center font-extrabold text-green-800 text-lg">{{ number_format($totalSaleQty, 0) }}</td>
+                            <td class="text-right font-extrabold text-green-800 text-lg">{{ number_format($totalAmount, 2) }}</td>
+                            <td class="text-center text-gray-500">-</td>
                         </tr>
                     </tfoot>
                 </table>

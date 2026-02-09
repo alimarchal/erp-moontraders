@@ -74,26 +74,35 @@ class SalesmanStockRegisterController extends Controller
                 ->whereDate('date', '<', $date);
         } elseif ($salesmanId) {
             // Find vehicles used by this salesman on this date
-            $salesmanVehicleIds = InventoryLedgerEntry::where('employee_id', $salesmanId)
+            $salesmanVehicleInfo = InventoryLedgerEntry::where('employee_id', $salesmanId)
                 ->whereDate('date', $date)
                 ->whereNotNull('vehicle_id')
-                ->distinct()
-                ->pluck('vehicle_id')
-                ->toArray();
+                ->select('vehicle_id', DB::raw('MIN(id) as first_transaction_id'))
+                ->groupBy('vehicle_id')
+                ->get()
+                ->keyBy('vehicle_id');
+
+            $salesmanVehicleIds = $salesmanVehicleInfo->keys()->toArray();
 
             if (!empty($salesmanVehicleIds)) {
-                $bfQuery->where(function ($query) use ($date, $salesmanVehicleIds, $salesmanId) {
-                    // Previous days stock for these vehicles
-                    $query->where(function ($q) use ($date, $salesmanVehicleIds) {
-                        $q->whereDate('date', '<', $date)
-                            ->whereIn('vehicle_id', $salesmanVehicleIds);
-                    })
-                        // OR Same day stock for these vehicles from OTHER employees (Handover in)
-                        ->orWhere(function ($q) use ($date, $salesmanVehicleIds, $salesmanId) {
-                            $q->whereDate('date', $date)
-                                ->whereIn('vehicle_id', $salesmanVehicleIds)
-                                ->where('employee_id', '!=', $salesmanId);
+                $bfQuery->where(function ($query) use ($date, $salesmanVehicleIds, $salesmanId, $salesmanVehicleInfo) {
+                    foreach ($salesmanVehicleIds as $vId) {
+                        $firstId = $salesmanVehicleInfo[$vId]->first_transaction_id;
+
+                        $query->orWhere(function ($subQ) use ($date, $vId, $salesmanId, $firstId) {
+                            $subQ->where('vehicle_id', $vId)
+                                ->where(function ($q) use ($date, $salesmanId, $firstId) {
+                                    // Previous days stock for this vehicle
+                                    $q->whereDate('date', '<', $date)
+                                        // OR Same day stock strictly BEFORE this salesman's first transaction
+                                        ->orWhere(function ($q2) use ($date, $salesmanId, $firstId) {
+                                        $q2->whereDate('date', $date)
+                                            ->where('employee_id', '!=', $salesmanId)
+                                            ->where('id', '<', $firstId);
+                                    });
+                                });
                         });
+                    }
                 });
             } else {
                 // Fallback if no vehicle activity found today: Just show previous personal stock? 

@@ -379,8 +379,8 @@
                                 </td>
                                 <td class="text-right">
                                     @php
-$bfIn = $bfMap[$item->product_id] ?? 0;
-@endphp
+                                        $bfIn = $bfMap[$item->product_id] ?? 0;
+                                    @endphp
                                     {{ number_format($bfIn, 2) }}
                                 </td>
                                 <td class="text-right">{{ number_format($item->quantity_issued, 2) }}</td>
@@ -697,49 +697,7 @@ $bfIn = $bfMap[$item->product_id] ?? 0;
                             </div>
                         </div>
 
-                        {{-- Bank Slips Details --}}
-                        <div class="mt-1">
-                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Bank Slips / Deposits</h4>
-                            <table class="report-table w-full">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="text-center w-10">#</th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Bank Account">Bank</x-tooltip></span>
-                                            <span class="hidden print:inline">Bank</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Deposit Date">Date</x-tooltip></span>
-                                            <span class="hidden print:inline">Date</span>
-                                        </th>
-                                        <th class="text-left">
-                                            <span class="print:hidden"><x-tooltip text="Reference Number">Ref #</x-tooltip></span>
-                                            <span class="hidden print:inline">Ref #</span>
-                                        </th>
-                                        <th class="text-right">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="tabular-nums">
-                                    @forelse($settlement->bankSlips as $index => $slip)
-                                        <tr>
-                                            <td class="text-center">{{ $index + 1 }}</td>
-                                            <td>{{ $slip->bankAccount->account_name ?? '-' }}</td>
-                                            <td>{{ $slip->deposit_date ? \Carbon\Carbon::parse($slip->deposit_date)->format('d-M-y') : '-' }}</td>
-                                            <td>{{ $slip->reference_number ?? '-' }}</td>
-                                            <td class="text-right font-bold">{{ number_format($slip->amount, 2) }}</td>
-                                        </tr>
-                                    @empty
-                                        <tr><td colspan="5" class="text-center italic text-gray-500">No bank slips recorded</td></tr>
-                                    @endforelse
-                                </tbody>
-                                <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                    <tr>
-                                        <td colspan="4" class="text-right">Total:</td>
-                                        <td class="text-right">{{ number_format($settlement->bankSlips->sum('amount'), 2) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+
                     </div>
 
                     {{-- Expense Details Group --}}
@@ -961,13 +919,13 @@ $bfIn = $bfMap[$item->product_id] ?? 0;
                         // Prepare Cash Detail Rows
                         $cashDetailRows = [];
                         $denominations = [
-                            ['label' => '5000 (Five Thousand Rupees)', 'qty' => $cashDenominations?->denom_5000 ?? 0, 'value' => 5000],
-                            ['label' => '1000 (One Thousand Rupees)', 'qty' => $cashDenominations?->denom_1000 ?? 0, 'value' => 1000],
-                            ['label' => '500 (Five Hundred Rupees)', 'qty' => $cashDenominations?->denom_500 ?? 0, 'value' => 500],
-                            ['label' => '100 (One Hundred Rupees)', 'qty' => $cashDenominations?->denom_100 ?? 0, 'value' => 100],
-                            ['label' => '50 (Fifty Rupees)', 'qty' => $cashDenominations?->denom_50 ?? 0, 'value' => 50],
-                            ['label' => '20 (Twenty Rupees)', 'qty' => $cashDenominations?->denom_20 ?? 0, 'value' => 20],
-                            ['label' => '10 (Ten Rupees)', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 10],
+                            ['label' => '5000', 'qty' => $cashDenominations?->denom_5000 ?? 0, 'value' => 5000],
+                            ['label' => '1000', 'qty' => $cashDenominations?->denom_1000 ?? 0, 'value' => 1000],
+                            ['label' => '500', 'qty' => $cashDenominations?->denom_500 ?? 0, 'value' => 500],
+                            ['label' => '100', 'qty' => $cashDenominations?->denom_100 ?? 0, 'value' => 100],
+                            ['label' => '50', 'qty' => $cashDenominations?->denom_50 ?? 0, 'value' => 50],
+                            ['label' => '20', 'qty' => $cashDenominations?->denom_20 ?? 0, 'value' => 20],
+                            ['label' => '10', 'qty' => $cashDenominations?->denom_10 ?? 0, 'value' => 10],
                         ];
 
                         $calculatedCash = 0;
@@ -997,93 +955,136 @@ $bfIn = $bfMap[$item->product_id] ?? 0;
                     </div> {{-- End of Expense Details Group --}}
 
                     {{-- Other Expenses & Cash Detail Row --}}
-                    {{-- Other Expenses & Cash Detail Row --}}
-                    <div class="grid grid-cols-2 gap-1 items-start print:block mt-2 clearfix" style="page-break-inside: avoid; break-inside: avoid;">
-                        {{-- Other Expenses --}}
-                        <div class="print:w-1/2 print:float-left print:pr-1" style="page-break-inside: auto; break-inside: auto;">
-                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Group Expenses</h4>
-                            <table class="report-table w-full" style="page-break-inside: auto; break-inside: auto;">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="text-center w-6 px-1 py-0.5">#</th>
-                                        <th class="text-left px-1 py-0.5">Expense Account</th>
-                                        <th class="text-center px-1 py-0.5">COA Code</th>
-                                        <th class="text-right px-1 py-0.5">Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="tabular-nums">
-                                    @for($i = 0; $i < $maxRowsExp; $i++)
-                                        @php 
-                                            $expRow = $groupExpenseRows[$i] ?? null;
-                                        @endphp
-                                        <tr>
-                                            <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
-                                            @if($expRow)
-                                                <td class="px-1 py-0.5">{{ $expRow['label'] }}</td>
-                                                <td class="text-center px-1 py-0.5">
-                                                @if(isset($expRow['is_predefined']) && $expRow['is_predefined'] && in_array($expRow['code'], $detailedBreakdownCodes))
-                                                        <span class="print:hidden underline decoration-dotted cursor-help"><x-tooltip text="See detailed breakdown in the table above">{{ $expRow['code'] }}</x-tooltip></span>
-                                                        <span class="hidden print:inline">{{ $expRow['code'] }}</span>
-                                                    @else
-                                                        {{ $expRow['code'] }}
-                                                    @endif
-                                                </td>
-                                                <td class="text-right font-bold px-1 py-0.5">{{ number_format($expRow['amount'], 2) }}</td>
-                                            @else
-                                                <td class="px-1 py-0.5">-</td>
-                                                <td class="text-center px-1 py-0.5">-</td>
-                                                <td class="text-right font-bold px-1 py-0.5">-</td>
-                                            @endif
+                    {{-- Group 1: Expenses & Collections Detail --}}
+                    <div class="border-2 border-black rounded-lg px-2 pb-2 mt-4">
+                        <h3 class="font-bold text-md text-center text-black pb-1 border-b border-black mb-2">Expenses & Cash/Bank Deposits Detail</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-1 items-start print:flex print:gap-1" style="page-break-inside: avoid; break-inside: avoid;">
+                            {{-- 1. Group Expenses --}}
+                            <div class="flex flex-col h-full print:w-1/3">
+                                <h4 class="font-bold text-sm border-x border-t border-black text-center">Group Expenses</h4>
+                                <table class="report-table w-full flex-grow tabular-nums">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="text-center w-6 px-1 py-0.5">#</th>
+                                            <th class="text-left px-1 py-0.5">Expense Account</th>
+                                            <th class="text-center px-1 py-0.5">COA Code</th>
+                                            <th class="text-right px-1 py-0.5">Amount</th>
                                         </tr>
-                                    @endfor
-                                </tbody>
-                                <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                    <tr>
-                                        <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
-                                        <td class="text-right px-1 py-0.5">{{ number_format($settlement->expenses->sum('amount'), 2) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
+                                    </thead>
+                                    <tbody>
+                                        @for($i = 0; $i < $maxRowsExp; $i++)
+                                            @php $expRow = $groupExpenseRows[$i] ?? null; @endphp
+                                            <tr>
+                                                <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
+                                                @if($expRow)
+                                                    <td class="px-1 py-0.5">{{ $expRow['label'] }}</td>
+                                                    <td class="text-center px-1 py-0.5">
+                                                        @if(isset($expRow['is_predefined']) && $expRow['is_predefined'] && in_array($expRow['code'], $detailedBreakdownCodes))
+                                                            <span class="print:hidden underline decoration-dotted cursor-help"><x-tooltip text="See detailed breakdown in the table above">{{ $expRow['code'] }}</x-tooltip></span>
+                                                            <span class="hidden print:inline">{{ $expRow['code'] }}</span>
+                                                        @else
+                                                            {{ $expRow['code'] }}
+                                                        @endif
+                                                    </td>
+                                                    <td class="text-right font-bold px-1 py-0.5">{{ number_format($expRow['amount'], 2) }}</td>
+                                                @else
+                                                    <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                                    <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
+                                                    <td class="text-right font-bold px-1 py-0.5 border-none">&nbsp;</td>
+                                                @endif
+                                            </tr>
+                                        @endfor
+                                    </tbody>
+                                    <tfoot class="bg-gray-50 font-bold">
+                                        <tr>
+                                            <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
+                                            <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($settlement->expenses->sum('amount'), 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
 
-                        {{-- Cash Denominations --}}
-                        <div class="print:w-1/2 print:float-left print:pl-1">
-                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Cash Detail</h4>
-                            <table class="report-table w-full">
-                                <thead>
-                                    <tr class="bg-gray-100">
-                                        <th class="text-center w-6 px-1 py-0.5">#</th>
-                                        <th class="text-left px-1 py-0.5">Note</th>
-                                        <th class="text-right px-1 py-0.5">Qty</th>
-                                        <th class="text-right px-1 py-0.5">Value</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="tabular-nums">
-                                    @for($i = 0; $i < $maxRowsExp; $i++)
-                                        @php 
-                                            $cashRow = $cashDetailRows[$i] ?? null;
-                                        @endphp
-                                        <tr>
-                                            <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
-                                            @if($cashRow)
-                                                <td class="px-1 py-0.5">{{ $cashRow['label'] }}</td>
-                                                <td class="text-right px-1 py-0.5">{{ $cashRow['qty'] }}</td>
-                                                <td class="text-right font-bold px-1 py-0.5">{{ number_format($cashRow['value'], isset($cashRow['is_coin']) && $cashRow['is_coin'] ? 2 : 0) }}</td>
-                                            @else
-                                                <td class="px-1 py-0.5">-</td>
-                                                <td class="text-right px-1 py-0.5">-</td>
-                                                <td class="text-right font-bold px-1 py-0.5">-</td>
-                                            @endif
+                            {{-- 2. Cash Detail --}}
+                            <div class="flex flex-col h-full print:w-1/3">
+                                <h4 class="font-bold text-sm border-x border-t border-black text-center">Cash Detail</h4>
+                                <table class="report-table w-full flex-grow tabular-nums">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="text-center px-1 py-0.5">#</th>
+                                            <th class="text-left px-1 py-0.5 ">Note</th>
+                                            <th class="text-right px-1 py-0.5">Qty</th>
+                                            <th class="text-right px-1 py-0.5">Value</th>
                                         </tr>
-                                    @endfor
-                                </tbody>
-                                <tfoot class="bg-gray-50 font-bold tabular-nums">
-                                    <tr>
-                                        <td colspan="3" class="text-right px-1 py-0.5">Total Physical Cash:</td>
-                                        <td class="text-right px-1 py-0.5">{{ number_format($calculatedCash, 2) }}</td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                                    </thead>
+                                    <tbody>
+                                        @for($i = 0; $i < $maxRowsExp; $i++)
+                                            @php $cashRow = $cashDetailRows[$i] ?? null; @endphp
+                                            <tr>
+                                                <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
+                                                @if($cashRow)
+                                                    <td class="px-1 py-0.5">{{ $cashRow['label'] }}</td>
+                                                    <td class="text-right px-1 py-0.5">{{ $cashRow['qty'] }}</td>
+                                                    <td class="text-right font-bold px-1 py-0.5">{{ number_format($cashRow['value'], isset($cashRow['is_coin']) && $cashRow['is_coin'] ? 2 : 0) }}</td>
+                                                @else
+                                                    <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                                    <td class="text-right px-1 py-0.5 border-none">&nbsp;</td>
+                                                    <td class="text-right font-bold px-1 py-0.5 border-none">&nbsp;</td>
+                                                @endif
+                                            </tr>
+                                        @endfor
+                                    </tbody>
+                                    <tfoot class="bg-gray-50 font-bold">
+                                        <tr>
+                                            <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total Physical Cash:</td>
+                                            <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($calculatedCash, 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            {{-- 3. Bank Slips / Deposits --}}
+                            <div class="flex flex-col h-full print:w-1/3">
+                                <h4 class="font-bold text-sm border-x border-t border-black text-center">Bank Slips / Deposits</h4>
+                                <table class="report-table w-full flex-grow tabular-nums">
+                                    <thead>
+                                        <tr class="bg-gray-100">
+                                            <th class="text-center w-8 px-1 py-0.5">#</th>
+                                            <th class="text-left px-1 py-0.5">Bank</th>
+                                            <th class="text-center px-1 py-0.5">Date</th>
+                                            <th class="text-right px-1 py-0.5">Amount</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @php $slipCount = 0; @endphp
+                                        @foreach($settlement->bankSlips as $index => $slip)
+                                            @php $slipCount++; @endphp
+                                            <tr>
+                                                <td class="text-center px-1 py-0.5">{{ $index + 1 }}</td>
+                                                <td class="px-1 py-0.5 text-xs">{{ $slip->bankAccount->account_name ?? '-' }}</td>
+                                                <td class="text-center px-1 py-0.5 text-xs">{{ $slip->deposit_date ? \Carbon\Carbon::parse($slip->deposit_date)->format('d-M-y') : '-' }}</td>
+                                                <td class="text-right px-1 py-0.5 font-bold">{{ number_format($slip->amount, 2) }}</td>
+                                            </tr>
+                                        @endforeach
+
+                                        {{-- Filler rows for height symmetry --}}
+                                        @for($i = $slipCount + 1; $i <= $maxRowsExp; $i++)
+                                            <tr>
+                                                <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
+                                                <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                                <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
+                                                <td class="text-right px-1 py-0.5 border-none">&nbsp;</td>
+                                            </tr>
+                                        @endfor
+                                    </tbody>
+                                    <tfoot class="bg-gray-50 font-bold">
+                                        <tr>
+                                            <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total Bank Slips:</td>
+                                            <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($settlement->bankSlips->sum('amount'), 2) }}</td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
                         </div>
                     </div>
                     
@@ -1091,14 +1092,19 @@ $bfIn = $bfMap[$item->product_id] ?? 0;
 
                     {{-- Financial Summary --}}
                     {{-- Financial Summary --}}
-                    <div class="grid grid-cols-2 md:grid-cols-2 gap-1 mt-4 pt-0 print:block clearfix" style="page-break-inside: avoid; break-inside: avoid;">
-                            {{-- Sales Summary (Matching Create/Edit Sequence) --}}
-                            <div class="print:w-1/2 print:float-left print:pr-1">
+                    {{-- Financial Summary Grid --}}
+                    {{-- Group 2: Sales & Collection Summary --}}
+                    <div class="border-2 border-black rounded-lg px-2 pb-2 mt-4">
+                        <h3 class="font-bold text-md text-center text-black pb-1 border-b border-black mb-2">Sales & Collection Summary</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-1 print:flex print:gap-1" style="page-break-inside: avoid; break-inside: avoid;">
+                            {{-- 1. Sales Summary --}}
+                            <div class="flex flex-col h-full print:w-1/2">
                                 <h4 class="font-bold text-sm border-x border-t border-black text-center mt-2">Sales Summary</h4>
-                                <table class="report-table w-full tabular-nums">
+                                <table class="report-table w-full flex-grow tabular-nums">
                                     <thead>
                                         <tr class="bg-gray-100">
-                                            <th class="text-center w-6 px-1 py-0.5">#</th>
+                                            <th class="text-center w-8 px-1 py-0.5">#</th>
                                             <th class="text-left px-1 py-0.5">Description</th>
                                             <th class="text-right px-1 py-0.5">Amount</th>
                                         </tr>
@@ -1185,15 +1191,21 @@ $bfIn = $bfMap[$item->product_id] ?? 0;
                                             <td class="text-right px-1 py-0.5 font-bold {{ $shortExcess < 0 ? 'text-red-700' : 'text-green-700' }}">{{ number_format($shortExcess, 2) }}</td>
                                         </tr>
                                     </tbody>
+                                    <tfoot class="bg-gray-50 border-t border-black">
+                                        <tr>
+                                            <td colspan="3" class="py-1">&nbsp;</td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
-                            {{-- Profitability Analysis --}}
-                            <div class="print:w-1/2 print:float-left print:pl-1">
+
+                            {{-- 2. Profit Analysis --}}
+                            <div class="flex flex-col h-full print:w-1/2">
                                 <h4 class="font-bold text-sm border-x border-t border-black text-center mt-2">Profit Analysis</h4>
-                                <table class="report-table w-full tabular-nums">
+                                <table class="report-table w-full flex-grow tabular-nums">
                                     <thead>
                                         <tr class="bg-gray-100">
-                                            <th class="text-center w-6 px-1 py-0.5">#</th>
+                                            <th class="text-center w-8 px-1 py-0.5">#</th>
                                             <th class="text-left px-1 py-0.5">Description</th>
                                             <th class="text-right px-1 py-0.5">Amount</th>
                                         </tr>
@@ -1234,8 +1246,8 @@ $bfIn = $bfMap[$item->product_id] ?? 0;
                                             <td class="px-1 py-0.5 text-gray-600 pl-4">Net Margin %</td>
                                             <td class="text-right px-1 py-0.5 font-semibold {{ $netMargin >= 0 ? 'text-green-700' : 'text-red-700' }}">{{ number_format($netMargin, 2) }}%</td>
                                         </tr>
-                                        {{-- Spacer Rows to match Sales Summary Height (15 rows total) --}}
-                                        @for($i = 8; $i <= 15; $i++)
+                                        {{-- Filler rows to match Sales Summary Height --}}
+                                        @for($i = 8; $i <= 16; $i++)
                                             <tr>
                                                 <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
                                                 <td class="px-1 py-0.5 border-none">&nbsp;</td>
@@ -1243,10 +1255,14 @@ $bfIn = $bfMap[$item->product_id] ?? 0;
                                             </tr>
                                         @endfor
                                     </tbody>
+                                    <tfoot class="bg-gray-50 border-t border-black">
+                                        <tr>
+                                            <td colspan="3" class="py-1">&nbsp;</td>
+                                        </tr>
+                                    </tfoot>
                                 </table>
                             </div>
                         </div>
-
                     </div>
 
 

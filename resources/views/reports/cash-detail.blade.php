@@ -120,7 +120,7 @@
     @endpush
 
     <x-filter-section :action="route('reports.cash-detail.index')" class="no-print">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {{-- Date --}}
             <div>
                 <x-label for="date" value="{{ __('Date') }}" />
@@ -128,7 +128,7 @@
             </div>
             
             {{-- Supplier Filter --}}
-            <div>
+             <div>
                 <x-label for="supplier_id" value="{{ __('Supplier') }}" />
                 <select id="supplier_id" name="supplier_id" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
@@ -139,12 +139,11 @@
                     @endforeach
                 </select>
             </div>
-            
          
         </div>
     </x-filter-section>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
                 <p class="text-center font-extrabold mb-2">
@@ -164,131 +163,159 @@
                 </p>
 
                 {{-- Main Content Grid --}}
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-0 border-2 border-black">
+                <div class="border-2 border-black rounded-lg px-2 pb-2 mt-4">
+                    <h3 class="font-bold text-md text-center text-black pb-1 border-b border-black mb-2">Cash & Bank Summary</h3>
                     
-                    {{-- 1. Salesman Data --}}
-                    <div class="border-r border-black p-0">
-                        <table class="report-table">
-                            <thead>
-                                <tr class="bg-gray-50">
-                                    <th style="width: 70%" class="text-left">Salesman</th>
-                                    <th style="width: 30%" class="text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php $totalSalesmanAmount = 0; @endphp
-                                @forelse($salesmanData as $data)
-                                    @php $totalSalesmanAmount += $data->amount; @endphp
-                                    <tr>
-                                        <td>{{ $data->salesman_name }}</td>
-                                        <td class="text-right font-bold">{{ number_format($data->amount, 0) }}</td>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-1 print:flex print:gap-1" style="page-break-inside: avoid; break-inside: avoid;">
+                        
+                        {{-- 1. Salesman Data --}}
+                        <div class="flex flex-col h-full print:w-1/3">
+                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Salesman Summary</h4>
+                            <table class="report-table w-full flex-grow tabular-nums">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-left px-1 py-0.5">Salesman</th>
+                                        <th class="text-right px-1 py-0.5">Amount</th>
                                     </tr>
-                                @empty
-                                    <tr><td colspan="2" class="text-center italic text-gray-500">No data found</td></tr>
-                                @endforelse
-                            </tbody>
-                            <tfoot class="bg-gray-100 font-extrabold">
-                                <tr>
-                                    <td class="text-right">Total :-</td>
-                                    <td class="text-right">{{ number_format($totalSalesmanAmount, 0) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                                </thead>
+                                <tbody>
+                                    @php $totalSalesmanAmount = 0; @endphp
+                                    @forelse($salesmanData as $data)
+                                        @php $totalSalesmanAmount += $data->amount; @endphp
+                                        <tr>
+                                            <td class="px-1 py-0.5">{{ $data->salesman_name }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ number_format($data->amount, 0) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="2" class="text-center italic text-gray-500 px-1 py-0.5">No data found</td></tr>
+                                    @endforelse
+                                    {{-- Filler rows if needed --}}
+                                    @for($i = count($salesmanData); $i < 10; $i++)
+                                        <tr>
+                                            <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                            <td class="text-right px-1 py-0.5 border-none">&nbsp;</td>
+                                        </tr>
+                                    @endfor
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold">
+                                    <tr>
+                                        <td class="text-right px-1 py-0.5 border-t border-black">Total:</td>
+                                        <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalSalesmanAmount, 0) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
 
-                    {{-- 2. Cash Detail --}}
-                    <div class="border-r border-black p-0">
-                        <table class="report-table">
-                            <thead>
-                                <tr class="bg-gray-50">
-                                    <th class="text-center">CASH</th>
-                                    <th class="text-center">Qty</th>
-                                    <th class="text-right">Value</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php 
-                                    $grandTotalCash = 0; 
-                                    $denomsList = [5000, 1000, 500, 100, 50, 20, 10];
-                                @endphp
-                                
-                                @foreach($denomsList as $val)
+                        {{-- 2. Cash Detail --}}
+                        <div class="flex flex-col h-full print:w-1/3">
+                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Cash Detail</h4>
+                            <table class="report-table w-full flex-grow tabular-nums">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-center px-1 py-0.5">Denom</th>
+                                        <th class="text-center px-1 py-0.5">Qty</th>
+                                        <th class="text-right px-1 py-0.5">Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                     @php 
-                                        $qty = $denominations[$val] ?? 0;
-                                        $subtotal = $qty * $val;
-                                        $grandTotalCash += $subtotal;
+                                        $grandTotalCash = 0; 
+                                        $denomsList = [5000, 1000, 500, 100, 50, 20, 10];
+                                    @endphp
+                                    
+                                    @foreach($denomsList as $val)
+                                        @php 
+                                            $qty = $denominations[$val] ?? 0;
+                                            $subtotal = $qty * $val;
+                                            $grandTotalCash += $subtotal;
+                                        @endphp
+                                        <tr>
+                                            <td class="text-center font-bold px-1 py-0.5">{{ $val }}</td>
+                                            <td class="text-center px-1 py-0.5">{{ $qty > 0 ? $qty : '-' }}</td>
+                                            <td class="text-right px-1 py-0.5">{{ $qty > 0 ? number_format($subtotal, 0) : '-' }}</td>
+                                        </tr>
+                                    @endforeach
+                                    
+                                    {{-- Coins --}}
+                                    @php 
+                                        $coins = $denominations['coins'] ?? 0;
+                                        $grandTotalCash += $coins;
                                     @endphp
                                     <tr>
-                                        <td class="text-center font-bold">{{ $val }}</td>
-                                        <td class="text-center">{{ $qty > 0 ? $qty : '-' }}</td>
-                                        <td class="text-right">{{ $qty > 0 ? number_format($subtotal, 0) : '-' }}</td>
+                                        <td class="text-center font-bold px-1 py-0.5">Coins</td>
+                                        <td class="text-center px-1 py-0.5">-</td>
+                                        <td class="text-right px-1 py-0.5">{{ $coins > 0 ? number_format($coins, 0) : '-' }}</td>
                                     </tr>
-                                @endforeach
-                                
-                                {{-- Coins --}}
-                                @php 
-                                    $coins = $denominations['coins'] ?? 0;
-                                    $grandTotalCash += $coins;
-                                @endphp
-                                <tr>
-                                    <td class="text-center font-bold">Coins/Loose</td>
-                                    <td class="text-center">-</td>
-                                    <td class="text-right">{{ $coins > 0 ? number_format($coins, 0) : '-' }}</td>
-                                </tr>
-                            </tbody>
-                             <tfoot class="bg-gray-100 font-extrabold">
-                                <tr>
-                                    <td colspan="2" class="text-right">Total :-</td>
-                                    <td class="text-right">{{ number_format($grandTotalCash, 0) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                    {{-- 3. Bank Slips --}}
-                    <div class="p-0">
-                         <table class="report-table">
-                            <thead>
-                                <tr class="bg-gray-50">
-                                    <th class="text-center">Bank Slips</th>
-                                    <th class="text-left">Salesman</th>
-                                    <th class="text-right">Amount</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @php $totalBankSlips = 0; @endphp
-                                @forelse($bankSlips as $slip)
-                                    @php $totalBankSlips += $slip->amount; @endphp
+                                    
+                                    {{-- Filler rows --}}
+                                    @for($i = 0; $i < 2; $i++)
+                                        <tr>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                        </tr>
+                                    @endfor
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold">
                                     <tr>
-                                        <td class="text-center text-xs text-gray-600">{{ $slip->bank_name }}</td>
-                                        <td>{{ $slip->salesman_name }}</td>
-                                        <td class="text-right font-bold">{{ number_format($slip->amount, 0) }}</td>
+                                        <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
+                                        <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($grandTotalCash, 0) }}</td>
                                     </tr>
-                                @empty
-                                    <tr><td colspan="3" class="text-center italic text-gray-500">No bank slips</td></tr>
-                                @endforelse
-                            </tbody>
-                             <tfoot class="bg-gray-100 font-extrabold">
-                                <tr>
-                                    <td colspan="2" class="text-right">Total :-</td>
-                                    <td class="text-right">{{ number_format($totalBankSlips, 0) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                        {{-- 3. Bank Slips --}}
+                        <div class="flex flex-col h-full print:w-1/3">
+                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Bank Slips</h4>
+                            <table class="report-table w-full flex-grow tabular-nums">
+                                <thead>
+                                    <tr class="bg-gray-100">
+                                        <th class="text-left px-1 py-0.5">Bank</th>
+                                        <th class="text-left px-1 py-0.5">Salesman</th>
+                                        <th class="text-right px-1 py-0.5">Amount</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @php $totalBankSlips = 0; @endphp
+                                    @forelse($bankSlips as $slip)
+                                        @php $totalBankSlips += $slip->amount; @endphp
+                                        <tr>
+                                            <td class="text-xs text-gray-600 px-1 py-0.5">{{ $slip->bank_name }}</td>
+                                            <td class="px-1 py-0.5">{{ $slip->salesman_name }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ number_format($slip->amount, 0) }}</td>
+                                        </tr>
+                                    @empty
+                                        <tr><td colspan="3" class="text-center italic text-gray-500 px-1 py-0.5">No bank slips</td></tr>
+                                    @endforelse
+                                    
+                                     {{-- Filler rows --}}
+                                    @for($i = count($bankSlips); $i < 10; $i++)
+                                        <tr>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                        </tr>
+                                    @endfor
+                                </tbody>
+                                <tfoot class="bg-gray-50 font-bold">
+                                    <tr>
+                                        <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
+                                        <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalBankSlips, 0) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
                     </div>
+                    
+                     {{-- Grand Total Summary --}}
+                     <div class="mt-4 border border-black p-2 bg-gray-50 flex justify-between items-center font-bold">
+                         <span>Grand Total (Salesman Amount):</span>
+                         <span class="text-xl">{{ number_format($totalSalesmanAmount, 0) }}</span>
+                     </div>
 
                 </div>
-                
-                 {{-- Grand Total Summary --}}
-                 <div class="mt-0 border-x-2 border-b-2 border-black p-0 grid grid-cols-3">
-                     <div class="col-span-1 p-1 font-bold">Others: -</div>
-                     <div class="col-span-1"></div>
-                     <div class="col-span-1 border-l border-black flex justify-between px-2 py-1 bg-gray-200 font-bold">
-                         <span>Grand Total :</span>
-                         <span>{{ number_format($totalSalesmanAmount, 0) }}</span>
-                     </div>
-                 </div>
-
             </div>
         </div>
     </div>
@@ -296,14 +323,14 @@
         @push('scripts')
         <script>
             $(document).ready(function () {
-                $('#filter_supplier_id').select2({
+                $('#supplier_id').select2({
                     width: '100%',
                     placeholder: 'All Suppliers',
                     allowClear: true
                 });
 
                 // Also ensure employee filter is initialized nicely if not already
-                $('#filter_employee_ids').select2({
+                $('#supplier_id').select2({
                     width: '100%',
                     placeholder: 'Select Salesmen',
                     allowClear: true

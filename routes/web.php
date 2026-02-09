@@ -20,6 +20,7 @@ use App\Http\Controllers\ProductTaxMappingController;
 use App\Http\Controllers\PromotionalCampaignController;
 use App\Http\Controllers\Reports\AccountBalancesController;
 use App\Http\Controllers\Reports\BalanceSheetController;
+use App\Http\Controllers\Reports\CashDetailController;
 use App\Http\Controllers\Reports\CreditorsLedgerController;
 use App\Http\Controllers\Reports\DailySalesReportController;
 use App\Http\Controllers\Reports\FmrAmrComparisonController;
@@ -244,5 +245,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('salesman-stock-register', [\App\Http\Controllers\Reports\SalesmanStockRegisterController::class, 'index'])->name('salesman-stock-register.index');
         Route::get('scheme-discount', [\App\Http\Controllers\Reports\SchemeDiscountReportController::class, 'index'])->name('scheme-discount.index');
         Route::get('inventory-ledger', [\App\Http\Controllers\Reports\InventoryLedgerReportController::class, 'index'])->name('inventory-ledger.index');
+        Route::get('cash-detail', [\App\Http\Controllers\Reports\CashDetailController::class, 'index'])->name('cash-detail.index');
     });
 });

@@ -246,6 +246,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('scheme-discount', [\App\Http\Controllers\Reports\SchemeDiscountReportController::class, 'index'])->name('scheme-discount.index');
         Route::get('percentage-expense', [\App\Http\Controllers\Reports\PercentageExpenseReportController::class, 'index'])->name('percentage-expense.index');
         Route::get('advance-tax', [\App\Http\Controllers\Reports\AdvanceTaxReportController::class, 'index'])->name('advance-tax.index');
+        Route::get('custom-settlement', [\App\Http\Controllers\Reports\CustomSettlementReportController::class, 'index'])->name('custom-settlement.index');
         Route::get('inventory-ledger', [\App\Http\Controllers\Reports\InventoryLedgerReportController::class, 'index'])->name('inventory-ledger.index');
         Route::get('cash-detail', [\App\Http\Controllers\Reports\CashDetailController::class, 'index'])->name('cash-detail.index');
     });

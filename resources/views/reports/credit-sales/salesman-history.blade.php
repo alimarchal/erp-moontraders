@@ -120,7 +120,7 @@
     @endpush
 
     <x-filter-section :action="route('reports.credit-sales.salesman-history')" class="no-print">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {{-- Date Range --}}
             <div>
                 <x-label for="filter_start_date" value="Start Date (From)" />

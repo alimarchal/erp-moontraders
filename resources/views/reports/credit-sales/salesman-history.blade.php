@@ -148,6 +148,20 @@
                 </select>
             </div>
 
+            {{-- Designation Filter --}}
+            <div>
+                <x-label for="filter_designation" value="Designation" />
+                <select id="filter_designation" name="filter[designation]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Designations</option>
+                    @foreach($designations as $designation)
+                        <option value="{{ $designation }}" {{ $selectedDesignation == $designation ? 'selected' : '' }}>
+                            {{ $designation }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             {{-- Multi-Select Salesman --}}
             <div>
                 <x-label for="filter_employee_ids" value="Salesman (Multi-Select)" class="pb-1" />
@@ -369,6 +383,12 @@
                 $('#filter_supplier_id').select2({
                     width: '100%',
                     placeholder: 'All Suppliers',
+                    allowClear: true
+                });
+
+                $('#filter_designation').select2({
+                    width: '100%',
+                    placeholder: 'All Designations',
                     allowClear: true
                 });
 

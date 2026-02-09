@@ -83,19 +83,16 @@ class CreditSalesReportController extends Controller
                     ->whereBetween('ceat.transaction_date', [$startDate, $endDate])
                     ->whereNull('ceat.deleted_at')
                     ->selectRaw('COUNT(DISTINCT cea.customer_id)');
-            }, 'customers_count')
-            // Only include employees who have ANY credit sales activity (all time)
-            ->whereExists(function ($query) {
-                $query->from('customer_employee_account_transactions as ceat')
-                    ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
-                    ->whereColumn('cea.employee_id', 'employees.id')
-                    ->where('ceat.transaction_type', 'credit_sale')
-                    ->whereNull('ceat.deleted_at');
-            });
+            }, 'customers_count');
 
         // Filter by supplier
         if ($request->filled('filter.supplier_id')) {
             $query->where('supplier_id', $request->input('filter.supplier_id'));
+        }
+
+        // Filter by designation
+        if ($request->filled('filter.designation')) {
+            $query->where('designation', $request->input('filter.designation'));
         }
 
         // Filter by selected employees
@@ -111,6 +108,25 @@ class CreditSalesReportController extends Controller
         // Filter by employee code
         if ($request->filled('filter.employee_code')) {
             $query->where('employee_code', 'like', '%' . $request->input('filter.employee_code') . '%');
+        }
+
+        // Only apply "has credit sales" constraint if NO supplier/designation/employee filter is applied.
+        // If a filter is applied, we want to see ALL matching employees, even if they have 0 activity.
+        if (
+            !$request->filled('filter.supplier_id') &&
+            !$request->filled('filter.designation') &&
+            empty($employeeIds) &&
+            !$request->filled('filter.name') &&
+            !$request->filled('filter.employee_code')
+        ) {
+
+            $query->whereExists(function ($query) {
+                $query->from('customer_employee_account_transactions as ceat')
+                    ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                    ->whereColumn('cea.employee_id', 'employees.id')
+                    ->where('ceat.transaction_type', 'credit_sale')
+                    ->whereNull('ceat.deleted_at');
+            });
         }
 
         // Sorting
@@ -147,6 +163,10 @@ class CreditSalesReportController extends Controller
         $salesmenWithCredits = $query->paginate($perPage)->withQueryString();
 
         // Calculate totals for period
+        // Note: Totals calculation currently sums EVERYTHING in the DB. This might need to be filtered by the same criteria if we want "Page Totals" vs "Grand Totals".
+        // For now, keeping it as "Grand Total of all transactions" or adapting to filter? 
+        // The original logic seemed to sum everything. Let's keep it consistent unless requested.
+
         $totals = DB::table('customer_employee_account_transactions as ceat')
             ->whereNull('ceat.deleted_at')
             ->selectRaw('SUM(CASE WHEN ceat.transaction_date < ? THEN (ceat.debit - ceat.credit) ELSE 0 END) as total_opening_balance', [$startDate])
@@ -162,10 +182,17 @@ class CreditSalesReportController extends Controller
             $employeesQuery->where('supplier_id', $request->input('filter.supplier_id'));
         }
 
+        if ($request->filled('filter.designation')) {
+            $employeesQuery->where('designation', $request->input('filter.designation'));
+        }
+
         $employees = $employeesQuery->get(['id', 'name', 'employee_code']);
 
         // Get all suppliers for filter
         $suppliers = \App\Models\Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+
+        // Get unique designations
+        $designations = Employee::distinct()->whereNotNull('designation')->orderBy('designation')->pluck('designation');
 
         // Get selected employee names for display
         $selectedEmployeeNames = !empty($employeeIds)
@@ -181,9 +208,11 @@ class CreditSalesReportController extends Controller
             'totals' => $totals,
             'employees' => $employees,
             'suppliers' => $suppliers,
+            'designations' => $designations, // Pass designations
             'selectedEmployeeIds' => $employeeIds,
             'selectedEmployeeNames' => $selectedEmployeeNames,
             'selectedSupplierId' => $request->input('filter.supplier_id'),
+            'selectedDesignation' => $request->input('filter.designation'), // Pass selected designation
             'selectedSupplierName' => $selectedSupplierName,
             'startDate' => $startDate,
             'endDate' => $endDate,

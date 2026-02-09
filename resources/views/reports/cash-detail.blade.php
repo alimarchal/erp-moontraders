@@ -1,10 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Cash Detail Report') }}
-            </h2>
-        </div>
+        <x-page-header title="Cash Detail Report" :createRoute="null" createLabel="" :showSearch="true"
+            :showRefresh="true" backRoute="reports.index" />
     </x-slot>
 
     @push('header')
@@ -13,88 +10,158 @@
                 width: 100%;
                 border-collapse: collapse;
                 border: 1px solid black;
-                font-size: 13px; /* Slightly larger for readability */
+                font-size: 14px;
                 line-height: 1.2;
             }
 
             .report-table th,
             .report-table td {
                 border: 1px solid black;
-                padding: 4px 6px;
-                white-space: nowrap;
+                padding: 3px 4px;
+                word-wrap: break-word;
             }
-            
-            .report-table thead th {
-                 background-color: #d1d5db; /* gray-300 */
-                 font-weight: bold;
-                 text-align: center;
+
+            .print-only {
+                display: none;
             }
 
             @media print {
                 @page {
-                    margin: 5mm;
-                    size: landscape; /* Suggest landscape for 3 columns */
+                    margin: 15mm 10mm 20mm 10mm;
+
+                    @bottom-center {
+                        content: "Page " counter(page) " of " counter(pages);
+                    }
                 }
-                
-                body {
-                     background-color: white !important;
-                }
-                
+
                 .no-print {
                     display: none !important;
                 }
-                
+
+                body {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    counter-reset: page 1;
+                }
+
+                .max-w-7xl {
+                    max-width: 100% !important;
+                    width: 100% !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+
+                .bg-white {
+                    margin: 0 !important;
+                    padding: 10px !important;
+                    box-shadow: none !important;
+                }
+
+                .overflow-x-auto {
+                    overflow: visible !important;
+                }
+
+                .report-table {
+                    font-size: 11px !important;
+                    width: 100% !important;
+                }
+
                 .report-table th,
                 .report-table td {
-                     border: 1px solid black !important;
+                    padding: 2px 3px !important;
+                    color: #000 !important;
                 }
+
+                .text-green-700,
+                .text-blue-700,
+                .text-orange-700,
+                .text-purple-700 {
+                    color: #000 !important;
+                }
+
+                p {
+                    margin-top: 0 !important;
+                    margin-bottom: 8px !important;
+                }
+
+                .print-info {
+                    font-size: 9px !important;
+                    margin-top: 5px !important;
+                    margin-bottom: 10px !important;
+                    color: #000 !important;
+                }
+
+                .print-only {
+                    display: block !important;
+                }
+
+                .page-footer {
+                    display: none;
+                }
+            }
+
+            /* Select2 Styling to match Tailwind Inputs */
+            .select2-container .select2-selection--multiple {
+                min-height: 42px !important;
+                border-color: #d1d5db !important;
+                /* gray-300 */
+                border-radius: 0.375rem !important;
+                /* rounded-md */
+                padding-top: 4px !important;
+                padding-bottom: 4px !important;
+            }
+
+            .select2-container--default.select2-container--focus .select2-selection--multiple {
+                border-color: #6366f1 !important;
+                /* indigo-500 */
+                box-shadow: 0 0 0 1px #6366f1 !important;
             }
         </style>
     @endpush
 
-    <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-4">
+    <x-filter-section :action="route('reports.cash-detail.index')" class="no-print">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {{-- Date --}}
+            <div>
+                <x-label for="date" value="{{ __('Date') }}" />
+                <x-input id="date" class="block mt-1 w-full" type="date" name="date" :value="$date" required />
+            </div>
+            
+            {{-- Supplier Filter --}}
+            <div>
+                <x-label for="supplier_id" value="{{ __('Supplier') }}" />
+                <select id="supplier_id" name="supplier_id" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Suppliers</option>
+                    @foreach($suppliers as $supplier)
+                        <option value="{{ $supplier->id }}" {{ $supplierId == $supplier->id ? 'selected' : '' }}>
+                            {{ $supplier->supplier_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            
+         
+        </div>
+    </x-filter-section>
 
-                {{-- Filters --}}
-                <form method="GET" action="{{ route('reports.cash-detail.index') }}" class="mb-6 flex gap-4 items-end no-print">
-                    <div>
-                        <x-label for="date" value="{{ __('Date') }}" />
-                        <x-input id="date" class="block mt-1 w-full" type="date" name="date" :value="$date" required />
-                    </div>
-                    
-                    <div>
-                        <x-label for="supplier_id" value="{{ __('Supplier') }}" />
-                        <select id="supplier_id" name="supplier_id" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                            <option value="">All Suppliers</option>
-                            @foreach($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}" {{ $supplierId == $supplier->id ? 'selected' : '' }}>
-                                    {{ $supplier->supplier_name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div>
-                        <x-button class="mb-0.5">
-                            {{ __('Filter') }}
-                        </x-button>
-                    </div>
-                     <div class="ml-auto">
-                        <button type="button" onclick="window.print()" class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                            Print
-                        </button>
-                    </div>
-                </form>
-                
-                {{-- Report Title --}}
-                <div class="text-center mb-4">
-                     <h1 class="text-2xl font-bold uppercase">Cash Detail</h1>
-                     <p class="font-semibold">{{ \Carbon\Carbon::parse($date)->format('d.m.Y') }}</p>
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
+            <div class="overflow-x-auto">
+                <p class="text-center font-extrabold mb-2">
+                    Moon Traders<br>
+                    CASH DETAIL REPORT<br>
+                    <span class="text-sm font-semibold">
+                        {{ \Carbon\Carbon::parse($date)->format('d-M-Y') }}
+                    </span><br>
                      @if($supplierId)
-                        <p class="text-sm font-semibold text-gray-600">{{ $suppliers->find($supplierId)->supplier_name }}</p>
+                        <span class="text-sm font-semibold">
+                            Supplier: {{ $suppliers->find($supplierId)->supplier_name }}
+                        </span><br>
                      @endif
-                </div>
+                    <span class="print-only print-info text-xs text-center">
+                        Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
+                    </span>
+                </p>
 
                 {{-- Main Content Grid --}}
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-0 border-2 border-black">
@@ -103,9 +170,9 @@
                     <div class="border-r border-black p-0">
                         <table class="report-table">
                             <thead>
-                                <tr>
-                                    <th class="text-left">Salesman</th>
-                                    <th class="text-right">Amount</th>
+                                <tr class="bg-gray-50">
+                                    <th style="width: 70%" class="text-left">Salesman</th>
+                                    <th style="width: 30%" class="text-right">Amount</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -117,13 +184,11 @@
                                         <td class="text-right font-bold">{{ number_format($data->amount, 0) }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="2" class="text-center italic">No data found</td></tr>
+                                    <tr><td colspan="2" class="text-center italic text-gray-500">No data found</td></tr>
                                 @endforelse
-                                
-                                {{-- Fill empty rows to maintain height if needed, or simplistic approach --}}
                             </tbody>
-                            <tfoot>
-                                <tr class="bg-gray-200 font-bold">
+                            <tfoot class="bg-gray-100 font-extrabold">
+                                <tr>
                                     <td class="text-right">Total :-</td>
                                     <td class="text-right">{{ number_format($totalSalesmanAmount, 0) }}</td>
                                 </tr>
@@ -135,7 +200,7 @@
                     <div class="border-r border-black p-0">
                         <table class="report-table">
                             <thead>
-                                <tr>
+                                <tr class="bg-gray-50">
                                     <th class="text-center">CASH</th>
                                     <th class="text-center">Qty</th>
                                     <th class="text-right">Value</th>
@@ -171,8 +236,8 @@
                                     <td class="text-right">{{ $coins > 0 ? number_format($coins, 0) : '-' }}</td>
                                 </tr>
                             </tbody>
-                             <tfoot>
-                                <tr class="bg-gray-200 font-bold">
+                             <tfoot class="bg-gray-100 font-extrabold">
+                                <tr>
                                     <td colspan="2" class="text-right">Total :-</td>
                                     <td class="text-right">{{ number_format($grandTotalCash, 0) }}</td>
                                 </tr>
@@ -184,7 +249,7 @@
                     <div class="p-0">
                          <table class="report-table">
                             <thead>
-                                <tr>
+                                <tr class="bg-gray-50">
                                     <th class="text-center">Bank Slips</th>
                                     <th class="text-left">Salesman</th>
                                     <th class="text-right">Amount</th>
@@ -200,11 +265,11 @@
                                         <td class="text-right font-bold">{{ number_format($slip->amount, 0) }}</td>
                                     </tr>
                                 @empty
-                                    <tr><td colspan="3" class="text-center italic">No bank slips</td></tr>
+                                    <tr><td colspan="3" class="text-center italic text-gray-500">No bank slips</td></tr>
                                 @endforelse
                             </tbody>
-                             <tfoot>
-                                <tr class="bg-gray-200 font-bold">
+                             <tfoot class="bg-gray-100 font-extrabold">
+                                <tr>
                                     <td colspan="2" class="text-right">Total :-</td>
                                     <td class="text-right">{{ number_format($totalBankSlips, 0) }}</td>
                                 </tr>
@@ -227,4 +292,23 @@
             </div>
         </div>
     </div>
+
+        @push('scripts')
+        <script>
+            $(document).ready(function () {
+                $('#filter_supplier_id').select2({
+                    width: '100%',
+                    placeholder: 'All Suppliers',
+                    allowClear: true
+                });
+
+                // Also ensure employee filter is initialized nicely if not already
+                $('#filter_employee_ids').select2({
+                    width: '100%',
+                    placeholder: 'Select Salesmen',
+                    allowClear: true
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>

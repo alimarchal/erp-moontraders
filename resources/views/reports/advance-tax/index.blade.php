@@ -1,7 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Scheme Discount Report" :showSearch="true" :showRefresh="true"
-            backRoute="reports.index" />
+        <x-page-header title="Advance Tax Report" :showSearch="true" :showRefresh="true" backRoute="reports.index" />
     </x-slot>
 
     @push('header')
@@ -104,13 +103,13 @@
         </style>
     @endpush
 
-    <x-filter-section :action="route('reports.scheme-discount.index')" class="no-print">
+    <x-filter-section :action="route('reports.advance-tax.index')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             <div class="relative">
                 <div class="flex justify-between items-center">
                     <x-label for="filter_supplier_id" value="Supplier" />
                     @if($selectedSupplierId)
-                        <a href="{{ route('reports.scheme-discount.index', array_merge(request()->except(['filter.supplier_id', 'page']), ['filter[supplier_id]' => ''])) }}"
+                        <a href="{{ route('reports.advance-tax.index', array_merge(request()->except(['filter.supplier_id', 'page']), ['filter[supplier_id]' => ''])) }}"
                             class="text-xs text-red-600 hover:text-red-800 underline">
                             Clear
                         </a>
@@ -131,7 +130,7 @@
                 <div class="flex justify-between items-center">
                     <x-label for="filter_designation" value="Designation" />
                     @if($selectedDesignation)
-                        <a href="{{ route('reports.scheme-discount.index', array_merge(request()->except(['filter.designation', 'page']), ['filter[designation]' => ''])) }}"
+                        <a href="{{ route('reports.advance-tax.index', array_merge(request()->except(['filter.designation', 'page']), ['filter[designation]' => ''])) }}"
                             class="text-xs text-red-600 hover:text-red-800 underline">
                             Clear
                         </a>
@@ -191,7 +190,10 @@
             <div class="overflow-x-auto">
                 <p class="text-center font-extrabold mb-2">
                     Moon Traders<br>
-                    Scheme Discount Report<br>
+                    Advance Tax Report<br>
+                    @if($selectedDesignation)
+                        <span class="text-sm font-semibold">Designation: {{ $selectedDesignation }}</span><br>
+                    @endif
                     <span class="text-sm font-semibold">Salesmen: {{ $selectedSalesmanNames }}</span><br>
                     For the period {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
                     {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
@@ -238,7 +240,8 @@
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
-                            <td colspan="2" class="text-right px-2 py-1">Grand Total</td>
+                            <td colspan="2" class="text-right px-2 py-1">Grand Total
+                            </td>
                             @foreach($dates as $date)
                                 <td class="text-center font-mono px-2 py-1 border">
                                     {{ number_format($dateTotals[$date] ?? 0, 0) }}

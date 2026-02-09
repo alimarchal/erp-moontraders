@@ -378,4 +378,78 @@ class SchemeDiscountReportTest extends TestCase
         $response->assertStatus(200);
         $response->assertSeeInOrder(['Salesman B', 'Salesman A']);
     }
+    public function test_filters_by_designation()
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user);
+
+        // Setup Common Dependencies - Simplified
+        $period = \App\Models\AccountingPeriod::create(['name' => 'Current Period', 'start_date' => now()->startOfMonth(), 'end_date' => now()->endOfMonth(), 'status' => 'open']);
+        $accountType = \App\Models\AccountType::factory()->create();
+        $currency = \App\Models\Currency::factory()->create();
+        $account = ChartOfAccount::create(['account_code' => '5292', 'account_name' => 'Scheme Discount', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'Debit']);
+
+        $stockInHand = ChartOfAccount::create(['account_code' => '1151', 'account_name' => 'Stock', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'Debit']);
+        $vanStock = ChartOfAccount::create(['account_code' => '1155', 'account_name' => 'Van Stock', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'Debit']);
+
+        $vehicle = \App\Models\Vehicle::factory()->create();
+        $warehouse = \App\Models\Warehouse::factory()->create();
+
+        // Create Salesmen with Designations
+        $salesmanManager = Employee::factory()->create(['name' => 'Manager Dave', 'designation' => 'Manager']);
+        $salesmanDriver = Employee::factory()->create(['name' => 'Driver Steve', 'designation' => 'Driver']);
+
+        // Helper to create settlement and expense
+        $createData = function ($salesman, $amount) use ($user, $vehicle, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
+            $goodsIssue = \App\Models\GoodsIssue::create([
+                'issue_number' => 'GI-' . uniqid(),
+                'issue_date' => now(),
+                'status' => 'issued',
+                'total_quantity' => 0,
+                'total_value' => 0,
+                'employee_id' => $salesman->id,
+                'vehicle_id' => $vehicle->id,
+                'warehouse_id' => $warehouse->id,
+                'issued_by' => $user->id,
+                'stock_in_hand_account_id' => $stockInHand->id,
+                'van_stock_account_id' => $vanStock->id,
+            ]);
+
+            $settlement = SalesSettlement::create([
+                'settlement_number' => 'SETTLE-' . uniqid(),
+                'settlement_date' => now()->format('Y-m-d'),
+                'status' => 'posted',
+                'employee_id' => $salesman->id,
+                'vehicle_id' => $vehicle->id,
+                'warehouse_id' => $warehouse->id,
+                'goods_issue_id' => $goodsIssue->id,
+                'total_sales_amount' => 0,
+                'cash_sales_amount' => 0,
+                'credit_sales_amount' => 0,
+                'cheque_sales_amount' => 0,
+                'verified_by' => $user->id,
+                'journal_entry_id' => \App\Models\JournalEntry::factory()->create(['status' => 'posted', 'entry_date' => now(), 'currency_id' => $currency->id, 'accounting_period_id' => $period->id])->id,
+                'total_quantity_issued' => 0,
+                'total_value_issued' => 0,
+                'credit_recoveries' => 0,
+            ]);
+
+            SalesSettlementExpense::create(['sales_settlement_id' => $settlement->id, 'expense_account_id' => $account->id, 'amount' => $amount, 'expense_date' => now()->format('Y-m-d')]);
+        };
+
+        $createData($salesmanManager, 100);
+        $createData($salesmanDriver, 200);
+
+        // Filter by Designation 'Manager'
+        $response = $this->get(route('reports.scheme-discount.index', ['filter' => ['designation' => 'Manager']]));
+        $response->assertStatus(200);
+        $response->assertSee('Manager Dave');
+        $response->assertDontSee('Driver Steve');
+
+        // Filter by Designation 'Driver'
+        $response = $this->get(route('reports.scheme-discount.index', ['filter' => ['designation' => 'Driver']]));
+        $response->assertStatus(200);
+        $response->assertSee('Driver Steve');
+        $response->assertDontSee('Manager Dave');
+    }
 }

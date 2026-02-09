@@ -454,6 +454,42 @@
                             </svg>
                         </div>
                     </a>
+
+                    <!-- Percentage Expense Report Card -->
+                    <a href="{{ route('reports.percentage-expense.index') }}"
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8 text-gray-800">PER</div>
+                                <div class="mt-1 text-base font-extrabold text-gray-700">Percentage Expense</div>
+                                <div class="text-xs text-gray-500 mt-1">Expense Report</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-purple-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+                            </svg>
+                        </div>
+                    </a>
+
+                    <!-- Advance Tax Report Card -->
+                    <a href="{{ route('reports.advance-tax.index') }}"
+                        class="transform hover:scale-105 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8 text-gray-800">AT</div>
+                                <div class="mt-1 text-base font-extrabold text-gray-700">Advance Tax</div>
+                                <div class="text-xs text-gray-500 mt-1">Expense Report</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-red-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z" />
+                            </svg>
+                        </div>
+                    </a>
                 </div>
             </div>
         </div>

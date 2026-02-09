@@ -10,12 +10,12 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class SchemeDiscountReportController extends Controller
+class AdvanceTaxReportController extends Controller
 {
     /**
-     * Account code for Scheme Discount Expense.
+     * Account code for Advance Tax.
      */
-    private const SCHEME_DISCOUNT_ACCOUNT_CODE = '5292';
+    private const ADVANCE_TAX_ACCOUNT_CODE = '1161';
 
     public function index(Request $request)
     {
@@ -56,14 +56,14 @@ class SchemeDiscountReportController extends Controller
 
         $salesmen = $salesmenQuery->orderBy('name')->get(['id', 'name']);
 
-        // Fetch Scheme Discount Expenses (Fixed Amount)
+        // Fetch Advance Tax Expenses
         $expenses = SalesSettlementExpense::query()
             ->join('sales_settlements', 'sales_settlements.id', '=', 'sales_settlement_expenses.sales_settlement_id')
             ->join('chart_of_accounts', 'chart_of_accounts.id', '=', 'sales_settlement_expenses.expense_account_id')
             ->join('employees', 'employees.id', '=', 'sales_settlements.employee_id')
             ->where('sales_settlements.status', 'posted')
             ->whereNull('sales_settlements.deleted_at')
-            ->where('chart_of_accounts.account_code', self::SCHEME_DISCOUNT_ACCOUNT_CODE)
+            ->where('chart_of_accounts.account_code', self::ADVANCE_TAX_ACCOUNT_CODE)
             ->whereBetween('sales_settlements.settlement_date', [$startDate, $endDate])
             ->select([
                 'sales_settlements.settlement_date',
@@ -114,11 +114,13 @@ class SchemeDiscountReportController extends Controller
             $reportSalesmenQuery->whereIn('id', $salesmanIds);
         } elseif (!$supplierId && !$designation) {
             // If no filters, show only employees who have activity in this period
+            // to avoid listing hundreds of inactive employees.
             $reportSalesmenIds = $expenses->pluck('employee_id')->unique();
             $reportSalesmenQuery->whereIn('id', $reportSalesmenIds);
         }
 
         $reportSalesmen = $reportSalesmenQuery->orderBy('name')->get(['id', 'name', 'supplier_id']);
+
 
         // 3. Build Matrix Data
         // Structure: $matrix[employee_id][date] = amount (Inverted per user request)
@@ -187,7 +189,7 @@ class SchemeDiscountReportController extends Controller
             ? $salesmen->whereIn('id', $salesmanIds)->pluck('name')->implode(', ')
             : 'All Salesmen';
 
-        return view('reports.scheme-discount.index', [
+        return view('reports.advance-tax.index', [
             'dates' => $dates,
             'reportSalesmen' => $reportSalesmen,
             'matrix' => $matrix,

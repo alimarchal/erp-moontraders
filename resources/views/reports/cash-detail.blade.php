@@ -120,7 +120,7 @@
     @endpush
 
     <x-filter-section :action="route('reports.cash-detail.index')" class="no-print">
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-4">
             {{-- Date --}}
             <div>
                 <x-label for="date" value="{{ __('Date') }}" />
@@ -128,7 +128,7 @@
             </div>
             
             {{-- Supplier Filter --}}
-             <div>
+            <div>
                 <x-label for="supplier_id" value="{{ __('Supplier') }}" />
                 <select id="supplier_id" name="supplier_id" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
@@ -139,7 +139,32 @@
                     @endforeach
                 </select>
             </div>
-         
+            
+            {{-- Designation Filter --}}
+            <div>
+                 <x-label for="designation" value="{{ __('Designation') }}" />
+                 <select id="designation" name="designation" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Designations</option>
+                    @foreach($designations as $desig)
+                        <option value="{{ $desig }}" {{ $designation == $desig ? 'selected' : '' }}>
+                            {{ $desig }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            
+            {{-- Multi-Select Salesman --}}
+            <div>
+                <x-label for="employee_ids" value="Salesman (Multi-Select)" class="pb-1" />
+                <select id="employee_ids" name="employee_ids[]" multiple
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    @foreach($allEmployees as $employee)
+                        <option value="{{ $employee->id }}" {{ in_array($employee->id, $employeeIds) ? 'selected' : '' }}>
+                            {{ $employee->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
         </div>
     </x-filter-section>
 
@@ -150,11 +175,26 @@
                     Moon Traders<br>
                     CASH DETAIL REPORT<br>
                     <span class="text-sm font-semibold">
-                        {{ \Carbon\Carbon::parse($date)->format('d-M-Y') }}
+                        Date:{{ \Carbon\Carbon::parse($date)->format('d-M-Y') }}
                     </span><br>
                      @if($supplierId)
                         <span class="text-sm font-semibold">
                             Supplier: {{ $suppliers->find($supplierId)->supplier_name }}
+                        </span><br>
+                     @endif
+                     
+                     @if($designation)
+                        <span class="text-sm font-semibold">
+                            Designation: {{ $designation }}
+                        </span><br>
+                     @endif
+
+                     @if(!empty($employeeIds))
+                        <span class="text-sm font-semibold">
+                            Salesmen: 
+                            @foreach($allEmployees->whereIn('id', $employeeIds) as $emp)
+                                {{ $emp->name }}@if(!$loop->last), @endif
+                            @endforeach
                         </span><br>
                      @endif
                     <span class="print-only print-info text-xs text-center">
@@ -163,35 +203,42 @@
                 </p>
 
                 {{-- Main Content Grid --}}
-                <div class="border-2 border-black rounded-lg px-2 pb-2 mt-4">
-                    <h3 class="font-bold text-md text-center text-black pb-1 border-b border-black mb-2">Cash & Bank Summary</h3>
-                    
+
+                    @php
+                        // Calculate maximum rows to ensure all tables identify with the same height
+                        // Natural rows for Cash Detail is 8 (7 denoms + 1 coin)
+                        $maxRows = max($salesmanData->count(), $bankSlipsData->count(), 8);
+                    @endphp
+
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-1 print:flex print:gap-1" style="page-break-inside: avoid; break-inside: avoid;">
                         
-                        {{-- 1. Salesman Data --}}
+                        {{-- 1. Salesman Cash --}}
                         <div class="flex flex-col h-full print:w-1/3">
-                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Salesman Summary</h4>
+                            <h4 class="font-bold text-sm border-x border-t border-black text-center">Salesman Cash</h4>
                             <table class="report-table w-full flex-grow tabular-nums">
                                 <thead>
                                     <tr class="bg-gray-100">
+                                        <th class="text-center w-8 px-1 py-0.5">Sr.#</th>
                                         <th class="text-left px-1 py-0.5">Salesman</th>
                                         <th class="text-right px-1 py-0.5">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @php $totalSalesmanAmount = 0; @endphp
-                                    @forelse($salesmanData as $data)
+                                    @forelse($salesmanData as $index => $data)
                                         @php $totalSalesmanAmount += $data->amount; @endphp
                                         <tr>
+                                            <td class="text-center px-1 py-0.5">{{ $loop->iteration }}</td>
                                             <td class="px-1 py-0.5">{{ $data->salesman_name }}</td>
-                                            <td class="text-right font-bold px-1 py-0.5">{{ number_format($data->amount, 0) }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ $data->amount > 0 ? number_format($data->amount, 0) : '-' }}</td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="2" class="text-center italic text-gray-500 px-1 py-0.5">No data found</td></tr>
+                                        <tr><td colspan="3" class="text-center italic text-gray-500 px-1 py-0.5">No data found</td></tr>
                                     @endforelse
-                                    {{-- Filler rows if needed --}}
-                                    @for($i = count($salesmanData); $i < 10; $i++)
+                                    {{-- Filler rows --}}
+                                    @for($i = $salesmanData->count(); $i < $maxRows; $i++)
                                         <tr>
+                                            <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                             <td class="text-right px-1 py-0.5 border-none">&nbsp;</td>
                                         </tr>
@@ -199,7 +246,7 @@
                                 </tbody>
                                 <tfoot class="bg-gray-50 font-bold">
                                     <tr>
-                                        <td class="text-right px-1 py-0.5 border-t border-black">Total:</td>
+                                        <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
                                         <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalSalesmanAmount, 0) }}</td>
                                     </tr>
                                 </tfoot>
@@ -212,6 +259,7 @@
                             <table class="report-table w-full flex-grow tabular-nums">
                                 <thead>
                                     <tr class="bg-gray-100">
+                                        <th class="text-center w-8 px-1 py-0.5">Sr.#</th>
                                         <th class="text-center px-1 py-0.5">Denom</th>
                                         <th class="text-center px-1 py-0.5">Qty</th>
                                         <th class="text-right px-1 py-0.5">Value</th>
@@ -221,6 +269,7 @@
                                     @php 
                                         $grandTotalCash = 0; 
                                         $denomsList = [5000, 1000, 500, 100, 50, 20, 10];
+                                        $sr = 1;
                                     @endphp
                                     
                                     @foreach($denomsList as $val)
@@ -230,6 +279,7 @@
                                             $grandTotalCash += $subtotal;
                                         @endphp
                                         <tr>
+                                            <td class="text-center px-1 py-0.5">{{ $sr++ }}</td>
                                             <td class="text-center font-bold px-1 py-0.5">{{ $val }}</td>
                                             <td class="text-center px-1 py-0.5">{{ $qty > 0 ? $qty : '-' }}</td>
                                             <td class="text-right px-1 py-0.5">{{ $qty > 0 ? number_format($subtotal, 0) : '-' }}</td>
@@ -242,14 +292,16 @@
                                         $grandTotalCash += $coins;
                                     @endphp
                                     <tr>
+                                        <td class="text-center px-1 py-0.5">{{ $sr++ }}</td>
                                         <td class="text-center font-bold px-1 py-0.5">Coins</td>
                                         <td class="text-center px-1 py-0.5">-</td>
                                         <td class="text-right px-1 py-0.5">{{ $coins > 0 ? number_format($coins, 0) : '-' }}</td>
                                     </tr>
                                     
                                     {{-- Filler rows --}}
-                                    @for($i = 0; $i < 2; $i++)
+                                    @for($i = 8; $i < $maxRows; $i++)
                                         <tr>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                              <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                              <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                              <td class="px-1 py-0.5 border-none">&nbsp;</td>
@@ -258,7 +310,7 @@
                                 </tbody>
                                 <tfoot class="bg-gray-50 font-bold">
                                     <tr>
-                                        <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
+                                        <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
                                         <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($grandTotalCash, 0) }}</td>
                                     </tr>
                                 </tfoot>
@@ -266,42 +318,41 @@
                         </div>
 
                         {{-- 3. Bank Slips --}}
-                        <div class="flex flex-col h-full print:w-1/3">
+                        <div class="print:w-1/3">
                             <h4 class="font-bold text-sm border-x border-t border-black text-center">Bank Slips</h4>
-                            <table class="report-table w-full flex-grow tabular-nums">
+                            <table class="report-table w-full tabular-nums">
                                 <thead>
                                     <tr class="bg-gray-100">
-                                        <th class="text-left px-1 py-0.5">Bank</th>
+                                        <th class="text-center w-8 px-1 py-0.5">Sr.#</th>
                                         <th class="text-left px-1 py-0.5">Salesman</th>
                                         <th class="text-right px-1 py-0.5">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @php $totalBankSlips = 0; @endphp
-                                    @forelse($bankSlips as $slip)
+                                    @forelse($bankSlipsData as $index => $slip)
                                         @php $totalBankSlips += $slip->amount; @endphp
                                         <tr>
-                                            <td class="text-xs text-gray-600 px-1 py-0.5">{{ $slip->bank_name }}</td>
+                                            <td class="text-center px-1 py-0.5">{{ $loop->iteration }}</td>
                                             <td class="px-1 py-0.5">{{ $slip->salesman_name }}</td>
-                                            <td class="text-right font-bold px-1 py-0.5">{{ number_format($slip->amount, 0) }}</td>
+                                            <td class="text-right font-bold px-1 py-0.5">{{ $slip->amount > 0 ? number_format($slip->amount, 2) : '-' }}</td>
                                         </tr>
                                     @empty
                                         <tr><td colspan="3" class="text-center italic text-gray-500 px-1 py-0.5">No bank slips</td></tr>
                                     @endforelse
-                                    
-                                     {{-- Filler rows --}}
-                                    @for($i = count($bankSlips); $i < 10; $i++)
+                                    </tbody>
+                                    {{-- Filler rows --}}
+                                    @for($i = $bankSlipsData->count(); $i < $maxRows; $i++)
                                         <tr>
                                              <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                              <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                              <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                         </tr>
                                     @endfor
-                                </tbody>
                                 <tfoot class="bg-gray-50 font-bold">
                                     <tr>
                                         <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
-                                        <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalBankSlips, 0) }}</td>
+                                        <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalBankSlips, 2) }}</td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -310,17 +361,15 @@
                     </div>
                     
                      {{-- Grand Total Summary --}}
-                     <div class="mt-4 border border-black p-2 bg-gray-50 flex justify-between items-center font-bold">
-                         <span>Grand Total (Salesman Amount):</span>
-                         <span class="text-xl">{{ number_format($totalSalesmanAmount, 0) }}</span>
+                     <div class="mt-1 border border-black p-1 bg-gray-50 flex justify-between items-center font-bold">
+                         <span>Grand Total (Salesman Cash + Bank Slips):</span>
+                         <span class="text-md">{{ number_format($totalSalesmanAmount + $totalBankSlips, 2) }}</span>
                      </div>
-
-                </div>
             </div>
         </div>
     </div>
 
-        @push('scripts')
+    @push('scripts')
         <script>
             $(document).ready(function () {
                 $('#supplier_id').select2({
@@ -329,8 +378,13 @@
                     allowClear: true
                 });
 
-                // Also ensure employee filter is initialized nicely if not already
-                $('#supplier_id').select2({
+                $('#designation').select2({
+                    width: '100%',
+                    placeholder: 'All Designations',
+                    allowClear: true
+                });
+
+                $('#employee_ids').select2({
                     width: '100%',
                     placeholder: 'Select Salesmen',
                     allowClear: true

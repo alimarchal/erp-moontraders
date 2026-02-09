@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -17,6 +16,12 @@ return new class extends Migration
             $table->date('start_date');
             $table->date('end_date');
             $table->enum('status', ['open', 'closed', 'archived'])->default('open')->comment('Controls if transactions can be posted.');
+            $table->timestamp('closed_at')->nullable();
+            $table->foreignId('closed_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->unsignedBigInteger('closing_journal_entry_id')->nullable();
+            $table->decimal('closing_total_debits', 17, 2)->nullable();
+            $table->decimal('closing_total_credits', 17, 2)->nullable();
+            $table->decimal('closing_net_income', 17, 2)->nullable();
             $table->timestamps();
 
             // Add indexes for quick lookups by date

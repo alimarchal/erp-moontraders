@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -19,6 +18,7 @@ return new class extends Migration
             $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
             $table->foreignId('vehicle_id')->constrained('vehicles')->cascadeOnDelete();
             $table->foreignId('warehouse_id')->constrained('warehouses')->cascadeOnDelete();
+            $table->foreignId('supplier_id')->nullable()->constrained()->onDelete('restrict');
 
             // Opening Stock
             $table->decimal('total_quantity_issued', 15, 3)->default(0);
@@ -27,6 +27,7 @@ return new class extends Migration
             // Sales Summary
             $table->decimal('total_sales_amount', 15, 2)->default(0);
             $table->decimal('cash_sales_amount', 15, 2)->default(0);
+            $table->decimal('bank_slips_amount', 15, 2)->default(0);
             $table->decimal('cheque_sales_amount', 15, 2)->default(0);
             $table->decimal('bank_transfer_amount', 15, 2)->default(0);
             $table->decimal('credit_sales_amount', 15, 2)->default(0);

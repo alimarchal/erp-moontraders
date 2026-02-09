@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -17,6 +16,8 @@ return new class extends Migration
 
             // This correctly links to the 'journal_entries' (header) table
             $table->foreignId('journal_entry_id')->constrained()->onDelete('cascade')->comment('Links to the journal_entries header.');
+
+            $table->unsignedInteger('line_no')->comment('Line number within the journal entry. Must be set explicitly by application.');
 
             // This correctly links to your Chart of Accounts
             $table->foreignId('chart_of_account_id')->constrained()->onDelete('restrict')->comment('Links to the specific account.');
@@ -32,7 +33,18 @@ return new class extends Migration
             $table->decimal('credit', 15, 2)->default(0.00)->comment('Credit amount.');
             $table->string('description')->nullable()->comment('A note about this specific line.');
 
+            // Reconciliation status for bank transactions
+            $table->enum('reconciliation_status', ['unreconciled', 'cleared', 'reconciled'])->default('unreconciled');
+            $table->timestamp('reconciled_at')->nullable();
+            $table->foreignId('reconciled_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('bank_statement_reference', 100)->nullable();
+
             $table->timestamps();
+
+            $table->unique(['journal_entry_id', 'line_no'], 'ux_journal_line');
+            $table->index('chart_of_account_id');
+            $table->index('cost_center_id');
+            $table->index('reconciliation_status');
         });
     }
 

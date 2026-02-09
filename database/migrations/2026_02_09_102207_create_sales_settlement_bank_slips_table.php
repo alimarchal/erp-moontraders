@@ -16,6 +16,9 @@ return new class extends Migration {
             $table->foreignId('employee_id')->constrained();
             $table->foreignId('bank_account_id')->constrained();
             $table->decimal('amount', 15, 2);
+            $table->string('reference_number')->nullable();
+            $table->date('deposit_date')->nullable();
+            $table->text('notes')->nullable();
             $table->string('attachment')->nullable();
             // supplier_id removed as per latest instruction to only have it on main table
             $table->foreignId('created_by')->nullable()->constrained('users');

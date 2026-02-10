@@ -1290,51 +1290,30 @@
                         $settlementRecoveries = $settlement->recoveries->groupBy('customer_id');
 
                         // 3. Process data
-                        $creditReportData = $customerAccounts->map(function ($account) use ($settlementDate, $settlementCredits, $settlementRecoveries) {
+                        $creditReportData = $customerAccounts->map(function ($account) use ($settlement, $settlementDate, $settlementCredits, $settlementRecoveries) {
                             $customerId = $account->customer_id;
 
                             // A. Get Activity strictly for THIS settlement
-                            $myCredits = $settlementCredits->get($customerId); // Collection of credit sales
-                            $myRecoveries = $settlementRecoveries->get($customerId); // Collection of recoveries
+                            $myCredits = $settlementCredits->get($customerId);
+                            $myRecoveries = $settlementRecoveries->get($customerId);
 
                             $creditAmount = $myCredits ? $myCredits->sum('sale_amount') : 0;
                             $recoveryAmount = $myRecoveries ? $myRecoveries->sum('amount') : 0;
                             $hasActivity = ($creditAmount > 0 || $recoveryAmount > 0);
 
-                            // B. Determine Closing Balance (Post-Settlement)
-                            // If we have activity, the reliable "Closing Balance" for this settlement is the 'new_balance' of the LAST transaction in this set.
-                            // If no activity, we fall back to the account's current ledger balance (as best effort).
-
-                            $closingBalance = 0;
-
-                            if ($hasActivity) {
-                                // Find the very last transaction in this settlement to get the final "NB"
-                                $lastCredit = $myCredits ? $myCredits->sortByDesc('id')->first() : null;
-                                $lastRec = $myRecoveries ? $myRecoveries->sortByDesc('id')->first() : null;
-
-                                if ($lastCredit && $lastRec) {
-                                    // Whichever has higher ID (created later) wins
-                                    $closingBalance = ($lastCredit->id > $lastRec->id) ? $lastCredit->new_balance : $lastRec->new_balance;
-                                } elseif ($lastCredit) {
-                                    $closingBalance = $lastCredit->new_balance;
-                                } elseif ($lastRec) {
-                                    $closingBalance = $lastRec->new_balance;
-                                }
-                            } else {
-                                // Fallback: Calculate balance up to this settlement date (start of day + all day activity)
-                                // Ideally, we should fetch the ledger balance as of EOD of settlement date.
-                                // Because we can't easily isolate "inter-settlement" balance without complex queries,
-                                // we'll use the transactions-based sum up to EOD.
-                                // Note: This might match Settlement #14's ending if this is Settlement #13, 
-                                // but for a "No Activity" row, showing EOD balance is acceptable standard practice.
-                                $closingBalance = $account->transactions()
-                                    ->whereDate('transaction_date', '<=', $settlementDate)
-                                    ->sum(\DB::raw('debit - credit'));
-                            }
+                            // B. Determine Closing Balance from ACTUAL LEDGER (not stored snapshots)
+                            // The ledger transactions are the single source of truth.
+                            // Closing = sum of all debits - credits for this account up to and including this settlement.
+                            $closingBalance = $account->transactions()
+                                ->where(function ($q) use ($settlement) {
+                                    $q->where('sales_settlement_id', '<=', $settlement->id)
+                                      ->orWhereNull('sales_settlement_id');
+                                })
+                                ->whereDate('transaction_date', '<=', $settlementDate)
+                                ->sum(\DB::raw('debit - credit'));
 
                             // C. Back-Calculate Opening Balance for THIS settlement
-                            // Op + Credit - Rec = Closing
-                            // => Op = Closing - Credit + Rec
+                            // Opening = Closing - Credit + Recovery
                             $openingBalance = $closingBalance - $creditAmount + $recoveryAmount;
 
                             return (object) [

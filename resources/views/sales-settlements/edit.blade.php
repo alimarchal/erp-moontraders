@@ -1729,828 +1729,830 @@
                 }
 
                 const expectedCashGross = theoreticalCashSales + recoveryCash;
-                const totalDeductions = expenses + advanceTaxTotal;
-                const expectedCashNet = expectedCashGross - totalDeductions;
+                // Advance tax is already included in `expenses` via            the expenseManager Alpine component
+                    // (synced by the advance-tax-updated event), so do NOT add advanceTaxTotal separately.
+                    const totalDeductions = expenses;
+                    const expectedCashNet = expectedCashGross - totalDeductions;
 
-                // Total Sale (Net Sale + Total Recovery)
-                const totalSale = netSale + recovery;
+                    // Total Sale (Net Sale + Total Recovery)
+                    const totalSale = netSale + recovery;
 
-                // Actual Physical Cash Collected (from denominations)
-                const actualPhysicalCash = cashSalesAmount;
-                const totalDeposited = actualPhysicalCash + bankSlipsAmount;
+                    // Actual Physical Cash Collected (from denominations)
+                    const actualPhysicalCash = cashSalesAmount;
+                    const totalDeposited = actualPhysicalCash + bankSlipsAmount;
 
-                // Shortage/Excess (Physical Cash vs Expected Cash)
-                const shortExcess = totalDeposited - expectedCashNet;
+                    // Shortage/Excess (Physical Cash vs Expected Cash)
+                    const shortExcess = totalDeposited - expectedCashNet;
 
-                document.getElementById('summary_total_sale').value = totalSale.toFixed(2);
-                document.getElementById('summary_balance').value = expectedCashGross.toFixed(2);
-                document.getElementById('summary_net_balance').value = expectedCashNet.toFixed(2);
-                document.getElementById('summary_short_excess').value = shortExcess.toFixed(2);
+                    document.getElementById('summary_total_sale').value = totalSale.toFixed(2);
+                    document.getElementById('summary_balance').value = expectedCashGross.toFixed(2);
+                    document.getElementById('summary_net_balance').value = expectedCashNet.toFixed(2);
+                    document.getElementById('summary_short_excess').value = shortExcess.toFixed(2);
 
-                // Create or update hidden input for cash_sales_amount
-                let cashSalesInput = document.getElementById('cash_sales_amount');
-                if (!cashSalesInput) {
-                    cashSalesInput = document.createElement('input');
-                    cashSalesInput.type = 'hidden';
-                    cashSalesInput.id = 'cash_sales_amount';
-                    cashSalesInput.name = 'cash_sales_amount';
-                    document.getElementById('settlementForm').appendChild(cashSalesInput);
-                }
-                cashSalesInput.value = theoreticalCashSales.toFixed(2);
+                    // Create or update hidden input for cash_sales_amount
+                    let cashSalesInput = document.getElementById('cash_sales_amount');
+                    if (!cashSalesInput) {
+                        cashSalesInput = document.createElement('input');
+                        cashSalesInput.type = 'hidden';
+                        cashSalesInput.id = 'cash_sales_amount';
+                        cashSalesInput.name = 'cash_sales_amount';
+                        document.getElementById('settlementForm').appendChild(cashSalesInput);
+                    }
+                    cashSalesInput.value = theoreticalCashSales.toFixed(2);
 
-                // Create or update hidden input for bank_transfer_amount
-                let bankSalesInput = document.getElementById('bank_transfer_amount');
-                if (!bankSalesInput) {
-                    bankSalesInput = document.createElement('input');
-                    bankSalesInput.type = 'hidden';
-                    bankSalesInput.id = 'bank_transfer_amount';
-                    bankSalesInput.name = 'bank_transfer_amount';
-                    document.getElementById('settlementForm').appendChild(bankSalesInput);
-                }
-                bankSalesInput.value = bankSalesAmount.toFixed(2);
+                    // Create or update hidden input for bank_transfer_amount
+                    let bankSalesInput = document.getElementById('bank_transfer_amount');
+                    if (!bankSalesInput) {
+                        bankSalesInput = document.createElement('input');
+                        bankSalesInput.type = 'hidden';
+                        bankSalesInput.id = 'bank_transfer_amount';
+                        bankSalesInput.name = 'bank_transfer_amount';
+                        document.getElementById('settlementForm').appendChild(bankSalesInput);
+                    }
+                    bankSalesInput.value = bankSalesAmount.toFixed(2);
 
-                // Update cheque_sales_amount
-                let chequeSalesInput = document.getElementById('cheque_sales_amount');
-                if (!chequeSalesInput) {
-                    chequeSalesInput = document.createElement('input');
-                    chequeSalesInput.type = 'hidden';
-                    chequeSalesInput.id = 'cheque_sales_amount';
-                    chequeSalesInput.name = 'cheque_sales_amount';
-                    document.getElementById('settlementForm').appendChild(chequeSalesInput);
-                }
-                chequeSalesInput.value = chequeSalesAmount.toFixed(2);
+                    // Update cheque_sales_amount
+                    let chequeSalesInput = document.getElementById('cheque_sales_amount');
+                    if (!chequeSalesInput) {
+                        chequeSalesInput = document.createElement('input');
+                        chequeSalesInput.type = 'hidden';
+                        chequeSalesInput.id = 'cheque_sales_amount';
+                        chequeSalesInput.name = 'cheque_sales_amount';
+                        document.getElementById('settlementForm').appendChild(chequeSalesInput);
+                    }
+                    chequeSalesInput.value = chequeSalesAmount.toFixed(2);
 
-                // Format currency for display
-                const formatPKR = (val) => '₨ ' + val.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    // Format currency for display
+                    const formatPKR = (val) => '₨ ' + val.toLocaleString('en-PK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-                // Update display fields
-                const totalSaleDisplay = document.getElementById('summary_total_sale_display');
-                const creditDisplay = document.getElementById('summary_credit_display');
-                const chequeDisplay = document.getElementById('summary_cheque_display');
-                const bankDisplay = document.getElementById('summary_bank_display');
-                const cashDisplay = document.getElementById('summary_cash_display');
+                    // Update display fields
+                    const totalSaleDisplay = document.getElementById('summary_total_sale_display');
+                    const creditDisplay = document.getElementById('summary_credit_display');
+                    const chequeDisplay = document.getElementById('summary_cheque_display');
+                    const bankDisplay = document.getElementById('summary_bank_display');
+                    const cashDisplay = document.getElementById('summary_cash_display');
 
-                const netSaleDisplay = document.getElementById('summary_net_sale_display');
-                const recoveryDisplay = document.getElementById('summary_recovery_display');
-                const returnValueDisplay = document.getElementById('summary_return_value_display');
-                const shortageValueDisplay = document.getElementById('summary_shortage_value_display');
-                const balanceDisplay = document.getElementById('summary_balance_display');
-                const expensesDisplay = document.getElementById('summary_expenses_display');
-                const bankSlipsDisplay = document.getElementById('summary_bank_slips_display');
+                    const netSaleDisplay = document.getElementById('summary_net_sale_display');
+                    const recoveryDisplay = document.getElementById('summary_recovery_display');
+                    const returnValueDisplay = document.getElementById('summary_return_value_display');
+                    const shortageValueDisplay = document.getElementById('summary_shortage_value_display');
+                    const balanceDisplay = document.getElementById('summary_balance_display');
+                    const expensesDisplay = document.getElementById('summary_expenses_display');
+                    const bankSlipsDisplay = document.getElementById('summary_bank_slips_display');
 
-                if (totalSaleDisplay) totalSaleDisplay.textContent = formatPKR(totalSale);
-                if (creditDisplay) creditDisplay.textContent = formatPKR(creditSalesAmount);
-                if (chequeDisplay) chequeDisplay.textContent = formatPKR(chequeSalesAmount);
-                if (bankDisplay) bankDisplay.textContent = formatPKR(bankSalesAmount);
-                if (cashDisplay) cashDisplay.textContent = formatPKR(cashSalesAmount);
+                    if (totalSaleDisplay) totalSaleDisplay.textContent = formatPKR(totalSale);
+                    if (creditDisplay) creditDisplay.textContent = formatPKR(creditSalesAmount);
+                    if (chequeDisplay) chequeDisplay.textContent = formatPKR(chequeSalesAmount);
+                    if (bankDisplay) bankDisplay.textContent = formatPKR(bankSalesAmount);
+                    if (cashDisplay) cashDisplay.textContent = formatPKR(cashSalesAmount);
 
-                if (bankSlipsDisplay) bankSlipsDisplay.textContent = formatPKR(bankSlipsAmount);
+                    if (bankSlipsDisplay) bankSlipsDisplay.textContent = formatPKR(bankSlipsAmount);
 
-                if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);
-                const netBalanceDisplay = document.getElementById('summary_net_balance_display');
-                const cashReceivedDisplay = document.getElementById('summary_cash_received_display');
-                const shortExcessDisplay = document.getElementById('summary_short_excess_display');
+                    if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);
+                    const netBalanceDisplay = document.getElementById('summary_net_balance_display');
+                    const cashReceivedDisplay = document.getElementById('summary_cash_received_display');
+                    const shortExcessDisplay = document.getElementById('summary_short_excess_display');
 
 
-                if (cashDisplay) cashDisplay.textContent = formatPKR(theoreticalCashSales);
+                    if (cashDisplay) cashDisplay.textContent = formatPKR(theoreticalCashSales);
 
-                if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);
-                if (recoveryDisplay) recoveryDisplay.textContent = formatPKR(recoveryCash);
-                const bankRecoveryDisplay = document.getElementById('summary_bank_recovery_display');
-                if (bankRecoveryDisplay) bankRecoveryDisplay.textContent = formatPKR(recoveryBank);
-                if (returnValueDisplay) returnValueDisplay.textContent = formatPKR(returnValue);
-                if (shortageValueDisplay) shortageValueDisplay.textContent = formatPKR(shortageValue);
-                if (balanceDisplay) balanceDisplay.textContent = formatPKR(expectedCashGross);
-                if (expensesDisplay) expensesDisplay.textContent = formatPKR(totalDeductions);
-                if (netBalanceDisplay) netBalanceDisplay.textContent = formatPKR(expectedCashNet);
-                if (cashReceivedDisplay) cashReceivedDisplay.textContent = formatPKR(actualPhysicalCash);
-                if (shortExcessDisplay) shortExcessDisplay.textContent = formatPKR(shortExcess);
+                    if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);
+                    if (recoveryDisplay) recoveryDisplay.textContent = formatPKR(recoveryCash);
+                    const bankRecoveryDisplay = document.getElementById('summary_bank_recovery_display');
+                    if (bankRecoveryDisplay) bankRecoveryDisplay.textContent = formatPKR(recoveryBank);
+                    if (returnValueDisplay) returnValueDisplay.textContent = formatPKR(returnValue);
+                    if (shortageValueDisplay) shortageValueDisplay.textContent = formatPKR(shortageValue);
+                    if (balanceDisplay) balanceDisplay.textContent = formatPKR(expectedCashGross);
+                    if (expensesDisplay) expensesDisplay.textContent = formatPKR(totalDeductions);
+                    if (netBalanceDisplay) netBalanceDisplay.textContent = formatPKR(expectedCashNet);
+                    if (cashReceivedDisplay) cashReceivedDisplay.textContent = formatPKR(actualPhysicalCash);
+                    if (shortExcessDisplay) shortExcessDisplay.textContent = formatPKR(shortExcess);
 
-                // Update summary_cash_received hidden input
-                document.getElementById('summary_cash_received').value = actualPhysicalCash.toFixed(2);
+                    // Update summary_cash_received hidden input
+                    document.getElementById('summary_cash_received').value = actualPhysicalCash.toFixed(2);
 
-                // Calculate and display Profit Analysis
-                const totalCOGS = calculateTotalCOGS();
-                const grossProfit = netSale - totalCOGS;
-                const grossMargin = netSale > 0 ? (grossProfit / netSale) * 100 : 0;
-                const netProfit = grossProfit - expenses;
-                const netMargin = netSale > 0 ? (netProfit / netSale) * 100 : 0;
+                    // Calculate and display Profit Analysis
+                    const totalCOGS = calculateTotalCOGS();
+                    const grossProfit = netSale - totalCOGS;
+                    const grossMargin = netSale > 0 ? (grossProfit / netSale) * 100 : 0;
+                    const netProfit = grossProfit - expenses;
+                    const netMargin = netSale > 0 ? (netProfit / netSale) * 100 : 0;
 
-                // Update profit display fields
-                const cogsDisplay = document.getElementById('summary_cogs_display');
-                const grossProfitDisplay = document.getElementById('summary_gross_profit_display');
-                const grossMarginDisplay = document.getElementById('summary_gross_margin_display');
-                const profitExpensesDisplay = document.getElementById('summary_profit_expenses_display');
-                const netProfitDisplay = document.getElementById('summary_net_profit_display');
-                const netMarginDisplay = document.getElementById('summary_net_margin_display');
+                    // Update profit display fields
+                    const cogsDisplay = document.getElementById('summary_cogs_display');
+                    const grossProfitDisplay = document.getElementById('summary_gross_profit_display');
+                    const grossMarginDisplay = document.getElementById('summary_gross_margin_display');
+                    const profitExpensesDisplay = document.getElementById('summary_profit_expenses_display');
+                    const netProfitDisplay = document.getElementById('summary_net_profit_display');
+                    const netMarginDisplay = document.getElementById('summary_net_margin_display');
 
-                if (cogsDisplay) cogsDisplay.textContent = formatPKR(totalCOGS);
-                if (grossProfitDisplay) {
-                    grossProfitDisplay.textContent = formatPKR(grossProfit);
-                    grossProfitDisplay.className = grossProfit >= 0
-                        ? 'py-1 px-2 text-right font-bold text-green-700'
-                        : 'py-1 px-2 text-right font-bold text-red-700';
-                }
-                if (grossMarginDisplay) {
-                    grossMarginDisplay.textContent = grossMargin.toFixed(2) + '%';
-                    grossMarginDisplay.className = grossMargin >= 0
-                        ? 'py-1 px-2 text-right text-xs font-semibold text-green-600'
-                        : 'py-1 px-2 text-right text-xs font-semibold text-red-600';
-                }
-                if (profitExpensesDisplay) profitExpensesDisplay.textContent = formatPKR(expenses);
-                if (netProfitDisplay) {
-                    netProfitDisplay.textContent = formatPKR(netProfit);
-                    netProfitDisplay.className = netProfit >= 0
-                        ? 'py-2 px-2 text-right font-bold text-emerald-900 text-base'
-                        : 'py-2 px-2 text-right font-bold text-red-900 text-base';
-                }
-                if (netMarginDisplay) {
-                    netMarginDisplay.textContent = netMargin.toFixed(2) + '%';
-                    netMarginDisplay.className = netMargin >= 0
-                        ? 'py-1 px-2 text-right text-xs font-semibold text-emerald-600'
-                        : 'py-1 px-2 text-right text-xs font-semibold text-red-600';
-                }
+                    if (cogsDisplay) cogsDisplay.textContent = formatPKR(totalCOGS);
+                    if (grossProfitDisplay) {
+                        grossProfitDisplay.textContent = formatPKR(grossProfit);
+                        grossProfitDisplay.className = grossProfit >= 0
+                            ? 'py-1 px-2 text-right font-bold text-green-700'
+                            : 'py-1 px-2 text-right font-bold text-red-700';
+                    }
+                    if (grossMarginDisplay) {
+                        grossMarginDisplay.textContent = grossMargin.toFixed(2) + '%';
+                        grossMarginDisplay.className = grossMargin >= 0
+                            ? 'py-1 px-2 text-right text-xs font-semibold text-green-600'
+                            : 'py-1 px-2 text-right text-xs font-semibold text-red-600';
+                    }
+                    if (profitExpensesDisplay) profitExpensesDisplay.textContent = formatPKR(expenses);
+                    if (netProfitDisplay) {
+                        netProfitDisplay.textContent = formatPKR(netProfit);
+                        netProfitDisplay.className = netProfit >= 0
+                            ? 'py-2 px-2 text-right font-bold text-emerald-900 text-base'
+                            : 'py-2 px-2 text-right font-bold text-red-900 text-base';
+                    }
+                    if (netMarginDisplay) {
+                        netMarginDisplay.textContent = netMargin.toFixed(2) + '%';
+                        netMarginDisplay.className = netMargin >= 0
+                            ? 'py-1 px-2 text-right text-xs font-semibold text-emerald-600'
+                            : 'py-1 px-2 text-right text-xs font-semibold text-red-600';
+                    }
 
-                // Color code short/excess in the old input field
-                const shortExcessEl = document.getElementById('summary_short_excess');
-                if (shortExcessEl) {
-                    if (Math.abs(shortExcess) < 0.01) {
-                        shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-green-100 border-green-300 rounded-md text-sm px-2 py-1';
-                    } else if (shortExcess > 0) {
-                        shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-red-100 border-red-300 rounded-md text-sm px-2 py-1 text-red-700';
-                    } else {
-                        shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-blue-100 border-blue-300 rounded-md text-sm px-2 py-1 text-blue-700';
+                    // Color code short/excess in the old input field
+                    const shortExcessEl = document.getElementById('summary_short_excess');
+                    if (shortExcessEl) {
+                        if (Math.abs(shortExcess) < 0.01) {
+                            shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-green-100 border-green-300 rounded-md text-sm px-2 py-1';
+                        } else if (shortExcess > 0) {
+                            shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-red-100 border-red-300 rounded-md text-sm px-2 py-1 text-red-700';
+                        } else {
+                            shortExcessEl.className = 'mt-1 block w-full text-right font-bold bg-blue-100 border-blue-300 rounded-md text-sm px-2 py-1 text-blue-700';
+                        }
                     }
                 }
-            }
 
-            // Expenses Detail calculations - Now handled by Alpine.js expenseManager
-            // This function is kept for backward compatibility but no longer directly used
-            function updateExpensesTotal() {
-                // Alpine.js now manages expenses dynamically
-                // This function can be called but won't affect the new dynamic expense system
-                if (typeof updateSalesSummary === 'function') {
-                    updateSalesSummary();
+                // Expenses Detail calculations - Now handled by Alpine.js expenseManager
+                // This function is kept for backward compatibility but no longer directly used
+                function updateExpensesTotal() {
+                    // Alpine.js now manages expenses dynamically
+                    // This function can be called but won't affect the new dynamic expense system
+                    if (typeof updateSalesSummary === 'function') {
+                        updateSalesSummary();
+                    }
                 }
-            }
 
 
-            // Helper function to clear settlement form
-            function clearSettlementForm() {
-                document.getElementById('settlementItemsBody').innerHTML = '';
-                document.getElementById('settlementTableContainer').style.display = 'none';
-                document.getElementById('settlementHelpText').style.display = 'none';
-                document.getElementById('noItemsMessage').style.display = 'block';
-                document.getElementById('noItemsMessage').innerHTML = 'Select a Goods Issue to load product details';
-                document.getElementById('expenseAndSalesSummarySection').style.display = 'none';
-                const salesSummarySection = document.getElementById('salesSummarySection');
-                if (salesSummarySection) salesSummarySection.style.display = 'none';
-            }
+                // Helper function to clear settlement form
+                function clearSettlementForm() {
+                    document.getElementById('settlementItemsBody').innerHTML = '';
+                    document.getElementById('settlementTableContainer').style.display = 'none';
+                    document.getElementById('settlementHelpText').style.display = 'none';
+                    document.getElementById('noItemsMessage').style.display = 'block';
+                    document.getElementById('noItemsMessage').innerHTML = 'Select a Goods Issue to load product details';
+                    document.getElementById('expenseAndSalesSummarySection').style.display = 'none';
+                    const salesSummarySection = document.getElementById('salesSummarySection');
+                    if (salesSummarySection) salesSummarySection.style.display = 'none';
+                }
 
-            // Cash Detail denomination breakdown
-            function updateCashTotal() {
-                const denom5000 = (parseFloat(document.getElementById('denom_5000').value) || 0) * 5000;
-                const denom1000 = (parseFloat(document.getElementById('denom_1000').value) || 0) * 1000;
-                const denom500 = (parseFloat(document.getElementById('denom_500').value) || 0) * 500;
-                const denom100 = (parseFloat(document.getElementById('denom_100').value) || 0) * 100;
-                const denom50 = (parseFloat(document.getElementById('denom_50').value) || 0) * 50;
-                const denom20 = (parseFloat(document.getElementById('denom_20').value) || 0) * 20;
-                const denom10 = (parseFloat(document.getElementById('denom_10').value) || 0) * 10;
-                const coins = parseFloat(document.getElementById('denom_coins').value) || 0;
-                const bankTransferTotal = parseFloat(document.getElementById('total_bank_transfers')?.value) || 0;
-                const chequesTotal = parseFloat(document.getElementById('total_cheques')?.value) || 0;
+                // Cash Detail denomination breakdown
+                function updateCashTotal() {
+                    const denom5000 = (parseFloat(document.getElementById('denom_5000').value) || 0) * 5000;
+                    const denom1000 = (parseFloat(document.getElementById('denom_1000').value) || 0) * 1000;
+                    const denom500 = (parseFloat(document.getElementById('denom_500').value) || 0) * 500;
+                    const denom100 = (parseFloat(document.getElementById('denom_100').value) || 0) * 100;
+                    const denom50 = (parseFloat(document.getElementById('denom_50').value) || 0) * 50;
+                    const denom20 = (parseFloat(document.getElementById('denom_20').value) || 0) * 20;
+                    const denom10 = (parseFloat(document.getElementById('denom_10').value) || 0) * 10;
+                    const coins = parseFloat(document.getElementById('denom_coins').value) || 0;
+                    const bankTransferTotal = parseFloat(document.getElementById('total_bank_transfers')?.value) || 0;
+                    const chequesTotal = parseFloat(document.getElementById('total_cheques')?.value) || 0;
 
-                // Update individual denomination totals
-                document.getElementById('denom_5000_total').textContent = '₨ ' + denom5000.toLocaleString('en-PK');
-                document.getElementById('denom_1000_total').textContent = '₨ ' + denom1000.toLocaleString('en-PK');
-                document.getElementById('denom_500_total').textContent = '₨ ' + denom500.toLocaleString('en-PK');
-                document.getElementById('denom_100_total').textContent = '₨ ' + denom100.toLocaleString('en-PK');
-                document.getElementById('denom_50_total').textContent = '₨ ' + denom50.toLocaleString('en-PK');
-                document.getElementById('denom_20_total').textContent = '₨ ' + denom20.toLocaleString('en-PK');
-                document.getElementById('denom_10_total').textContent = '₨ ' + denom10.toLocaleString('en-PK');
+                    // Update individual denomination totals
+                    document.getElementById('denom_5000_total').textContent = '₨ ' + denom5000.toLocaleString('en-PK');
+                    document.getElementById('denom_1000_total').textContent = '₨ ' + denom1000.toLocaleString('en-PK');
+                    document.getElementById('denom_500_total').textContent = '₨ ' + denom500.toLocaleString('en-PK');
+                    document.getElementById('denom_100_total').textContent = '₨ ' + denom100.toLocaleString('en-PK');
+                    document.getElementById('denom_50_total').textContent = '₨ ' + denom50.toLocaleString('en-PK');
+                    document.getElementById('denom_20_total').textContent = '₨ ' + denom20.toLocaleString('en-PK');
+                    document.getElementById('denom_10_total').textContent = '₨ ' + denom10.toLocaleString('en-PK');
 
-                const physicalCashTotal = denom5000 + denom1000 + denom500 + denom100 + denom50 + denom20 + denom10 + coins;
-                const totalCash = physicalCashTotal;
+                    const physicalCashTotal = denom5000 + denom1000 + denom500 + denom100 + denom50 + denom20 + denom10 + coins;
+                    const totalCash = physicalCashTotal;
 
-                // Update physical cash display
-                document.getElementById('totalCashDisplay').textContent = '₨ ' + physicalCashTotal.toLocaleString('en-PK', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2
-                });
-
-                // Update grand total cash display
-                const grandTotalDisplay = document.getElementById('grandTotalCashDisplay');
-                if (grandTotalDisplay) {
-                    grandTotalDisplay.textContent = '₨ ' + totalCash.toLocaleString('en-PK', {
+                    // Update physical cash display
+                    document.getElementById('totalCashDisplay').textContent = '₨ ' + physicalCashTotal.toLocaleString('en-PK', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
                     });
+
+                    // Update grand total cash display
+                    const grandTotalDisplay = document.getElementById('grandTotalCashDisplay');
+                    if (grandTotalDisplay) {
+                        grandTotalDisplay.textContent = '₨ ' + totalCash.toLocaleString('en-PK', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    }
+
+                    // Update cash received in sales summary
+                    document.getElementById('summary_cash_received').value = totalCash.toFixed(2);
+                    updateSalesSummary();
                 }
 
-                // Update cash received in sales summary
-                document.getElementById('summary_cash_received').value = totalCash.toFixed(2);
-                updateSalesSummary();
-            }
+                // Handle Goods Issue selection with AJAX data loading
+                // Use Select2 specific event instead of standard change
+                $('#goods_issue_id').on('select2:select', function (e) {
+                    const goodsIssueId = e.params.data.id;
 
-            // Handle Goods Issue selection with AJAX data loading
-            // Use Select2 specific event instead of standard change
-            $('#goods_issue_id').on('select2:select', function (e) {
-                const goodsIssueId = e.params.data.id;
+                    if (!goodsIssueId) {
+                        clearSettlementForm();
+                        return;
+                    }
 
-                if (!goodsIssueId) {
-                    clearSettlementForm();
-                    return;
-                }
+                    // Show loading state
+                    document.getElementById('noItemsMessage').innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner fa-spin"></i> Loading goods issue data...</span>';
+                    document.getElementById('noItemsMessage').style.display = 'block';
 
-                // Show loading state
-                document.getElementById('noItemsMessage').innerHTML = '<span class="text-blue-600"><i class="fas fa-spinner fa-spin"></i> Loading goods issue data...</span>';
-                document.getElementById('noItemsMessage').style.display = 'block';
+                    // Fetch goods issue items via AJAX
+                    const apiUrl = `{{ url('api/sales-settlements/goods-issues') }}/${goodsIssueId}/items`;
 
-                // Fetch goods issue items via AJAX
-                const apiUrl = `{{ url('api/sales-settlements/goods-issues') }}/${goodsIssueId}/items`;
+                    fetch(apiUrl)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            const items = data.items || [];
 
-                fetch(apiUrl)
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        const items = data.items || [];
-
-                        // Load customers for this employee
-                        if (data.employee_id) {
-                            loadCustomersForEmployee(data.employee_id);
-                        }
-
-                        const settlementItemsBody = document.getElementById('settlementItemsBody');
-                        settlementItemsBody.innerHTML = '';
-
-                        let grandTotal = 0;
-
-                        items.forEach((item, index) => {
-                            const batchBreakdown = item.batch_breakdown || [];
-                            const itemTotal = item.calculated_total || item.total_value;
-                            grandTotal += parseFloat(itemTotal);
-
-                            // Calculate weighted average selling price from batch breakdown
-                            let avgSellingPrice = 0;
-                            if (batchBreakdown.length > 0) {
-                                const totalQty = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.quantity), 0);
-                                const totalValue = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.value), 0);
-                                avgSellingPrice = totalQty > 0 ? (totalValue / totalQty) : parseFloat(item.unit_cost);
-                            } else {
-                                avgSellingPrice = parseFloat(item.unit_cost);
+                            // Load customers for this employee
+                            if (data.employee_id) {
+                                loadCustomersForEmployee(data.employee_id);
                             }
 
+                            const settlementItemsBody = document.getElementById('settlementItemsBody');
+                            settlementItemsBody.innerHTML = '';
 
-                            // Container div for product-level hidden fields (will be placed outside the table)
-                            let hiddenFieldsContainer = document.createElement('div');
-                            hiddenFieldsContainer.className = 'hidden-fields-container';
-                            hiddenFieldsContainer.innerHTML = `
-                                                                                                                                                                                <input type="hidden" name="items[${index}][goods_issue_item_id]" value="${item.id}">
-                                                                                                                                                                                <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
-                                                                                                                                                                                <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
-                                                                                                                                                                                <input type="hidden" name="items[${index}][bf_quantity]" value="${item.bf_quantity || 0}">
-                                                                                                                                                                                <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
-                                                                                                                                                                                <input type="hidden" name="items[${index}][selling_price]" value="${avgSellingPrice}">
-                                                                                                                                                                                <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="0">
-                                                                                                                                                                                <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="0">
-                                                                                                                                                                                <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="0">
-                                                                                                                                                                            `;
+                            let grandTotal = 0;
 
-                            // Get B/F quantity for this item (from van stock)
-                            const itemBfQuantity = parseFloat(item.bf_quantity) || 0;
+                            items.forEach((item, index) => {
+                                const batchBreakdown = item.batch_breakdown || [];
+                                const itemTotal = item.calculated_total || item.total_value;
+                                grandTotal += parseFloat(itemTotal);
 
-                            // Settlement rows (one per batch)
-                            if (batchBreakdown.length > 0) {
-                                batchBreakdown.forEach((batch, batchIdx) => {
-                                    const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
-                                    // For B/F, distribute proportionally across batches or show on first batch only
-                                    const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
-                                    const savedBatch = savedBatchQuantities[batch.stock_batch_id] || {};
-                                    const savedSold = Math.round(parseFloat(savedBatch.sold) || 0);
-                                    const savedReturned = Math.round(parseFloat(savedBatch.returned) || 0);
-                                    const savedShortage = Math.round(parseFloat(savedBatch.shortage) || 0);
+                                // Calculate weighted average selling price from batch breakdown
+                                let avgSellingPrice = 0;
+                                if (batchBreakdown.length > 0) {
+                                    const totalQty = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.quantity), 0);
+                                    const totalValue = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.value), 0);
+                                    avgSellingPrice = totalQty > 0 ? (totalValue / totalQty) : parseFloat(item.unit_cost);
+                                } else {
+                                    avgSellingPrice = parseFloat(item.unit_cost);
+                                }
 
-                                    const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
-                                    const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
-                                    const uomSymbol = (item.uom && item.uom.symbol) ? item.uom.symbol : 'N/A';
 
-                                    const settlementRow = `
-                                                                                                                                                                                        <tr class="border-b border-gray-200 hover:bg-gray-50">
-                                                                                                                                                                                            <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
-                                                                                                                                                                                                <div class="font-semibold text-gray-900 break-words">${productName}</div>
-                                                                                                                                                                                                <div class="text-xs text-gray-500 break-words">
-                                                                                                                                                                                                    ${productCode}<br>Batch: ${batch.batch_code}
-                                                                                                                                                                                                    ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
-                                                                                                                                                                                                </div>
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
-                                                                                                                                                                                                <div class="text-xs text-gray-600">
-                                                                                                                                                                                                    ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
-                                                                                                                                                                                                </div>
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-1 text-right">
-                                                                                                                                                                                                <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
-                                                                                                                                                                                                <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-1 text-right">
-                                                                                                                                                                                                <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
-                                                                                                                                                                                                <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
-                                                                                                                                                                                            <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', { minimumFractionDigits: 2 })}</td>
-                                                                                                                                                                                            <td class="py-1 px-1 text-right">
-                                                                                                                                                                                                <input type="number"
-                                                                                                                                                                                                    name="items[${index}][batches][${batchIdx}][quantity_sold]"
-                                                                                                                                                                                                    class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                                                                                                                                                                                    data-item-index="${index}"
-                                                                                                                                                                                                    data-batch-index="${batchIdx}"
-                                                                                                                                                                                                    data-stock-batch-id="${batch.stock_batch_id}"
-                                                                                                                                                                                                    data-type="sold"
-                                                                                                                                                                                                    data-bf-quantity="${batchBfQuantity}"
-                                                                                                                                                                                                    min="0"
-                                                                                                                                                                                                    step="1"
-                                                                                                                                                                                                    value="${savedSold}"
-                                                                                                                                                                                                    oninput="calculateBatchBalance(${index}, ${batchIdx}, 'sold')">
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-1 text-right">
-                                                                                                                                                                                                <input type="number"
-                                                                                                                                                                                                    name="items[${index}][batches][${batchIdx}][quantity_returned]"
-                                                                                                                                                                                                    class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                                                                                                                                                                                    data-item-index="${index}"
-                                                                                                                                                                                                    data-batch-index="${batchIdx}"
-                                                                                                                                                                                                    data-stock-batch-id="${batch.stock_batch_id}"
-                                                                                                                                                                                                    data-type="returned"
-                                                                                                                                                                                                    min="0"
-                                                                                                                                                                                                    step="1"
-                                                                                                                                                                                                    value="${savedReturned}"
-                                                                                                                                                                                                    oninput="calculateBatchBalance(${index}, ${batchIdx}, 'returned')">
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-1 text-right">
-                                                                                                                                                                                                <input type="number"
-                                                                                                                                                                                                    name="items[${index}][batches][${batchIdx}][quantity_shortage]"
-                                                                                                                                                                                                    class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
-                                                                                                                                                                                                    data-item-index="${index}"
-                                                                                                                                                                                                    data-batch-index="${batchIdx}"
-                                                                                                                                                                                                    data-stock-batch-id="${batch.stock_batch_id}"
-                                                                                                                                                                                                    data-type="shortage"
-                                                                                                                                                                                                    min="0"
-                                                                                                                                                                                                    step="1"
-                                                                                                                                                                                                    value="${savedShortage}"
-                                                                                                                                                                                                    oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-1 text-right">
-                                                                                                                                                                                                <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${(parseFloat(batch.quantity) + batchBfQuantity) - savedSold - savedReturned - savedShortage}</span>
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                        </tr>
-                                                                                                                                                                                    `;
-                                    settlementItemsBody.innerHTML += settlementRow;
+                                // Container div for product-level hidden fields (will be placed outside the table)
+                                let hiddenFieldsContainer = document.createElement('div');
+                                hiddenFieldsContainer.className = 'hidden-fields-container';
+                                hiddenFieldsContainer.innerHTML = `
+                                                                                                                                                                                    <input type="hidden" name="items[${index}][goods_issue_item_id]" value="${item.id}">
+                                                                                                                                                                                    <input type="hidden" name="items[${index}][product_id]" value="${item.product_id}">
+                                                                                                                                                                                    <input type="hidden" name="items[${index}][quantity_issued]" value="${item.quantity_issued}">
+                                                                                                                                                                                    <input type="hidden" name="items[${index}][bf_quantity]" value="${item.bf_quantity || 0}">
+                                                                                                                                                                                    <input type="hidden" name="items[${index}][unit_cost]" value="${item.unit_cost}">
+                                                                                                                                                                                    <input type="hidden" name="items[${index}][selling_price]" value="${avgSellingPrice}">
+                                                                                                                                                                                    <input type="hidden" name="items[${index}][quantity_sold]" class="item-${index}-qty-sold" value="0">
+                                                                                                                                                                                    <input type="hidden" name="items[${index}][quantity_returned]" class="item-${index}-qty-returned" value="0">
+                                                                                                                                                                                    <input type="hidden" name="items[${index}][quantity_shortage]" class="item-${index}-qty-shortage" value="0">
+                                                                                                                                                                                `;
 
-                                    // Create batch-level hidden fields container (outside table)
-                                    const batchHiddenFields = document.createElement('div');
-                                    batchHiddenFields.className = 'batch-hidden-fields';
-                                    batchHiddenFields.innerHTML = `
-                                                                                                                                                                                        <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
-                                                                                                                                                                                        <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
-                                                                                                                                                                                        <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
-                                                                                                                                                                                        <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
-                                                                                                                                                                                        <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
-                                                                                                                                                                                        <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
-                                                                                                                                                                                    `;
-                                    document.getElementById('settlementForm').appendChild(batchHiddenFields);
+                                // Get B/F quantity for this item (from van stock)
+                                const itemBfQuantity = parseFloat(item.bf_quantity) || 0;
 
-                                    // Add product-level hidden fields only once (on first batch)
-                                    if (batchIdx === 0) {
-                                        // Append hidden fields container to the form (outside the table)
-                                        document.getElementById('settlementForm').appendChild(hiddenFieldsContainer);
-                                    }
+                                // Settlement rows (one per batch)
+                                if (batchBreakdown.length > 0) {
+                                    batchBreakdown.forEach((batch, batchIdx) => {
+                                        const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
+                                        // For B/F, distribute proportionally across batches or show on first batch only
+                                        const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
+                                        const savedBatch = savedBatchQuantities[batch.stock_batch_id] || {};
+                                        const savedSold = Math.round(parseFloat(savedBatch.sold) || 0);
+                                        const savedReturned = Math.round(parseFloat(savedBatch.returned) || 0);
+                                        const savedShortage = Math.round(parseFloat(savedBatch.shortage) || 0);
+
+                                        const productName = (item.product && item.product.name) ? item.product.name : 'Unknown Product';
+                                        const productCode = (item.product && item.product.product_code) ? item.product.product_code : 'N/A';
+                                        const uomSymbol = (item.uom && item.uom.symbol) ? item.uom.symbol : 'N/A';
+
+                                        const settlementRow = `
+                                                                                                                                                                                            <tr class="border-b border-gray-200 hover:bg-gray-50">
+                                                                                                                                                                                                <td class="py-1 px-1" style="max-width: 250px; min-width: 180px;">
+                                                                                                                                                                                                    <div class="font-semibold text-gray-900 break-words">${productName}</div>
+                                                                                                                                                                                                    <div class="text-xs text-gray-500 break-words">
+                                                                                                                                                                                                        ${productCode}<br>Batch: ${batch.batch_code}
+                                                                                                                                                                                                        ${batch.is_promotional ? '<span class="ml-1 px-1.5 py-0.5 bg-purple-100 text-purple-800 text-xs font-bold rounded">PROMO</span>' : ''}
+                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
+                                                                                                                                                                                                    <div class="text-xs text-gray-600">
+                                                                                                                                                                                                        ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
+                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-1 text-right">
+                                                                                                                                                                                                    <span id="bf-in-${index}-${batchIdx}" class="font-semibold text-purple-600">${batchBfQuantity > 0 ? batchBfQuantity : '-'}</span>
+                                                                                                                                                                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][bf_quantity]" value="${batchBfQuantity}">
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-1 text-right">
+                                                                                                                                                                                                    <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
+                                                                                                                                                                                                    <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                                                                                                                                                                                <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', { minimumFractionDigits: 2 })}</td>
+                                                                                                                                                                                                <td class="py-1 px-1 text-right">
+                                                                                                                                                                                                    <input type="number"
+                                                                                                                                                                                                        name="items[${index}][batches][${batchIdx}][quantity_sold]"
+                                                                                                                                                                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                                                                                                                                                                        data-item-index="${index}"
+                                                                                                                                                                                                        data-batch-index="${batchIdx}"
+                                                                                                                                                                                                        data-stock-batch-id="${batch.stock_batch_id}"
+                                                                                                                                                                                                        data-type="sold"
+                                                                                                                                                                                                        data-bf-quantity="${batchBfQuantity}"
+                                                                                                                                                                                                        min="0"
+                                                                                                                                                                                                        step="1"
+                                                                                                                                                                                                        value="${savedSold}"
+                                                                                                                                                                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'sold')">
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-1 text-right">
+                                                                                                                                                                                                    <input type="number"
+                                                                                                                                                                                                        name="items[${index}][batches][${batchIdx}][quantity_returned]"
+                                                                                                                                                                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                                                                                                                                                                        data-item-index="${index}"
+                                                                                                                                                                                                        data-batch-index="${batchIdx}"
+                                                                                                                                                                                                        data-stock-batch-id="${batch.stock_batch_id}"
+                                                                                                                                                                                                        data-type="returned"
+                                                                                                                                                                                                        min="0"
+                                                                                                                                                                                                        step="1"
+                                                                                                                                                                                                        value="${savedReturned}"
+                                                                                                                                                                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'returned')">
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-1 text-right">
+                                                                                                                                                                                                    <input type="number"
+                                                                                                                                                                                                        name="items[${index}][batches][${batchIdx}][quantity_shortage]"
+                                                                                                                                                                                                        class="batch-input w-full text-right border-gray-300 rounded text-sm px-2 py-1"
+                                                                                                                                                                                                        data-item-index="${index}"
+                                                                                                                                                                                                        data-batch-index="${batchIdx}"
+                                                                                                                                                                                                        data-stock-batch-id="${batch.stock_batch_id}"
+                                                                                                                                                                                                        data-type="shortage"
+                                                                                                                                                                                                        min="0"
+                                                                                                                                                                                                        step="1"
+                                                                                                                                                                                                        value="${savedShortage}"
+                                                                                                                                                                                                        oninput="calculateBatchBalance(${index}, ${batchIdx}, 'shortage')">
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-1 text-right">
+                                                                                                                                                                                                    <span id="bf-out-${index}-${batchIdx}" class="font-bold text-orange-600">${(parseFloat(batch.quantity) + batchBfQuantity) - savedSold - savedReturned - savedShortage}</span>
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                            </tr>
+                                                                                                                                                                                        `;
+                                        settlementItemsBody.innerHTML += settlementRow;
+
+                                        // Create batch-level hidden fields container (outside table)
+                                        const batchHiddenFields = document.createElement('div');
+                                        batchHiddenFields.className = 'batch-hidden-fields';
+                                        batchHiddenFields.innerHTML = `
+                                                                                                                                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][stock_batch_id]" value="${batch.stock_batch_id}">
+                                                                                                                                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
+                                                                                                                                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
+                                                                                                                                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
+                                                                                                                                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
+                                                                                                                                                                                            <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
+                                                                                                                                                                                        `;
+                                        document.getElementById('settlementForm').appendChild(batchHiddenFields);
+
+                                        // Add product-level hidden fields only once (on first batch)
+                                        if (batchIdx === 0) {
+                                            // Append hidden fields container to the form (outside the table)
+                                            document.getElementById('settlementForm').appendChild(hiddenFieldsContainer);
+                                        }
+                                    });
+                                }
+                            });
+
+                            // Show relevant sections
+                            document.getElementById('noItemsMessage').style.display = 'none';
+                            document.getElementById('settlementTableContainer').style.display = 'block';
+                            document.getElementById('settlementHelpText').style.display = 'block';
+                            document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
+                            const salesSummarySection = document.getElementById('salesSummarySection');
+                            if (salesSummarySection) salesSummarySection.style.display = 'block';
+
+                            applySavedBatchData();
+                            updateSalesSummary();
+                        })
+                        .catch(() => {
+                            document.getElementById('noItemsMessage').innerHTML = '<span class="text-red-600">Error loading goods issue data. Please try again.</span>';
+                            document.getElementById('noItemsMessage').style.display = 'block';
+                            document.getElementById('settlementTableContainer').style.display = 'none';
+                        });
+                });
+
+                // Handle clearing the select2 dropdown
+                $('#goods_issue_id').on('select2:clear', function () {
+                    clearSettlementForm();
+                    // Clear customer lists in modals
+                    loadCustomersForEmployee(null);
+                });
+
+                // Global variable to store current employee ID for settlement
+                window.currentSettlementEmployeeId = null;
+
+                // Function to load customers for a specific employee
+                function loadCustomersForEmployee(employeeId) {
+                    // Store globally for modals to access
+                    window.currentSettlementEmployeeId = employeeId;
+
+                    // Also store in hidden input for reliable access
+                    const hiddenInput = document.getElementById('current_settlement_employee_id');
+                    if (hiddenInput) {
+                        hiddenInput.value = employeeId || '';
+                    }
+
+                    if (!employeeId) {
+                        // Clear all customer dropdowns
+                        updateModalCustomers([]);
+                        return;
+                    }
+
+                    // Fetch customers for this employee via API (new endpoint)
+                    fetch(`{{ url('api/v1/customer-employee-accounts/by-employee') }}/${employeeId}`)
+                        .then(response => response.json())
+                        .then(customers => {
+                            // Pass both customers AND employeeId in the same event
+                            updateModalCustomers(customers, employeeId);
+                        })
+                        .catch(() => {
+                            updateModalCustomers([]);
+                        });
+                }
+
+                // Function to update customer lists in all modals
+                function updateModalCustomers(customers, employeeId = null) {
+                    // Update Alpine.js components with new customer data AND employeeId
+                    window.dispatchEvent(new CustomEvent('update-modal-customers', {
+                        detail: { customers: customers, employeeId: employeeId }
+                    }));
+                }
+
+                // Alpine.js component for Credit Sales Display
+                function creditSalesDisplay() {
+                    return {
+                        entries: [],
+
+                        openModal() {
+                            window.dispatchEvent(new CustomEvent('open-credit-sales-modal'));
+                        },
+
+                        updateDisplay() {
+                            const tbody = document.getElementById('creditSalesTableBody');
+                            if (!tbody) return;
+
+                            // Get entries from hidden input
+                            const entriesInput = document.getElementById('credit_sales');
+
+                            if (entriesInput && entriesInput.value) {
+                                try {
+                                    this.entries = JSON.parse(entriesInput.value);
+                                } catch (e) {
+                                    this.entries = [];
+                                }
+                            } else {
+                                this.entries = [];
+                            }
+
+                            // Clear and rebuild table
+                            tbody.innerHTML = '';
+
+                            if (this.entries.length === 0) {
+                                tbody.innerHTML = `
+                                                                                                                                                                                            <tr>
+                                                                                                                                                                                                <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                                                                                                                    No credit sales entries added yet
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                            </tr>
+                                                                                                                                                                                        `;
+                            } else {
+                                this.entries.forEach((entry, index) => {
+                                    const row = document.createElement('tr');
+                                    row.className = 'border-b border-gray-200';
+                                    row.innerHTML = `
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs">
+                                                                                                                                                                                                    <div class="font-semibold text-gray-800">${entry.customer_name}</div>
+                                                                                                                                                                                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-right text-xs font-semibold text-orange-700">
+                                                                                                                                                                                                    ₨ ${parseFloat(entry.sale_amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
+                                                                                                                                                                                                    ₨ ${parseFloat(entry.new_balance).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                            `;
+                                    tbody.appendChild(row);
                                 });
                             }
-                        });
+                        },
 
-                        // Show relevant sections
-                        document.getElementById('noItemsMessage').style.display = 'none';
-                        document.getElementById('settlementTableContainer').style.display = 'block';
-                        document.getElementById('settlementHelpText').style.display = 'block';
-                        document.getElementById('expenseAndSalesSummarySection').style.display = 'block';
-                        const salesSummarySection = document.getElementById('salesSummarySection');
-                        if (salesSummarySection) salesSummarySection.style.display = 'block';
-
-                        applySavedBatchData();
-                        updateSalesSummary();
-                    })
-                    .catch(() => {
-                        document.getElementById('noItemsMessage').innerHTML = '<span class="text-red-600">Error loading goods issue data. Please try again.</span>';
-                        document.getElementById('noItemsMessage').style.display = 'block';
-                        document.getElementById('settlementTableContainer').style.display = 'none';
-                    });
-            });
-
-            // Handle clearing the select2 dropdown
-            $('#goods_issue_id').on('select2:clear', function () {
-                clearSettlementForm();
-                // Clear customer lists in modals
-                loadCustomersForEmployee(null);
-            });
-
-            // Global variable to store current employee ID for settlement
-            window.currentSettlementEmployeeId = null;
-
-            // Function to load customers for a specific employee
-            function loadCustomersForEmployee(employeeId) {
-                // Store globally for modals to access
-                window.currentSettlementEmployeeId = employeeId;
-
-                // Also store in hidden input for reliable access
-                const hiddenInput = document.getElementById('current_settlement_employee_id');
-                if (hiddenInput) {
-                    hiddenInput.value = employeeId || '';
-                }
-
-                if (!employeeId) {
-                    // Clear all customer dropdowns
-                    updateModalCustomers([]);
-                    return;
-                }
-
-                // Fetch customers for this employee via API (new endpoint)
-                fetch(`{{ url('api/v1/customer-employee-accounts/by-employee') }}/${employeeId}`)
-                    .then(response => response.json())
-                    .then(customers => {
-                        // Pass both customers AND employeeId in the same event
-                        updateModalCustomers(customers, employeeId);
-                    })
-                    .catch(() => {
-                        updateModalCustomers([]);
-                    });
-            }
-
-            // Function to update customer lists in all modals
-            function updateModalCustomers(customers, employeeId = null) {
-                // Update Alpine.js components with new customer data AND employeeId
-                window.dispatchEvent(new CustomEvent('update-modal-customers', {
-                    detail: { customers: customers, employeeId: employeeId }
-                }));
-            }
-
-            // Alpine.js component for Credit Sales Display
-            function creditSalesDisplay() {
-                return {
-                    entries: [],
-
-                    openModal() {
-                        window.dispatchEvent(new CustomEvent('open-credit-sales-modal'));
-                    },
-
-                    updateDisplay() {
-                        const tbody = document.getElementById('creditSalesTableBody');
-                        if (!tbody) return;
-
-                        // Get entries from hidden input
-                        const entriesInput = document.getElementById('credit_sales');
-
-                        if (entriesInput && entriesInput.value) {
-                            try {
-                                this.entries = JSON.parse(entriesInput.value);
-                            } catch (e) {
-                                this.entries = [];
-                            }
-                        } else {
-                            this.entries = [];
-                        }
-
-                        // Clear and rebuild table
-                        tbody.innerHTML = '';
-
-                        if (this.entries.length === 0) {
-                            tbody.innerHTML = `
-                                                                                                                                                                                        <tr>
-                                                                                                                                                                                            <td colspan="2" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                                                                                                                                                                                No credit sales entries added yet
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                        </tr>
-                                                                                                                                                                                    `;
-                        } else {
-                            this.entries.forEach((entry, index) => {
-                                const row = document.createElement('tr');
-                                row.className = 'border-b border-gray-200';
-                                row.innerHTML = `
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs">
-                                                                                                                                                                                                <div class="font-semibold text-gray-800">${entry.customer_name}</div>
-                                                                                                                                                                                                ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-right text-xs font-semibold text-orange-700">
-                                                                                                                                                                                                ₨ ${parseFloat(entry.sale_amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
-                                                                                                                                                                                                ₨ ${parseFloat(entry.new_balance).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                        `;
-                                tbody.appendChild(row);
+                        init() {
+                            // Listen for updates from the modal
+                            window.addEventListener('credit-sales-updated', () => {
+                                this.updateDisplay();
                             });
-                        }
-                    },
 
-                    init() {
-                        // Listen for updates from the modal
-                        window.addEventListener('credit-sales-updated', () => {
+                            // Initial load
                             this.updateDisplay();
-                        });
-
-                        // Initial load
-                        this.updateDisplay();
+                        }
                     }
                 }
-            }
 
-            // Alpine.js component for Recoveries Display
-            function recoveriesDisplay() {
-                return {
-                    entries: [],
+                // Alpine.js component for Recoveries Display
+                function recoveriesDisplay() {
+                    return {
+                        entries: [],
 
-                    openModal() {
-                        window.dispatchEvent(new CustomEvent('open-recoveries-modal'));
-                    },
+                        openModal() {
+                            window.dispatchEvent(new CustomEvent('open-recoveries-modal'));
+                        },
 
-                    updateDisplay() {
-                        const tbody = document.getElementById('recoveriesTableBody');
-                        if (!tbody) return;
+                        updateDisplay() {
+                            const tbody = document.getElementById('recoveriesTableBody');
+                            if (!tbody) return;
 
-                        // Get entries from hidden input
-                        const entriesInput = document.getElementById('recoveries_entries');
+                            // Get entries from hidden input
+                            const entriesInput = document.getElementById('recoveries_entries');
 
-                        if (entriesInput && entriesInput.value) {
-                            try {
-                                this.entries = JSON.parse(entriesInput.value);
-                            } catch (e) {
+                            if (entriesInput && entriesInput.value) {
+                                try {
+                                    this.entries = JSON.parse(entriesInput.value);
+                                } catch (e) {
+                                    this.entries = [];
+                                }
+                            } else {
                                 this.entries = [];
                             }
-                        } else {
-                            this.entries = [];
-                        }
 
-                        // Clear and rebuild table
-                        tbody.innerHTML = '';
+                            // Clear and rebuild table
+                            tbody.innerHTML = '';
 
-                        if (this.entries.length === 0) {
-                            tbody.innerHTML = `
-                                                                                                                                                                                        <tr>
-                                                                                                                                                                                            <td colspan="4" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                                                                                                                                                                                No recovery entries added yet
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                        </tr>
-                                                                                                                                                                                    `;
-                        } else {
-                            this.entries.forEach((entry, index) => {
-                                const row = document.createElement('tr');
-                                row.className = 'border-b border-gray-200';
-                                row.innerHTML = `
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs">
-                                                                                                                                                                                                <div class="font-semibold text-gray-800">${entry.customer_name}</div>
-                                                                                                                                                                                                ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-center text-xs">
-                                                                                                                                                                                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${entry.payment_method === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
-                                                                                                                                                                                                    ${entry.payment_method === 'cash' ? 'Cash' : 'Bank'}
-                                                                                                                                                                                                </span>
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-800">${entry.payment_method === 'bank_transfer' ? (entry.bank_account_name || '—') : '—'}</td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-right text-xs font-semibold text-green-700">
-                                                                                                                                                                                                ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                                                                                                                                                                                            </td>
+                            if (this.entries.length === 0) {
+                                tbody.innerHTML = `
+                                                                                                                                                                                            <tr>
+                                                                                                                                                                                                <td colspan="4" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                                                                                                                    No recovery entries added yet
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                            </tr>
                                                                                                                                                                                         `;
-                                tbody.appendChild(row);
+                            } else {
+                                this.entries.forEach((entry, index) => {
+                                    const row = document.createElement('tr');
+                                    row.className = 'border-b border-gray-200';
+                                    row.innerHTML = `
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs">
+                                                                                                                                                                                                    <div class="font-semibold text-gray-800">${entry.customer_name}</div>
+                                                                                                                                                                                                    ${entry.notes ? `<div class="text-xs text-gray-500">${entry.notes}</div>` : ''}
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-center text-xs">
+                                                                                                                                                                                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${entry.payment_method === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}">
+                                                                                                                                                                                                        ${entry.payment_method === 'cash' ? 'Cash' : 'Bank'}
+                                                                                                                                                                                                    </span>
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-800">${entry.payment_method === 'bank_transfer' ? (entry.bank_account_name || '—') : '—'}</td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-right text-xs font-semibold text-green-700">
+                                                                                                                                                                                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                            `;
+                                    tbody.appendChild(row);
+                                });
+                            }
+                        },
+
+                        init() {
+                            // Listen for updates from the modal
+                            window.addEventListener('recoveries-updated', () => {
+                                this.updateDisplay();
                             });
-                        }
-                    },
 
-                    init() {
-                        // Listen for updates from the modal
-                        window.addEventListener('recoveries-updated', () => {
+                            // Initial load
                             this.updateDisplay();
-                        });
-
-                        // Initial load
-                        this.updateDisplay();
+                        }
                     }
                 }
-            }
 
-            // Alpine.js component for Bank Transfer Display
-            function bankTransferDisplay() {
-                return {
-                    entries: [],
+                // Alpine.js component for Bank Transfer Display
+                function bankTransferDisplay() {
+                    return {
+                        entries: [],
 
-                    openModal() {
-                        window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'));
-                    },
+                        openModal() {
+                            window.dispatchEvent(new CustomEvent('open-bank-transfer-modal'));
+                        },
 
-                    updateDisplay() {
-                        const tbody = document.getElementById('bankTransferTableBody');
-                        if (!tbody) return;
+                        updateDisplay() {
+                            const tbody = document.getElementById('bankTransferTableBody');
+                            if (!tbody) return;
 
-                        // Get entries from hidden input
-                        const entriesInput = document.getElementById('bank_transfers');
+                            // Get entries from hidden input
+                            const entriesInput = document.getElementById('bank_transfers');
 
-                        if (entriesInput && entriesInput.value) {
-                            try {
-                                this.entries = JSON.parse(entriesInput.value);
-                            } catch (e) {
+                            if (entriesInput && entriesInput.value) {
+                                try {
+                                    this.entries = JSON.parse(entriesInput.value);
+                                } catch (e) {
+                                    this.entries = [];
+                                }
+                            } else {
                                 this.entries = [];
                             }
-                        } else {
-                            this.entries = [];
-                        }
 
-                        // Clear and rebuild table
-                        tbody.innerHTML = '';
+                            // Clear and rebuild table
+                            tbody.innerHTML = '';
 
-                        if (this.entries.length === 0) {
-                            tbody.innerHTML = `
-                                                                                                                                                                                        <tr>
-                                                                                                                                                                                            <td colspan="5" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                                                                                                                                                                                No bank transfer entries added yet
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                        </tr>
-                                                                                                                                                                                    `;
-                        } else {
-                            this.entries.forEach((entry, index) => {
-                                const row = document.createElement('tr');
-                                row.className = 'border-b border-gray-200';
-                                row.innerHTML = `
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-800">${entry.customer_name || 'N/A'}</td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_account_name || 'Unknown Account'}</td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-700">${entry.reference_number || 'No ref'}</td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-600">${entry.transfer_date || 'N/A'}</td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
-                                                                                                                                                                                                ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                                                                                                                                                                                            </td>
+                            if (this.entries.length === 0) {
+                                tbody.innerHTML = `
+                                                                                                                                                                                            <tr>
+                                                                                                                                                                                                <td colspan="5" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                                                                                                                    No bank transfer entries added yet
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                            </tr>
                                                                                                                                                                                         `;
-                                tbody.appendChild(row);
-                            });
-                        }
-                    },
-
-                    init() {
-                        // Listen for updates from the modal
-                        window.addEventListener('bank-transfers-updated', () => {
-                            this.updateDisplay();
-                            if (typeof updateCashTotal === 'function') {
-                                updateCashTotal();
+                            } else {
+                                this.entries.forEach((entry, index) => {
+                                    const row = document.createElement('tr');
+                                    row.className = 'border-b border-gray-200';
+                                    row.innerHTML = `
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-800">${entry.customer_name || 'N/A'}</td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_account_name || 'Unknown Account'}</td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-700">${entry.reference_number || 'No ref'}</td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-600">${entry.transfer_date || 'N/A'}</td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-right text-xs font-semibold text-blue-700">
+                                                                                                                                                                                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                            `;
+                                    tbody.appendChild(row);
+                                });
                             }
-                        });
+                        },
 
-                        // Initial load
-                        this.updateDisplay();
+                        init() {
+                            // Listen for updates from the modal
+                            window.addEventListener('bank-transfers-updated', () => {
+                                this.updateDisplay();
+                                if (typeof updateCashTotal === 'function') {
+                                    updateCashTotal();
+                                }
+                            });
+
+                            // Initial load
+                            this.updateDisplay();
+                        }
                     }
                 }
-            }
 
-            // Alpine.js component for Cheque Payment Display
-            function chequePaymentDisplay() {
-                return {
-                    entries: [],
+                // Alpine.js component for Cheque Payment Display
+                function chequePaymentDisplay() {
+                    return {
+                        entries: [],
 
-                    openModal() {
-                        window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'));
-                    },
+                        openModal() {
+                            window.dispatchEvent(new CustomEvent('open-cheque-payment-modal'));
+                        },
 
-                    updateDisplay() {
-                        const tbody = document.getElementById('chequePaymentTableBody');
-                        if (!tbody) return;
+                        updateDisplay() {
+                            const tbody = document.getElementById('chequePaymentTableBody');
+                            if (!tbody) return;
 
-                        // Get entries from hidden input
-                        const entriesInput = document.getElementById('cheques');
+                            // Get entries from hidden input
+                            const entriesInput = document.getElementById('cheques');
 
-                        if (entriesInput && entriesInput.value) {
-                            try {
-                                this.entries = JSON.parse(entriesInput.value);
-                            } catch (e) {
+                            if (entriesInput && entriesInput.value) {
+                                try {
+                                    this.entries = JSON.parse(entriesInput.value);
+                                } catch (e) {
+                                    this.entries = [];
+                                }
+                            } else {
                                 this.entries = [];
                             }
-                        } else {
-                            this.entries = [];
-                        }
 
-                        // Clear and rebuild table
-                        tbody.innerHTML = '';
+                            // Clear and rebuild table
+                            tbody.innerHTML = '';
 
-                        if (this.entries.length === 0) {
-                            tbody.innerHTML = `
-                                                                                                                                                                                        <tr>
-                                                                                                                                                                                            <td colspan="6" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                                                                                                                                                                                No cheque payment entries added yet
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                        </tr>
-                                                                                                                                                                                    `;
-                        } else {
-                            this.entries.forEach((entry, index) => {
-                                const row = document.createElement('tr');
-                                row.className = 'border-b border-gray-200';
-                                row.innerHTML = `
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-800">${entry.customer_name || 'N/A'}</td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs">
-                                                                                                                                                                                                <div class="font-semibold text-gray-800">${entry.cheque_number || 'N/A'}</div>
-                                                                                                                                                                                                ${entry.notes ? `<div class="text-[11px] text-gray-500">${entry.notes}</div>` : ''}
-                                                                                                                                                                                            </td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_name || 'N/A'}</td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_account_name || 'N/A'}</td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-600">${entry.cheque_date || 'N/A'}</td>
-                                                                                                                                                                                            <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
-                                                                                                                                                                                                ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                                                                                                                                                                                            </td>
+                            if (this.entries.length === 0) {
+                                tbody.innerHTML = `
+                                                                                                                                                                                            <tr>
+                                                                                                                                                                                                <td colspan="6" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                                                                                                                    No cheque payment entries added yet
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                            </tr>
                                                                                                                                                                                         `;
-                                tbody.appendChild(row);
-                            });
-                        }
-                    },
-
-                    init() {
-                        // Listen for updates from the modal
-                        window.addEventListener('cheque-payments-updated', () => {
-                            this.updateDisplay();
-                            if (typeof updateCashTotal === 'function') {
-                                updateCashTotal();
+                            } else {
+                                this.entries.forEach((entry, index) => {
+                                    const row = document.createElement('tr');
+                                    row.className = 'border-b border-gray-200';
+                                    row.innerHTML = `
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-800">${entry.customer_name || 'N/A'}</td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs">
+                                                                                                                                                                                                    <div class="font-semibold text-gray-800">${entry.cheque_number || 'N/A'}</div>
+                                                                                                                                                                                                    ${entry.notes ? `<div class="text-[11px] text-gray-500">${entry.notes}</div>` : ''}
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_name || 'N/A'}</td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_account_name || 'N/A'}</td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-600">${entry.cheque_date || 'N/A'}</td>
+                                                                                                                                                                                                <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
+                                                                                                                                                                                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                                                                                                                </td>
+                                                                                                                                                                                            `;
+                                    tbody.appendChild(row);
+                                });
                             }
-                        });
+                        },
 
-                        // Initial load
-                        this.updateDisplay();
+                        init() {
+                            // Listen for updates from the modal
+                            window.addEventListener('cheque-payments-updated', () => {
+                                this.updateDisplay();
+                                if (typeof updateCashTotal === 'function') {
+                                    updateCashTotal();
+                                }
+                            });
+
+                            // Initial load
+                            this.updateDisplay();
+                        }
                     }
                 }
-            }
 
-            // Alpine.js component for Bank Slips Display
-            function bankSlipsDisplay() {
-                return {
-                    entries: [],
+                // Alpine.js component for Bank Slips Display
+                function bankSlipsDisplay() {
+                    return {
+                        entries: [],
 
-                    openModal() {
-                        window.dispatchEvent(new CustomEvent('open-bank-slips-modal'));
-                    },
+                        openModal() {
+                            window.dispatchEvent(new CustomEvent('open-bank-slips-modal'));
+                        },
 
-                    updateDisplay() {
-                        const tbody = document.getElementById('bankSlipsTableBody');
-                        if (!tbody) return;
+                        updateDisplay() {
+                            const tbody = document.getElementById('bankSlipsTableBody');
+                            if (!tbody) return;
 
-                        // Get entries from hidden input
-                        const entriesInput = document.getElementById('bank_slips');
+                            // Get entries from hidden input
+                            const entriesInput = document.getElementById('bank_slips');
 
-                        if (entriesInput && entriesInput.value) {
-                            try {
-                                this.entries = JSON.parse(entriesInput.value);
-                            } catch (e) {
+                            if (entriesInput && entriesInput.value) {
+                                try {
+                                    this.entries = JSON.parse(entriesInput.value);
+                                } catch (e) {
+                                    this.entries = [];
+                                }
+                            } else {
                                 this.entries = [];
                             }
-                        } else {
-                            this.entries = [];
-                        }
 
-                        // Clear and rebuild table
-                        tbody.innerHTML = '';
+                            // Clear and rebuild table
+                            tbody.innerHTML = '';
 
-                        if (this.entries.length === 0) {
-                            tbody.innerHTML = `
-                                                                                                                                                                                                                        <tr>
-                                                                                                                                                                                                                            <td colspan="4" class="py-2 px-2 text-center text-gray-500 text-xs italic">
-                                                                                                                                                                                                                                No bank slip entries added yet
-                                                                                                                                                                                                                            </td>
-                                                                                                                                                                                                                        </tr>
-                                                                                                                                                                                                                    `;
-                        } else {
-                            this.entries.forEach((entry, index) => {
-                                const row = document.createElement('tr');
-                                row.className = 'border-b border-gray-200';
-                                row.innerHTML = `
-                                                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_account_name || 'Unknown Account'}</td>
-                                                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-700">${entry.reference_number || 'No ref'}</td>
-                                                                                                                                                                                                                            <td class="py-1 px-2 text-xs text-gray-600">${entry.deposit_date || 'N/A'}</td>
-                                                                                                                                                                                                                            <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
-                                                                                                                                                                                                                                ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
-                                                                                                                                                                                                                            </td>
+                            if (this.entries.length === 0) {
+                                tbody.innerHTML = `
+                                                                                                                                                                                                                            <tr>
+                                                                                                                                                                                                                                <td colspan="4" class="py-2 px-2 text-center text-gray-500 text-xs italic">
+                                                                                                                                                                                                                                    No bank slip entries added yet
+                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                            </tr>
                                                                                                                                                                                                                         `;
-                                tbody.appendChild(row);
-                            });
-                        }
-                    },
-
-                    init() {
-                        // Listen for updates from the modal
-                        window.addEventListener('bank-slips-updated', () => {
-                            this.updateDisplay();
-                            if (typeof updateSalesSummary === 'function') {
-                                updateSalesSummary();
+                            } else {
+                                this.entries.forEach((entry, index) => {
+                                    const row = document.createElement('tr');
+                                    row.className = 'border-b border-gray-200';
+                                    row.innerHTML = `
+                                                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-800">${entry.bank_account_name || 'Unknown Account'}</td>
+                                                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-700">${entry.reference_number || 'No ref'}</td>
+                                                                                                                                                                                                                                <td class="py-1 px-2 text-xs text-gray-600">${entry.deposit_date || 'N/A'}</td>
+                                                                                                                                                                                                                                <td class="py-1 px-2 text-right text-xs font-semibold text-purple-700">
+                                                                                                                                                                                                                                    ₨ ${parseFloat(entry.amount).toLocaleString('en-PK', { minimumFractionDigits: 2 })}
+                                                                                                                                                                                                                                </td>
+                                                                                                                                                                                                                            `;
+                                    tbody.appendChild(row);
+                                });
                             }
-                        });
+                        },
 
-                        // Initial load
-                        this.updateDisplay();
+                        init() {
+                            // Listen for updates from the modal
+                            window.addEventListener('bank-slips-updated', () => {
+                                this.updateDisplay();
+                                if (typeof updateSalesSummary === 'function') {
+                                    updateSalesSummary();
+                                }
+                            });
+
+                            // Initial load
+                            this.updateDisplay();
+                        }
                     }
                 }
-            }
-        </script>
+            </script>
     @endpush
 </x-app-layout>

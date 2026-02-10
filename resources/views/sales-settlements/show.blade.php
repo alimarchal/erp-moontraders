@@ -227,9 +227,11 @@
         $totalSaleAmount = $totalSale;
 
         // Expenses & Taxes
+        // Note: Advance tax is already stored as an expense row (account_code 1161),
+        // so $totalExpenses already includes it. Do NOT add advanceTaxTotal separately.
         $totalExpenses = (float) ($settlement->expenses->sum('amount') ?? 0);
         $advanceTaxTotal = (float) ($settlement->advanceTaxes->sum('tax_amount') ?? 0);
-        $totalDeductions = $totalExpenses + $advanceTaxTotal;
+        $totalDeductions = $totalExpenses;
 
         // Expected Cash Calculation (Professional Accounting)
         // Only Cash Sales and Cash Recoveries should be in the salesman's physical wallet

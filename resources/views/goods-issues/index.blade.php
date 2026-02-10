@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Goods Issues" :createRoute="route('goods-issues.create')" createLabel="New Goods Issue"
+        <x-page-header title="Goods Issues" :createRoute="route('goods-issues.create')" createLabel=""
             :showSearch="true" :showRefresh="true" />
     </x-slot>
 
@@ -33,7 +33,7 @@
                     <option value="">All Vehicles</option>
                     @foreach ($vehicles as $vehicle)
                         <option value="{{ $vehicle->id }}" {{ request('filter.vehicle_id') == $vehicle->id ? 'selected' : ''
-                            }}>
+                                                                                                            }}>
                             {{ $vehicle->vehicle_number }} ({{ $vehicle->vehicle_type }})
                         </option>
                     @endforeach
@@ -92,25 +92,25 @@
         :emptyRoute="route('goods-issues.create')" emptyLinkText="Create a Goods Issue">
 
         @foreach ($goodsIssues as $index => $gi)
-            <tr class="border-b border-gray-200 text-sm">
-                <td class="py-1 px-2 text-center">
+            <tr class="border-b border-gray-200 text-sm tabular-nums">
+                <td class="py-0 px-2 text-center">
                     {{ $goodsIssues->firstItem() + $index }}
                 </td>
-                <td class="py-1 px-2">
+                <td class="py-0 px-2">
                     <div class="font-semibold text-gray-900">
                         {{ $gi->issue_number }}
                     </div>
                 </td>
-                <td class="py-1 px-2 text-center">
+                <td class="py-0 px-2 text-center">
                     {{ \Carbon\Carbon::parse($gi->issue_date)->format('d M Y') }}
                 </td>
-                <td class="py-1 px-2">
+                <td class="py-0 px-2">
                     {{ $gi->warehouse->warehouse_name }}
                 </td>
-                <td class="py-1 px-2">
+                <td class="py-0 px-2">
                     {{ $gi->vehicle->vehicle_number }}
                 </td>
-                <td class="py-1 px-2">
+                <td class="py-0 px-2">
                     <div>
                         @if($gi->supplier && $gi->supplier->supplier_name)
                             <span class="font-semibold text-gray-900">{{ $gi->supplier->supplier_name }}</span>
@@ -120,19 +120,20 @@
                         @endif
                     </div>
                 </td>
-                <td class="py-1 px-2 text-right">
+                <td class="py-0 px-2 text-right">
                     <div class="font-semibold text-gray-900">
                         Rs {{ number_format($gi->total_value, 2) }}
                     </div>
                 </td>
-                <td class="py-1 px-2 text-center">
-                    <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full
-                            {{ $gi->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                            {{ $gi->status === 'issued' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                <td class="py-0 px-2 text-center">
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full
+                                                                                                            {{ $gi->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                                                                                            {{ $gi->status === 'issued' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                         {{ ucfirst($gi->status) }}
                     </span>
                 </td>
-                <td class="py-1 px-2 text-center">
+                <td class="py-0 px-2 text-center">
                     <div class="flex justify-center flex-wrap gap-2">
                         <a href="{{ route('goods-issues.show', $gi) }}"
                             class="inline-flex items-center justify-center w-8 h-8 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-md transition-colors duration-150"
@@ -161,15 +162,20 @@
                                 onsubmit="return confirm('Are you sure you want to delete this draft goods issue?');">
                                 @csrf
                                 @method('DELETE')
+
+
                                 <button type="submit"
                                     class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
                                     title="Delete">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                         stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            d="M6 18L18 6M6 6l12 12" />
                                     </svg>
                                 </button>
+
+
+
                             </form>
                         @endif
                     </div>
@@ -179,8 +185,8 @@
 
         <x-slot name="footer">
             <tr class="text-gray-900 border-t-2 border-gray-300">
-                <td class="py-2 px-2 text-right" colspan="6">Total:</td>
-                <td class="py-2 px-2 text-right font-bold text-lg">Rs {{ number_format($totalValue, 2) }}</td>
+                <td class="py-1 px-1 text-right" colspan="6">Total:</td>
+                <td class="py-1 px-1 text-right font-bold text-lg">Rs {{ number_format($totalValue, 2) }}</td>
                 <td colspan="2"></td>
             </tr>
         </x-slot>

@@ -8,10 +8,13 @@ use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
@@ -97,12 +100,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
     {
         return view('goods-issues.create', [
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
-            'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
-            'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'employee_code']),
-            'products' => Product::where('is_active', true)
-                ->with(['uom'])
-                ->orderBy('product_name')
-                ->get(['id', 'product_code', 'product_name', 'uom_id']),
+            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
         ]);
     }
@@ -255,7 +253,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
             return back()
                 ->withInput()
-                ->with('error', 'Unable to create Goods Issue: ' . $e->getMessage());
+                ->with('error', 'Unable to create Goods Issue: '.$e->getMessage());
         }
     }
 
@@ -386,9 +384,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
         return view('goods-issues.edit', [
             'goodsIssue' => $goodsIssue,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
-            'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
-            'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'employee_code']),
-            'products' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name', 'uom_id']),
+            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
         ]);
     }
@@ -517,6 +513,65 @@ class GoodsIssueController extends Controller implements HasMiddleware
         return redirect()
             ->back()
             ->with('error', $result['message']);
+    }
+
+    /**
+     * Get employees (salesmen) filtered by supplier IDs (AJAX endpoint).
+     * Returns employees belonging to the given suppliers + employees with no supplier (unassigned).
+     */
+    public function getEmployeesBySuppliers(Request $request): JsonResponse
+    {
+        $supplierIds = $request->query('supplier_ids', []);
+
+        $employees = Employee::where('is_active', true)
+            ->where(function ($query) use ($supplierIds) {
+                if (! empty($supplierIds)) {
+                    $query->whereIn('supplier_id', $supplierIds);
+                }
+                $query->orWhereNull('supplier_id');
+            })
+            ->orderBy('name')
+            ->get(['id', 'name', 'employee_code', 'supplier_id']);
+
+        return response()->json($employees);
+    }
+
+    /**
+     * Get vehicles filtered by employee (AJAX endpoint).
+     * Returns vehicles belonging to the given employee + Walk vehicles (no employee assigned).
+     */
+    public function getVehiclesByEmployee(Employee $employee): JsonResponse
+    {
+        $vehicles = Vehicle::where('is_active', true)
+            ->where(function ($query) use ($employee) {
+                $query->where('employee_id', $employee->id)
+                    ->orWhereNull('employee_id');
+            })
+            ->orderBy('vehicle_number')
+            ->get(['id', 'vehicle_number', 'vehicle_type', 'employee_id']);
+
+        return response()->json($vehicles);
+    }
+
+    /**
+     * Get products filtered by supplier IDs (AJAX endpoint).
+     * Returns products belonging to the given suppliers + products with no supplier (unassigned).
+     */
+    public function getProductsBySuppliers(Request $request): JsonResponse
+    {
+        $supplierIds = $request->query('supplier_ids', []);
+
+        $products = Product::where('is_active', true)
+            ->where(function ($query) use ($supplierIds) {
+                if (! empty($supplierIds)) {
+                    $query->whereIn('supplier_id', $supplierIds);
+                }
+                $query->orWhereNull('supplier_id');
+            })
+            ->orderBy('product_name')
+            ->get(['id', 'product_code', 'product_name', 'uom_id', 'supplier_id']);
+
+        return response()->json($products);
     }
 
     /**

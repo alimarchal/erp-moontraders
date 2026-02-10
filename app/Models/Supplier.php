@@ -64,4 +64,12 @@ class Supplier extends Model
     {
         return $this->hasMany(Employee::class);
     }
+
+    /**
+     * Get all products associated with this supplier
+     */
+    public function products(): HasMany
+    {
+        return $this->hasMany(Product::class);
+    }
 }

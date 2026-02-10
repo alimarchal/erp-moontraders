@@ -48,29 +48,37 @@
                             </div>
 
                             <div>
-                                <x-label for="vehicle_id" value="Vehicle *" />
-                                <select id="vehicle_id" name="vehicle_id" required
-                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                                    <option value="">Select Vehicle</option>
-                                    @foreach ($vehicles as $vehicle)
-                                                                    <option value="{{ $vehicle->id }}" {{ old('vehicle_id') == $vehicle->id ? 'selected' :
-                                        '' }}>
-                                                                        {{ $vehicle->vehicle_number }} ({{ $vehicle->vehicle_type }})
-                                                                    </option>
-                                    @endforeach
+                                <x-label for="employee_id" value="Salesman *" />
+                                <select id="employee_id" name="employee_id" required disabled
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                                    <option value="">Select Supplier First</option>
                                 </select>
                             </div>
 
                             <div>
-                                <x-label for="employee_id" value="Salesman *" />
-                                <select id="employee_id" name="employee_id" required
+                                <x-label for="vehicle_id" value="Vehicle *" />
+                                <select id="vehicle_id" name="vehicle_id" required disabled
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                                    <option value="">Select Salesman First</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-4 mb-6">
+                            <div>
+                                <x-label for="supplier_ids" value="Supplier *" />
+                                {{-- For multiple suppliers, uncomment this and remove the single select below:
+                                <select id="supplier_ids" name="supplier_ids[]" multiple required
+                                    class="select2-multi border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                                --}}
+                                <select id="supplier_ids" name="supplier_ids[]" required
                                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                                    <option value="">Select Salesman</option>
-                                    @foreach ($employees as $employee)
-                                                                    <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ?
-                                        'selected' : '' }}>
-                                                                        {{ $employee->name }} ({{ $employee->employee_code }})
-                                                                    </option>
+                                    <option value="">Select Supplier</option>
+                                    @foreach ($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}"
+                                            {{ is_array(old('supplier_ids')) && in_array($supplier->id, old('supplier_ids')) ? 'selected' : '' }}>
+                                            {{ $supplier->supplier_name }}
+                                        </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -81,7 +89,7 @@
                         <x-form-table title="Products to Issue" :headers="[
         ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
         ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '120px'],
-        ['label' => 'Quantity<br>Issued', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'Qty<br>Issued', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'UOM', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Price<br>Breakdown', 'align' => 'text-left', 'width' => '200px'],
         ['label' => 'Total<br>Value', 'align' => 'text-right', 'width' => '140px'],
@@ -206,10 +214,47 @@
         </div>
     </div>
 
+    @push('header')
+        <style>
+            .select2-container .select2-selection--multiple {
+                min-height: 42px !important;
+                border-color: #d1d5db !important;
+                border-radius: 0.375rem !important;
+                padding: 4px !important;
+                display: flex !important;
+                align-items: center !important;
+                flex-wrap: wrap;
+            }
+
+            .select2-container--default.select2-container--focus .select2-selection--multiple {
+                border-color: #6366f1 !important;
+                box-shadow: 0 0 0 1px #6366f1 !important;
+            }
+
+            .select2-container--default .select2-selection--multiple .select2-selection__rendered {
+                padding-left: 0 !important;
+                margin: 0 !important;
+                display: flex;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+
+            .select2-container--default .select2-selection--multiple .select2-selection__choice {
+                margin-top: 0 !important;
+                margin-bottom: 0 !important;
+            }
+
+            .select2-search__field {
+                margin-top: 0 !important;
+                height: 24px !important;
+            }
+        </style>
+    @endpush
+
     @push('scripts')
         <script>
-            let allProducts = []; // All active products
-            let productBatches = {}; // Batch data per product
+            let allProducts = [];
+            let productBatches = {};
             const oldItems = @json(old('items', []));
 
             function goodsIssueForm() {
@@ -233,7 +278,6 @@
                     }],
 
                     validateAndSubmit() {
-                        // Filter out items with 0 or invalid quantity before submitting
                         const validItems = this.items.filter(item => {
                             const qty = parseFloat(item.quantity_issued) || 0;
                             return qty > 0 && item.product_id;
@@ -244,10 +288,8 @@
                             return false;
                         }
 
-                        // Update items to only include valid ones
                         this.items = validItems;
 
-                        // Submit the form after a short delay to allow Alpine to update
                         this.$nextTick(() => {
                             document.getElementById('goodsIssueForm').submit();
                         });
@@ -257,6 +299,11 @@
                         const warehouseId = document.getElementById('warehouse_id').value;
                         if (!warehouseId) {
                             alert('Please select a warehouse first');
+                            return;
+                        }
+
+                        if (allProducts.length === 0) {
+                            alert('Please select a supplier first to load products');
                             return;
                         }
 
@@ -271,7 +318,6 @@
                             available_qty: 0,
                         });
 
-                        // Initialize Select2 for new product dropdown
                         this.$nextTick(() => {
                             initializeProductSelect2(newIndex);
                         });
@@ -281,14 +327,12 @@
                         if (this.items.length > 1) {
                             const productId = this.items[index].product_id;
 
-                            // Clear batch data
                             if (productId && productBatches[productId]) {
                                 delete productBatches[productId];
                             }
 
                             this.items.splice(index, 1);
 
-                            // Reinitialize all Select2 after removal
                             this.$nextTick(() => {
                                 $('.product-select').each(function () {
                                     if ($(this).data('select2')) {
@@ -323,20 +367,18 @@
                             return;
                         }
 
-                        // Validate quantity against available stock
                         if (quantity > availableQty) {
                             document.getElementById(`batch_info_${index}`).innerHTML = `
-                                                                                                <div class="text-red-600 font-bold">⚠️ ERROR: Quantity exceeds available stock!</div>
-                                                                                            `;
+                                <div class="text-red-600 font-bold">⚠️ ERROR: Quantity exceeds available stock!</div>
+                            `;
                             document.getElementById(`price_breakdown_${index}`).innerHTML = `
-                                                                                                <div class="text-red-600 font-semibold">Entered: ${quantity.toFixed(0)} units</div>
-                                                                                                <div class="text-green-600 font-semibold">Available: ${availableQty.toFixed(0)} units</div>
-                                                                                                <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${(quantity - availableQty).toFixed(0)} units</div>
-                                                                                            `;
+                                <div class="text-red-600 font-semibold">Entered: ${quantity.toFixed(0)} units</div>
+                                <div class="text-green-600 font-semibold">Available: ${availableQty.toFixed(0)} units</div>
+                                <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${(quantity - availableQty).toFixed(0)} units</div>
+                            `;
                             item.total_value = 0;
                             item.unit_cost = 0;
 
-                            // Reset quantity to available max
                             setTimeout(() => {
                                 alert(`⚠️ INVALID QUANTITY!\n\nYou entered: ${quantity.toFixed(0)} units\nAvailable stock: ${availableQty.toFixed(0)} units\n\nQuantity has been reset to maximum available.`);
                                 item.quantity_issued = availableQty;
@@ -351,7 +393,6 @@
                         let totalCost = 0;
                         let batchesUsed = [];
 
-                        // Calculate which batches will be used
                         for (const batch of batches) {
                             if (remainingQty <= 0) break;
 
@@ -374,20 +415,18 @@
                             }
                         }
 
-                        // Check if insufficient stock (shouldn't happen due to above check, but keep as fallback)
                         if (remainingQty > 0) {
                             document.getElementById(`batch_info_${index}`).innerHTML = `
-                                                                                                <div class="text-red-600 font-bold">⚠️ Insufficient stock!</div>
-                                                                                            `;
+                                <div class="text-red-600 font-bold">⚠️ Insufficient stock!</div>
+                            `;
                             document.getElementById(`price_breakdown_${index}`).innerHTML = `
-                                                                                                <div class="text-sm">Available: ${(quantity - remainingQty).toFixed(0)}</div>
-                                                                                                <div class="text-sm text-red-600">Short: ${remainingQty.toFixed(0)}</div>
-                                                                                            `;
+                                <div class="text-sm">Available: ${(quantity - remainingQty).toFixed(0)}</div>
+                                <div class="text-sm text-red-600">Short: ${remainingQty.toFixed(0)}</div>
+                            `;
                             item.total_value = 0;
                             return;
                         }
 
-                        // Update batch info - show detailed breakdown at the top
                         const batchInfoDiv = document.getElementById(`batch_info_${index}`);
                         if (batchesUsed.length > 0) {
                             let info = '<div class="text-blue-600 font-semibold mb-1">📦 Issuing from batches:</div>';
@@ -398,15 +437,14 @@
                             batchInfoDiv.innerHTML = info;
                         }
 
-                        // Display price breakdown below batch info
                         const priceBreakdownDiv = document.getElementById(`price_breakdown_${index}`);
                         if (batchesUsed.length === 1) {
                             const b = batchesUsed[0];
                             priceBreakdownDiv.innerHTML = `
-                                                                                                <div class="text-sm font-semibold text-green-700 mt-1">
-                                                                                                    ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)} = ₨${b.value.toFixed(2)}
-                                                                                                </div>
-                                                                                            `;
+                                <div class="text-sm font-semibold text-green-700 mt-1">
+                                    ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)} = ₨${b.value.toFixed(2)}
+                                </div>
+                            `;
                         } else {
                             let html = '<div class="mt-1 border-t border-gray-200 pt-1">';
                             batchesUsed.forEach((b, bIndex) => {
@@ -418,7 +456,6 @@
                             priceBreakdownDiv.innerHTML = html;
                         }
 
-                        // Set total value (selling) and unit_cost (purchase cost)
                         item.total_value = totalValue;
                         item.unit_cost = quantity > 0 ? totalCost / quantity : 0;
                     },
@@ -436,11 +473,151 @@
                 }
             }
 
+            async function loadEmployeesBySuppliers(supplierIds) {
+                if (!supplierIds || supplierIds.length === 0) {
+                    resetEmployeeDropdown();
+                    return;
+                }
+
+                const params = new URLSearchParams();
+                supplierIds.forEach(id => params.append('supplier_ids[]', id));
+
+                try {
+                    const response = await fetch(`/api/employees/by-suppliers?${params.toString()}`);
+                    const employees = await response.json();
+
+                    const $employee = $('#employee_id');
+                    if ($employee.data('select2')) {
+                        $employee.select2('destroy');
+                    }
+
+                    $employee.empty().append('<option value="">Select Salesman</option>');
+                    employees.forEach(emp => {
+                        const label = emp.supplier_id ? '' : ' [Unassigned]';
+                        $employee.append(`<option value="${emp.id}">${emp.name} (${emp.employee_code})${label}</option>`);
+                    });
+
+                    $employee.prop('disabled', false);
+                    $employee.select2({ placeholder: 'Select Salesman', allowClear: false, width: '100%' });
+                } catch (error) {
+                    console.error('Error loading employees:', error);
+                }
+            }
+
+            async function loadVehiclesByEmployee(employeeId) {
+                if (!employeeId) {
+                    resetVehicleDropdown();
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/employees/${employeeId}/vehicles`);
+                    const vehicles = await response.json();
+
+                    const $vehicle = $('#vehicle_id');
+                    if ($vehicle.data('select2')) {
+                        $vehicle.select2('destroy');
+                    }
+
+                    $vehicle.empty().append('<option value="">Select Vehicle</option>');
+
+                    const assignedVehicles = vehicles.filter(v => v.employee_id !== null);
+                    const walkVehicles = vehicles.filter(v => v.employee_id === null);
+
+                    if (assignedVehicles.length > 0) {
+                        const $group1 = $('<optgroup label="Salesman Vehicles"></optgroup>');
+                        assignedVehicles.forEach(v => {
+                            $group1.append(`<option value="${v.id}">${v.vehicle_number} (${v.vehicle_type || 'N/A'})</option>`);
+                        });
+                        $vehicle.append($group1);
+                    }
+
+                    if (walkVehicles.length > 0) {
+                        const $group2 = $('<optgroup label="Walk Vehicles"></optgroup>');
+                        walkVehicles.forEach(v => {
+                            $group2.append(`<option value="${v.id}">${v.vehicle_number} (${v.vehicle_type || 'N/A'}) - Walk</option>`);
+                        });
+                        $vehicle.append($group2);
+                    }
+
+                    $vehicle.prop('disabled', false);
+                    $vehicle.select2({ placeholder: 'Select Vehicle', allowClear: false, width: '100%' });
+                } catch (error) {
+                    console.error('Error loading vehicles:', error);
+                }
+            }
+
+            async function loadProductsBySuppliers(supplierIds) {
+                if (!supplierIds || supplierIds.length === 0) {
+                    allProducts = [];
+                    return;
+                }
+
+                const params = new URLSearchParams();
+                supplierIds.forEach(id => params.append('supplier_ids[]', id));
+
+                try {
+                    const response = await fetch(`/api/products/by-suppliers?${params.toString()}`);
+                    allProducts = await response.json();
+                } catch (error) {
+                    console.error('Error loading products:', error);
+                }
+            }
+
+            function refreshAllProductSelects() {
+                const alpineComponent = Alpine.$data(document.querySelector('[x-data="goodsIssueForm()"]'));
+                if (!alpineComponent) return;
+
+                const validProductIds = new Set(allProducts.map(p => String(p.id)));
+
+                $('.product-select').each(function () {
+                    if ($(this).data('select2')) {
+                        $(this).select2('destroy');
+                    }
+                });
+
+                alpineComponent.items.forEach((item, index) => {
+                    if (item.product_id && !validProductIds.has(String(item.product_id))) {
+                        item.product_id = '';
+                        item.available_qty = 0;
+                        item.quantity_issued = 0;
+                        item.unit_cost = 0;
+                        item.selling_price = 0;
+                        item.total_value = 0;
+                        if (productBatches[item.product_id]) {
+                            delete productBatches[item.product_id];
+                        }
+                    }
+                });
+
+                $('.product-select').each(function (idx) {
+                    initializeProductSelect2(idx);
+                });
+            }
+
+            function resetEmployeeDropdown() {
+                const $employee = $('#employee_id');
+                if ($employee.data('select2')) {
+                    $employee.select2('destroy');
+                }
+                $employee.empty().append('<option value="">Select Supplier First</option>');
+                $employee.prop('disabled', true);
+                resetVehicleDropdown();
+            }
+
+            function resetVehicleDropdown() {
+                const $vehicle = $('#vehicle_id');
+                if ($vehicle.data('select2')) {
+                    $vehicle.select2('destroy');
+                }
+                $vehicle.empty().append('<option value="">Select Salesman First</option>');
+                $vehicle.prop('disabled', true);
+            }
+
             async function initializeProductSelect2(index) {
                 const $select = $(`#product_${index}`);
                 const alpineComponent = Alpine.$data($select.closest('form')[0]);
 
-                // Initialize Select2
                 $select.select2({
                     placeholder: 'Select Product',
                     allowClear: false,
@@ -451,21 +628,17 @@
                     }))
                 });
 
-                // Set initial value from Alpine.js data if exists (for old input)
                 if (alpineComponent && alpineComponent.items && alpineComponent.items[index] && alpineComponent.items[index].product_id) {
                     const savedQuantity = alpineComponent.items[index].quantity_issued;
 
                     $select.val(alpineComponent.items[index].product_id).trigger('change.select2');
 
-                    // Load stock data for existing product
                     const warehouseId = $('#warehouse_id').val();
                     if (warehouseId && alpineComponent.items[index].product_id) {
                         await onProductChange(index, alpineComponent.items[index].product_id, warehouseId);
 
-                        // Restore the quantity after stock data loads and trigger calculation
                         if (savedQuantity > 0) {
                             alpineComponent.items[index].quantity_issued = savedQuantity;
-                            // Trigger price calculation after a short delay to ensure batch data is loaded
                             setTimeout(() => {
                                 alpineComponent.updatePriceBasedOnQuantity(index);
                             }, 100);
@@ -473,7 +646,6 @@
                     }
                 }
 
-                // Sync with Alpine.js when product changes
                 $select.on('change', async function () {
                     const productId = $(this).val();
                     const warehouseId = $('#warehouse_id').val();
@@ -495,7 +667,6 @@
 
                 const alpineComponent = Alpine.$data(document.querySelector('[x-data="goodsIssueForm()"]'));
 
-                // Check for duplicates (ensure type consistency)
                 const isDuplicate = alpineComponent.items.some((item, idx) => {
                     return idx !== index && String(item.product_id) === String(productId);
                 });
@@ -511,24 +682,19 @@
                     const response = await fetch(`/api/warehouses/${warehouseId}/products/${productId}/stock`);
                     const data = await response.json();
 
-                    // Store batch data
                     productBatches[productId] = data.batches || [];
 
-                    // Update Alpine.js data
                     alpineComponent.items[index].available_qty = parseFloat(data.available_quantity || 0).toFixed(2);
                     alpineComponent.items[index].uom_id = data.stock_uom_id || '';
 
-                    // Set selling_price from first batch's selling_price
                     if (data.batches && data.batches.length > 0) {
                         alpineComponent.items[index].selling_price = parseFloat(data.batches[0].selling_price || 0);
                     } else {
                         alpineComponent.items[index].selling_price = 0;
                     }
 
-                    // Show batch info
                     displayBatchInfo(index, data.batches, data.has_multiple_prices);
 
-                    // Only clear quantity and price if this is a new product selection (not loading existing item)
                     if (alpineComponent.items[index].quantity_issued === 0 || alpineComponent.items[index].quantity_issued === null || alpineComponent.items[index].quantity_issued === undefined) {
                         alpineComponent.items[index].total_value = 0;
                         alpineComponent.items[index].unit_cost = 0;
@@ -561,7 +727,6 @@
                 }
             }
 
-            // Initialize when DOM is ready
             function initializeGoodsIssueForm() {
                 if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
                     setTimeout(initializeGoodsIssueForm, 100);
@@ -569,8 +734,35 @@
                 }
 
                 $(document).ready(function () {
-                    // Load all products
-                    allProducts = @json($products);
+                    // Initialize warehouse Select2
+                    $('#warehouse_id').select2({
+                        placeholder: 'Select Warehouse',
+                        allowClear: false,
+                        width: '100%'
+                    });
+
+                    // Initialize supplier select
+                    $('#supplier_ids').select2({
+                        placeholder: 'Select Supplier',
+                        allowClear: true,
+                        width: '100%'
+                    });
+
+                    // Supplier change → load employees + products
+                    $('#supplier_ids').on('change', function () {
+                        const val = $(this).val();
+                        const supplierIds = val ? (Array.isArray(val) ? val : [val]) : [];
+                        loadEmployeesBySuppliers(supplierIds);
+                        loadProductsBySuppliers(supplierIds).then(() => {
+                            refreshAllProductSelects();
+                        });
+                    });
+
+                    // Employee change → load vehicles
+                    $('#employee_id').on('change', function () {
+                        const employeeId = $(this).val();
+                        loadVehiclesByEmployee(employeeId);
+                    });
 
                     // Initialize product selects for existing items
                     $('.product-select').each(function (index) {
@@ -579,7 +771,6 @@
                 });
             }
 
-            // Start initialization
             initializeGoodsIssueForm();
         </script>
     @endpush

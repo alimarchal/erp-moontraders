@@ -20,7 +20,6 @@ use App\Http\Controllers\ProductTaxMappingController;
 use App\Http\Controllers\PromotionalCampaignController;
 use App\Http\Controllers\Reports\AccountBalancesController;
 use App\Http\Controllers\Reports\BalanceSheetController;
-use App\Http\Controllers\Reports\CashDetailController;
 use App\Http\Controllers\Reports\CreditorsLedgerController;
 use App\Http\Controllers\Reports\DailySalesReportController;
 use App\Http\Controllers\Reports\FmrAmrComparisonController;
@@ -91,6 +90,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('goods-issues.post');
     Route::get('api/warehouses/{warehouse}/products/{product}/stock', [GoodsIssueController::class, 'getProductStock'])
         ->name('api.warehouses.products.stock');
+    Route::get('api/employees/by-suppliers', [GoodsIssueController::class, 'getEmployeesBySuppliers'])
+        ->name('api.employees.by-suppliers');
+    Route::get('api/employees/{employee}/vehicles', [GoodsIssueController::class, 'getVehiclesByEmployee'])
+        ->name('api.employees.vehicles');
+    Route::get('api/products/by-suppliers', [GoodsIssueController::class, 'getProductsBySuppliers'])
+        ->name('api.products.by-suppliers');
 
     // Sales Settlement Routes
     Route::resource('sales-settlements', SalesSettlementController::class);

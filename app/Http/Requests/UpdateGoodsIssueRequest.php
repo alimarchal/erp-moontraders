@@ -17,7 +17,23 @@ class UpdateGoodsIssueRequest extends FormRequest
         return [
             'issue_date' => 'required|date',
             'warehouse_id' => 'required|exists:warehouses,id',
-            'vehicle_id' => 'required|exists:vehicles,id',
+            'vehicle_id' => [
+                'required',
+                'exists:vehicles,id',
+                function ($attribute, $value, $fail) {
+                    $vehicle = DB::table('vehicles')->where('id', $value)->first();
+
+                    if (! $vehicle) {
+                        return;
+                    }
+
+                    $employeeId = $this->input('employee_id');
+
+                    if ($vehicle->employee_id !== null && (int) $vehicle->employee_id !== (int) $employeeId) {
+                        $fail('The selected vehicle does not belong to the selected salesman.');
+                    }
+                },
+            ],
             'employee_id' => 'required|exists:employees,id',
             'notes' => 'nullable|string',
 

@@ -326,13 +326,13 @@
                         // Validate quantity against available stock
                         if (quantity > availableQty) {
                             document.getElementById(`batch_info_${index}`).innerHTML = `
-                                                                                <div class="text-red-600 font-bold">⚠️ ERROR: Quantity exceeds available stock!</div>
-                                                                            `;
+                                                                                                <div class="text-red-600 font-bold">⚠️ ERROR: Quantity exceeds available stock!</div>
+                                                                                            `;
                             document.getElementById(`price_breakdown_${index}`).innerHTML = `
-                                                                                <div class="text-red-600 font-semibold">Entered: ${quantity.toFixed(0)} units</div>
-                                                                                <div class="text-green-600 font-semibold">Available: ${availableQty.toFixed(0)} units</div>
-                                                                                <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${(quantity - availableQty).toFixed(0)} units</div>
-                                                                            `;
+                                                                                                <div class="text-red-600 font-semibold">Entered: ${quantity.toFixed(0)} units</div>
+                                                                                                <div class="text-green-600 font-semibold">Available: ${availableQty.toFixed(0)} units</div>
+                                                                                                <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${(quantity - availableQty).toFixed(0)} units</div>
+                                                                                            `;
                             item.total_value = 0;
                             item.unit_cost = 0;
 
@@ -377,12 +377,12 @@
                         // Check if insufficient stock (shouldn't happen due to above check, but keep as fallback)
                         if (remainingQty > 0) {
                             document.getElementById(`batch_info_${index}`).innerHTML = `
-                                                                                <div class="text-red-600 font-bold">⚠️ Insufficient stock!</div>
-                                                                            `;
+                                                                                                <div class="text-red-600 font-bold">⚠️ Insufficient stock!</div>
+                                                                                            `;
                             document.getElementById(`price_breakdown_${index}`).innerHTML = `
-                                                                                <div class="text-sm">Available: ${(quantity - remainingQty).toFixed(0)}</div>
-                                                                                <div class="text-sm text-red-600">Short: ${remainingQty.toFixed(0)}</div>
-                                                                            `;
+                                                                                                <div class="text-sm">Available: ${(quantity - remainingQty).toFixed(0)}</div>
+                                                                                                <div class="text-sm text-red-600">Short: ${remainingQty.toFixed(0)}</div>
+                                                                                            `;
                             item.total_value = 0;
                             return;
                         }
@@ -403,10 +403,10 @@
                         if (batchesUsed.length === 1) {
                             const b = batchesUsed[0];
                             priceBreakdownDiv.innerHTML = `
-                                                                                <div class="text-sm font-semibold text-green-700 mt-1">
-                                                                                    ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)} = ₨${b.value.toFixed(2)}
-                                                                                </div>
-                                                                            `;
+                                                                                                <div class="text-sm font-semibold text-green-700 mt-1">
+                                                                                                    ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)} = ₨${b.value.toFixed(2)}
+                                                                                                </div>
+                                                                                            `;
                         } else {
                             let html = '<div class="mt-1 border-t border-gray-200 pt-1">';
                             batchesUsed.forEach((b, bIndex) => {
@@ -571,14 +571,6 @@
                 $(document).ready(function () {
                     // Load all products
                     allProducts = @json($products);
-
-                    // Initialize standard Select2 dropdowns
-                    $('.select2').select2({
-                        placeholder: 'Select an option',
-                        allowClear: true,
-                        width: '100%',
-                        height: '0px',
-                    });
 
                     // Initialize product selects for existing items
                     $('.product-select').each(function (index) {

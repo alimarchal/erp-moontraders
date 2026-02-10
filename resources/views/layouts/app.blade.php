@@ -68,6 +68,23 @@
             top: 8px !important;
             right: 10px !important;
         }
+
+
+        /*  Allow Clear Properties for select2 */
+
+        .select2-container .select2-selection--single .select2-selection__clear {
+            color: #dc2626 !important;
+            font-size: 1.25rem !important;
+            font-weight: 700 !important;
+            line-height: 1 !important;
+            height: auto !important;
+            margin-top: 0 !important;
+            padding: 0 !important;
+        }
+
+        .select2-container .select2-selection--single .select2-selection__clear:hover {
+            color: #991b1b !important;
+        }
     </style>
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -101,9 +118,9 @@
     <script>
         $(document).ready(function () {
             $('.select2').select2({
-                width: '100%',
                 placeholder: 'Select an option',
-                allowClear: false,
+                allowClear: true,
+                width: '100%',
             });
 
             // Handle label clicks for Select2 elements

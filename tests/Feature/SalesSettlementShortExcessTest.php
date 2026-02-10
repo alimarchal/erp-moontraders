@@ -88,14 +88,18 @@ it('does not double-count advance tax in short/excess calculation', function () 
         'total_amount' => 20000.00,
     ]);
 
+    $currency = \App\Models\Currency::factory()->create();
+
     $expenseAccount = ChartOfAccount::factory()->create([
         'account_code' => '1161',
         'account_name' => 'Advance Tax',
+        'currency_id' => $currency->id,
     ]);
 
     $miscExpenseAccount = ChartOfAccount::factory()->create([
         'account_code' => '5262',
         'account_name' => 'AMR Liquid',
+        'currency_id' => $currency->id,
     ]);
 
     SalesSettlementExpense::create([
@@ -114,7 +118,7 @@ it('does not double-count advance tax in short/excess calculation', function () 
         'description' => 'AMR Liquid + Percentage',
     ]);
 
-    $customer = Customer::factory()->create();
+    $customer = Customer::factory()->create(['customer_code' => 'TC001']);
     SalesSettlementAdvanceTax::create([
         'sales_settlement_id' => $settlement->id,
         'customer_id' => $customer->id,
@@ -124,7 +128,7 @@ it('does not double-count advance tax in short/excess calculation', function () 
         'invoice_number' => 'ATI-00001',
     ]);
 
-    $customer2 = Customer::factory()->create();
+    $customer2 = Customer::factory()->create(['customer_code' => 'TC002']);
     SalesSettlementAdvanceTax::create([
         'sales_settlement_id' => $settlement->id,
         'customer_id' => $customer2->id,

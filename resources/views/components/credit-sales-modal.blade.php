@@ -5,14 +5,19 @@
     'creditInputId' => 'credit_sales_amount',
     'recoveryInputId' => 'credit_recoveries_total',
     'entriesInputId' => 'credit_sales',
+    'initialEntries' => [],
 ])
 
 @php
+    $modalDataId = 'creditSalesData_' . str_replace('-', '_', \Illuminate\Support\Str::uuid());
     $customers = $customers instanceof \Illuminate\Support\Collection ? $customers : collect($customers);
+    $initialEntries = $initialEntries instanceof \Illuminate\Support\Collection ? $initialEntries : collect($initialEntries);
 @endphp
 
-<div x-data="creditSalesModal({
-        customers: @js($customers->map(fn($customer) => [
+@push('scripts')
+<script>
+    window['{{ $modalDataId }}'] = {
+        customers: @json($customers->map(fn($customer) => [
             'id' => $customer->id,
             'name' => $customer->customer_name,
         ])->values()),
@@ -20,7 +25,12 @@
         creditInputId: '{{ $creditInputId }}',
         recoveryInputId: '{{ $recoveryInputId }}',
         entriesInputId: '{{ $entriesInputId }}',
-    })" x-on:{{ $triggerEvent }}.window="openModal()" x-cloak>
+        initialEntries: @json($initialEntries),
+    };
+</script>
+@endpush
+
+<div x-data="creditSalesModal(window['{{ $modalDataId }}'])" x-on:{{ $triggerEvent }}.window="openModal()" x-cloak>
     <input type="hidden" name="{{ $entriesInputId }}" id="{{ $entriesInputId }}" :value="JSON.stringify(entries)">
 
     <div x-show="show" class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0">
@@ -241,7 +251,7 @@
 @once
     @push('scripts')
         <script>
-            function creditSalesModal({ customers, employeeId, creditInputId, recoveryInputId, entriesInputId }) {
+            function creditSalesModal({ customers, employeeId, creditInputId, recoveryInputId, entriesInputId, initialEntries }) {
                 return {
                     show: false,
                     customers,
@@ -255,7 +265,7 @@
                         payment_received: '',
                         notes: '',
                     },
-                    entries: [],
+                    entries: initialEntries || [],
                     invoiceCounter: 1,
                     select2Initialized: false,
 
@@ -326,18 +336,25 @@
 
                     initializeSelect2() {
                         const self = this;
-                        $('#credit_sales_customer_select').select2({
+                        const select = $('#credit_sales_customer_select');
+                        
+                        if (select.length === 0) return;
+
+                        select.select2({
                             width: '100%',
-                             placeholder: 'Select Customer',
+                            placeholder: 'Select Customer',
                             allowClear: true,
-                            dropdownParent: $('#credit_sales_customer_select').parent()
+                            dropdownParent: select.parent()
                         });
 
                         // Handle select2 change event
-                        $('#credit_sales_customer_select').on('change', function() {
+                        select.on('change', function() {
                             const customerId = $(this).val();
-                            self.form.customer_id = customerId;
-                            self.onCustomerChange();
+                            // Only update if value changed to avoid loops
+                            if (self.form.customer_id != customerId) {
+                                self.form.customer_id = customerId;
+                                self.onCustomerChange();
+                            }
                         });
                     },
 
@@ -504,18 +521,23 @@
                     },
 
                     init() {
-                        // Initialize entries from the hidden input if it has a value
-                        const entriesInput = document.getElementById(entriesInputId);
-                        if (entriesInput && entriesInput.value) {
-                            try {
-                                const parsed = JSON.parse(entriesInput.value);
-                                if (Array.isArray(parsed)) {
-                                    this.entries = parsed;
-                                    // Update invoice counter based on existing entries
-                                    this.invoiceCounter = this.entries.length + 1;
+                        // Use initialEntries if provided, otherwise try hidden input
+                        if (this.entries.length > 0) {
+                            this.invoiceCounter = this.entries.length + 1;
+                        } else {
+                            // Initialize entries from the hidden input if it has a value (fallback)
+                            const entriesInput = document.getElementById(this.entriesInputId);
+                            if (entriesInput && entriesInput.value) {
+                                try {
+                                    const parsed = JSON.parse(entriesInput.value);
+                                    if (Array.isArray(parsed)) {
+                                        this.entries = parsed;
+                                        // Update invoice counter based on existing entries
+                                        this.invoiceCounter = this.entries.length + 1;
+                                    }
+                                } catch (e) {
+                                    console.error('Error parsing credit sales entries:', e);
                                 }
-                            } catch (e) {
-                                console.error('Error parsing credit sales entries:', e);
                             }
                         }
 

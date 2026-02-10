@@ -9,6 +9,7 @@ use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
 use App\Models\Product;
 use App\Models\SalesSettlement;
+use App\Models\SalesSettlementCreditSale;
 use App\Models\SalesSettlementExpense;
 use App\Models\SalesSettlementPercentageExpense;
 use App\Models\Uom;
@@ -57,6 +58,76 @@ test('sales settlement edit page can be rendered', function () {
         ->get(route('sales-settlements.edit', $settlement, absolute: false))
         ->assertSuccessful()
         ->assertSee('Edit Sales Settlement');
+});
+
+test('sales settlement edit page shows credit sales with previous_balance and new_balance', function () {
+    $user = User::factory()->create(['is_super_admin' => 'Yes']);
+
+    $employee = Employee::factory()->create();
+    $vehicle = Vehicle::factory()->create();
+    $warehouse = Warehouse::factory()->create();
+
+    $uom = Uom::factory()->create();
+    $product = Product::factory()->create();
+    $customer = Customer::factory()->create(['customer_name' => 'Test Credit Customer', 'customer_code' => 'TC001']);
+
+    $goodsIssue = GoodsIssue::factory()->create([
+        'status' => 'issued',
+        'warehouse_id' => $warehouse->id,
+        'vehicle_id' => $vehicle->id,
+        'employee_id' => $employee->id,
+        'issued_by' => $user->id,
+    ]);
+
+    GoodsIssueItem::factory()->create([
+        'goods_issue_id' => $goodsIssue->id,
+        'line_no' => 1,
+        'product_id' => $product->id,
+        'uom_id' => $uom->id,
+        'quantity_issued' => 10,
+        'unit_cost' => 100,
+        'selling_price' => 150,
+        'total_value' => 1500,
+    ]);
+
+    $settlement = SalesSettlement::factory()->create([
+        'status' => 'draft',
+        'goods_issue_id' => $goodsIssue->id,
+        'employee_id' => $employee->id,
+        'vehicle_id' => $vehicle->id,
+        'warehouse_id' => $warehouse->id,
+    ]);
+
+    SalesSettlementCreditSale::create([
+        'sales_settlement_id' => $settlement->id,
+        'customer_id' => $customer->id,
+        'employee_id' => $employee->id,
+        'invoice_number' => 'CSI-00001',
+        'sale_amount' => 5000.00,
+        'payment_received' => 0,
+        'previous_balance' => 2000.00,
+        'new_balance' => 7000.00,
+        'notes' => 'Test note',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->get(route('sales-settlements.edit', $settlement, absolute: false));
+
+    $response->assertSuccessful();
+
+    $html = $response->getContent();
+
+    $creditSalesJson = null;
+    if (preg_match('/id="credit_sales"[^>]*value=\'(\[.*?\])\'/', $html, $matches)) {
+        $creditSalesJson = json_decode($matches[1], true);
+    }
+
+    expect($creditSalesJson)->not->toBeNull()
+        ->and($creditSalesJson)->toHaveCount(1)
+        ->and((float) $creditSalesJson[0]['previous_balance'])->toBe(2000.0)
+        ->and((float) $creditSalesJson[0]['new_balance'])->toBe(7000.0)
+        ->and((float) $creditSalesJson[0]['sale_amount'])->toBe(5000.0)
+        ->and($creditSalesJson[0]['customer_name'])->toBe('Test Credit Customer');
 });
 
 test('can update sales settlement with percentage expenses', function () {

@@ -39,10 +39,10 @@
                                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Warehouse</option>
                                     @foreach ($warehouses as $warehouse)
-                                    <option value="{{ $warehouse->id }}" {{ old('warehouse_id')==$warehouse->id ?
+                                                                    <option value="{{ $warehouse->id }}" {{ old('warehouse_id') == $warehouse->id ?
                                         'selected' : '' }}>
-                                        {{ $warehouse->warehouse_name }}
-                                    </option>
+                                                                        {{ $warehouse->warehouse_name }}
+                                                                    </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -53,10 +53,10 @@
                                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Vehicle</option>
                                     @foreach ($vehicles as $vehicle)
-                                    <option value="{{ $vehicle->id }}" {{ old('vehicle_id')==$vehicle->id ? 'selected' :
+                                                                    <option value="{{ $vehicle->id }}" {{ old('vehicle_id') == $vehicle->id ? 'selected' :
                                         '' }}>
-                                        {{ $vehicle->vehicle_number }} ({{ $vehicle->vehicle_type }})
-                                    </option>
+                                                                        {{ $vehicle->vehicle_number }} ({{ $vehicle->vehicle_type }})
+                                                                    </option>
                                     @endforeach
                                 </select>
                             </div>
@@ -67,26 +67,26 @@
                                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Salesman</option>
                                     @foreach ($employees as $employee)
-                                    <option value="{{ $employee->id }}" {{ old('employee_id')==$employee->id ?
+                                                                    <option value="{{ $employee->id }}" {{ old('employee_id') == $employee->id ?
                                         'selected' : '' }}>
-                                        {{ $employee->name }} ({{ $employee->employee_code }})
-                                    </option>
+                                                                        {{ $employee->name }} ({{ $employee->employee_code }})
+                                                                    </option>
                                     @endforeach
                                 </select>
                             </div>
-                            </div>
+                        </div>
 
 
-                       
+
                         <x-form-table title="Products to Issue" :headers="[
-                            ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
-                            ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '120px'],
-                            ['label' => 'Quantity<br>Issued', 'align' => 'text-center', 'width' => '120px'],
-                            ['label' => 'UOM', 'align' => 'text-center', 'width' => '120px'],
-                            ['label' => 'Price<br>Breakdown', 'align' => 'text-left', 'width' => '200px'],
-                            ['label' => 'Total<br>Value', 'align' => 'text-right', 'width' => '140px'],
-                            ['label' => 'Action', 'align' => 'text-center', 'width' => '8-px'],
-                        ]">
+        ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
+        ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'Quantity<br>Issued', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'UOM', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'Price<br>Breakdown', 'align' => 'text-left', 'width' => '200px'],
+        ['label' => 'Total<br>Value', 'align' => 'text-right', 'width' => '140px'],
+        ['label' => 'Action', 'align' => 'text-center', 'width' => '8-px'],
+    ]">
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(item, index) in items" :key="index">
                                     <tr class="align-top">
@@ -121,7 +121,7 @@
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">UOM</option>
                                                 @foreach ($uoms as $uom)
-                                                <option value="{{ $uom->id }}">{{ $uom->uom_name }}</option>
+                                                    <option value="{{ $uom->id }}">{{ $uom->uom_name }}</option>
                                                 @endforeach
                                             </select>
                                         </td>
@@ -183,7 +183,7 @@
 
 
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                             <hr class="my-6 border-gray-200">
+                            <hr class="my-6 border-gray-200">
 
                             <div class="md:col-span-4">
                                 <x-label for="notes" value="Notes" />
@@ -193,7 +193,7 @@
                         </div>
 
 
-                        
+
 
                         <div class="flex items-center justify-end mt-6">
                             <x-button type="button" @click="validateAndSubmit()">
@@ -207,61 +207,22 @@
     </div>
 
     @push('scripts')
-    <script>
-        let allProducts = []; // All active products
-        let productBatches = {}; // Batch data per product
-        const oldItems = @json(old('items', []));
+        <script>
+            let allProducts = []; // All active products
+            let productBatches = {}; // Batch data per product
+            const oldItems = @json(old('items', []));
 
-        function goodsIssueForm() {
-            return {
-                items: oldItems.length > 0 ? oldItems.map(item => ({
-                    product_id: item.product_id || '',
-                    uom_id: item.uom_id || '',
-                    quantity_issued: parseFloat(item.quantity_issued) || 0,
-                    unit_cost: parseFloat(item.unit_cost) || 0,
-                    selling_price: parseFloat(item.selling_price) || 0,
-                    total_value: parseFloat(item.total_value) || 0,
-                    available_qty: 0,
-                })) : [{
-                    product_id: '',
-                    uom_id: '',
-                    quantity_issued: 0,
-                    unit_cost: 0,
-                    selling_price: 0,
-                    total_value: 0,
-                    available_qty: 0,
-                }],
-
-                validateAndSubmit() {
-                    // Filter out items with 0 or invalid quantity before submitting
-                    const validItems = this.items.filter(item => {
-                        const qty = parseFloat(item.quantity_issued) || 0;
-                        return qty > 0 && item.product_id;
-                    });
-
-                    if (validItems.length === 0) {
-                        alert('⚠️ Cannot create!\n\nNo valid items to create. Please add at least one product with a valid quantity.');
-                        return false;
-                    }
-
-                    // Update items to only include valid ones
-                    this.items = validItems;
-
-                    // Submit the form after a short delay to allow Alpine to update
-                    this.$nextTick(() => {
-                        document.getElementById('goodsIssueForm').submit();
-                    });
-                },
-
-                addItem() {
-                    const warehouseId = document.getElementById('warehouse_id').value;
-                    if (!warehouseId) {
-                        alert('Please select a warehouse first');
-                        return;
-                    }
-
-                    const newIndex = this.items.length;
-                    this.items.push({
+            function goodsIssueForm() {
+                return {
+                    items: oldItems.length > 0 ? oldItems.map(item => ({
+                        product_id: item.product_id || '',
+                        uom_id: item.uom_id || '',
+                        quantity_issued: parseFloat(item.quantity_issued) || 0,
+                        unit_cost: parseFloat(item.unit_cost) || 0,
+                        selling_price: parseFloat(item.selling_price) || 0,
+                        total_value: parseFloat(item.total_value) || 0,
+                        available_qty: 0,
+                    })) : [{
                         product_id: '',
                         uom_id: '',
                         quantity_issued: 0,
@@ -269,325 +230,365 @@
                         selling_price: 0,
                         total_value: 0,
                         available_qty: 0,
-                    });
+                    }],
 
-                    // Initialize Select2 for new product dropdown
-                    this.$nextTick(() => {
-                        initializeProductSelect2(newIndex);
-                    });
-                },
+                    validateAndSubmit() {
+                        // Filter out items with 0 or invalid quantity before submitting
+                        const validItems = this.items.filter(item => {
+                            const qty = parseFloat(item.quantity_issued) || 0;
+                            return qty > 0 && item.product_id;
+                        });
 
-                removeItem(index) {
-                    if (this.items.length > 1) {
-                        const productId = this.items[index].product_id;
-                        
-                        // Clear batch data
-                        if (productId && productBatches[productId]) {
-                            delete productBatches[productId];
+                        if (validItems.length === 0) {
+                            alert('⚠️ Cannot create!\n\nNo valid items to create. Please add at least one product with a valid quantity.');
+                            return false;
                         }
-                        
-                        this.items.splice(index, 1);
-                        
-                        // Reinitialize all Select2 after removal
+
+                        // Update items to only include valid ones
+                        this.items = validItems;
+
+                        // Submit the form after a short delay to allow Alpine to update
                         this.$nextTick(() => {
-                            $('.product-select').each(function() {
-                                if ($(this).data('select2')) {
-                                    $(this).select2('destroy');
-                                }
-                            });
-                            
-                            $('.product-select').each(function(idx) {
-                                initializeProductSelect2(idx);
-                            });
+                            document.getElementById('goodsIssueForm').submit();
                         });
-                    }
-                },
+                    },
 
-                updatePriceBasedOnQuantity(index) {
-                    const item = this.items[index];
-                    const productId = item.product_id;
-                    const quantity = parseFloat(item.quantity_issued) || 0;
-                    const availableQty = parseFloat(item.available_qty) || 0;
-                    
-                    if (!productId || !productBatches[productId]) {
-                        document.getElementById(`price_breakdown_${index}`).innerHTML = '';
-                        document.getElementById(`batch_info_${index}`).innerHTML = '';
-                        item.total_value = 0;
-                        return;
-                    }
+                    addItem() {
+                        const warehouseId = document.getElementById('warehouse_id').value;
+                        if (!warehouseId) {
+                            alert('Please select a warehouse first');
+                            return;
+                        }
 
-                    if (quantity === 0) {
-                        document.getElementById(`price_breakdown_${index}`).innerHTML = '<span class="text-gray-400">Enter quantity</span>';
-                        document.getElementById(`batch_info_${index}`).innerHTML = '';
-                        item.total_value = 0;
-                        return;
-                    }
+                        const newIndex = this.items.length;
+                        this.items.push({
+                            product_id: '',
+                            uom_id: '',
+                            quantity_issued: 0,
+                            unit_cost: 0,
+                            selling_price: 0,
+                            total_value: 0,
+                            available_qty: 0,
+                        });
 
-                    // Validate quantity against available stock
-                    if (quantity > availableQty) {
-                        document.getElementById(`batch_info_${index}`).innerHTML = `
-                            <div class="text-red-600 font-bold">⚠️ ERROR: Quantity exceeds available stock!</div>
-                        `;
-                        document.getElementById(`price_breakdown_${index}`).innerHTML = `
-                            <div class="text-red-600 font-semibold">Entered: ${quantity.toFixed(0)} units</div>
-                            <div class="text-green-600 font-semibold">Available: ${availableQty.toFixed(0)} units</div>
-                            <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${(quantity - availableQty).toFixed(0)} units</div>
-                        `;
-                        item.total_value = 0;
-                        item.unit_cost = 0;
-                        
-                        // Reset quantity to available max
-                        setTimeout(() => {
-                            alert(`⚠️ INVALID QUANTITY!\n\nYou entered: ${quantity.toFixed(0)} units\nAvailable stock: ${availableQty.toFixed(0)} units\n\nQuantity has been reset to maximum available.`);
-                            item.quantity_issued = availableQty;
-                            this.updatePriceBasedOnQuantity(index);
-                        }, 100);
-                        return;
-                    }
+                        // Initialize Select2 for new product dropdown
+                        this.$nextTick(() => {
+                            initializeProductSelect2(newIndex);
+                        });
+                    },
 
-                    const batches = productBatches[productId];
-                    let remainingQty = quantity;
-                    let totalValue = 0;
-                    let totalCost = 0;
-                    let batchesUsed = [];
+                    removeItem(index) {
+                        if (this.items.length > 1) {
+                            const productId = this.items[index].product_id;
 
-                    // Calculate which batches will be used
-                    for (const batch of batches) {
-                        if (remainingQty <= 0) break;
+                            // Clear batch data
+                            if (productId && productBatches[productId]) {
+                                delete productBatches[productId];
+                            }
 
-                        const qtyFromBatch = Math.min(remainingQty, batch.quantity);
-                        const batchValue = qtyFromBatch * batch.selling_price;
-                        const batchCost = qtyFromBatch * batch.unit_cost;
-                        totalValue += batchValue;
-                        totalCost += batchCost;
-                        remainingQty -= qtyFromBatch;
+                            this.items.splice(index, 1);
 
-                        if (qtyFromBatch > 0) {
-                            batchesUsed.push({
-                                code: batch.batch_code,
-                                qty: qtyFromBatch,
-                                price: batch.selling_price,
-                                cost: batch.unit_cost,
-                                value: batchValue,
-                                is_promotional: batch.is_promotional
+                            // Reinitialize all Select2 after removal
+                            this.$nextTick(() => {
+                                $('.product-select').each(function () {
+                                    if ($(this).data('select2')) {
+                                        $(this).select2('destroy');
+                                    }
+                                });
+
+                                $('.product-select').each(function (idx) {
+                                    initializeProductSelect2(idx);
+                                });
                             });
                         }
-                    }
+                    },
 
-                    // Check if insufficient stock (shouldn't happen due to above check, but keep as fallback)
-                    if (remainingQty > 0) {
-                        document.getElementById(`batch_info_${index}`).innerHTML = `
-                            <div class="text-red-600 font-bold">⚠️ Insufficient stock!</div>
-                        `;
-                        document.getElementById(`price_breakdown_${index}`).innerHTML = `
-                            <div class="text-sm">Available: ${(quantity - remainingQty).toFixed(0)}</div>
-                            <div class="text-sm text-red-600">Short: ${remainingQty.toFixed(0)}</div>
-                        `;
-                        item.total_value = 0;
-                        return;
-                    }
-                    
-                    // Update batch info - show detailed breakdown at the top
-                    const batchInfoDiv = document.getElementById(`batch_info_${index}`);
-                    if (batchesUsed.length > 0) {
-                        let info = '<div class="text-blue-600 font-semibold mb-1">📦 Issuing from batches:</div>';
-                        batchesUsed.forEach((b, bIndex) => {
-                            const promo = b.is_promotional ? ' 🎁' : '';
-                            info += `<div>Batch ${bIndex + 1}: ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)}${promo}</div>`;
+                    updatePriceBasedOnQuantity(index) {
+                        const item = this.items[index];
+                        const productId = item.product_id;
+                        const quantity = parseFloat(item.quantity_issued) || 0;
+                        const availableQty = parseFloat(item.available_qty) || 0;
+
+                        if (!productId || !productBatches[productId]) {
+                            document.getElementById(`price_breakdown_${index}`).innerHTML = '';
+                            document.getElementById(`batch_info_${index}`).innerHTML = '';
+                            item.total_value = 0;
+                            return;
+                        }
+
+                        if (quantity === 0) {
+                            document.getElementById(`price_breakdown_${index}`).innerHTML = '<span class="text-gray-400">Enter quantity</span>';
+                            document.getElementById(`batch_info_${index}`).innerHTML = '';
+                            item.total_value = 0;
+                            return;
+                        }
+
+                        // Validate quantity against available stock
+                        if (quantity > availableQty) {
+                            document.getElementById(`batch_info_${index}`).innerHTML = `
+                                                                                <div class="text-red-600 font-bold">⚠️ ERROR: Quantity exceeds available stock!</div>
+                                                                            `;
+                            document.getElementById(`price_breakdown_${index}`).innerHTML = `
+                                                                                <div class="text-red-600 font-semibold">Entered: ${quantity.toFixed(0)} units</div>
+                                                                                <div class="text-green-600 font-semibold">Available: ${availableQty.toFixed(0)} units</div>
+                                                                                <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${(quantity - availableQty).toFixed(0)} units</div>
+                                                                            `;
+                            item.total_value = 0;
+                            item.unit_cost = 0;
+
+                            // Reset quantity to available max
+                            setTimeout(() => {
+                                alert(`⚠️ INVALID QUANTITY!\n\nYou entered: ${quantity.toFixed(0)} units\nAvailable stock: ${availableQty.toFixed(0)} units\n\nQuantity has been reset to maximum available.`);
+                                item.quantity_issued = availableQty;
+                                this.updatePriceBasedOnQuantity(index);
+                            }, 100);
+                            return;
+                        }
+
+                        const batches = productBatches[productId];
+                        let remainingQty = quantity;
+                        let totalValue = 0;
+                        let totalCost = 0;
+                        let batchesUsed = [];
+
+                        // Calculate which batches will be used
+                        for (const batch of batches) {
+                            if (remainingQty <= 0) break;
+
+                            const qtyFromBatch = Math.min(remainingQty, batch.quantity);
+                            const batchValue = qtyFromBatch * batch.selling_price;
+                            const batchCost = qtyFromBatch * batch.unit_cost;
+                            totalValue += batchValue;
+                            totalCost += batchCost;
+                            remainingQty -= qtyFromBatch;
+
+                            if (qtyFromBatch > 0) {
+                                batchesUsed.push({
+                                    code: batch.batch_code,
+                                    qty: qtyFromBatch,
+                                    price: batch.selling_price,
+                                    cost: batch.unit_cost,
+                                    value: batchValue,
+                                    is_promotional: batch.is_promotional
+                                });
+                            }
+                        }
+
+                        // Check if insufficient stock (shouldn't happen due to above check, but keep as fallback)
+                        if (remainingQty > 0) {
+                            document.getElementById(`batch_info_${index}`).innerHTML = `
+                                                                                <div class="text-red-600 font-bold">⚠️ Insufficient stock!</div>
+                                                                            `;
+                            document.getElementById(`price_breakdown_${index}`).innerHTML = `
+                                                                                <div class="text-sm">Available: ${(quantity - remainingQty).toFixed(0)}</div>
+                                                                                <div class="text-sm text-red-600">Short: ${remainingQty.toFixed(0)}</div>
+                                                                            `;
+                            item.total_value = 0;
+                            return;
+                        }
+
+                        // Update batch info - show detailed breakdown at the top
+                        const batchInfoDiv = document.getElementById(`batch_info_${index}`);
+                        if (batchesUsed.length > 0) {
+                            let info = '<div class="text-blue-600 font-semibold mb-1">📦 Issuing from batches:</div>';
+                            batchesUsed.forEach((b, bIndex) => {
+                                const promo = b.is_promotional ? ' 🎁' : '';
+                                info += `<div>Batch ${bIndex + 1}: ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)}${promo}</div>`;
+                            });
+                            batchInfoDiv.innerHTML = info;
+                        }
+
+                        // Display price breakdown below batch info
+                        const priceBreakdownDiv = document.getElementById(`price_breakdown_${index}`);
+                        if (batchesUsed.length === 1) {
+                            const b = batchesUsed[0];
+                            priceBreakdownDiv.innerHTML = `
+                                                                                <div class="text-sm font-semibold text-green-700 mt-1">
+                                                                                    ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)} = ₨${b.value.toFixed(2)}
+                                                                                </div>
+                                                                            `;
+                        } else {
+                            let html = '<div class="mt-1 border-t border-gray-200 pt-1">';
+                            batchesUsed.forEach((b, bIndex) => {
+                                const promo = b.is_promotional ? ' 🎁' : '';
+                                html += `<div class="text-sm">Batch ${bIndex + 1}: ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)} = ₨${b.value.toFixed(2)}${promo}</div>`;
+                            });
+                            html += `<div class="font-bold text-green-700 border-t border-gray-300 pt-1 mt-1">Total: ₨${totalValue.toFixed(2)}</div>`;
+                            html += '</div>';
+                            priceBreakdownDiv.innerHTML = html;
+                        }
+
+                        // Set total value (selling) and unit_cost (purchase cost)
+                        item.total_value = totalValue;
+                        item.unit_cost = quantity > 0 ? totalCost / quantity : 0;
+                    },
+
+                    get grandTotal() {
+                        return this.items.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0);
+                    },
+
+                    formatNumber(value) {
+                        return parseFloat(value || 0).toLocaleString('en-PK', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
                         });
-                        batchInfoDiv.innerHTML = info;
-                    }
-                    
-                    // Display price breakdown below batch info
-                    const priceBreakdownDiv = document.getElementById(`price_breakdown_${index}`);
-                    if (batchesUsed.length === 1) {
-                        const b = batchesUsed[0];
-                        priceBreakdownDiv.innerHTML = `
-                            <div class="text-sm font-semibold text-green-700 mt-1">
-                                ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)} = ₨${b.value.toFixed(2)}
-                            </div>
-                        `;
-                    } else {
-                        let html = '<div class="mt-1 border-t border-gray-200 pt-1">';
-                        batchesUsed.forEach((b, bIndex) => {
-                            const promo = b.is_promotional ? ' 🎁' : '';
-                            html += `<div class="text-sm">Batch ${bIndex + 1}: ${b.qty.toFixed(0)} × ₨${b.price.toFixed(2)} = ₨${b.value.toFixed(2)}${promo}</div>`;
-                        });
-                        html += `<div class="font-bold text-green-700 border-t border-gray-300 pt-1 mt-1">Total: ₨${totalValue.toFixed(2)}</div>`;
-                        html += '</div>';
-                        priceBreakdownDiv.innerHTML = html;
-                    }
-
-                    // Set total value (selling) and unit_cost (purchase cost)
-                    item.total_value = totalValue;
-                    item.unit_cost = quantity > 0 ? totalCost / quantity : 0;
-                },
-
-                get grandTotal() {
-                    return this.items.reduce((sum, item) => sum + (parseFloat(item.total_value) || 0), 0);
-                },
-
-                formatNumber(value) {
-                    return parseFloat(value || 0).toLocaleString('en-PK', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    });
-                }
-            }
-        }
-
-        async function initializeProductSelect2(index) {
-            const $select = $(`#product_${index}`);
-            const alpineComponent = Alpine.$data($select.closest('form')[0]);
-
-            // Initialize Select2
-            $select.select2({
-                placeholder: 'Select Product',
-                allowClear: false,
-                width: '100%',
-                data: allProducts.map(p => ({
-                    id: p.id,
-                    text: `${p.product_code} - ${p.product_name}`
-                }))
-            });
-            
-            // Set initial value from Alpine.js data if exists (for old input)
-            if (alpineComponent && alpineComponent.items && alpineComponent.items[index] && alpineComponent.items[index].product_id) {
-                const savedQuantity = alpineComponent.items[index].quantity_issued;
-                
-                $select.val(alpineComponent.items[index].product_id).trigger('change.select2');
-                
-                // Load stock data for existing product
-                const warehouseId = $('#warehouse_id').val();
-                if (warehouseId && alpineComponent.items[index].product_id) {
-                    await onProductChange(index, alpineComponent.items[index].product_id, warehouseId);
-                    
-                    // Restore the quantity after stock data loads and trigger calculation
-                    if (savedQuantity > 0) {
-                        alpineComponent.items[index].quantity_issued = savedQuantity;
-                        // Trigger price calculation after a short delay to ensure batch data is loaded
-                        setTimeout(() => {
-                            alpineComponent.updatePriceBasedOnQuantity(index);
-                        }, 100);
                     }
                 }
             }
 
-            // Sync with Alpine.js when product changes
-            $select.on('change', async function() {
-                const productId = $(this).val();
-                const warehouseId = $('#warehouse_id').val();
-                
-                if (alpineComponent && alpineComponent.items && alpineComponent.items[index]) {
-                    alpineComponent.items[index].product_id = productId;
-                    
-                    if (productId && warehouseId) {
-                        await onProductChange(index, productId, warehouseId);
-                    }
-                }
-            });
-        }
+            async function initializeProductSelect2(index) {
+                const $select = $(`#product_${index}`);
+                const alpineComponent = Alpine.$data($select.closest('form')[0]);
 
-        async function onProductChange(index, productId, warehouseId) {
-            if (!productId || !warehouseId) {
-                return;
-            }
-
-            const alpineComponent = Alpine.$data(document.querySelector('[x-data="goodsIssueForm()"]'));
-
-            // Check for duplicates (ensure type consistency)
-            const isDuplicate = alpineComponent.items.some((item, idx) => {
-                return idx !== index && String(item.product_id) === String(productId);
-            });
-
-            if (isDuplicate) {
-                alert('⚠️ DUPLICATE PRODUCT!\n\nThis product is already added to the list.\n\nPlease adjust the quantity in the existing row instead of adding it again.');
-                $(`#product_${index}`).val('').trigger('change');
-                alpineComponent.items[index].product_id = '';
-                return;
-            }
-
-            try {
-                const response = await fetch(`/api/warehouses/${warehouseId}/products/${productId}/stock`);
-                const data = await response.json();
-
-                // Store batch data
-                productBatches[productId] = data.batches || [];
-
-                // Update Alpine.js data
-                alpineComponent.items[index].available_qty = parseFloat(data.available_quantity || 0).toFixed(2);
-                alpineComponent.items[index].uom_id = data.stock_uom_id || '';
-                
-                // Set selling_price from first batch's selling_price
-                if (data.batches && data.batches.length > 0) {
-                    alpineComponent.items[index].selling_price = parseFloat(data.batches[0].selling_price || 0);
-                } else {
-                    alpineComponent.items[index].selling_price = 0;
-                }
-
-                // Show batch info
-                displayBatchInfo(index, data.batches, data.has_multiple_prices);
-
-                // Only clear quantity and price if this is a new product selection (not loading existing item)
-                if (alpineComponent.items[index].quantity_issued === 0 || alpineComponent.items[index].quantity_issued === null || alpineComponent.items[index].quantity_issued === undefined) {
-                    alpineComponent.items[index].total_value = 0;
-                    alpineComponent.items[index].unit_cost = 0;
-                    document.getElementById(`price_breakdown_${index}`).innerHTML = '';
-                }
-
-            } catch (error) {
-                console.error('Error fetching product stock:', error);
-                alert('Error loading product stock data');
-            }
-        }
-
-        function displayBatchInfo(index, batches, hasMultiplePrices) {
-            const batchInfoDiv = document.getElementById(`batch_info_${index}`);
-            
-            if (!batches || batches.length === 0) {
-                batchInfoDiv.innerHTML = '';
-                return;
-            }
-
-            if (hasMultiplePrices) {
-                let batchHtml = '<div class="text-orange-600 font-semibold mt-1">⚠️ Multiple batch prices:</div>';
-                batches.forEach((batch, idx) => {
-                    const promo = batch.is_promotional ? ' 🎁' : '';
-                    batchHtml += `<div class="ml-2">Batch ${idx + 1}: ${batch.quantity.toFixed(0)} @ ₨${batch.selling_price.toFixed(2)}${promo}</div>`;
-                });
-                batchInfoDiv.innerHTML = batchHtml;
-            } else {
-                batchInfoDiv.innerHTML = `<div class="text-green-600">✓ Single price: ₨${batches[0].selling_price.toFixed(2)}</div>`;
-            }
-        }
-
-        // Initialize when DOM is ready
-        function initializeGoodsIssueForm() {
-            if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
-                setTimeout(initializeGoodsIssueForm, 100);
-                return;
-            }
-
-            $(document).ready(function() {
-                // Load all products
-                allProducts = @json($products);
-
-                // Initialize standard Select2 dropdowns
-                $('#warehouse_id, #vehicle_id, #employee_id').select2({
-                    placeholder: 'Select an option',
+                // Initialize Select2
+                $select.select2({
+                    placeholder: 'Select Product',
                     allowClear: false,
-                    width: '100%'
+                    width: '100%',
+                    data: allProducts.map(p => ({
+                        id: p.id,
+                        text: `${p.product_code} - ${p.product_name}`
+                    }))
                 });
 
-                // Initialize product selects for existing items
-                $('.product-select').each(function(index) {
-                    initializeProductSelect2(index);
-                });
-            });
-        }
+                // Set initial value from Alpine.js data if exists (for old input)
+                if (alpineComponent && alpineComponent.items && alpineComponent.items[index] && alpineComponent.items[index].product_id) {
+                    const savedQuantity = alpineComponent.items[index].quantity_issued;
 
-        // Start initialization
-        initializeGoodsIssueForm();
-    </script>
+                    $select.val(alpineComponent.items[index].product_id).trigger('change.select2');
+
+                    // Load stock data for existing product
+                    const warehouseId = $('#warehouse_id').val();
+                    if (warehouseId && alpineComponent.items[index].product_id) {
+                        await onProductChange(index, alpineComponent.items[index].product_id, warehouseId);
+
+                        // Restore the quantity after stock data loads and trigger calculation
+                        if (savedQuantity > 0) {
+                            alpineComponent.items[index].quantity_issued = savedQuantity;
+                            // Trigger price calculation after a short delay to ensure batch data is loaded
+                            setTimeout(() => {
+                                alpineComponent.updatePriceBasedOnQuantity(index);
+                            }, 100);
+                        }
+                    }
+                }
+
+                // Sync with Alpine.js when product changes
+                $select.on('change', async function () {
+                    const productId = $(this).val();
+                    const warehouseId = $('#warehouse_id').val();
+
+                    if (alpineComponent && alpineComponent.items && alpineComponent.items[index]) {
+                        alpineComponent.items[index].product_id = productId;
+
+                        if (productId && warehouseId) {
+                            await onProductChange(index, productId, warehouseId);
+                        }
+                    }
+                });
+            }
+
+            async function onProductChange(index, productId, warehouseId) {
+                if (!productId || !warehouseId) {
+                    return;
+                }
+
+                const alpineComponent = Alpine.$data(document.querySelector('[x-data="goodsIssueForm()"]'));
+
+                // Check for duplicates (ensure type consistency)
+                const isDuplicate = alpineComponent.items.some((item, idx) => {
+                    return idx !== index && String(item.product_id) === String(productId);
+                });
+
+                if (isDuplicate) {
+                    alert('⚠️ DUPLICATE PRODUCT!\n\nThis product is already added to the list.\n\nPlease adjust the quantity in the existing row instead of adding it again.');
+                    $(`#product_${index}`).val('').trigger('change');
+                    alpineComponent.items[index].product_id = '';
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/warehouses/${warehouseId}/products/${productId}/stock`);
+                    const data = await response.json();
+
+                    // Store batch data
+                    productBatches[productId] = data.batches || [];
+
+                    // Update Alpine.js data
+                    alpineComponent.items[index].available_qty = parseFloat(data.available_quantity || 0).toFixed(2);
+                    alpineComponent.items[index].uom_id = data.stock_uom_id || '';
+
+                    // Set selling_price from first batch's selling_price
+                    if (data.batches && data.batches.length > 0) {
+                        alpineComponent.items[index].selling_price = parseFloat(data.batches[0].selling_price || 0);
+                    } else {
+                        alpineComponent.items[index].selling_price = 0;
+                    }
+
+                    // Show batch info
+                    displayBatchInfo(index, data.batches, data.has_multiple_prices);
+
+                    // Only clear quantity and price if this is a new product selection (not loading existing item)
+                    if (alpineComponent.items[index].quantity_issued === 0 || alpineComponent.items[index].quantity_issued === null || alpineComponent.items[index].quantity_issued === undefined) {
+                        alpineComponent.items[index].total_value = 0;
+                        alpineComponent.items[index].unit_cost = 0;
+                        document.getElementById(`price_breakdown_${index}`).innerHTML = '';
+                    }
+
+                } catch (error) {
+                    console.error('Error fetching product stock:', error);
+                    alert('Error loading product stock data');
+                }
+            }
+
+            function displayBatchInfo(index, batches, hasMultiplePrices) {
+                const batchInfoDiv = document.getElementById(`batch_info_${index}`);
+
+                if (!batches || batches.length === 0) {
+                    batchInfoDiv.innerHTML = '';
+                    return;
+                }
+
+                if (hasMultiplePrices) {
+                    let batchHtml = '<div class="text-orange-600 font-semibold mt-1">⚠️ Multiple batch prices:</div>';
+                    batches.forEach((batch, idx) => {
+                        const promo = batch.is_promotional ? ' 🎁' : '';
+                        batchHtml += `<div class="ml-2">Batch ${idx + 1}: ${batch.quantity.toFixed(0)} @ ₨${batch.selling_price.toFixed(2)}${promo}</div>`;
+                    });
+                    batchInfoDiv.innerHTML = batchHtml;
+                } else {
+                    batchInfoDiv.innerHTML = `<div class="text-green-600">✓ Single price: ₨${batches[0].selling_price.toFixed(2)}</div>`;
+                }
+            }
+
+            // Initialize when DOM is ready
+            function initializeGoodsIssueForm() {
+                if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
+                    setTimeout(initializeGoodsIssueForm, 100);
+                    return;
+                }
+
+                $(document).ready(function () {
+                    // Load all products
+                    allProducts = @json($products);
+
+                    // Initialize standard Select2 dropdowns
+                    $('.select2').select2({
+                        placeholder: 'Select an option',
+                        allowClear: true,
+                        width: '100%',
+                        height: '0px',
+                    });
+
+                    // Initialize product selects for existing items
+                    $('.product-select').each(function (index) {
+                        initializeProductSelect2(index);
+                    });
+                });
+            }
+
+            // Start initialization
+            initializeGoodsIssueForm();
+        </script>
     @endpush
 </x-app-layout>

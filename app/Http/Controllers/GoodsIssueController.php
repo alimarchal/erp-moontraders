@@ -580,13 +580,19 @@ class GoodsIssueController extends Controller implements HasMiddleware
     private function generateIssueNumber(): string
     {
         $year = now()->year;
+        $prefix = "GI-{$year}-";
+
         $lastIssue = GoodsIssue::withTrashed()
-            ->whereYear('created_at', $year)
+            ->where('issue_number', 'like', "{$prefix}%")
             ->orderBy('id', 'desc')
             ->first();
 
-        $sequence = $lastIssue ? ((int) substr($lastIssue->issue_number, -4)) + 1 : 1;
+        $sequence = 1;
+        if ($lastIssue) {
+            $lastSequence = (int) str_replace($prefix, '', $lastIssue->issue_number);
+            $sequence = $lastSequence + 1;
+        }
 
-        return sprintf('GI-%d-%04d', $year, $sequence);
+        return sprintf('%s%04d', $prefix, $sequence);
     }
 }

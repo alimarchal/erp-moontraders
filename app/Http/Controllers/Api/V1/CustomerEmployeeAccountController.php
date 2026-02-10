@@ -36,14 +36,14 @@ class CustomerEmployeeAccountController extends Controller
         // Get ALL active customers (salesman can create credit with any customer)
         $customers = Customer::where('is_active', true)
             ->orderBy('customer_name')
-            ->get(['id', 'customer_name', 'business_name'])
+            ->get(['id', 'customer_name', 'customer_code', 'business_name'])
             ->map(function ($customer) use ($balances) {
                 // Use employee-specific balance from ledger (0 if no existing transactions)
                 $balanceData = $balances[$customer->id] ?? ['outstanding_balance' => 0];
 
                 return [
                     'id' => $customer->id,
-                    'name' => $customer->customer_name,
+                    'name' => $customer->customer_name.' ('.$customer->customer_code.')',
                     'business_name' => $customer->business_name ?? $customer->customer_name,
                     'balance' => $balanceData['outstanding_balance'],
                 ];

@@ -15,7 +15,7 @@
 <div x-data="recoveriesModal({
         customers: @js($customers->map(fn($customer) => [
             'id' => $customer->id,
-            'name' => $customer->customer_name,
+            'name' => $customer->customer_name . ' (' . $customer->customer_code . ')',
         ])->values()),
         bankAccounts: @js($bankAccounts->map(fn($bank) => [
             'id' => $bank->id,
@@ -519,7 +519,7 @@
                             }
                             this.customers = rawCustomers.map(c => ({
                                 id: c.id,
-                                name: c.name || c.customer_name,
+                                name: c.name,
                                 balance: c.balance ?? c.receivable_balance ?? 0
                             }));
                             this.rebuildSelect2Options();

@@ -14,7 +14,7 @@
 <div x-data="chequePaymentModal({
         customers: @js($customers->map(fn($customer) => [
             'id' => $customer->id,
-            'name' => $customer->customer_name,
+            'name' => $customer->customer_name . ' (' . $customer->customer_code . ')',
         ])->values()),
         bankAccounts: @js($bankAccounts->map(fn($bank) => [
             'id' => $bank->id,

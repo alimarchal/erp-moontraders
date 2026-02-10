@@ -19,7 +19,7 @@
     window['{{ $modalDataId }}'] = {
         customers: @json($customers->map(fn($customer) => [
             'id' => $customer->id,
-            'name' => $customer->customer_name,
+            'name' => $customer->customer_name . ' (' . $customer->customer_code . ')',
         ])->values()),
         employeeId: {{ $employeeId ?? 'null' }},
         creditInputId: '{{ $creditInputId }}',
@@ -552,9 +552,9 @@
                             // Map to ensure consistent structure with balance
                             this.customers = rawCustomers.map(c => ({
                                 id: c.id,
-                                name: c.name || c.customer_name,
-                        balance: c.balance ?? c.receivable_balance ?? 0
-                        }));
+                                name: c.name,
+                                balance: c.balance ?? c.receivable_balance ?? 0
+                            }));
                             this.rebuildSelect2Options();
                         });
                     },

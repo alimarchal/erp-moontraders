@@ -15,7 +15,7 @@ $customers = $customers instanceof \Illuminate\Support\Collection ? $customers :
 <div x-data="bankTransferModal({
         customers: @js($customers->map(fn ($customer) => [
             'id' => $customer->id,
-            'name' => $customer->customer_name,
+            'name' => $customer->customer_name . ' (' . $customer->customer_code . ')',
         ])->values()),
         bankAccounts: @js($bankAccounts->map(fn ($account) => [
             'id' => $account->id,

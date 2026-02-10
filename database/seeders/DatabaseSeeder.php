@@ -40,6 +40,7 @@ class DatabaseSeeder extends Seeder
             VehicleSeeder::class,               // Seed vehicle master data
             UomSeeder::class,                   // Add units of measurement before products
             ProductSeeder::class,               // Add products from SKU data
+            CategorySeeder::class,              // Add categories and assign to products
             BankAccountSeeder::class,           // Add bank accounts after chart of accounts
             AttachmentSeeder::class,            // Add attachments last
         ]);

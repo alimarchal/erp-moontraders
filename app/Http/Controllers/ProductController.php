@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
+use App\Models\Category;
+
 class ProductController extends Controller implements HasMiddleware
 {
     /**
@@ -37,7 +39,7 @@ class ProductController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         $products = QueryBuilder::for(
-            Product::query()->with(['supplier', 'uom', 'salesUom'])
+            Product::query()->with(['supplier', 'uom', 'salesUom', 'category'])
         )
             ->allowedFilters([
                 AllowedFilter::exact('product_name'),
@@ -46,9 +48,11 @@ class ProductController extends Controller implements HasMiddleware
                 AllowedFilter::partial('barcode'),
                 AllowedFilter::partial('pack_size'),
                 AllowedFilter::exact('supplier_id'),
+                AllowedFilter::exact('category_id'),
                 AllowedFilter::exact('uom_id'),
                 AllowedFilter::exact('valuation_method'),
                 AllowedFilter::exact('is_active'),
+                AllowedFilter::exact('is_powder'),
             ])
             ->orderBy('product_name')
             ->paginate(40)
@@ -58,6 +62,7 @@ class ProductController extends Controller implements HasMiddleware
             'products' => $products,
             'productOptions' => $this->productOptions(),
             'supplierOptions' => $this->supplierOptions(),
+            'categoryOptions' => $this->categoryOptions(),
             'uomOptions' => $this->uomOptions(),
             'valuationMethods' => Product::VALUATION_METHODS,
             'statusOptions' => ['1' => 'Active', '0' => 'Inactive'],
@@ -71,6 +76,7 @@ class ProductController extends Controller implements HasMiddleware
     {
         return view('products.create', [
             'supplierOptions' => $this->supplierOptions(),
+            'categoryOptions' => $this->categoryOptions(),
             'uomOptions' => $this->uomOptions(),
             'valuationMethods' => Product::VALUATION_METHODS,
         ]);
@@ -89,6 +95,9 @@ class ProductController extends Controller implements HasMiddleware
             $payload['is_active'] = array_key_exists('is_active', $payload)
                 ? (bool) $payload['is_active']
                 : true;
+            $payload['is_powder'] = array_key_exists('is_powder', $payload)
+                ? (bool) $payload['is_powder']
+                : false;
 
             $product = Product::create($payload);
 
@@ -141,7 +150,7 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function show(Product $product)
     {
-        $product->load(['supplier', 'uom', 'salesUom']);
+        $product->load(['supplier', 'uom', 'salesUom', 'category']);
 
         return view('products.show', [
             'product' => $product,
@@ -153,11 +162,12 @@ class ProductController extends Controller implements HasMiddleware
      */
     public function edit(Product $product)
     {
-        $product->load(['supplier', 'uom', 'salesUom']);
+        $product->load(['supplier', 'uom', 'salesUom', 'category']);
 
         return view('products.edit', [
             'product' => $product,
             'supplierOptions' => $this->supplierOptions(),
+            'categoryOptions' => $this->categoryOptions(),
             'uomOptions' => $this->uomOptions(),
             'valuationMethods' => Product::VALUATION_METHODS,
         ]);
@@ -176,10 +186,13 @@ class ProductController extends Controller implements HasMiddleware
             $payload['is_active'] = array_key_exists('is_active', $payload)
                 ? (bool) $payload['is_active']
                 : $product->is_active;
+            $payload['is_powder'] = array_key_exists('is_powder', $payload)
+                ? (bool) $payload['is_powder']
+                : $product->is_powder;
 
             $updated = $product->update($payload);
 
-            if (! $updated) {
+            if (!$updated) {
                 DB::rollBack();
 
                 return back()
@@ -259,6 +272,11 @@ class ProductController extends Controller implements HasMiddleware
     protected function supplierOptions()
     {
         return Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+    }
+
+    protected function categoryOptions()
+    {
+        return Category::orderBy('name')->get(['id', 'name']);
     }
 
     protected function uomOptions()

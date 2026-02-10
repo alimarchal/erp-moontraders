@@ -4,8 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -17,6 +16,7 @@ return new class extends Migration
             $table->string('product_code')->unique()->comment('SKU code');
             $table->string('product_name');
             $table->text('description')->nullable();
+            $table->foreignId('category_id')->nullable()->constrained('categories')->nullOnDelete();
 
             // Foreign Keys
             $table->foreignId('supplier_id')->nullable()->constrained('suppliers')->nullOnDelete()->comment('Primary supplier');

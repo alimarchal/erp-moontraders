@@ -14,7 +14,8 @@ class Category extends Model
 
     protected $fillable = [
         'name',
-        'type',
+        'slug',
+        'is_active',
     ];
 
     public function products(): HasMany

@@ -123,11 +123,11 @@
             <!-- Category Filter -->
             <div>
                 <x-label for="filter_category_id" value="Category" />
-                <select id="filter_category_id" name="filter[brand]" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
+                <select id="filter_category_id" name="filter[category_id]" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
                     <option value="">All Categories</option>
-                    @foreach ($brands as $brand)
-                        <option value="{{ $brand }}" {{ request('filter.brand') == $brand ? 'selected' : '' }}>
-                            {{ $brand }}
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}" {{ request('filter.category_id') == $category->id ? 'selected' : '' }}>
+                            {{ $category->name }}
                         </option>
                     @endforeach
                 </select>
@@ -211,7 +211,7 @@
                         Salesman: {{ $selectedSalesmanId ? ($salesmen->find($selectedSalesmanId)->name ?? 'All') : 'All' }} | 
                         Vehicle: {{ $selectedVehicleId ? ($vehicles->find($selectedVehicleId)->vehicle_number ?? 'All') : 'All' }}
                         @if($selectedSupplierId) <br> Supplier: {{ $suppliers->find($selectedSupplierId)->supplier_name ?? '' }} @endif
-                        @if($selectedBrand) | Brand: {{ $selectedBrand }} @endif
+                        @if($selectedCategoryId) | Category: {{ $categories->find($selectedCategoryId)->name ?? '' }} @endif
                         @if($selectedProductId) <br> Product: {{ $allProducts->find($selectedProductId)->product_name ?? '' }} @endif
                     </span>
                     <br>

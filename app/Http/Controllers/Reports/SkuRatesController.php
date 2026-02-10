@@ -29,7 +29,7 @@ class SkuRatesController extends Controller
             ->allowedFilters([
                 AllowedFilter::partial('product_name'),
                 AllowedFilter::partial('product_code'),
-                AllowedFilter::partial('brand'),
+                AllowedFilter::exact('category_id'),
                 AllowedFilter::partial('barcode'),
                 AllowedFilter::partial('pack_size'),
                 AllowedFilter::exact('supplier_id'),
@@ -46,6 +46,7 @@ class SkuRatesController extends Controller
 
         return view('reports.sku-rates.index', [
             'products' => $products,
+            'categories' => \App\Models\Category::where('is_active', true)->orderBy('name')->get(),
             'supplierOptions' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
             'uomOptions' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name']),
             'valuationMethods' => Product::VALUATION_METHODS,
@@ -62,7 +63,7 @@ class SkuRatesController extends Controller
     {
         $perPage = (int) $request->input('per_page', self::DEFAULT_PER_PAGE);
 
-        if (! in_array($perPage, self::PER_PAGE_OPTIONS)) {
+        if (!in_array($perPage, self::PER_PAGE_OPTIONS)) {
             return self::DEFAULT_PER_PAGE;
         }
 

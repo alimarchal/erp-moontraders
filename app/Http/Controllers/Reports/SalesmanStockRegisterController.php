@@ -29,8 +29,8 @@ class SalesmanStockRegisterController extends Controller
 
         $suppliers = Supplier::orderBy('supplier_name')->get();
 
-        // Fetch unique brands from Product table to use as "Categories"
-        $brands = Product::whereNotNull('brand')->distinct()->orderBy('brand')->pluck('brand');
+        // Fetch categories for dropdown
+        $categories = \App\Models\Category::where('is_active', true)->orderBy('name')->get();
 
         $allProducts = Product::orderBy('product_name')->select('id', 'product_name', 'product_code')->get();
 
@@ -44,7 +44,7 @@ class SalesmanStockRegisterController extends Controller
         $returns = collect();
 
         // PRODUCTS QUERY - Always execute based on filters
-        $products = Product::query()
+        $products = Product::with('category')
             ->when($request->input('filter.search'), function ($query, $search) {
                 $query->where('product_name', 'like', "%{$search}%")
                     ->orWhere('product_code', 'like', "%{$search}%");
@@ -52,8 +52,8 @@ class SalesmanStockRegisterController extends Controller
             ->when($request->input('filter.supplier_id'), function ($query, $supplierId) {
                 $query->where('supplier_id', $supplierId);
             })
-            ->when($request->input('filter.brand'), function ($query, $brand) {
-                $query->where('brand', $brand);
+            ->when($request->input('filter.category_id'), function ($query, $categoryId) {
+                $query->where('category_id', $categoryId);
             })
             ->when($request->input('filter.product_id'), function ($query, $productId) {
                 $query->where('id', $productId);
@@ -184,8 +184,8 @@ class SalesmanStockRegisterController extends Controller
                 'id' => $pid,
                 'sku' => $product->product_code,
                 'product_name' => $product->product_name,
-                'category' => $product->brand, // Use Brand column
-                'brand' => $product->brand,
+                'category' => $product->category->name ?? '-', // Use Category relationship
+                // 'brand' => $product->brand, // Removing brand
                 'tp' => $product->unit_sell_price ?? 0, // Trade Price
                 'bf' => $bfQty,
                 'load' => $loadQty,
@@ -204,7 +204,7 @@ class SalesmanStockRegisterController extends Controller
         // If ONLY Salesman/Vehicle is set (or Date), SHOW ONLY items with activity.
         $hasSpecificFilter = $request->filled('filter.search') ||
             $request->filled('filter.supplier_id') ||
-            $request->filled('filter.brand') ||
+            $request->filled('filter.category_id') ||
             $request->filled('filter.product_id');
 
         if (!$hasSpecificFilter) {
@@ -244,20 +244,20 @@ class SalesmanStockRegisterController extends Controller
         $selectedVehicleId = $vehicleId;
         $selectedSalesmanId = $salesmanId;
         $selectedSupplierId = $request->input('filter.supplier_id');
-        $selectedBrand = $request->input('filter.brand');
+        $selectedCategoryId = $request->input('filter.category_id');
         $selectedProductId = $request->input('filter.product_id');
 
         return view('reports.salesman-stock-register.index', compact(
             'vehicles',
             'salesmen',
             'suppliers',
-            'brands',
+            'categories',
             'allProducts',
             'date',
             'selectedVehicleId',
             'selectedSalesmanId',
             'selectedSupplierId',
-            'selectedBrand',
+            'selectedCategoryId',
             'selectedProductId',
             'reportData',
             'financials'

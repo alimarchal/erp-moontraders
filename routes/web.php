@@ -206,6 +206,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         // Products CRUD
         Route::resource('products', ProductController::class);
 
+        // Categories CRUD
+        Route::resource('categories', \App\Http\Controllers\CategoryController::class);
+
         // Customers CRUD
         Route::resource('customers', CustomerController::class);
 

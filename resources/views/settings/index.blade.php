@@ -409,6 +409,26 @@
                     </a>
                 @endcan
 
+                @can('category-list')
+                    <!-- Categories Module Card -->
+                    <a href="{{ route('categories.index') }}"
+                        class="transform hover:scale-110 transition duration-300 shadow-xl rounded-lg col-span-12 sm:col-span-6 md:col-span-3 lg:col-span-3 intro-y bg-white block">
+                        <div class="p-5 flex justify-between">
+                            <div>
+                                <div class="text-3xl font-bold leading-8">{{ \App\Models\Category::count() }}</div>
+                                <div class="mt-1 text-base font-extrabold text-black uppercase">Categories</div>
+                                <div class="text-xs text-gray-500 font-medium lowercase">Product classifications</div>
+                            </div>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                stroke="currentColor" class="h-16 w-16 text-teal-600">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 6h.008v.008H6V6z" />
+                            </svg>
+                        </div>
+                    </a>
+                @endcan
+
                 @can('uom-list')
                     <!-- UOMs Module Card -->
                     <a href="{{ route('uoms.index') }}"

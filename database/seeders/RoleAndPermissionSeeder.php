@@ -46,6 +46,8 @@ class RoleAndPermissionSeeder extends Seeder
             'warehouse' => ['list', 'create', 'edit', 'delete'],
             'warehouse-type' => ['list', 'create', 'edit', 'delete'],
             'product' => ['list', 'create', 'edit', 'delete'],
+            'category' => ['list', 'create', 'edit', 'delete'],
+
             'uom' => ['list', 'create', 'edit', 'delete'],
 
             // Sales & Distribution
@@ -77,40 +79,75 @@ class RoleAndPermissionSeeder extends Seeder
         // Admin: Most things
         $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $adminRole->syncPermissions(array_filter($allPermissionNames, function ($name) {
-            return ! str_contains($name, 'delete') || str_contains($name, 'journal-entry');
+            return !str_contains($name, 'delete') || str_contains($name, 'journal-entry');
         }));
 
         // Accountant
         $accountantRole = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web']);
         $accountantRole->syncPermissions([
-            'accounting-view', 'accounting-manage', 'accounting-post',
-            'accounting-period-list', 'accounting-period-open',
-            'chart-of-account-list', 'chart-of-account-create', 'chart-of-account-edit',
-            'journal-entry-list', 'journal-entry-create', 'journal-entry-edit', 'journal-entry-post',
-            'account-type-list', 'currency-list', 'cost-center-list', 'bank-account-list',
-            'tax-list', 'supplier-list', 'customer-list',
-            'supplier-payment-list', 'supplier-payment-create', 'supplier-payment-post',
+            'accounting-view',
+            'accounting-manage',
+            'accounting-post',
+            'accounting-period-list',
+            'accounting-period-open',
+            'chart-of-account-list',
+            'chart-of-account-create',
+            'chart-of-account-edit',
+            'journal-entry-list',
+            'journal-entry-create',
+            'journal-entry-edit',
+            'journal-entry-post',
+            'account-type-list',
+            'currency-list',
+            'cost-center-list',
+            'bank-account-list',
+            'tax-list',
+            'supplier-list',
+            'customer-list',
+            'supplier-payment-list',
+            'supplier-payment-create',
+            'supplier-payment-post',
             'report-view-financial',
         ]);
 
         // Inventory Manager
         $inventoryManagerRole = Role::firstOrCreate(['name' => 'inventory-manager', 'guard_name' => 'web']);
         $inventoryManagerRole->syncPermissions([
-            'goods-receipt-note-list', 'goods-receipt-note-create', 'goods-receipt-note-edit', 'goods-receipt-note-post',
-            'goods-issue-list', 'goods-issue-create', 'goods-issue-edit', 'goods-issue-post',
-            'stock-transfer-list', 'stock-transfer-create', 'stock-transfer-edit', 'stock-transfer-post',
-            'stock-adjustment-list', 'stock-adjustment-create', 'stock-adjustment-post',
-            'warehouse-list', 'product-list', 'uom-list',
+            'goods-receipt-note-list',
+            'goods-receipt-note-create',
+            'goods-receipt-note-edit',
+            'goods-receipt-note-post',
+            'goods-issue-list',
+            'goods-issue-create',
+            'goods-issue-edit',
+            'goods-issue-post',
+            'stock-transfer-list',
+            'stock-transfer-create',
+            'stock-transfer-edit',
+            'stock-transfer-post',
+            'stock-adjustment-list',
+            'stock-adjustment-create',
+            'stock-adjustment-post',
+            'warehouse-list',
+            'product-list',
+            'uom-list',
             'report-view-inventory',
-            'supplier-list', 'customer-list',
+            'supplier-list',
+            'customer-list',
         ]);
 
         // Sales Manager
         $salesManagerRole = Role::firstOrCreate(['name' => 'sales-manager', 'guard_name' => 'web']);
         $salesManagerRole->syncPermissions([
-            'sales-settlement-list', 'sales-settlement-create', 'sales-settlement-edit', 'sales-settlement-post',
-            'customer-list', 'customer-create', 'customer-edit',
-            'vehicle-list', 'promotional-campaign-list',
+            'sales-settlement-list',
+            'sales-settlement-create',
+            'sales-settlement-edit',
+            'sales-settlement-post',
+            'customer-list',
+            'customer-create',
+            'customer-edit',
+            'vehicle-list',
+            'promotional-campaign-list',
             'report-view-sales',
         ]);
 

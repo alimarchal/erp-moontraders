@@ -99,10 +99,27 @@
                         </div>
                     </div>
 
-                    <div>
-                        <x-label value="Status" />
-                        <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                            :value="$product->is_active ? 'Active' : 'Inactive'" disabled readonly />
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <x-label value="Category" />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
+                                :value="$product->category->name ?? '—'" disabled readonly />
+                        </div>
+                        <div>
+                            <x-label value="Attributes" />
+                            <div class="mt-2 flex space-x-2">
+                                <span
+                                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $product->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                                    {{ $product->is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                                @if($product->is_powder)
+                                <span
+                                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                                    Powder
+                                </span>
+                                @endif
+                            </div>
+                        </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">

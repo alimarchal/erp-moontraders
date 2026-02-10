@@ -186,7 +186,7 @@ class GoodsIssueReportController extends Controller
                     'product_id' => $product->id,
                     'product_code' => $product->product_code,
                     'product_name' => $product->product_name,
-                    'category_name' => $product->brand ?: '-', // User requested Brand in Category column
+                    'category_name' => $product->category->name ?? '-', // User requested Category column
                     'daily_data' => $dailyData,
                     'totals' => [
                         'total_issued_qty' => $rowTotalIssuedQty,

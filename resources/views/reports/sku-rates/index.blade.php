@@ -123,9 +123,16 @@
             </div>
 
             <div>
-                <x-label for="filter_brand" value="Brand" />
-                <x-input id="filter_brand" name="filter[brand]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.brand')" placeholder="Search brand" />
+                <x-label for="filter_category_id" value="Category" />
+                <select id="filter_category_id" name="filter[category_id]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Categories</option>
+                    @foreach ($categories as $category)
+                        <option value="{{ $category->id }}" {{ request('filter.category_id') == $category->id ? 'selected' : '' }}>
+                            {{ $category->name }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
@@ -210,6 +217,7 @@
                         <tr class="bg-gray-50">
                             <th style="width: 40px;">Sr#</th>
                             <th style="width: 180px;">Supplier Name</th>
+                            <th style="width: 120px;">Category</th>
                             <th style="width: 120px;">SKU</th>
                             <th style="width: 80px;">Units</th>
                             <th style="width: 100px;">Invoice Price</th>
@@ -224,19 +232,25 @@
                             @foreach ($supplierProducts as $idx => $product)
                                 <tr>
                                     <td class="text-center" style="vertical-align: middle;">
-                                        {{ $products->firstItem() + $products->search(fn($p) => $p->id === $product->id) }}</td>
+                                        {{ $products->firstItem() + $products->search(fn($p) => $p->id === $product->id) }}
+                                    </td>
                                     @if ($idx === 0)
-                                        <td rowspan="{{ $supplierProducts->count() }}" style="vertical-align: middle; font-weight: 600; background-color: #f9fafb;">
+                                        <td rowspan="{{ $supplierProducts->count() }}"
+                                            style="vertical-align: middle; font-weight: 600; background-color: #f9fafb;">
                                             {{ $product->supplier?->supplier_name ?? '-' }}
                                         </td>
                                     @endif
+                                    <td style="vertical-align: middle;">{{ $product->category->name ?? '-' }}</td>
                                     <td style="vertical-align: middle;">{{ $product->product_code }}</td>
                                     <td class="text-center" style="vertical-align: middle;">
-                                        {{ number_format($product->uom_conversion_factor, 3) }}</td>
+                                        {{ number_format($product->uom_conversion_factor, 3) }}
+                                    </td>
                                     <td class="text-right" style="vertical-align: middle;">
-                                        {{ number_format($product->cost_price, 2) }}</td>
+                                        {{ number_format($product->cost_price, 2) }}
+                                    </td>
                                     <td class="text-right" style="vertical-align: middle;">
-                                        {{ number_format($product->unit_sell_price, 2) }}</td>
+                                        {{ number_format($product->unit_sell_price, 2) }}
+                                    </td>
                                 </tr>
                             @endforeach
                         @empty

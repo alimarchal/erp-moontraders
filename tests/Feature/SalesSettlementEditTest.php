@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\AccountType;
+use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\Customer;
@@ -9,6 +10,7 @@ use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
 use App\Models\Product;
 use App\Models\SalesSettlement;
+use App\Models\SalesSettlementCheque;
 use App\Models\SalesSettlementCreditSale;
 use App\Models\SalesSettlementExpense;
 use App\Models\SalesSettlementPercentageExpense;
@@ -260,4 +262,172 @@ test('can update sales settlement with percentage expenses', function () {
         'invoice_number' => 'INV-002',
         'amount' => 300,
     ]);
+});
+
+test('edit page shows cheques with customer_name and bank_account_name', function () {
+    $user = User::factory()->create(['is_super_admin' => 'Yes']);
+
+    $employee = Employee::factory()->create();
+    $vehicle = Vehicle::factory()->create();
+    $warehouse = Warehouse::factory()->create();
+
+    $uom = Uom::factory()->create();
+    $product = Product::factory()->create();
+    $customer = Customer::factory()->create([
+        'customer_code' => 'CHQ-C001',
+        'customer_name' => 'Cheque Customer',
+    ]);
+    $bankAccount = BankAccount::factory()->create([
+        'account_name' => 'HBL Current',
+        'bank_name' => 'HBL',
+    ]);
+
+    $goodsIssue = GoodsIssue::factory()->create([
+        'status' => 'issued',
+        'warehouse_id' => $warehouse->id,
+        'vehicle_id' => $vehicle->id,
+        'employee_id' => $employee->id,
+        'issued_by' => $user->id,
+    ]);
+
+    GoodsIssueItem::factory()->create([
+        'goods_issue_id' => $goodsIssue->id,
+        'line_no' => 1,
+        'product_id' => $product->id,
+        'uom_id' => $uom->id,
+        'quantity_issued' => 10,
+        'unit_cost' => 100,
+        'selling_price' => 150,
+        'total_value' => 1500,
+    ]);
+
+    $settlement = SalesSettlement::factory()->create([
+        'status' => 'draft',
+        'goods_issue_id' => $goodsIssue->id,
+        'employee_id' => $employee->id,
+        'vehicle_id' => $vehicle->id,
+        'warehouse_id' => $warehouse->id,
+    ]);
+
+    SalesSettlementCheque::factory()->create([
+        'sales_settlement_id' => $settlement->id,
+        'customer_id' => $customer->id,
+        'bank_account_id' => $bankAccount->id,
+        'cheque_number' => 'CHQ-000001',
+        'amount' => 3000.00,
+        'bank_name' => 'HBL',
+        'cheque_date' => now()->toDateString(),
+        'status' => 'pending',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->get(route('sales-settlements.edit', $settlement, absolute: false));
+
+    $response->assertSuccessful();
+
+    $html = $response->getContent();
+
+    $chequesJson = null;
+    if (preg_match('/id="cheques"[^>]*value=\'(\[.*?\])\'/', $html, $matches)) {
+        $chequesJson = json_decode($matches[1], true);
+    }
+
+    expect($chequesJson)->not->toBeNull()
+        ->and($chequesJson)->toHaveCount(1)
+        ->and($chequesJson[0]['customer_name'])->toBe('Cheque Customer')
+        ->and($chequesJson[0]['bank_account_name'])->toBe('HBL Current')
+        ->and($chequesJson[0]['cheque_number'])->toBe('CHQ-000001')
+        ->and((float) $chequesJson[0]['amount'])->toBe(3000.0);
+});
+
+test('update calculates cash_sales_amount as gross cash sales not denomination total', function () {
+    $user = User::factory()->create(['is_super_admin' => 'Yes']);
+
+    $employee = Employee::factory()->create();
+    $vehicle = Vehicle::factory()->create();
+    $warehouse = Warehouse::factory()->create();
+
+    $uom = Uom::factory()->create();
+    $product = Product::factory()->create();
+
+    $goodsIssue = GoodsIssue::factory()->create([
+        'status' => 'issued',
+        'warehouse_id' => $warehouse->id,
+        'vehicle_id' => $vehicle->id,
+        'employee_id' => $employee->id,
+        'issued_by' => $user->id,
+    ]);
+
+    GoodsIssueItem::factory()->create([
+        'goods_issue_id' => $goodsIssue->id,
+        'line_no' => 1,
+        'product_id' => $product->id,
+        'uom_id' => $uom->id,
+        'quantity_issued' => 10,
+        'unit_cost' => 100,
+        'selling_price' => 150,
+        'total_value' => 1500,
+    ]);
+
+    $settlement = SalesSettlement::factory()->create([
+        'status' => 'draft',
+        'goods_issue_id' => $goodsIssue->id,
+        'employee_id' => $employee->id,
+        'vehicle_id' => $vehicle->id,
+        'warehouse_id' => $warehouse->id,
+        'settlement_number' => 'SETTLE-2025-9999',
+    ]);
+
+    $response = $this->actingAs($user)
+        ->put(route('sales-settlements.update', $settlement), [
+            'settlement_date' => now()->toDateString(),
+            'goods_issue_id' => $goodsIssue->id,
+            'items' => [
+                [
+                    'product_id' => $product->id,
+                    'quantity_issued' => 10,
+                    'quantity_sold' => 10,
+                    'quantity_returned' => 0,
+                    'unit_cost' => 100,
+                    'selling_price' => 150,
+                    'batches' => [],
+                ],
+            ],
+            'credit_sales_amount' => 200,
+            'cheques' => [
+                [
+                    'cheque_number' => 'CHQ-TEST',
+                    'amount' => 300,
+                    'bank_name' => 'HBL',
+                    'cheque_date' => now()->toDateString(),
+                ],
+            ],
+            'bank_transfers' => [
+                [
+                    'bank_account_id' => BankAccount::factory()->create()->id,
+                    'amount' => 100,
+                    'transfer_date' => now()->toDateString(),
+                ],
+            ],
+            'denom_5000' => 0,
+            'denom_1000' => 1,
+            'denom_500' => 0,
+            'denom_100' => 0,
+            'denom_50' => 0,
+            'denom_20' => 0,
+            'denom_10' => 0,
+            'denom_coins' => 0,
+        ]);
+
+    $response->assertRedirect(route('sales-settlements.show', $settlement));
+
+    $settlement->refresh();
+
+    // Total sales value from items = 10 * 150 = 1500
+    // cash_sales_amount = totalSalesValue - credit(200) - cheques(300) - bankTransfers(100) = 900
+    expect((float) $settlement->cash_sales_amount)->toBe(900.0)
+        ->and((float) $settlement->cheque_sales_amount)->toBe(300.0)
+        ->and((float) $settlement->bank_transfer_amount)->toBe(100.0)
+        ->and((float) $settlement->credit_sales_amount)->toBe(200.0)
+        ->and((float) $settlement->cash_collected)->toBe(1000.0);
 });

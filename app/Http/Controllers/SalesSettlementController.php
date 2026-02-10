@@ -1005,6 +1005,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'items.batches',
             'creditSales.customer',
             'recoveries.customer',
+            'recoveries.bankAccount',
+            'cheques.customer',
+            'cheques.bankAccount',
+            'bankTransfers.customer',
+            'bankTransfers.bankAccount',
             'advanceTaxes.customer',
             'amrPowders.product',
             'amrLiquids.product',
@@ -1054,20 +1059,23 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'recovery_number' => $r->recovery_number,
             'payment_method' => $r->payment_method,
             'bank_account_id' => $r->bank_account_id,
+            'bank_account_name' => $r->bankAccount?->account_name,
             'amount' => (float) $r->amount,
             'previous_balance' => (float) $r->previous_balance,
             'new_balance' => (float) $r->new_balance,
             'notes' => $r->notes,
-        ]);
+        ])->toArray();
 
         $bankTransfersDecoded = $salesSettlement->bankTransfers->map(fn ($t) => [
             'customer_id' => $t->customer_id,
             'customer_name' => $t->customer?->customer_name ?? 'Unknown',
             'bank_account_id' => $t->bank_account_id,
+            'bank_account_name' => $t->bankAccount?->account_name ?? 'Unknown',
             'amount' => (float) $t->amount,
             'reference_number' => $t->reference_number,
             'transfer_date' => $t->transfer_date,
-        ]);
+            'notes' => $t->notes,
+        ])->toArray();
 
         $bankSlipsDecoded = $salesSettlement->bankSlips->map(fn ($s) => [
             'bank_account_id' => $s->bank_account_id,
@@ -1082,10 +1090,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'customer_id' => $c->customer_id,
             'customer_name' => $c->customer?->customer_name ?? 'Unknown',
             'bank_account_id' => $c->bank_account_id,
+            'bank_account_name' => $c->bankAccount?->account_name ?? null,
             'cheque_number' => $c->cheque_number,
             'amount' => (float) $c->amount,
+            'bank_name' => $c->bank_name,
             'cheque_date' => $c->cheque_date,
-        ]);
+            'notes' => $c->notes,
+        ])->toArray();
 
         $advanceTaxesDecoded = $salesSettlement->advanceTaxes->map(fn ($tax) => [
             'customer_id' => $tax->customer_id,
@@ -1309,21 +1320,17 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 }
             }
 
-            // Cash sales include only physical cash from denominations
-            $cashSalesAmount = $denomTotal;
+            // Calculate Gross Cash Sales = Total Sales Value - Credit - Cheque - Bank
+            $cashSalesAmount = $totalSalesValue - ($request->credit_sales_amount ?? 0) - $totalCheques - $totalBankTransfers;
 
-            $totalSalesAmount = $cashSalesAmount +
-                $totalCheques +
-                $totalBankTransfers +
-                ($request->credit_sales_amount ?? 0) +
-                $totalRecoveries;
+            // Total Sales Amount is the total revenue from items sold
+            $totalSalesAmount = $totalSalesValue;
 
-            // Cash collected is physical cash (denomination count)
+            // Cash collected is strictly physical cash from denominations
             $cashCollected = $denomTotal;
 
-            // Cash to deposit includes cash recoveries, minus expenses paid from cash
-            // Assumes all expenses are paid from cash collected
-            $cashToDeposit = $cashCollected + $cashRecoveries - $totalExpenses;
+            // Cash to deposit is the physical cash the salesman has
+            $cashToDeposit = $cashCollected;
 
             // Update sales settlement
             $salesSettlement->update([

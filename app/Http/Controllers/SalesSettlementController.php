@@ -1843,12 +1843,18 @@ class SalesSettlementController extends Controller implements HasMiddleware
     private function generateSettlementNumber(): string
     {
         $year = now()->year;
-        $lastSettlement = SalesSettlement::whereYear('created_at', $year)
+        $prefix = "SETTLE-{$year}-";
+
+        $lastSettlement = SalesSettlement::where('settlement_number', 'like', "{$prefix}%")
             ->orderBy('id', 'desc')
             ->first();
 
-        $sequence = $lastSettlement ? ((int) substr($lastSettlement->settlement_number, -4)) + 1 : 1;
+        $sequence = 1;
+        if ($lastSettlement) {
+            $lastSequence = (int) str_replace($prefix, '', $lastSettlement->settlement_number);
+            $sequence = $lastSequence + 1;
+        }
 
-        return sprintf('SETTLE-%d-%04d', $year, $sequence);
+        return sprintf('%s%04d', $prefix, $sequence);
     }
 }

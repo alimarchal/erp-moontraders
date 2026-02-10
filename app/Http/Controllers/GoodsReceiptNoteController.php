@@ -524,13 +524,15 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     private function generateGRNNumber(): string
     {
         $year = now()->year;
-        $lastGRN = GoodsReceiptNote::whereYear('created_at', $year)
+        $prefix = "GRN-{$year}-";
+
+        $lastGRN = GoodsReceiptNote::where('grn_number', 'like', "{$prefix}%")
             ->orderBy('id', 'desc')
             ->first();
 
-        $sequence = $lastGRN ? ((int) substr($lastGRN->grn_number, -4)) + 1 : 1;
+        $sequence = $lastGRN ? ((int) str_replace($prefix, '', $lastGRN->grn_number)) + 1 : 1;
 
-        return sprintf('GRN-%d-%04d', $year, $sequence);
+        return sprintf('%s%04d', $prefix, $sequence);
     }
 
     /**

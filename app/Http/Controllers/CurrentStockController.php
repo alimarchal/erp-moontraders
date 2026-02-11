@@ -7,11 +7,20 @@ use App\Models\CurrentStockByBatch;
 use App\Models\Product;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class CurrentStockController extends Controller
+class CurrentStockController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-inventory'),
+        ];
+    }
+
     /**
      * Display current stock summary by product and warehouse
      */

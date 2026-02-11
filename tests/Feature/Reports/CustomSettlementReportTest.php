@@ -7,18 +7,24 @@ use App\Models\Employee;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementExpense;
 use App\Models\User;
-use App\Models\Supplier;
-use App\Models\SalesSettlementBankSlip;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class CustomSettlementReportTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Permission::create(['name' => 'report-view-audit']);
+    }
+
     public function test_custom_settlement_report_loads()
     {
         $user = User::factory()->create();
+        $user->givePermissionTo('report-view-audit');
         $this->actingAs($user);
 
         $response = $this->get(route('reports.custom-settlement.index'));
@@ -30,6 +36,7 @@ class CustomSettlementReportTest extends TestCase
     public function test_report_aggregates_multiple_settlements_on_same_day()
     {
         $user = User::factory()->create();
+        $user->givePermissionTo('report-view-audit');
         $this->actingAs($user);
 
         // Setup Dependencies

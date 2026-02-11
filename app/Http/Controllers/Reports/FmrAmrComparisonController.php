@@ -5,10 +5,19 @@ namespace App\Http\Controllers\Reports;
 use App\Http\Controllers\Controller;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 
-class FmrAmrComparisonController extends Controller
+class FmrAmrComparisonController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-sales'),
+        ];
+    }
+
     /**
      * GL Account codes for the report.
      */
@@ -31,7 +40,7 @@ class FmrAmrComparisonController extends Controller
 
         // Get supplier filter (supports multiple selection)
         $supplierIds = $request->input('filter.supplier_ids', []);
-        if (!is_array($supplierIds)) {
+        if (! is_array($supplierIds)) {
             $supplierIds = array_filter([$supplierIds]);
         }
         $supplierIds = array_filter($supplierIds);
@@ -139,7 +148,7 @@ class FmrAmrComparisonController extends Controller
                 ->groupBy('s.id', 's.supplier_name', 's.short_name', DB::raw('YEAR(ss.settlement_date)'), DB::raw('MONTH(ss.settlement_date)'));
 
             // Apply supplier filter to each query individually if properly set
-            if (!empty($supplierIds)) {
+            if (! empty($supplierIds)) {
                 $grnQuery->whereIn('s.id', $supplierIds);
                 $settlementLiquidQuery->whereIn('s.id', $supplierIds);
                 $settlementPowderQuery->whereIn('s.id', $supplierIds);
@@ -218,7 +227,7 @@ class FmrAmrComparisonController extends Controller
         ];
 
         // Get selected supplier names for display
-        $selectedSupplierNames = !empty($supplierIds)
+        $selectedSupplierNames = ! empty($supplierIds)
             ? $suppliers->whereIn('id', $supplierIds)->pluck('supplier_name')->implode(', ')
             : 'All Suppliers';
 

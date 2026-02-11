@@ -7,22 +7,30 @@ use App\Models\Employee;
 use App\Models\SalesSettlement;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class SalesSettlementReportController extends Controller
+class SalesSettlementReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-sales'),
+        ];
+    }
+
     public function index(Request $request)
     {
         // Set default dates in request if missing, so QueryBuilder picks them up via default logic or accessible via input
-        if (!$request->has('filter.settlement_date_from')) {
+        if (! $request->has('filter.settlement_date_from')) {
             $request->merge([
                 'filter' => array_merge($request->input('filter', []), [
                     'settlement_date_from' => now()->startOfMonth()->format('Y-m-d'),
                     'settlement_date_to' => now()->endOfMonth()->format('Y-m-d'),
-                ])
+                ]),
             ]);
         }
 
@@ -54,7 +62,7 @@ class SalesSettlementReportController extends Controller
                 'expenses_claimed',
                 'total_quantity_shortage',
                 'cash_to_deposit',
-                'status'
+                'status',
             ])
             ->with(['employee', 'vehicle', 'warehouse', 'goodsIssue']);
 
@@ -98,16 +106,18 @@ class SalesSettlementReportController extends Controller
         }
         if ($request->filled('filter.vehicle_id')) {
             $vehicle = $vehicles->find($request->input('filter.vehicle_id'));
-            if ($vehicle)
+            if ($vehicle) {
                 $filterSummary[] = "Vehicle: {$vehicle->registration_number}";
+            }
         }
         if ($request->filled('filter.warehouse_id')) {
             $warehouse = $warehouses->find($request->input('filter.warehouse_id'));
-            if ($warehouse)
+            if ($warehouse) {
                 $filterSummary[] = "Warehouse: {$warehouse->name}";
+            }
         }
         if ($request->filled('filter.status')) {
-            $filterSummary[] = "Status: " . ucfirst($request->input('filter.status'));
+            $filterSummary[] = 'Status: '.ucfirst($request->input('filter.status'));
         }
 
         return view('reports.sales-settlement.index', [
@@ -122,6 +132,7 @@ class SalesSettlementReportController extends Controller
             'filterSummary' => implode(' | ', $filterSummary),
         ]);
     }
+
     public function print(SalesSettlement $salesSettlement)
     {
         $salesSettlement->load([
@@ -143,7 +154,7 @@ class SalesSettlementReportController extends Controller
             'bankTransfers.bankAccount',
             'cashDenominations',
             'amrPowders.product',
-            'amrLiquids.product'
+            'amrLiquids.product',
         ]);
 
         return view('reports.sales-settlement.print', [

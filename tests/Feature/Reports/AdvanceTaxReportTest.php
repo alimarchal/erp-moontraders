@@ -6,18 +6,25 @@ use App\Models\ChartOfAccount;
 use App\Models\Employee;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementExpense;
-use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class AdvanceTaxReportTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Permission::create(['name' => 'report-view-audit']);
+    }
+
     public function test_advance_tax_report_loads()
     {
         $user = User::factory()->create();
+        $user->givePermissionTo('report-view-audit');
         $this->actingAs($user);
 
         $response = $this->get(route('reports.advance-tax.index'));
@@ -29,6 +36,7 @@ class AdvanceTaxReportTest extends TestCase
     public function test_report_shows_data_and_filters_by_designation()
     {
         $user = User::factory()->create();
+        $user->givePermissionTo('report-view-audit');
         $this->actingAs($user);
 
         // Setup Common Dependencies
@@ -81,7 +89,7 @@ class AdvanceTaxReportTest extends TestCase
         // Helper to create settlement and expense
         $createData = function ($salesman, $amount) use ($user, $vehicle, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
             $goodsIssue = \App\Models\GoodsIssue::create([
-                'issue_number' => 'GI-' . uniqid(),
+                'issue_number' => 'GI-'.uniqid(),
                 'issue_date' => now(),
                 'status' => 'issued',
                 'total_quantity' => 0,
@@ -95,7 +103,7 @@ class AdvanceTaxReportTest extends TestCase
             ]);
 
             $settlement = SalesSettlement::create([
-                'settlement_number' => 'SETTLE-' . uniqid(),
+                'settlement_number' => 'SETTLE-'.uniqid(),
                 'settlement_date' => now()->format('Y-m-d'),
                 'status' => 'posted',
                 'employee_id' => $salesman->id,

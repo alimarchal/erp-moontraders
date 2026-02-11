@@ -4,25 +4,31 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
-use App\Models\GoodsIssue;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
-use Spatie\QueryBuilder\AllowedFilter;
-use Spatie\QueryBuilder\QueryBuilder;
 
-class GoodsIssueReportController extends Controller
+class GoodsIssueReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-sales'),
+        ];
+    }
+
     public function index(Request $request)
     {
         // 1. Initial Setup & Validation
-        if (!$request->has('filter.start_date')) {
+        if (! $request->has('filter.start_date')) {
             $request->merge([
                 'filter' => array_merge($request->input('filter', []), [
                     'start_date' => now()->startOfMonth()->format('Y-m-d'),
                     'end_date' => now()->format('Y-m-d'),
-                ])
+                ]),
             ]);
         }
 
@@ -52,10 +58,10 @@ class GoodsIssueReportController extends Controller
             }, function ($query) {
                 $query->where('goods_issues.status', 'issued'); // Default to issued if not specified (or should we show all?)
                 // Let's default to 'issued' to keep the report relevant to sales, unless user explicitly asks for something else or clears it?
-                // Actually, if 'All Statuses' is selected (empty), we should probably show all or just issued. 
+                // Actually, if 'All Statuses' is selected (empty), we should probably show all or just issued.
                 // Given the columns (Profit/Sale), 'Issued' makes most sense as default.
                 // But if user clears filter, they might expect all. The view options are "All", "Issued", "Draft".
-                // If "All" (value ""), and we default to Issued, it's misleading. 
+                // If "All" (value ""), and we default to Issued, it's misleading.
                 // But let's stick to respecting the input if present.
             })
             ->when($request->input('filter.issue_number'), function ($query, $number) {
@@ -112,7 +118,7 @@ class GoodsIssueReportController extends Controller
                 'cogs' => 0,
                 'gross_profit' => 0,
                 'profit' => 0,
-            ]
+            ],
         ];
 
         // Generate Date Columns
@@ -160,7 +166,7 @@ class GoodsIssueReportController extends Controller
                 $dailyData[$item->date] = [
                     'qty' => $item->total_qty,
                     'value' => $item->total_value,
-                    'count' => $item->issue_count
+                    'count' => $item->issue_count,
                 ];
                 $rowTotalIssuedQty += $item->issue_count; // Summing counts as per user request
                 $rowTotalIssuedValue += $item->total_value;
@@ -198,7 +204,7 @@ class GoodsIssueReportController extends Controller
                         'total_profit' => $rowNetProfit, // Saving NET PROFIT as the main profit for the column
                         'total_gross_profit' => $rowGrossProfit, // Keeping GP if needed
                         'avg_unit_cost' => $avgUnitCost,
-                    ]
+                    ],
                 ]);
 
                 // Add to grand totals

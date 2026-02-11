@@ -15,31 +15,45 @@
                     <x-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
-                    <x-nav-link href="{{ route('goods-receipt-notes.index') }}"
-                        :active="request()->routeIs('goods-receipt-notes.*')">
-                        {{ __('GRN') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('supplier-payments.index') }}"
-                        :active="request()->routeIs('supplier-payments.*')">
-                        {{ __('Payments') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('inventory.current-stock.index') }}"
-                        :active="request()->routeIs('inventory.*')">
-                        {{ __('Inventory') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('goods-issues.index') }}" :active="request()->routeIs('goods-issues.*')">
-                        {{ __('Goods Issue') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('sales-settlements.index') }}"
-                        :active="request()->routeIs('sales-settlements.*')">
-                        {{ __('Sales Settlement') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*')">
-                        {{ __('Settings') }}
-                    </x-nav-link>
-                    <x-nav-link href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')">
-                        {{ __('Reports') }}
-                    </x-nav-link>
+                    @can('goods-receipt-note-list')
+                        <x-nav-link href="{{ route('goods-receipt-notes.index') }}"
+                            :active="request()->routeIs('goods-receipt-notes.*')">
+                            {{ __('GRN') }}
+                        </x-nav-link>
+                    @endcan
+                    @can('supplier-payment-list')
+                        <x-nav-link href="{{ route('supplier-payments.index') }}"
+                            :active="request()->routeIs('supplier-payments.*')">
+                            {{ __('Payments') }}
+                        </x-nav-link>
+                    @endcan
+                    @canany(['goods-receipt-note-list', 'goods-issue-list', 'report-view-inventory'])
+                        <x-nav-link href="{{ route('inventory.current-stock.index') }}"
+                            :active="request()->routeIs('inventory.*')">
+                            {{ __('Inventory') }}
+                        </x-nav-link>
+                    @endcanany
+                    @can('goods-issue-list')
+                        <x-nav-link href="{{ route('goods-issues.index') }}" :active="request()->routeIs('goods-issues.*')">
+                            {{ __('Goods Issue') }}
+                        </x-nav-link>
+                    @endcan
+                    @can('sales-settlement-list')
+                        <x-nav-link href="{{ route('sales-settlements.index') }}"
+                            :active="request()->routeIs('sales-settlements.*')">
+                            {{ __('Sales Settlement') }}
+                        </x-nav-link>
+                    @endcan
+                    @can('setting-view')
+                        <x-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*')">
+                            {{ __('Settings') }}
+                        </x-nav-link>
+                    @endcan
+                    @canany(['report-view-financial', 'report-view-inventory', 'report-view-sales', 'report-view-audit'])
+                        <x-nav-link href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')">
+                            {{ __('Reports') }}
+                        </x-nav-link>
+                    @endcanany
                 </div>
             </div>
 
@@ -178,33 +192,47 @@
             <x-responsive-nav-link href="{{ route('dashboard') }}" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('goods-receipt-notes.index') }}"
-                :active="request()->routeIs('goods-receipt-notes.*')">
-                {{ __('GRN') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('supplier-payments.index') }}"
-                :active="request()->routeIs('supplier-payments.*')">
-                {{ __('Payments') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('inventory.current-stock.index') }}"
-                :active="request()->routeIs('inventory.*')">
-                {{ __('Inventory') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('goods-issues.index') }}"
-                :active="request()->routeIs('goods-issues.*')">
-                {{ __('Distribution') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('sales-settlements.index') }}"
-                :active="request()->routeIs('sales-settlements.*')">
-                {{ __('Sales') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*')">
-                {{ __('Settings') }}
-            </x-responsive-nav-link>
-            <x-responsive-nav-link href="{{ route('reports.general-ledger.index') }}"
-                :active="request()->routeIs('reports.*')">
-                {{ __('Reports') }}
-            </x-responsive-nav-link>
+            @can('goods-receipt-note-list')
+                <x-responsive-nav-link href="{{ route('goods-receipt-notes.index') }}"
+                    :active="request()->routeIs('goods-receipt-notes.*')">
+                    {{ __('GRN') }}
+                </x-responsive-nav-link>
+            @endcan
+            @can('supplier-payment-list')
+                <x-responsive-nav-link href="{{ route('supplier-payments.index') }}"
+                    :active="request()->routeIs('supplier-payments.*')">
+                    {{ __('Payments') }}
+                </x-responsive-nav-link>
+            @endcan
+            @canany(['goods-receipt-note-list', 'goods-issue-list', 'report-view-inventory'])
+                <x-responsive-nav-link href="{{ route('inventory.current-stock.index') }}"
+                    :active="request()->routeIs('inventory.*')">
+                    {{ __('Inventory') }}
+                </x-responsive-nav-link>
+            @endcanany
+            @can('goods-issue-list')
+                <x-responsive-nav-link href="{{ route('goods-issues.index') }}"
+                    :active="request()->routeIs('goods-issues.*')">
+                    {{ __('Distribution') }}
+                </x-responsive-nav-link>
+            @endcan
+            @can('sales-settlement-list')
+                <x-responsive-nav-link href="{{ route('sales-settlements.index') }}"
+                    :active="request()->routeIs('sales-settlements.*')">
+                    {{ __('Sales') }}
+                </x-responsive-nav-link>
+            @endcan
+            @can('setting-view')
+                <x-responsive-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*')">
+                    {{ __('Settings') }}
+                </x-responsive-nav-link>
+            @endcan
+            @canany(['report-view-financial', 'report-view-inventory', 'report-view-sales', 'report-view-audit'])
+                <x-responsive-nav-link href="{{ route('reports.general-ledger.index') }}"
+                    :active="request()->routeIs('reports.*')">
+                    {{ __('Reports') }}
+                </x-responsive-nav-link>
+            @endcanany
         </div>
 
         <!-- Responsive Settings Options -->

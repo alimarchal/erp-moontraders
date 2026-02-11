@@ -6,14 +6,23 @@ use App\Models\Customer;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 
-class CreditSalesReportController extends Controller
+class CreditSalesReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-sales'),
+        ];
+    }
+
     public function salesmanCreditHistory(Request $request)
     {
         // Default date range: current month
-        if (!$request->has('filter.start_date')) {
+        if (! $request->has('filter.start_date')) {
             $request->merge([
                 'filter' => array_merge($request->input('filter', []), [
                     'start_date' => now()->startOfMonth()->format('Y-m-d'),
@@ -25,7 +34,7 @@ class CreditSalesReportController extends Controller
         $startDate = $request->input('filter.start_date');
         $endDate = $request->input('filter.end_date');
         $employeeIds = $request->input('filter.employee_ids', []);
-        if (!is_array($employeeIds)) {
+        if (! is_array($employeeIds)) {
             $employeeIds = array_filter([$employeeIds]);
         }
         $employeeIds = array_filter($employeeIds);
@@ -96,28 +105,28 @@ class CreditSalesReportController extends Controller
         }
 
         // Filter by selected employees
-        if (!empty($employeeIds)) {
+        if (! empty($employeeIds)) {
             $query->whereIn('employees.id', $employeeIds);
         }
 
         // Filter by name
         if ($request->filled('filter.name')) {
-            $query->where('name', 'like', '%' . $request->input('filter.name') . '%');
+            $query->where('name', 'like', '%'.$request->input('filter.name').'%');
         }
 
         // Filter by employee code
         if ($request->filled('filter.employee_code')) {
-            $query->where('employee_code', 'like', '%' . $request->input('filter.employee_code') . '%');
+            $query->where('employee_code', 'like', '%'.$request->input('filter.employee_code').'%');
         }
 
         // Only apply "has credit sales" constraint if NO supplier/designation/employee filter is applied.
         // If a filter is applied, we want to see ALL matching employees, even if they have 0 activity.
         if (
-            !$request->filled('filter.supplier_id') &&
-            !$request->filled('filter.designation') &&
+            ! $request->filled('filter.supplier_id') &&
+            ! $request->filled('filter.designation') &&
             empty($employeeIds) &&
-            !$request->filled('filter.name') &&
-            !$request->filled('filter.employee_code')
+            ! $request->filled('filter.name') &&
+            ! $request->filled('filter.employee_code')
         ) {
 
             $query->whereExists(function ($query) {
@@ -136,25 +145,25 @@ class CreditSalesReportController extends Controller
 
         switch ($column) {
             case 'credit_sales':
-                $query->orderByRaw('credit_sales_amount ' . $direction);
+                $query->orderByRaw('credit_sales_amount '.$direction);
                 break;
             case 'recoveries':
-                $query->orderByRaw('recoveries_amount ' . $direction);
+                $query->orderByRaw('recoveries_amount '.$direction);
                 break;
             case 'opening_balance':
-                $query->orderByRaw('opening_balance ' . $direction);
+                $query->orderByRaw('opening_balance '.$direction);
                 break;
             case 'closing_balance':
-                $query->orderByRaw('(opening_balance + credit_sales_amount - recoveries_amount) ' . $direction);
+                $query->orderByRaw('(opening_balance + credit_sales_amount - recoveries_amount) '.$direction);
                 break;
             case 'name':
                 $query->orderBy('name', $direction);
                 break;
             case 'customers_count':
-                $query->orderByRaw('customers_count ' . $direction);
+                $query->orderByRaw('customers_count '.$direction);
                 break;
             case 'sales_count':
-                $query->orderByRaw('credit_sales_count ' . $direction);
+                $query->orderByRaw('credit_sales_count '.$direction);
                 break;
             default:
                 $query->orderByRaw('(opening_balance + credit_sales_amount - recoveries_amount) desc');
@@ -164,7 +173,7 @@ class CreditSalesReportController extends Controller
 
         // Calculate totals for period
         // Note: Totals calculation currently sums EVERYTHING in the DB. This might need to be filtered by the same criteria if we want "Page Totals" vs "Grand Totals".
-        // For now, keeping it as "Grand Total of all transactions" or adapting to filter? 
+        // For now, keeping it as "Grand Total of all transactions" or adapting to filter?
         // The original logic seemed to sum everything. Let's keep it consistent unless requested.
 
         $totals = DB::table('customer_employee_account_transactions as ceat')
@@ -195,7 +204,7 @@ class CreditSalesReportController extends Controller
         $designations = Employee::distinct()->whereNotNull('designation')->orderBy('designation')->pluck('designation');
 
         // Get selected employee names for display
-        $selectedEmployeeNames = !empty($employeeIds)
+        $selectedEmployeeNames = ! empty($employeeIds)
             ? $employees->whereIn('id', $employeeIds)->pluck('name')->implode(', ')
             : 'All Salesmen';
 
@@ -332,19 +341,19 @@ class CreditSalesReportController extends Controller
 
         // Filters
         if ($request->filled('filter.customer_name')) {
-            $query->where('customer_name', 'like', '%' . $request->input('filter.customer_name') . '%');
+            $query->where('customer_name', 'like', '%'.$request->input('filter.customer_name').'%');
         }
 
         if ($request->filled('filter.customer_code')) {
-            $query->where('customer_code', 'like', '%' . $request->input('filter.customer_code') . '%');
+            $query->where('customer_code', 'like', '%'.$request->input('filter.customer_code').'%');
         }
 
         if ($request->filled('filter.business_name')) {
-            $query->where('business_name', 'like', '%' . $request->input('filter.business_name') . '%');
+            $query->where('business_name', 'like', '%'.$request->input('filter.business_name').'%');
         }
 
         if ($request->filled('filter.phone')) {
-            $query->where('phone', 'like', '%' . $request->input('filter.phone') . '%');
+            $query->where('phone', 'like', '%'.$request->input('filter.phone').'%');
         }
 
         if ($request->filled('filter.city')) {
@@ -365,7 +374,7 @@ class CreditSalesReportController extends Controller
                 $query->orderBy('credit_sales_sum_sale_amount', $direction);
                 break;
             case 'balance':
-                $query->orderByRaw('(credit_sales_sum_sale_amount - recoveries_sum_amount) ' . $direction);
+                $query->orderByRaw('(credit_sales_sum_sale_amount - recoveries_sum_amount) '.$direction);
                 break;
             case 'customer_name':
                 $query->orderBy('customer_name', $direction);

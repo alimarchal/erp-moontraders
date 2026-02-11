@@ -7,10 +7,19 @@ use App\Models\Customer;
 use App\Models\Employee;
 use App\Services\LedgerService;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 
-class CreditorsLedgerController extends Controller
+class CreditorsLedgerController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-audit'),
+        ];
+    }
+
     public function __construct(protected LedgerService $ledgerService) {}
 
     /**

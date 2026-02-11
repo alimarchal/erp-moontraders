@@ -6,10 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\SalesSettlement;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class CashDetailController extends Controller
+class CashDetailController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-audit'),
+        ];
+    }
+
     public function index(Request $request)
     {
         $date = $request->input('date', now()->format('Y-m-d'));
@@ -48,7 +56,7 @@ class CashDetailController extends Controller
             $employeesQuery->where('designation', $designation);
         }
 
-        if (!empty($employeeIds)) {
+        if (! empty($employeeIds)) {
             $employeesQuery->whereIn('id', $employeeIds);
         }
 
@@ -74,27 +82,26 @@ class CashDetailController extends Controller
             return (object) [
                 'salesman_name' => $employee->name,
                 'amount' => $amount,
-                'has_settlement' => $settlement ? true : false
+                'has_settlement' => $settlement ? true : false,
             ];
         });
 
         // If NO supplier is selected, and NO employee filter, maybe we only want to show employees who HAVE a settlement?
         // The user didn't explicitly say "show all employees of the system" if no filter is active.
         // But usually "Cash Detail" implies active settlements.
-        // However, to be safe and consistent with "Show all for supplier", if no filter is active, 
-        // showing ALL employees might be too much. 
+        // However, to be safe and consistent with "Show all for supplier", if no filter is active,
+        // showing ALL employees might be too much.
         // Let's filter the Main List to only those with Amount > 0 OR if a filter is active.
         // Actually, if a Supplier IS selected, show ALL. If NOT, maybe just show those with activity?
         // Let's stick to: If $supplierId OR $employeeIds is set, show matches. Else show only those with activity.
 
-        if (!$supplierId && !$designation && empty($employeeIds)) {
+        if (! $supplierId && ! $designation && empty($employeeIds)) {
             $salesmanData = $salesmanData->filter(function ($item) {
                 return $item->amount > 0 || $item->has_settlement;
             });
         }
 
         $salesmanData = $salesmanData->sortByDesc('amount')->values();
-
 
         // 2. Data for Cash Denominations and Bank Slips (Only from ACTUAL settlements)
         // We need to fetch actual settlements again to aggregate denominations and bank slips
@@ -113,7 +120,7 @@ class CashDetailController extends Controller
             });
         }
 
-        if (!empty($employeeIds)) {
+        if (! empty($employeeIds)) {
             $settlementsQuery->whereIn('employee_id', $employeeIds);
         }
 
@@ -128,7 +135,7 @@ class CashDetailController extends Controller
             '50' => 0,
             '20' => 0,
             '10' => 0,
-            'coins' => 0
+            'coins' => 0,
         ];
 
         foreach ($settlements as $settlement) {
@@ -161,20 +168,20 @@ class CashDetailController extends Controller
             return (object) [
                 'salesman_name' => $employee->name,
                 'amount' => $amount,
-                'has_settlement' => $settlement ? true : false
+                'has_settlement' => $settlement ? true : false,
             ];
         });
 
         // Filter logic identical to salesmanData
-        if (!$supplierId && !$designation && empty($employeeIds)) {
+        if (! $supplierId && ! $designation && empty($employeeIds)) {
             $bankSlipsData = $bankSlipsData->filter(function ($item) {
                 return $item->amount > 0 || $item->has_settlement;
             });
         }
 
         // We do NOT sort this by amount descending because the user likely wants the order to match Salesman Cash?
-        // Actually, Salesman Cash IS sorted by amount desc. 
-        // "Bank Slips mein bhi asay he salesman show honay chieyay jsay Salesman Cash mein ho rhay hn" 
+        // Actually, Salesman Cash IS sorted by amount desc.
+        // "Bank Slips mein bhi asay he salesman show honay chieyay jsay Salesman Cash mein ho rhay hn"
         // (Bank Slips should also show salesmen JUST LIKE Salesman Cash).
         // This implies the ORDER should also be the same.
         // Currently Salesman Cash is sorted by Amount Desc.
@@ -185,11 +192,11 @@ class CashDetailController extends Controller
         // This effectively breaks the "Salesman A is here" visual link if they expect them to be the same list.
         // HOWEVER, "show salesmen like Salesman Cash" usually means "Show the list of salesmen".
         // Given they are separate tables, let's sort Bank Slips by its own Amount Desc to show top depositors?
-        // OR does "jsay Salesman Cash mein ho rhay hn" mean "Same list, same order"? 
+        // OR does "jsay Salesman Cash mein ho rhay hn" mean "Same list, same order"?
         // Let's assume SAME LIST, SAME ORDER as Salesman Cash (which is sorted by Cash Amount)? No, that's weird for Bank Slips.
-        // Let's assume "Same List of Names" but sorted by its own value? 
+        // Let's assume "Same List of Names" but sorted by its own value?
         // Actually, looking at the user's request: "Salesman Cash mein ho rhay hn" -> The Salesman Cash table lists them.
-        // I will sort Bank Slips by ITS OWN amount desc for now, as that's standard for "Top X". 
+        // I will sort Bank Slips by ITS OWN amount desc for now, as that's standard for "Top X".
         // If the user wants fixed order (Alphabetical), they would have asked.
         // Wait, if I sort differently, the "Sr.#" won't match per person.
         // Let's just sort by Amount Desc for now.

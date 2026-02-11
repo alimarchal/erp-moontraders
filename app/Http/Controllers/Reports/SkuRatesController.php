@@ -7,11 +7,20 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Uom;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class SkuRatesController extends Controller
+class SkuRatesController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-sales'),
+        ];
+    }
+
     public const PER_PAGE_OPTIONS = [100, 500, 1000, 10000, 1000000];
 
     public const DEFAULT_PER_PAGE = 1000;
@@ -63,7 +72,7 @@ class SkuRatesController extends Controller
     {
         $perPage = (int) $request->input('per_page', self::DEFAULT_PER_PAGE);
 
-        if (!in_array($perPage, self::PER_PAGE_OPTIONS)) {
+        if (! in_array($perPage, self::PER_PAGE_OPTIONS)) {
             return self::DEFAULT_PER_PAGE;
         }
 

@@ -10,9 +10,18 @@ use App\Models\StockMovement;
 use App\Models\VanStockBalance;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class VanStockLedgerController extends Controller
+class VanStockLedgerController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-inventory'),
+        ];
+    }
+
     /**
      * Display van stock ledger - movement history for vehicles
      */

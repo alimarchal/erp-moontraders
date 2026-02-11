@@ -7,11 +7,19 @@ use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 
-class DailyStockRegisterController extends Controller
+class DailyStockRegisterController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-inventory'),
+        ];
+    }
+
     public function index(Request $request)
     {
         $date = $request->input('date', now()->format('Y-m-d'));

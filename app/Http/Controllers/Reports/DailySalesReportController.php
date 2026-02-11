@@ -8,10 +8,19 @@ use App\Models\SalesSettlement;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 
-class DailySalesReportController extends Controller
+class DailySalesReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-sales'),
+        ];
+    }
+
     /**
      * Display daily sales report with filters
      */
@@ -41,7 +50,7 @@ class DailySalesReportController extends Controller
         }
 
         if ($request->filled('settlement_number')) {
-            $query->where('settlement_number', 'like', '%' . $request->input('settlement_number') . '%');
+            $query->where('settlement_number', 'like', '%'.$request->input('settlement_number').'%');
         }
 
         $settlements = $query->get();
@@ -64,8 +73,8 @@ class DailySalesReportController extends Controller
             'date_desc' => $settlements->sortByDesc('settlement_date'),
             'settlement_no_asc' => $settlements->sortBy('settlement_number'),
             'settlement_no_desc' => $settlements->sortByDesc('settlement_number'),
-            'salesman_asc' => $settlements->sortBy(fn($s) => $s->employee->name ?? ''),
-            'salesman_desc' => $settlements->sortByDesc(fn($s) => $s->employee->name ?? ''),
+            'salesman_asc' => $settlements->sortBy(fn ($s) => $s->employee->name ?? ''),
+            'salesman_desc' => $settlements->sortByDesc(fn ($s) => $s->employee->name ?? ''),
             'total_sales_desc' => $settlements->sortByDesc('net_sales_amount'),
             'total_sales_asc' => $settlements->sortBy('net_sales_amount'),
             'net_profit_desc' => $settlements->sortByDesc('net_profit'),
@@ -174,6 +183,7 @@ class DailySalesReportController extends Controller
                 if ($item->settlement_total_sales > 0) {
                     return ($item->total_sales_value / $item->settlement_total_sales) * $item->settlement_total_expense;
                 }
+
                 return 0;
             });
 
@@ -257,7 +267,7 @@ class DailySalesReportController extends Controller
 
         $salesmanPerformance = $settlements
             ->groupBy(function ($settlement) {
-                return $settlement->employee_id . '-' . $settlement->vehicle_id;
+                return $settlement->employee_id.'-'.$settlement->vehicle_id;
             })
             ->map(function ($group) {
                 $first = $group->first();

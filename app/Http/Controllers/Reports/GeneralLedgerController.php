@@ -7,11 +7,20 @@ use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\GeneralLedgerEntry;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class GeneralLedgerController extends Controller
+class GeneralLedgerController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-financial'),
+        ];
+    }
+
     /**
      * Display a listing of the General Ledger entries.
      */

@@ -8,10 +8,19 @@ use App\Models\SalesSettlementExpense;
 use App\Models\Supplier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 
-class SchemeDiscountReportController extends Controller
+class SchemeDiscountReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-sales'),
+        ];
+    }
+
     /**
      * Account code for Scheme Discount Expense.
      */
@@ -28,7 +37,7 @@ class SchemeDiscountReportController extends Controller
 
         // Get salesman filter (supports multiple selection)
         $salesmanIds = $request->input('filter.salesman_ids', []);
-        if (!is_array($salesmanIds)) {
+        if (! is_array($salesmanIds)) {
             $salesmanIds = array_filter([$salesmanIds]);
         }
         $salesmanIds = array_filter($salesmanIds);
@@ -72,7 +81,7 @@ class SchemeDiscountReportController extends Controller
                 'sales_settlement_expenses.amount',
             ]);
 
-        if (!empty($salesmanIds)) {
+        if (! empty($salesmanIds)) {
             $expenses->whereIn('sales_settlements.employee_id', $salesmanIds);
         }
 
@@ -110,9 +119,9 @@ class SchemeDiscountReportController extends Controller
             $reportSalesmenQuery->where('designation', $designation);
         }
 
-        if (!empty($salesmanIds)) {
+        if (! empty($salesmanIds)) {
             $reportSalesmenQuery->whereIn('id', $salesmanIds);
-        } elseif (!$supplierId && !$designation) {
+        } elseif (! $supplierId && ! $designation) {
             // If no filters, show only employees who have activity in this period
             $reportSalesmenIds = $expenses->pluck('employee_id')->unique();
             $reportSalesmenQuery->whereIn('id', $reportSalesmenIds);
@@ -183,7 +192,7 @@ class SchemeDiscountReportController extends Controller
         }
 
         // Selected Salesman Names for display
-        $selectedSalesmanNames = !empty($salesmanIds)
+        $selectedSalesmanNames = ! empty($salesmanIds)
             ? $salesmen->whereIn('id', $salesmanIds)->pluck('name')->implode(', ')
             : 'All Salesmen';
 

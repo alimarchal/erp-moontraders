@@ -11,10 +11,19 @@ use App\Models\Supplier;
 use App\Models\Vehicle;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 
-class SalesmanStockRegisterController extends Controller
+class SalesmanStockRegisterController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-inventory'),
+        ];
+    }
+
     public function index(Request $request)
     {
         $filters = $request->input('filter', []);
@@ -84,7 +93,7 @@ class SalesmanStockRegisterController extends Controller
 
             $salesmanVehicleIds = $salesmanVehicleInfo->keys()->toArray();
 
-            if (!empty($salesmanVehicleIds)) {
+            if (! empty($salesmanVehicleIds)) {
                 $bfQuery->where(function ($query) use ($date, $salesmanVehicleIds, $salesmanId, $salesmanVehicleInfo) {
                     foreach ($salesmanVehicleIds as $vId) {
                         $firstId = $salesmanVehicleInfo[$vId]->first_transaction_id;
@@ -96,16 +105,16 @@ class SalesmanStockRegisterController extends Controller
                                     $q->whereDate('date', '<', $date)
                                         // OR Same day stock strictly BEFORE this salesman's first transaction
                                         ->orWhere(function ($q2) use ($date, $salesmanId, $firstId) {
-                                        $q2->whereDate('date', $date)
-                                            ->where('employee_id', '!=', $salesmanId)
-                                            ->where('id', '<', $firstId);
-                                    });
+                                            $q2->whereDate('date', $date)
+                                                ->where('employee_id', '!=', $salesmanId)
+                                                ->where('id', '<', $firstId);
+                                        });
                                 });
                         });
                     }
                 });
             } else {
-                // Fallback if no vehicle activity found today: Just show previous personal stock? 
+                // Fallback if no vehicle activity found today: Just show previous personal stock?
                 // Or previous vehicle stock if we knew the vehicle?
                 // If no activity, BF is 0 effectively.
                 $bfQuery->where('employee_id', $salesmanId)
@@ -195,7 +204,7 @@ class SalesmanStockRegisterController extends Controller
                 'short' => $short,
                 'amount' => $amount,
                 // Helper for filtering
-                'has_activity' => ($bfQty != 0 || $loadQty != 0 || $saleQty != 0 || $retQty != 0 || $short != 0)
+                'has_activity' => ($bfQty != 0 || $loadQty != 0 || $saleQty != 0 || $retQty != 0 || $short != 0),
             ];
         });
 
@@ -207,7 +216,7 @@ class SalesmanStockRegisterController extends Controller
             $request->filled('filter.category_id') ||
             $request->filled('filter.product_id');
 
-        if (!$hasSpecificFilter) {
+        if (! $hasSpecificFilter) {
             $reportData = $reportData->filter(function ($row) {
                 return $row->has_activity;
             });

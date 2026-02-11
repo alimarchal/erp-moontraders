@@ -9,15 +9,23 @@ use App\Models\SalesSettlementExpense;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
 
 class SchemeDiscountReportTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Permission::create(['name' => 'report-view-sales']);
+    }
+
     public function test_scheme_discount_report_loads()
     {
         $user = User::factory()->create();
+        $user->givePermissionTo('report-view-sales');
         $this->actingAs($user);
 
         $response = $this->get(route('reports.scheme-discount.index'));
@@ -29,6 +37,7 @@ class SchemeDiscountReportTest extends TestCase
     public function test_report_shows_data_correctly()
     {
         $user = User::factory()->create();
+        $user->givePermissionTo('report-view-sales');
         $this->actingAs($user);
 
         // Create Scheme Discount Account
@@ -83,7 +92,7 @@ class SchemeDiscountReportTest extends TestCase
         ]);
 
         $goodsIssue = \App\Models\GoodsIssue::create([
-            'issue_number' => 'GI-TEST-' . uniqid(),
+            'issue_number' => 'GI-TEST-'.uniqid(),
             'issue_date' => now(),
             'status' => 'issued',
             'total_quantity' => 0,
@@ -97,7 +106,7 @@ class SchemeDiscountReportTest extends TestCase
         ]);
 
         $settlement = SalesSettlement::create([
-            'settlement_number' => 'SETTLE-' . uniqid(),
+            'settlement_number' => 'SETTLE-'.uniqid(),
             'settlement_date' => now()->format('Y-m-d'),
             'status' => 'posted',
             'employee_id' => $salesman->id,
@@ -136,6 +145,7 @@ class SchemeDiscountReportTest extends TestCase
     public function test_report_excludes_draft_settlements()
     {
         $user = User::factory()->create();
+        $user->givePermissionTo('report-view-sales');
         $this->actingAs($user);
 
         // Create dependencies
@@ -170,7 +180,7 @@ class SchemeDiscountReportTest extends TestCase
         // Re-use or create new accounts for this test case? RefreshDatabase cleans up, so need to recreate.
         // Or finding existing.
         $stockInHand = ChartOfAccount::where('account_code', '1151')->first();
-        if (!$stockInHand) {
+        if (! $stockInHand) {
             $stockInHand = ChartOfAccount::create([
                 'account_code' => '1151',
                 'account_name' => 'Stock In Hand',
@@ -183,7 +193,7 @@ class SchemeDiscountReportTest extends TestCase
         }
 
         $vanStock = ChartOfAccount::where('account_code', '1155')->first();
-        if (!$vanStock) {
+        if (! $vanStock) {
             $vanStock = ChartOfAccount::create([
                 'account_code' => '1155',
                 'account_name' => 'Van Stock',
@@ -196,7 +206,7 @@ class SchemeDiscountReportTest extends TestCase
         }
 
         $goodsIssue = \App\Models\GoodsIssue::create([
-            'issue_number' => 'GI-TEST-' . uniqid(),
+            'issue_number' => 'GI-TEST-'.uniqid(),
             'issue_date' => now(),
             'status' => 'issued',
             'total_quantity' => 0,
@@ -210,7 +220,7 @@ class SchemeDiscountReportTest extends TestCase
         ]);
 
         $settlement = SalesSettlement::create([
-            'settlement_number' => 'SETTLE-' . uniqid(),
+            'settlement_number' => 'SETTLE-'.uniqid(),
             'settlement_date' => now()->format('Y-m-d'),
             'status' => 'draft',
             'employee_id' => $salesman->id,
@@ -249,6 +259,7 @@ class SchemeDiscountReportTest extends TestCase
     public function test_filters_by_supplier_and_sorting()
     {
         $user = User::factory()->create();
+        $user->givePermissionTo('report-view-sales');
         $this->actingAs($user);
 
         // Setup Common Dependencies
@@ -303,7 +314,7 @@ class SchemeDiscountReportTest extends TestCase
         // Helper to create settlement and expense
         $createData = function ($salesman, $amount) use ($user, $vehicle, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
             $goodsIssue = \App\Models\GoodsIssue::create([
-                'issue_number' => 'GI-' . uniqid(),
+                'issue_number' => 'GI-'.uniqid(),
                 'issue_date' => now(),
                 'status' => 'issued',
                 'total_quantity' => 0,
@@ -317,7 +328,7 @@ class SchemeDiscountReportTest extends TestCase
             ]);
 
             $settlement = SalesSettlement::create([
-                'settlement_number' => 'SETTLE-' . uniqid(),
+                'settlement_number' => 'SETTLE-'.uniqid(),
                 'settlement_date' => now()->format('Y-m-d'),
                 'status' => 'posted',
                 'employee_id' => $salesman->id,
@@ -378,9 +389,11 @@ class SchemeDiscountReportTest extends TestCase
         $response->assertStatus(200);
         $response->assertSeeInOrder(['Salesman B', 'Salesman A']);
     }
+
     public function test_filters_by_designation()
     {
         $user = User::factory()->create();
+        $user->givePermissionTo('report-view-sales');
         $this->actingAs($user);
 
         // Setup Common Dependencies - Simplified
@@ -402,7 +415,7 @@ class SchemeDiscountReportTest extends TestCase
         // Helper to create settlement and expense
         $createData = function ($salesman, $amount) use ($user, $vehicle, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
             $goodsIssue = \App\Models\GoodsIssue::create([
-                'issue_number' => 'GI-' . uniqid(),
+                'issue_number' => 'GI-'.uniqid(),
                 'issue_date' => now(),
                 'status' => 'issued',
                 'total_quantity' => 0,
@@ -416,7 +429,7 @@ class SchemeDiscountReportTest extends TestCase
             ]);
 
             $settlement = SalesSettlement::create([
-                'settlement_number' => 'SETTLE-' . uniqid(),
+                'settlement_number' => 'SETTLE-'.uniqid(),
                 'settlement_date' => now()->format('Y-m-d'),
                 'status' => 'posted',
                 'employee_id' => $salesman->id,

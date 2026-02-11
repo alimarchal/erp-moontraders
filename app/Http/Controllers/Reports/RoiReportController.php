@@ -7,14 +7,23 @@ use App\Models\Employee;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 
-class RoiReportController extends Controller
+class RoiReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-sales'),
+        ];
+    }
+
     public function index(Request $request)
     {
         // 1. Initial Setup & Validation
-        if (!$request->has('filter.start_date')) {
+        if (! $request->has('filter.start_date')) {
             $startDate = \Carbon\Carbon::now()->startOfMonth();
             $endDate = \Carbon\Carbon::now();
         } else {
@@ -73,7 +82,7 @@ class RoiReportController extends Controller
                 $query->where('sales_settlements.warehouse_id', $request->input('filter.warehouse_id'));
             })
             ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
-                $query->where('sales_settlements.settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
+                $query->where('sales_settlements.settlement_number', 'like', '%'.$request->input('filter.settlement_number').'%');
             })
             ->when($request->input('filter.product_id'), function ($query) use ($request) {
                 $query->where('product_id', $request->input('filter.product_id'));
@@ -133,7 +142,7 @@ class RoiReportController extends Controller
                 $query->where('sales_settlements.warehouse_id', $request->input('filter.warehouse_id'));
             })
             ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
-                $query->where('sales_settlements.settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
+                $query->where('sales_settlements.settlement_number', 'like', '%'.$request->input('filter.settlement_number').'%');
             })
             ->selectRaw('
                 SUM(sales_settlement_items.total_sales_value) as total_sales,
@@ -167,7 +176,7 @@ class RoiReportController extends Controller
                 $query->where('sales_settlements.warehouse_id', $request->input('filter.warehouse_id'));
             })
             ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
-                $query->where('sales_settlements.settlement_number', 'like', '%' . $request->input('filter.settlement_number') . '%');
+                $query->where('sales_settlements.settlement_number', 'like', '%'.$request->input('filter.settlement_number').'%');
             })
             ->selectRaw('
                 chart_of_accounts.id as account_id,
@@ -342,7 +351,7 @@ class RoiReportController extends Controller
         // $filterSummary[] = "Period: " . $startDate->format('d-M-Y') . " to " . $endDate->format('d-M-Y');
 
         if ($request->input('filter.settlement_number')) {
-            $filterSummary[] = 'Settlement #: ' . $request->input('filter.settlement_number');
+            $filterSummary[] = 'Settlement #: '.$request->input('filter.settlement_number');
         }
 
         if ($employeeIds) {
@@ -366,7 +375,7 @@ class RoiReportController extends Controller
         }
 
         if ($request->input('filter.status')) {
-            $filterSummary[] = 'Status: ' . ucfirst($request->input('filter.status'));
+            $filterSummary[] = 'Status: '.ucfirst($request->input('filter.status'));
         }
 
         if ($request->input('filter.product_id')) {

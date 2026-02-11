@@ -11,17 +11,25 @@ use App\Models\Supplier;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 
-class InventoryLedgerReportController extends Controller
+class InventoryLedgerReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-inventory'),
+        ];
+    }
+
     public function index(Request $request)
     {
         try {
             // Check if table exists
-            if (!Schema::hasTable('inventory_ledger_entries')) {
+            if (! Schema::hasTable('inventory_ledger_entries')) {
                 return view('reports.inventory-ledger.index', [
                     'entries' => collect(),
                     'products' => Product::orderBy('product_name')->get(),
@@ -180,7 +188,7 @@ class InventoryLedgerReportController extends Controller
                 'closingBalance' => 0,
                 'totalDebits' => 0,
                 'totalCredits' => 0,
-                'error' => 'An error occurred while loading the report. Please try again. Error: ' . $e->getMessage(),
+                'error' => 'An error occurred while loading the report. Please try again. Error: '.$e->getMessage(),
             ]);
         }
     }

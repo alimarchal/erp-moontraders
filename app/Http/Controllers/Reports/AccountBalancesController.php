@@ -6,12 +6,21 @@ use App\Http\Controllers\Controller;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class AccountBalancesController extends Controller
+class AccountBalancesController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-financial'),
+        ];
+    }
+
     /**
      * Display a listing of Account Balances with date filtering.
      */

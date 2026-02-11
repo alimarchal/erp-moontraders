@@ -7,13 +7,25 @@ use App\Models\Employee;
 use App\Models\SalesSettlement;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class CustomSettlementReportController extends Controller
+class CustomSettlementReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-audit'),
+        ];
+    }
+
     // Account Codes
     private const ACC_PERCENTAGE_EXPENSE = '5223';
+
     private const ACC_SCHEME_DISCOUNT = '5292'; // Assuming 5292 based on user request "Scheme Discount Expense (5292)"
+
     private const ACC_AMR_LIQUID = '5262';
+
     private const ACC_AMR_POWDER = '5252';
 
     public function index(Request $request)
@@ -38,7 +50,7 @@ class CustomSettlementReportController extends Controller
             $employeesQuery->where('designation', $designation);
         }
 
-        if (!empty($employeeIds)) {
+        if (! empty($employeeIds)) {
             $employeesQuery->whereIn('id', $employeeIds);
         }
 
@@ -108,7 +120,7 @@ class CustomSettlementReportController extends Controller
             ];
         });
 
-        if (!$supplierId && !$designation && empty($employeeIds)) {
+        if (! $supplierId && ! $designation && empty($employeeIds)) {
             $settlements = $settlements->filter(function ($item) {
                 return $item->has_data;
             })->values();

@@ -7,10 +7,19 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\Vehicle;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 
-class VanStockBatchReportController extends Controller
+class VanStockBatchReportController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:report-view-inventory'),
+        ];
+    }
+
     public function index(Request $request)
     {
         $vehicleId = $request->input('filter.vehicle_id');

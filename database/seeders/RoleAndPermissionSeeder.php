@@ -151,11 +151,7 @@ class RoleAndPermissionSeeder extends Seeder
             'report-view-sales',
         ]);
 
-        // User
-        $userRole = Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
-        $userRole->syncPermissions([
-            'report-view-sales',
-            'report-view-inventory',
-        ]);
+        // User: No default permissions — super admin assigns individually
+        Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
     }
 }

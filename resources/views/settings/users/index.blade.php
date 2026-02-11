@@ -60,25 +60,23 @@
     </x-filter-section>
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
-        <x-status-message />
-
-        @can('user-bulk-update')
-            <form id="bulk-action-form" action="{{ route('users.bulk-update') }}" method="POST">
-                @csrf
-                <div class="mb-4 flex items-center gap-2">
-                    <select name="action"
-                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
-                        required>
-                        <option value="">Bulk Actions</option>
-                        <option value="activate">Activate Selected</option>
-                        <option value="deactivate">Deactivate Selected</option>
-                        @role('super-admin')
-                        <option value="delete">Delete Selected</option>
-                        @endrole
-                    </select>
-                    <x-button type="submit" onclick="return confirm('Apply action to selected users?')">Apply</x-button>
-                </div>
-        @endcan
+        @role('super-admin')
+        <form id="bulk-action-form" action="{{ route('users.bulk-update') }}" method="POST">
+            @csrf
+            <div class="mb-4 flex items-center gap-2">
+                <select name="action"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm"
+                    required>
+                    <option value="">Bulk Actions</option>
+                    <option value="activate">Activate Selected</option>
+                    <option value="deactivate">Deactivate Selected</option>
+                    @role('super-admin')
+                    <option value="delete">Delete Selected</option>
+                    @endrole
+                </select>
+                <x-button type="submit" onclick="return confirm('Apply action to selected users?')">Apply</x-button>
+            </div>
+            @endrole
 
             <x-data-table :items="$users" :headers="[
         ['label' => '<input type=\'checkbox\' id=\'select-all\' class=\'rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500\'>', 'align' => 'text-center'],
@@ -186,9 +184,9 @@
                 @endforeach
             </x-data-table>
 
-            @can('user-bulk-update')
-                </form>
-            @endcan
+            @role('super-admin')
+        </form>
+        @endrole
     </div>
 
     @push('scripts')

@@ -5,8 +5,6 @@
     </x-slot>
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
-        <x-status-message />
-
         <x-filter-section :action="route('permissions.index')" method="GET">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>

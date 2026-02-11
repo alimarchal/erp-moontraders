@@ -21,7 +21,7 @@ class BankAccountSeeder extends Seeder
         }
 
         // Get base currency
-        $baseCurrency = \DB::table('currencies')->where('is_base_currency', true)->first();
+        $baseCurrency = \DB::table('currencies')->where('is_base_currency', false)->first();
 
         $bankAccounts = [
             [
@@ -34,56 +34,56 @@ class BankAccountSeeder extends Seeder
                 'account_name' => 'HBL Secondary Account',
                 'account_number' => '24997000289703',
                 'bank_name' => 'Habib Bank Limited',
-                'is_active' => true,
+                'is_active' => false,
             ],
             [
                 'account_name' => 'Meezan Account',
                 'account_number' => '01298400',
                 'bank_name' => 'Meezan Bank',
-                'is_active' => true,
+                'is_active' => false,
             ],
             [
                 'account_name' => 'Al Barka Account',
                 'account_number' => '0105697241013',
                 'bank_name' => 'Al Baraka Bank',
-                'is_active' => true,
+                'is_active' => false,
             ],
             [
                 'account_name' => 'HBL Account',
                 'account_number' => '15547901098303',
                 'bank_name' => 'Habib Bank Limited',
-                'is_active' => true,
+                'is_active' => false,
             ],
             [
                 'account_name' => 'HBL SHAHPUR Account',
                 'account_number' => '15547902209755',
                 'bank_name' => 'Habib Bank Limited',
                 'branch' => 'SHAHPUR',
-                'is_active' => true,
+                'is_active' => false,
             ],
             [
                 'account_name' => 'HBL Account',
                 'account_number' => '15547901927555',
                 'bank_name' => 'Habib Bank Limited',
-                'is_active' => true,
+                'is_active' => false,
             ],
             [
                 'account_name' => 'Meezan Account',
                 'account_number' => '0110057820',
                 'bank_name' => 'Meezan Bank',
-                'is_active' => true,
+                'is_active' => false,
             ],
             [
                 'account_name' => 'Meezan Account',
                 'account_number' => '34010110778826',
                 'bank_name' => 'Meezan Bank',
-                'is_active' => true,
+                'is_active' => false,
             ],
             [
                 'account_name' => 'Meezan Account',
                 'account_number' => '0112394389',
                 'bank_name' => 'Meezan Bank',
-                'is_active' => true,
+                'is_active' => false,
             ],
         ];
 
@@ -103,7 +103,7 @@ class BankAccountSeeder extends Seeder
                 'normal_balance' => 'debit',
                 'description' => 'Bank',
                 'is_group' => false,
-                'is_active' => true,
+                'is_active' => false,
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);

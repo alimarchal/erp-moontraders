@@ -22,7 +22,7 @@ class ChartOfAccountFactory extends Factory
             'description' => fake()->sentence(),
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => fake()->randomElement(['Debit', 'Credit']),
+            'normal_balance' => fake()->randomElement(['debit', 'credit']),
             'account_type_id' => \App\Models\AccountType::factory(),
             'currency_id' => \App\Models\Currency::factory(),
         ];

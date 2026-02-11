@@ -252,14 +252,14 @@ test('can update sales settlement with percentage expenses', function () {
     $this->assertDatabaseHas('sales_settlement_percentage_expenses', [
         'sales_settlement_id' => $settlement->id,
         'customer_id' => $customer->id,
-        'invoice_number' => 'INV-001',
+        'invoice_number' => 'PEI-260211-00001',
         'amount' => 200,
     ]);
 
     $this->assertDatabaseHas('sales_settlement_percentage_expenses', [
         'sales_settlement_id' => $settlement->id,
         'customer_id' => $customer->id,
-        'invoice_number' => 'INV-002',
+        'invoice_number' => 'PEI-260211-00002',
         'amount' => 300,
     ]);
 });

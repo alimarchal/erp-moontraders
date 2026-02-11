@@ -225,6 +225,19 @@
                     loadingCustomers: false,
                     select2Initialized: false,
 
+                    getDateCode() {
+                        const dateInput = document.getElementById('settlement_date');
+                        if (dateInput && dateInput.value) {
+                            const d = new Date(dateInput.value + 'T00:00:00');
+                            const yy = String(d.getFullYear()).slice(-2);
+                            const mm = String(d.getMonth() + 1).padStart(2, '0');
+                            const dd = String(d.getDate()).padStart(2, '0');
+                            return yy + mm + dd;
+                        }
+                        const now = new Date();
+                        return String(now.getFullYear()).slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
+                    },
+
                     form: {
                         customer_id: '',
                         recovery_number: 'REC-00001',
@@ -237,6 +250,7 @@
 
                     openModal() {
                         this.show = true;
+                        this.form.recovery_number = 'REC-' + this.getDateCode() + '-' + String(this.recoveryCounter).padStart(5, '0');
                         this.$nextTick(() => {
                             if (!this.select2Initialized) {
                                 this.initializeSelect2();
@@ -389,7 +403,7 @@
 
                         // Reset form
                         this.form.customer_id = '';
-                        this.form.recovery_number = 'REC-' + String(this.recoveryCounter).padStart(5, '0');
+                        this.form.recovery_number = 'REC-' + this.getDateCode() + '-' + String(this.recoveryCounter).padStart(5, '0');
                         this.form.payment_method = 'cash';
                         this.form.bank_account_id = '';
                         this.form.previous_balance = 0;
@@ -511,6 +525,11 @@
                         if (entriesInput && entriesInput.value) {
                             this.entries = this.parseEntries(entriesInput.value);
                         }
+
+                        if (this.entries.length > 0) {
+                            this.recoveryCounter = this.entries.length + 1;
+                        }
+                        this.form.recovery_number = 'REC-' + this.getDateCode() + '-' + String(this.recoveryCounter).padStart(5, '0');
 
                         window.addEventListener('update-modal-customers', (event) => {
                             const rawCustomers = event.detail.customers || [];

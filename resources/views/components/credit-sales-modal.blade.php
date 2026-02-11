@@ -269,9 +269,22 @@
                     invoiceCounter: 1,
                     select2Initialized: false,
 
+                    getDateCode() {
+                        const dateInput = document.getElementById('settlement_date');
+                        if (dateInput && dateInput.value) {
+                            const d = new Date(dateInput.value + 'T00:00:00');
+                            const yy = String(d.getFullYear()).slice(-2);
+                            const mm = String(d.getMonth() + 1).padStart(2, '0');
+                            const dd = String(d.getDate()).padStart(2, '0');
+                            return yy + mm + dd;
+                        }
+                        const now = new Date();
+                        return String(now.getFullYear()).slice(-2) + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0');
+                    },
+
                     openModal() {
                         this.show = true;
-                        this.form.invoice_number = 'CSI-' + String(this.invoiceCounter).padStart(5, '0');
+                        this.form.invoice_number = 'CSI-' + this.getDateCode() + '-' + String(this.invoiceCounter).padStart(5, '0');
 
                         // Initialize select2 after the modal is fully rendered
                         this.$nextTick(() => {
@@ -435,7 +448,7 @@
 
                         // Reset form
                         this.form.customer_id = '';
-                        this.form.invoice_number = 'CSI-' + String(this.invoiceCounter).padStart(5, '0');
+                        this.form.invoice_number = 'CSI-' + this.getDateCode() + '-' + String(this.invoiceCounter).padStart(5, '0');
                         this.form.previous_balance = 0;
                         this.form.sale_amount = '';
                         this.form.notes = '';

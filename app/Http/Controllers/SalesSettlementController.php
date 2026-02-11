@@ -789,7 +789,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                         'sale_amount' => $advanceTax['sale_amount'] ?? 0,
                         'tax_rate' => $advanceTax['tax_rate'] ?? 0.25,
                         'tax_amount' => $advanceTax['tax_amount'],
-                        'invoice_number' => $advanceTax['invoice_number'] ?? null,
+                        'invoice_number' => $this->generateAdvanceTaxInvoiceNumber($request->settlement_date),
                         'notes' => $advanceTax['notes'] ?? null,
                     ]);
                 }
@@ -831,7 +831,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                     SalesSettlementPercentageExpense::create([
                         'sales_settlement_id' => $settlement->id,
                         'customer_id' => $percentageExpense['customer_id'],
-                        'invoice_number' => $percentageExpense['invoice_number'] ?? null,
+                        'invoice_number' => $this->generatePercentageExpenseInvoiceNumber($request->settlement_date),
                         'amount' => $percentageExpense['amount'],
                         'notes' => $percentageExpense['notes'] ?? null,
                     ]);
@@ -861,7 +861,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                         'sales_settlement_id' => $settlement->id,
                         'customer_id' => $recovery['customer_id'],
                         'employee_id' => $goodsIssue->employee_id,
-                        'recovery_number' => $recovery['recovery_number'] ?? null,
+                        'recovery_number' => $this->generateRecoveryNumber($request->settlement_date),
                         'payment_method' => $recovery['payment_method'] ?? 'cash',
                         'bank_account_id' => $recovery['bank_account_id'] ?? null,
                         'amount' => floatval($recovery['amount'] ?? 0),
@@ -880,7 +880,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                         'sales_settlement_id' => $settlement->id,
                         'customer_id' => $creditSale['customer_id'],
                         'employee_id' => $goodsIssue->employee_id,
-                        'invoice_number' => $creditSale['invoice_number'] ?? null,
+                        'invoice_number' => $this->generateCreditSaleInvoiceNumber($request->settlement_date),
                         'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
                         'payment_received' => floatval($creditSale['payment_received'] ?? 0),
                         'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
@@ -1475,7 +1475,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                         'sale_amount' => $advanceTax['sale_amount'] ?? 0,
                         'tax_rate' => $advanceTax['tax_rate'] ?? 0.25,
                         'tax_amount' => $advanceTax['tax_amount'],
-                        'invoice_number' => $advanceTax['invoice_number'] ?? null,
+                        'invoice_number' => $this->generateAdvanceTaxInvoiceNumber($request->settlement_date),
                         'notes' => $advanceTax['notes'] ?? null,
                     ]);
                 }
@@ -1517,7 +1517,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                     SalesSettlementPercentageExpense::create([
                         'sales_settlement_id' => $salesSettlement->id,
                         'customer_id' => $percentageExpense['customer_id'],
-                        'invoice_number' => $percentageExpense['invoice_number'] ?? null,
+                        'invoice_number' => $this->generatePercentageExpenseInvoiceNumber($request->settlement_date),
                         'amount' => $percentageExpense['amount'],
                         'notes' => $percentageExpense['notes'] ?? null,
                     ]);
@@ -1553,7 +1553,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                                 'sales_settlement_id' => $salesSettlement->id,
                                 'customer_id' => $recovery['customer_id'],
                                 'employee_id' => $goodsIssue->employee_id,
-                                'recovery_number' => $recovery['recovery_number'] ?? null,
+                                'recovery_number' => $this->generateRecoveryNumber($request->settlement_date),
                                 'payment_method' => $recovery['payment_method'] ?? 'cash',
                                 'bank_account_id' => $recovery['bank_account_id'] ?? null,
                                 'amount' => floatval($recovery['amount'] ?? 0),
@@ -1579,7 +1579,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                                 'sales_settlement_id' => $salesSettlement->id,
                                 'customer_id' => $creditSale['customer_id'],
                                 'employee_id' => $goodsIssue->employee_id,
-                                'invoice_number' => $creditSale['invoice_number'] ?? null,
+                                'invoice_number' => $this->generateCreditSaleInvoiceNumber($request->settlement_date),
                                 'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
                                 'payment_received' => floatval($creditSale['payment_received'] ?? 0),
                                 'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
@@ -1856,5 +1856,81 @@ class SalesSettlementController extends Controller implements HasMiddleware
         }
 
         return sprintf('%s%04d', $prefix, $sequence);
+    }
+
+    /**
+     * Generate a globally unique credit sale invoice number.
+     *
+     * Format: CSI-{YYMMDD}-{NNNNN}
+     */
+    private function generateCreditSaleInvoiceNumber(string $settlementDate): string
+    {
+        $dateCode = date('ymd', strtotime($settlementDate));
+        $prefix = "CSI-{$dateCode}-";
+
+        $maxSequence = SalesSettlementCreditSale::where('invoice_number', 'like', "{$prefix}%")
+            ->lockForUpdate()
+            ->pluck('invoice_number')
+            ->map(fn (string $num) => (int) str_replace($prefix, '', $num))
+            ->max() ?? 0;
+
+        return sprintf('%s%05d', $prefix, $maxSequence + 1);
+    }
+
+    /**
+     * Generate a globally unique recovery number.
+     *
+     * Format: REC-{YYMMDD}-{NNNNN}
+     */
+    private function generateRecoveryNumber(string $settlementDate): string
+    {
+        $dateCode = date('ymd', strtotime($settlementDate));
+        $prefix = "REC-{$dateCode}-";
+
+        $maxSequence = SalesSettlementRecovery::where('recovery_number', 'like', "{$prefix}%")
+            ->lockForUpdate()
+            ->pluck('recovery_number')
+            ->map(fn (string $num) => (int) str_replace($prefix, '', $num))
+            ->max() ?? 0;
+
+        return sprintf('%s%05d', $prefix, $maxSequence + 1);
+    }
+
+    /**
+     * Generate a globally unique advance tax invoice number.
+     *
+     * Format: ATI-{YYMMDD}-{NNNNN}
+     */
+    private function generateAdvanceTaxInvoiceNumber(string $settlementDate): string
+    {
+        $dateCode = date('ymd', strtotime($settlementDate));
+        $prefix = "ATI-{$dateCode}-";
+
+        $maxSequence = SalesSettlementAdvanceTax::where('invoice_number', 'like', "{$prefix}%")
+            ->lockForUpdate()
+            ->pluck('invoice_number')
+            ->map(fn (string $num) => (int) str_replace($prefix, '', $num))
+            ->max() ?? 0;
+
+        return sprintf('%s%05d', $prefix, $maxSequence + 1);
+    }
+
+    /**
+     * Generate a globally unique percentage expense invoice number.
+     *
+     * Format: PEI-{YYMMDD}-{NNNNN}
+     */
+    private function generatePercentageExpenseInvoiceNumber(string $settlementDate): string
+    {
+        $dateCode = date('ymd', strtotime($settlementDate));
+        $prefix = "PEI-{$dateCode}-";
+
+        $maxSequence = SalesSettlementPercentageExpense::where('invoice_number', 'like', "{$prefix}%")
+            ->lockForUpdate()
+            ->pluck('invoice_number')
+            ->map(fn (string $num) => (int) str_replace($prefix, '', $num))
+            ->max() ?? 0;
+
+        return sprintf('%s%05d', $prefix, $maxSequence + 1);
     }
 }

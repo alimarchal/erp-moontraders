@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Goods Receipt Notes" :createRoute="route('goods-receipt-notes.create')" createLabel=""
-            :showSearch="true" :showRefresh="true" />
+            createPermission="goods-receipt-note-create" :showSearch="true" :showRefresh="true" />
     </x-slot>
 
     <x-filter-section :action="route('goods-receipt-notes.index')">
@@ -133,18 +133,18 @@
                 </td>
                 <td class="py-1 px-2 text-center">
                     <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full 
-                            {{ $grn->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                            {{ $grn->status === 'received' ? 'bg-blue-100 text-blue-700' : '' }}
-                            {{ $grn->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                {{ $grn->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                {{ $grn->status === 'received' ? 'bg-blue-100 text-blue-700' : '' }}
+                                {{ $grn->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                         {{ ucfirst($grn->status) }}
                     </span>
                 </td>
                 <td class="py-1 px-2 text-center">
                     @if ($grn->status === 'posted')
                         <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full 
-                                {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
-                                {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                        {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
+                                        {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                        {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                             {{ ucfirst($grn->payment_status) }}
                         </span>
                         @if ($grn->payment_status !== 'unpaid')
@@ -175,29 +175,33 @@
                             </svg>
                         </a>
                         @if ($grn->status === 'draft')
-                            <a href="{{ route('goods-receipt-notes.edit', $grn->id) }}"
-                                class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                                title="Edit">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </a>
-                            <form action="{{ route('goods-receipt-notes.destroy', $grn->id) }}" method="POST"
-                                class="inline-block" onsubmit="return confirm('Are you sure you want to delete this GRN?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                    class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
-                                    title="Delete">
+                            @can('goods-receipt-note-edit')
+                                <a href="{{ route('goods-receipt-notes.edit', $grn->id) }}"
+                                    class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
+                                    title="Edit">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                                         stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
-                                </button>
-                            </form>
+                                </a>
+                            @endcan
+                            @can('goods-receipt-note-delete')
+                                <form action="{{ route('goods-receipt-notes.destroy', $grn->id) }}" method="POST"
+                                    class="inline-block" onsubmit="return confirm('Are you sure you want to delete this GRN?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                        class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                        title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            @endcan
                         @endif
                     </div>
                 </td>

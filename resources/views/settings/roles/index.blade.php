@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Roles" :createRoute="route('roles.create')" createLabel="Add Role" :showSearch="true"
-            :showRefresh="true" backRoute="settings.index" />
+        <x-page-header title="Roles" :createRoute="route('roles.create')" createLabel="Add Role"
+            createPermission="role-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
@@ -62,15 +62,18 @@
                                             d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                     </svg>
                                 </a>
-                                <a href="{{ route('roles.edit', $role) }}"
-                                    class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                                    title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </a>
+                                @can('role-edit')
+                                    <a href="{{ route('roles.edit', $role) }}"
+                                        class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
+                                        title="Edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </a>
+                                @endcan
+                                @role('super-admin')
                                 @if ($role->name !== 'Super Admin' && $role->name !== 'super-admin')
                                     <form method="POST" action="{{ route('roles.destroy', $role) }}"
                                         onsubmit="return confirm('Are you sure you want to delete this role?');">
@@ -87,6 +90,7 @@
                                         </button>
                                     </form>
                                 @endif
+                                @endrole
                             </div>
                         </td>
                     </tr>

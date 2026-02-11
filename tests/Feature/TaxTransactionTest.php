@@ -5,11 +5,15 @@ use App\Models\TaxRate;
 use App\Models\TaxTransaction;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    Permission::create(['name' => 'tax-list']);
+
     $this->user = User::factory()->create();
+    $this->user->givePermissionTo('tax-list');
     $this->actingAs($this->user);
 });
 

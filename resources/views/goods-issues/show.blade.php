@@ -7,23 +7,27 @@
 
             <div class="flex justify-center items-center space-x-2 no-print">
                 @if ($goodsIssue->status === 'draft')
-                    <form action="{{ route('goods-issues.post', $goodsIssue->id) }}" method="POST"
-                        onsubmit="return confirm('Are you sure you want to post this Goods Issue? This will transfer inventory from warehouse to vehicle.');"
-                        class="inline-block">
-                        @csrf
-                        <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
-                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Post Issue
-                        </button>
-                    </form>
-                    <a href="{{ route('goods-issues.edit', $goodsIssue->id) }}"
-                        class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                        Edit
-                    </a>
+                    @can('goods-issue-post')
+                        <form action="{{ route('goods-issues.post', $goodsIssue->id) }}" method="POST"
+                            onsubmit="return confirm('Are you sure you want to post this Goods Issue? This will transfer inventory from warehouse to vehicle.');"
+                            class="inline-block">
+                            @csrf
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
+                                <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Post Issue
+                            </button>
+                        </form>
+                    @endcan
+                    @can('goods-issue-edit')
+                        <a href="{{ route('goods-issues.edit', $goodsIssue->id) }}"
+                            class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                            Edit
+                        </a>
+                    @endcan
                 @endif
 
                 <button onclick="window.print();"
@@ -167,7 +171,8 @@
                             <td class="py-1 px-2 font-bold" style="width: 35%;">{{ $goodsIssue->issue_number }}</td>
                             <td class="py-1 px-2 font-semibold" style="width: 15%;">Issue Date:</td>
                             <td class="py-1 px-2" style="width: 35%;">
-                                {{ \Carbon\Carbon::parse($goodsIssue->issue_date)->format('d-M-Y') }}</td>
+                                {{ \Carbon\Carbon::parse($goodsIssue->issue_date)->format('d-M-Y') }}
+                            </td>
                         </tr>
                         <tr>
                             <td class="py-1 px-2 font-semibold">Status:</td>
@@ -231,10 +236,12 @@
                                 <tr>
                                     <td class="text-center" style="vertical-align: middle;">{{ $item->line_no }}</td>
                                     <td style="vertical-align: middle;" class="font-semibold">
-                                        {{ $item->product->product_code }}</td>
+                                        {{ $item->product->product_code }}
+                                    </td>
                                     <td style="vertical-align: middle;">{{ $item->product->product_name }}</td>
                                     <td class="text-right font-mono" style="vertical-align: middle;">
-                                        {{ number_format($item->quantity_issued, 2) }}</td>
+                                        {{ number_format($item->quantity_issued, 2) }}
+                                    </td>
                                     <td class="text-center" style="vertical-align: middle;">{{ $item->uom->uom_name }}</td>
                                     <td style="vertical-align: middle;">
                                         @if(isset($item->batch_breakdown) && count($item->batch_breakdown) > 0)

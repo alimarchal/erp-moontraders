@@ -4,12 +4,19 @@ use App\Models\TaxCode;
 use App\Models\TaxRate;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
+
+    foreach (['tax-list', 'tax-create', 'tax-edit', 'tax-delete'] as $perm) {
+        Permission::create(['name' => $perm]);
+    }
+
     $this->user = User::factory()->create();
+    $this->user->givePermissionTo(['tax-list', 'tax-create', 'tax-edit', 'tax-delete']);
     $this->actingAs($this->user);
 });
 

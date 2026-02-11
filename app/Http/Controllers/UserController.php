@@ -17,11 +17,11 @@ class UserController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:view users', only: ['index', 'show']),
-            new Middleware('can:create users', only: ['create', 'store']),
-            new Middleware('can:edit users', only: ['edit', 'update']),
-            new Middleware('can:delete users', only: ['destroy']),
-            new Middleware('can:assign permissions', only: ['store', 'update']),
+            new Middleware('permission:user-list', only: ['index', 'show']),
+            new Middleware('permission:user-create', only: ['create', 'store']),
+            new Middleware('permission:user-edit', only: ['edit', 'update']),
+            new Middleware('permission:user-delete', only: ['destroy']),
+            new Middleware('permission:user-bulk-update', only: ['bulkUpdate']),
         ];
     }
 
@@ -134,7 +134,7 @@ class UserController extends Controller implements HasMiddleware
         $action = $request->action;
 
         // Prevent self-action on current user
-        $ids = array_filter($ids, fn($id) => (int)$id !== auth()->id());
+        $ids = array_filter($ids, fn ($id) => (int) $id !== auth()->id());
 
         if (empty($ids)) {
             return redirect()->back()->with('error', 'No valid users selected for this action.');
@@ -158,9 +158,9 @@ class UserController extends Controller implements HasMiddleware
             }
         });
 
-        $message = "Users updated successfully.";
+        $message = 'Users updated successfully.';
         if ($action === 'delete') {
-            $message = "Users deleted successfully (except any protected accounts).";
+            $message = 'Users deleted successfully (except any protected accounts).';
         }
 
         return redirect()->route('users.index')->with('success', $message);

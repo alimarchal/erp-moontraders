@@ -6,18 +6,28 @@ use App\Http\Requests\StoreCategoryRequest;
 use App\Http\Requests\UpdateCategoryRequest;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class CategoryController extends Controller
+class CategoryController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:category-list', only: ['index', 'show']),
+            new Middleware('permission:category-create', only: ['create', 'store']),
+            new Middleware('permission:category-edit', only: ['edit', 'update']),
+            new Middleware('permission:category-delete', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $this->authorize('category-list');
-
         $categories = QueryBuilder::for(Category::class)
             ->allowedFilters([
                 'name',
@@ -35,8 +45,6 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        $this->authorize('category-create');
-
         return view('settings.categories.create');
     }
 
@@ -45,8 +53,6 @@ class CategoryController extends Controller
      */
     public function store(StoreCategoryRequest $request)
     {
-        $this->authorize('category-create');
-
         Category::create($request->validated());
 
         return redirect()->route('categories.index')
@@ -58,8 +64,6 @@ class CategoryController extends Controller
      */
     public function show(Category $category)
     {
-        $this->authorize('category-list');
-        // Not implemented as per current requirements, reuse edit or index
         return redirect()->route('categories.edit', $category);
     }
 
@@ -68,8 +72,6 @@ class CategoryController extends Controller
      */
     public function edit(Category $category)
     {
-        $this->authorize('category-edit');
-
         return view('settings.categories.edit', compact('category'));
     }
 
@@ -78,8 +80,6 @@ class CategoryController extends Controller
      */
     public function update(UpdateCategoryRequest $request, Category $category)
     {
-        $this->authorize('category-edit');
-
         $category->update($request->validated());
 
         return redirect()->route('categories.index')
@@ -91,8 +91,6 @@ class CategoryController extends Controller
      */
     public function destroy(Category $category)
     {
-        $this->authorize('category-delete');
-
         if ($category->products()->exists()) {
             return back()->with('error', 'Cannot delete category because it has associated products.');
         }

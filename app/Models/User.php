@@ -99,6 +99,7 @@ class User extends Authenticatable
         return [
             'name',
             'email',
+            'designation',
             'is_super_admin',
             'is_active',
             AllowedFilter::scope('role'),

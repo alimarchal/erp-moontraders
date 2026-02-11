@@ -7,11 +7,20 @@ use App\Http\Requests\UpdateTaxTransactionRequest;
 use App\Models\TaxCode;
 use App\Models\TaxTransaction;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class TaxTransactionController extends Controller
+class TaxTransactionController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:tax-list', only: ['index', 'show']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

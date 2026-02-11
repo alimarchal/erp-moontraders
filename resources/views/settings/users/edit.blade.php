@@ -21,12 +21,51 @@
             <x-status-message class="mb-4 mt-4 shadow-md" />
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg border border-gray-200">
                 <div class="p-6">
+                    <div class="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-gray-700 dark:to-gray-600 rounded-lg p-4 border border-blue-100 dark:border-gray-500">
+                        <p class="text-center font-extrabold mb-1 text-lg text-gray-800 dark:text-gray-100">
+                            Moon Traders<br>
+                            <span class="text-base font-bold">User Management — Edit User</span>
+                        </p>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
+                            <div class="text-center">
+                                <span class="block text-[10px] text-gray-500 uppercase font-semibold">Name</span>
+                                <span class="font-bold text-gray-800 dark:text-gray-200">{{ $user->name }}</span>
+                            </div>
+                            <div class="text-center">
+                                <span class="block text-[10px] text-gray-500 uppercase font-semibold">Email</span>
+                                <span class="font-medium text-gray-700 dark:text-gray-300">{{ $user->email }}</span>
+                            </div>
+                            <div class="text-center">
+                                <span class="block text-[10px] text-gray-500 uppercase font-semibold">Designation</span>
+                                <span class="font-medium text-gray-700 dark:text-gray-300">{{ $user->designation ?? 'N/A' }}</span>
+                            </div>
+                            <div class="text-center">
+                                <span class="block text-[10px] text-gray-500 uppercase font-semibold">Status</span>
+                                <span @class([
+                                    'inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase rounded-full',
+                                    'bg-emerald-100 text-emerald-700' => $user->is_active === 'Yes',
+                                    'bg-red-100 text-red-700' => $user->is_active === 'No',
+                                ])>
+                                    {{ $user->is_active === 'Yes' ? 'Active' : 'Inactive' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="flex justify-center gap-2 mt-2">
+                            @foreach($user->roles as $role)
+                                <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-semibold rounded-full bg-blue-100 text-blue-700">{{ $role->name }}</span>
+                            @endforeach
+                            @if($user->is_super_admin === 'Yes')
+                                <span class="inline-flex items-center px-2 py-0.5 text-[10px] font-bold rounded-full bg-red-100 text-red-700">Super Admin</span>
+                            @endif
+                        </div>
+                    </div>
+
                     <x-validation-errors class="mb-4 mt-4" />
                     <form action="{{ route('users.update', $user) }}" method="POST">
                         @csrf
                         @method('PUT')
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-6">
                             <div>
                                 <x-label for="name" value="Full Name" />
                                 <x-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name', $user->name)" required autofocus />

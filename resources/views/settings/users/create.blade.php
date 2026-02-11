@@ -25,7 +25,7 @@
                     <form action="{{ route('users.store') }}" method="POST">
                         @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pb-6">
                             <div>
                                 <x-label for="name" value="Full Name" />
                                 <x-input id="name" name="name" type="text" class="mt-1 block w-full" :value="old('name')" required autofocus />

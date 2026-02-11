@@ -39,7 +39,7 @@ class RoleAndPermissionSeeder extends Seeder
             'employee' => ['list', 'create', 'edit', 'delete'],
 
             // Inventory & Production
-            'goods-receipt-note' => ['list', 'create', 'edit', 'delete', 'post'],
+            'goods-receipt-note' => ['list', 'create', 'edit', 'delete', 'post', 'reverse'],
             'goods-issue' => ['list', 'create', 'edit', 'delete', 'post'],
             'stock-transfer' => ['list', 'create', 'edit', 'delete', 'post'],
             'stock-adjustment' => ['list', 'create', 'edit', 'delete', 'post'],
@@ -79,7 +79,7 @@ class RoleAndPermissionSeeder extends Seeder
         // Admin: Most things
         $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $adminRole->syncPermissions(array_filter($allPermissionNames, function ($name) {
-            return !str_contains($name, 'delete') || str_contains($name, 'journal-entry');
+            return ! str_contains($name, 'delete') || str_contains($name, 'journal-entry');
         }));
 
         // Accountant

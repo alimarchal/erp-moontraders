@@ -5,12 +5,19 @@ use App\Models\ProductTaxMapping;
 use App\Models\TaxCode;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
+
+    foreach (['tax-list', 'tax-manage-mapping'] as $perm) {
+        Permission::create(['name' => $perm]);
+    }
+
     $this->user = User::factory()->create();
+    $this->user->givePermissionTo(['tax-list', 'tax-manage-mapping']);
     $this->actingAs($this->user);
 });
 

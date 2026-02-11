@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Suppliers" :createRoute="route('suppliers.create')" createLabel="Add Supplier"
-            :showSearch="true" :showRefresh="true" backRoute="settings.index" />
+            createPermission="supplier-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
     <x-filter-section :action="route('suppliers.index')">
@@ -20,14 +20,14 @@
 
             <div>
                 <x-label for="filter_supplier_group" value="Supplier Group" />
-                <x-input id="filter_supplier_group" name="filter[supplier_group]" type="text"
-                    class="mt-1 block w-full" :value="request('filter.supplier_group')" placeholder="Local" />
+                <x-input id="filter_supplier_group" name="filter[supplier_group]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.supplier_group')" placeholder="Local" />
             </div>
 
             <div>
                 <x-label for="filter_supplier_type" value="Supplier Type" />
-                <x-input id="filter_supplier_type" name="filter[supplier_type]" type="text"
-                    class="mt-1 block w-full" :value="request('filter.supplier_type')" placeholder="Food & Beverage" />
+                <x-input id="filter_supplier_type" name="filter[supplier_type]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.supplier_type')" placeholder="Food & Beverage" />
             </div>
 
             <div>
@@ -69,14 +69,14 @@
     </x-filter-section>
 
     <x-data-table :items="$suppliers" :headers="[
-            ['label' => '#', 'align' => 'text-center'],
-            ['label' => 'Supplier'],
-            ['label' => 'Group / Type'],
-            ['label' => 'Country', 'align' => 'text-center'],
-            ['label' => 'Defaults'],
-            ['label' => 'Flags', 'align' => 'text-center'],
-            ['label' => 'Actions', 'align' => 'text-center'],
-        ]" emptyMessage="No suppliers found." :emptyRoute="route('suppliers.create')" emptyLinkText="Create a supplier">
+        ['label' => '#', 'align' => 'text-center'],
+        ['label' => 'Supplier'],
+        ['label' => 'Group / Type'],
+        ['label' => 'Country', 'align' => 'text-center'],
+        ['label' => 'Defaults'],
+        ['label' => 'Flags', 'align' => 'text-center'],
+        ['label' => 'Actions', 'align' => 'text-center'],
+    ]" emptyMessage="No suppliers found." :emptyRoute="route('suppliers.create')" emptyLinkText="Create a supplier">
 
         @foreach ($suppliers as $index => $supplier)
             <tr class="border-b border-gray-200 text-sm">
@@ -141,15 +141,18 @@
                                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                         </a>
-                        <a href="{{ route('suppliers.edit', $supplier->id) }}"
-                            class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                            title="Edit">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </a>
+                        @can('supplier-edit')
+                            <a href="{{ route('suppliers.edit', $supplier->id) }}"
+                                class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
+                                title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </a>
+                        @endcan
+                        @role('super-admin')
                         <form method="POST" action="{{ route('suppliers.destroy', $supplier->id) }}"
                             onsubmit="return confirm('Delete this supplier?');">
                             @csrf
@@ -164,6 +167,7 @@
                                 </svg>
                             </button>
                         </form>
+                        @endrole
                     </div>
                 </td>
             </tr>

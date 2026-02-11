@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Permissions" :createRoute="route('permissions.create')" createLabel="Add Permission"
-            :showSearch="true" :showRefresh="true" backRoute="settings.index" />
+            createPermission="permission-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4">
@@ -52,15 +52,18 @@
                         </td>
                         <td class="py-1 px-2 text-center">
                             <div class="flex justify-center space-x-2">
-                                <a href="{{ route('permissions.edit', $permission) }}"
-                                    class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                                    title="Edit">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                        stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                    </svg>
-                                </a>
+                                @can('permission-edit')
+                                    <a href="{{ route('permissions.edit', $permission) }}"
+                                        class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
+                                        title="Edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                    </a>
+                                @endcan
+                                @role('super-admin')
                                 <form method="POST" action="{{ route('permissions.destroy', $permission) }}"
                                     onsubmit="return confirm('Are you sure you want to delete this permission?');">
                                     @csrf
@@ -75,6 +78,7 @@
                                         </svg>
                                     </button>
                                 </form>
+                                @endrole
                             </div>
                         </td>
                     </tr>

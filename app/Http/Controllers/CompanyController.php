@@ -10,13 +10,25 @@ use App\Models\CostCenter;
 use App\Models\Currency;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class CompanyController extends Controller
+class CompanyController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:company-list', only: ['index', 'show']),
+            new Middleware('permission:company-create', only: ['create', 'store']),
+            new Middleware('permission:company-edit', only: ['edit', 'update']),
+            new Middleware('permission:company-delete', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

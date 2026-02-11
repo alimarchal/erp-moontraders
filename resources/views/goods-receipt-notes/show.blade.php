@@ -16,43 +16,49 @@
         </h3>
         <div class="flex justify-center items-center float-right space-x-2">
             @if ($grn->status === 'draft')
-                <form action="{{ route('goods-receipt-notes.post', $grn->id) }}" method="POST"
-                    onsubmit="return confirm('Are you sure you want to post this GRN to inventory? This action cannot be undone.');"
-                    class="inline-block">
-                    @csrf
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
-                        <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        Post to Inventory
-                    </button>
-                </form>
-                <a href="{{ route('goods-receipt-notes.edit', $grn->id) }}"
-                    class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
-                    Edit
-                </a>
+                @can('goods-receipt-note-post')
+                    <form action="{{ route('goods-receipt-notes.post', $grn->id) }}" method="POST"
+                        onsubmit="return confirm('Are you sure you want to post this GRN to inventory? This action cannot be undone.');"
+                        class="inline-block">
+                        @csrf
+                        <button type="submit"
+                            class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
+                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Post to Inventory
+                        </button>
+                    </form>
+                @endcan
+                @can('goods-receipt-note-edit')
+                    <a href="{{ route('goods-receipt-notes.edit', $grn->id) }}"
+                        class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">
+                        Edit
+                    </a>
+                @endcan
             @endif
             @if ($grn->status === 'posted')
                 @php
                     $hasPostedPayments = $grn->payments()->where('status', 'posted')->exists();
                 @endphp
                 @if (!$hasPostedPayments)
-                    <form id="reverseGrnForm" action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
-                        onsubmit="return confirmReverseGrn();" class="inline-block">
-                        @csrf
-                        <input type="hidden" id="password" name="password" value="">
-                        <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                            </svg>
-                            Reverse Entry
-                        </button>
-                    </form>
+                    @can('goods-receipt-note-reverse')
+                        <form id="reverseGrnForm" action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
+                            onsubmit="return confirmReverseGrn();" class="inline-block">
+                            @csrf
+                            <input type="hidden" id="password" name="password" value="">
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                                <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                </svg>
+                                Reverse Entry
+                            </button>
+                        </form>
+                    @endcan
                 @endif
             @endif
             <a href="{{ route('goods-receipt-notes.index') }}"
@@ -186,13 +192,14 @@
                                                     <tr class="border-b border-gray-200 text-sm">
                                                         <td class="py-1 px-2">{{ $payment->payment_number }}</td>
                                                         <td class="py-1 px-2">{{ \Carbon\Carbon::parse($payment->payment_date)->format('d M Y')
-                                                            }}</td>
+                                                                                        }}</td>
                                                         <td class="py-1 px-2">{{ ucwords(str_replace('_', ' ', $payment->payment_method)) }}
                                                         </td>
                                                         <td class="py-1 px-2 text-center">
-                                                            <span class="px-2 py-1 text-xs font-semibold rounded-full 
-                                                                    {{ $payment->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                                                    {{ $payment->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                                            <span
+                                                                class="px-2 py-1 text-xs font-semibold rounded-full 
+                                                                                                {{ $payment->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                                                                                {{ $payment->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                                                                 {{ ucfirst($payment->status) }}
                                                             </span>
                                                         </td>
@@ -225,10 +232,11 @@
                                 <div>
                                     <h3 class="text-sm font-semibold text-gray-500 uppercase mb-2">Payment
                                         Status</h3>
-                                    <span class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
-                                            {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
-                                            {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                            {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                    <span
+                                        class="inline-flex items-center px-3 py-1 text-sm font-semibold rounded-full 
+                                                        {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
+                                                        {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                        {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                                         {{ ucfirst($grn->payment_status) }}
                                     </span>
                                 </div>

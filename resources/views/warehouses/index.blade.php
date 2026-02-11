@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Warehouses" :createRoute="route('warehouses.create')" createLabel="Add Warehouse"
-            :showSearch="true" :showRefresh="true" backRoute="settings.index" />
+            createPermission="warehouse-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
     <x-filter-section :action="route('warehouses.index')">
@@ -18,8 +18,7 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Companies</option>
                     @foreach ($companyOptions as $company)
-                        <option value="{{ $company->id }}"
-                            {{ (string) request('filter.company_id') === (string) $company->id ? 'selected' : '' }}>
+                        <option value="{{ $company->id }}" {{ (string) request('filter.company_id') === (string) $company->id ? 'selected' : '' }}>
                             {{ $company->company_name }}
                         </option>
                     @endforeach
@@ -32,8 +31,7 @@
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Types</option>
                     @foreach ($warehouseTypeOptions as $type)
-                        <option value="{{ $type->id }}"
-                            {{ (string) request('filter.warehouse_type_id') === (string) $type->id ? 'selected' : '' }}>
+                        <option value="{{ $type->id }}" {{ (string) request('filter.warehouse_type_id') === (string) $type->id ? 'selected' : '' }}>
                             {{ $type->name }}
                         </option>
                     @endforeach
@@ -72,7 +70,8 @@
         ['label' => 'Rejected', 'align' => 'text-center'],
         ['label' => 'Account'],
         ['label' => 'Actions', 'align' => 'text-center'],
-    ]" emptyMessage="No warehouses found." :emptyRoute="route('warehouses.create')" emptyLinkText="Add a warehouse">
+    ]" emptyMessage="No warehouses found."
+        :emptyRoute="route('warehouses.create')" emptyLinkText="Add a warehouse">
         @foreach ($warehouses as $index => $warehouse)
         <tr class="border-b border-gray-200 text-sm">
             <td class="py-1 px-2 text-center">
@@ -122,15 +121,18 @@
                                 d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
                     </a>
-                    <a href="{{ route('warehouses.edit', $warehouse) }}"
-                        class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                        title="Edit">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                    </a>
+                    @can('warehouse-edit')
+                        <a href="{{ route('warehouses.edit', $warehouse) }}"
+                            class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
+                            title="Edit">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                        </a>
+                    @endcan
+                    @role('super-admin')
                     <form method="POST" action="{{ route('warehouses.destroy', $warehouse) }}"
                         onsubmit="return confirm('Are you sure you want to delete this warehouse?');">
                         @csrf
@@ -145,6 +147,7 @@
                             </svg>
                         </button>
                     </form>
+                    @endrole
                 </div>
             </td>
         </tr>

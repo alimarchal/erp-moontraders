@@ -6,6 +6,7 @@
             </h2>
             <div class="flex space-x-2 no-print">
                 @if ($settlement->status === 'draft')
+                    @can('sales-settlement-edit')
                     <a href="{{ route('sales-settlements.edit', $settlement) }}"
                         class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition">
                         <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -15,6 +16,8 @@
                         </svg>
                         Edit
                     </a>
+                    @endcan
+                    @can('sales-settlement-post')
                     <form action="{{ route('sales-settlements.post', $settlement->id) }}" method="POST"
                         onsubmit="return confirm('Are you sure you want to post this Sales Settlement? This will record sales and update inventory.');"
                         class="inline-block">
@@ -28,6 +31,8 @@
                             Post Settlement
                         </button>
                     </form>
+                    @endcan
+                    @can('sales-settlement-delete')
                     <form action="{{ route('sales-settlements.destroy', $settlement->id) }}" method="POST"
                         onsubmit="return confirm('Are you sure you want to delete this draft settlement?');"
                         class="inline-block">
@@ -38,6 +43,7 @@
                             Delete Draft
                         </button>
                     </form>
+                    @endcan
                 @endif
                 <a href="{{ route('sales-settlements.index') }}"
                     class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700 transition">

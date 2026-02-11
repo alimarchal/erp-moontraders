@@ -2,6 +2,7 @@
     'title' => 'Page Title',
     'createRoute' => null,
     'createLabel' => 'Add New',
+    'createPermission' => null,
     'showSearch' => true,
     'showRefresh' => true,
     'backRoute' => 'dashboard',
@@ -14,13 +15,25 @@
 
     <div class="flex justify-center items-center space-x-2">
          @if($createRoute)
-            <a href="{{ $createRoute }}"
-                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg  class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span class="hidden md:inline-block">{{ $createLabel }}</span>
-            </a>
+            @if($createPermission)
+                @can($createPermission)
+                    <a href="{{ $createRoute }}"
+                        class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                        <svg  class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span class="hidden md:inline-block">{{ $createLabel }}</span>
+                    </a>
+                @endcan
+            @else
+                <a href="{{ $createRoute }}"
+                    class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <svg  class="size-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span class="hidden md:inline-block">{{ $createLabel }}</span>
+                </a>
+            @endif
         @endif
 
 

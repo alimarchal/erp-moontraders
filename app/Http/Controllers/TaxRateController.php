@@ -8,13 +8,25 @@ use App\Models\TaxCode;
 use App\Models\TaxRate;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class TaxRateController extends Controller
+class TaxRateController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:tax-list', only: ['index', 'show']),
+            new Middleware('permission:tax-create', only: ['create', 'store']),
+            new Middleware('permission:tax-edit', only: ['edit', 'update']),
+            new Middleware('permission:tax-delete', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Cost Centers" :createRoute="route('cost-centers.create')" createLabel="Add Cost Center"
-            :showSearch="true" :showRefresh="true" backRoute="settings.index" />
+            createPermission="cost-center-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
     <x-filter-section :action="route('cost-centers.index')">
@@ -49,34 +49,34 @@
 
             <div>
                 <x-label for="filter_start_date_to" value="Start Date (To)" />
-                <x-input id="filter_start_date_to" name="filter[start_date_to]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.start_date_to')" />
+                <x-input id="filter_start_date_to" name="filter[start_date_to]" type="date" class="mt-1 block w-full"
+                    :value="request('filter.start_date_to')" />
             </div>
 
             <div>
                 <x-label for="filter_end_date_from" value="End Date (From)" />
-                <x-input id="filter_end_date_from" name="filter[end_date_from]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.end_date_from')" />
+                <x-input id="filter_end_date_from" name="filter[end_date_from]" type="date" class="mt-1 block w-full"
+                    :value="request('filter.end_date_from')" />
             </div>
 
             <div>
                 <x-label for="filter_end_date_to" value="End Date (To)" />
-                <x-input id="filter_end_date_to" name="filter[end_date_to]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.end_date_to')" />
+                <x-input id="filter_end_date_to" name="filter[end_date_to]" type="date" class="mt-1 block w-full"
+                    :value="request('filter.end_date_to')" />
             </div>
         </div>
     </x-filter-section>
 
     <x-data-table :items="$costCenters" :headers="[
-            ['label' => '#', 'align' => 'text-center'],
-            ['label' => 'Code'],
-            ['label' => 'Name'],
-            ['label' => 'Type', 'align' => 'text-center'],
-            ['label' => 'Parent'],
-            ['label' => 'Active', 'align' => 'text-center'],
-            ['label' => 'Dates', 'align' => 'text-left'],
-            ['label' => 'Actions', 'align' => 'text-center'],
-        ]" emptyMessage="No cost centers found." :emptyRoute="route('cost-centers.create')"
+        ['label' => '#', 'align' => 'text-center'],
+        ['label' => 'Code'],
+        ['label' => 'Name'],
+        ['label' => 'Type', 'align' => 'text-center'],
+        ['label' => 'Parent'],
+        ['label' => 'Active', 'align' => 'text-center'],
+        ['label' => 'Dates', 'align' => 'text-left'],
+        ['label' => 'Actions', 'align' => 'text-center'],
+    ]" emptyMessage="No cost centers found." :emptyRoute="route('cost-centers.create')"
         emptyLinkText="Create a cost center">
 
         @foreach ($costCenters as $index => $costCenter)
@@ -99,10 +99,10 @@
                 </td>
                 <td class="py-1 px-2 text-center">
                     <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full
-                        @class([
-                            'bg-blue-100 text-blue-700' => $costCenter->type === \App\Models\CostCenter::TYPE_COST_CENTER,
-                            'bg-purple-100 text-purple-700' => $costCenter->type === \App\Models\CostCenter::TYPE_PROJECT,
-                        ])">
+                            @class([
+                                'bg-blue-100 text-blue-700' => $costCenter->type === \App\Models\CostCenter::TYPE_COST_CENTER,
+                                'bg-purple-100 text-purple-700' => $costCenter->type === \App\Models\CostCenter::TYPE_PROJECT,
+                            ])">
                         {{ $typeOptions[$costCenter->type] ?? ucfirst(str_replace('_', ' ', $costCenter->type)) }}
                     </span>
                 </td>
@@ -138,15 +138,18 @@
                                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                         </a>
-                        <a href="{{ route('cost-centers.edit', $costCenter->id) }}"
-                            class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                            title="Edit">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                            </svg>
-                        </a>
+                        @can('cost-center-edit')
+                            <a href="{{ route('cost-centers.edit', $costCenter->id) }}"
+                                class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
+                                title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </a>
+                        @endcan
+                        @role('super-admin')
                         <form method="POST" action="{{ route('cost-centers.destroy', $costCenter->id) }}"
                             onsubmit="return confirm('Delete this cost center?');">
                             @csrf
@@ -161,6 +164,7 @@
                                 </svg>
                             </button>
                         </form>
+                        @endrole
                     </div>
                 </td>
             </tr>

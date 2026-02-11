@@ -106,7 +106,7 @@ class InventoryService
 
             return [
                 'success' => true,
-                'message' => "GRN {$grn->grn_number} posted successfully to inventory" . ($journalEntry ? ' and accounting' : ''),
+                'message' => "GRN {$grn->grn_number} posted successfully to inventory".($journalEntry ? ' and accounting' : ''),
                 'data' => $grn->fresh(),
             ];
 
@@ -115,7 +115,7 @@ class InventoryService
 
             return [
                 'success' => false,
-                'message' => 'Failed to post GRN: ' . $e->getMessage(),
+                'message' => 'Failed to post GRN: '.$e->getMessage(),
                 'data' => null,
             ];
         }
@@ -144,26 +144,26 @@ class InventoryService
             $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
             $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
-            if (!$inventoryAccount) {
-                Log::warning('Inventory account (1151 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: ' . $grn->id);
+            if (! $inventoryAccount) {
+                Log::warning('Inventory account (1151 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
 
-            if (!$apAccount) {
-                Log::warning('Accounts Payable account (2111 - Creditors) not found in Chart of Accounts. Skipping journal entry for GRN: ' . $grn->id);
+            if (! $apAccount) {
+                Log::warning('Accounts Payable account (2111 - Creditors) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
 
-            if (!$fmrAllowanceLiquidAccount || !$fmrAllowancePowderAccount) {
-                Log::warning('FMR Allowance accounts (4210 - Liquid or 4220 - Powder) not found in Chart of Accounts. Skipping journal entry for GRN: ' . $grn->id);
+            if (! $fmrAllowanceLiquidAccount || ! $fmrAllowancePowderAccount) {
+                Log::warning('FMR Allowance accounts (4210 - Liquid or 4220 - Powder) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
 
-            if (!$warehouseCostCenter) {
-                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping journal entry for GRN: ' . $grn->id);
+            if (! $warehouseCostCenter) {
+                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
@@ -204,14 +204,14 @@ class InventoryService
                 $creditorAmount = 0;
             }
 
-            if (abs($roundingDifference) > 0.001 && !$roundOffAccount) {
-                Log::warning('Rounding difference detected but Round Off account (5271) not found. Skipping journal entry for GRN: ' . $grn->id);
+            if (abs($roundingDifference) > 0.001 && ! $roundOffAccount) {
+                Log::warning('Rounding difference detected but Round Off account (5271) not found. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
 
             if ($actualInventoryValue <= 0) {
-                Log::warning('GRN actual inventory value is zero or negative. Skipping journal entry for GRN: ' . $grn->id);
+                Log::warning('GRN actual inventory value is zero or negative. Skipping journal entry for GRN: '.$grn->id);
 
                 return null;
             }
@@ -294,13 +294,13 @@ class InventoryService
 
                 return $result['data'];
             } else {
-                Log::error("Failed to create journal entry for GRN {$grn->grn_number}: " . $result['message']);
+                Log::error("Failed to create journal entry for GRN {$grn->grn_number}: ".$result['message']);
 
                 return null;
             }
 
         } catch (\Exception $e) {
-            Log::error("Exception creating journal entry for GRN {$grn->id}: " . $e->getMessage());
+            Log::error("Exception creating journal entry for GRN {$grn->id}: ".$e->getMessage());
 
             return null;
         }
@@ -329,26 +329,26 @@ class InventoryService
             $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
             $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
-            if (!$inventoryAccount || !$apAccount) {
-                Log::warning('Required accounts not found in Chart of Accounts. Skipping reversing journal entry for GRN: ' . $grn->id);
+            if (! $inventoryAccount || ! $apAccount) {
+                Log::warning('Required accounts not found in Chart of Accounts. Skipping reversing journal entry for GRN: '.$grn->id);
 
                 return null;
             }
 
-            if (!$fmrAllowanceLiquidAccount || !$fmrAllowancePowderAccount) {
-                Log::warning('FMR Allowance accounts (4210 - Liquid or 4220 - Powder) not found in Chart of Accounts. Skipping reversing journal entry for GRN: ' . $grn->id);
+            if (! $fmrAllowanceLiquidAccount || ! $fmrAllowancePowderAccount) {
+                Log::warning('FMR Allowance accounts (4210 - Liquid or 4220 - Powder) not found in Chart of Accounts. Skipping reversing journal entry for GRN: '.$grn->id);
 
                 return null;
             }
 
-            if (!$warehouseCostCenter) {
-                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping reversing journal entry for GRN: ' . $grn->id);
+            if (! $warehouseCostCenter) {
+                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping reversing journal entry for GRN: '.$grn->id);
 
                 return null;
             }
 
-            if (!$warehouseCostCenter) {
-                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping reversing journal entry for GRN: ' . $grn->id);
+            if (! $warehouseCostCenter) {
+                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping reversing journal entry for GRN: '.$grn->id);
 
                 return null;
             }
@@ -388,14 +388,14 @@ class InventoryService
                 $creditorAmount = 0;
             }
 
-            if (abs($roundingDifference) > 0.001 && !$roundOffAccount) {
-                Log::warning('Rounding difference detected but Round Off account (5271) not found. Skipping reversing journal entry for GRN: ' . $grn->id);
+            if (abs($roundingDifference) > 0.001 && ! $roundOffAccount) {
+                Log::warning('Rounding difference detected but Round Off account (5271) not found. Skipping reversing journal entry for GRN: '.$grn->id);
 
                 return null;
             }
 
             if ($actualInventoryValue <= 0) {
-                Log::warning('GRN actual inventory value is zero or negative. Skipping reversing journal entry for GRN: ' . $grn->id);
+                Log::warning('GRN actual inventory value is zero or negative. Skipping reversing journal entry for GRN: '.$grn->id);
 
                 return null;
             }
@@ -484,13 +484,13 @@ class InventoryService
 
                 return $result['data'];
             } else {
-                Log::error("Failed to create reversing journal entry for GRN {$grn->grn_number}: " . $result['message']);
+                Log::error("Failed to create reversing journal entry for GRN {$grn->grn_number}: ".$result['message']);
 
                 return null;
             }
 
         } catch (\Exception $e) {
-            Log::error("Exception creating reversing journal entry for GRN {$grn->id}: " . $e->getMessage());
+            Log::error("Exception creating reversing journal entry for GRN {$grn->id}: ".$e->getMessage());
 
             return null;
         }
@@ -542,24 +542,28 @@ class InventoryService
             }
 
         } catch (\Exception $e) {
-            Log::error("Error cancelling draft payments for GRN {$grn->id}: " . $e->getMessage());
+            Log::error("Error cancelling draft payments for GRN {$grn->id}: ".$e->getMessage());
             // Don't throw exception, just log it - reversal should still succeed
         }
     }
 
     /**
-     * Generate unique batch code
+     * Generate unique batch code (supports 5+ digit sequences beyond 9999)
      */
     private function generateBatchCode(): string
     {
         $year = now()->year;
-        $lastBatch = StockBatch::whereYear('created_at', $year)
-            ->orderBy('id', 'desc')
+        $prefix = "BATCH-{$year}-";
+
+        $lastBatch = StockBatch::where('batch_code', 'like', "{$prefix}%")
+            ->orderByRaw('CAST(SUBSTRING(batch_code, ?) AS UNSIGNED) DESC', [strlen($prefix) + 1])
             ->first();
 
-        $nextNumber = $lastBatch ? (int) substr($lastBatch->batch_code, -4) + 1 : 1;
+        $nextNumber = $lastBatch
+            ? (int) substr($lastBatch->batch_code, strlen($prefix)) + 1
+            : 1;
 
-        return sprintf('BATCH-%d-%04d', $year, $nextNumber);
+        return sprintf('%s%04d', $prefix, $nextNumber);
     }
 
     /**
@@ -861,7 +865,7 @@ class InventoryService
 
             return [
                 'success' => false,
-                'message' => 'Failed to reverse GRN: ' . $e->getMessage(),
+                'message' => 'Failed to reverse GRN: '.$e->getMessage(),
                 'data' => null,
             ];
         }

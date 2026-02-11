@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Sales Settlements" :createRoute="route('sales-settlements.create')"
-            createLabel="New Settlement" :showSearch="true" :showRefresh="true" />
+        <x-page-header title="Sales Settlements" :createRoute="route('sales-settlements.create')" createLabel=""
+            :showSearch="true" :showRefresh="true" />
     </x-slot>
 
     @push('header')
@@ -363,8 +363,8 @@
                                         $netProfit = $settlement->calculated_net_profit;
                                     @endphp
                                     <!-- <td class="text-right tabular-nums">
-                                                                                                                                                                                                                {{ number_format($settlement->gross_profit, 2) }}
-                                                                                                                                                                                                            </td> -->
+                                                                                                                                                                                                                        {{ number_format($settlement->gross_profit, 2) }}
+                                                                                                                                                                                                                    </td> -->
                                     <td class="text-right tabular-nums text-orange-600">
                                         {{ number_format($settlement->calculated_total_expenses, 2) }}
                                     </td>
@@ -397,8 +397,8 @@
                                 </td>
 
                                 <!-- <td class="py-2 px-2 text-right tabular-nums">
-                                                                                                                        {{ number_format($totals->total_gross_profit, 2) }}
-                                                                                                                    </td> -->
+                                                                                                                            {{ number_format($totals->total_gross_profit, 2) }}
+                                                                                                                        </td> -->
                                 <td class="py-2 px-2 text-right tabular-nums">
                                     {{ number_format($totals->total_expenses, 2) }}
                                 </td>

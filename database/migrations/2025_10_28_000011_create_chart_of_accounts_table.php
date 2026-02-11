@@ -31,6 +31,9 @@ return new class extends Migration
             $table->boolean('is_active')->default(true)->comment('If false, no new transactions can be posted.');
 
             $table->timestamps();
+
+            $table->index('is_active', 'idx_coa_active');
+            $table->index(['account_type_id', 'is_active'], 'idx_coa_type_active');
         });
     }
 

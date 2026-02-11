@@ -18,7 +18,7 @@ return new class extends Migration
             $table->decimal('sale_amount', 15, 2)->default(0);
             $table->decimal('tax_rate', 5, 2)->default(0.25);
             $table->decimal('tax_amount', 15, 2)->default(0);
-            $table->string('invoice_number')->nullable();
+            $table->string('invoice_number')->nullable()->unique();
             $table->text('notes')->nullable();
             $table->timestamps();
 

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('sales_settlement_id')->constrained('sales_settlements')->cascadeOnDelete();
             $table->foreignId('customer_id')->constrained('customers')->cascadeOnDelete();
             $table->foreignId('employee_id')->constrained('employees')->cascadeOnDelete();
-            $table->string('invoice_number')->nullable();
+            $table->string('invoice_number')->nullable()->unique();
             $table->decimal('sale_amount', 15, 2)->default(0)->comment('Credit sale amount');
             $table->decimal('payment_received', 15, 2)->default(0)->comment('Cash payment received with this sale');
             $table->decimal('previous_balance', 15, 2)->default(0)->comment('Customer balance before this sale');

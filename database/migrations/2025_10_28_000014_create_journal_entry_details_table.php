@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -45,6 +46,7 @@ return new class extends Migration {
             $table->index('chart_of_account_id');
             $table->index('cost_center_id');
             $table->index('reconciliation_status');
+            $table->index(['chart_of_account_id', 'journal_entry_id'], 'idx_jed_account_entry');
         });
     }
 

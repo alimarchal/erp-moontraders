@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -27,6 +28,8 @@ return new class extends Migration {
             // Add indexes for quick lookups by date
             $table->index('start_date');
             $table->index('end_date');
+            $table->index('status', 'idx_ap_status');
+            $table->index(['start_date', 'end_date'], 'idx_ap_date_range');
         });
     }
 

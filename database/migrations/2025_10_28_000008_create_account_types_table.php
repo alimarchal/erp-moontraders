@@ -23,13 +23,15 @@ return new class extends Migration
          */
         Schema::create('account_types', function (Blueprint $table) {
             $table->id()->comment('Primary key.');
-            $table->string('type_name')->comment('Name of the account type (e.g., Asset, Liability).');
+            $table->string('type_name')->unique()->comment('Name of the account type (e.g., Asset, Liability).');
             $table->string('report_group')
                 ->comment('Financial report group (e.g., BalanceSheet, IncomeStatement).');
             $table->string('description')->nullable()->comment('Optional description of the account type.');
             $table->userTracking();
             $table->softDeletes();
             $table->timestamps();
+
+            $table->index('report_group', 'idx_at_report_group');
         });
     }
 

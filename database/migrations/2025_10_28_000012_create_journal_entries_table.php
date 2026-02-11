@@ -4,7 +4,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
@@ -19,18 +20,32 @@ return new class extends Migration {
             $table->date('entry_date')->comment('The date the transaction occurred.');
             $table->text('description')->nullable()->comment('Memo for the entire journal entry (e.g., "Paid monthly rent").');
             $table->string('reference')->nullable()->comment('Optional reference like invoice #, check #, etc.');
+            $table->foreignId('reverses_entry_id')->nullable()
+                ->constrained('journal_entries')->onDelete('restrict')
+                ->comment('If this entry reverses another entry');
+            $table->foreignId('reversed_by_entry_id')->nullable()
+                ->constrained('journal_entries')->onDelete('restrict')
+                ->comment('If this entry was reversed by another entry');
+            $table->timestamp('reversed_at')->nullable()
+                ->comment('When this entry was reversed');
             $table->enum('status', ['draft', 'posted', 'void'])->default('draft')->comment('e.g., "Posted", "Pending".');
             $table->boolean('is_closing_entry')->default(false);
             $table->foreignId('closes_period_id')->nullable()->constrained('accounting_periods')->nullOnDelete();
             $table->timestamp('posted_at')->nullable();
             $table->foreignId('posted_by')->nullable()->constrained('users')->onDelete('restrict');
             $table->timestamps();
+            $table->softDeletes()->comment('Soft delete timestamp (only for draft entries)');
+            $table->foreignId('deleted_by')->nullable()
+                ->constrained('users')->onDelete('set null')
+                ->comment('User who deleted the entry');
 
             $table->index('entry_date');
             $table->index('status');
             $table->index(['status', 'entry_date']);
             $table->index('accounting_period_id');
             $table->index('is_closing_entry');
+            $table->index('reverses_entry_id');
+            $table->index('reversed_by_entry_id');
         });
 
         Schema::table('accounting_periods', function (Blueprint $table) {

@@ -26,7 +26,7 @@
                         x-data="grnForm()">
                         @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                             <div>
                                 <x-label for="receipt_date" value="Receipt Date *" />
                                 <x-input id="receipt_date" name="receipt_date" type="date" class="mt-1 block w-full"
@@ -61,17 +61,19 @@
                                 </select>
                             </div>
 
-                            <div>
-                                <x-label for="supplier_invoice_number" value="Supplier Invoice Number" />
-                                <x-input id="supplier_invoice_number" name="supplier_invoice_number" type="text"
-                                    class="mt-1 block w-full" :value="old('supplier_invoice_number')" />
-                            </div>
 
                             <div>
                                 <x-label for="supplier_invoice_date" value="Supplier Invoice Date" />
                                 <x-input id="supplier_invoice_date" name="supplier_invoice_date" type="date"
                                     class="mt-1 block w-full" :value="old('supplier_invoice_date', date('Y-m-d'))" />
                             </div>
+
+                            <div>
+                                <x-label for="supplier_invoice_number" value="Supplier Invoice Number" />
+                                <x-input id="supplier_invoice_number" name="supplier_invoice_number" type="text"
+                                    class="mt-1 block w-full" :value="old('supplier_invoice_number')" />
+                            </div>
+
                         </div>
 
                         <hr class="my-6 border-gray-200">
@@ -991,7 +993,7 @@
                     @if(old('supplier_id'))
                         refreshAllProductSelects();
                     @endif
-                        });
+                                });
             }
 
             // Start initialization

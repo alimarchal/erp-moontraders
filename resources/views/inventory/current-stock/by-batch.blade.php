@@ -186,15 +186,15 @@
                         <table class="report-table">
                             <thead>
                                 <tr class="bg-gray-50">
-                                    <th style="width: 40px;">Sr#</th>
-                                    <th style="width: 130px;">Batch Code</th>
-                                    <th style="width: 100px;">Receipt Date</th>
-                                    <th style="width: 100px;">Quantity</th>
-                                    <th style="width: 100px;">Unit Cost</th>
-                                    <th style="width: 110px;">Selling Price</th>
-                                    <th style="width: 120px;">Total Value</th>
-                                    <th style="width: 70px;">Priority</th>
-                                    <th style="width: 80px;">Status</th>
+                                    <th>Sr#</th>
+                                    <th>Batch Code</th>
+                                    <th>Receipt Date</th>
+                                    <th>Quantity</th>
+                                    <th>Unit Cost</th>
+                                    <th>Selling Price</th>
+                                    <th>Total Value</th>
+                                    <th>Priority</th>
+                                    <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -221,20 +221,20 @@
                                         <td class="text-center" style="vertical-align: middle;">
                                             {{ \Carbon\Carbon::parse($batch->stockBatch->receipt_date)->format('d-M-Y') }}
                                         </td>
-                                        <td class="text-right font-mono font-semibold" style="vertical-align: middle;">
+                                        <td class="text-center tabular-nums font-semibold" style="vertical-align: middle;">
                                             {{ number_format($batch->quantity_on_hand, 2) }}
                                         </td>
-                                        <td class="text-right font-mono" style="vertical-align: middle;">
+                                        <td class="text-center tabular-nums" style="vertical-align: middle;">
                                             ₨{{ number_format($batch->unit_cost, 2) }}
                                         </td>
-                                        <td class="text-right font-mono" style="vertical-align: middle;">
+                                        <td class="text-center tabular-nums" style="vertical-align: middle;">
                                             @if($batch->stockBatch->selling_price)
                                                 ₨{{ number_format($batch->stockBatch->selling_price, 2) }}
                                             @else
                                                 <span class="text-gray-400">—</span>
                                             @endif
                                         </td>
-                                        <td class="text-right font-mono font-bold text-emerald-600"
+                                        <td class="text-center tabular-nums font-bold text-emerald-600"
                                             style="vertical-align: middle;">
                                             ₨{{ number_format($batch->total_value, 2) }}
                                         </td>
@@ -256,10 +256,11 @@
                             <tfoot class="bg-gray-100 font-extrabold">
                                 <tr>
                                     <td colspan="3" class="text-center px-2 py-1">Grand Total</td>
-                                    <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotalQty, 2) }}</td>
+                                    <td class="text-center tabular-nums px-2 py-1">{{ number_format($grandTotalQty, 2) }}
+                                    </td>
                                     <td class="px-2 py-1"></td>
                                     <td class="px-2 py-1"></td>
-                                    <td class="text-right font-mono px-2 py-1 text-emerald-600">
+                                    <td class="text-center tabular-nums px-2 py-1 text-emerald-600">
                                         ₨{{ number_format($grandTotalValue, 2) }}</td>
                                     <td class="px-2 py-1"></td>
                                     <td class="px-2 py-1"></td>

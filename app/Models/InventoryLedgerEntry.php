@@ -142,10 +142,10 @@ class InventoryLedgerEntry extends Model
     public function getLocationAttribute(): string
     {
         if ($this->warehouse_id) {
-            return $this->warehouse?->warehouse_name ?? 'Warehouse #' . $this->warehouse_id;
+            return $this->warehouse?->warehouse_name ?? 'Warehouse #'.$this->warehouse_id;
         }
         if ($this->vehicle_id) {
-            return $this->vehicle?->registration_number ?? 'Van #' . $this->vehicle_id;
+            return $this->vehicle?->registration_number ?? 'Van #'.$this->vehicle_id;
         }
 
         return 'Unknown';

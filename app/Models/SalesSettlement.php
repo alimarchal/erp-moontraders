@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Traits\UserTracking;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Traits\UserTracking;
+
 class SalesSettlement extends Model
 {
     use HasFactory, SoftDeletes;
@@ -269,6 +270,7 @@ class SalesSettlement extends Model
         if (array_key_exists('items_sum_total_sales_value', $this->getAttributes())) {
             return (float) ($this->getAttribute('items_sum_total_sales_value') ?? 0);
         }
+
         return (float) $this->items()->sum('total_sales_value');
     }
 
@@ -277,6 +279,7 @@ class SalesSettlement extends Model
         if (array_key_exists('items_sum_total_cogs', $this->getAttributes())) {
             return (float) ($this->getAttribute('items_sum_total_cogs') ?? 0);
         }
+
         return (float) $this->items()->sum('total_cogs');
     }
 
@@ -289,4 +292,3 @@ class SalesSettlement extends Model
         return $grossProfit - $this->calculated_total_expenses;
     }
 }
-

@@ -2,16 +2,15 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\ClaimRegister;
 use Illuminate\Database\Seeder;
 
 class ClaimRegisterSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        //
+        ClaimRegister::factory()->count(10)->pending()->create();
+        ClaimRegister::factory()->count(8)->adjusted()->create();
+        ClaimRegister::factory()->count(7)->partialAdjust()->create();
     }
 }

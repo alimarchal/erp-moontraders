@@ -67,7 +67,7 @@ class InventoryLedgerService
             'debit_qty' => 0,
             'credit_qty' => $quantity,  // OUT = Credit
             'unit_cost' => $unitCost,
-            'notes' => $notes . ' (Warehouse OUT)',
+            'notes' => $notes.' (Warehouse OUT)',
         ]);
 
         // Entry 2: Debit to vehicle (stock IN)
@@ -83,7 +83,7 @@ class InventoryLedgerService
             'debit_qty' => $quantity,  // IN = Debit
             'credit_qty' => 0,
             'unit_cost' => $unitCost,
-            'notes' => $notes . ' (Vehicle IN)',
+            'notes' => $notes.' (Vehicle IN)',
         ]);
 
         return [
@@ -151,7 +151,7 @@ class InventoryLedgerService
             'debit_qty' => 0,
             'credit_qty' => $quantity,  // OUT from vehicle = Credit
             'unit_cost' => $unitCost,
-            'notes' => $notes . ' (Return - Vehicle OUT)',
+            'notes' => $notes.' (Return - Vehicle OUT)',
         ]);
 
         // Entry 2: Debit to warehouse (stock entering warehouse)
@@ -167,7 +167,7 @@ class InventoryLedgerService
             'debit_qty' => $quantity,  // IN to warehouse = Debit
             'credit_qty' => 0,
             'unit_cost' => $unitCost,
-            'notes' => $notes . ' (Return - Warehouse IN)',
+            'notes' => $notes.' (Return - Warehouse IN)',
         ]);
 
         return [
@@ -371,7 +371,7 @@ class InventoryLedgerService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            Log::error('Failed to create inventory snapshots: ' . $e->getMessage());
+            Log::error('Failed to create inventory snapshots: '.$e->getMessage());
             throw $e;
         }
     }

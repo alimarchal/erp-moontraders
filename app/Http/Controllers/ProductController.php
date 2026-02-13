@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Uom;
@@ -15,8 +16,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
-
-use App\Models\Category;
 
 class ProductController extends Controller implements HasMiddleware
 {
@@ -192,7 +191,7 @@ class ProductController extends Controller implements HasMiddleware
 
             $updated = $product->update($payload);
 
-            if (!$updated) {
+            if (! $updated) {
                 DB::rollBack();
 
                 return back()

@@ -31,7 +31,7 @@ class SalesSettlementCashDenomination extends Model
     protected static function booted(): void
     {
         static::saving(function ($denomination) {
-            $denomination->total_amount = 
+            $denomination->total_amount =
                 ($denomination->denom_5000 * 5000) +
                 ($denomination->denom_1000 * 1000) +
                 ($denomination->denom_500 * 500) +

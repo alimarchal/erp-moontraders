@@ -46,7 +46,7 @@ class UserSeeder extends Seeder
                     'is_active' => 'Yes',
                 ]
             );
-            
+
             // Ensure role exists before assigning
             if (Role::where('name', $userData['role'])->exists()) {
                 $user->syncRoles([$userData['role']]);

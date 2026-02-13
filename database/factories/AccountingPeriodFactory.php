@@ -17,7 +17,7 @@ class AccountingPeriodFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->monthName() . ' ' . fake()->year(),
+            'name' => fake()->monthName().' '.fake()->year(),
             'start_date' => now()->startOfMonth(),
             'end_date' => now()->endOfMonth(),
             'status' => 'open',

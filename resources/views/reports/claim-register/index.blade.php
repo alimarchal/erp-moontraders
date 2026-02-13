@@ -153,7 +153,6 @@
                             <th class="text-right">Debit</th>
                             <th class="text-right">Credit</th>
                             <th class="text-right">Balance</th>
-                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -163,7 +162,6 @@
                                 <td class="text-right">{{ $openingBalance > 0 ? number_format($openingBalance, 2) : '-' }}</td>
                                 <td class="text-right">{{ $openingBalance < 0 ? number_format(abs($openingBalance), 2) : '-' }}</td>
                                 <td class="text-right font-bold">{{ number_format($openingBalance, 2) }}</td>
-                                <td></td>
                             </tr>
                         @endif
 
@@ -173,7 +171,6 @@
                                 $debit = (float) $claim->debit;
                                 $credit = (float) $claim->credit;
                                 $runningBalance += $debit - $credit;
-                                $stLabel = $statusOptions[$claim->status] ?? $claim->status;
                             @endphp
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
@@ -187,7 +184,6 @@
                                 <td class="text-right font-bold {{ $runningBalance > 0 ? 'text-green-700' : ($runningBalance < 0 ? 'text-red-700' : '') }}">
                                     {{ number_format($runningBalance, 2) }}
                                 </td>
-                                <td>{{ $stLabel }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -197,7 +193,6 @@
                             <td class="text-right">{{ number_format($totals['debit'], 2) }}</td>
                             <td class="text-right">{{ number_format($totals['credit'], 2) }}</td>
                             <td class="text-right">{{ number_format($totals['net_balance'], 2) }}</td>
-                            <td></td>
                         </tr>
                         @if ($dateFrom)
                             <tr class="bg-emerald-50">
@@ -206,7 +201,6 @@
                                 <td class="text-right font-extrabold {{ $closingBalance > 0 ? 'text-green-700' : ($closingBalance < 0 ? 'text-red-700' : '') }}">
                                     {{ number_format($closingBalance, 2) }}
                                 </td>
-                                <td></td>
                             </tr>
                         @endif
                     </tfoot>

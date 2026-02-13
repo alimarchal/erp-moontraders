@@ -43,18 +43,16 @@ class ClaimRegisterFactory extends Factory
             'debit' => $amount,  // Claim = debit
             'credit' => 0,
             'payment_method' => 'bank_transfer',
-            'status' => 'Pending',
             'notes' => fake()->optional(0.3)->sentence(),
         ];
     }
 
-    public function pending(): static
+    public function claim(): static
     {
         return $this->state(function () {
             $amount = fake()->randomFloat(2, 5000, 500000);
 
             return [
-                'status' => 'Pending',
                 'transaction_type' => 'claim',
                 'debit' => $amount,
                 'credit' => 0,
@@ -62,30 +60,15 @@ class ClaimRegisterFactory extends Factory
         });
     }
 
-    public function adjusted(): static
+    public function recovery(): static
     {
         return $this->state(function () {
             $amount = fake()->randomFloat(2, 5000, 500000);
 
             return [
-                'status' => 'Adjusted',
                 'transaction_type' => 'recovery',
                 'debit' => 0,
-                'credit' => $amount,  // Recovery = credit
-            ];
-        });
-    }
-
-    public function partialAdjust(): static
-    {
-        return $this->state(function () {
-            $amount = fake()->randomFloat(2, 5000, 500000);
-
-            return [
-                'status' => 'PartialAdjust',
-                'transaction_type' => 'recovery',
-                'debit' => 0,
-                'credit' => $amount,  // Recovery = credit
+                'credit' => $amount,
             ];
         });
     }

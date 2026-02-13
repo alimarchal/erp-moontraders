@@ -28,7 +28,6 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $transactionType = $request->input('transaction_type');
 
         $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
-        $statusOptions = ClaimRegister::statusOptions();
         $transactionTypeOptions = ClaimRegister::transactionTypeOptions();
 
         $openingBalance = 0;
@@ -88,7 +87,6 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         return view('reports.claim-register.index', compact(
             'claims',
             'suppliers',
-            'statusOptions',
             'transactionTypeOptions',
             'supplierId',
             'status',

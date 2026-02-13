@@ -54,8 +54,8 @@
     </div>
 </div>
 
-{{-- Row 3: Transaction Type, Amount, Status --}}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+{{-- Row 3: Transaction Type, Amount --}}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
     <div>
         <x-label for="transaction_type" value="Transaction Type" :required="true" />
         <select id="transaction_type" name="transaction_type"
@@ -73,21 +73,7 @@
     <div>
         <x-label for="amount" value="Amount" :required="true" />
         <x-input id="amount" type="number" name="amount" class="mt-1 block w-full" step="0.01" min="0"
-            :value="old('amount', optional($claimRegister)->amount ?? '0.00')" required />
-    </div>
-
-    <div>
-        <x-label for="status" value="Status" :required="true" />
-        <select id="status" name="status"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
-            required>
-            @foreach ($statusOptions as $value => $label)
-                <option value="{{ $value }}"
-                    {{ old('status', optional($claimRegister)->status ?? 'Pending') === $value ? 'selected' : '' }}>
-                    {{ $label }}
-                </option>
-            @endforeach
-        </select>
+            :value="old('amount', max((float)optional($claimRegister)->debit, (float)optional($claimRegister)->credit) ?: '0.00')" required />
     </div>
 </div>
 

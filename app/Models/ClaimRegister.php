@@ -27,7 +27,6 @@ class ClaimRegister extends Model
         'credit_account_id',
         'payment_method',
         'bank_account_id',
-        'status',
         'notes',
         'journal_entry_id',
         'posted_at',
@@ -42,15 +41,6 @@ class ClaimRegister extends Model
             'debit' => 'decimal:2',
             'credit' => 'decimal:2',
             'posted_at' => 'datetime',
-        ];
-    }
-
-    public static function statusOptions(): array
-    {
-        return [
-            'Pending' => 'Pending',
-            'PartialAdjust' => 'Partial Adjust',
-            'Adjusted' => 'Adjusted',
         ];
     }
 

@@ -39,8 +39,7 @@ return new class extends Migration
             $table->string('payment_method')->default('bank_transfer');
             $table->foreignId('bank_account_id')->nullable()->constrained('bank_accounts')->nullOnDelete();
 
-            // Status & Notes
-            $table->enum('status', ['Pending', 'PartialAdjust', 'Adjusted'])->default('Pending')->index();
+            // Notes
             $table->text('notes')->nullable();
 
             // Posting Info
@@ -55,7 +54,6 @@ return new class extends Migration
 
             // Indexes
             $table->index(['supplier_id', 'transaction_date']);
-            $table->index(['supplier_id', 'status']);
         });
     }
 

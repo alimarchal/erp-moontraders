@@ -51,7 +51,6 @@ class ClaimRegisterController extends Controller implements HasMiddleware
         return view('claim-registers.index', [
             'claims' => $claims,
             'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
-            'statusOptions' => ClaimRegister::statusOptions(),
         ]);
     }
 
@@ -191,7 +190,6 @@ class ClaimRegisterController extends Controller implements HasMiddleware
     {
         return [
             'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
-            'statusOptions' => ClaimRegister::statusOptions(),
         ];
     }
 

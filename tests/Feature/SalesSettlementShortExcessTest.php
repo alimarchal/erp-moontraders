@@ -88,7 +88,7 @@ it('does not double-count advance tax in short/excess calculation', function () 
         'total_amount' => 20000.00,
     ]);
 
-    $currency = \App\Models\Currency::factory()->create();
+    $currency = \App\Models\Currency::first() ?? \App\Models\Currency::factory()->create();
 
     $expenseAccount = ChartOfAccount::factory()->create([
         'account_code' => '1161',

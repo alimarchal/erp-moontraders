@@ -53,18 +53,6 @@ test('index can filter by supplier', function () {
     expect($response->viewData('claims'))->toHaveCount(1);
 });
 
-test('index can filter by status', function () {
-    $supplier = Supplier::factory()->create();
-    ClaimRegister::factory()->pending()->create(['supplier_id' => $supplier->id]);
-    ClaimRegister::factory()->adjusted()->create(['supplier_id' => $supplier->id]);
-
-    $response = $this->get(route('claim-registers.index', ['filter' => ['status' => 'Pending']]));
-
-    $response->assertSuccessful();
-    expect($response->viewData('claims'))->toHaveCount(1);
-    expect($response->viewData('claims')->first()->status)->toBe('Pending');
-});
-
 // ── Create ─────────────────────────────────────────────────────────
 
 test('create page can be rendered', function () {
@@ -72,7 +60,6 @@ test('create page can be rendered', function () {
         ->assertSuccessful()
         ->assertViewIs('claim-registers.create')
         ->assertViewHas('suppliers')
-        ->assertViewHas('statusOptions')
         ->assertViewHas('paymentMethodOptions')
         ->assertViewHas('chartOfAccounts')
         ->assertViewHas('bankAccounts');
@@ -125,34 +112,7 @@ test('store requires transaction_date', function () {
         'supplier_id' => $supplier->id,
         'debit' => 1000,
         'credit' => 0,
-        'status' => 'Pending',
     ])->assertSessionHasErrors('transaction_date');
-});
-
-test('store requires valid status', function () {
-    $supplier = Supplier::factory()->create();
-
-    $this->post(route('claim-registers.store'), [
-        'supplier_id' => $supplier->id,
-        'transaction_date' => now()->format('Y-m-d'),
-        'debit' => 1000,
-        'credit' => 0,
-        'status' => 'InvalidStatus',
-    ])->assertSessionHasErrors('status');
-});
-
-test('store validates claim_month_end is after claim_month_start', function () {
-    $supplier = Supplier::factory()->create();
-
-    $this->post(route('claim-registers.store'), [
-        'supplier_id' => $supplier->id,
-        'transaction_date' => now()->format('Y-m-d'),
-        'debit' => 1000,
-        'credit' => 0,
-        'status' => 'Pending',
-        'claim_month_start' => '2025-06-01',
-        'claim_month_end' => '2025-05-01',
-    ])->assertSessionHasErrors('claim_month_end');
 });
 
 test('store validates cheque fields when payment method is cheque', function () {
@@ -275,7 +235,7 @@ test('posted claims cannot be updated', function () {
 // ── Destroy ────────────────────────────────────────────────────────
 
 test('claim can be deleted', function () {
-    $claim = ClaimRegister::factory()->pending()->create();
+    $claim = ClaimRegister::factory()->create();
 
     $this->delete(route('claim-registers.destroy', $claim))
         ->assertRedirect(route('claim-registers.index'))
@@ -284,18 +244,8 @@ test('claim can be deleted', function () {
     $this->assertSoftDeleted('claim_registers', ['id' => $claim->id]);
 });
 
-test('adjusted claims cannot be deleted', function () {
-    $claim = ClaimRegister::factory()->adjusted()->create();
-
-    $this->delete(route('claim-registers.destroy', $claim))
-        ->assertRedirect()
-        ->assertSessionHas('error');
-
-    $this->assertDatabaseHas('claim_registers', ['id' => $claim->id, 'deleted_at' => null]);
-});
-
 test('posted claims cannot be deleted', function () {
-    $claim = ClaimRegister::factory()->pending()->create([
+    $claim = ClaimRegister::factory()->create([
         'posted_at' => now(),
         'posted_by' => $this->user->id,
     ]);
@@ -313,7 +263,7 @@ test('claim can be posted with valid password', function () {
     $debitAccount = ChartOfAccount::factory()->create(['is_group' => false, 'is_active' => true]);
     $creditAccount = ChartOfAccount::factory()->create(['is_group' => false, 'is_active' => true]);
 
-    $claim = ClaimRegister::factory()->pending()->create([
+    $claim = ClaimRegister::factory()->create([
         'debit_account_id' => $debitAccount->id,
         'credit_account_id' => $creditAccount->id,
     ]);
@@ -338,7 +288,7 @@ test('claim can be posted with valid password', function () {
 });
 
 test('post fails with invalid password', function () {
-    $claim = ClaimRegister::factory()->pending()->create();
+    $claim = ClaimRegister::factory()->create();
 
     $this->post(route('claim-registers.post', $claim), [
         'password' => 'wrong-password',
@@ -364,7 +314,7 @@ test('already posted claim cannot be posted again', function () {
 });
 
 test('post requires password', function () {
-    $claim = ClaimRegister::factory()->pending()->create();
+    $claim = ClaimRegister::factory()->create();
 
     $this->post(route('claim-registers.post', $claim), [])
         ->assertSessionHasErrors('password');

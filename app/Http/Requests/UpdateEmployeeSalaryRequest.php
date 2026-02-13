@@ -6,23 +6,27 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateEmployeeSalaryRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, array<int, mixed>>
      */
     public function rules(): array
     {
         return [
-            //
+            'employee_id' => ['required', 'exists:employees,id'],
+            'supplier_id' => ['nullable', 'exists:suppliers,id'],
+            'basic_salary' => ['required', 'numeric', 'min:0'],
+            'allowances' => ['required', 'numeric', 'min:0'],
+            'deductions' => ['required', 'numeric', 'min:0'],
+            'net_salary' => ['required', 'numeric', 'min:0'],
+            'effective_from' => ['required', 'date'],
+            'effective_to' => ['nullable', 'date', 'after_or_equal:effective_from'],
+            'is_active' => ['required', 'boolean'],
+            'notes' => ['nullable', 'string'],
         ];
     }
 }

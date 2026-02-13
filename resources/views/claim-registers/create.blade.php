@@ -26,7 +26,6 @@
 
                         @include('claim-registers.partials.form-fields', [
                             'suppliers' => $suppliers,
-                            'statusOptions' => $statusOptions,
                         ])
 
                         <div class="flex items-center justify-end mt-6">

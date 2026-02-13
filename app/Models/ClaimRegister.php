@@ -21,12 +21,12 @@ class ClaimRegister extends Model
         'claim_month',
         'date_of_dispatch',
         'transaction_type',
-        'amount',
+        'debit',
+        'credit',
         'debit_account_id',
         'credit_account_id',
         'payment_method',
         'bank_account_id',
-        'status',
         'notes',
         'journal_entry_id',
         'posted_at',
@@ -38,17 +38,9 @@ class ClaimRegister extends Model
         return [
             'transaction_date' => 'date',
             'date_of_dispatch' => 'date',
-            'amount' => 'decimal:2',
+            'debit' => 'decimal:2',
+            'credit' => 'decimal:2',
             'posted_at' => 'datetime',
-        ];
-    }
-
-    public static function statusOptions(): array
-    {
-        return [
-            'Pending' => 'Pending',
-            'PartialAdjust' => 'Partial Adjust',
-            'Adjusted' => 'Adjusted',
         ];
     }
 

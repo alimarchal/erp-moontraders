@@ -25,7 +25,6 @@ class UpdateClaimRegisterRequest extends FormRequest
             'date_of_dispatch' => ['nullable', 'date'],
             'transaction_type' => ['required', 'in:claim,recovery'],
             'amount' => ['required', 'numeric', 'min:0'],
-            'status' => ['required', 'in:Pending,PartialAdjust,Adjusted'],
             'notes' => ['nullable', 'string'],
         ];
     }

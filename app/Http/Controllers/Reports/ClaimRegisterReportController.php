@@ -23,14 +23,13 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to', now()->format('Y-m-d'));
         $supplierId = $request->input('supplier_id');
-        $status = $request->input('status');
         $claimMonth = $request->input('claim_month');
         $transactionType = $request->input('transaction_type');
 
         $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
-        $statusOptions = ClaimRegister::statusOptions();
         $transactionTypeOptions = ClaimRegister::transactionTypeOptions();
 
+        $openingBalances = [];
         $openingBalance = 0;
         if ($dateFrom) {
             $openingQuery = ClaimRegister::query();
@@ -43,11 +42,11 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
             $openingRecords = $openingQuery->get();
             foreach ($openingRecords as $record) {
-                if ($record->transaction_type === 'claim') {
-                    $openingBalance += (float) $record->amount;
-                } else {
-                    $openingBalance -= (float) $record->amount;
+                if (! isset($openingBalances[$record->supplier_id])) {
+                    $openingBalances[$record->supplier_id] = 0;
                 }
+                $openingBalances[$record->supplier_id] += (float) $record->debit - (float) $record->credit;
+                $openingBalance += (float) $record->debit - (float) $record->credit;
             }
         }
 
@@ -57,10 +56,6 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
         if ($supplierId) {
             $query->where('supplier_id', $supplierId);
-        }
-
-        if ($status) {
-            $query->where('status', $status);
         }
 
         if ($claimMonth) {
@@ -82,33 +77,24 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $claims = $query->get();
 
         $totals = [
-            'claim_amount' => 0,
-            'recovery_amount' => 0,
+            'debit' => $claims->sum('debit'),
+            'credit' => $claims->sum('credit'),
         ];
 
-        foreach ($claims as $claim) {
-            if ($claim->transaction_type === 'claim') {
-                $totals['claim_amount'] += (float) $claim->amount;
-            } else {
-                $totals['recovery_amount'] += (float) $claim->amount;
-            }
-        }
-
-        $totals['net_balance'] = $totals['claim_amount'] - $totals['recovery_amount'];
+        $totals['net_balance'] = $totals['debit'] - $totals['credit'];
         $closingBalance = $openingBalance + $totals['net_balance'];
 
         return view('reports.claim-register.index', compact(
             'claims',
             'suppliers',
-            'statusOptions',
             'transactionTypeOptions',
             'supplierId',
-            'status',
             'claimMonth',
             'transactionType',
             'dateFrom',
             'dateTo',
             'openingBalance',
+            'openingBalances',
             'closingBalance',
             'totals'
         ));

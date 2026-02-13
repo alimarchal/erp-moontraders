@@ -37,21 +37,48 @@ class ClaimRegisterController extends Controller implements HasMiddleware
         $claims = QueryBuilder::for(ClaimRegister::with('supplier'))
             ->allowedFilters([
                 AllowedFilter::exact('supplier_id'),
-                AllowedFilter::exact('status'),
                 AllowedFilter::exact('transaction_type'),
                 AllowedFilter::partial('reference_number'),
                 AllowedFilter::partial('claim_month'),
                 AllowedFilter::callback('transaction_date_from', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('transaction_date', '>=', $value) : null),
                 AllowedFilter::callback('transaction_date_to', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('transaction_date', '<=', $value) : null),
             ])
-            ->orderByDesc('transaction_date')
+            ->orderBy('transaction_date')
+            ->orderBy('id')
             ->paginate(15)
             ->withQueryString();
+
+        // Calculate opening balance per supplier (records before date_from filter)
+        $openingBalances = [];
+        $totalOpeningBalance = 0;
+        $dateFrom = $request->input('filter.transaction_date_from');
+        $supplierId = $request->input('filter.supplier_id');
+
+        if ($dateFrom) {
+            $openingQuery = ClaimRegister::query();
+
+            if ($supplierId) {
+                $openingQuery->where('supplier_id', $supplierId);
+            }
+
+            $openingQuery->whereDate('transaction_date', '<', $dateFrom);
+
+            $openingRecords = $openingQuery->get();
+            foreach ($openingRecords as $record) {
+                if (! isset($openingBalances[$record->supplier_id])) {
+                    $openingBalances[$record->supplier_id] = 0;
+                }
+                $amount = (float) $record->debit - (float) $record->credit;
+                $openingBalances[$record->supplier_id] += $amount;
+                $totalOpeningBalance += $amount;
+            }
+        }
 
         return view('claim-registers.index', [
             'claims' => $claims,
             'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
-            'statusOptions' => ClaimRegister::statusOptions(),
+            'openingBalances' => $openingBalances,
+            'totalOpeningBalance' => $totalOpeningBalance,
         ]);
     }
 
@@ -191,33 +218,57 @@ class ClaimRegisterController extends Controller implements HasMiddleware
     {
         return [
             'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
-            'statusOptions' => ClaimRegister::statusOptions(),
         ];
     }
 
     /**
-     * Auto-set GL accounts and bank for claim register.
-     * debit_account = 1112 Pending Claims Debtors (Account Receivable)
-     * credit_account = HBL Main Bank's COA
-     * payment_method = bank_transfer
-     * bank_account_id = HBL Main
+     * Auto-set GL accounts, convert amount to debit/credit, and set bank info.
+     *
+     * Converts UI input (transaction_type + amount) to proper double-entry (debit/credit):
+     * - Claim: debit = amount, credit = 0
+     * - Recovery: debit = 0, credit = amount
+     *
+     * Also sets:
+     * - debit_account = 1112 Pending Claims Debtors
+     * - credit_account = HBL Main Bank's COA
+     * - payment_method = bank_transfer
      */
     private function setDefaultAccounts(array $data): array
     {
+        // Convert amount input to debit/credit based on transaction_type
+        if (isset($data['amount'])) {
+            $amount = (float) $data['amount'];
+            $transactionType = $data['transaction_type'] ?? 'claim';
+
+            if ($transactionType === 'claim') {
+                $data['debit'] = $amount;
+                $data['credit'] = 0;
+            } else {
+                // recovery
+                $data['debit'] = 0;
+                $data['credit'] = $amount;
+            }
+
+            // Remove amount field as it's not stored in DB
+            unset($data['amount']);
+        }
+
         // Set debit account to 1112 (Pending Claims Debtors)
         $debtorsAccount = ChartOfAccount::where('account_code', '1112')->first();
         if ($debtorsAccount) {
             $data['debit_account_id'] = $debtorsAccount->id;
         }
 
-        // Set credit account to HBL Main Bank's linked COA
-        $hblBank = BankAccount::where('account_name', 'LIKE', '%HBL%')
-            ->orWhere('account_name', 'LIKE', '%Main%')
-            ->first();
+        // Set credit account to account code 1171 (HBL Main Bank)
+        $bankAccount = ChartOfAccount::where('account_code', '1171')->first();
+        if ($bankAccount) {
+            $data['credit_account_id'] = $bankAccount->id;
 
-        if ($hblBank && $hblBank->chart_of_account_id) {
-            $data['credit_account_id'] = $hblBank->chart_of_account_id;
-            $data['bank_account_id'] = $hblBank->id;
+            // Also set bank_account_id if BankAccount record exists
+            $hblBank = BankAccount::where('chart_of_account_id', $bankAccount->id)->first();
+            if ($hblBank) {
+                $data['bank_account_id'] = $hblBank->id;
+            }
         }
 
         // Default payment method

@@ -6,8 +6,7 @@
 
     @push('header')
         <style>
-            .report-table,
-            table {
+            .report-table {
                 width: 100%;
                 border-collapse: collapse;
                 border: 1px solid black;
@@ -16,9 +15,7 @@
             }
 
             .report-table th,
-            .report-table td,
-            table th,
-            table td {
+            .report-table td {
                 border: 1px solid black;
                 padding: 3px 4px;
                 word-wrap: break-word;
@@ -31,10 +28,6 @@
             @media print {
                 @page {
                     margin: 15mm 10mm 20mm 10mm;
-
-                    @bottom-center {
-                        content: "Page " counter(page) " of " counter(pages);
-                    }
                 }
 
                 .no-print {
@@ -44,7 +37,6 @@
                 body {
                     margin: 0 !important;
                     padding: 0 !important;
-                    counter-reset: page 1;
                 }
 
                 .max-w-7xl {
@@ -64,44 +56,14 @@
                     overflow: visible !important;
                 }
 
-                .report-table,
-                table {
+                .report-table {
                     font-size: 11px !important;
                     width: 100% !important;
-                    table-layout: auto !important;
                 }
 
                 .report-table th,
-                .report-table td,
-                table th,
-                table td {
+                .report-table td {
                     padding: 2px 3px !important;
-                    color: #000 !important;
-                    word-wrap: break-word !important;
-                    white-space: normal !important;
-                    font-size: 11px !important;
-                }
-
-                table th *,
-                table td *,
-                table th span,
-                table td span,
-                table td div,
-                table td abbr {
-                    font-size: 11px !important;
-                    color: #000 !important;
-                    font-weight: normal !important;
-                }
-
-                p {
-                    margin-top: 0 !important;
-                    margin-bottom: 8px !important;
-                }
-
-                .print-info {
-                    font-size: 9px !important;
-                    margin-top: 5px !important;
-                    margin-bottom: 10px !important;
                     color: #000 !important;
                 }
 
@@ -117,7 +79,7 @@
             <div class="lg:col-span-2">
                 <x-label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
                     onchange="this.form.submit()">
                     <option value="">All Time (Custom Date)</option>
                     @foreach($accountingPeriods as $period)
@@ -137,7 +99,7 @@
             <div>
                 <x-label for="per_page" value="Show Per Page" />
                 <select id="per_page" name="per_page"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
                     <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
                     <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
@@ -149,7 +111,7 @@
             <div>
                 <x-label for="filter_account_code" value="Account Code" />
                 <select id="filter_account_code" name="filter[account_code]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
                                     <option value="{{ $account->account_code }}" {{ request('filter.account_code') === $account->
@@ -163,7 +125,7 @@
             <div>
                 <x-label for="filter_account_name" value="Account Name" />
                 <select id="filter_account_name" name="filter[account_name]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
                                     <option value="{{ $account->account_name }}" {{ request('filter.account_name') === $account->
@@ -177,7 +139,7 @@
             <div>
                 <x-label for="filter_account_type" value="Account Type" />
                 <select id="filter_account_type" name="filter[account_type]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Types</option>
                     @foreach($accountTypes as $type)
                         <option value="{{ $type }}" {{ request('filter.account_type') === $type ? 'selected' : '' }}>
@@ -190,7 +152,7 @@
             <div>
                 <x-label for="filter_normal_balance" value="Normal Balance" />
                 <select id="filter_normal_balance" name="filter[normal_balance]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="debit" {{ request('filter.normal_balance') === 'debit' ? 'selected' : '' }}>
                         Debit
@@ -204,7 +166,7 @@
             <div>
                 <x-label for="filter_is_active" value="Active Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="true" {{ request('filter.is_active') === 'true' ? 'selected' : '' }}>
                         Active
@@ -230,7 +192,7 @@
             <div>
                 <x-label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="account_code" {{ request('sort') == 'account_code' || !request('sort') ? 'selected'
     : '' }}>Account Code (A-Z)</option>
                     <option value="-account_code" {{ request('sort') == '-account_code' ? 'selected' : '' }}>Account Code
@@ -260,87 +222,85 @@
         </div>
     </x-filter-section>
 
-    <!-- Account Balances Header -->
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 mb-4">
-        <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-4 text-center">
-            <h3 class="text-xl font-bold text-gray-800">Account Balances</h3>
-            <p class="text-gray-600 mt-1">
-                As of {{ \Carbon\Carbon::parse($asOfDate)->format('F d, Y') }}
-            </p>
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
+            <div class="overflow-x-auto">
+                <p class="text-center font-extrabold mb-2">
+                    Moon Traders<br>
+                    Account Balances<br>
+                    As of {{ \Carbon\Carbon::parse($asOfDate)->format('d-M-Y') }}
+                    <br>
+                    <span class="print-only print-info text-xs text-center">
+                        Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
+                    </span>
+                </p>
+
+                <table class="report-table">
+                    <thead>
+                        <tr class="bg-gray-50">
+                            <th class="text-center border font-bold px-2">#</th>
+                            <th class="text-left border font-bold px-2">Acc Code</th>
+                            <th class="text-left border font-bold px-2">Account Name</th>
+                            <th class="text-left border font-bold px-2">Account Type</th>
+                            <th class="text-left border font-bold px-2">Report Group</th>
+                            <th class="text-right border font-bold px-2">Total Debits</th>
+                            <th class="text-right border font-bold px-2">Total Credits</th>
+                            <th class="text-right border font-bold px-2">Balance</th>
+                            <th class="text-center border font-bold px-2">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($balances as $index => $balance)
+                            <tr>
+                                <td class="text-center border">{{ $balances->firstItem() + $index }}</td>
+                                <td class="border font-semibold uppercase">{{ $balance->account_code }}</td>
+                                <td class="border">{{ $balance->account_name }}</td>
+                                <td class="border text-xs">{{ $balance->account_type }}</td>
+                                <td class="border">
+                                    <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium {{ $balance->report_group === 'BalanceSheet' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
+                                        {{ $balance->report_group === 'BalanceSheet' ? 'Balance Sheet' : 'Income Statement' }}
+                                    </span>
+                                </td>
+                                <td class="text-right border font-mono">{{ number_format((float) $balance->total_debits, 2) }}</td>
+                                <td class="text-right border font-mono">{{ number_format((float) $balance->total_credits, 2) }}</td>
+                                <td class="text-right border font-mono font-bold {{ $balance->balance < 0 ? 'text-red-600' : 'text-green-600' }}">
+                                    {{ number_format((float) $balance->balance, 2) }}
+                                </td>
+                                <td class="text-center border">
+                                    @if ($balance->is_active)
+                                        <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">Active</span>
+                                    @else
+                                        <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">Inactive</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="9" class="text-center py-8 text-gray-500 border">
+                                    No account balances found.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    @if($balances->isNotEmpty())
+                    <tfoot class="bg-gray-100 font-bold">
+                        <tr>
+                            <td class="text-right border" colspan="5">Grand Total ({{ $balances->total() }} accounts):</td>
+                            <td class="text-right border font-mono">{{ number_format($balances->sum('total_debits'), 2) }}</td>
+                            <td class="text-right border font-mono">{{ number_format($balances->sum('total_credits'), 2) }}</td>
+                            <td class="text-right border font-mono">{{ number_format($balances->sum('balance'), 2) }}</td>
+                            <td class="border"></td>
+                        </tr>
+                    </tfoot>
+                    @endif
+                </table>
+
+                @if($balances->hasPages())
+                    <div class="mt-4 no-print">
+                        {{ $balances->withQueryString()->links() }}
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
-
-    <x-data-table :items="$balances" :headers="[
-        ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'Acc <br> Code'],
-        ['label' => 'Account Name'],
-        ['label' => 'Account <br> Type'],
-        ['label' => 'Report <br> Group'],
-        ['label' => 'Total <br> Debits', 'align' => 'text-right'],
-        ['label' => 'Total <br> Credits', 'align' => 'text-right'],
-        ['label' => 'Balance', 'align' => 'text-right'],
-        ['label' => 'Status', 'align' => 'text-center'],
-    ]"  emptyMessage="No account balances found.">
-        @foreach ($balances as $index => $balance)
-            <tr class="border-b border-gray-200 text-sm">
-                <td class="py-1 px-1 text-center">
-                    {{ $balances->firstItem() + $index }}
-                </td>
-                <td class="py-1 px-1">
-                    <div class="font-semibold uppercase">{{ $balance->account_code }}</div>
-                </td>
-                <td class="py-1 px-1">
-                    {{ $balance->account_name }}
-                </td>
-                <td class="py-1 px-1">
-                    <div class="text-xs">{{ $balance->account_type }}</div>
-                </td>
-                <td class="py-1 px-1">
-                    <span
-                        class="inline-flex items-center px-1 py-1 text-xs font-semibold rounded-full 
-                                                                                                                            {{ $balance->report_group === 'BalanceSheet' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
-                        {{ $balance->report_group === 'BalanceSheet' ? 'Balance Sheet' : 'Income Statement' }}
-                    </span>
-                </td>
-                <td class="py-1 px-1 text-right font-mono">
-                    {{ number_format((float) $balance->total_debits, 2) }}
-                </td>
-                <td class="py-1 px-1 text-right font-mono">
-                    {{ number_format((float) $balance->total_credits, 2) }}
-                </td>
-                <td
-                    class="py-1 px-1 text-right font-mono font-bold {{ $balance->balance < 0 ? 'text-red-600' : 'text-green-600' }}">
-                    {{ number_format((float) $balance->balance, 2) }}
-                </td>
-                <td class="py-1 px-1 text-center">
-                    @if ($balance->is_active)
-                        <span
-                            class="inline-flex items-center px-1 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700">
-                            Active
-                        </span>
-                    @else
-                        <span
-                            class="inline-flex items-center px-1 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600">
-                            Inactive
-                        </span>
-                    @endif
-                </td>
-            </tr>
-        @endforeach
-        <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
-            <td colspan="5" class="py-1 px-1 text-right">
-                Grand Total ({{ $balances->total() }} accounts):
-            </td>
-            <td class="py-1 px-1 text-right font-mono">
-                {{ number_format($balances->sum('total_debits'), 2) }}
-            </td>
-            <td class="py-1 px-1 text-right font-mono">
-                {{ number_format($balances->sum('total_credits'), 2) }}
-            </td>
-            <td class="py-1 px-1 text-right font-mono">
-                {{ number_format($balances->sum('balance'), 2) }}
-            </td>
-            <td></td>
-        </tr>
-    </x-data-table>
 </x-app-layout>

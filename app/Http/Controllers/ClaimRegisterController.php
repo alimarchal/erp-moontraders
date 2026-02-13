@@ -37,20 +37,41 @@ class ClaimRegisterController extends Controller implements HasMiddleware
         $claims = QueryBuilder::for(ClaimRegister::with('supplier'))
             ->allowedFilters([
                 AllowedFilter::exact('supplier_id'),
-                AllowedFilter::exact('status'),
                 AllowedFilter::exact('transaction_type'),
                 AllowedFilter::partial('reference_number'),
                 AllowedFilter::partial('claim_month'),
                 AllowedFilter::callback('transaction_date_from', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('transaction_date', '>=', $value) : null),
                 AllowedFilter::callback('transaction_date_to', fn ($query, $value) => $value !== null && $value !== '' ? $query->whereDate('transaction_date', '<=', $value) : null),
             ])
-            ->orderByDesc('transaction_date')
+            ->orderBy('transaction_date')
+            ->orderBy('id')
             ->paginate(15)
             ->withQueryString();
+
+        // Calculate opening balance (records before date_from filter or before current page)
+        $openingBalance = 0;
+        $dateFrom = $request->input('filter.transaction_date_from');
+        $supplierId = $request->input('filter.supplier_id');
+
+        if ($dateFrom) {
+            $openingQuery = ClaimRegister::query();
+
+            if ($supplierId) {
+                $openingQuery->where('supplier_id', $supplierId);
+            }
+
+            $openingQuery->whereDate('transaction_date', '<', $dateFrom);
+
+            $openingRecords = $openingQuery->get();
+            foreach ($openingRecords as $record) {
+                $openingBalance += (float) $record->debit - (float) $record->credit;
+            }
+        }
 
         return view('claim-registers.index', [
             'claims' => $claims,
             'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'openingBalance' => $openingBalance,
         ]);
     }
 
@@ -231,14 +252,16 @@ class ClaimRegisterController extends Controller implements HasMiddleware
             $data['debit_account_id'] = $debtorsAccount->id;
         }
 
-        // Set credit account to HBL Main Bank's linked COA
-        $hblBank = BankAccount::where('account_name', 'LIKE', '%HBL%')
-            ->orWhere('account_name', 'LIKE', '%Main%')
-            ->first();
+        // Set credit account to account code 1171 (HBL Main Bank)
+        $bankAccount = ChartOfAccount::where('account_code', '1171')->first();
+        if ($bankAccount) {
+            $data['credit_account_id'] = $bankAccount->id;
 
-        if ($hblBank && $hblBank->chart_of_account_id) {
-            $data['credit_account_id'] = $hblBank->chart_of_account_id;
-            $data['bank_account_id'] = $hblBank->id;
+            // Also set bank_account_id if BankAccount record exists
+            $hblBank = BankAccount::where('chart_of_account_id', $bankAccount->id)->first();
+            if ($hblBank) {
+                $data['bank_account_id'] = $hblBank->id;
+            }
         }
 
         // Default payment method

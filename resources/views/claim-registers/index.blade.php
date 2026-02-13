@@ -21,21 +21,6 @@
                 </select>
             </div>
 
-            {{-- Status --}}
-            <div>
-                <x-label for="filter_status" value="Status" />
-                <select id="filter_status" name="filter[status]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Statuses</option>
-                    @foreach ($statusOptions as $value => $label)
-                        <option value="{{ $value }}"
-                            {{ request('filter.status') === $value ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
             {{-- Transaction Type --}}
             <div>
                 <x-label for="filter_transaction_type" value="Transaction Type" />
@@ -110,6 +95,7 @@
         ['label' => 'Supplier'],
         ['label' => 'Txn Date', 'align' => 'text-center'],
         ['label' => 'Reference'],
+        ['label' => 'Description'],
         ['label' => 'Claim Month', 'align' => 'text-center'],
         ['label' => 'Debit', 'align' => 'text-right'],
         ['label' => 'Credit', 'align' => 'text-right'],
@@ -117,17 +103,33 @@
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No claim registers found." :emptyRoute="route('claim-registers.create')"
         emptyLinkText="Add a claim">
+        @php $runningBalance = $openingBalance ?? 0; @endphp
+
+        {{-- Opening Balance Row --}}
+        @if (request('filter.transaction_date_from') && ($openingBalance ?? 0) != 0)
+            <tr class="bg-yellow-50 font-semibold border-b border-gray-300">
+                <td class="py-2 px-2 text-right" colspan="6">Opening Balance</td>
+                <td class="py-2 px-2 text-right">{{ $openingBalance > 0 ? number_format($openingBalance, 2) : '-' }}</td>
+                <td class="py-2 px-2 text-right">{{ $openingBalance < 0 ? number_format(abs($openingBalance), 2) : '-' }}</td>
+                <td class="py-2 px-2 text-right font-bold {{ $openingBalance > 0 ? 'text-green-700' : ($openingBalance < 0 ? 'text-red-700' : '') }}">
+                    {{ number_format($openingBalance, 2) }}
+                </td>
+                <td class="py-2 px-2"></td>
+            </tr>
+        @endif
+
         @foreach ($claims as $index => $claim)
             @php
-                $balance = (float) $claim->debit - (float) $claim->credit;
-                $deleteDisabled = $claim->isPosted();
+                $debit = (float) $claim->debit;
+                $credit = (float) $claim->credit;
+                $runningBalance += $debit - $credit;
             @endphp
             <tr class="border-b border-gray-200 text-sm">
                 <td class="py-1 px-2 text-center">
                     {{ $claims->firstItem() + $index }}
                 </td>
                 <td class="py-1 px-2 font-semibold whitespace-nowrap">
-                    {{ $claim->supplier?->supplier_name ?? '-' }}
+                    {{ $claim->supplier?->short_name ?? '-' }}
                 </td>
                 <td class="py-1 px-2 text-center whitespace-nowrap">
                     {{ $claim->transaction_date->format('d-m-Y') }}
@@ -135,17 +137,20 @@
                 <td class="py-1 px-2">
                     {{ $claim->reference_number ?? '-' }}
                 </td>
+                <td class="py-1 px-2">
+                    {{ $claim->description ?? '-' }}
+                </td>
                 <td class="py-1 px-2 text-center whitespace-nowrap">
                     {{ $claim->claim_month ?? '-' }}
                 </td>
                 <td class="py-1 px-2 text-right whitespace-nowrap">
-                    {{ $claim->debit > 0 ? number_format($claim->debit, 2) : '-' }}
+                    {{ $debit > 0 ? number_format($debit, 2) : '-' }}
                 </td>
                 <td class="py-1 px-2 text-right whitespace-nowrap">
-                    {{ $claim->credit > 0 ? number_format($claim->credit, 2) : '-' }}
+                    {{ $credit > 0 ? number_format($credit, 2) : '-' }}
                 </td>
-                <td class="py-1 px-2 text-right whitespace-nowrap font-bold {{ $balance > 0 ? 'text-red-600' : ($balance < 0 ? 'text-green-600' : '') }}">
-                    {{ number_format($balance, 2) }}
+                <td class="py-1 px-2 text-right whitespace-nowrap font-bold {{ $runningBalance > 0 ? 'text-green-700' : ($runningBalance < 0 ? 'text-red-700' : '') }}">
+                    {{ number_format($runningBalance, 2) }}
                 </td>
                 <td class="py-1 px-2 text-center">
                     <div class="flex justify-center space-x-2">
@@ -160,33 +165,35 @@
                                     d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                         </a>
-                        @can('claim-register-edit')
-                            <a href="{{ route('claim-registers.edit', $claim) }}"
-                                class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                                title="Edit">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </a>
-                        @endcan
-                        @role('super-admin')
-                            <form method="POST" action="{{ route('claim-registers.destroy', $claim) }}"
-                                onsubmit="return confirm('Are you sure you want to delete this claim?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                    class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150 {{ $deleteDisabled ? 'opacity-40 cursor-not-allowed hover:bg-transparent hover:text-red-600 pointer-events-none' : '' }}"
-                                    title="Delete" @if ($deleteDisabled) disabled aria-disabled="true" @endif>
+                        @if (!$claim->isPosted())
+                            @can('claim-register-edit')
+                                <a href="{{ route('claim-registers.edit', $claim) }}"
+                                    class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
+                                    title="Edit">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
                                         viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
-                                </button>
-                            </form>
-                        @endrole
+                                </a>
+                            @endcan
+                            @role('super-admin')
+                                <form method="POST" action="{{ route('claim-registers.destroy', $claim) }}"
+                                    onsubmit="return confirm('Are you sure you want to delete this claim?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                        class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                        title="Delete">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            @endrole
+                        @endif
                     </div>
                 </td>
             </tr>

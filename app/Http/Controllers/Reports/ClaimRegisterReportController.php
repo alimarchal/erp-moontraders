@@ -23,7 +23,6 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $dateFrom = $request->input('date_from');
         $dateTo = $request->input('date_to', now()->format('Y-m-d'));
         $supplierId = $request->input('supplier_id');
-        $status = $request->input('status');
         $claimMonth = $request->input('claim_month');
         $transactionType = $request->input('transaction_type');
 
@@ -52,10 +51,6 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
         if ($supplierId) {
             $query->where('supplier_id', $supplierId);
-        }
-
-        if ($status) {
-            $query->where('status', $status);
         }
 
         if ($claimMonth) {
@@ -89,7 +84,6 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
             'suppliers',
             'transactionTypeOptions',
             'supplierId',
-            'status',
             'claimMonth',
             'transactionType',
             'dateFrom',

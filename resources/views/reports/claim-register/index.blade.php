@@ -72,20 +72,6 @@
                 </select>
             </div>
 
-            {{-- Status --}}
-            <div>
-                <x-label for="status" value="Status" />
-                <select id="status" name="status"
-                    class="border-gray-300 rounded-md w-full">
-                    <option value="">All Statuses</option>
-                    @foreach ($statusOptions as $value => $label)
-                        <option value="{{ $value }}" {{ $status === $value ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
             {{-- Date From --}}
             <div>
                 <x-label for="date_from" value="Date From" />

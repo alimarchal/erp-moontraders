@@ -5,10 +5,8 @@ use App\Models\AccountType;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
-use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
-use App\Models\GoodsIssueItem;
 use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementBankSlip;
@@ -48,7 +46,7 @@ it('validation fails if bank slips are invalid', function () {
                     'quantity_sold' => 10,
                     'unit_cost' => 100,
                     'batches' => [],
-                ]
+                ],
             ],
             'bank_slips' => json_encode([['amount' => 5000]]), // Missing bank_account_id
         ]);
@@ -103,7 +101,7 @@ it('can store sales settlement with bank slips', function () {
             'unit_cost' => 100,
             'selling_price' => 150,
             'batches' => [],
-        ]
+        ],
     ];
 
     $bankSlipsData = [
@@ -113,7 +111,7 @@ it('can store sales settlement with bank slips', function () {
             'reference_number' => 'REF-123',
             'deposit_date' => now()->toDateString(),
             'notes' => 'Test Deposit',
-        ]
+        ],
     ];
 
     $response = $this->actingAs($this->user)
@@ -171,7 +169,7 @@ it('posts bank slips to journal entries correctly', function () {
             'account_type_id' => $accountType->id,
             'currency_id' => $currency->id,
             'normal_balance' => 'debit',
-            'is_active' => true
+            'is_active' => true,
         ]),
         'bank' => ChartOfAccount::create([
             'account_code' => '1001',
@@ -179,7 +177,7 @@ it('posts bank slips to journal entries correctly', function () {
             'account_type_id' => $accountType->id,
             'currency_id' => $currency->id,
             'normal_balance' => 'debit',
-            'is_active' => true
+            'is_active' => true,
         ]),
         // Create other required accounts to avoid validation errors in DistributionService
         'cash' => ChartOfAccount::create(['account_code' => '1121', 'account_name' => 'Cash', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'normal_balance' => 'debit', 'is_active' => true]),
@@ -258,9 +256,9 @@ it('posts bank slips to journal entries correctly', function () {
     // Verify Journal Entry Lines
     $journalEntry = \App\Models\JournalEntry::with('details')->find($settlement->journal_entry_id);
 
-    if (!$journalEntry->details->where('chart_of_account_id', $accounts['bank']->id)->first()) {
-        dump("Expected Account ID: " . $accounts['bank']->id);
-        dump("Failing Accounts Search: " . $journalEntry->details->pluck('chart_of_account_id')->implode(', '));
+    if (! $journalEntry->details->where('chart_of_account_id', $accounts['bank']->id)->first()) {
+        dump('Expected Account ID: '.$accounts['bank']->id);
+        dump('Failing Accounts Search: '.$journalEntry->details->pluck('chart_of_account_id')->implode(', '));
         dump($journalEntry->details->toArray());
     }
 

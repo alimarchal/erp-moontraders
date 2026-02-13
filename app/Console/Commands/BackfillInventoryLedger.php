@@ -57,7 +57,7 @@ class BackfillInventoryLedger extends Command
             DB::beginTransaction();
 
             // Process in chronological order for accurate running balances
-            $processAll = !$this->option('grn-only') && !$this->option('gi-only') && !$this->option('ss-only');
+            $processAll = ! $this->option('grn-only') && ! $this->option('gi-only') && ! $this->option('ss-only');
 
             if ($processAll || $this->option('grn-only')) {
                 $this->processGRNs($fromDate, $toDate);
@@ -97,7 +97,7 @@ class BackfillInventoryLedger extends Command
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->error('Backfill failed: ' . $e->getMessage());
+            $this->error('Backfill failed: '.$e->getMessage());
             Log::error('Inventory ledger backfill failed', ['error' => $e->getMessage()]);
 
             return self::FAILURE;
@@ -172,7 +172,7 @@ class BackfillInventoryLedger extends Command
         }
 
         // If no batch_number, try to find batch by product + receipt date
-        if (!$stockBatch) {
+        if (! $stockBatch) {
             $stockBatch = StockBatch::where('product_id', $item->product_id)
                 ->whereDate('receipt_date', $grn->receipt_date)
                 ->first();
@@ -211,7 +211,7 @@ class BackfillInventoryLedger extends Command
             'unit_cost' => $unitCost,
             'selling_price' => $sellingPrice,
             'total_value' => $qty * $unitCost,
-            'notes' => "GRN {$grn->grn_number}" . ($stockBatch ? " - Batch {$stockBatch->batch_code}" : ''),
+            'notes' => "GRN {$grn->grn_number}".($stockBatch ? " - Batch {$stockBatch->batch_code}" : ''),
         ]);
 
         $this->grnCount++;
@@ -341,7 +341,7 @@ class BackfillInventoryLedger extends Command
                 ->where('transaction_type', InventoryLedgerEntry::TYPE_SALE)
                 ->exists();
 
-            if (!$exists) {
+            if (! $exists) {
                 InventoryLedgerEntry::create([
                     'date' => $settlement->settlement_date,
                     'transaction_type' => InventoryLedgerEntry::TYPE_SALE,
@@ -368,7 +368,7 @@ class BackfillInventoryLedger extends Command
                 ->where('transaction_type', InventoryLedgerEntry::TYPE_RETURN)
                 ->exists();
 
-            if (!$exists) {
+            if (! $exists) {
                 // Vehicle OUT (Credit - returning goods)
                 InventoryLedgerEntry::create([
                     'date' => $settlement->settlement_date,
@@ -411,7 +411,7 @@ class BackfillInventoryLedger extends Command
                 ->where('transaction_type', InventoryLedgerEntry::TYPE_SHORTAGE)
                 ->exists();
 
-            if (!$exists) {
+            if (! $exists) {
                 InventoryLedgerEntry::create([
                     'date' => $settlement->settlement_date,
                     'transaction_type' => InventoryLedgerEntry::TYPE_SHORTAGE,

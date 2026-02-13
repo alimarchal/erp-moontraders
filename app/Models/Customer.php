@@ -19,15 +19,15 @@ class Customer extends Model
      * @var string[]
      */
     public const CHANNEL_TYPES = [
-            'General Store',
-            'Pharmacy',
-            'Wholesale',
-            'Bakery',
-            'Hotel & Accommodation',
-            'Minimart',
-            '3rd Party',
-            'Petromart',
-            'Other',
+        'General Store',
+        'Pharmacy',
+        'Wholesale',
+        'Bakery',
+        'Hotel & Accommodation',
+        'Minimart',
+        '3rd Party',
+        'Petromart',
+        'Other',
     ];
 
     /**

@@ -15,6 +15,7 @@ use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ChartOfAccountController;
+use App\Http\Controllers\ClaimRegisterController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CostCenterController;
 use App\Http\Controllers\CreditSalesReportController;
@@ -22,6 +23,8 @@ use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\CurrentStockController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\EmployeeSalaryController;
+use App\Http\Controllers\EmployeeSalaryTransactionController;
 use App\Http\Controllers\GoodsIssueController;
 use App\Http\Controllers\GoodsReceiptNoteController;
 use App\Http\Controllers\JournalEntryController;
@@ -33,6 +36,7 @@ use App\Http\Controllers\Reports\AccountBalancesController;
 use App\Http\Controllers\Reports\AdvanceTaxReportController;
 use App\Http\Controllers\Reports\BalanceSheetController;
 use App\Http\Controllers\Reports\CashDetailController;
+use App\Http\Controllers\Reports\ClaimRegisterReportController;
 use App\Http\Controllers\Reports\CreditorsLedgerController;
 use App\Http\Controllers\Reports\CustomSettlementReportController;
 use App\Http\Controllers\Reports\DailySalesReportController;
@@ -180,6 +184,32 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     /*
     |----------------------------------------------------------------------
+    | Claim Register
+    |----------------------------------------------------------------------
+    | Track supplier claims (debit) and recoveries (credit) with GL posting.
+    | Permissions: claim-register-list, -create, -edit, -delete, -post
+    */
+    Route::resource('claim-registers', ClaimRegisterController::class);
+    Route::post('claim-registers/{claimRegister}/post', [ClaimRegisterController::class, 'post'])
+        ->name('claim-registers.post');
+
+    /*
+    |----------------------------------------------------------------------
+    | Employee Salary Management
+    |----------------------------------------------------------------------
+    | Salary structures and double-entry salary transactions ledger.
+    | Post creates GL journal entry via SalaryService.
+    | Permissions: employee-salary-list, -create, -edit, -delete
+    |              employee-salary-transaction-list, -create, -edit, -delete, -post
+    */
+    Route::resource('employee-salaries', EmployeeSalaryController::class);
+    Route::resource('employee-salary-transactions', EmployeeSalaryTransactionController::class);
+    Route::post('employee-salary-transactions/{employeeSalaryTransaction}/post',
+        [EmployeeSalaryTransactionController::class, 'post'])
+        ->name('employee-salary-transactions.post');
+
+    /*
+    |----------------------------------------------------------------------
     | Inventory Stock Views
     |----------------------------------------------------------------------
     | Read-only views of current warehouse stock, optionally by batch.
@@ -308,6 +338,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('inventory-ledger', [InventoryLedgerReportController::class, 'index'])->name('inventory-ledger.index');
         Route::get('shop-list', [ShopListController::class, 'index'])->name('shop-list.index');
         Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
+
+        /* Claim Register */
+        Route::get('claim-register', [ClaimRegisterReportController::class, 'index'])->name('claim-register.index');
 
         /* Analytics & Tax */
         Route::get('roi', [RoiReportController::class, 'index'])->name('roi.index');

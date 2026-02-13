@@ -17,7 +17,7 @@ class GoodsReceiptNoteFactory extends Factory
     public function definition(): array
     {
         return [
-            'grn_number' => 'GRN-TEST-' . fake()->unique()->numberBetween(1000, 9999),
+            'grn_number' => 'GRN-TEST-'.fake()->unique()->numberBetween(1000, 9999),
             'receipt_date' => now(),
             'status' => 'draft',
             'total_quantity' => 0,

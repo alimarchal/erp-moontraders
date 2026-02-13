@@ -17,8 +17,9 @@ class CategorySeeder extends Seeder
     {
         $csvPath = database_path('seeders/data/product_categories.csv');
 
-        if (!file_exists($csvPath)) {
+        if (! file_exists($csvPath)) {
             $this->command->warn('⚠️  product_categories.csv not found. Skipping category seeding.');
+
             return;
         }
 
@@ -77,7 +78,7 @@ class CategorySeeder extends Seeder
 
         } catch (\Exception $e) {
             DB::rollBack();
-            $this->command->error('❌ Error seeding categories: ' . $e->getMessage());
+            $this->command->error('❌ Error seeding categories: '.$e->getMessage());
             if (isset($file) && is_resource($file)) {
                 fclose($file);
             }

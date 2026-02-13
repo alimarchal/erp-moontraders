@@ -55,6 +55,11 @@ class RoleAndPermissionSeeder extends Seeder
             'supplier-payment' => ['list', 'create', 'edit', 'delete', 'post'],
             'vehicle' => ['list', 'create', 'edit', 'delete'],
             'promotional-campaign' => ['list', 'create', 'edit', 'delete'],
+            'claim-register' => ['list', 'create', 'edit', 'delete'],
+
+            // Employee Salary Management
+            'employee-salary' => ['list', 'create', 'edit', 'delete'],
+            'employee-salary-transaction' => ['list', 'create', 'edit', 'delete', 'post'],
 
             // Reports & Utilities
             'report' => ['view-financial', 'view-inventory', 'view-sales', 'view-audit'],
@@ -107,6 +112,11 @@ class RoleAndPermissionSeeder extends Seeder
             'supplier-payment-list',
             'supplier-payment-create',
             'supplier-payment-post',
+            'claim-register-list',
+            'claim-register-create',
+            'employee-salary-transaction-list',
+            'employee-salary-transaction-create',
+            'employee-salary-transaction-post',
             'report-view-financial',
         ]);
 

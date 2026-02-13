@@ -129,6 +129,7 @@ class ChartOfAccountSeeder extends Seeder
             ['name' => 'Stock Liabilities', 'parent' => 'Current Liabilities', 'type' => '', 'is_group' => 1, 'root_type' => 'Liability', 'disabled' => 0],
             ['name' => 'Asset Received But Not Billed', 'parent' => 'Stock Liabilities', 'type' => 'Asset Received But Not Billed', 'is_group' => 0, 'root_type' => 'Liability', 'disabled' => 0],
             ['name' => 'Stock Received But Not Billed', 'parent' => 'Stock Liabilities', 'type' => 'Stock Received But Not Billed', 'is_group' => 0, 'root_type' => 'Liability', 'disabled' => 0],
+            ['name' => 'Employee Loans', 'parent' => 'Loans and Advances (Assets)', 'type' => '', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
         ];
 
         $accountsToInsert = [];

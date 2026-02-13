@@ -1,13 +1,14 @@
 <?php
 
+use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
+use App\Models\Product;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
-use App\Models\Product;
-use App\Models\Employee;
 use App\Services\DistributionService;
+
 use function Pest\Laravel\actingAs;
 
 it('creates van stock batches when goods issue is posted', function () {
@@ -30,11 +31,11 @@ it('creates van stock batches when goods issue is posted', function () {
     $uom = \App\Models\Uom::first() ?? \App\Models\Uom::factory()->create();
 
     // Create GL Accounts
-    $currency = \App\Models\Currency::where('is_base_currency', true)->first() 
+    $currency = \App\Models\Currency::where('is_base_currency', true)->first()
         ?? \App\Models\Currency::factory()->create(['is_base_currency' => true]);
     $accountType = \App\Models\AccountType::first() ?? \App\Models\AccountType::factory()->create([
         'type_name' => 'Assets',
-        'report_group' => 'BalanceSheet'
+        'report_group' => 'BalanceSheet',
     ]);
     \App\Models\ChartOfAccount::firstOrCreate(
         ['account_code' => '1151'],
@@ -57,7 +58,7 @@ it('creates van stock batches when goods issue is posted', function () {
 
     $stockBatch = \App\Models\StockBatch::create([
         'product_id' => $product->id,
-        'batch_code' => 'BATCH-' . time(),
+        'batch_code' => 'BATCH-'.time(),
         'supplier_id' => \App\Models\Supplier::first()->id ?? \App\Models\Supplier::factory()->create()->id,
         'receipt_date' => now(),
         'manufacturing_date' => now()->subMonth(),
@@ -117,7 +118,7 @@ it('creates van stock batches when goods issue is posted', function () {
     $uom = \App\Models\Uom::first() ?? \App\Models\Uom::factory()->create();
 
     // 2. Create Goods Issue
-    $issueNumber = 'GI-TEST-' . time();
+    $issueNumber = 'GI-TEST-'.time();
 
     $goodsIssue = GoodsIssue::create([
         'warehouse_id' => $warehouse->id,
@@ -134,7 +135,7 @@ it('creates van stock batches when goods issue is posted', function () {
         'goods_issue_id' => $goodsIssue->id,
         'product_id' => $product->id,
         'uom_id' => $uom->id,
-        'batch_no' => 'BATCH-' . time(),
+        'batch_no' => 'BATCH-'.time(),
         'quantity_issued' => 10,
         'unit_cost' => 150.00,
         'selling_price' => 200.00,

@@ -17,7 +17,7 @@ class SalesSettlementFactory extends Factory
     public function definition(): array
     {
         return [
-            'settlement_number' => 'SETTLE-TEST-' . fake()->unique()->numberBetween(1000, 9999),
+            'settlement_number' => 'SETTLE-TEST-'.fake()->unique()->numberBetween(1000, 9999),
             'settlement_date' => now(),
             'goods_issue_id' => \App\Models\GoodsIssue::factory(),
             'status' => 'draft',

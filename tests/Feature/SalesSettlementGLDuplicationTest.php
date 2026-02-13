@@ -1,6 +1,5 @@
 <?php
 
-use App\Models\JournalEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -17,7 +16,7 @@ it('distribution service does not post credit sales or cheques to GL', function 
     // - Cheques (handled by LedgerService)
     // - Bank transfers (handled by LedgerService)
     // - Expenses (handled by LedgerService)
-    
+
     expect(true)->toBeTrue();
 })->skip('Test implementation requires full settlement chain setup - fix validated manually');
 
@@ -37,7 +36,7 @@ it('verifies no duplicate sales revenue in income statement', function () {
         // - Cash sales will appear ONCE (from DistributionService)
         // - Credit sales will appear ONCE per customer (from LedgerService)
         // - Total sales = cash sales + sum(credit sales)
-        
+
         // This is more of a documentation test than validation
         // since fixing old data requires reversing entries
         expect($incomeStatement)->not->toBeNull();

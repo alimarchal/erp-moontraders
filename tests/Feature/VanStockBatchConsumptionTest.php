@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\AccountType;
 use App\Models\AccountingPeriod;
+use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\Employee;
@@ -11,8 +11,8 @@ use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementItem;
 use App\Models\User;
-use App\Models\VanStockBatch;
 use App\Models\VanStockBalance;
+use App\Models\VanStockBatch;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
@@ -76,7 +76,7 @@ class VanStockBatchConsumptionTest extends TestCase
 
         $accountType = AccountType::first() ?? AccountType::factory()->create([
             'type_name' => 'Assets',
-            'report_group' => 'BalanceSheet'
+            'report_group' => 'BalanceSheet',
         ]);
 
         $codes = [
@@ -97,7 +97,7 @@ class VanStockBatchConsumptionTest extends TestCase
             '5292',
             '5282',
             '5223',
-            '5213'
+            '5213',
         ];
 
         foreach ($codes as $code) {
@@ -192,9 +192,9 @@ class VanStockBatchConsumptionTest extends TestCase
         $service = app(DistributionService::class);
         $result = $service->postSalesSettlement($settlement);
 
-        if (!$result['success']) {
+        if (! $result['success']) {
             dump($result);
-            $this->fail('Settlement posting failed: ' . ($result['message'] ?? 'Unknown error'));
+            $this->fail('Settlement posting failed: '.($result['message'] ?? 'Unknown error'));
         }
 
         // 6. Verify Batches

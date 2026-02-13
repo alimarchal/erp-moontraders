@@ -19,12 +19,12 @@ class AccountingPeriodSeeder extends Seeder
         $now = Carbon::now();
         $currentYear = $now->year;
         $currentQuarter = $now->quarter;
-        
+
         $periods = [];
-        
+
         for ($year = 2025; $year <= 2026; $year++) {
             $fiscalYearStatus = $this->determineYearStatus($year, $currentYear);
-            
+
             $periods[] = [
                 'name' => "Fiscal Year {$year}",
                 'start_date' => "{$year}-01-01",
@@ -33,11 +33,11 @@ class AccountingPeriodSeeder extends Seeder
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
-            
+
             for ($quarter = 1; $quarter <= 4; $quarter++) {
                 $quarterDates = $this->getQuarterDates($year, $quarter);
                 $quarterStatus = $this->determineQuarterStatus($year, $quarter, $currentYear, $currentQuarter);
-                
+
                 $periods[] = [
                     'name' => "Q{$quarter} {$year}",
                     'start_date' => $quarterDates['start'],
@@ -48,10 +48,10 @@ class AccountingPeriodSeeder extends Seeder
                 ];
             }
         }
-        
+
         DB::table('accounting_periods')->insert($periods);
     }
-    
+
     private function determineYearStatus(int $year, int $currentYear): string
     {
         if ($year < $currentYear) {
@@ -62,7 +62,7 @@ class AccountingPeriodSeeder extends Seeder
             return 'open';
         }
     }
-    
+
     private function determineQuarterStatus(int $year, int $quarter, int $currentYear, int $currentQuarter): string
     {
         if ($year < $currentYear) {
@@ -73,7 +73,7 @@ class AccountingPeriodSeeder extends Seeder
             return 'open';
         }
     }
-    
+
     private function getQuarterDates(int $year, int $quarter): array
     {
         return match ($quarter) {

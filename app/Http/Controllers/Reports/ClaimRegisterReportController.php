@@ -25,11 +25,11 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $supplierId = $request->input('supplier_id');
         $status = $request->input('status');
         $claimMonth = $request->input('claim_month');
-        $paymentMethod = $request->input('payment_method');
+        $transactionType = $request->input('transaction_type');
 
         $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
         $statusOptions = ClaimRegister::statusOptions();
-        $paymentMethodOptions = ClaimRegister::paymentMethodOptions();
+        $transactionTypeOptions = ClaimRegister::transactionTypeOptions();
 
         $openingBalance = 0;
         if ($dateFrom) {
@@ -41,8 +41,14 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
             $openingQuery->whereDate('transaction_date', '<', $dateFrom);
 
-            $openingBalance = $openingQuery->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as balance')
-                ->value('balance') ?? 0;
+            $openingRecords = $openingQuery->get();
+            foreach ($openingRecords as $record) {
+                if ($record->transaction_type === 'claim') {
+                    $openingBalance += (float) $record->amount;
+                } else {
+                    $openingBalance -= (float) $record->amount;
+                }
+            }
         }
 
         $query = ClaimRegister::with('supplier')
@@ -61,8 +67,8 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
             $query->where('claim_month', 'like', "%{$claimMonth}%");
         }
 
-        if ($paymentMethod) {
-            $query->where('payment_method', $paymentMethod);
+        if ($transactionType) {
+            $query->where('transaction_type', $transactionType);
         }
 
         if ($dateFrom) {
@@ -76,21 +82,30 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $claims = $query->get();
 
         $totals = [
-            'debit' => $claims->sum('debit'),
-            'credit' => $claims->sum('credit'),
+            'claim_amount' => 0,
+            'recovery_amount' => 0,
         ];
-        $totals['net_balance'] = $totals['debit'] - $totals['credit'];
+
+        foreach ($claims as $claim) {
+            if ($claim->transaction_type === 'claim') {
+                $totals['claim_amount'] += (float) $claim->amount;
+            } else {
+                $totals['recovery_amount'] += (float) $claim->amount;
+            }
+        }
+
+        $totals['net_balance'] = $totals['claim_amount'] - $totals['recovery_amount'];
         $closingBalance = $openingBalance + $totals['net_balance'];
 
         return view('reports.claim-register.index', compact(
             'claims',
             'suppliers',
             'statusOptions',
-            'paymentMethodOptions',
+            'transactionTypeOptions',
             'supplierId',
             'status',
             'claimMonth',
-            'paymentMethod',
+            'transactionType',
             'dateFrom',
             'dateTo',
             'openingBalance',

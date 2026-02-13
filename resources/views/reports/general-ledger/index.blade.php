@@ -9,28 +9,41 @@
             .report-table {
                 width: 100%;
                 border-collapse: collapse;
-                border: 1px solid black;
-                font-size: 12px;
+                border: 1px solid #000;
+                font-size: 14px;
             }
 
             .report-table th,
             .report-table td {
-                border: 1px solid black;
-                padding: 4px;
-                text-align: center;
+                border: 1px solid #000;
+                padding: 5px 8px;
             }
 
             .report-table th {
-                background-color: #f3f4f6;
+                background-color: #1f2937;
+                color: #fff;
+                font-weight: 600;
+                text-transform: uppercase;
+                font-size: 11px;
+                letter-spacing: 0.5px;
+            }
+
+            .report-table tbody tr:nth-child(even) {
+                background-color: #f9fafb;
+            }
+
+            .report-table tbody tr:hover {
+                background-color: #e5e7eb;
+            }
+
+            .report-table tfoot td {
+                background-color: #1f2937;
+                color: #fff;
                 font-weight: bold;
             }
 
-            .text-left {
-                text-align: left !important;
-            }
-
-            .text-right {
-                text-align: right !important;
+            .print-only {
+                display: none;
             }
 
             @media print {
@@ -70,50 +83,63 @@
                 }
 
                 .report-table {
-                    font-size: 10px;
+                    font-size: 9px;
                 }
-            }
 
-            .print-only {
-                display: none;
+                .report-table th {
+                    background-color: #e5e7eb !important;
+                    color: #000 !important;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
+                .report-table tfoot td {
+                    background-color: #e5e7eb !important;
+                    color: #000 !important;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
+                .report-table tbody tr:nth-child(even) {
+                    background-color: #f3f4f6 !important;
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+
+                .report-table tbody tr:hover {
+                    background-color: transparent;
+                }
             }
         </style>
     @endpush
 
     <x-filter-section :action="route('reports.general-ledger.index')" class="no-print">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="lg:col-span-2">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            <div class="xl:col-span-2">
                 <x-label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
                     onchange="this.form.submit()">
                     <option value="">All Time (Custom Dates)</option>
                     @foreach($accountingPeriods as $period)
-                                    <option value="{{ $period->id }}" {{ $periodId == $period->id ? 'selected' : '' }}>
-                                        {{ $period->name }} ({{ \Carbon\Carbon::parse($period->start_date)->format('M d, Y') }} - {{
-                        \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
-                                    </option>
+                        <option value="{{ $period->id }}" {{ $periodId == $period->id ? 'selected' : '' }}>
+                            {{ $period->name }} ({{ \Carbon\Carbon::parse($period->start_date)->format('M d, Y') }} -
+                            {{ \Carbon\Carbon::parse($period->end_date)->format('M d, Y') }})
+                        </option>
                     @endforeach
                 </select>
             </div>
 
             <div>
-                <x-label for="filter_entry_date_from" value="Entry Date (From)" />
+                <x-label for="filter_entry_date_from" value="Date From" />
                 <x-input id="filter_entry_date_from" name="filter[entry_date_from]" type="date"
                     class="mt-1 block w-full" :value="$entryDateFrom" />
             </div>
 
             <div>
-                <x-label for="filter_entry_date_to" value="Entry Date (To)" />
+                <x-label for="filter_entry_date_to" value="Date To" />
                 <x-input id="filter_entry_date_to" name="filter[entry_date_to]" type="date" class="mt-1 block w-full"
                     :value="$entryDateTo" />
-            </div>
-
-            <div>
-                <x-label for="filter_journal_entry_id" value="Journal #" />
-                <x-input id="filter_journal_entry_id" name="filter[journal_entry_id]" type="text"
-                    class="mt-1 block w-full" :value="request('filter.journal_entry_id')"
-                    placeholder="Exact journal #" />
             </div>
 
             <div>
@@ -122,18 +148,11 @@
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
-                                    <option value="{{ $account->account_code }}" {{ request('filter.account_code') === $account->
-                        account_code ? 'selected' : '' }}>
-                                        {{ $account->account_code }} - {{ $account->account_name }}
-                                    </option>
+                        <option value="{{ $account->account_code }}" {{ request('filter.account_code') === $account->account_code ? 'selected' : '' }}>
+                            {{ $account->account_code }} - {{ $account->account_name }}
+                        </option>
                     @endforeach
                 </select>
-            </div>
-
-            <div>
-                <x-label for="filter_account_id" value="Account ID" />
-                <x-input id="filter_account_id" name="filter[account_id]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.account_id')" placeholder="Exact account id" />
             </div>
 
             <div>
@@ -142,12 +161,18 @@
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
-                                    <option value="{{ $account->account_name }}" {{ request('filter.account_name') === $account->
-                        account_name ? 'selected' : '' }}>
-                                        {{ $account->account_name }} ({{ $account->account_code }})
-                                    </option>
+                        <option value="{{ $account->account_name }}" {{ request('filter.account_name') === $account->account_name ? 'selected' : '' }}>
+                            {{ $account->account_name }} ({{ $account->account_code }})
+                        </option>
                     @endforeach
                 </select>
+            </div>
+
+            <div>
+                <x-label for="filter_journal_entry_id" value="Journal #" />
+                <x-input id="filter_journal_entry_id" name="filter[journal_entry_id]" type="text"
+                    class="mt-1 block w-full" :value="request('filter.journal_entry_id')"
+                    placeholder="Exact journal #" />
             </div>
 
             <div>
@@ -160,30 +185,23 @@
                 <x-label for="filter_journal_description" value="Journal Description" />
                 <x-input id="filter_journal_description" name="filter[journal_description]" type="text"
                     class="mt-1 block w-full" :value="request('filter.journal_description')"
-                    placeholder="Journal description contains..." />
+                    placeholder="Description contains..." />
             </div>
 
             <div>
                 <x-label for="filter_line_description" value="Line Description" />
                 <x-input id="filter_line_description" name="filter[line_description]" type="text"
                     class="mt-1 block w-full" :value="request('filter.line_description')"
-                    placeholder="Line description contains..." />
+                    placeholder="Line desc contains..." />
             </div>
 
             <div>
-                <x-label for="filter_line_no" value="Line #" />
-                <x-input id="filter_line_no" name="filter[line_no]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.line_no')" placeholder="Exact line #" />
-            </div>
-
-            <div>
-                <x-label for="filter_cost_center_code" value="Cost Center Code" />
+                <x-label for="filter_cost_center_code" value="Cost Center" />
                 <select id="filter_cost_center_code" name="filter[cost_center_code]"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
-                        <option value="{{ $cc->code }}" {{ request('filter.cost_center_code') === $cc->code ? 'selected' : ''
-                                                                                                                                                                                        }}>
+                        <option value="{{ $cc->code }}" {{ request('filter.cost_center_code') === $cc->code ? 'selected' : '' }}>
                             {{ $cc->code }} - {{ $cc->name }}
                         </option>
                     @endforeach
@@ -191,24 +209,16 @@
             </div>
 
             <div>
-                <x-label for="filter_cost_center_name" value="Cost Center Name" />
-                <select id="filter_cost_center_name" name="filter[cost_center_name]"
+                <x-label for="filter_status" value="Status" />
+                <select id="filter_status" name="filter[status]"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Cost Centers</option>
-                    @foreach($costCenters as $cc)
-                        <option value="{{ $cc->name }}" {{ request('filter.cost_center_name') === $cc->name ? 'selected' : ''
-                                                                                                                                                                                        }}>
-                            {{ $cc->name }} ({{ $cc->code }})
+                    <option value="">All</option>
+                    @foreach ($statusOptions as $value => $label)
+                        <option value="{{ $value }}" {{ request('filter.status') === $value ? 'selected' : '' }}>
+                            {{ $label }}
                         </option>
                     @endforeach
                 </select>
-            </div>
-
-            <div>
-                <x-label for="filter_currency_code" value="Currency" />
-                <x-input id="filter_currency_code" name="filter[currency_code]" type="text"
-                    class="mt-1 block w-full uppercase" :value="request('filter.currency_code')"
-                    placeholder="e.g., USD" />
             </div>
 
             <div>
@@ -236,62 +246,25 @@
             </div>
 
             <div>
-                <x-label for="filter_fx_rate_min" value="FX Rate to Base (Min)" />
-                <x-input id="filter_fx_rate_min" name="filter[fx_rate_min]" type="number" step="0.000001" min="0"
-                    class="mt-1 block w-full" :value="request('filter.fx_rate_min')" placeholder="0.000000" />
-            </div>
-
-            <div>
-                <x-label for="filter_fx_rate_max" value="FX Rate to Base (Max)" />
-                <x-input id="filter_fx_rate_max" name="filter[fx_rate_max]" type="number" step="0.000001" min="0"
-                    class="mt-1 block w-full" :value="request('filter.fx_rate_max')" placeholder="Any" />
-            </div>
-
-            <div>
-                <x-label for="filter_status" value="Status" />
-                <select id="filter_status" name="filter[status]"
-                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All</option>
-                    @foreach ($statusOptions as $value => $label)
-                        <option value="{{ $value }}" {{ request('filter.status') === $value ? 'selected' : '' }}>
-                            {{ $label }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
                 <x-label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="-entry_date" {{ request('sort') == '-entry_date' || !request('sort') ? 'selected' : ''
-                        }}>Entry Date (Newest)</option>
-                    <option value="entry_date" {{ request('sort') == 'entry_date' ? 'selected' : '' }}>Entry Date (Oldest)
+                    <option value="-entry_date" {{ request('sort') == '-entry_date' || !request('sort') ? 'selected' : '' }}>Date (Newest)</option>
+                    <option value="entry_date" {{ request('sort') == 'entry_date' ? 'selected' : '' }}>Date (Oldest)
                     </option>
-                    <option value="journal_entry_id" {{ request('sort') == 'journal_entry_id' ? 'selected' : '' }}>Journal
-                        Entry ID (Asc)</option>
-                    <option value="-journal_entry_id" {{ request('sort') == '-journal_entry_id' ? 'selected' : '' }}>
-                        Journal Entry ID (Desc)</option>
                     <option value="account_code" {{ request('sort') == 'account_code' ? 'selected' : '' }}>Account Code
                         (A-Z)</option>
                     <option value="-account_code" {{ request('sort') == '-account_code' ? 'selected' : '' }}>Account Code
                         (Z-A)</option>
-                    <option value="account_name" {{ request('sort') == 'account_name' ? 'selected' : '' }}>Account Name
-                        (A-Z)</option>
-                    <option value="-account_name" {{ request('sort') == '-account_name' ? 'selected' : '' }}>Account Name
-                        (Z-A)</option>
                     <option value="-debit" {{ request('sort') == '-debit' ? 'selected' : '' }}>Debit (High-Low)</option>
-                    <option value="debit" {{ request('sort') == 'debit' ? 'selected' : '' }}>Debit (Low-High)</option>
                     <option value="-credit" {{ request('sort') == '-credit' ? 'selected' : '' }}>Credit (High-Low)
                     </option>
-                    <option value="credit" {{ request('sort') == 'credit' ? 'selected' : '' }}>Credit (Low-High)</option>
-                    <option value="status" {{ request('sort') == 'status' ? 'selected' : '' }}>Status (A-Z)</option>
-                    <option value="-status" {{ request('sort') == '-status' ? 'selected' : '' }}>Status (Z-A)</option>
+                    <option value="status" {{ request('sort') == 'status' ? 'selected' : '' }}>Status</option>
                 </select>
             </div>
 
             <div>
-                <x-label for="per_page" value="Show Per Page" />
+                <x-label for="per_page" value="Per Page" />
                 <select id="per_page" name="per_page"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
@@ -303,6 +276,33 @@
             </div>
         </div>
     </x-filter-section>
+
+    {{-- Summary Cards --}}
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-600">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Total Entries</p>
+                <p class="text-2xl font-bold text-gray-900">{{ number_format($entries->total()) }}</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-600">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Total Debits</p>
+                <p class="text-2xl font-bold font-mono text-green-700">{{ number_format($entries->sum('debit'), 2) }}
+                </p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-600">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Total Credits</p>
+                <p class="text-2xl font-bold font-mono text-red-700">{{ number_format($entries->sum('credit'), 2) }}</p>
+            </div>
+            @php $netDifference = $entries->sum('debit') - $entries->sum('credit'); @endphp
+            <div
+                class="bg-white rounded-lg shadow p-4 border-l-4 {{ abs($netDifference) < 0.01 ? 'border-emerald-600' : 'border-yellow-500' }}">
+                <p class="text-xs text-gray-500 uppercase tracking-wide">Net Difference</p>
+                <p
+                    class="text-2xl font-bold font-mono {{ abs($netDifference) < 0.01 ? 'text-emerald-700' : 'text-yellow-600' }}">
+                    {{ number_format($netDifference, 2) }}</p>
+            </div>
+        </div>
+    </div>
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none">
@@ -316,18 +316,16 @@
                             {{ \Carbon\Carbon::parse($entryDateTo)->format('d-M-Y') }}
                         </span>
                     @elseif($entryDateTo)
-                        <span class="text-sm font-semibold">
-                            As of: {{ \Carbon\Carbon::parse($entryDateTo)->format('d-M-Y') }}
-                        </span>
+                        <span class="text-sm font-semibold">As of:
+                            {{ \Carbon\Carbon::parse($entryDateTo)->format('d-M-Y') }}</span>
                     @elseif($entryDateFrom)
-                        <span class="text-sm font-semibold">
-                            From: {{ \Carbon\Carbon::parse($entryDateFrom)->format('d-M-Y') }}
-                        </span>
+                        <span class="text-sm font-semibold">From:
+                            {{ \Carbon\Carbon::parse($entryDateFrom)->format('d-M-Y') }}</span>
                     @else
                         <span class="text-sm font-semibold">All Time</span>
                     @endif
                     <br>
-                    <span class="print-only text-xs">
+                    <span class="print-only text-xs font-normal">
                         Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
                     </span>
                 </p>
@@ -335,58 +333,59 @@
                 <table class="report-table">
                     <thead>
                         <tr>
-                            <th>Sr.#</th>
-                            <th>Date</th>
+                            <th class="text-center">Sr.#</th>
+                            <th class="text-center">Date</th>
+                            <th class="text-center">JE #</th>
+                            <th class="text-center">Ln</th>
                             <th class="text-left">Acc Code</th>
                             <th class="text-left">Account Name</th>
                             <th class="text-left">Description</th>
-                            <th class="text-left">Line Description</th>
                             <th class="text-right">Debit</th>
                             <th class="text-right">Credit</th>
-                            <th>Reference</th>
-                            <th>Cost Center</th>
-                            <th>Status</th>
+                            <th class="text-left">Reference</th>
+                            <th class="text-center">Cost Center</th>
+                            <th class="text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($entries as $index => $entry)
                             <tr>
-                                <td>{{ $entries->firstItem() + $index }}</td>
-                                <td class="whitespace-nowrap">
-                                    {{ $entry->entry_date ? $entry->entry_date->format('d-M-Y') : '-' }}
-                                </td>
+                                <td class="text-center">{{ $entries->firstItem() + $index }}</td>
+                                <td class="text-center whitespace-nowrap">
+                                    {{ $entry->entry_date ? $entry->entry_date->format('d-M-Y') : '-' }}</td>
+                                <td class="text-center font-mono">{{ $entry->journal_entry_id }}</td>
+                                <td class="text-center font-mono">{{ $entry->line_no }}</td>
                                 <td class="text-left font-mono whitespace-nowrap">{{ $entry->account_code }}</td>
                                 <td class="text-left whitespace-nowrap">{{ $entry->account_name }}</td>
-                                <td class="text-left">{{ $entry->journal_description ?? '-' }}</td>
-                                <td class="text-left">{{ $entry->line_description ?? '-' }}</td>
-                                <td class="text-right font-mono">
-                                    {{ (float) $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
-                                </td>
-                                <td class="text-right font-mono">
-                                    {{ (float) $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
-                                </td>
-                                <td class="whitespace-nowrap">{{ $entry->reference ?? '-' }}</td>
-                                <td class="whitespace-nowrap">
-                                    @if ($entry->cost_center_code)
-                                        {{ $entry->cost_center_code }}
+                                <td class="text-left">
+                                    @if($entry->line_description && $entry->line_description !== $entry->journal_description)
+                                        <x-tooltip :text="'LD: ' . $entry->line_description">
+                                            <span class="cursor-help border-b border-dashed border-gray-400">{{ $entry->journal_description ?? '-' }}</span>
+                                        </x-tooltip>
                                     @else
-                                        -
+                                        {{ $entry->journal_description ?? '-' }}
                                     @endif
                                 </td>
-                                <td>{{ ucfirst($entry->status ?? 'draft') }}</td>
+                                <td class="text-right font-mono whitespace-nowrap">
+                                    {{ (float) $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}</td>
+                                <td class="text-right font-mono whitespace-nowrap">
+                                    {{ (float) $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}</td>
+                                <td class="text-left">{{ $entry->reference ?? '-' }}</td>
+                                <td class="text-center whitespace-nowrap">{{ $entry->cost_center_code ?? '-' }}</td>
+                                <td class="text-center whitespace-nowrap">{{ ucfirst($entry->status ?? 'draft') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="py-8 text-gray-500">
+                                <td colspan="12" class="text-center py-8 text-gray-500">
                                     No general ledger entries found.
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                     @if($entries->isNotEmpty())
-                        <tfoot class="bg-gray-100 font-bold">
+                        <tfoot>
                             <tr>
-                                <td class="text-right" colspan="6">Page Total ({{ $entries->count() }} rows):</td>
+                                <td class="text-right" colspan="7">Page Total ({{ $entries->count() }} entries):</td>
                                 <td class="text-right font-mono">{{ number_format($entries->sum('debit'), 2) }}</td>
                                 <td class="text-right font-mono">{{ number_format($entries->sum('credit'), 2) }}</td>
                                 <td colspan="3"></td>

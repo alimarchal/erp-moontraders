@@ -203,7 +203,8 @@ class ClaimRegisterService
     {
         $claim->loadMissing(['debitAccount', 'supplier']);
 
-        $amount = (float) $claim->amount;
+        // Use the transaction's debit or credit amount
+        $amount = max((float) $claim->debit, (float) $claim->credit);
 
         if ($amount <= 0) {
             Log::info("Skipping JE for claim #{$claim->id}: amount is zero");

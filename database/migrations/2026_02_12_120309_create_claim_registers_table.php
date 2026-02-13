@@ -25,10 +25,11 @@ return new class extends Migration
             $table->string('claim_month')->nullable()->index();
             $table->date('date_of_dispatch')->nullable();
 
-            // Transaction Type & Amount
-            $table->enum('transaction_type', ['claim', 'recovery'])->default('claim')
-                ->comment('claim = DR Debtors (amount we need to receive), recovery = CR Debtors (amount received via bank)');
-            $table->decimal('amount', 15, 2)->default(0);
+            // Transaction Type & Double-Entry Amounts
+            $table->enum('transaction_type', ['claim', 'recovery'])->default('claim')->index()
+                ->comment('claim = DR (supplier owes us), recovery = CR (we received payment)');
+            $table->decimal('debit', 15, 2)->default(0)->comment('Claim amount (DR)');
+            $table->decimal('credit', 15, 2)->default(0)->comment('Recovery amount (CR)');
 
             // GL Accounts (auto-set: debit=1111 Debtors, credit=HBL Main Bank COA)
             $table->foreignId('debit_account_id')->nullable()->constrained('chart_of_accounts')->nullOnDelete();

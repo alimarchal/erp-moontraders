@@ -196,14 +196,37 @@ class ClaimRegisterController extends Controller implements HasMiddleware
     }
 
     /**
-     * Auto-set GL accounts and bank for claim register.
-     * debit_account = 1112 Pending Claims Debtors (Account Receivable)
-     * credit_account = HBL Main Bank's COA
-     * payment_method = bank_transfer
-     * bank_account_id = HBL Main
+     * Auto-set GL accounts, convert amount to debit/credit, and set bank info.
+     *
+     * Converts UI input (transaction_type + amount) to proper double-entry (debit/credit):
+     * - Claim: debit = amount, credit = 0
+     * - Recovery: debit = 0, credit = amount
+     *
+     * Also sets:
+     * - debit_account = 1112 Pending Claims Debtors
+     * - credit_account = HBL Main Bank's COA
+     * - payment_method = bank_transfer
      */
     private function setDefaultAccounts(array $data): array
     {
+        // Convert amount input to debit/credit based on transaction_type
+        if (isset($data['amount'])) {
+            $amount = (float) $data['amount'];
+            $transactionType = $data['transaction_type'] ?? 'claim';
+
+            if ($transactionType === 'claim') {
+                $data['debit'] = $amount;
+                $data['credit'] = 0;
+            } else {
+                // recovery
+                $data['debit'] = 0;
+                $data['credit'] = $amount;
+            }
+
+            // Remove amount field as it's not stored in DB
+            unset($data['amount']);
+        }
+
         // Set debit account to 1112 (Pending Claims Debtors)
         $debtorsAccount = ChartOfAccount::where('account_code', '1112')->first();
         if ($debtorsAccount) {

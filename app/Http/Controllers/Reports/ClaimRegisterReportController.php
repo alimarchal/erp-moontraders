@@ -43,11 +43,7 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
             $openingRecords = $openingQuery->get();
             foreach ($openingRecords as $record) {
-                if ($record->transaction_type === 'claim') {
-                    $openingBalance += (float) $record->amount;
-                } else {
-                    $openingBalance -= (float) $record->amount;
-                }
+                $openingBalance += (float) $record->debit - (float) $record->credit;
             }
         }
 
@@ -82,19 +78,11 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $claims = $query->get();
 
         $totals = [
-            'claim_amount' => 0,
-            'recovery_amount' => 0,
+            'debit' => $claims->sum('debit'),
+            'credit' => $claims->sum('credit'),
         ];
 
-        foreach ($claims as $claim) {
-            if ($claim->transaction_type === 'claim') {
-                $totals['claim_amount'] += (float) $claim->amount;
-            } else {
-                $totals['recovery_amount'] += (float) $claim->amount;
-            }
-        }
-
-        $totals['net_balance'] = $totals['claim_amount'] - $totals['recovery_amount'];
+        $totals['net_balance'] = $totals['debit'] - $totals['credit'];
         $closingBalance = $openingBalance + $totals['net_balance'];
 
         return view('reports.claim-register.index', compact(

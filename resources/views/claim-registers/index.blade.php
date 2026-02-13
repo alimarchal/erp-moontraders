@@ -114,16 +114,13 @@
         ['label' => 'Debit', 'align' => 'text-right'],
         ['label' => 'Credit', 'align' => 'text-right'],
         ['label' => 'Balance', 'align' => 'text-right'],
-        ['label' => 'Status', 'align' => 'text-center'],
-        ['label' => 'Adjusted', 'align' => 'text-center'],
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No claim registers found." :emptyRoute="route('claim-registers.create')"
         emptyLinkText="Add a claim">
         @foreach ($claims as $index => $claim)
             @php
                 $balance = (float) $claim->debit - (float) $claim->credit;
-                $statusLabel = $statusOptions[$claim->status] ?? ucfirst($claim->status);
-                $deleteDisabled = $claim->status === 'Adjusted';
+                $deleteDisabled = $claim->isPosted();
             @endphp
             <tr class="border-b border-gray-200 text-sm">
                 <td class="py-1 px-2 text-center">
@@ -149,20 +146,6 @@
                 </td>
                 <td class="py-1 px-2 text-right whitespace-nowrap font-bold {{ $balance > 0 ? 'text-red-600' : ($balance < 0 ? 'text-green-600' : '') }}">
                     {{ number_format($balance, 2) }}
-                </td>
-                <td class="py-1 px-2 text-center">
-                    <span
-                        class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full
-                            @class([
-                                'bg-amber-100 text-amber-700' => $claim->status === 'Pending',
-                                'bg-blue-100 text-blue-700' => $claim->status === 'PartialAdjust',
-                                'bg-emerald-100 text-emerald-700' => $claim->status === 'Adjusted',
-                            ])">
-                        {{ $statusLabel }}
-                    </span>
-                </td>
-                <td class="py-1 px-2 text-center whitespace-nowrap">
-                    {{ $claim->adjusted_date?->format('d-m-Y') ?? '-' }}
                 </td>
                 <td class="py-1 px-2 text-center">
                     <div class="flex justify-center space-x-2">

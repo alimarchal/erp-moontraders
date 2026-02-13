@@ -138,7 +138,7 @@
                             </div>
                         </div>
 
-                        {{-- Row 3: Transaction Type, Amount, Status --}}
+                        {{-- Row 3: Transaction Type, Debit, Credit --}}
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                             <div>
                                 <x-label for="transaction_type" value="Transaction Type" />
@@ -146,14 +146,14 @@
                                     :value="$transactionTypeLabel" disabled readonly />
                             </div>
                             <div>
-                                <x-label for="amount" value="Amount" />
-                                <x-input id="amount" type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100 font-bold"
-                                    :value="number_format($claimRegister->amount, 2)" disabled readonly />
+                                <x-label for="debit" value="Debit" />
+                                <x-input id="debit" type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100 font-bold"
+                                    :value="number_format($claimRegister->debit, 2)" disabled readonly />
                             </div>
                             <div>
-                                <x-label for="status" value="Status" />
-                                <x-input id="status" type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$statusLabel" disabled readonly />
+                                <x-label for="credit" value="Credit" />
+                                <x-input id="credit" type="text" class="mt-1 block w-full cursor-not-allowed bg-gray-100 font-bold"
+                                    :value="number_format($claimRegister->credit, 2)" disabled readonly />
                             </div>
                         </div>
 

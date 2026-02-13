@@ -170,15 +170,9 @@
                         @php $runningBalance = $openingBalance; @endphp
                         @foreach ($claims as $claim)
                             @php
-                                $debit = 0;
-                                $credit = 0;
-                                if ($claim->transaction_type === 'claim') {
-                                    $debit = (float) $claim->amount;
-                                    $runningBalance += $debit;
-                                } else {
-                                    $credit = (float) $claim->amount;
-                                    $runningBalance -= $credit;
-                                }
+                                $debit = (float) $claim->debit;
+                                $credit = (float) $claim->credit;
+                                $runningBalance += $debit - $credit;
                                 $stLabel = $statusOptions[$claim->status] ?? $claim->status;
                             @endphp
                             <tr>
@@ -200,8 +194,8 @@
                     <tfoot class="bg-gray-100 font-bold">
                         <tr>
                             <td colspan="6" class="text-right">Period Totals:</td>
-                            <td class="text-right">{{ number_format($totals['claim_amount'], 2) }}</td>
-                            <td class="text-right">{{ number_format($totals['recovery_amount'], 2) }}</td>
+                            <td class="text-right">{{ number_format($totals['debit'], 2) }}</td>
+                            <td class="text-right">{{ number_format($totals['credit'], 2) }}</td>
                             <td class="text-right">{{ number_format($totals['net_balance'], 2) }}</td>
                             <td></td>
                         </tr>

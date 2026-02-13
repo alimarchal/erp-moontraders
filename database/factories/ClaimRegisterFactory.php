@@ -24,6 +24,8 @@ class ClaimRegisterFactory extends Factory
             'Q'.fake()->numberBetween(1, 4).' '.fake()->year(),
         ]);
 
+        $amount = fake()->randomFloat(2, 5000, 500000);
+
         return [
             'supplier_id' => Supplier::inRandomOrder()->value('id') ?? Supplier::factory(),
             'transaction_date' => $transactionDate,
@@ -38,7 +40,8 @@ class ClaimRegisterFactory extends Factory
             'claim_month' => $claimMonth,
             'date_of_dispatch' => fake()->optional(0.7)->dateTimeBetween($transactionDate, 'now'),
             'transaction_type' => 'claim',
-            'amount' => fake()->randomFloat(2, 5000, 500000),
+            'debit' => $amount,  // Claim = debit
+            'credit' => 0,
             'payment_method' => 'bank_transfer',
             'status' => 'Pending',
             'notes' => fake()->optional(0.3)->sentence(),
@@ -47,25 +50,43 @@ class ClaimRegisterFactory extends Factory
 
     public function pending(): static
     {
-        return $this->state(fn () => [
-            'status' => 'Pending',
-            'transaction_type' => 'claim',
-        ]);
+        return $this->state(function () {
+            $amount = fake()->randomFloat(2, 5000, 500000);
+
+            return [
+                'status' => 'Pending',
+                'transaction_type' => 'claim',
+                'debit' => $amount,
+                'credit' => 0,
+            ];
+        });
     }
 
     public function adjusted(): static
     {
-        return $this->state(fn () => [
-            'status' => 'Adjusted',
-            'transaction_type' => 'recovery',
-        ]);
+        return $this->state(function () {
+            $amount = fake()->randomFloat(2, 5000, 500000);
+
+            return [
+                'status' => 'Adjusted',
+                'transaction_type' => 'recovery',
+                'debit' => 0,
+                'credit' => $amount,  // Recovery = credit
+            ];
+        });
     }
 
     public function partialAdjust(): static
     {
-        return $this->state(fn () => [
-            'status' => 'PartialAdjust',
-            'transaction_type' => 'recovery',
-        ]);
+        return $this->state(function () {
+            $amount = fake()->randomFloat(2, 5000, 500000);
+
+            return [
+                'status' => 'PartialAdjust',
+                'transaction_type' => 'recovery',
+                'debit' => 0,
+                'credit' => $amount,  // Recovery = credit
+            ];
+        });
     }
 }

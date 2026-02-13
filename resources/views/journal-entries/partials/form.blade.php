@@ -30,7 +30,9 @@
 
 <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
     <div class="p-6 space-y-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        {{-- Header Fields --}}
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <x-label for="entry_date" value="Entry Date" :required="true" />
                 <x-input id="entry_date" name="entry_date" type="date" class="mt-1 block w-full"
@@ -40,12 +42,12 @@
             <div>
                 <x-label for="currency_id" value="Currency" :required="true" />
                 <select id="currency_id" name="currency_id"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
                     required>
                     <option value="">Select currency</option>
                     @foreach ($currencies as $currency)
                         <option value="{{ $currency->id }}" {{ (int) $selectedCurrencyId === $currency->id ? 'selected' : '' }}>
-                            {{ $currency->currency_code }} · {{ $currency->currency_name }}{{ $currency->is_base_currency ? ' (Base)' : '' }}
+                            {{ $currency->currency_code }} &middot; {{ $currency->currency_name }}{{ $currency->is_base_currency ? ' (Base)' : '' }}
                         </option>
                     @endforeach
                 </select>
@@ -55,164 +57,135 @@
                 <x-label for="fx_rate_to_base" value="FX Rate To Base" />
                 <x-input id="fx_rate_to_base" name="fx_rate_to_base" type="number" step="0.000001" min="0"
                     class="mt-1 block w-full" :value="number_format((float) $fxRate, 6, '.', '')" />
-                <p class="text-xs text-gray-500 mt-1">Keep at 1.000000 for base currency entries.</p>
+                <p class="text-xs text-gray-500 mt-1">Keep at 1.000000 for base currency.</p>
             </div>
 
             <div>
                 <x-label for="reference" value="Reference" />
                 <x-input id="reference" name="reference" type="text" maxlength="191" class="mt-1 block w-full"
-                    :value="$reference" placeholder="Optional external reference number" />
+                    :value="$reference" placeholder="Invoice #, Check # etc." />
             </div>
 
-            <div class="md:col-span-2">
+            <div class="md:col-span-3">
                 <x-label for="description" value="Description" />
-                <textarea id="description" name="description"
-                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                    rows="3" placeholder="Brief description of the journal entry">{{ $description }}</textarea>
+                <x-input id="description" name="description" type="text" class="mt-1 block w-full"
+                    :value="$description" placeholder="Brief description of this journal entry" />
             </div>
 
-            <div class="flex items-center space-x-2 md:col-span-2">
-                <input type="hidden" name="auto_post" value="0">
-                <input id="auto_post" type="checkbox" name="auto_post" value="1"
-                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    {{ filter_var($autoPost, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}>
-                <x-label for="auto_post" value="Post immediately after saving" />
+            <div class="flex items-end pb-1">
+                <label class="inline-flex items-center gap-2 cursor-pointer">
+                    <input type="hidden" name="auto_post" value="0">
+                    <input id="auto_post" type="checkbox" name="auto_post" value="1"
+                        class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+                        {{ filter_var($autoPost, FILTER_VALIDATE_BOOLEAN) ? 'checked' : '' }}>
+                    <span class="text-sm text-gray-700">Post immediately</span>
+                </label>
             </div>
         </div>
 
-        <div class="border border-gray-200 rounded-lg p-4">
-            <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-semibold text-gray-700">Journal Lines</h3>
+        {{-- Journal Lines Table --}}
+        <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm" id="journal-lines-table">
+                    <thead class="bg-gray-50 border-b border-gray-200">
+                        <tr>
+                            <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-8">#</th>
+                            <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style="min-width: 250px;">Account <span class="text-red-500">*</span></th>
+                            <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style="min-width: 180px;">Description</th>
+                            <th class="px-3 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider" style="min-width: 130px;">Debit</th>
+                            <th class="px-3 py-2.5 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider" style="min-width: 130px;">Credit</th>
+                            <th class="px-3 py-2.5 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider" style="min-width: 180px;">Cost Center</th>
+                            <th class="px-3 py-2.5 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="journal-line-items" class="divide-y divide-gray-100">
+                        @foreach ($lineDefaults as $index => $line)
+                            <tr class="journal-line-row hover:bg-gray-50/50" data-index="{{ $index }}">
+                                <td class="px-3 py-2 text-gray-400 text-center line-number">{{ $index + 1 }}</td>
+                                <td class="px-2 py-2">
+                                    <select id="line-account-{{ $index }}" name="lines[{{ $index }}][account_id]"
+                                        class="select2 line-account border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full text-sm"
+                                        required>
+                                        <option value="">Select account</option>
+                                        @foreach ($accounts as $account)
+                                            <option value="{{ $account->id }}" {{ (int) ($line['account_id'] ?? 0) === $account->id ? 'selected' : '' }}>
+                                                {{ $account->account_code }} &middot; {{ $account->account_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="px-2 py-2">
+                                    <input type="text" id="line-description-{{ $index }}" name="lines[{{ $index }}][description]"
+                                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full text-sm"
+                                        value="{{ $line['description'] }}" placeholder="Line detail">
+                                </td>
+                                <td class="px-2 py-2">
+                                    <input type="number" id="line-debit-{{ $index }}" name="lines[{{ $index }}][debit]"
+                                        step="0.01" min="0"
+                                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full text-sm text-right"
+                                        value="{{ $line['debit'] }}" data-role="amount" data-type="debit">
+                                </td>
+                                <td class="px-2 py-2">
+                                    <input type="number" id="line-credit-{{ $index }}" name="lines[{{ $index }}][credit]"
+                                        step="0.01" min="0"
+                                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full text-sm text-right"
+                                        value="{{ $line['credit'] }}" data-role="amount" data-type="credit">
+                                </td>
+                                <td class="px-2 py-2">
+                                    <select id="line-cost-center-{{ $index }}" name="lines[{{ $index }}][cost_center_id]"
+                                        class="select2 line-cost-center border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full text-sm">
+                                        <option value="">--</option>
+                                        @foreach ($costCenters as $costCenter)
+                                            <option value="{{ $costCenter->id }}" {{ (int) ($line['cost_center_id'] ?? 0) === $costCenter->id ? 'selected' : '' }}>
+                                                {{ $costCenter->code }} &middot; {{ $costCenter->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                                <td class="px-2 py-2 text-center">
+                                    <button type="button"
+                                        class="remove-journal-line text-gray-400 hover:text-red-600 transition-colors p-1"
+                                        title="Remove line">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                    <tfoot class="bg-gray-50 border-t-2 border-gray-300">
+                        <tr>
+                            <td colspan="3" class="px-3 py-3 text-right text-xs font-bold text-gray-600 uppercase">Totals</td>
+                            <td class="px-2 py-3 text-right font-bold text-gray-800">
+                                <span id="journal-total-debit">0.00</span>
+                            </td>
+                            <td class="px-2 py-3 text-right font-bold text-gray-800">
+                                <span id="journal-total-credit">0.00</span>
+                            </td>
+                            <td colspan="2" class="px-3 py-3">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-xs text-gray-500">Diff:</span>
+                                    <span id="journal-total-difference" class="font-bold text-green-600">0.00</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+
+            {{-- Add Line Button --}}
+            <div class="px-4 py-3 bg-gray-50/50 border-t border-gray-100">
                 <button type="button" id="add-journal-line"
-                    class="inline-flex items-center px-3 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    class="inline-flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
-                    Add Line
+                    Add Another Line
                 </button>
             </div>
-
-            <div id="journal-line-items" class="space-y-4">
-                @foreach ($lineDefaults as $index => $line)
-                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 journal-line-row" data-index="{{ $index }}">
-                        <div class="md:col-span-4">
-                            <x-label :for="'line-account-' . $index" value="Account" :required="true" />
-                            <select id="line-account-{{ $index }}" name="lines[{{ $index }}][account_id]"
-                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
-                                required>
-                                <option value="">Select account</option>
-                                @foreach ($accounts as $account)
-                                    <option value="{{ $account->id }}" {{ (int) ($line['account_id'] ?? 0) === $account->id ? 'selected' : '' }}>
-                                        {{ $account->account_code }} · {{ $account->account_name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="md:col-span-2">
-                            <x-label :for="'line-debit-' . $index" value="Debit" />
-                            <x-input id="line-debit-{{ $index }}" name="lines[{{ $index }}][debit]" type="number"
-                                step="0.01" min="0" class="mt-1 block w-full" :value="$line['debit']" data-role="amount"
-                                data-type="debit" />
-                        </div>
-                        <div class="md:col-span-2">
-                            <x-label :for="'line-credit-' . $index" value="Credit" />
-                            <x-input id="line-credit-{{ $index }}" name="lines[{{ $index }}][credit]" type="number"
-                                step="0.01" min="0" class="mt-1 block w-full" :value="$line['credit']" data-role="amount"
-                                data-type="credit" />
-                        </div>
-                        <div class="md:col-span-3">
-                            <x-label :for="'line-cost-center-' . $index" value="Cost Center" />
-                            <select id="line-cost-center-{{ $index }}" name="lines[{{ $index }}][cost_center_id]"
-                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                                <option value="">Optional</option>
-                                @foreach ($costCenters as $costCenter)
-                                    <option value="{{ $costCenter->id }}" {{ (int) ($line['cost_center_id'] ?? 0) === $costCenter->id ? 'selected' : '' }}>
-                                        {{ $costCenter->code }} · {{ $costCenter->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="md:col-span-1 flex items-end">
-                            <button type="button"
-                                class="remove-journal-line inline-flex items-center px-3 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150 w-full md:w-auto justify-center">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                Remove
-                            </button>
-                        </div>
-                        <div class="md:col-span-12">
-                            <x-label :for="'line-description-' . $index" value="Line Description" />
-                            <textarea id="line-description-{{ $index }}" name="lines[{{ $index }}][description]" rows="2"
-                                class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                                placeholder="Optional detail for this line item">{{ $line['description'] }}</textarea>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-
-            <template id="journal-line-template">
-                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 journal-line-row" data-index="__INDEX__">
-                    <div class="md:col-span-4">
-                        <x-label value="Account" :required="true" />
-                        <select name="lines[__INDEX__][account_id]"
-                            class="line-account border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
-                            required>
-                            <option value="">Select account</option>
-                            @foreach ($accounts as $account)
-                                <option value="{{ $account->id }}">{{ $account->account_code }} · {{ $account->account_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="md:col-span-2">
-                        <x-label value="Debit" />
-                        <input type="number" name="lines[__INDEX__][debit]" step="0.01" min="0"
-                            class="line-debit mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            data-role="amount" data-type="debit" value="0.00">
-                    </div>
-                    <div class="md:col-span-2">
-                        <x-label value="Credit" />
-                        <input type="number" name="lines[__INDEX__][credit]" step="0.01" min="0"
-                            class="line-credit mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            data-role="amount" data-type="credit" value="0.00">
-                    </div>
-                    <div class="md:col-span-3">
-                        <x-label value="Cost Center" />
-                        <select name="lines[__INDEX__][cost_center_id]"
-                            class="line-cost-center border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                            <option value="">Optional</option>
-                            @foreach ($costCenters as $costCenter)
-                                <option value="{{ $costCenter->id }}">{{ $costCenter->code }} · {{ $costCenter->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="md:col-span-1 flex items-end">
-                        <button type="button"
-                            class="remove-journal-line inline-flex items-center px-3 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150 w-full md:w-auto justify-center">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                            Remove
-                        </button>
-                    </div>
-                    <div class="md:col-span-12">
-                        <x-label value="Line Description" />
-                        <textarea name="lines[__INDEX__][description]" rows="2"
-                            class="line-description mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
-                            placeholder="Optional detail for this line item"></textarea>
-                    </div>
-                </div>
-            </template>
-
-            <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4 text-sm font-semibold text-gray-700">
-                <div>Total Debit: <span id="journal-total-debit">0.00</span></div>
-                <div>Total Credit: <span id="journal-total-credit">0.00</span></div>
-                <div>Difference: <span id="journal-total-difference" class="text-green-600">0.00</span></div>
-                <div class="text-sm text-gray-500 md:text-right">Debits must equal credits before posting.</div>
-            </div>
         </div>
+
     </div>
 </div>
 
@@ -222,14 +195,62 @@
     </x-button>
 </div>
 
+{{-- Hidden template for dynamic line rows --}}
+<template id="journal-line-template">
+    <tr class="journal-line-row hover:bg-gray-50/50" data-index="__INDEX__">
+        <td class="px-3 py-2 text-gray-400 text-center line-number">__NUMBER__</td>
+        <td class="px-2 py-2">
+            <select name="lines[__INDEX__][account_id]"
+                class="select2-dynamic line-account border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full text-sm"
+                required>
+                <option value="">Select account</option>
+                @foreach ($accounts as $account)
+                    <option value="{{ $account->id }}">{{ $account->account_code }} &middot; {{ $account->account_name }}</option>
+                @endforeach
+            </select>
+        </td>
+        <td class="px-2 py-2">
+            <input type="text" name="lines[__INDEX__][description]"
+                class="line-description border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full text-sm"
+                placeholder="Line detail">
+        </td>
+        <td class="px-2 py-2">
+            <input type="number" name="lines[__INDEX__][debit]" step="0.01" min="0"
+                class="line-debit border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full text-sm text-right"
+                data-role="amount" data-type="debit" value="0.00">
+        </td>
+        <td class="px-2 py-2">
+            <input type="number" name="lines[__INDEX__][credit]" step="0.01" min="0"
+                class="line-credit border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full text-sm text-right"
+                data-role="amount" data-type="credit" value="0.00">
+        </td>
+        <td class="px-2 py-2">
+            <select name="lines[__INDEX__][cost_center_id]"
+                class="select2-dynamic line-cost-center border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block w-full text-sm">
+                <option value="">--</option>
+                @foreach ($costCenters as $costCenter)
+                    <option value="{{ $costCenter->id }}">{{ $costCenter->code }} &middot; {{ $costCenter->name }}</option>
+                @endforeach
+            </select>
+        </td>
+        <td class="px-2 py-2 text-center">
+            <button type="button"
+                class="remove-journal-line text-gray-400 hover:text-red-600 transition-colors p-1"
+                title="Remove line">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+            </button>
+        </td>
+    </tr>
+</template>
+
 @push('scripts')
     @once
         <script>
             document.addEventListener('DOMContentLoaded', () => {
                 const container = document.getElementById('journal-line-items');
-                if (!container) {
-                    return;
-                }
+                if (!container) return;
 
                 const addButton = document.getElementById('add-journal-line');
                 const template = document.getElementById('journal-line-template');
@@ -240,11 +261,14 @@
 
                 const formatAmount = (value) => {
                     const numeric = parseFloat(value);
-                    if (Number.isFinite(numeric)) {
-                        return numeric.toFixed(2);
-                    }
+                    return Number.isFinite(numeric) ? numeric.toFixed(2) : '0.00';
+                };
 
-                    return '0.00';
+                const updateLineNumbers = () => {
+                    container.querySelectorAll('.journal-line-row').forEach((row, i) => {
+                        const numCell = row.querySelector('.line-number');
+                        if (numCell) numCell.textContent = i + 1;
+                    });
                 };
 
                 const updateTotals = () => {
@@ -274,51 +298,31 @@
                     }
                 };
 
-                const addLine = (prefill = {}) => {
-                    if (!template) {
-                        return;
-                    }
+                const initSelect2OnRow = (row) => {
+                    $(row).find('.select2-dynamic').each(function () {
+                        $(this).select2({
+                            placeholder: $(this).hasClass('line-account') ? 'Select account' : '--',
+                            allowClear: true,
+                            width: '100%',
+                            dropdownParent: $(this).closest('td'),
+                        });
+                    });
+                };
 
-                    const markup = template.innerHTML.replace(/__INDEX__/g, lineIndex);
-                    const wrapper = document.createElement('div');
-                    wrapper.innerHTML = markup.trim();
-                    const newRow = wrapper.firstElementChild;
+                const addLine = () => {
+                    if (!template) return;
+
+                    const rowCount = container.querySelectorAll('.journal-line-row').length;
+                    const markup = template.innerHTML
+                        .replace(/__INDEX__/g, lineIndex)
+                        .replace(/__NUMBER__/g, rowCount + 1);
+
+                    const temp = document.createElement('tbody');
+                    temp.innerHTML = markup.trim();
+                    const newRow = temp.firstElementChild;
                     container.appendChild(newRow);
 
-                    if (prefill.account_id) {
-                        const accountSelect = newRow.querySelector('.line-account');
-                        if (accountSelect) {
-                            accountSelect.value = prefill.account_id;
-                        }
-                    }
-
-                    if (prefill.cost_center_id) {
-                        const costSelect = newRow.querySelector('.line-cost-center');
-                        if (costSelect) {
-                            costSelect.value = prefill.cost_center_id;
-                        }
-                    }
-
-                    if (prefill.debit !== undefined) {
-                        const debitInput = newRow.querySelector('.line-debit');
-                        if (debitInput) {
-                            debitInput.value = formatAmount(prefill.debit);
-                        }
-                    }
-
-                    if (prefill.credit !== undefined) {
-                        const creditInput = newRow.querySelector('.line-credit');
-                        if (creditInput) {
-                            creditInput.value = formatAmount(prefill.credit);
-                        }
-                    }
-
-                    if (prefill.description) {
-                        const descriptionInput = newRow.querySelector('.line-description');
-                        if (descriptionInput) {
-                            descriptionInput.value = prefill.description;
-                        }
-                    }
+                    initSelect2OnRow(newRow);
 
                     lineIndex += 1;
                     updateTotals();
@@ -331,26 +335,26 @@
 
                 container.addEventListener('click', (event) => {
                     const trigger = event.target.closest('.remove-journal-line');
-                    if (!trigger) {
-                        return;
-                    }
+                    if (!trigger) return;
 
                     event.preventDefault();
 
                     const rows = container.querySelectorAll('.journal-line-row');
-                    if (rows.length <= 2) {
-                        return;
-                    }
+                    if (rows.length <= 2) return;
 
-                    trigger.closest('.journal-line-row')?.remove();
+                    const row = trigger.closest('.journal-line-row');
+                    // Destroy Select2 instances before removing
+                    $(row).find('.select2-hidden-accessible').each(function () {
+                        $(this).select2('destroy');
+                    });
+                    row?.remove();
+                    updateLineNumbers();
                     updateTotals();
                 });
 
                 container.addEventListener('input', (event) => {
                     const target = event.target;
-                    if (!target.matches('input[data-role="amount"]')) {
-                        return;
-                    }
+                    if (!target.matches('input[data-role="amount"]')) return;
 
                     if (target.value === '') {
                         updateTotals();

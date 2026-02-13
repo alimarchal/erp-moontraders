@@ -29,6 +29,7 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
         $transactionTypeOptions = ClaimRegister::transactionTypeOptions();
 
+        $openingBalances = [];
         $openingBalance = 0;
         if ($dateFrom) {
             $openingQuery = ClaimRegister::query();
@@ -41,6 +42,10 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
             $openingRecords = $openingQuery->get();
             foreach ($openingRecords as $record) {
+                if (! isset($openingBalances[$record->supplier_id])) {
+                    $openingBalances[$record->supplier_id] = 0;
+                }
+                $openingBalances[$record->supplier_id] += (float) $record->debit - (float) $record->credit;
                 $openingBalance += (float) $record->debit - (float) $record->credit;
             }
         }
@@ -89,6 +94,7 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
             'dateFrom',
             'dateTo',
             'openingBalance',
+            'openingBalances',
             'closingBalance',
             'totals'
         ));

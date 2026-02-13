@@ -48,8 +48,9 @@ class ClaimRegisterController extends Controller implements HasMiddleware
             ->paginate(15)
             ->withQueryString();
 
-        // Calculate opening balance (records before date_from filter or before current page)
-        $openingBalance = 0;
+        // Calculate opening balance per supplier (records before date_from filter)
+        $openingBalances = [];
+        $totalOpeningBalance = 0;
         $dateFrom = $request->input('filter.transaction_date_from');
         $supplierId = $request->input('filter.supplier_id');
 
@@ -64,14 +65,20 @@ class ClaimRegisterController extends Controller implements HasMiddleware
 
             $openingRecords = $openingQuery->get();
             foreach ($openingRecords as $record) {
-                $openingBalance += (float) $record->debit - (float) $record->credit;
+                if (! isset($openingBalances[$record->supplier_id])) {
+                    $openingBalances[$record->supplier_id] = 0;
+                }
+                $amount = (float) $record->debit - (float) $record->credit;
+                $openingBalances[$record->supplier_id] += $amount;
+                $totalOpeningBalance += $amount;
             }
         }
 
         return view('claim-registers.index', [
             'claims' => $claims,
             'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
-            'openingBalance' => $openingBalance,
+            'openingBalances' => $openingBalances,
+            'totalOpeningBalance' => $totalOpeningBalance,
         ]);
     }
 

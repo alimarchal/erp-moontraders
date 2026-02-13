@@ -103,7 +103,7 @@
                     @endif
 
                     <form>
-                        {{-- Row 1: Supplier, Transaction Date, Reference --}}
+                        {{-- Row 1: Supplier, Transaction Type, Transaction Date --}}
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div>
                                 <x-label for="supplier" value="Supplier" />
@@ -112,21 +112,27 @@
                                     :value="$claimRegister->supplier?->supplier_name ?? '-'" disabled readonly />
                             </div>
                             <div>
+                                <x-label for="transaction_type" value="Transaction Type" />
+                                <x-input id="transaction_type" type="text"
+                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
+                                    :value="$transactionTypeLabel" disabled readonly />
+                            </div>
+                            <div>
                                 <x-label for="transaction_date" value="Transaction Date" />
                                 <x-input id="transaction_date" type="text"
                                     class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$claimRegister->transaction_date?->format('d-m-Y')" disabled readonly />
                             </div>
+                        </div>
+
+                        {{-- Row 2: Reference, Description, Claim Month --}}
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                             <div>
                                 <x-label for="reference_number" value="Reference Number" />
                                 <x-input id="reference_number" type="text"
                                     class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$claimRegister->reference_number ?? '-'" disabled readonly />
                             </div>
-                        </div>
-
-                        {{-- Row 2: Description, Claim Month, Date of Dispatch --}}
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                             <div>
                                 <x-label for="description" value="Description" />
                                 <x-input id="description" type="text"
@@ -139,22 +145,16 @@
                                     class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$claimRegister->claim_month ?? '-'" disabled readonly />
                             </div>
+                        </div>
+
+                        {{-- Row 3: Date of Dispatch, Debit, Credit --}}
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                             <div>
                                 <x-label for="date_of_dispatch" value="Date of Dispatch" />
                                 <x-input id="date_of_dispatch" type="text"
                                     class="mt-1 block w-full cursor-not-allowed bg-gray-100"
                                     :value="$claimRegister->date_of_dispatch?->format('d-m-Y') ?? '-'" disabled
                                     readonly />
-                            </div>
-                        </div>
-
-                        {{-- Row 3: Transaction Type, Debit, Credit --}}
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                            <div>
-                                <x-label for="transaction_type" value="Transaction Type" />
-                                <x-input id="transaction_type" type="text"
-                                    class="mt-1 block w-full cursor-not-allowed bg-gray-100"
-                                    :value="$transactionTypeLabel" disabled readonly />
                             </div>
                             <div>
                                 <x-label for="debit" value="Debit" />

@@ -3,7 +3,7 @@
     $claimRegister = $claimRegister ?? null;
 @endphp
 
-{{-- Row 1: Supplier, Transaction Date, Transaction Type, Amount --}}
+{{-- Row 1: Supplier, Transaction Type, Transaction Date, Amount --}}
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
     <div>
         <x-label for="supplier_id" value="Supplier" :required="true" />
@@ -21,12 +21,6 @@
     </div>
 
     <div>
-        <x-label for="transaction_date" value="Transaction Date" :required="true" />
-        <x-input id="transaction_date" type="date" name="transaction_date" class="mt-1 block w-full"
-            :value="old('transaction_date', optional($claimRegister?->transaction_date)->format('Y-m-d') ?? now()->format('Y-m-d'))" required />
-    </div>
-
-    <div>
         <x-label for="transaction_type" value="Transaction Type" :required="true" />
         <select id="transaction_type" name="transaction_type"
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
@@ -38,6 +32,12 @@
                 </option>
             @endforeach
         </select>
+    </div>
+
+    <div>
+        <x-label for="transaction_date" value="Transaction Date" :required="true" />
+        <x-input id="transaction_date" type="date" name="transaction_date" class="mt-1 block w-full"
+            :value="old('transaction_date', optional($claimRegister?->transaction_date)->format('Y-m-d') ?? now()->format('Y-m-d'))" required />
     </div>
 
     <div>

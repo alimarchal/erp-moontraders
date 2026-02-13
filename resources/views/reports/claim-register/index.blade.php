@@ -136,27 +136,52 @@
                             <th>Reference</th>
                             <th class="text-left">Description</th>
                             <th>Claim Month</th>
+                            <th class="text-right">Opening Bal</th>
                             <th class="text-right">Debit</th>
                             <th class="text-right">Credit</th>
-                            <th class="text-right">Balance</th>
+                            <th class="text-right">Closing Bal</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @if ($dateFrom && $openingBalance != 0)
-                            <tr class="bg-yellow-50 font-semibold">
-                                <td colspan="6" class="text-right">Opening Balance</td>
-                                <td class="text-right">{{ $openingBalance > 0 ? number_format($openingBalance, 2) : '-' }}</td>
-                                <td class="text-right">{{ $openingBalance < 0 ? number_format(abs($openingBalance), 2) : '-' }}</td>
-                                <td class="text-right font-bold">{{ number_format($openingBalance, 2) }}</td>
+                        @php
+                            $supplierBalances = [];
+                            $suppliersShown = [];
+                            $hasDateFilter = (bool) $dateFrom;
+                        @endphp
+
+                        {{-- Total Opening Balance Row (only show if there's an opening balance) --}}
+                        @if ($openingBalance != 0)
+                            <tr class="bg-blue-50 font-bold border-b-2 border-blue-300">
+                                <td colspan="6" class="text-right py-2">Total Opening Balance:</td>
+                                <td class="text-right py-2 {{ $openingBalance > 0 ? 'text-green-700' : ($openingBalance < 0 ? 'text-red-700' : '') }}">
+                                    {{ number_format($openingBalance, 2) }}
+                                </td>
+                                <td class="text-right py-2">-</td>
+                                <td class="text-right py-2">-</td>
+                                <td class="text-right py-2 {{ $openingBalance > 0 ? 'text-green-700' : ($openingBalance < 0 ? 'text-red-700' : '') }}">
+                                    {{ number_format($openingBalance, 2) }}
+                                </td>
                             </tr>
                         @endif
 
-                        @php $runningBalance = $openingBalance; @endphp
                         @foreach ($claims as $claim)
                             @php
+                                $supplierId = $claim->supplier_id;
+
+                                // Initialize supplier balance with opening balance if not yet done
+                                if (!isset($supplierBalances[$supplierId])) {
+                                    $supplierBalances[$supplierId] = $openingBalances[$supplierId] ?? 0;
+                                }
+
                                 $debit = (float) $claim->debit;
                                 $credit = (float) $claim->credit;
-                                $runningBalance += $debit - $credit;
+
+                                // Opening balance is the balance BEFORE this transaction
+                                $transactionOpeningBalance = $supplierBalances[$supplierId];
+
+                                // Apply transaction to get closing balance
+                                $supplierBalances[$supplierId] += $debit - $credit;
+                                $closingBalance = $supplierBalances[$supplierId];
                             @endphp
                             <tr>
                                 <td>{{ $loop->iteration }}</td>
@@ -165,10 +190,13 @@
                                 <td>{{ $claim->reference_number ?? '-' }}</td>
                                 <td class="text-left">{{ $claim->description ?? '-' }}</td>
                                 <td class="whitespace-nowrap">{{ $claim->claim_month ?? '-' }}</td>
+                                <td class="text-right {{ $transactionOpeningBalance > 0 ? 'text-green-700' : ($transactionOpeningBalance < 0 ? 'text-red-700' : '') }}">
+                                    {{ number_format($transactionOpeningBalance, 2) }}
+                                </td>
                                 <td class="text-right">{{ $debit > 0 ? number_format($debit, 2) : '-' }}</td>
                                 <td class="text-right">{{ $credit > 0 ? number_format($credit, 2) : '-' }}</td>
-                                <td class="text-right font-bold {{ $runningBalance > 0 ? 'text-green-700' : ($runningBalance < 0 ? 'text-red-700' : '') }}">
-                                    {{ number_format($runningBalance, 2) }}
+                                <td class="text-right font-bold {{ $closingBalance > 0 ? 'text-green-700' : ($closingBalance < 0 ? 'text-red-700' : '') }}">
+                                    {{ number_format($closingBalance, 2) }}
                                 </td>
                             </tr>
                         @endforeach
@@ -176,6 +204,7 @@
                     <tfoot class="bg-gray-100 font-bold">
                         <tr>
                             <td colspan="6" class="text-right">Period Totals:</td>
+                            <td></td>
                             <td class="text-right">{{ number_format($totals['debit'], 2) }}</td>
                             <td class="text-right">{{ number_format($totals['credit'], 2) }}</td>
                             <td class="text-right">{{ number_format($totals['net_balance'], 2) }}</td>
@@ -183,7 +212,7 @@
                         @if ($dateFrom)
                             <tr class="bg-emerald-50">
                                 <td colspan="6" class="text-right">Closing Balance:</td>
-                                <td colspan="2"></td>
+                                <td colspan="3"></td>
                                 <td class="text-right font-extrabold {{ $closingBalance > 0 ? 'text-green-700' : ($closingBalance < 0 ? 'text-red-700' : '') }}">
                                     {{ number_format($closingBalance, 2) }}
                                 </td>

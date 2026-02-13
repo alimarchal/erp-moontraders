@@ -144,13 +144,31 @@ class ClaimRegisterService
     /**
      * Resolve the credit account for journal entry creation.
      *
-     * If payment method is bank_transfer and a bank_account is selected,
-     * use the bank account's linked chart_of_account_id.
-     * Otherwise fall back to the user-selected credit_account_id.
+     * For CLAIM (supplier owes us): Credit goes to Income account (4210 FMR Allowance)
+     * For RECOVERY (we receive payment): Credit goes to 1111 Debtors (already in debit_account_id)
+     *
+     * The debit account for recovery comes from bank_account's linked COA.
      */
     protected function resolveCreditAccount(ClaimRegister $claim): int
     {
+        // For CLAIM transactions: credit should go to Income account
+        if ($claim->transaction_type === 'claim') {
+            // Use FMR Allowance Liquid (4210) as default income account for supplier claims
+            $incomeAccount = ChartOfAccount::where('account_code', '4210')->first();
+            if ($incomeAccount) {
+                return $incomeAccount->id;
+            }
+
+            // Fallback to Indirect Income parent (4200)
+            $indirectIncome = ChartOfAccount::where('account_code', '4200')->first();
+            if ($indirectIncome) {
+                return $indirectIncome->id;
+            }
+        }
+
+        // For RECOVERY transactions: use bank account for debit side
         if (
+            $claim->transaction_type === 'recovery' &&
             in_array($claim->payment_method, ['bank_transfer', 'cheque']) &&
             $claim->bank_account_id
         ) {
@@ -162,14 +180,15 @@ class ClaimRegisterService
             }
         }
 
-        // For cash payments, resolve to 1131 (Cash) if credit_account is a group
-        if ($claim->payment_method === 'cash') {
+        // For cash recovery payments
+        if ($claim->transaction_type === 'recovery' && $claim->payment_method === 'cash') {
             $cashAccount = ChartOfAccount::where('account_code', '1131')->first();
             if ($cashAccount) {
                 return $cashAccount->id;
             }
         }
 
+        // Fallback to preset credit_account_id
         return $claim->credit_account_id;
     }
 

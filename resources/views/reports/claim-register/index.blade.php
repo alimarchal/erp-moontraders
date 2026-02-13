@@ -150,8 +150,8 @@
                             <th>Reference</th>
                             <th class="text-left">Description</th>
                             <th>Claim Month</th>
-                            <th>Type</th>
-                            <th class="text-right">Amount</th>
+                            <th class="text-right">Debit</th>
+                            <th class="text-right">Credit</th>
                             <th class="text-right">Balance</th>
                             <th>Status</th>
                         </tr>
@@ -159,7 +159,9 @@
                     <tbody>
                         @if ($dateFrom && $openingBalance != 0)
                             <tr class="bg-yellow-50 font-semibold">
-                                <td colspan="7" class="text-right">Opening Balance</td>
+                                <td colspan="6" class="text-right">Opening Balance</td>
+                                <td class="text-right">{{ $openingBalance > 0 ? number_format($openingBalance, 2) : '-' }}</td>
+                                <td class="text-right">{{ $openingBalance < 0 ? number_format(abs($openingBalance), 2) : '-' }}</td>
                                 <td class="text-right font-bold">{{ number_format($openingBalance, 2) }}</td>
                                 <td></td>
                             </tr>
@@ -168,12 +170,15 @@
                         @php $runningBalance = $openingBalance; @endphp
                         @foreach ($claims as $claim)
                             @php
+                                $debit = 0;
+                                $credit = 0;
                                 if ($claim->transaction_type === 'claim') {
-                                    $runningBalance += (float) $claim->amount;
+                                    $debit = (float) $claim->amount;
+                                    $runningBalance += $debit;
                                 } else {
-                                    $runningBalance -= (float) $claim->amount;
+                                    $credit = (float) $claim->amount;
+                                    $runningBalance -= $credit;
                                 }
-                                $typeLabel = $transactionTypeOptions[$claim->transaction_type] ?? ucfirst($claim->transaction_type);
                                 $stLabel = $statusOptions[$claim->status] ?? $claim->status;
                             @endphp
                             <tr>
@@ -183,9 +188,11 @@
                                 <td>{{ $claim->reference_number ?? '-' }}</td>
                                 <td class="text-left">{{ $claim->description ?? '-' }}</td>
                                 <td class="whitespace-nowrap">{{ $claim->claim_month ?? '-' }}</td>
-                                <td>{{ $typeLabel }}</td>
-                                <td class="text-right">{{ number_format($claim->amount, 2) }}</td>
-                                <td class="text-right font-bold">{{ number_format($runningBalance, 2) }}</td>
+                                <td class="text-right">{{ $debit > 0 ? number_format($debit, 2) : '-' }}</td>
+                                <td class="text-right">{{ $credit > 0 ? number_format($credit, 2) : '-' }}</td>
+                                <td class="text-right font-bold {{ $runningBalance > 0 ? 'text-green-700' : ($runningBalance < 0 ? 'text-red-700' : '') }}">
+                                    {{ number_format($runningBalance, 2) }}
+                                </td>
                                 <td>{{ $stLabel }}</td>
                             </tr>
                         @endforeach
@@ -193,17 +200,18 @@
                     <tfoot class="bg-gray-100 font-bold">
                         <tr>
                             <td colspan="6" class="text-right">Period Totals:</td>
-                            <td class="text-left">
-                                Claim: {{ number_format($totals['claim_amount'], 2) }}<br>
-                                Recovery: {{ number_format($totals['recovery_amount'], 2) }}
-                            </td>
+                            <td class="text-right">{{ number_format($totals['claim_amount'], 2) }}</td>
+                            <td class="text-right">{{ number_format($totals['recovery_amount'], 2) }}</td>
                             <td class="text-right">{{ number_format($totals['net_balance'], 2) }}</td>
-                            <td colspan="2"></td>
+                            <td></td>
                         </tr>
                         @if ($dateFrom)
                             <tr class="bg-emerald-50">
-                                <td colspan="7" class="text-right">Closing Balance:</td>
-                                <td class="text-right font-extrabold">{{ number_format($closingBalance, 2) }}</td>
+                                <td colspan="6" class="text-right">Closing Balance:</td>
+                                <td colspan="2"></td>
+                                <td class="text-right font-extrabold {{ $closingBalance > 0 ? 'text-green-700' : ($closingBalance < 0 ? 'text-red-700' : '') }}">
+                                    {{ number_format($closingBalance, 2) }}
+                                </td>
                                 <td></td>
                             </tr>
                         @endif

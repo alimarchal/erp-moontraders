@@ -6,45 +6,50 @@
 
     @push('header')
         <style>
-            .report-table,
-            table {
+            .report-table {
                 width: 100%;
                 border-collapse: collapse;
                 border: 1px solid black;
-                font-size: 14px;
-                line-height: 1.2;
+                font-size: 12px;
             }
 
             .report-table th,
-            .report-table td,
-            table th,
-            table td {
+            .report-table td {
                 border: 1px solid black;
-                padding: 3px 4px;
-                word-wrap: break-word;
+                padding: 4px;
+                text-align: center;
             }
 
-            .print-only {
-                display: none;
+            .report-table th {
+                background-color: #f3f4f6;
+                font-weight: bold;
+            }
+
+            .text-left {
+                text-align: left !important;
+            }
+
+            .text-right {
+                text-align: right !important;
             }
 
             @media print {
                 @page {
-                    margin: 15mm 10mm 20mm 10mm;
+                    margin: 10mm;
+                    size: landscape;
+                }
 
-                    @bottom-center {
-                        content: "Page " counter(page) " of " counter(pages);
-                    }
+                body {
+                    margin: 0;
+                    padding: 0;
                 }
 
                 .no-print {
                     display: none !important;
                 }
 
-                body {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    counter-reset: page 1;
+                .print-only {
+                    display: block !important;
                 }
 
                 .max-w-7xl {
@@ -64,49 +69,13 @@
                     overflow: visible !important;
                 }
 
-                .report-table,
-                table {
-                    font-size: 11px !important;
-                    width: 100% !important;
-                    table-layout: auto !important;
+                .report-table {
+                    font-size: 10px;
                 }
+            }
 
-                .report-table th,
-                .report-table td,
-                table th,
-                table td {
-                    padding: 2px 3px !important;
-                    color: #000 !important;
-                    word-wrap: break-word !important;
-                    white-space: normal !important;
-                    font-size: 11px !important;
-                }
-
-                table th *,
-                table td *,
-                table th span,
-                table td span,
-                table td div,
-                table td abbr {
-                    font-size: 11px !important;
-                    color: #000 !important;
-                }
-
-                p {
-                    margin-top: 0 !important;
-                    margin-bottom: 8px !important;
-                }
-
-                .print-info {
-                    font-size: 9px !important;
-                    margin-top: 5px !important;
-                    margin-bottom: 10px !important;
-                    color: #000 !important;
-                }
-
-                .print-only {
-                    display: block !important;
-                }
+            .print-only {
+                display: none;
             }
         </style>
     @endpush
@@ -116,7 +85,7 @@
             <div class="lg:col-span-2">
                 <x-label for="accounting_period_id" value="Accounting Period" />
                 <select id="accounting_period_id" name="accounting_period_id"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
                     onchange="this.form.submit()">
                     <option value="">All Time (Custom Dates)</option>
                     @foreach($accountingPeriods as $period)
@@ -150,7 +119,7 @@
             <div>
                 <x-label for="filter_account_code" value="Account Code" />
                 <select id="filter_account_code" name="filter[account_code]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
                                     <option value="{{ $account->account_code }}" {{ request('filter.account_code') === $account->
@@ -170,7 +139,7 @@
             <div>
                 <x-label for="filter_account_name" value="Account Name" />
                 <select id="filter_account_name" name="filter[account_name]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Accounts</option>
                     @foreach($accounts as $account)
                                     <option value="{{ $account->account_name }}" {{ request('filter.account_name') === $account->
@@ -210,11 +179,11 @@
             <div>
                 <x-label for="filter_cost_center_code" value="Cost Center Code" />
                 <select id="filter_cost_center_code" name="filter[cost_center_code]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
                         <option value="{{ $cc->code }}" {{ request('filter.cost_center_code') === $cc->code ? 'selected' : ''
-                                                                                                                                                                                }}>
+                                                                                                                                                                                        }}>
                             {{ $cc->code }} - {{ $cc->name }}
                         </option>
                     @endforeach
@@ -224,11 +193,11 @@
             <div>
                 <x-label for="filter_cost_center_name" value="Cost Center Name" />
                 <select id="filter_cost_center_name" name="filter[cost_center_name]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Cost Centers</option>
                     @foreach($costCenters as $cc)
                         <option value="{{ $cc->name }}" {{ request('filter.cost_center_name') === $cc->name ? 'selected' : ''
-                                                                                                                                                                                }}>
+                                                                                                                                                                                        }}>
                             {{ $cc->name }} ({{ $cc->code }})
                         </option>
                     @endforeach
@@ -281,7 +250,7 @@
             <div>
                 <x-label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     @foreach ($statusOptions as $value => $label)
                         <option value="{{ $value }}" {{ request('filter.status') === $value ? 'selected' : '' }}>
@@ -294,7 +263,7 @@
             <div>
                 <x-label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="-entry_date" {{ request('sort') == '-entry_date' || !request('sort') ? 'selected' : ''
                         }}>Entry Date (Newest)</option>
                     <option value="entry_date" {{ request('sort') == 'entry_date' ? 'selected' : '' }}>Entry Date (Oldest)
@@ -324,7 +293,7 @@
             <div>
                 <x-label for="per_page" value="Show Per Page" />
                 <select id="per_page" name="per_page"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
                     <option value="25" {{ request('per_page', 25) == 25 ? 'selected' : '' }}>25</option>
                     <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
@@ -335,77 +304,103 @@
         </div>
     </x-filter-section>
 
-    <x-data-table :items="$entries" :headers="[
-        ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'Date / Ref / CS'],
-        ['label' => 'Journal Description'],
-        ['label' => 'Account'],
-        ['label' => 'Debit', 'align' => 'text-right'],
-        ['label' => 'Credit', 'align' => 'text-right'],
-        ['label' => 'Status', 'align' => 'text-center'],
-    ]" emptyMessage="No general ledger entries found.">
-        @php
-            $statusClasses = [
-                'posted' => 'bg-emerald-100 text-emerald-700',
-                'draft' => 'bg-yellow-100 text-yellow-700',
-                'void' => 'bg-red-100 text-red-700',
-            ];
-        @endphp
-        @foreach ($entries as $index => $entry)
-            <tr class="border-b border-gray-200 text-sm">
-                <td class="py-1 px-1 text-center">
-                    {{ $entries->firstItem() + $index }}
-                </td>
-                <td class="py-1 px-1 break-words max-w-xs">
-                    {{ optional($entry->entry_date)->format('d-m-Y') }}
-                    <div class="break-words max-w-[8rem]">{{ $entry->reference ?? '—' }}</div>
-                    @if ($entry->cost_center_code)
-                        <div class="font-semibold uppercase font-mono">{{ $entry->cost_center_code }}</div>
-                        <div class="text-xs text-gray-600">{{ $entry->cost_center_name }}</div>
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4">
+        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none">
+            <div class="overflow-x-auto">
+                <p class="text-center font-extrabold mb-2">
+                    Moon Traders<br>
+                    General Ledger<br>
+                    @if($entryDateFrom && $entryDateTo)
+                        <span class="text-sm font-semibold">
+                            Period: {{ \Carbon\Carbon::parse($entryDateFrom)->format('d-M-Y') }} to
+                            {{ \Carbon\Carbon::parse($entryDateTo)->format('d-M-Y') }}
+                        </span>
+                    @elseif($entryDateTo)
+                        <span class="text-sm font-semibold">
+                            As of: {{ \Carbon\Carbon::parse($entryDateTo)->format('d-M-Y') }}
+                        </span>
+                    @elseif($entryDateFrom)
+                        <span class="text-sm font-semibold">
+                            From: {{ \Carbon\Carbon::parse($entryDateFrom)->format('d-M-Y') }}
+                        </span>
                     @else
-                        <span class="text-gray-400">—</span>
+                        <span class="text-sm font-semibold">All Time</span>
                     @endif
-                </td>
-                <td class="py-1 px-1">
-                    <div class="font-semibold break-words max-w-xs">{{ $entry->journal_description ?? '—' }}</div>
-                    <div class="text-xs text-gray-600 break-words max-w-xs">
-                        <abbr class="text-red-700" title="Line Description">LD:</abbr> {{ $entry->line_description ??
-            $entry->journal_description ?? '—' }}
-                    </div>
-                </td>
-                <td class="py-1 px-1">
-                    <div class="font-semibold uppercase font-mono">{{ $entry->account_code }}</div>
-                    <div class="text-xs text-gray-600">{{ $entry->account_name }}</div>
-                </td>
-                <td class="py-1 px-1 text-right font-mono">
-                    {{ number_format((float) $entry->debit, 2) }}
-                </td>
-                <td class="py-1 px-1 text-right font-mono">
-                    {{ number_format((float) $entry->credit, 2) }}
-                </td>
-
-                <td class="py-1 px-1 text-center">
-                    @php
-                        $status = $entry->status ?? 'draft';
-                        $badgeClass = $statusClasses[$status] ?? 'bg-gray-100 text-gray-600';
-                    @endphp
-                    <span class="inline-flex items-center px-1 py-1 text-xs font-semibold rounded-full {{ $badgeClass }}">
-                        {{ ucfirst($status) }}
+                    <br>
+                    <span class="print-only text-xs">
+                        Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
                     </span>
-                </td>
-            </tr>
-        @endforeach
-        <tr class="border-t-2 border-gray-400 bg-gray-100 font-bold">
-            <td colspan="4" class="py-1 px-1 text-right">
-                Page Total ({{ $entries->count() }} rows):
-            </td>
-            <td class="py-1 px-1 text-right font-mono">
-                {{ number_format($entries->sum('debit'), 2) }}
-            </td>
-            <td class="py-1 px-1 text-right font-mono">
-                {{ number_format($entries->sum('credit'), 2) }}
-            </td>
-            <td></td>
-        </tr>
-    </x-data-table>
+                </p>
+
+                <table class="report-table">
+                    <thead>
+                        <tr>
+                            <th>Sr.#</th>
+                            <th>Date</th>
+                            <th class="text-left">Acc Code</th>
+                            <th class="text-left">Account Name</th>
+                            <th class="text-left">Description</th>
+                            <th class="text-left">Line Description</th>
+                            <th class="text-right">Debit</th>
+                            <th class="text-right">Credit</th>
+                            <th>Reference</th>
+                            <th>Cost Center</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($entries as $index => $entry)
+                            <tr>
+                                <td>{{ $entries->firstItem() + $index }}</td>
+                                <td class="whitespace-nowrap">
+                                    {{ $entry->entry_date ? $entry->entry_date->format('d-M-Y') : '-' }}
+                                </td>
+                                <td class="text-left font-mono whitespace-nowrap">{{ $entry->account_code }}</td>
+                                <td class="text-left whitespace-nowrap">{{ $entry->account_name }}</td>
+                                <td class="text-left">{{ $entry->journal_description ?? '-' }}</td>
+                                <td class="text-left">{{ $entry->line_description ?? '-' }}</td>
+                                <td class="text-right font-mono">
+                                    {{ (float) $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
+                                </td>
+                                <td class="text-right font-mono">
+                                    {{ (float) $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
+                                </td>
+                                <td class="whitespace-nowrap">{{ $entry->reference ?? '-' }}</td>
+                                <td class="whitespace-nowrap">
+                                    @if ($entry->cost_center_code)
+                                        {{ $entry->cost_center_code }}
+                                    @else
+                                        -
+                                    @endif
+                                </td>
+                                <td>{{ ucfirst($entry->status ?? 'draft') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="11" class="py-8 text-gray-500">
+                                    No general ledger entries found.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                    @if($entries->isNotEmpty())
+                        <tfoot class="bg-gray-100 font-bold">
+                            <tr>
+                                <td class="text-right" colspan="6">Page Total ({{ $entries->count() }} rows):</td>
+                                <td class="text-right font-mono">{{ number_format($entries->sum('debit'), 2) }}</td>
+                                <td class="text-right font-mono">{{ number_format($entries->sum('credit'), 2) }}</td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </tfoot>
+                    @endif
+                </table>
+
+                @if($entries->hasPages())
+                    <div class="mt-4 no-print">
+                        {{ $entries->withQueryString()->links() }}
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
 </x-app-layout>

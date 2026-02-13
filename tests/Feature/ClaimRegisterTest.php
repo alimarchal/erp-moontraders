@@ -1,7 +1,10 @@
 <?php
 
+use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
 use App\Models\ClaimRegister;
+use App\Models\Currency;
+use App\Models\JournalEntry;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -59,10 +62,7 @@ test('create page can be rendered', function () {
     $this->get(route('claim-registers.create'))
         ->assertSuccessful()
         ->assertViewIs('claim-registers.create')
-        ->assertViewHas('suppliers')
-        ->assertViewHas('paymentMethodOptions')
-        ->assertViewHas('chartOfAccounts')
-        ->assertViewHas('bankAccounts');
+        ->assertViewHas('suppliers');
 });
 
 // ── Store ──────────────────────────────────────────────────────────
@@ -76,9 +76,8 @@ test('claim can be created as draft', function () {
         'reference_number' => 'ST-TEST-01',
         'description' => 'TED June-August',
         'claim_month' => 'June-Aug',
-        'debit' => 50000.00,
-        'credit' => 0,
-        'status' => 'Pending',
+        'transaction_type' => 'claim',
+        'amount' => 50000.00,
     ];
 
     $response = $this->post(route('claim-registers.store'), $data);
@@ -90,7 +89,7 @@ test('claim can be created as draft', function () {
         'supplier_id' => $supplier->id,
         'reference_number' => 'ST-TEST-01',
         'debit' => 50000.00,
-        'status' => 'Pending',
+        'credit' => 0,
         'posted_at' => null,
         'journal_entry_id' => null,
     ]);
@@ -99,9 +98,8 @@ test('claim can be created as draft', function () {
 test('store requires supplier_id', function () {
     $this->post(route('claim-registers.store'), [
         'transaction_date' => now()->format('Y-m-d'),
-        'debit' => 1000,
-        'credit' => 0,
-        'status' => 'Pending',
+        'transaction_type' => 'claim',
+        'amount' => 1000,
     ])->assertSessionHasErrors('supplier_id');
 });
 
@@ -110,22 +108,19 @@ test('store requires transaction_date', function () {
 
     $this->post(route('claim-registers.store'), [
         'supplier_id' => $supplier->id,
-        'debit' => 1000,
-        'credit' => 0,
+        'transaction_type' => 'claim',
+        'amount' => 1000,
     ])->assertSessionHasErrors('transaction_date');
 });
 
-test('store validates cheque fields when payment method is cheque', function () {
+test('store validates transaction_type is required', function () {
     $supplier = Supplier::factory()->create();
 
     $this->post(route('claim-registers.store'), [
         'supplier_id' => $supplier->id,
         'transaction_date' => now()->format('Y-m-d'),
-        'debit' => 0,
-        'credit' => 5000,
-        'status' => 'Adjusted',
-        'payment_method' => 'cheque',
-    ])->assertSessionHasErrors(['cheque_number', 'cheque_date']);
+        'amount' => 5000,
+    ])->assertSessionHasErrors('transaction_type');
 });
 
 // ── Show ───────────────────────────────────────────────────────────
@@ -189,16 +184,14 @@ test('claim can be updated', function () {
         'supplier_id' => $supplier->id,
         'debit' => 50000,
         'credit' => 0,
-        'status' => 'Pending',
     ]);
 
     $data = [
         'supplier_id' => $supplier->id,
         'transaction_date' => now()->format('Y-m-d'),
         'reference_number' => 'ST-UPD-01',
-        'debit' => 75000.00,
-        'credit' => 0,
-        'status' => 'Pending',
+        'transaction_type' => 'claim',
+        'amount' => 75000.00,
     ];
 
     $response = $this->put(route('claim-registers.update', $claim), $data);
@@ -224,9 +217,8 @@ test('posted claims cannot be updated', function () {
     $this->put(route('claim-registers.update', $claim), [
         'supplier_id' => $supplier->id,
         'transaction_date' => now()->format('Y-m-d'),
-        'debit' => 99999,
-        'credit' => 0,
-        'status' => 'Pending',
+        'transaction_type' => 'claim',
+        'amount' => 99999,
     ])
         ->assertRedirect()
         ->assertSessionHas('error');
@@ -268,8 +260,20 @@ test('claim can be posted with valid password', function () {
         'credit_account_id' => $creditAccount->id,
     ]);
 
+    // Create a proper JournalEntry with required dependencies
+    $currency = Currency::factory()->create();
+    $accountingPeriod = AccountingPeriod::factory()->create([
+        'start_date' => now()->startOfMonth(),
+        'end_date' => now()->endOfMonth(),
+    ]);
+    $mockJournalEntry = JournalEntry::factory()->create([
+        'currency_id' => $currency->id,
+        'accounting_period_id' => $accountingPeriod->id,
+        'entry_date' => now(),
+        'status' => 'posted',
+    ]);
+
     // Mock AccountingService so we don't need full GL infrastructure in tests
-    $mockJournalEntry = \App\Models\JournalEntry::factory()->create();
     $this->mock(\App\Services\AccountingService::class, function ($mock) use ($mockJournalEntry) {
         $mock->shouldReceive('createJournalEntry')
             ->once()

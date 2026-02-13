@@ -197,15 +197,15 @@ class ClaimRegisterController extends Controller implements HasMiddleware
 
     /**
      * Auto-set GL accounts and bank for claim register.
-     * debit_account = 1111 Debtors (Account Receivable)
+     * debit_account = 1112 Pending Claims Debtors (Account Receivable)
      * credit_account = HBL Main Bank's COA
      * payment_method = bank_transfer
      * bank_account_id = HBL Main
      */
     private function setDefaultAccounts(array $data): array
     {
-        // Set debit account to 1111 (Debtors)
-        $debtorsAccount = ChartOfAccount::where('account_code', '1111')->first();
+        // Set debit account to 1112 (Pending Claims Debtors)
+        $debtorsAccount = ChartOfAccount::where('account_code', '1112')->first();
         if ($debtorsAccount) {
             $data['debit_account_id'] = $debtorsAccount->id;
         }

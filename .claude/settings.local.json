@@ -32,7 +32,8 @@
       "mcp__laravel-boost__application-info",
       "Bash(php:*)",
       "Bash(ls:*)",
-      "Bash(mariadb-upgrade:*)"
+      "Bash(mariadb-upgrade:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

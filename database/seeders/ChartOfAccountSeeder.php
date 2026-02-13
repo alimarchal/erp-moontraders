@@ -33,6 +33,7 @@ class ChartOfAccountSeeder extends Seeder
             ['name' => 'Current Assets', 'parent' => 'Application of Funds (Assets)', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Accounts Receivable', 'parent' => 'Current Assets', 'type' => '', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Debtors', 'parent' => 'Accounts Receivable', 'type' => 'Receivable', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
+            ['name' => 'Pending Claims Debtors', 'parent' => 'Accounts Receivable', 'type' => 'Receivable', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
 
             ['name' => 'Cash In Hand', 'parent' => 'Current Assets', 'type' => 'Cash', 'is_group' => 1, 'root_type' => 'Asset', 'disabled' => 0],
             ['name' => 'Cash', 'parent' => 'Cash In Hand', 'type' => 'Cash', 'is_group' => 0, 'root_type' => 'Asset', 'disabled' => 0],
@@ -114,6 +115,7 @@ class ChartOfAccountSeeder extends Seeder
             ['name' => 'Indirect Income', 'parent' => 'Income', 'type' => '', 'is_group' => 1, 'root_type' => 'Income', 'disabled' => 0],
             ['name' => 'FMR Allowance Liquid', 'parent' => 'Indirect Income', 'type' => '', 'is_group' => 0, 'root_type' => 'Income', 'disabled' => 0],
             ['name' => 'FMR Allowance Powder', 'parent' => 'Indirect Income', 'type' => '', 'is_group' => 0, 'root_type' => 'Income', 'disabled' => 0],
+            ['name' => 'Pending Claim Register Allowance', 'parent' => 'Indirect Income', 'type' => '', 'is_group' => 0, 'root_type' => 'Income', 'disabled' => 0],
             ['name' => 'Source of Funds (Liabilities)', 'parent' => 'Source of Funds (Liabilities)', 'type' => '', 'is_group' => 1, 'root_type' => 'Liability', 'disabled' => 0],
             ['name' => 'Current Liabilities', 'parent' => 'Source of Funds (Liabilities)', 'type' => '', 'is_group' => 1, 'root_type' => 'Liability', 'disabled' => 0],
             ['name' => 'Accounts Payable', 'parent' => 'Current Liabilities', 'type' => '', 'is_group' => 1, 'root_type' => 'Liability', 'disabled' => 0],

@@ -79,12 +79,12 @@ class ClaimRegisterService
      * Post a claim to the GL — creates a journal entry and marks the claim as posted.
      *
      * Claim Raised (debit > 0):
-     *   DR debit_account (e.g. 1111 Debtors)   = debit amount
+     *   DR debit_account (e.g. 1112 Pending Claims Debtors)   = debit amount
      *   CR credit_account (e.g. Income account) = debit amount
      *
      * Recovery Received (credit > 0):
      *   DR debit_account (e.g. Bank/Cash)       = credit amount
-     *   CR credit_account (e.g. 1111 Debtors)   = credit amount
+     *   CR credit_account (e.g. 1112 Pending Claims Debtors)   = credit amount
      *
      * @return array{success: bool, data: ?ClaimRegister, message: string}
      */
@@ -144,8 +144,8 @@ class ClaimRegisterService
     /**
      * Resolve the credit account for journal entry creation.
      *
-     * For CLAIM (supplier owes us): Credit goes to Income account (4210 FMR Allowance)
-     * For RECOVERY (we receive payment): Credit goes to 1111 Debtors (already in debit_account_id)
+     * For CLAIM (supplier owes us): Credit goes to Income account (4230 Pending Claim Register Allowance)
+     * For RECOVERY (we receive payment): Credit goes to 1112 Pending Claims Debtors (already in debit_account_id)
      *
      * The debit account for recovery comes from bank_account's linked COA.
      */
@@ -153,8 +153,8 @@ class ClaimRegisterService
     {
         // For CLAIM transactions: credit should go to Income account
         if ($claim->transaction_type === 'claim') {
-            // Use FMR Allowance Liquid (4210) as default income account for supplier claims
-            $incomeAccount = ChartOfAccount::where('account_code', '4210')->first();
+            // Use Pending Claim Register Allowance (4230) as default income account for supplier claims
+            $incomeAccount = ChartOfAccount::where('account_code', '4230')->first();
             if ($incomeAccount) {
                 return $incomeAccount->id;
             }
@@ -182,7 +182,7 @@ class ClaimRegisterService
 
         // For cash recovery payments
         if ($claim->transaction_type === 'recovery' && $claim->payment_method === 'cash') {
-            $cashAccount = ChartOfAccount::where('account_code', '1131')->first();
+            $cashAccount = ChartOfAccount::where('account_code', '1121')->first();
             if ($cashAccount) {
                 return $cashAccount->id;
             }
@@ -194,8 +194,8 @@ class ClaimRegisterService
 
     /**
      * Create a journal entry for a claim register record.
-     * Claim: DR 1111 Debtors, CR Income
-     * Recovery: DR Bank (HBL Main), CR 1111 Debtors
+     * Claim: DR 1112 Pending Claims Debtors, CR Income
+     * Recovery: DR Bank (HBL Main), CR 1112 Pending Claims Debtors
      *
      * @return \App\Models\JournalEntry|null
      */
@@ -215,7 +215,7 @@ class ClaimRegisterService
         $lines = [];
 
         if ($claim->transaction_type === 'claim') {
-            // Claim raised: DR Debtors, CR Income/Adjustment
+            // Claim raised: DR Pending Claims Debtors, CR Income/Adjustment
             $lines[] = [
                 'account_id' => $claim->debit_account_id,
                 'debit' => $amount,
@@ -231,7 +231,7 @@ class ClaimRegisterService
                 'cost_center_id' => 1,
             ];
         } else {
-            // Recovery received: DR Bank, CR Debtors
+            // Recovery received: DR Bank, CR Pending Claims Debtors
             $lines[] = [
                 'account_id' => $creditAccountId,
                 'debit' => $amount,

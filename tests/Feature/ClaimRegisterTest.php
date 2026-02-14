@@ -260,8 +260,8 @@ test('claim can be posted with valid password', function () {
         'credit_account_id' => $creditAccount->id,
     ]);
 
-    // Create a proper JournalEntry with required dependencies
-    $currency = Currency::factory()->create();
+    // Reuse an existing currency (already created by ChartOfAccount factories)
+    $currency = Currency::first() ?? Currency::factory()->create();
     $accountingPeriod = AccountingPeriod::factory()->create([
         'start_date' => now()->startOfMonth(),
         'end_date' => now()->endOfMonth(),

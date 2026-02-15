@@ -935,9 +935,10 @@ class DistributionService
 
             // 6. Expense Detail
             // Expenses paid from cash (using salesman_clearing)
-            // We skip Advance Tax (ID 20) here because it's handled separately below for better descriptions
+            // We skip Advance Tax here because it's handled separately below via advanceTaxes relationship
+            $advanceTaxAccountId = $accounts['advance_tax']?->id;
             foreach ($settlement->expenses as $expense) {
-                if ($expense->amount > 0 && $expense->expense_account_id && $expense->expense_account_id != 20) {
+                if ($expense->amount > 0 && $expense->expense_account_id && $expense->expense_account_id !== $advanceTaxAccountId) {
                     $expenseAccountName = $expense->expenseAccount->account_name ?? 'Expense';
                     $addLine(
                         $expense->expense_account_id,

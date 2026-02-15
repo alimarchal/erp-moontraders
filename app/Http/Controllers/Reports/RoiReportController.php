@@ -276,37 +276,34 @@ class RoiReportController extends Controller implements HasMiddleware
         $viewedSales = $matrixData['grand_totals']['sale_amount'];
         $allocationFactor = $totalSalesGlobal > 0 ? ($viewedSales / $totalSalesGlobal) : 0;
 
-        // Define Predefined Expenses (Sequence matters)
+        // Define Predefined Expenses by account_code (Sequence matters)
+        // Using account_code instead of hardcoded IDs to avoid ID mismatch issues
         $predefinedExpenses = [
-            ['id' => 73, 'label' => 'Toll Tax', 'code' => '5272'],
-            ['id' => 71, 'label' => 'AMR Powder', 'code' => '5252'],
-            ['id' => 72, 'label' => 'AMR Liquid', 'code' => '5262'],
-            ['id' => 75, 'label' => 'Scheme Discount Expense', 'code' => '5292'],
-            ['id' => 21, 'label' => 'Advance Tax', 'code' => '1161'],
-            ['id' => 74, 'label' => 'Food/Salesman/Loader Charges', 'code' => '5282'],
-            ['id' => 77, 'label' => 'Percentage Expense', 'code' => '5223'],
-            ['id' => 59, 'label' => 'Miscellaneous Expenses', 'code' => '5221'],
+            ['code' => '5272', 'label' => 'Toll Tax'],
+            ['code' => '5252', 'label' => 'AMR Powder'],
+            ['code' => '5262', 'label' => 'AMR Liquid'],
+            ['code' => '5292', 'label' => 'Scheme Discount Expense'],
+            ['code' => '1161', 'label' => 'Advance Tax'],
+            ['code' => '5282', 'label' => 'Food/Salesman/Loader Charges'],
+            ['code' => '5223', 'label' => 'Percentage Expense'],
+            ['code' => '5221', 'label' => 'Miscellaneous Expenses'],
         ];
 
-        // Key fetched expenses by Account ID for easy lookup
-        $fetchedExpenses = $fetchedExpensesCollection->keyBy('account_id');
+        // Key fetched expenses by account_code for reliable lookup
+        $fetchedExpenses = $fetchedExpensesCollection->keyBy('account_code');
 
         // Build Optimized Breakdown List
         $finalBreakdown = collect();
 
         // 1. Add Predefined Expenses (Defaults)
         foreach ($predefinedExpenses as $def) {
-            $existing = $fetchedExpenses->get($def['id']);
+            $existing = $fetchedExpenses->get($def['code']);
             $amount = $existing ? $existing->total_amount : 0;
 
             // Remove from fetched list so we don't duplicate
             if ($existing) {
-                $fetchedExpenses->forget($def['id']);
+                $fetchedExpenses->forget($def['code']);
             }
-
-            // Show ACTUAL Total Amount (As per user request) instead of allocated
-            // The allocation factor is for the Financial Summary (Allocated Expenses line).
-            // The breakdown list should show the actual incurred expenses for transparency.
 
             $finalBreakdown->push((object) [
                 'account_code' => $def['code'],

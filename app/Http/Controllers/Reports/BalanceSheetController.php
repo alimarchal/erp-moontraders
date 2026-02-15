@@ -80,7 +80,18 @@ class BalanceSheetController extends Controller implements HasMiddleware
                     AND je.entry_date <= '{$asOfDate}'
                 ) as d"), 'd.chart_of_account_id', '=', 'a.id')
                 ->where('at.report_group', '=', 'BalanceSheet')
-                ->where('a.is_active', '=', true)
+                ->where(function ($query) {
+                    // Include active accounts OR inactive accounts that have posted transactions
+                    // to prevent balance sheet imbalance when accounts are deactivated after posting
+                    $query->where('a.is_active', '=', true)
+                        ->orWhereExists(function ($sub) {
+                            $sub->select(DB::raw(1))
+                                ->from('journal_entry_details as jed2')
+                                ->join('journal_entries as je2', 'je2.id', '=', 'jed2.journal_entry_id')
+                                ->whereColumn('jed2.chart_of_account_id', 'a.id')
+                                ->where('je2.status', '=', 'posted');
+                        });
+                })
                 ->groupBy('a.id', 'a.account_code', 'a.account_name', 'at.type_name', 'at.report_group', 'a.normal_balance')
                 ->havingRaw('COALESCE(SUM(d.debit), 0) <> 0 OR COALESCE(SUM(d.credit), 0) <> 0')
                 ->orderBy('a.account_code')
@@ -135,7 +146,16 @@ class BalanceSheetController extends Controller implements HasMiddleware
                     AND je.entry_date <= '{$asOfDate}'
                 ) as d"), 'd.chart_of_account_id', '=', 'a.id')
                 ->where('at.report_group', '=', 'IncomeStatement')
-                ->where('a.is_active', '=', true)
+                ->where(function ($query) {
+                    $query->where('a.is_active', '=', true)
+                        ->orWhereExists(function ($sub) {
+                            $sub->select(DB::raw(1))
+                                ->from('journal_entry_details as jed2')
+                                ->join('journal_entries as je2', 'je2.id', '=', 'jed2.journal_entry_id')
+                                ->whereColumn('jed2.chart_of_account_id', 'a.id')
+                                ->where('je2.status', '=', 'posted');
+                        });
+                })
                 ->groupBy('a.id', 'at.type_name', 'a.normal_balance')
                 ->get();
         }

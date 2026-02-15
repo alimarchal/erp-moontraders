@@ -208,7 +208,7 @@
                 <table class="report-table tabular-nums">
                     <thead>
                         <tr class="bg-gray-50">
-                            <th class="w-10 text-center font-bold">#</th>
+                            <th class="text-center font-bold">#</th>
                             <th class="text-left font-bold px-2 whitespace-nowrap">Product</th>
                             <th class="text-left font-bold px-2 whitespace-nowrap">Warehouse</th>
                             <th class="text-center font-bold" title="Quantity On Hand">Qty On Hand</th>
@@ -223,14 +223,18 @@
                         @forelse ($stocks as $stock)
                             <tr>
                                 <td class="text-center">
-                                    {{ $loop->iteration + ($stocks->currentPage() - 1) * $stocks->perPage() }}</td>
+                                    {{ $loop->iteration + ($stocks->currentPage() - 1) * $stocks->perPage() }}
+                                </td>
                                 <td class="text-left font-semibold px-2 whitespace-nowrap">
-                                    {{ $stock->product->product_name }}</td>
+                                    {{ $stock->product->product_name }}
+                                </td>
                                 <td class="text-left px-2 whitespace-nowrap">{{ $stock->warehouse->warehouse_name }}</td>
                                 <td class="text-center font-semibold">
-                                    {{ rtrim(rtrim(number_format($stock->quantity_on_hand, 2), '0'), '.') }}</td>
+                                    {{ rtrim(rtrim(number_format($stock->quantity_on_hand, 2), '0'), '.') }}
+                                </td>
                                 <td class="text-center">
-                                    {{ rtrim(rtrim(number_format($stock->quantity_available, 2), '0'), '.') }}</td>
+                                    {{ rtrim(rtrim(number_format($stock->quantity_available, 2), '0'), '.') }}
+                                </td>
                                 <td class="text-center">₨ {{ number_format($stock->average_cost, 2) }}</td>
                                 <td class="text-center font-semibold">₨ {{ number_format($stock->total_value, 2) }}</td>
                                 <td class="text-center">
@@ -268,9 +272,11 @@
                         <tr class="bg-gray-100 font-bold border-t-2 border-black">
                             <td colspan="3" class="text-right px-2">Grand Total:</td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($stocks->sum('quantity_on_hand'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($stocks->sum('quantity_on_hand'), 2), '0'), '.') }}
+                            </td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($stocks->sum('quantity_available'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($stocks->sum('quantity_available'), 2), '0'), '.') }}
+                            </td>
                             <td class="text-center">-</td>
                             <td class="text-center">₨ {{ number_format($stocks->sum('total_value'), 2) }}</td>
                             <td class="text-center">{{ $stocks->sum('total_batches') }}</td>

@@ -223,12 +223,12 @@
                         <thead>
                             <tr class="bg-gray-50">
                                 <th style="width: 40px;">Sr#</th>
-                                <th style="width: 100px;">Product Code</th>
+                                <th>Product Code</th>
                                 <th>Product Name</th>
-                                <th style="width: 100px;">Qty Issued</th>
-                                <th style="width: 80px;">UOM</th>
-                                <th style="width: 250px;">Batch Breakdown</th>
-                                <th style="width: 120px;">Total Value</th>
+                                <th>Qty Issued</th>
+                                <th>UOM</th>
+                                <th>Batch Breakdown</th>
+                                <th>Total Value</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -239,7 +239,7 @@
                                         {{ $item->product->product_code }}
                                     </td>
                                     <td style="vertical-align: middle;">{{ $item->product->product_name }}</td>
-                                    <td class="text-right font-mono" style="vertical-align: middle;">
+                                    <td class="text-right tabular-nums" style="vertical-align: middle;">
                                         {{ number_format($item->quantity_issued, 2) }}
                                     </td>
                                     <td class="text-center" style="vertical-align: middle;">{{ $item->uom->uom_name }}</td>
@@ -272,7 +272,7 @@
                                                 ₨{{ number_format($item->unit_cost, 2) }}</span>
                                         @endif
                                     </td>
-                                    <td class="text-right font-mono font-bold text-emerald-600"
+                                    <td class="text-right  tabular-nums font-bold text-emerald-600"
                                         style="vertical-align: middle;">
                                         ₨{{ number_format($item->calculated_total ?? $item->total_value, 2) }}
                                     </td>
@@ -282,10 +282,10 @@
                         <tfoot class="bg-gray-100 font-extrabold">
                             <tr>
                                 <td colspan="3" class="text-center px-2 py-1">Grand Total</td>
-                                <td class="text-right font-mono px-2 py-1">{{ number_format($totalQty, 2) }}</td>
+                                <td class="text-right tabular-nums px-2 py-1">{{ number_format($totalQty, 2) }}</td>
                                 <td class="px-2 py-1"></td>
                                 <td class="px-2 py-1"></td>
-                                <td class="text-right font-mono px-2 py-1 text-emerald-600">
+                                <td class="text-right tabular-nums px-2 py-1 text-emerald-600">
                                     ₨{{ number_format($grandTotal, 2) }}</td>
                             </tr>
                         </tfoot>

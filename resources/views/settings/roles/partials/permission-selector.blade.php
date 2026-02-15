@@ -73,6 +73,7 @@
         </div>
     </div>
 
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
     @foreach($groupedPermissions as $group => $groupPerms)
         <div x-data="{ open: {{ (isset($user) || isset($role)) ? 'true' : 'false' }} }" data-perm-group="{{ $group }}"
             class="bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600 overflow-hidden">
@@ -101,7 +102,7 @@
 
             <div x-show="open" x-collapse>
                 <div class="px-4 pb-3 pt-1 border-t border-gray-200 dark:border-gray-600">
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         @foreach($groupPerms as $permission)
                             @php
                                 $isInherited = in_array($permission->id, $rolePermissions);
@@ -130,4 +131,5 @@
             </div>
         </div>
     @endforeach
+    </div>
 </div>

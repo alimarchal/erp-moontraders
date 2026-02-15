@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
+use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\SalesSettlement;
 use App\Models\Supplier;
@@ -68,6 +69,11 @@ class CustomSettlementReportController extends Controller implements HasMiddlewa
 
             $hasData = $employeeSettlements->isNotEmpty();
 
+            // Outstanding credit balance from customer-employee account ledger (debit - credit)
+            $totalCredit = (float) CustomerEmployeeAccountTransaction::whereHas('account', function ($q) use ($employee) {
+                $q->where('employee_id', $employee->id);
+            })->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as balance')->value('balance');
+
             // Aggregators
             $sale = 0;
             $percentageExpense = 0;
@@ -75,12 +81,10 @@ class CustomSettlementReportController extends Controller implements HasMiddlewa
             $amrLiquid = 0;
             $amrPowder = 0;
             $todayCashAmount = 0;
-            $totalCredit = 0;
 
             if ($hasData) {
                 foreach ($employeeSettlements as $settlement) {
                     $sale += $settlement->total_sales_amount;
-                    $totalCredit += $settlement->credit_sales_amount;
 
                     // Cash + Bank Slips
                     $cashCollected = $settlement->cash_collected;

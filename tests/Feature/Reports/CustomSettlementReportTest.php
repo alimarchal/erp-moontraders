@@ -3,6 +3,9 @@
 namespace Tests\Feature\Reports;
 
 use App\Models\ChartOfAccount;
+use App\Models\Customer;
+use App\Models\CustomerEmployeeAccount;
+use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementExpense;
@@ -123,12 +126,73 @@ class CustomSettlementReportTest extends TestCase
         ]);
         SalesSettlementExpense::create(['sales_settlement_id' => $settlement2->id, 'expense_account_id' => $accScheme->id, 'amount' => 500]);
 
+        // Create customer-employee account ledger entries (source of truth for credit balance)
+        $customer1 = Customer::factory()->create();
+        $customer2 = Customer::factory()->create();
+
+        $account1 = CustomerEmployeeAccount::create([
+            'account_number' => 'ACC-000001',
+            'customer_id' => $customer1->id,
+            'employee_id' => $salesman->id,
+            'opened_date' => now()->subMonth(),
+            'status' => 'active',
+            'created_by' => $user->id,
+        ]);
+        $account2 = CustomerEmployeeAccount::create([
+            'account_number' => 'ACC-000002',
+            'customer_id' => $customer2->id,
+            'employee_id' => $salesman->id,
+            'opened_date' => now()->subMonth(),
+            'status' => 'active',
+            'created_by' => $user->id,
+        ]);
+
+        // Credit sales (debit = customer owes)
+        CustomerEmployeeAccountTransaction::create([
+            'customer_employee_account_id' => $account1->id,
+            'transaction_date' => now()->subDay(),
+            'transaction_type' => 'credit_sale',
+            'description' => 'Credit sale yesterday',
+            'debit' => 5000,
+            'credit' => 0,
+            'created_by' => $user->id,
+        ]);
+        CustomerEmployeeAccountTransaction::create([
+            'customer_employee_account_id' => $account1->id,
+            'transaction_date' => now(),
+            'transaction_type' => 'credit_sale',
+            'description' => 'Credit sale today',
+            'debit' => 3000,
+            'credit' => 0,
+            'created_by' => $user->id,
+        ]);
+        CustomerEmployeeAccountTransaction::create([
+            'customer_employee_account_id' => $account2->id,
+            'transaction_date' => now(),
+            'transaction_type' => 'credit_sale',
+            'description' => 'Credit sale today',
+            'debit' => 2000,
+            'credit' => 0,
+            'created_by' => $user->id,
+        ]);
+
+        // Recoveries (credit = customer paid back)
+        CustomerEmployeeAccountTransaction::create([
+            'customer_employee_account_id' => $account1->id,
+            'transaction_date' => now(),
+            'transaction_type' => 'recovery_cash',
+            'description' => 'Cash recovery',
+            'debit' => 0,
+            'credit' => 1500,
+            'created_by' => $user->id,
+        ]);
+
         // Expected Totals:
-        // Sale: 50000 + 30000 = 80,000
+        // Sale: 50000 + 30000 = 80,000 (today only)
         // Perc Expense: 1000
         // Scheme Discount: 500
         // Today Cash: 20000 + 10000 = 30,000
-        // Credit: 5000 + 2000 = 7,000
+        // Total Credit from ledger: (5000 + 3000 + 2000) - 1500 = 8,500 (net outstanding)
 
         $response = $this->get(route('reports.custom-settlement.index'));
         $response->assertStatus(200);
@@ -137,6 +201,6 @@ class CustomSettlementReportTest extends TestCase
         $response->assertSee('1,000'); // Perc Expense
         $response->assertSee('500'); // Scheme
         $response->assertSee('30,000'); // Today Cash
-        $response->assertSee('7,000'); // Total Credit
+        $response->assertSee('8,500'); // Total Credit (from ledger: net outstanding)
     }
 }

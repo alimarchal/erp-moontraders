@@ -91,9 +91,8 @@ class RecallAccountsSeeder extends Seeder
                 'description' => $accountData['description'],
                 'account_type_id' => $expenseType?->id,
                 'parent_id' => $parentAccount->id,
-                'level' => 2,
+                'currency_id' => $parentAccount->currency_id,
                 'is_active' => true,
-                'is_system_account' => false,
                 'is_group' => false,
                 'normal_balance' => 'debit',
             ]);

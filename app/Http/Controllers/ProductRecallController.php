@@ -232,14 +232,12 @@ class ProductRecallController extends Controller implements HasMiddleware
 
         try {
             $claim = ClaimRegister::create([
-                'claim_date' => now()->toDateString(),
+                'transaction_date' => now()->toDateString(),
                 'supplier_id' => $productRecall->supplier_id,
                 'transaction_type' => 'claim',
                 'reference_number' => $productRecall->recall_number,
-                'grn_id' => $productRecall->grn_id,
-                'claim_amount' => $productRecall->total_value,
+                'debit' => $productRecall->total_value,
                 'description' => "Product recall - {$productRecall->recall_number}: {$productRecall->reason}",
-                'status' => 'pending',
             ]);
 
             $productRecall->update(['claim_register_id' => $claim->id]);

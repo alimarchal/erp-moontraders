@@ -32,8 +32,8 @@ beforeEach(function () {
     $this->uom = Uom::factory()->create();
 
     // Create required GL accounts for testing
-    $accountType = AccountType::create(['code' => 'EXP', 'name' => 'Expense', 'normal_balance' => 'debit']);
-    $assetType = AccountType::create(['code' => 'AST', 'name' => 'Asset', 'normal_balance' => 'debit']);
+    $accountType = AccountType::create(['type_name' => 'Expense', 'report_group' => 'Expense']);
+    $assetType = AccountType::create(['type_name' => 'Asset', 'report_group' => 'Asset']);
 
     ChartOfAccount::create([
         'account_code' => '1151',

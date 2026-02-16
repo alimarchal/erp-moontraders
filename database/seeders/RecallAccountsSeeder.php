@@ -10,7 +10,7 @@ class RecallAccountsSeeder extends Seeder
 {
     public function run(): void
     {
-        $expenseType = AccountType::where('code', 'EXP')->first();
+        $expenseType = AccountType::where('type_name', 'Expense')->first();
 
         if (! $expenseType) {
             $this->command->warn('Expense account type not found. Creating accounts without account type.');

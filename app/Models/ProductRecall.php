@@ -104,4 +104,14 @@ class ProductRecall extends Model
     {
         return $this->status === 'cancelled';
     }
+
+    public function scopeRecallDateFrom($query, string $date)
+    {
+        return $query->whereDate('recall_date', '>=', $date);
+    }
+
+    public function scopeRecallDateTo($query, string $date)
+    {
+        return $query->whereDate('recall_date', '<=', $date);
+    }
 }

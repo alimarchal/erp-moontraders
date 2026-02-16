@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StockAdjustment extends Model
@@ -81,5 +80,15 @@ class StockAdjustment extends Model
     public function isCancelled(): bool
     {
         return $this->status === 'cancelled';
+    }
+
+    public function scopeAdjustmentDateFrom($query, string $date)
+    {
+        return $query->whereDate('adjustment_date', '>=', $date);
+    }
+
+    public function scopeAdjustmentDateTo($query, string $date)
+    {
+        return $query->whereDate('adjustment_date', '<=', $date);
     }
 }

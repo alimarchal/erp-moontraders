@@ -135,9 +135,6 @@ class StockAdjustmentService
             $stockByBatch->save();
         }
 
-        $inventoryService = app(InventoryService::class);
-        $inventoryService->syncCurrentStockFromValuationLayers($item->product_id, $adjustment->warehouse_id);
-
         if ($item->adjustment_quantity < 0) {
             $remainingQty = CurrentStockByBatch::where('stock_batch_id', $item->stock_batch_id)
                 ->sum('quantity_on_hand');
@@ -191,6 +188,9 @@ class StockAdjustmentService
         ]);
 
         $this->updateValuationLayer($adjustment, $item);
+
+        $inventoryService = app(InventoryService::class);
+        $inventoryService->syncCurrentStockFromValuationLayers($item->product_id, $adjustment->warehouse_id);
     }
 
     protected function updateValuationLayer(StockAdjustment $adjustment, $item): void

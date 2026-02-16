@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BankAccount;
+use App\Models\ChartOfAccount;
 use App\Models\ClaimRegister;
 use App\Models\ProductRecall;
 use App\Models\Supplier;
@@ -231,14 +233,32 @@ class ProductRecallController extends Controller implements HasMiddleware
         }
 
         try {
-            $claim = ClaimRegister::create([
+            $claimData = [
                 'transaction_date' => now()->toDateString(),
                 'supplier_id' => $productRecall->supplier_id,
                 'transaction_type' => 'claim',
                 'reference_number' => $productRecall->recall_number,
                 'debit' => $productRecall->total_value,
+                'credit' => 0,
                 'description' => "Product recall - {$productRecall->recall_number}: {$productRecall->reason}",
-            ]);
+                'payment_method' => 'bank_transfer',
+            ];
+
+            $debtorsAccount = ChartOfAccount::where('account_code', '1112')->first();
+            if ($debtorsAccount) {
+                $claimData['debit_account_id'] = $debtorsAccount->id;
+            }
+
+            $bankCoa = ChartOfAccount::where('account_code', '1171')->first();
+            if ($bankCoa) {
+                $claimData['credit_account_id'] = $bankCoa->id;
+                $hblBank = BankAccount::where('chart_of_account_id', $bankCoa->id)->first();
+                if ($hblBank) {
+                    $claimData['bank_account_id'] = $hblBank->id;
+                }
+            }
+
+            $claim = ClaimRegister::create($claimData);
 
             $productRecall->update(['claim_register_id' => $claim->id]);
 

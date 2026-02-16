@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('stock_adjustment_id')->constrained('stock_adjustments')->cascadeOnDelete();
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
+            $table->foreignId('stock_batch_id')->nullable()->constrained('stock_batches')->nullOnDelete();
+            $table->foreignId('grn_item_id')->nullable()->constrained('goods_receipt_note_items')->nullOnDelete();
             $table->decimal('system_quantity', 15, 3);
             $table->decimal('actual_quantity', 15, 3);
             $table->decimal('adjustment_quantity', 15, 3);
@@ -26,6 +28,8 @@ return new class extends Migration
 
             $table->index('stock_adjustment_id');
             $table->index('product_id');
+            $table->index('stock_batch_id');
+            $table->index('grn_item_id');
         });
     }
 

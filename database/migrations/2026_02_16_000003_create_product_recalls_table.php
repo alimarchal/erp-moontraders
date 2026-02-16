@@ -35,6 +35,10 @@ return new class extends Migration
             $table->index('status');
             $table->index('recall_type');
         });
+
+        Schema::table('stock_adjustments', function (Blueprint $table) {
+            $table->foreign('product_recall_id')->references('id')->on('product_recalls')->nullOnDelete();
+        });
     }
 
     public function down(): void

@@ -214,8 +214,8 @@ class StockAdjustmentService
     protected function createAdjustmentJournalEntry(StockAdjustment $adjustment)
     {
         try {
-            $inventoryAccount = ChartOfAccount::where('account_code', '1151')->first();
-            $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
+            $inventoryAccount = ChartOfAccount::where('account_name', 'Stock In Hand')->first();
+            $warehouseCostCenter = CostCenter::where('name', 'Warehouse')->first();
 
             $expenseAccount = match ($adjustment->adjustment_type) {
                 'recall' => ChartOfAccount::where('account_name', 'Stock Loss on Recalls')->first(),

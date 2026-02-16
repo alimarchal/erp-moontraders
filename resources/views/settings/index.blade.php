@@ -162,7 +162,7 @@
                 @endcanany
 
                 <!-- Financial Core Section -->
-                @canany(['chart-of-account-list', 'currency-list', 'accounting-period-list', 'bank-account-list', 'cost-center-list'])
+                @canany(['account-type-list', 'chart-of-account-list', 'currency-list', 'accounting-period-list', 'bank-account-list', 'cost-center-list'])
                     <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
                         <button @click="open = !open" type="button"
                             class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
@@ -177,7 +177,7 @@
                         </button>
                         <div x-show="open" x-collapse>
                             <div class="border-t border-gray-100 divide-y divide-gray-100">
-                                @can('chart-of-account-list')
+                                @can('account-type-list')
                                     <a href="{{ route('account-types.index') }}"
                                         class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">

@@ -165,7 +165,7 @@
                         </button>
                         <div x-show="open" x-collapse>
                             <div class="border-t border-gray-100 divide-y divide-gray-100">
-                               
+
 
                                 <a href="{{ route('reports.daily-stock-register.index') }}"
                                     class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
@@ -216,7 +216,7 @@
                                     </a>
                                 @endcan
 
-                                                                <a href="{{ route('reports.van-stock-ledger.index') }}"
+                                <a href="{{ route('reports.van-stock-ledger.index') }}"
                                     class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
                                     <div class="flex items-center gap-4">
                                         <div
@@ -262,7 +262,7 @@
                                     </svg>
                                 </a>
 
-                                 <a href="{{ route('reports.inventory-ledger.index') }}"
+                                <a href="{{ route('reports.inventory-ledger.index') }}"
                                     class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
                                     <div class="flex items-center gap-4">
                                         <div
@@ -289,7 +289,7 @@
 
 
 
-                                
+
                             </div>
                         </div>
                     </div>
@@ -297,7 +297,7 @@
 
 
                 <!-- Distribution & Logistics -->
-                @canany(['report-view-sales', 'report-view-inventory'])
+                @can('report-view-sales')
                     <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
                         <button @click="open = !open" type="button"
                             class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
@@ -414,7 +414,7 @@
                             </div>
                         </div>
                     </div>
-                @endcanany
+                @endcan
 
                 <!-- Sales & Revenue -->
                 @can('report-view-sales')

@@ -27,12 +27,12 @@
                             {{ __('Payments') }}
                         </x-nav-link>
                     @endcan
-                    @canany(['goods-receipt-note-list', 'goods-issue-list', 'report-view-inventory'])
+                    @can('inventory-view')
                         <x-nav-link href="{{ route('inventory.current-stock.index') }}"
                             :active="request()->routeIs('inventory.*')">
                             {{ __('Inventory') }}
                         </x-nav-link>
-                    @endcanany
+                    @endcan
                     @can('goods-issue-list')
                         <x-nav-link href="{{ route('goods-issues.index') }}" :active="request()->routeIs('goods-issues.*')">
                             {{ __('Goods Issue') }}
@@ -204,12 +204,12 @@
                     {{ __('Payments') }}
                 </x-responsive-nav-link>
             @endcan
-            @canany(['goods-receipt-note-list', 'goods-issue-list', 'report-view-inventory'])
+            @can('inventory-view')
                 <x-responsive-nav-link href="{{ route('inventory.current-stock.index') }}"
                     :active="request()->routeIs('inventory.*')">
                     {{ __('Inventory') }}
                 </x-responsive-nav-link>
-            @endcanany
+            @endcan
             @can('goods-issue-list')
                 <x-responsive-nav-link href="{{ route('goods-issues.index') }}"
                     :active="request()->routeIs('goods-issues.*')">

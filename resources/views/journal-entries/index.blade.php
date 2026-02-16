@@ -1,15 +1,16 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Journal Entries" :createRoute="route('journal-entries.create')" createLabel="New Journal Entry"
-            :showSearch="true" :showRefresh="true" backRoute="dashboard" />
+        <x-page-header title="Journal Entries" :createRoute="route('journal-entries.create')"
+            createLabel="New Journal Entry" createPermission="journal-entry-create" :showSearch="true"
+            :showRefresh="true" backRoute="dashboard" />
     </x-slot>
 
     <x-filter-section :action="route('journal-entries.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <x-label for="filter_reference" value="Reference" />
-                <x-input id="filter_reference" name="filter[reference]" type="text"
-                    class="mt-1 block w-full" :value="request('filter.reference')" placeholder="Search by reference" />
+                <x-input id="filter_reference" name="filter[reference]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.reference')" placeholder="Search by reference" />
             </div>
 
             <div>
@@ -27,28 +28,28 @@
 
             <div>
                 <x-label for="filter_date_from" value="Date From" />
-                <x-input id="filter_date_from" name="filter[date_from]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.date_from')" />
+                <x-input id="filter_date_from" name="filter[date_from]" type="date" class="mt-1 block w-full"
+                    :value="request('filter.date_from')" />
             </div>
 
             <div>
                 <x-label for="filter_date_to" value="Date To" />
-                <x-input id="filter_date_to" name="filter[date_to]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.date_to')" />
+                <x-input id="filter_date_to" name="filter[date_to]" type="date" class="mt-1 block w-full"
+                    :value="request('filter.date_to')" />
             </div>
         </div>
     </x-filter-section>
 
     <x-data-table :items="$entries" :headers="[
-            ['label' => '#', 'align' => 'text-center'],
-            ['label' => 'Entry Date', 'align' => 'text-left'],
-            ['label' => 'Reference', 'align' => 'text-left'],
-            ['label' => 'Description', 'align' => 'text-left'],
-            ['label' => 'Currency', 'align' => 'text-left'],
-            ['label' => 'Amount', 'align' => 'text-right'],
-            ['label' => 'Status', 'align' => 'text-center'],
-            ['label' => 'Actions', 'align' => 'text-center print:hidden'],
-        ]" emptyMessage="No journal entries found." :emptyRoute="route('journal-entries.create')"
+        ['label' => '#', 'align' => 'text-center'],
+        ['label' => 'Entry Date', 'align' => 'text-left'],
+        ['label' => 'Reference', 'align' => 'text-left'],
+        ['label' => 'Description', 'align' => 'text-left'],
+        ['label' => 'Currency', 'align' => 'text-left'],
+        ['label' => 'Amount', 'align' => 'text-right'],
+        ['label' => 'Status', 'align' => 'text-center'],
+        ['label' => 'Actions', 'align' => 'text-center print:hidden'],
+    ]" emptyMessage="No journal entries found." :emptyRoute="route('journal-entries.create')"
         emptyLinkText="Create the first journal entry">
 
         @foreach ($entries as $index => $entry)
@@ -96,57 +97,65 @@
                         </a>
 
                         @if ($entry->status === 'draft')
-                            <a href="{{ route('journal-entries.edit', $entry->id) }}"
-                                class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
-                                title="Edit">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                    viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                </svg>
-                            </a>
-
-                            <form method="POST" action="{{ route('journal-entries.post', $entry->id) }}">
-                                @csrf
-                                <button type="submit"
-                                    class="inline-flex items-center justify-center w-8 h-8 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100 rounded-md transition-colors duration-150"
-                                    title="Post entry">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
+                            @can('journal-entry-edit')
+                                <a href="{{ route('journal-entries.edit', $entry->id) }}"
+                                    class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
+                                    title="Edit">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
-                                </button>
-                            </form>
+                                </a>
+                            @endcan
 
-                            <form method="POST" action="{{ route('journal-entries.destroy', $entry->id) }}"
-                                onsubmit="return confirm('Delete this draft journal entry?');">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit"
-                                    class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
-                                    title="Delete draft">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
-                                        viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                            </form>
+                            @can('journal-entry-post')
+                                <form method="POST" action="{{ route('journal-entries.post', $entry->id) }}">
+                                    @csrf
+                                    <button type="submit"
+                                        class="inline-flex items-center justify-center w-8 h-8 text-indigo-600 hover:text-indigo-800 hover:bg-indigo-100 rounded-md transition-colors duration-150"
+                                        title="Post entry">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            @endcan
+
+                            @can('journal-entry-delete')
+                                <form method="POST" action="{{ route('journal-entries.destroy', $entry->id) }}"
+                                    onsubmit="return confirm('Delete this draft journal entry?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                        class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                        title="Delete draft">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            @endcan
                         @elseif ($entry->status === 'posted')
-                            <form method="POST" action="{{ route('journal-entries.reverse', $entry->id) }}"
-                                onsubmit="return confirm('Create a reversing entry for this journal?');">
-                                @csrf
-                                <button type="submit"
-                                    class="inline-flex items-center justify-center w-8 h-8 text-orange-600 hover:text-orange-800 hover:bg-orange-100 rounded-md transition-colors duration-150"
-                                    title="Reverse entry">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none"
-                                        viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                            d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h13.5a4.5 4.5 0 0 1 0 9H12" />
-                                    </svg>
-                                </button>
-                            </form>
+                            @can('journal-entry-reverse')
+                                <form method="POST" action="{{ route('journal-entries.reverse', $entry->id) }}"
+                                    onsubmit="return confirm('Create a reversing entry for this journal?');">
+                                    @csrf
+                                    <button type="submit"
+                                        class="inline-flex items-center justify-center w-8 h-8 text-orange-600 hover:text-orange-800 hover:bg-orange-100 rounded-md transition-colors duration-150"
+                                        title="Reverse entry">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                            stroke="currentColor" class="w-5 h-5">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M6.75 15.75L3 12m0 0l3.75-3.75M3 12h13.5a4.5 4.5 0 0 1 0 9H12" />
+                                        </svg>
+                                    </button>
+                                </form>
+                            @endcan
                         @endif
                     </div>
                 </td>

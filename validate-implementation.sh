@@ -175,8 +175,21 @@ echo "Database Compatibility Checks"
 echo "-----------------------------"
 
 # Check for MySQL-specific syntax
-if grep -r "MODIFY\|CAST.*AS UNSIGNED" database/migrations/2026_02_16_*.php | grep -v "getDriverName"; then
-    echo "⚠ Found database-specific SQL without driver checks"
+offending_migrations=()
+for migration in database/migrations/2026_02_16_*.php; do
+    [ -f "$migration" ] || continue
+    if grep -qE "MODIFY|CAST.*AS UNSIGNED" "$migration"; then
+        if ! grep -q "getDriverName" "$migration"; then
+            offending_migrations+=("$migration")
+        fi
+    fi
+done
+
+if [ ${#offending_migrations[@]} -gt 0 ]; then
+    echo "⚠ Found database-specific SQL without driver checks in:"
+    for migration in "${offending_migrations[@]}"; do
+        echo "  - $migration"
+    done
 else
     echo "✓ Migrations are database-agnostic"
 fi

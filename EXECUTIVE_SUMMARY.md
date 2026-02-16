@@ -72,6 +72,7 @@ php artisan test
 
 ### Critical Fixes Applied
 - Fixed CI test failures (23 tests) by correcting AccountType column names (used `type_name` instead of invalid `code`/`name`)
+- Fixed RecallAccountsSeeder migration error: Removed non-existent `level` and `is_system_account` columns, added required `currency_id`
 - Fixed validation script logic for database-agnostic checks
 - Fixed migration order for proper foreign key resolution
 

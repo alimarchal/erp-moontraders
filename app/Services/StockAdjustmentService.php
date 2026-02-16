@@ -218,11 +218,11 @@ class StockAdjustmentService
             $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
             $expenseAccount = match ($adjustment->adjustment_type) {
-                'recall' => ChartOfAccount::where('account_code', '5280')->first(),
-                'damage' => ChartOfAccount::where('account_code', '5281')->first(),
-                'theft' => ChartOfAccount::where('account_code', '5282')->first(),
-                'expiry' => ChartOfAccount::where('account_code', '5283')->first(),
-                default => ChartOfAccount::where('account_code', '5284')->first(),
+                'recall' => ChartOfAccount::where('account_name', 'Stock Loss on Recalls')->first(),
+                'damage' => ChartOfAccount::where('account_name', 'Stock Loss - Damage')->first(),
+                'theft' => ChartOfAccount::where('account_name', 'Stock Loss - Theft')->first(),
+                'expiry' => ChartOfAccount::where('account_name', 'Stock Loss - Expiry')->first(),
+                default => ChartOfAccount::where('account_name', 'Stock Loss - Other')->first(),
             };
 
             if (! $inventoryAccount || ! $expenseAccount) {

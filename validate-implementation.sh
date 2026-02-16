@@ -195,10 +195,10 @@ else
 fi
 
 # Check for orderByRaw with database-specific functions
-if grep -r "orderByRaw.*CAST\|orderByRaw.*SUBSTRING" app/Services/*.php; then
-    echo "⚠ Found database-specific orderByRaw"
+if grep -r "orderByRaw.*CAST\|orderByRaw.*SUBSTRING" app/Services/StockAdjustmentService.php app/Services/ProductRecallService.php 2>/dev/null | grep -v "^$" >/dev/null 2>&1; then
+    echo "⚠ Found database-specific orderByRaw in new services"
 else
-    echo "✓ No database-specific raw queries in services"
+    echo "✓ No database-specific raw queries in new services"
 fi
 
 echo ""

@@ -33,6 +33,18 @@
                             {{ __('Inventory') }}
                         </x-nav-link>
                     @endcanany
+                    @can('stock-adjustment-list')
+                        <x-nav-link href="{{ route('stock-adjustments.index') }}"
+                            :active="request()->routeIs('stock-adjustments.*')">
+                            {{ __('Stock Adjustments') }}
+                        </x-nav-link>
+                    @endcan
+                    @can('product-recall-list')
+                        <x-nav-link href="{{ route('product-recalls.index') }}"
+                            :active="request()->routeIs('product-recalls.*')">
+                            {{ __('Product Recalls') }}
+                        </x-nav-link>
+                    @endcan
                     @can('goods-issue-list')
                         <x-nav-link href="{{ route('goods-issues.index') }}" :active="request()->routeIs('goods-issues.*')">
                             {{ __('Goods Issue') }}
@@ -210,6 +222,18 @@
                     {{ __('Inventory') }}
                 </x-responsive-nav-link>
             @endcanany
+            @can('stock-adjustment-list')
+                <x-responsive-nav-link href="{{ route('stock-adjustments.index') }}"
+                    :active="request()->routeIs('stock-adjustments.*')">
+                    {{ __('Stock Adjustments') }}
+                </x-responsive-nav-link>
+            @endcan
+            @can('product-recall-list')
+                <x-responsive-nav-link href="{{ route('product-recalls.index') }}"
+                    :active="request()->routeIs('product-recalls.*')">
+                    {{ __('Product Recalls') }}
+                </x-responsive-nav-link>
+            @endcan
             @can('goods-issue-list')
                 <x-responsive-nav-link href="{{ route('goods-issues.index') }}"
                     :active="request()->routeIs('goods-issues.*')">

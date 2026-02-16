@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             CurrencySeeder::class,              // Add currencies before accounts
             AccountingPeriodSeeder::class,
             ChartOfAccountSeeder::class,
+            RecallAccountsSeeder::class,        // Add recall accounts after main COA
             TaxCodeSeeder::class,               // Add tax codes after chart of accounts
             TaxRateSeeder::class,               // Add tax rates after tax codes
             CostCenterSeeder::class,            // Add cost centers before journal entries
@@ -42,5 +43,8 @@ class DatabaseSeeder extends Seeder
             BankAccountSeeder::class,           // Add bank accounts after chart of accounts
             AttachmentSeeder::class,            // Add attachments last
         ]);
+
+        // Seed product recall permissions after roles exist
+        $this->call(RecallPermissionsSeeder::class);
     }
 }

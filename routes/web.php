@@ -195,6 +195,38 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     /*
     |----------------------------------------------------------------------
+    | Stock Adjustments
+    |----------------------------------------------------------------------
+    | Manual inventory adjustments (damage, theft, expiry, recall).
+    | Posts to inventory ledger and creates GL journal entry.
+    | Permissions: stock-adjustment-list, -create, -edit, -delete, -post
+    */
+    Route::resource('stock-adjustments', \App\Http\Controllers\StockAdjustmentController::class);
+    Route::post('stock-adjustments/{stockAdjustment}/post', [\App\Http\Controllers\StockAdjustmentController::class, 'post'])
+        ->name('stock-adjustments.post');
+    Route::get('api/products/{product}/batches/{warehouse}', [\App\Http\Controllers\StockAdjustmentController::class, 'getBatchesForProduct'])
+        ->name('api.products.batches');
+
+    /*
+    |----------------------------------------------------------------------
+    | Product Recalls
+    |----------------------------------------------------------------------
+    | Supplier-initiated product recalls with batch tracking.
+    | Creates stock adjustment on posting, can generate claim register.
+    | Permissions: product-recall-list, -create, -edit, -delete, -post, -cancel
+    */
+    Route::resource('product-recalls', \App\Http\Controllers\ProductRecallController::class);
+    Route::post('product-recalls/{productRecall}/post', [\App\Http\Controllers\ProductRecallController::class, 'post'])
+        ->name('product-recalls.post');
+    Route::post('product-recalls/{productRecall}/cancel', [\App\Http\Controllers\ProductRecallController::class, 'cancel'])
+        ->name('product-recalls.cancel');
+    Route::post('product-recalls/{productRecall}/create-claim', [\App\Http\Controllers\ProductRecallController::class, 'createClaim'])
+        ->name('product-recalls.create-claim');
+    Route::get('api/suppliers/{supplier}/batches', [\App\Http\Controllers\ProductRecallController::class, 'getBatchesForSupplier'])
+        ->name('api.suppliers.batches');
+
+    /*
+    |----------------------------------------------------------------------
     | Employee Salary Management
     |----------------------------------------------------------------------
     | Salary structures and double-entry salary transactions ledger.

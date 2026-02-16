@@ -6,7 +6,6 @@ use App\Models\ClaimRegister;
 use App\Models\ProductRecall;
 use App\Models\Supplier;
 use App\Models\Warehouse;
-use App\Services\ClaimRegisterService;
 use App\Services\ProductRecallService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -120,7 +119,7 @@ class ProductRecallController extends Controller implements HasMiddleware
                 ->with('error', 'Only draft recalls can be edited');
         }
 
-        $productRecall->load('items');
+        $productRecall->load('items.product', 'items.stockBatch');
 
         return view('product-recalls.edit', [
             'recall' => $productRecall,

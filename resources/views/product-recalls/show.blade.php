@@ -7,10 +7,12 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <x-status-message class="mb-4" />
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6">
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold">{{ $productRecall->recall_number }}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Status: {{ ucfirst($productRecall->status) }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Status: {{ ucfirst($productRecall->status) }}
+                    </p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 mb-6">
@@ -61,7 +63,8 @@
                     <tfoot>
                         <tr class="font-semibold">
                             <td colspan="2" class="px-4 py-2 text-right">Total:</td>
-                            <td class="px-4 py-2 text-right">{{ number_format($productRecall->total_quantity_recalled, 2) }}</td>
+                            <td class="px-4 py-2 text-right">
+                                {{ number_format($productRecall->total_quantity_recalled, 2) }}</td>
                             <td></td>
                             <td class="px-4 py-2 text-right">{{ number_format($productRecall->total_value, 2) }}</td>
                         </tr>
@@ -70,9 +73,11 @@
 
                 @if($productRecall->isPosted() && $productRecall->stockAdjustment)
                     <div class="bg-blue-50 dark:bg-blue-900 p-4 rounded-md mb-6">
-                        <p class="text-sm"><strong>Stock Adjustment:</strong> {{ $productRecall->stockAdjustment->adjustment_number }}</p>
+                        <p class="text-sm"><strong>Stock Adjustment:</strong>
+                            {{ $productRecall->stockAdjustment->adjustment_number }}</p>
                         @if($productRecall->stockAdjustment->journalEntry)
-                            <p class="text-sm"><strong>Journal Entry:</strong> {{ $productRecall->stockAdjustment->journalEntry->reference }}</p>
+                            <p class="text-sm"><strong>Journal Entry:</strong>
+                                {{ $productRecall->stockAdjustment->journalEntry->reference }}</p>
                         @endif
                     </div>
                 @endif

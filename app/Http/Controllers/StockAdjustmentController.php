@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StockAdjustment;
 use App\Models\Product;
+use App\Models\StockAdjustment;
 use App\Models\StockBatch;
 use App\Models\Uom;
 use App\Models\Warehouse;
@@ -55,7 +55,7 @@ class StockAdjustmentController extends Controller implements HasMiddleware
     {
         return view('stock-adjustments.create', [
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(),
-            'products' => Product::where('is_active', true)->orderBy('product_name')->get(),
+            'products' => Product::where('is_active', true)->with('uom:id,uom_name')->orderBy('product_name')->get(),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(),
         ]);
     }
@@ -107,12 +107,12 @@ class StockAdjustmentController extends Controller implements HasMiddleware
                 ->with('error', 'Only draft adjustments can be edited');
         }
 
-        $stockAdjustment->load('items');
+        $stockAdjustment->load('items.product', 'items.stockBatch', 'items.uom');
 
         return view('stock-adjustments.edit', [
             'adjustment' => $stockAdjustment,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(),
-            'products' => Product::where('is_active', true)->orderBy('product_name')->get(),
+            'products' => Product::where('is_active', true)->with('uom:id,uom_name')->orderBy('product_name')->get(),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(),
         ]);
     }

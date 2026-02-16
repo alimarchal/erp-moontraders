@@ -1,55 +1,366 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             Create Stock Adjustment
         </h2>
+        <div class="flex justify-center items-center float-right">
+            <a href="{{ route('stock-adjustments.index') }}"
+                class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+            </a>
+        </div>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6">
-                <form method="POST" action="{{ route('stock-adjustments.store') }}">
-                    @csrf
-                    <p class="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                        Note: Create and edit views require dynamic JavaScript functionality for adding items.
-                        This is a placeholder view. Please implement full functionality using Livewire or Vue.js.
-                    </p>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <x-label for="adjustment_date" value="Adjustment Date" />
-                            <x-input id="adjustment_date" type="date" name="adjustment_date" :value="old('adjustment_date', today()->toDateString())" required />
+            <x-status-message class="mb-4 mt-4 shadow-md" />
+            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
+                <div class="p-6">
+                    <x-validation-errors class="mb-4 mt-4" />
+
+                    <form method="POST" action="{{ route('stock-adjustments.store') }}" id="stockAdjustmentForm"
+                        x-data="stockAdjustmentForm()">
+                        @csrf
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                            <div>
+                                <x-label for="adjustment_date" value="Adjustment Date *" />
+                                <x-input id="adjustment_date" name="adjustment_date" type="date"
+                                    class="mt-1 block w-full" :value="old('adjustment_date', date('Y-m-d'))" required />
+                            </div>
+
+                            <div>
+                                <x-label for="warehouse_id" value="Warehouse *" />
+                                <select id="warehouse_id" name="warehouse_id" required x-model="warehouseId"
+                                    @change="onWarehouseChange()"
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                                    <option value="">Select Warehouse</option>
+                                    @foreach ($warehouses as $warehouse)
+                                        <option value="{{ $warehouse->id }}">{{ $warehouse->warehouse_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
+                                <x-label for="adjustment_type" value="Adjustment Type *" />
+                                <select id="adjustment_type" name="adjustment_type" required
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                                    <option value="">Select Type</option>
+                                    <option value="damage" {{ old('adjustment_type') == 'damage' ? 'selected' : '' }}>
+                                        Damage</option>
+                                    <option value="theft" {{ old('adjustment_type') == 'theft' ? 'selected' : '' }}>Theft
+                                    </option>
+                                    <option value="count_variance" {{ old('adjustment_type') == 'count_variance' ? 'selected' : '' }}>Count Variance</option>
+                                    <option value="expiry" {{ old('adjustment_type') == 'expiry' ? 'selected' : '' }}>
+                                        Expiry</option>
+                                    <option value="other" {{ old('adjustment_type') == 'other' ? 'selected' : '' }}>Other
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <x-label for="reason" value="Reason *" />
+                                <textarea id="reason" name="reason" rows="1" required
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">{{ old('reason') }}</textarea>
+                            </div>
                         </div>
-                        <div>
-                            <x-label for="warehouse_id" value="Warehouse" />
-                            <select id="warehouse_id" name="warehouse_id" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full" required>
-                                <option value="">Select Warehouse</option>
-                                @foreach ($warehouses as $warehouse)
-                                    <option value="{{ $warehouse->id }}">{{ $warehouse->warehouse_name }}</option>
-                                @endforeach
-                            </select>
+
+                        <hr class="my-6 border-gray-200">
+
+                        <x-form-table title="Adjustment Items" :headers="[
+        ['label' => '#', 'align' => 'text-center', 'width' => '50px'],
+        ['label' => 'Product', 'align' => 'text-left', 'width' => '280px'],
+        ['label' => 'Batch', 'align' => 'text-left', 'width' => '220px'],
+        ['label' => 'UOM', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'System<br>Qty', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'Actual<br>Qty', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'Adj<br>Qty', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'Unit<br>Cost', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'Adj<br>Value', 'align' => 'text-right', 'width' => '130px'],
+        ['label' => 'Action', 'align' => 'text-center', 'width' => '80px'],
+    ]">
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template x-for="(item, index) in items" :key="index">
+                                    <tr>
+                                        <td class="px-2 py-2 text-center text-sm text-gray-500" x-text="index + 1"></td>
+
+                                        <td class="px-2 py-2">
+                                            <select :name="`items[${index}][product_id]`" x-model="item.product_id"
+                                                @change="onProductChange(index)" required
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                <option value="">Select Product</option>
+                                                @foreach ($products as $product)
+                                                    <option value="{{ $product->id }}" data-uom-id="{{ $product->uom_id }}"
+                                                        data-uom-name="{{ $product->uom?->uom_name }}">
+                                                        {{ $product->product_name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+
+                                        <td class="px-2 py-2">
+                                            <select :name="`items[${index}][stock_batch_id]`"
+                                                x-model="item.stock_batch_id" @change="onBatchChange(index)" required
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                <option value="">Select Batch</option>
+                                                <template x-for="batch in item.availableBatches" :key="batch.id">
+                                                    <option :value="batch.id"
+                                                        x-text="`${batch.batch_code} (Qty: ${batch.stock_qty}, Cost: ${batch.unit_cost})`">
+                                                    </option>
+                                                </template>
+                                            </select>
+                                            <p x-show="item.product_id && !warehouseId"
+                                                class="text-xs text-red-500 mt-1">Select warehouse first</p>
+                                            <p x-show="item.loadingBatches" class="text-xs text-blue-500 mt-1">Loading
+                                                batches...</p>
+                                        </td>
+
+                                        <td class="px-2 py-2">
+                                            <select :name="`items[${index}][uom_id]`" x-model="item.uom_id" required
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                <option value="">UOM</option>
+                                                @foreach ($uoms as $uom)
+                                                    <option value="{{ $uom->id }}">{{ $uom->uom_name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][system_quantity]`"
+                                                x-model="item.system_quantity" step="0.001" min="0" readonly
+                                                class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right font-semibold"
+                                                placeholder="0.000">
+                                        </td>
+
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][actual_quantity]`"
+                                                x-model="item.actual_quantity" @input="calculateAdjustment(index)"
+                                                step="0.001" min="0" required
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full text-right"
+                                                placeholder="0.000">
+                                        </td>
+
+                                        <td class="px-2 py-2">
+                                            <input type="text" :value="formatNumber(item.adjustment_quantity)" readonly
+                                                class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right font-semibold"
+                                                :class="item.adjustment_quantity < 0 ? 'text-red-600' : (item.adjustment_quantity > 0 ? 'text-green-600' : '')"
+                                                placeholder="0.000">
+                                        </td>
+
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][unit_cost]`"
+                                                x-model="item.unit_cost" @input="calculateAdjustment(index)" step="0.01"
+                                                min="0" required
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full text-right"
+                                                placeholder="0.00">
+                                        </td>
+
+                                        <td class="px-2 py-2 text-right text-sm font-semibold"
+                                            :class="item.adjustment_value < 0 ? 'text-red-600' : (item.adjustment_value > 0 ? 'text-green-600' : '')"
+                                            x-text="formatNumber(item.adjustment_value)">
+                                        </td>
+
+                                        <td class="px-2 py-2 text-center">
+                                            <button type="button" @click="removeItem(index)"
+                                                class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                                :class="items.length === 1 ? 'opacity-40 cursor-not-allowed' : ''"
+                                                :disabled="items.length === 1">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                            <tfoot class="bg-gray-50">
+                                <tr class="font-semibold bg-gray-100">
+                                    <td class="px-2 py-2" colspan="4">Totals:</td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.system_quantity) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.actual_quantity) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.adjustment_quantity) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2"></td>
+                                    <td class="px-2 py-2 text-right font-bold text-lg"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.adjustment_value) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2"></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="10" class="px-2 py-2">
+                                        <button type="button" @click="addItem()"
+                                            class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
+                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M12 4v16m8-8H4" />
+                                            </svg>
+                                            Add Line
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </x-form-table>
+
+                        <hr class="my-6 border-gray-200">
+
+                        <div class="mt-4">
+                            <x-label for="notes" value="Notes" />
+                            <textarea id="notes" name="notes" rows="3"
+                                class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">{{ old('notes') }}</textarea>
                         </div>
-                        <div>
-                            <x-label for="adjustment_type" value="Adjustment Type" />
-                            <select id="adjustment_type" name="adjustment_type" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full" required>
-                                <option value="">Select Type</option>
-                                <option value="damage">Damage</option>
-                                <option value="theft">Theft</option>
-                                <option value="count_variance">Count Variance</option>
-                                <option value="expiry">Expiry</option>
-                                <option value="other">Other</option>
-                            </select>
+
+                        <div class="flex items-center justify-end mt-6">
+                            <x-button>
+                                Save Draft
+                            </x-button>
                         </div>
-                        <div class="col-span-2">
-                            <x-label for="reason" value="Reason" />
-                            <textarea id="reason" name="reason" rows="3" class="border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 dark:focus:border-indigo-600 focus:ring-indigo-500 dark:focus:ring-indigo-600 rounded-md shadow-sm block mt-1 w-full" required></textarea>
-                        </div>
-                    </div>
-                    <div class="mt-6">
-                        <x-button>Save Draft</x-button>
-                        <a href="{{ route('stock-adjustments.index') }}" class="ml-3 inline-flex items-center px-4 py-2 bg-gray-800 dark:bg-gray-200 border border-transparent rounded-md font-semibold text-xs text-white dark:text-gray-800 uppercase tracking-widest hover:bg-gray-700 dark:hover:bg-white focus:bg-gray-700 dark:focus:bg-white active:bg-gray-900 dark:active:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 dark:focus:ring-offset-gray-800 transition ease-in-out duration-150">Cancel</a>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            function stockAdjustmentForm() {
+                return {
+                    warehouseId: '{{ old("warehouse_id", "") }}',
+                    items: [{
+                        product_id: '',
+                        stock_batch_id: '',
+                        uom_id: '',
+                        system_quantity: 0,
+                        actual_quantity: '',
+                        adjustment_quantity: 0,
+                        unit_cost: '',
+                        adjustment_value: 0,
+                        availableBatches: [],
+                        loadingBatches: false,
+                    }],
+
+                    addItem() {
+                        this.items.push({
+                            product_id: '',
+                            stock_batch_id: '',
+                            uom_id: '',
+                            system_quantity: 0,
+                            actual_quantity: '',
+                            adjustment_quantity: 0,
+                            unit_cost: '',
+                            adjustment_value: 0,
+                            availableBatches: [],
+                            loadingBatches: false,
+                        });
+                    },
+
+                    removeItem(index) {
+                        if (this.items.length > 1) {
+                            this.items.splice(index, 1);
+                        }
+                    },
+
+                    onWarehouseChange() {
+                        this.items.forEach((item, index) => {
+                            if (item.product_id) {
+                                this.loadBatches(index);
+                            }
+                        });
+                    },
+
+                    async onProductChange(index) {
+                        const item = this.items[index];
+                        item.stock_batch_id = '';
+                        item.system_quantity = 0;
+                        item.unit_cost = '';
+                        item.adjustment_quantity = 0;
+                        item.adjustment_value = 0;
+                        item.availableBatches = [];
+
+                        const selectEl = document.querySelector(`[name="items[${index}][product_id]"]`);
+                        if (selectEl && selectEl.selectedIndex > 0) {
+                            const option = selectEl.options[selectEl.selectedIndex];
+                            const uomId = option.getAttribute('data-uom-id');
+                            if (uomId) {
+                                item.uom_id = uomId;
+                            }
+                        }
+
+                        if (item.product_id && this.warehouseId) {
+                            await this.loadBatches(index);
+                        }
+                    },
+
+                    async loadBatches(index) {
+                        const item = this.items[index];
+                        if (!item.product_id || !this.warehouseId) return;
+
+                        item.loadingBatches = true;
+                        item.availableBatches = [];
+
+                        try {
+                            const response = await fetch(`/api/products/${item.product_id}/batches/${this.warehouseId}`);
+                            const batches = await response.json();
+
+                            item.availableBatches = batches.map(batch => ({
+                                id: batch.id,
+                                batch_code: batch.batch_code,
+                                unit_cost: parseFloat(batch.unit_cost) || 0,
+                                stock_qty: batch.current_stock_by_batch
+                                    ? batch.current_stock_by_batch.reduce((sum, s) => sum + parseFloat(s.quantity_on_hand || 0), 0)
+                                    : 0,
+                            }));
+                        } catch (error) {
+                            console.error('Failed to load batches:', error);
+                        } finally {
+                            item.loadingBatches = false;
+                        }
+                    },
+
+                    onBatchChange(index) {
+                        const item = this.items[index];
+                        const batch = item.availableBatches.find(b => b.id == item.stock_batch_id);
+
+                        if (batch) {
+                            item.system_quantity = batch.stock_qty;
+                            item.unit_cost = batch.unit_cost;
+                            this.calculateAdjustment(index);
+                        } else {
+                            item.system_quantity = 0;
+                            item.unit_cost = '';
+                        }
+                    },
+
+                    calculateAdjustment(index) {
+                        const item = this.items[index];
+                        const actual = parseFloat(item.actual_quantity) || 0;
+                        const system = parseFloat(item.system_quantity) || 0;
+                        const cost = parseFloat(item.unit_cost) || 0;
+
+                        item.adjustment_quantity = actual - system;
+                        item.adjustment_value = item.adjustment_quantity * cost;
+                    },
+
+                    formatNumber(value) {
+                        const num = parseFloat(value) || 0;
+                        return num.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2
+                        });
+                    },
+                };
+            }
+        </script>
+    @endpush
 </x-app-layout>

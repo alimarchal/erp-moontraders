@@ -7,10 +7,12 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <x-status-message class="mb-4" />
             <div class="bg-white dark:bg-gray-800 overflow-hidden shadow-xl sm:rounded-lg p-6">
                 <div class="mb-6">
                     <h3 class="text-lg font-semibold">{{ $stockAdjustment->adjustment_number }}</h3>
-                    <p class="text-sm text-gray-600 dark:text-gray-400">Status: {{ ucfirst($stockAdjustment->status) }}</p>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Status: {{ ucfirst($stockAdjustment->status) }}
+                    </p>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 mb-6">

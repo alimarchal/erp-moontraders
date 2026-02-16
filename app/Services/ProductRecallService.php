@@ -219,7 +219,7 @@ class ProductRecallService
         $prefix = "RCL-{$year}-";
 
         $lastRecall = ProductRecall::where('recall_number', 'like', "{$prefix}%")
-            ->orderByRaw('CAST(SUBSTRING(recall_number, ?) AS UNSIGNED) DESC', [strlen($prefix) + 1])
+            ->orderBy('id', 'desc')
             ->first();
 
         $nextNumber = $lastRecall

@@ -302,7 +302,7 @@ class StockAdjustmentService
         $prefix = "SA-{$year}-";
 
         $lastAdjustment = StockAdjustment::where('adjustment_number', 'like', "{$prefix}%")
-            ->orderByRaw('CAST(SUBSTRING(adjustment_number, ?) AS UNSIGNED) DESC', [strlen($prefix) + 1])
+            ->orderBy('id', 'desc')
             ->first();
 
         $nextNumber = $lastAdjustment

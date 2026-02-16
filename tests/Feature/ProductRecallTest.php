@@ -30,16 +30,19 @@ beforeEach(function () {
 
     $this->supplier = Supplier::factory()->create();
     $this->warehouse = Warehouse::factory()->create();
-    $this->product = Product::factory()->create();
+    $this->uom = \App\Models\Uom::factory()->create();
+    $this->product = Product::factory()->create(['uom_id' => $this->uom->id]);
 
     // Create required GL accounts for testing
-    $accountType = AccountType::create(['type_name' => 'Expense', 'report_group' => 'Expense']);
-    $assetType = AccountType::create(['type_name' => 'Asset', 'report_group' => 'Asset']);
+    $currency = \App\Models\Currency::factory()->create();
+    $accountType = AccountType::create(['type_name' => 'Expense', 'report_group' => 'IncomeStatement']);
+    $assetType = AccountType::create(['type_name' => 'Asset', 'report_group' => 'BalanceSheet']);
 
     ChartOfAccount::create([
         'account_code' => '1151',
         'account_name' => 'Stock In Hand',
         'account_type_id' => $assetType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -48,6 +51,7 @@ beforeEach(function () {
         'account_code' => '5280',
         'account_name' => 'Stock Loss on Recalls',
         'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -56,6 +60,7 @@ beforeEach(function () {
         'account_code' => '5281',
         'account_name' => 'Stock Loss - Damage',
         'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -64,6 +69,7 @@ beforeEach(function () {
         'account_code' => '5282',
         'account_name' => 'Stock Loss - Theft',
         'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -72,6 +78,7 @@ beforeEach(function () {
         'account_code' => '5283',
         'account_name' => 'Stock Loss - Expiry',
         'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -80,6 +87,7 @@ beforeEach(function () {
         'account_code' => '5284',
         'account_name' => 'Stock Loss - Other',
         'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -242,13 +250,15 @@ test('product recall prevents recall if batch issued to vans', function () {
         'total_value' => 5000.00,
     ]);
 
+    $vehicle = \App\Models\Vehicle::factory()->create();
+
     InventoryLedgerEntry::create([
         'product_id' => $this->product->id,
         'warehouse_id' => $this->warehouse->id,
-        'vehicle_id' => 1,
+        'vehicle_id' => $vehicle->id,
         'stock_batch_id' => $batch->id,
         'transaction_type' => 'transfer_in',
-        'transaction_date' => now(),
+        'date' => now(),
         'debit_qty' => 20,
         'credit_qty' => 0,
         'unit_cost' => 50.00,
@@ -297,7 +307,7 @@ test('product recall prevents recall if batch has sales', function () {
         'warehouse_id' => $this->warehouse->id,
         'stock_batch_id' => $batch->id,
         'transaction_type' => 'sale',
-        'transaction_date' => now(),
+        'date' => now(),
         'debit_qty' => 0,
         'credit_qty' => 5,
         'unit_cost' => 50.00,

@@ -4,11 +4,11 @@ namespace App\Services;
 
 use App\Models\ChartOfAccount;
 use App\Models\CostCenter;
-use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\StockAdjustment;
 use App\Models\StockBatch;
 use App\Models\StockLedgerEntry;
+use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -152,19 +152,42 @@ class StockAdjustmentService
             }
         }
 
+        $movement = StockMovement::create([
+            'movement_type' => 'adjustment',
+            'reference_type' => StockAdjustment::class,
+            'reference_id' => $adjustment->id,
+            'movement_date' => $adjustment->adjustment_date,
+            'product_id' => $item->product_id,
+            'stock_batch_id' => $item->stock_batch_id,
+            'warehouse_id' => $adjustment->warehouse_id,
+            'quantity' => $item->adjustment_quantity,
+            'uom_id' => $item->uom_id,
+            'unit_cost' => $item->unit_cost,
+            'total_value' => abs($item->adjustment_value),
+            'created_by' => auth()->id(),
+        ]);
+
+        $previousEntry = StockLedgerEntry::where('product_id', $item->product_id)
+            ->where('warehouse_id', $adjustment->warehouse_id)
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $quantityBalance = ($previousEntry->quantity_balance ?? 0) + $item->adjustment_quantity;
+
         StockLedgerEntry::create([
-            'ledger_date' => $adjustment->adjustment_date,
             'product_id' => $item->product_id,
             'warehouse_id' => $adjustment->warehouse_id,
             'stock_batch_id' => $item->stock_batch_id,
-            'transaction_type' => 'adjustment',
-            'reference_type' => StockAdjustment::class,
-            'reference_id' => $adjustment->id,
+            'entry_date' => $adjustment->adjustment_date,
+            'stock_movement_id' => $movement->id,
             'quantity_in' => $item->adjustment_quantity > 0 ? $item->adjustment_quantity : 0,
             'quantity_out' => $item->adjustment_quantity < 0 ? abs($item->adjustment_quantity) : 0,
-            'unit_cost' => $item->unit_cost,
-            'total_value' => abs($item->adjustment_value),
-            'notes' => $adjustment->reason,
+            'quantity_balance' => $quantityBalance,
+            'valuation_rate' => $item->unit_cost,
+            'stock_value' => $quantityBalance * $item->unit_cost,
+            'reference_type' => StockAdjustment::class,
+            'reference_id' => $adjustment->id,
+            'created_at' => now(),
         ]);
 
         $this->updateValuationLayer($adjustment, $item);

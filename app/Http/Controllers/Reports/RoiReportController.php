@@ -186,7 +186,7 @@ class RoiReportController extends Controller implements HasMiddleware
             ')
             ->groupBy('chart_of_accounts.id', 'chart_of_accounts.account_code', 'chart_of_accounts.account_name')
             // Remove having > 0 check to ensure we catch even small aggregated amounts
-            ->having('total_amount', '>', 0)
+            ->havingRaw('SUM(sales_settlement_expenses.amount) > 0')
             ->orderBy('chart_of_accounts.account_code')
             ->get();
 

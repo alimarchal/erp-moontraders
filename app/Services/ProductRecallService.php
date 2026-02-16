@@ -105,7 +105,7 @@ class ProductRecallService
                     'adjustment_quantity' => -$recallItem->quantity_recalled,
                     'unit_cost' => $recallItem->unit_cost,
                     'adjustment_value' => -$recallItem->total_value,
-                    'uom_id' => $recallItem->product->stock_uom_id ?? 1,
+                    'uom_id' => $recallItem->product->uom_id ?? 1,
                 ]);
             }
 

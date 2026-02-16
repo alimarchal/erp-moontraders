@@ -43,7 +43,15 @@ class VanStockBatchReportController extends Controller implements HasMiddleware
             )
             ->whereNotNull('vehicle_id')
             ->groupBy('vehicle_id', 'product_id', 'stock_batch_id')
-            ->having('quantity_on_hand', '>', 0);
+            ->havingRaw("SUM(
+                    CASE
+                        WHEN movement_type = 'transfer' AND reference_type = ? THEN -quantity
+                        WHEN movement_type = 'sale' THEN quantity
+                        WHEN movement_type = 'return' THEN -quantity
+                        WHEN movement_type = 'shortage' THEN quantity
+                        ELSE 0
+                    END
+                ) > 0", ['App\\Models\\GoodsIssue']);
 
         if ($vehicleId) {
             $query->where('vehicle_id', $vehicleId);

@@ -61,7 +61,7 @@ class SchemeDiscountReportTest extends TestCase
             'currency_id' => $currency->id,
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => 'Debit',
+            'normal_balance' => 'debit',
         ]);
 
         // Create Salesman
@@ -79,7 +79,7 @@ class SchemeDiscountReportTest extends TestCase
             'currency_id' => $currency->id,
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => 'Debit',
+            'normal_balance' => 'debit',
         ]);
         $vanStock = ChartOfAccount::create([
             'account_code' => '1155',
@@ -88,7 +88,7 @@ class SchemeDiscountReportTest extends TestCase
             'currency_id' => $currency->id,
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => 'Debit',
+            'normal_balance' => 'debit',
         ]);
 
         $goodsIssue = \App\Models\GoodsIssue::create([
@@ -167,7 +167,7 @@ class SchemeDiscountReportTest extends TestCase
             'currency_id' => $currency->id,
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => 'Debit',
+            'normal_balance' => 'debit',
         ]);
         $salesman = Employee::factory()->create(['name' => 'Draft Salesman']);
 
@@ -188,7 +188,7 @@ class SchemeDiscountReportTest extends TestCase
                 'currency_id' => $currency->id,
                 'is_group' => false,
                 'is_active' => true,
-                'normal_balance' => 'Debit',
+                'normal_balance' => 'debit',
             ]);
         }
 
@@ -201,7 +201,7 @@ class SchemeDiscountReportTest extends TestCase
                 'currency_id' => $currency->id,
                 'is_group' => false,
                 'is_active' => true,
-                'normal_balance' => 'Debit',
+                'normal_balance' => 'debit',
             ]);
         }
 
@@ -278,7 +278,7 @@ class SchemeDiscountReportTest extends TestCase
             'currency_id' => $currency->id,
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => 'Debit',
+            'normal_balance' => 'debit',
         ]);
 
         $stockInHand = ChartOfAccount::create([
@@ -288,7 +288,7 @@ class SchemeDiscountReportTest extends TestCase
             'currency_id' => $currency->id,
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => 'Debit',
+            'normal_balance' => 'debit',
         ]);
         $vanStock = ChartOfAccount::create([
             'account_code' => '1155',
@@ -297,7 +297,7 @@ class SchemeDiscountReportTest extends TestCase
             'currency_id' => $currency->id,
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => 'Debit',
+            'normal_balance' => 'debit',
         ]);
 
         $vehicle = \App\Models\Vehicle::factory()->create();
@@ -400,10 +400,10 @@ class SchemeDiscountReportTest extends TestCase
         $period = \App\Models\AccountingPeriod::create(['name' => 'Current Period', 'start_date' => now()->startOfMonth(), 'end_date' => now()->endOfMonth(), 'status' => 'open']);
         $accountType = \App\Models\AccountType::factory()->create();
         $currency = \App\Models\Currency::factory()->create();
-        $account = ChartOfAccount::create(['account_code' => '5292', 'account_name' => 'Scheme Discount', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'Debit']);
+        $account = ChartOfAccount::create(['account_code' => '5292', 'account_name' => 'Scheme Discount', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'debit']);
 
-        $stockInHand = ChartOfAccount::create(['account_code' => '1151', 'account_name' => 'Stock', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'Debit']);
-        $vanStock = ChartOfAccount::create(['account_code' => '1155', 'account_name' => 'Van Stock', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'Debit']);
+        $stockInHand = ChartOfAccount::create(['account_code' => '1151', 'account_name' => 'Stock', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'debit']);
+        $vanStock = ChartOfAccount::create(['account_code' => '1155', 'account_name' => 'Van Stock', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'debit']);
 
         $vehicle = \App\Models\Vehicle::factory()->create();
         $warehouse = \App\Models\Warehouse::factory()->create();

@@ -32,13 +32,15 @@ beforeEach(function () {
     $this->uom = Uom::factory()->create();
 
     // Create required GL accounts for testing
-    $accountType = AccountType::create(['type_name' => 'Expense', 'report_group' => 'Expense']);
-    $assetType = AccountType::create(['type_name' => 'Asset', 'report_group' => 'Asset']);
+    $currency = \App\Models\Currency::factory()->create();
+    $accountType = AccountType::create(['type_name' => 'Expense', 'report_group' => 'IncomeStatement']);
+    $assetType = AccountType::create(['type_name' => 'Asset', 'report_group' => 'BalanceSheet']);
 
     ChartOfAccount::create([
         'account_code' => '1151',
         'account_name' => 'Stock In Hand',
         'account_type_id' => $assetType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -47,6 +49,7 @@ beforeEach(function () {
         'account_code' => '5280',
         'account_name' => 'Stock Loss on Recalls',
         'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -55,6 +58,7 @@ beforeEach(function () {
         'account_code' => '5281',
         'account_name' => 'Stock Loss - Damage',
         'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -63,6 +67,7 @@ beforeEach(function () {
         'account_code' => '5282',
         'account_name' => 'Stock Loss - Theft',
         'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -71,6 +76,7 @@ beforeEach(function () {
         'account_code' => '5283',
         'account_name' => 'Stock Loss - Expiry',
         'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -79,6 +85,7 @@ beforeEach(function () {
         'account_code' => '5284',
         'account_name' => 'Stock Loss - Other',
         'account_type_id' => $accountType->id,
+        'currency_id' => $currency->id,
         'is_active' => true,
         'normal_balance' => 'debit',
     ]);
@@ -223,7 +230,7 @@ test('stock adjustment updates inventory ledger', function () {
         ->first();
 
     expect($ledgerEntry)->not->toBeNull();
-    expect($ledgerEntry->credit_qty)->toBe('10.000');
+    expect($ledgerEntry->credit_qty)->toBe('10.00');
     expect($ledgerEntry->warehouse_id)->toBe($this->warehouse->id);
 });
 
@@ -263,7 +270,7 @@ test('stock adjustment reduces current stock', function () {
     $service->postAdjustment($adjustment);
 
     $currentStock->refresh();
-    expect($currentStock->quantity_on_hand)->toBe('85.000');
+    expect($currentStock->quantity_on_hand)->toBe('85.00');
 });
 
 test('only draft adjustments can be posted', function () {

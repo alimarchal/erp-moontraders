@@ -652,7 +652,7 @@ class InventoryService
      * Sync CurrentStock from StockValuationLayer (source of truth)
      * This ensures CurrentStock always matches the sum of valuation layers
      */
-    private function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
+    public function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
     {
         // Calculate totals from stock_valuation_layers (source of truth)
         $layerData = StockValuationLayer::where('product_id', $productId)

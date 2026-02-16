@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\AccountType;
+use App\Models\ChartOfAccount;
+use App\Models\CostCenter;
 use App\Models\CurrentStockByBatch;
 use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
@@ -28,6 +31,60 @@ beforeEach(function () {
     $this->supplier = Supplier::factory()->create();
     $this->warehouse = Warehouse::factory()->create();
     $this->product = Product::factory()->create();
+
+    // Create required GL accounts for testing
+    $accountType = AccountType::create(['code' => 'EXP', 'name' => 'Expense', 'normal_balance' => 'debit']);
+    $assetType = AccountType::create(['code' => 'AST', 'name' => 'Asset', 'normal_balance' => 'debit']);
+
+    ChartOfAccount::create([
+        'account_code' => '1151',
+        'account_name' => 'Stock In Hand',
+        'account_type_id' => $assetType->id,
+        'is_active' => true,
+        'normal_balance' => 'debit',
+    ]);
+
+    ChartOfAccount::create([
+        'account_code' => '5280',
+        'account_name' => 'Stock Loss on Recalls',
+        'account_type_id' => $accountType->id,
+        'is_active' => true,
+        'normal_balance' => 'debit',
+    ]);
+
+    ChartOfAccount::create([
+        'account_code' => '5281',
+        'account_name' => 'Stock Loss - Damage',
+        'account_type_id' => $accountType->id,
+        'is_active' => true,
+        'normal_balance' => 'debit',
+    ]);
+
+    ChartOfAccount::create([
+        'account_code' => '5282',
+        'account_name' => 'Stock Loss - Theft',
+        'account_type_id' => $accountType->id,
+        'is_active' => true,
+        'normal_balance' => 'debit',
+    ]);
+
+    ChartOfAccount::create([
+        'account_code' => '5283',
+        'account_name' => 'Stock Loss - Expiry',
+        'account_type_id' => $accountType->id,
+        'is_active' => true,
+        'normal_balance' => 'debit',
+    ]);
+
+    ChartOfAccount::create([
+        'account_code' => '5284',
+        'account_name' => 'Stock Loss - Other',
+        'account_type_id' => $accountType->id,
+        'is_active' => true,
+        'normal_balance' => 'debit',
+    ]);
+
+    CostCenter::create(['code' => 'CC006', 'name' => 'Warehouse', 'is_active' => true]);
 });
 
 test('product recall can be created as draft', function () {

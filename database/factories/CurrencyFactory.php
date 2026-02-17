@@ -16,19 +16,10 @@ class CurrencyFactory extends Factory
      */
     public function definition(): array
     {
-        $currencies = [
-            ['code' => 'USD', 'name' => 'US Dollar', 'symbol' => '$'],
-            ['code' => 'PKR', 'name' => 'Pakistani Rupee', 'symbol' => '₨'],
-            ['code' => 'EUR', 'name' => 'Euro', 'symbol' => '€'],
-            ['code' => 'GBP', 'name' => 'British Pound', 'symbol' => '£'],
-        ];
-
-        $currency = fake()->randomElement($currencies);
-
         return [
-            'currency_code' => $currency['code'],
-            'currency_name' => $currency['name'],
-            'currency_symbol' => $currency['symbol'],
+            'currency_code' => fake()->unique()->currencyCode(),
+            'currency_name' => fake()->words(2, true),
+            'currency_symbol' => fake()->randomElement(['$', '€', '£', '¥', '₨', '₩', '₫', '₱', '₹', '₺']),
             'exchange_rate' => fake()->randomFloat(6, 0.5, 300),
             'is_base_currency' => false,
             'is_active' => true,

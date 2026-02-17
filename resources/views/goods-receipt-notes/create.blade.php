@@ -3,9 +3,20 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
             Create Goods Receipt Note
         </h2>
-        <div class="flex justify-center items-center float-right">
+        <div class="flex justify-center items-center float-right gap-2">
+            @can('goods-receipt-note-import')
+                <button type="button" onclick="document.getElementById('importModal').classList.remove('hidden')"
+                    class="inline-flex items-center px-4 py-2 bg-green-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                    </svg>
+                    Import Excel
+                </button>
+            @endcan
             <a href="{{ route('goods-receipt-notes.index') }}"
-                class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                     stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -993,11 +1004,148 @@
                     @if(old('supplier_id'))
                         refreshAllProductSelects();
                     @endif
-                                });
+                                        });
             }
 
             // Start initialization
             initializeGRNForm();
         </script>
     @endpush
+
+    {{-- Import from Excel Modal --}}
+    @can('goods-receipt-note-import')
+        <div id="importModal" class="hidden fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4"
+            aria-labelledby="import-modal-title" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+                onclick="document.getElementById('importModal').classList.add('hidden')"></div>
+
+            <div class="relative bg-white rounded-lg shadow-xl max-w-lg w-full" onclick="event.stopPropagation()">
+                <div class="bg-white px-6 py-4 border-b border-gray-200 rounded-t-lg">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900" id="import-modal-title">
+                            Import GRN Items from Excel
+                        </h3>
+                        <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')"
+                            class="text-gray-400 hover:text-gray-500">
+                            <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ route('goods-receipt-notes.import') }}" enctype="multipart/form-data">
+                    @csrf
+                    <div class="px-6 py-4 space-y-4">
+                        @if($errors->has('import_file'))
+                            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm">
+                                <p class="font-semibold mb-1">Import Errors:</p>
+                                <ul class="list-disc list-inside space-y-1">
+                                    @foreach($errors->get('import_file') as $error)
+                                        <li>{{ is_array($error) ? implode(', ', $error) : $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <x-label for="import_supplier_id" value="Supplier *" />
+                                <select id="import_supplier_id" name="supplier_id" required
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full text-sm">
+                                    <option value="">Select Supplier</option>
+                                    @foreach ($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}" {{ old('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                            {{ $supplier->supplier_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
+                                <x-label for="import_warehouse_id" value="Warehouse *" />
+                                <select id="import_warehouse_id" name="warehouse_id" required
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full text-sm">
+                                    <option value="">Select Warehouse</option>
+                                    @foreach ($warehouses as $warehouse)
+                                        <option value="{{ $warehouse->id }}" {{ old('warehouse_id') == $warehouse->id ? 'selected' : '' }}>
+                                            {{ $warehouse->warehouse_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
+                                <x-label for="import_receipt_date" value="Receipt Date *" />
+                                <x-input id="import_receipt_date" name="receipt_date" type="date"
+                                    class="mt-1 block w-full text-sm" :value="old('receipt_date', date('Y-m-d'))"
+                                    required />
+                            </div>
+
+                            <div>
+                                <x-label for="import_supplier_invoice_date" value="Supplier Invoice Date" />
+                                <x-input id="import_supplier_invoice_date" name="supplier_invoice_date" type="date"
+                                    class="mt-1 block w-full text-sm" :value="old('supplier_invoice_date', date('Y-m-d'))" />
+                            </div>
+
+                            <div class="md:col-span-2">
+                                <x-label for="import_supplier_invoice_number" value="Supplier Invoice Number" />
+                                <x-input id="import_supplier_invoice_number" name="supplier_invoice_number" type="text"
+                                    class="mt-1 block w-full text-sm" :value="old('supplier_invoice_number')"
+                                    placeholder="e.g., INV-2026-001" />
+                            </div>
+                        </div>
+
+                        <div>
+                            <x-label for="import_file" value="Excel File *" />
+                            <input type="file" id="import_file" name="import_file" required accept=".xlsx,.xls,.csv"
+                                class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            <p class="text-xs text-gray-500 mt-1">Accepted formats: .xlsx, .xls, .csv (max 5MB)</p>
+                        </div>
+
+                        <div class="flex items-center">
+                            <a href="{{ route('goods-receipt-notes.import-template') }}"
+                                class="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline">
+                                <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download Sample Template
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-end gap-3 rounded-b-lg">
+                        <button type="button" onclick="document.getElementById('importModal').classList.add('hidden')"
+                            class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-700 text-sm font-medium text-white hover:bg-green-800">
+                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                            </svg>
+                            Import
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        @push('scripts')
+            <script>
+                // Auto-open import modal if there are import errors
+                @if($errors->has('import_file'))
+                    document.addEventListener('DOMContentLoaded', function () {
+                        document.getElementById('importModal').classList.remove('hidden');
+                    });
+                @endif
+            </script>
+        @endpush
+    @endcan
 </x-app-layout>

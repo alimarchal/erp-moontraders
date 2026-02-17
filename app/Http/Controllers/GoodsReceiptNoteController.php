@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\GoodsReceiptNoteTemplateExport;
+use App\Http\Requests\ImportGoodsReceiptNoteRequest;
+use App\Imports\GoodsReceiptNoteItemsImport;
 use App\Models\GoodsReceiptNote;
 use App\Models\Product;
 use App\Models\PromotionalCampaign;
@@ -15,6 +18,7 @@ use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -32,6 +36,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             new Middleware('permission:goods-receipt-note-delete', only: ['destroy']),
             new Middleware('permission:goods-receipt-note-post', only: ['post']),
             new Middleware('permission:goods-receipt-note-reverse', only: ['reverse']),
+            new Middleware('permission:goods-receipt-note-import', only: ['importItems', 'downloadImportTemplate']),
         ];
     }
 
@@ -607,6 +612,176 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             \Log::error('Failed to create auto payment: '.$e->getMessage());
 
             return null;
+        }
+    }
+
+    /**
+     * Download sample Excel template for GRN import
+     */
+    public function downloadImportTemplate()
+    {
+        return Excel::download(new GoodsReceiptNoteTemplateExport, 'grn_import_template.xlsx');
+    }
+
+    /**
+     * Import GRN items from Excel file
+     */
+    public function importItems(ImportGoodsReceiptNoteRequest $request)
+    {
+        $validated = $request->validated();
+
+        DB::beginTransaction();
+
+        try {
+            $import = new GoodsReceiptNoteItemsImport($validated['supplier_id']);
+            Excel::import($import, $request->file('import_file'));
+
+            if ($import->hasErrors()) {
+                DB::rollBack();
+
+                return back()
+                    ->withInput()
+                    ->withErrors(['import_file' => array_values($import->getRowErrors())]);
+            }
+
+            $processedItems = $import->getProcessedItems();
+
+            if (empty($processedItems)) {
+                DB::rollBack();
+
+                return back()
+                    ->withInput()
+                    ->withErrors(['import_file' => 'No valid items found in the Excel file.']);
+            }
+
+            $grnNumber = $this->generateGRNNumber();
+
+            $totalQuantity = 0;
+            $totalAmount = 0;
+            $amountPayable = 0;
+
+            foreach ($processedItems as $item) {
+                $qty = $item['quantity_accepted'];
+                $totalQuantity += $qty;
+                $totalAmount += $qty * $item['unit_cost'];
+                $amountPayable += $item['total_value_with_taxes'];
+            }
+
+            $grandTotal = $amountPayable;
+
+            $grn = GoodsReceiptNote::create([
+                'grn_number' => $grnNumber,
+                'receipt_date' => $validated['receipt_date'],
+                'supplier_id' => $validated['supplier_id'],
+                'warehouse_id' => $validated['warehouse_id'],
+                'supplier_invoice_number' => $validated['supplier_invoice_number'] ?? null,
+                'supplier_invoice_date' => $validated['supplier_invoice_date'] ?? null,
+                'total_quantity' => $totalQuantity,
+                'total_amount' => $totalAmount,
+                'tax_amount' => 0,
+                'freight_charges' => 0,
+                'other_charges' => 0,
+                'grand_total' => $grandTotal,
+                'status' => 'draft',
+                'received_by' => auth()->id(),
+                'notes' => 'Imported from Excel file: '.$request->file('import_file')->getClientOriginalName(),
+            ]);
+
+            foreach ($processedItems as $index => $item) {
+                $promotionalCampaignId = null;
+                $isPromotional = false;
+
+                if (! empty($item['promotional_price']) && $item['promotional_price'] > 0) {
+                    $product = Product::find($item['product_id']);
+                    $campaignCode = 'PROMO-'.$grn->grn_number.'-'.($index + 1);
+                    $campaign = PromotionalCampaign::updateOrCreate(
+                        ['campaign_code' => $campaignCode],
+                        [
+                            'campaign_name' => 'GRN Promo: '.($product->product_name ?? 'Product '.$item['product_id']),
+                            'description' => 'Auto-created promotional campaign for GRN '.$grn->grn_number,
+                            'start_date' => $validated['receipt_date'],
+                            'end_date' => $item['must_sell_before'] ?? now()->addMonths(3),
+                            'discount_type' => 'special_price',
+                            'discount_value' => $item['promotional_price'],
+                            'is_active' => true,
+                            'is_auto_apply' => false,
+                            'created_by' => auth()->id(),
+                        ]
+                    );
+                    $promotionalCampaignId = $campaign->id;
+                    $isPromotional = true;
+                }
+
+                $grn->items()->create([
+                    'line_no' => $index + 1,
+                    'product_id' => $item['product_id'],
+                    'stock_uom_id' => $item['stock_uom_id'],
+                    'purchase_uom_id' => $item['purchase_uom_id'],
+                    'qty_in_purchase_uom' => $item['qty_in_purchase_uom'],
+                    'uom_conversion_factor' => $item['uom_conversion_factor'],
+                    'qty_in_stock_uom' => $item['qty_in_stock_uom'],
+                    'unit_price_per_case' => $item['unit_price_per_case'],
+                    'extended_value' => $item['extended_value'],
+                    'discount_value' => $item['discount_value'],
+                    'fmr_allowance' => $item['fmr_allowance'],
+                    'discounted_value_before_tax' => $item['discounted_value_before_tax'],
+                    'excise_duty' => $item['excise_duty'],
+                    'sales_tax_value' => $item['sales_tax_value'],
+                    'advance_income_tax' => $item['advance_income_tax'],
+                    'total_value_with_taxes' => $item['total_value_with_taxes'],
+                    'quantity_received' => $item['quantity_received'],
+                    'quantity_accepted' => $item['quantity_accepted'],
+                    'quantity_rejected' => 0,
+                    'unit_cost' => $item['unit_cost'],
+                    'total_cost' => $item['quantity_accepted'] * $item['unit_cost'],
+                    'selling_price' => $item['selling_price'],
+                    'promotional_campaign_id' => $promotionalCampaignId,
+                    'is_promotional' => $isPromotional,
+                    'promotional_price' => $item['promotional_price'],
+                    'promotional_discount_percent' => null,
+                    'priority_order' => $item['priority_order'],
+                    'must_sell_before' => $item['must_sell_before'],
+                    'batch_number' => $item['batch_number'],
+                    'manufacturing_date' => $item['manufacturing_date'],
+                    'expiry_date' => $item['expiry_date'],
+                    'quality_status' => 'approved',
+                    'notes' => null,
+                ]);
+            }
+
+            DB::commit();
+
+            $itemCount = count($processedItems);
+
+            return redirect()
+                ->route('goods-receipt-notes.edit', $grn)
+                ->with('success', "GRN '{$grn->grn_number}' created with {$itemCount} items from Excel import. Please review and submit.");
+
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            DB::rollBack();
+
+            $failures = $e->failures();
+            $errors = [];
+            foreach ($failures as $failure) {
+                $errors[] = 'Row '.$failure->row().': '.$failure->attribute().' - '.implode(', ', $failure->errors());
+            }
+
+            return back()
+                ->withInput()
+                ->withErrors(['import_file' => $errors]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error importing GRN from Excel', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => auth()->id(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Unable to import GRN: '.$e->getMessage());
         }
     }
 

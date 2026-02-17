@@ -39,7 +39,7 @@ class RoleAndPermissionSeeder extends Seeder
             'employee' => ['list', 'create', 'edit', 'delete'],
 
             // Inventory & Production
-            'goods-receipt-note' => ['list', 'create', 'edit', 'delete', 'post', 'reverse'],
+            'goods-receipt-note' => ['list', 'create', 'edit', 'delete', 'post', 'reverse', 'import'],
             'goods-issue' => ['list', 'create', 'edit', 'delete', 'post'],
             'stock-transfer' => ['list', 'create', 'edit', 'delete', 'post'],
             'stock-adjustment' => ['list', 'create', 'edit', 'delete', 'post'],

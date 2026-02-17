@@ -103,7 +103,7 @@ class BankAccountSeeder extends Seeder
                 'normal_balance' => 'debit',
                 'description' => 'Bank',
                 'is_group' => false,
-                'is_active' => false,
+                'is_active' => $accountData['is_active'],
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);

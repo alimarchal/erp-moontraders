@@ -113,8 +113,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     |----------------------------------------------------------------------
     | Inbound inventory from suppliers. Post creates journal entries and
     | updates stock. Reverse creates a correcting entry.
-    | Permissions: goods-receipt-note-list, -create, -edit, -delete, -post, -reverse
+    | Permissions: goods-receipt-note-list, -create, -edit, -delete, -post, -reverse, -import
     */
+    Route::get('goods-receipt-notes/import-template', [GoodsReceiptNoteController::class, 'downloadImportTemplate'])
+        ->name('goods-receipt-notes.import-template');
+    Route::post('goods-receipt-notes/import', [GoodsReceiptNoteController::class, 'importItems'])
+        ->name('goods-receipt-notes.import');
     Route::resource('goods-receipt-notes', GoodsReceiptNoteController::class);
     Route::post('goods-receipt-notes/{goodsReceiptNote}/post', [GoodsReceiptNoteController::class, 'post'])
         ->name('goods-receipt-notes.post');

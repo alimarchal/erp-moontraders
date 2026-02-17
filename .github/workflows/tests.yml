@@ -14,7 +14,7 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     environment: Testing
-    
+
     services:
       mariadb:
         image: mariadb:10.10
@@ -39,8 +39,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
       - name: Install Node Dependencies
         run: npm i

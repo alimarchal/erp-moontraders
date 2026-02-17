@@ -7,57 +7,65 @@
 
             <div class="flex justify-center items-center space-x-2 no-print">
                 @if ($supplierPayment->status === 'draft')
-                    <a href="{{ route('supplier-payments.edit', $supplierPayment->id) }}"
-                        class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition">
-                        <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Edit
-                    </a>
-                    <form id="postPaymentForm" action="{{ route('supplier-payments.post', $supplierPayment->id) }}"
-                        method="POST" onsubmit="return confirmPostPayment();" class="inline-block">
-                        @csrf
-                        <input type="hidden" id="post_password" name="password" value="">
-                        <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
-                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                            </svg>
-                            Post Payment
-                        </button>
-                    </form>
-                    <form action="{{ route('supplier-payments.destroy', $supplierPayment->id) }}" method="POST"
-                        onsubmit="return confirm('Are you sure you want to delete this payment?');" class="inline-block">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                    @can('supplier-payment-edit')
+                        <a href="{{ route('supplier-payments.edit', $supplierPayment->id) }}"
+                            class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition">
                             <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                             </svg>
-                            Delete
-                        </button>
-                    </form>
+                            Edit
+                        </a>
+                    @endcan
+                    @can('supplier-payment-post')
+                        <form id="postPaymentForm" action="{{ route('supplier-payments.post', $supplierPayment->id) }}"
+                            method="POST" onsubmit="return confirmPostPayment();" class="inline-block">
+                            @csrf
+                            <input type="hidden" id="post_password" name="password" value="">
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
+                                <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                                </svg>
+                                Post Payment
+                            </button>
+                        </form>
+                    @endcan
+                    @can('supplier-payment-delete')
+                        <form action="{{ route('supplier-payments.destroy', $supplierPayment->id) }}" method="POST"
+                            onsubmit="return confirm('Are you sure you want to delete this payment?');" class="inline-block">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                                <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                                Delete
+                            </button>
+                        </form>
+                    @endcan
                 @elseif ($supplierPayment->status === 'posted')
-                    <form action="{{ route('supplier-payments.reverse', $supplierPayment->id) }}" method="POST"
-                        onsubmit="return confirmReverse();" class="inline-block">
-                        @csrf
-                        <button type="submit"
-                            class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-700 transition">
-                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                            </svg>
-                            Reverse Payment
-                        </button>
-                        <input type="hidden" name="password" id="reversePassword">
-                    </form>
+                    @can('supplier-payment-reverse')
+                        <form action="{{ route('supplier-payments.reverse', $supplierPayment->id) }}" method="POST"
+                            onsubmit="return confirmReverse();" class="inline-block">
+                            @csrf
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-700 transition">
+                                <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                                </svg>
+                                Reverse Payment
+                            </button>
+                            <input type="hidden" name="password" id="reversePassword">
+                        </form>
+                    @endcan
                 @endif
 
                 <button onclick="window.print();"
@@ -198,16 +206,19 @@
                     <table class="header-table w-full mb-4" style="border-collapse: collapse; font-size: 13px;">
                         <tr>
                             <td class="py-1 px-2 font-semibold" style="width: 15%;">Payment #:</td>
-                            <td class="py-1 px-2 font-bold" style="width: 35%;">{{ $supplierPayment->payment_number }}</td>
+                            <td class="py-1 px-2 font-bold" style="width: 35%;">{{ $supplierPayment->payment_number }}
+                            </td>
                             <td class="py-1 px-2 font-semibold" style="width: 15%;">Payment Date:</td>
-                            <td class="py-1 px-2" style="width: 35%;">{{ \Carbon\Carbon::parse($supplierPayment->payment_date)->format('d M Y') }}</td>
+                            <td class="py-1 px-2" style="width: 35%;">
+                                {{ \Carbon\Carbon::parse($supplierPayment->payment_date)->format('d M Y') }}</td>
                         </tr>
                         <tr>
                             <td class="py-1 px-2 font-semibold">Supplier:</td>
                             <td class="py-1 px-2 font-bold">{{ $supplierPayment->supplier->supplier_name }}</td>
                             <td class="py-1 px-2 font-semibold">Status:</td>
                             <td class="py-1 px-2">
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
                                     {{ $supplierPayment->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
                                     {{ $supplierPayment->status === 'posted' ? 'bg-green-100 text-green-800' : '' }}
                                     {{ $supplierPayment->status === 'cancelled' ? 'bg-red-100 text-red-800' : '' }}
@@ -219,50 +230,55 @@
                         </tr>
                         <tr>
                             <td class="py-1 px-2 font-semibold">Payment Method:</td>
-                            <td class="py-1 px-2">{{ ucfirst(str_replace('_', ' ', $supplierPayment->payment_method)) }}</td>
+                            <td class="py-1 px-2">{{ ucfirst(str_replace('_', ' ', $supplierPayment->payment_method)) }}
+                            </td>
                             <td class="py-1 px-2 font-semibold">Amount:</td>
-                            <td class="py-1 px-2 font-bold text-emerald-600">₨ {{ number_format($supplierPayment->amount, 2) }}</td>
+                            <td class="py-1 px-2 font-bold text-emerald-600">₨
+                                {{ number_format($supplierPayment->amount, 2) }}</td>
                         </tr>
                         @if ($supplierPayment->bankAccount)
-                        <tr>
-                            <td class="py-1 px-2 font-semibold">Bank Account:</td>
-                            <td class="py-1 px-2">{{ $supplierPayment->bankAccount->account_name }}</td>
-                            <td class="py-1 px-2 font-semibold">Account #:</td>
-                            <td class="py-1 px-2">{{ $supplierPayment->bankAccount->account_number }}</td>
-                        </tr>
+                            <tr>
+                                <td class="py-1 px-2 font-semibold">Bank Account:</td>
+                                <td class="py-1 px-2">{{ $supplierPayment->bankAccount->account_name }}</td>
+                                <td class="py-1 px-2 font-semibold">Account #:</td>
+                                <td class="py-1 px-2">{{ $supplierPayment->bankAccount->account_number }}</td>
+                            </tr>
                         @endif
                         @if ($supplierPayment->reference_number)
-                        <tr>
-                            <td class="py-1 px-2 font-semibold">Reference #:</td>
-                            <td class="py-1 px-2">{{ $supplierPayment->reference_number }}</td>
-                            <td class="py-1 px-2"></td>
-                            <td class="py-1 px-2"></td>
-                        </tr>
+                            <tr>
+                                <td class="py-1 px-2 font-semibold">Reference #:</td>
+                                <td class="py-1 px-2">{{ $supplierPayment->reference_number }}</td>
+                                <td class="py-1 px-2"></td>
+                                <td class="py-1 px-2"></td>
+                            </tr>
                         @endif
                         <tr>
                             <td class="py-1 px-2 font-semibold">Created By:</td>
                             <td class="py-1 px-2">{{ $supplierPayment->createdBy->name ?? 'N/A' }}
-                                <span class="text-xs text-gray-500">{{ $supplierPayment->created_at->format('d M Y H:i') }}</span>
+                                <span
+                                    class="text-xs text-gray-500">{{ $supplierPayment->created_at->format('d M Y H:i') }}</span>
                             </td>
                             @if ($supplierPayment->posted_at)
-                            <td class="py-1 px-2 font-semibold">Posted By:</td>
-                            <td class="py-1 px-2">{{ $supplierPayment->postedBy->name ?? 'N/A' }}
-                                <span class="text-xs text-gray-500">{{ $supplierPayment->posted_at->format('d M Y H:i') }}</span>
-                            </td>
+                                <td class="py-1 px-2 font-semibold">Posted By:</td>
+                                <td class="py-1 px-2">{{ $supplierPayment->postedBy->name ?? 'N/A' }}
+                                    <span
+                                        class="text-xs text-gray-500">{{ $supplierPayment->posted_at->format('d M Y H:i') }}</span>
+                                </td>
                             @else
-                            <td class="py-1 px-2"></td>
-                            <td class="py-1 px-2"></td>
+                                <td class="py-1 px-2"></td>
+                                <td class="py-1 px-2"></td>
                             @endif
                         </tr>
                         @if ($supplierPayment->reversed_at)
-                        <tr>
-                            <td class="py-1 px-2 font-semibold">Reversed By:</td>
-                            <td class="py-1 px-2">{{ $supplierPayment->reversedBy->name ?? 'N/A' }}
-                                <span class="text-xs text-gray-500">{{ $supplierPayment->reversed_at->format('d M Y H:i') }}</span>
-                            </td>
-                            <td class="py-1 px-2"></td>
-                            <td class="py-1 px-2"></td>
-                        </tr>
+                            <tr>
+                                <td class="py-1 px-2 font-semibold">Reversed By:</td>
+                                <td class="py-1 px-2">{{ $supplierPayment->reversedBy->name ?? 'N/A' }}
+                                    <span
+                                        class="text-xs text-gray-500">{{ $supplierPayment->reversed_at->format('d M Y H:i') }}</span>
+                                </td>
+                                <td class="py-1 px-2"></td>
+                                <td class="py-1 px-2"></td>
+                            </tr>
                         @endif
                     </table>
 
@@ -413,7 +429,7 @@
         }
 
         // Listen for password confirmation events
-        document.addEventListener('passwordConfirmed', function(event) {
+        document.addEventListener('passwordConfirmed', function (event) {
             const { modalId, password } = event.detail;
 
             if (modalId === 'postPasswordModal') {

@@ -57,7 +57,7 @@ class CustomSettlementReportTest extends TestCase
                 'currency_id' => $currency->id,
                 'is_group' => false,
                 'is_active' => true,
-                'normal_balance' => 'Debit',
+                'normal_balance' => 'debit',
             ]);
         };
 

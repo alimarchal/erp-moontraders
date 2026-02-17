@@ -11,35 +11,43 @@
             </div>
             <div class="flex flex-wrap items-center gap-2">
                 @if($journalEntry->status === 'draft')
-                <form method="POST" action="{{ route('journal-entries.post', $journalEntry->id) }}">
-                    @csrf
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        Post Entry
-                    </button>
-                </form>
-                <a href="{{ route('journal-entries.edit', $journalEntry->id) }}"
-                    class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                    Edit
-                </a>
-                <form method="POST" action="{{ route('journal-entries.destroy', $journalEntry->id) }}"
-                    onsubmit="return confirm('Delete this draft journal entry?');">
-                    @csrf
-                    @method('DELETE')
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        Delete Draft
-                    </button>
-                </form>
+                    @can('journal-entry-post')
+                        <form method="POST" action="{{ route('journal-entries.post', $journalEntry->id) }}">
+                            @csrf
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-indigo-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                Post Entry
+                            </button>
+                        </form>
+                    @endcan
+                    @can('journal-entry-edit')
+                        <a href="{{ route('journal-entries.edit', $journalEntry->id) }}"
+                            class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                            Edit
+                        </a>
+                    @endcan
+                    @can('journal-entry-delete')
+                        <form method="POST" action="{{ route('journal-entries.destroy', $journalEntry->id) }}"
+                            onsubmit="return confirm('Delete this draft journal entry?');">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                Delete Draft
+                            </button>
+                        </form>
+                    @endcan
                 @elseif($journalEntry->status === 'posted')
-                <form method="POST" action="{{ route('journal-entries.reverse', $journalEntry->id) }}"
-                    onsubmit="return confirm('Create a reversing entry for this journal?');">
-                    @csrf
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                        Reverse Entry
-                    </button>
-                </form>
+                    @can('journal-entry-reverse')
+                        <form method="POST" action="{{ route('journal-entries.reverse', $journalEntry->id) }}"
+                            onsubmit="return confirm('Create a reversing entry for this journal?');">
+                            @csrf
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-orange-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                Reverse Entry
+                            </button>
+                        </form>
+                    @endcan
                 @endif
                 <a href="{{ route('journal-entries.index') }}"
                     class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
@@ -54,13 +62,12 @@
             <x-status-message class="shadow-md" />
 
             @php
-            $totalDebit = $journalEntry->details->sum('debit');
-            $totalCredit = $journalEntry->details->sum('credit');
+                $totalDebit = $journalEntry->details->sum('debit');
+                $totalCredit = $journalEntry->details->sum('credit');
             @endphp
 
             <div class="bg-white overflow-hidden shadow sm:rounded-lg">
-                <div
-                    class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-700">
+                <div class="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-700">
                     <div>
                         <span class="font-semibold block text-gray-500 uppercase text-xs">Entry Date</span>
                         <span>{{ optional($journalEntry->entry_date)->format('F d, Y') }}</span>
@@ -102,10 +109,10 @@
                     </div>
                 </div>
                 @if ($journalEntry->description)
-                <div class="px-6 pb-6">
-                    <span class="font-semibold block text-gray-500 uppercase text-xs mb-1">Description</span>
-                    <p class="text-sm text-gray-700">{{ $journalEntry->description }}</p>
-                </div>
+                    <div class="px-6 pb-6">
+                        <span class="font-semibold block text-gray-500 uppercase text-xs mb-1">Description</span>
+                        <p class="text-sm text-gray-700">{{ $journalEntry->description }}</p>
+                    </div>
                 @endif
             </div>
 
@@ -131,27 +138,27 @@
                             </thead>
                             <tbody class="text-black text-md leading-normal font-semibold">
                                 @foreach ($journalEntry->details as $index => $detail)
-                                <tr class="border-b border-gray-200">
-                                    <td class="py-2 px-2 text-left">
-                                        {{ $detail->line_no ?? ($index + 1) }}
-                                    </td>
-                                    <td class="py-2 px-2 text-left">
-                                        {{ $detail->account?->account_code }} · {{ $detail->account?->account_name }}
-                                    </td>
-                                    <td class="py-2 px-2 text-left">
-                                        {{ $detail->costCenter?->code ? $detail->costCenter->code . ' · ' .
-                                        $detail->costCenter->name : '—' }}
-                                    </td>
-                                    <td class="py-2 px-2 text-right">
-                                        {{ number_format((float) $detail->debit, 2) }}
-                                    </td>
-                                    <td class="py-2 px-2 text-right">
-                                        {{ number_format((float) $detail->credit, 2) }}
-                                    </td>
-                                    <td class="py-2 px-2 text-left text-sm text-gray-600">
-                                        {{ $detail->description ?? '—' }}
-                                    </td>
-                                </tr>
+                                                            <tr class="border-b border-gray-200">
+                                                                <td class="py-2 px-2 text-left">
+                                                                    {{ $detail->line_no ?? ($index + 1) }}
+                                                                </td>
+                                                                <td class="py-2 px-2 text-left">
+                                                                    {{ $detail->account?->account_code }} · {{ $detail->account?->account_name }}
+                                                                </td>
+                                                                <td class="py-2 px-2 text-left">
+                                                                    {{ $detail->costCenter?->code ? $detail->costCenter->code . ' · ' .
+                                    $detail->costCenter->name : '—' }}
+                                                                </td>
+                                                                <td class="py-2 px-2 text-right">
+                                                                    {{ number_format((float) $detail->debit, 2) }}
+                                                                </td>
+                                                                <td class="py-2 px-2 text-right">
+                                                                    {{ number_format((float) $detail->credit, 2) }}
+                                                                </td>
+                                                                <td class="py-2 px-2 text-left text-sm text-gray-600">
+                                                                    {{ $detail->description ?? '—' }}
+                                                                </td>
+                                                            </tr>
                                 @endforeach
                             </tbody>
                             <tfoot class="bg-gray-100 text-sm font-semibold">
@@ -172,29 +179,28 @@
             </div>
 
             @if ($journalEntry->attachments->isNotEmpty())
-            <div class="bg-white overflow-hidden shadow sm:rounded-lg">
-                <div class="p-6">
-                    <h3 class="text-lg font-semibold text-gray-700 mb-4">Attachments</h3>
-                    <ul class="space-y-2 text-sm text-gray-700">
-                        @foreach ($journalEntry->attachments as $attachment)
-                        <li
-                            class="flex items-center justify-between border border-gray-200 rounded-md px-3 py-2">
-                            <div>
-                                <p class="font-semibold">{{ $attachment->file_name }}</p>
-                                <p class="text-xs text-gray-500">
-                                    {{ number_format(($attachment->file_size ?? 0) / 1024, 2) }} KB
-                                    · {{ $attachment->file_type ?? 'Unknown type' }}
-                                </p>
-                            </div>
-                            <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
-                                class="inline-flex items-center px-3 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                                View
-                            </a>
-                        </li>
-                        @endforeach
-                    </ul>
+                <div class="bg-white overflow-hidden shadow sm:rounded-lg">
+                    <div class="p-6">
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Attachments</h3>
+                        <ul class="space-y-2 text-sm text-gray-700">
+                            @foreach ($journalEntry->attachments as $attachment)
+                                <li class="flex items-center justify-between border border-gray-200 rounded-md px-3 py-2">
+                                    <div>
+                                        <p class="font-semibold">{{ $attachment->file_name }}</p>
+                                        <p class="text-xs text-gray-500">
+                                            {{ number_format(($attachment->file_size ?? 0) / 1024, 2) }} KB
+                                            · {{ $attachment->file_type ?? 'Unknown type' }}
+                                        </p>
+                                    </div>
+                                    <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
+                                        class="inline-flex items-center px-3 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                                        View
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
                 </div>
-            </div>
             @endif
         </div>
     </div>

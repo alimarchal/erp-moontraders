@@ -4,11 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\PromotionalCampaign;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
-class PromotionalCampaignController extends Controller
+class PromotionalCampaignController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:promotional-campaign-list', only: ['index', 'show']),
+            new Middleware('permission:promotional-campaign-create', only: ['create', 'store']),
+            new Middleware('permission:promotional-campaign-edit', only: ['edit', 'update']),
+            new Middleware('permission:promotional-campaign-delete', only: ['destroy']),
+        ];
+    }
+
     /**
      * Display a listing of the resource.
      */

@@ -60,7 +60,10 @@ class CategorySeeder extends Seeder
                     ->first();
 
                 if ($product) {
-                    $product->update(['category_id' => $category->id]);
+                    $product->update([
+                        'category_id' => $category->id,
+                        'is_powder' => strtolower($categoryName) === 'powder',
+                    ]);
                     $updatedProducts++;
                 } else {
                     // Optional: Log missing products

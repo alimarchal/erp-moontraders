@@ -57,7 +57,7 @@ class AdvanceTaxReportTest extends TestCase
             'currency_id' => $currency->id,
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => 'Debit',
+            'normal_balance' => 'debit',
         ]);
 
         $stockInHand = ChartOfAccount::create([
@@ -67,7 +67,7 @@ class AdvanceTaxReportTest extends TestCase
             'currency_id' => $currency->id,
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => 'Debit',
+            'normal_balance' => 'debit',
         ]);
         $vanStock = ChartOfAccount::create([
             'account_code' => '1155',
@@ -76,7 +76,7 @@ class AdvanceTaxReportTest extends TestCase
             'currency_id' => $currency->id,
             'is_group' => false,
             'is_active' => true,
-            'normal_balance' => 'Debit',
+            'normal_balance' => 'debit',
         ]);
 
         $vehicle = \App\Models\Vehicle::factory()->create();

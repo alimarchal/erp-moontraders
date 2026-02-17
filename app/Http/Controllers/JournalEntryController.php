@@ -10,9 +10,23 @@ use App\Models\Currency;
 use App\Models\JournalEntry;
 use App\Services\AccountingService;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class JournalEntryController extends Controller
+class JournalEntryController extends Controller implements HasMiddleware
 {
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('permission:journal-entry-list', only: ['index', 'show']),
+            new Middleware('permission:journal-entry-create', only: ['create', 'store']),
+            new Middleware('permission:journal-entry-edit', only: ['edit', 'update']),
+            new Middleware('permission:journal-entry-delete', only: ['destroy']),
+            new Middleware('permission:journal-entry-post', only: ['post', 'recordCashReceipt', 'recordCashPayment', 'recordOpeningBalance']),
+            new Middleware('permission:journal-entry-reverse', only: ['reverse']),
+        ];
+    }
+
     protected AccountingService $accountingService;
 
     public function __construct(AccountingService $accountingService)

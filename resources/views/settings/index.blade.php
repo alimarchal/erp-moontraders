@@ -162,7 +162,7 @@
                 @endcanany
 
                 <!-- Financial Core Section -->
-                @canany(['chart-of-account-list', 'currency-list', 'accounting-period-list', 'bank-account-list', 'cost-center-list'])
+                @canany(['account-type-list', 'chart-of-account-list', 'currency-list', 'accounting-period-list', 'bank-account-list', 'cost-center-list'])
                     <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
                         <button @click="open = !open" type="button"
                             class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
@@ -177,7 +177,7 @@
                         </button>
                         <div x-show="open" x-collapse>
                             <div class="border-t border-gray-100 divide-y divide-gray-100">
-                                @can('chart-of-account-list')
+                                @can('account-type-list')
                                     <a href="{{ route('account-types.index') }}"
                                         class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
@@ -742,6 +742,87 @@
                 @endcanany
 
                 <!-- Asset Management Section -->
+                @canany(['stock-adjustment-list', 'product-recall-list'])
+                    <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
+                        <button @click="open = !open" type="button"
+                            class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-8 rounded-full bg-red-500"></div>
+                                <h3 class="text-lg font-bold text-gray-800">Inventory Operations</h3>
+                            </div>
+                            <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
+                                :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-collapse>
+                            <div class="border-t border-gray-100 divide-y divide-gray-100">
+                                @can('stock-adjustment-list')
+                                    <a href="{{ route('stock-adjustments.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Stock Adjustments</div>
+                                                <div class="text-xs text-gray-500">Damage, theft, expiry & count variance</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                                {{ \App\Models\StockAdjustment::count() }}
+                                            </span>
+                                            <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </a>
+                                @endcan
+
+                                @can('product-recall-list')
+                                    <a href="{{ route('product-recalls.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Product Recalls</div>
+                                                <div class="text-xs text-gray-500">Supplier recalls & quality issues</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                                {{ \App\Models\ProductRecall::count() }}
+                                            </span>
+                                            <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </a>
+                                @endcan
+                            </div>
+                        </div>
+                    </div>
+                @endcanany
+
                 @canany(['vehicle-list', 'warehouse-list', 'warehouse-type-list'])
                     <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
                         <button @click="open = !open" type="button"

@@ -108,6 +108,7 @@ class VanStockBatchConsumptionTest extends TestCase
                     'account_type_id' => $accountType->id,
                     'currency_id' => $currency->id,
                     'is_active' => true,
+                    'normal_balance' => 'debit',
                 ]
             );
         }

@@ -43,27 +43,30 @@ class RoleAndPermissionSeeder extends Seeder
             'goods-issue' => ['list', 'create', 'edit', 'delete', 'post'],
             'stock-transfer' => ['list', 'create', 'edit', 'delete', 'post'],
             'stock-adjustment' => ['list', 'create', 'edit', 'delete', 'post'],
+            'product-recall' => ['list', 'create', 'edit', 'delete', 'post', 'cancel'],
             'warehouse' => ['list', 'create', 'edit', 'delete'],
             'warehouse-type' => ['list', 'create', 'edit', 'delete'],
             'product' => ['list', 'create', 'edit', 'delete'],
             'category' => ['list', 'create', 'edit', 'delete'],
-
             'uom' => ['list', 'create', 'edit', 'delete'],
 
             // Sales & Distribution
             'sales-settlement' => ['list', 'create', 'edit', 'delete', 'post'],
-            'supplier-payment' => ['list', 'create', 'edit', 'delete', 'post'],
+            'supplier-payment' => ['list', 'create', 'edit', 'delete', 'post', 'reverse'],
             'vehicle' => ['list', 'create', 'edit', 'delete'],
             'promotional-campaign' => ['list', 'create', 'edit', 'delete'],
-            'claim-register' => ['list', 'create', 'edit', 'delete'],
+            'claim-register' => ['list', 'create', 'edit', 'delete', 'post'],
 
             // Employee Salary Management
             'employee-salary' => ['list', 'create', 'edit', 'delete'],
             'employee-salary-transaction' => ['list', 'create', 'edit', 'delete', 'post'],
 
-            // Reports & Utilities
+            // Reports (granular per report area)
             'report' => ['view-financial', 'view-inventory', 'view-sales', 'view-audit'],
+
+            // Settings & Navigation
             'setting' => ['view', 'update'],
+            'inventory' => ['view'],
         ];
 
         $allPermissionNames = [];
@@ -112,12 +115,14 @@ class RoleAndPermissionSeeder extends Seeder
             'supplier-payment-list',
             'supplier-payment-create',
             'supplier-payment-post',
+            'supplier-payment-reverse',
             'claim-register-list',
             'claim-register-create',
             'employee-salary-transaction-list',
             'employee-salary-transaction-create',
             'employee-salary-transaction-post',
             'report-view-financial',
+            'setting-view',
         ]);
 
         // Inventory Manager
@@ -138,12 +143,17 @@ class RoleAndPermissionSeeder extends Seeder
             'stock-adjustment-list',
             'stock-adjustment-create',
             'stock-adjustment-post',
+            'product-recall-list',
+            'product-recall-create',
+            'product-recall-edit',
             'warehouse-list',
             'product-list',
             'uom-list',
             'report-view-inventory',
+            'inventory-view',
             'supplier-list',
             'customer-list',
+            'setting-view',
         ]);
 
         // Sales Manager

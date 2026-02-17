@@ -353,6 +353,7 @@ return new class extends Migration
             $$ LANGUAGE plpgsql;
         SQL);
 
+        DB::unprepared('DROP FUNCTION IF EXISTS fn_general_ledger(DATE, DATE, BIGINT) CASCADE');
         DB::unprepared(<<<'SQL'
             CREATE OR REPLACE FUNCTION fn_general_ledger(
                 p_start_date DATE DEFAULT NULL, p_end_date DATE DEFAULT CURRENT_DATE,
@@ -362,7 +363,7 @@ return new class extends Migration
                 journal_entry_id BIGINT, entry_date DATE, reference VARCHAR,
                 journal_description TEXT, status VARCHAR,
                 account_id BIGINT, account_code VARCHAR, account_name VARCHAR,
-                line_no INTEGER, debit NUMERIC, credit NUMERIC, line_description TEXT,
+                line_no INTEGER, debit NUMERIC, credit NUMERIC, line_description VARCHAR,
                 cost_center_code VARCHAR, cost_center_name VARCHAR,
                 currency_code VARCHAR, fx_rate_to_base NUMERIC
             ) AS $$
@@ -409,7 +410,17 @@ return new class extends Migration
                     JOIN journal_entries je ON je.id = jed.journal_entry_id
                     WHERE je.status = 'posted' AND je.entry_date <= p_as_of_date
                 ) d ON d.chart_of_account_id = a.id
-                WHERE at.report_group = 'BalanceSheet' AND a.is_active = true
+                WHERE at.report_group = 'BalanceSheet'
+                AND (
+                    a.is_active = true
+                    OR EXISTS (
+                        SELECT 1
+                        FROM journal_entry_details jed2
+                        JOIN journal_entries je2 ON je2.id = jed2.journal_entry_id
+                        WHERE jed2.chart_of_account_id = a.id
+                        AND je2.status = 'posted'
+                    )
+                )
                 GROUP BY a.id, a.account_code, a.account_name, at.type_name, at.report_group, a.normal_balance
                 HAVING COALESCE(SUM(d.debit), 0) <> 0 OR COALESCE(SUM(d.credit), 0) <> 0
                 ORDER BY a.account_code;
@@ -444,7 +455,17 @@ return new class extends Migration
                     AND (p_start_date IS NULL OR je.entry_date >= p_start_date)
                     AND je.entry_date <= p_end_date
                 ) d ON d.chart_of_account_id = a.id
-                WHERE at.report_group = 'IncomeStatement' AND a.is_active = true
+                WHERE at.report_group = 'IncomeStatement'
+                AND (
+                    a.is_active = true
+                    OR EXISTS (
+                        SELECT 1
+                        FROM journal_entry_details jed2
+                        JOIN journal_entries je2 ON je2.id = jed2.journal_entry_id
+                        WHERE jed2.chart_of_account_id = a.id
+                        AND je2.status = 'posted'
+                    )
+                )
                 GROUP BY a.id, a.account_code, a.account_name, at.type_name, at.report_group, a.normal_balance
                 HAVING COALESCE(SUM(d.debit), 0) <> 0 OR COALESCE(SUM(d.credit), 0) <> 0
                 ORDER BY a.account_code;

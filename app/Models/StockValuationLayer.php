@@ -20,6 +20,8 @@ class StockValuationLayer extends Model
         'quantity_received',
         'quantity_remaining',
         'unit_cost',
+        'total_value',
+        'value_remaining',
         'priority_order',
         'must_sell_before',
         'is_promotional',

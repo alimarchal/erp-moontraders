@@ -555,9 +555,20 @@ class InventoryService
         $year = now()->year;
         $prefix = "BATCH-{$year}-";
 
-        $lastBatch = StockBatch::where('batch_code', 'like', "{$prefix}%")
-            ->orderByRaw('CAST(SUBSTRING(batch_code, ?) AS UNSIGNED) DESC', [strlen($prefix) + 1])
-            ->first();
+        $driver = DB::getDriverName();
+        $substringPos = strlen($prefix) + 1;
+
+        if ($driver === 'pgsql') {
+            $orderByRaw = "CAST(SUBSTRING(batch_code, {$substringPos}) AS INTEGER) DESC";
+        } else {
+            $orderByRaw = 'CAST(SUBSTRING(batch_code, ?) AS UNSIGNED) DESC';
+        }
+
+        $query = StockBatch::where('batch_code', 'like', "{$prefix}%");
+
+        $lastBatch = $driver === 'pgsql'
+            ? $query->orderByRaw($orderByRaw)->first()
+            : $query->orderByRaw($orderByRaw, [$substringPos])->first();
 
         $nextNumber = $lastBatch
             ? (int) substr($lastBatch->batch_code, strlen($prefix)) + 1
@@ -652,7 +663,7 @@ class InventoryService
      * Sync CurrentStock from StockValuationLayer (source of truth)
      * This ensures CurrentStock always matches the sum of valuation layers
      */
-    private function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
+    public function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
     {
         // Calculate totals from stock_valuation_layers (source of truth)
         $layerData = StockValuationLayer::where('product_id', $productId)

@@ -337,7 +337,14 @@ class CreditSalesReportController extends Controller implements HasMiddleware
                     ->whereNull('ceat.deleted_at')
                     ->selectRaw('COALESCE(SUM(ceat.credit), 0)');
             }, 'recoveries_sum_amount')
-            ->havingRaw('credit_sales_count > 0');
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('customer_employee_account_transactions as ceat_exists')
+                    ->join('customer_employee_accounts as cea_exists', 'ceat_exists.customer_employee_account_id', '=', 'cea_exists.id')
+                    ->whereColumn('cea_exists.customer_id', 'customers.id')
+                    ->where('ceat_exists.transaction_type', 'credit_sale')
+                    ->whereNull('ceat_exists.deleted_at');
+            });
 
         // Filters
         if ($request->filled('filter.customer_name')) {

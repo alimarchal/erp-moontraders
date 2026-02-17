@@ -27,7 +27,7 @@
             @media print {
                 @page {
                     margin: 15mm 10mm 20mm 10mm;
-                    size: landscape;
+                    /* size: landscape; */
 
                     @bottom-center {
                         content: "Page " counter(page) " of " counter(pages);
@@ -167,12 +167,14 @@
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->bf, 2), '0'), '.') }}</td>
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->issue, 2), '0'), '.') }}</td>
                                 <td class="text-center bg-green-50 font-semibold">
-                                    {{ rtrim(rtrim(number_format($row->total_issue, 2), '0'), '.') }}</td>
+                                    {{ rtrim(rtrim(number_format($row->total_issue, 2), '0'), '.') }}
+                                </td>
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->return, 2), '0'), '.') }}</td>
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->sale, 2), '0'), '.') }}</td>
                                 <td class="text-center">{{ rtrim(rtrim(number_format($row->shortage, 2), '0'), '.') }}</td>
                                 <td class="text-center bg-gray-100 font-bold">
-                                    {{ rtrim(rtrim(number_format($row->in_hand, 2), '0'), '.') }}</td>
+                                    {{ rtrim(rtrim(number_format($row->in_hand, 2), '0'), '.') }}
+                                </td>
                             </tr>
                         @empty
                             <tr>
@@ -184,23 +186,32 @@
                         <tr class="bg-gray-100 font-bold border-t-2 border-black">
                             <td colspan="2" class="text-right px-2">Grand Total:</td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('opening'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('opening'), 2), '0'), '.') }}
+                            </td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('purchase'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('purchase'), 2), '0'), '.') }}
+                            </td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('bf'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('bf'), 2), '0'), '.') }}
+                            </td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('issue'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('issue'), 2), '0'), '.') }}
+                            </td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('total_issue'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('total_issue'), 2), '0'), '.') }}
+                            </td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('return'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('return'), 2), '0'), '.') }}
+                            </td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('sale'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('sale'), 2), '0'), '.') }}
+                            </td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('shortage'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('shortage'), 2), '0'), '.') }}
+                            </td>
                             <td class="text-center">
-                                {{ rtrim(rtrim(number_format($reportData->sum('in_hand'), 2), '0'), '.') }}</td>
+                                {{ rtrim(rtrim(number_format($reportData->sum('in_hand'), 2), '0'), '.') }}
+                            </td>
                         </tr>
                     </tfoot>
                 </table>

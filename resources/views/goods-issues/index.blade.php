@@ -161,25 +161,16 @@
                             @endcan
 
                             @can('goods-issue-delete')
-                                <form method="POST" action="{{ route('goods-issues.destroy', $gi) }}"
-                                    onsubmit="return confirm('Are you sure you want to delete this draft goods issue?');">
-                                    @csrf
-                                    @method('DELETE')
-
-
-                                    <button type="submit"
-                                        class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
-                                        title="Delete">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-
-
-
-                                </form>
+                                <button type="button" x-data
+                                    @click="$dispatch('open-delete-gi-modal', { url: '{{ route('goods-issues.destroy', $gi) }}' })"
+                                    class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                    title="Delete">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             @endcan
                         @endif
                     </div>
@@ -195,4 +186,12 @@
             </tr>
         </x-slot>
     </x-data-table>
+
+    <x-alpine-confirmation-modal
+        event-name="open-delete-gi-modal"
+        title="Delete Goods Issue"
+        message="Are you sure you want to delete this draft goods issue? This action cannot be undone."
+        confirm-button-text="Delete"
+        csrf-method="DELETE"
+    />
 </x-app-layout>

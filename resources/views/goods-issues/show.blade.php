@@ -8,19 +8,15 @@
             <div class="flex justify-center items-center space-x-2 no-print">
                 @if ($goodsIssue->status === 'draft')
                     @can('goods-issue-post')
-                        <form action="{{ route('goods-issues.post', $goodsIssue->id) }}" method="POST"
-                            onsubmit="return confirm('Are you sure you want to post this Goods Issue? This will transfer inventory from warehouse to vehicle.');"
-                            class="inline-block">
-                            @csrf
-                            <button type="submit"
-                                class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
-                                <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                Post Issue
-                            </button>
-                        </form>
+                        <button type="button" x-data
+                            @click="$dispatch('open-post-gi-modal', { url: '{{ route('goods-issues.post', $goodsIssue->id) }}' })"
+                            class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
+                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Post Issue
+                        </button>
                     @endcan
                     @can('goods-issue-edit')
                         <a href="{{ route('goods-issues.edit', $goodsIssue->id) }}"
@@ -295,4 +291,15 @@
             </div>
         </div>
     </div>
+
+    <x-alpine-confirmation-modal
+        event-name="open-post-gi-modal"
+        title="Post Goods Issue"
+        message="Are you sure you want to post this Goods Issue? This will transfer inventory from warehouse to vehicle."
+        confirm-button-text="Post Issue"
+        confirm-button-class="bg-emerald-600 hover:bg-emerald-700"
+        icon-bg-class="bg-emerald-100"
+        icon-color-class="text-emerald-600"
+        icon-path="M5 13l4 4L19 7"
+    />
 </x-app-layout>

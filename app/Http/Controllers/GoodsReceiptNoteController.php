@@ -554,7 +554,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
             return redirect()
                 ->route('goods-receipt-notes.show', $goodsReceiptNote->id)
-                ->with('status', $result['message'].' A draft payment has been created for this GRN.');
+                ->with('success', $result['message'].' A draft payment has been created for this GRN.');
         }
 
         return redirect()

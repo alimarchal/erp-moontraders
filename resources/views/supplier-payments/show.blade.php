@@ -34,20 +34,15 @@
                         </form>
                     @endcan
                     @can('supplier-payment-delete')
-                        <form action="{{ route('supplier-payments.destroy', $supplierPayment->id) }}" method="POST"
-                            onsubmit="return confirm('Are you sure you want to delete this payment?');" class="inline-block">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit"
-                                class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
-                                <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                                Delete
-                            </button>
-                        </form>
+                        <button type="button" x-data x-on:click="$dispatch('open-delete-payment-modal')"
+                            class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 transition">
+                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Delete
+                        </button>
                     @endcan
                 @elseif ($supplierPayment->status === 'posted')
                     @can('supplier-payment-reverse')
@@ -210,7 +205,8 @@
                             </td>
                             <td class="py-1 px-2 font-semibold" style="width: 15%;">Payment Date:</td>
                             <td class="py-1 px-2" style="width: 35%;">
-                                {{ \Carbon\Carbon::parse($supplierPayment->payment_date)->format('d M Y') }}</td>
+                                {{ \Carbon\Carbon::parse($supplierPayment->payment_date)->format('d M Y') }}
+                            </td>
                         </tr>
                         <tr>
                             <td class="py-1 px-2 font-semibold">Supplier:</td>
@@ -234,7 +230,8 @@
                             </td>
                             <td class="py-1 px-2 font-semibold">Amount:</td>
                             <td class="py-1 px-2 font-bold text-emerald-600">₨
-                                {{ number_format($supplierPayment->amount, 2) }}</td>
+                                {{ number_format($supplierPayment->amount, 2) }}
+                            </td>
                         </tr>
                         @if ($supplierPayment->bankAccount)
                             <tr>
@@ -413,12 +410,13 @@
         warningClass="text-red-600" confirmButtonText="Confirm Reverse"
         confirmButtonClass="bg-orange-600 hover:bg-orange-700" />
 
+    <x-alpine-confirmation-modal eventName="open-delete-payment-modal" title="Delete Payment"
+        message="Are you sure you want to delete payment <strong>{{ $supplierPayment->payment_number }}</strong>? This action cannot be undone."
+        confirmButtonText="Delete" confirmButtonClass="bg-red-600 hover:bg-red-700"
+        formAction="{{ route('supplier-payments.destroy', $supplierPayment->id) }}" csrfMethod="DELETE" />
+
     <script>
         function confirmPostPayment() {
-            if (!confirm('Are you sure you want to POST this payment? This will create accounting journal entries and cannot be undone.')) {
-                return false;
-            }
-
             window.showPasswordModal('postPasswordModal');
             return false;
         }

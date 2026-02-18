@@ -123,11 +123,11 @@
                 </td>
                 <td class="py-1 px-2 text-center">
                     <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full 
-                                {{ $payment->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                {{ $payment->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}
-                                {{ $payment->status === 'cancelled' ? 'bg-red-100 text-red-700' : '' }}
-                                {{ $payment->status === 'bounced' ? 'bg-orange-100 text-orange-700' : '' }}
-                                {{ $payment->status === 'reversed' ? 'bg-purple-100 text-purple-700' : '' }}">
+                                    {{ $payment->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                    {{ $payment->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}
+                                    {{ $payment->status === 'cancelled' ? 'bg-red-100 text-red-700' : '' }}
+                                    {{ $payment->status === 'bounced' ? 'bg-orange-100 text-orange-700' : '' }}
+                                    {{ $payment->status === 'reversed' ? 'bg-purple-100 text-purple-700' : '' }}">
                         {{ ucfirst($payment->status) }}
                     </span>
                 </td>
@@ -157,21 +157,16 @@
                                 </a>
                             @endcan
                             @can('supplier-payment-delete')
-                                <form action="{{ route('supplier-payments.destroy', $payment->id) }}" method="POST"
-                                    class="inline-block"
-                                    onsubmit="return confirm('Are you sure you want to delete this payment?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
-                                        title="Delete">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                </form>
+                                <button type="button" x-data
+                                    x-on:click="$dispatch('open-delete-payment-modal', { url: '{{ route('supplier-payments.destroy', $payment->id) }}' })"
+                                    class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                    title="Delete">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             @endcan
                         @endif
                     </div>
@@ -179,4 +174,11 @@
             </tr>
         @endforeach
     </x-data-table>
+
+    <x-alpine-confirmation-modal eventName="open-delete-payment-modal" title="Delete Payment" confirmButtonText="Delete"
+        confirmButtonClass="bg-red-600 hover:bg-red-700" csrfMethod="DELETE">
+        <p class="text-sm text-gray-600">
+            Are you sure you want to delete this payment? This action cannot be undone.
+        </p>
+    </x-alpine-confirmation-modal>
 </x-app-layout>

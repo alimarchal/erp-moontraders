@@ -14,7 +14,7 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:report-view-audit'),
+            new Middleware('can:report-audit-claim-register'),
         ];
     }
 

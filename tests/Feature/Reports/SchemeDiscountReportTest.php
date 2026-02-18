@@ -19,13 +19,13 @@ class SchemeDiscountReportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Permission::create(['name' => 'report-view-sales']);
+        Permission::create(['name' => 'report-sales-scheme-discount']);
     }
 
     public function test_scheme_discount_report_loads()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-sales');
+        $user->givePermissionTo('report-sales-scheme-discount');
         $this->actingAs($user);
 
         $response = $this->get(route('reports.scheme-discount.index'));
@@ -37,7 +37,7 @@ class SchemeDiscountReportTest extends TestCase
     public function test_report_shows_data_correctly()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-sales');
+        $user->givePermissionTo('report-sales-scheme-discount');
         $this->actingAs($user);
 
         // Create Scheme Discount Account
@@ -145,7 +145,7 @@ class SchemeDiscountReportTest extends TestCase
     public function test_report_excludes_draft_settlements()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-sales');
+        $user->givePermissionTo('report-sales-scheme-discount');
         $this->actingAs($user);
 
         // Create dependencies
@@ -259,7 +259,7 @@ class SchemeDiscountReportTest extends TestCase
     public function test_filters_by_supplier_and_sorting()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-sales');
+        $user->givePermissionTo('report-sales-scheme-discount');
         $this->actingAs($user);
 
         // Setup Common Dependencies
@@ -393,7 +393,7 @@ class SchemeDiscountReportTest extends TestCase
     public function test_filters_by_designation()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-sales');
+        $user->givePermissionTo('report-sales-scheme-discount');
         $this->actingAs($user);
 
         // Setup Common Dependencies - Simplified

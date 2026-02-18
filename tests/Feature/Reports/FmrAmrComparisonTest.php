@@ -4,9 +4,9 @@ use App\Models\User;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
-    Permission::create(['name' => 'report-view-sales']);
+    Permission::create(['name' => 'report-sales-fmr-amr-comparison']);
     $this->user = User::factory()->create();
-    $this->user->givePermissionTo('report-view-sales');
+    $this->user->givePermissionTo('report-sales-fmr-amr-comparison');
 
     // Create accounting periods for the test years
     \App\Models\AccountingPeriod::factory()->create([

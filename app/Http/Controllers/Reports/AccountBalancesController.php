@@ -17,7 +17,7 @@ class AccountBalancesController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:report-view-financial'),
+            new Middleware('can:report-financial-account-balances'),
         ];
     }
 

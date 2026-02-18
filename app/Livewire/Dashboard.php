@@ -81,14 +81,14 @@ class Dashboard extends Component
         $this->loadKpiCards($user);
         $this->loadPendingItems($user);
 
-        if ($user->can('report-view-financial') || $user->can('accounting-view')) {
+        if ($user->can('view-any-report') || $user->can('accounting-view')) {
             $this->loadMonthlySalesTrend();
             $this->loadRevenueVsCogs();
             $this->loadPurchasesVsPayments();
             $this->loadJournalEntryStatus();
         }
 
-        if ($user->can('sales-settlement-list') || $user->can('report-view-sales')) {
+        if ($user->can('sales-settlement-list') || $user->can('view-any-report')) {
             $this->loadSalesByPaymentMethod();
             $this->loadDailySalesTrend();
             $this->loadTopProductsBySales();
@@ -100,7 +100,7 @@ class Dashboard extends Component
             $this->loadCustomerChannelDistribution();
         }
 
-        if ($user->can('inventory-view') || $user->can('report-view-inventory')) {
+        if ($user->can('inventory-view') || $user->can('view-any-report')) {
             $this->loadTopProductsByStockValue();
             $this->loadGrnVsGoodsIssueTrend();
             $this->loadWarehouseStockDistribution();

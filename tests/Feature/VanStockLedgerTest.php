@@ -5,9 +5,9 @@ use App\Models\Vehicle;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
-    Permission::create(['name' => 'report-view-inventory']);
+    Permission::create(['name' => 'report-inventory-van-stock-ledger']);
     $this->user = User::factory()->create();
-    $this->user->givePermissionTo('report-view-inventory');
+    $this->user->givePermissionTo('report-inventory-van-stock-ledger');
 });
 
 test('van stock ledger index page loads for authenticated user', function () {

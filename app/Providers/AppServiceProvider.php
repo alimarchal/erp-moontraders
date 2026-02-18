@@ -25,5 +25,9 @@ class AppServiceProvider extends ServiceProvider
         Gate::before(function ($user, $ability) {
             return ($user->hasRole('super-admin') || $user->is_super_admin === 'Yes') ? true : null;
         });
+
+        Gate::define('view-any-report', function ($user) {
+            return $user->getAllPermissions()->contains(fn ($p) => str_starts_with($p->name, 'report-'));
+        });
     }
 }

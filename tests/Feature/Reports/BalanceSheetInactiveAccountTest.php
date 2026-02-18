@@ -9,10 +9,10 @@ use App\Services\AccountingService;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
-    Permission::create(['name' => 'report-view-financial']);
+    Permission::create(['name' => 'report-financial-balance-sheet']);
 
     $this->user = User::factory()->create();
-    $this->user->givePermissionTo('report-view-financial');
+    $this->user->givePermissionTo('report-financial-balance-sheet');
     $this->actingAs($this->user);
 
     $this->currency = Currency::factory()->base()->create();

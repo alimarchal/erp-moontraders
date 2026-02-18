@@ -20,7 +20,7 @@ class CurrentStockController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('permission:inventory-view|report-view-inventory'),
+            new Middleware('permission:inventory-view|report-inventory-daily-stock-register|report-inventory-salesman-stock-register|report-inventory-inventory-ledger|report-inventory-van-stock-batch|report-inventory-van-stock-ledger'),
         ];
     }
 

@@ -16,7 +16,7 @@ class VanStockBatchReportController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:report-view-inventory'),
+            new Middleware('can:report-inventory-van-stock-batch'),
         ];
     }
 

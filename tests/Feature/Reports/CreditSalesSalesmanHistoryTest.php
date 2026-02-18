@@ -4,9 +4,9 @@ use App\Models\User;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
-    Permission::create(['name' => 'report-view-sales']);
+    Permission::create(['name' => 'report-sales-credit-sales']);
     $this->user = User::factory()->create();
-    $this->user->givePermissionTo('report-view-sales');
+    $this->user->givePermissionTo('report-sales-credit-sales');
     $this->actingAs($this->user);
 });
 

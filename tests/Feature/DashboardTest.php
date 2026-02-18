@@ -22,7 +22,7 @@ function createDashboardPermissions(): void
         'inventory-view',
         'goods-issue-list', 'goods-issue-create',
         'journal-entry-list', 'journal-entry-create',
-        'report-view-financial', 'report-view-inventory', 'report-view-sales',
+        'report-financial-general-ledger', 'report-inventory-daily-stock-register', 'report-sales-daily-sales',
         'accounting-view',
     ];
 
@@ -146,7 +146,7 @@ it('shows inventory data for users with inventory permissions', function () {
     createDashboardPermissions();
 
     $user = User::factory()->create();
-    $user->givePermissionTo(['inventory-view', 'report-view-inventory', 'goods-receipt-note-list']);
+    $user->givePermissionTo(['inventory-view', 'report-inventory-daily-stock-register', 'goods-receipt-note-list']);
 
     $component = Livewire::actingAs($user)->test(Dashboard::class);
 
@@ -158,7 +158,7 @@ it('shows accounting data for users with financial permissions', function () {
     createDashboardPermissions();
 
     $user = User::factory()->create();
-    $user->givePermissionTo(['report-view-financial', 'journal-entry-list']);
+    $user->givePermissionTo(['report-financial-general-ledger', 'journal-entry-list']);
 
     $accountingPeriod = \App\Models\AccountingPeriod::factory()->create();
     JournalEntry::factory()->count(2)->create([

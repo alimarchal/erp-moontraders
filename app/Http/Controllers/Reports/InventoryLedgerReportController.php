@@ -21,7 +21,7 @@ class InventoryLedgerReportController extends Controller implements HasMiddlewar
     public static function middleware(): array
     {
         return [
-            new Middleware('can:report-view-inventory'),
+            new Middleware('can:report-inventory-inventory-ledger'),
         ];
     }
 

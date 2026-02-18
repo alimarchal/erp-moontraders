@@ -17,7 +17,7 @@ class PercentageExpenseReportController extends Controller implements HasMiddlew
     public static function middleware(): array
     {
         return [
-            new Middleware('can:report-view-audit'),
+            new Middleware('can:report-audit-percentage-expense'),
         ];
     }
 

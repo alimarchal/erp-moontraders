@@ -14,7 +14,7 @@ class FmrAmrComparisonController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:report-view-sales'),
+            new Middleware('can:report-sales-fmr-amr-comparison'),
         ];
     }
 

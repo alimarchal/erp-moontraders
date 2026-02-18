@@ -61,8 +61,17 @@ class RoleAndPermissionSeeder extends Seeder
             'employee-salary' => ['list', 'create', 'edit', 'delete'],
             'employee-salary-transaction' => ['list', 'create', 'edit', 'delete', 'post'],
 
-            // Reports (granular per report area)
-            'report' => ['view-financial', 'view-inventory', 'view-sales', 'view-audit'],
+            // Reports - Financial (granular per report)
+            'report-financial' => ['general-ledger', 'trial-balance', 'account-balances', 'balance-sheet', 'income-statement'],
+
+            // Reports - Sales (granular per report)
+            'report-sales' => ['daily-sales', 'credit-sales', 'fmr-amr-comparison', 'settlement', 'goods-issue', 'roi', 'scheme-discount', 'shop-list', 'sku-rates'],
+
+            // Reports - Inventory (granular per report)
+            'report-inventory' => ['daily-stock-register', 'salesman-stock-register', 'inventory-ledger', 'van-stock-batch', 'van-stock-ledger'],
+
+            // Reports - Audit & Operational (granular per report)
+            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'claim-register', 'advance-tax', 'percentage-expense'],
 
             // Settings & Navigation
             'setting' => ['view', 'update'],
@@ -121,7 +130,11 @@ class RoleAndPermissionSeeder extends Seeder
             'employee-salary-transaction-list',
             'employee-salary-transaction-create',
             'employee-salary-transaction-post',
-            'report-view-financial',
+            'report-financial-general-ledger',
+            'report-financial-trial-balance',
+            'report-financial-account-balances',
+            'report-financial-balance-sheet',
+            'report-financial-income-statement',
             'setting-view',
         ]);
 
@@ -149,7 +162,11 @@ class RoleAndPermissionSeeder extends Seeder
             'warehouse-list',
             'product-list',
             'uom-list',
-            'report-view-inventory',
+            'report-inventory-daily-stock-register',
+            'report-inventory-salesman-stock-register',
+            'report-inventory-inventory-ledger',
+            'report-inventory-van-stock-batch',
+            'report-inventory-van-stock-ledger',
             'inventory-view',
             'supplier-list',
             'customer-list',
@@ -168,7 +185,15 @@ class RoleAndPermissionSeeder extends Seeder
             'customer-edit',
             'vehicle-list',
             'promotional-campaign-list',
-            'report-view-sales',
+            'report-sales-daily-sales',
+            'report-sales-credit-sales',
+            'report-sales-fmr-amr-comparison',
+            'report-sales-settlement',
+            'report-sales-goods-issue',
+            'report-sales-roi',
+            'report-sales-scheme-discount',
+            'report-sales-shop-list',
+            'report-sales-sku-rates',
         ]);
 
         // User: No default permissions — super admin assigns individually

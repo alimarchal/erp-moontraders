@@ -2,9 +2,9 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Models\BankAccount;
 use App\Models\Employee;
 use App\Models\SalesSettlement;
-use App\Models\BankAccount;
 use App\Models\SalesSettlementBankSlip;
 use App\Models\SalesSettlementCashDenomination;
 use App\Models\Supplier;
@@ -20,13 +20,13 @@ class CashDetailReportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Permission::create(['name' => 'report-view-audit']);
+        Permission::create(['name' => 'report-audit-cash-detail']);
     }
 
     public function test_cash_detail_report_loads_successfully()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-audit');
+        $user->givePermissionTo('report-audit-cash-detail');
 
         $response = $this->actingAs($user)->get(route('reports.cash-detail.index'));
 
@@ -37,7 +37,7 @@ class CashDetailReportTest extends TestCase
     public function test_cash_detail_report_displays_data()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-audit');
+        $user->givePermissionTo('report-audit-cash-detail');
         $employee = Employee::factory()->create(['name' => 'John Doe']);
 
         $settlement = SalesSettlement::factory()->create([
@@ -63,7 +63,7 @@ class CashDetailReportTest extends TestCase
     public function test_cash_detail_report_sums_multiple_settlements_per_employee()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-audit');
+        $user->givePermissionTo('report-audit-cash-detail');
 
         $supplier = Supplier::factory()->create();
         $employee = Employee::factory()->create([
@@ -134,7 +134,7 @@ class CashDetailReportTest extends TestCase
     public function test_cash_detail_report_sums_bank_slips_across_multiple_settlements()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-audit');
+        $user->givePermissionTo('report-audit-cash-detail');
 
         $supplier = Supplier::factory()->create();
         $employee = Employee::factory()->create([

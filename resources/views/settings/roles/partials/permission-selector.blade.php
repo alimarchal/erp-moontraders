@@ -1,7 +1,49 @@
 @php
     $permissions = \Spatie\Permission\Models\Permission::all();
 
-    $knownActions = ['list', 'create', 'edit', 'delete', 'post', 'reverse', 'sync', 'view', 'manage', 'close', 'open', 'bulk-update', 'manage-mapping', 'view-financial', 'view-inventory', 'view-sales', 'view-audit', 'update'];
+    $knownActions = [
+        'general-ledger',
+        'trial-balance',
+        'account-balances',
+        'balance-sheet',
+        'income-statement',
+        'daily-sales',
+        'credit-sales',
+        'fmr-amr-comparison',
+        'settlement',
+        'scheme-discount',
+        'shop-list',
+        'sku-rates',
+        'daily-stock-register',
+        'salesman-stock-register',
+        'inventory-ledger',
+        'van-stock-batch',
+        'van-stock-ledger',
+        'cash-detail',
+        'custom-settlement',
+        'creditors-ledger',
+        'claim-register',
+        'advance-tax',
+        'percentage-expense',
+        'goods-issue',
+        'roi',
+        'list',
+        'create',
+        'edit',
+        'delete',
+        'post',
+        'reverse',
+        'sync',
+        'view',
+        'manage',
+        'close',
+        'open',
+        'bulk-update',
+        'manage-mapping',
+        'update',
+        'import',
+        'cancel',
+    ];
 
     $groupedPermissions = $permissions->groupBy(function ($item) use ($knownActions) {
         $name = $item->name;
@@ -43,8 +85,16 @@
         'supplier-payment' => 'Supplier Payments',
         'vehicle' => 'Vehicles',
         'promotional-campaign' => 'Promotional Campaigns',
-        'report' => 'Reports',
+        'claim-register' => 'Claim Register',
+        'employee-salary' => 'Employee Salaries',
+        'employee-salary-transaction' => 'Salary Transactions',
+        'product-recall' => 'Product Recalls',
+        'report-financial' => 'Financial Reports',
+        'report-sales' => 'Sales Reports',
+        'report-inventory' => 'Inventory Reports',
+        'report-audit' => 'Audit & Operational Reports',
         'setting' => 'Settings',
+        'inventory' => 'Inventory Navigation',
     ];
 
     $rolePermissions = isset($user) ? $user->getPermissionsViaRoles()->pluck('id')->toArray() : [];
@@ -77,22 +127,24 @@
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         @foreach($groupedPermissions as $group => $groupPerms)
             @php
-                $hasChecked = $groupPerms->contains(fn ($p) => in_array($p->id, $rolePermissions) || in_array($p->id, $directPermissions));
-                $checkedCount = $groupPerms->filter(fn ($p) => in_array($p->id, $rolePermissions) || in_array($p->id, $directPermissions))->count();
+                $hasChecked = $groupPerms->contains(fn($p) => in_array($p->id, $rolePermissions) || in_array($p->id, $directPermissions));
+                $checkedCount = $groupPerms->filter(fn($p) => in_array($p->id, $rolePermissions) || in_array($p->id, $directPermissions))->count();
             @endphp
             <div x-data="{ open: false }" data-perm-group="{{ $group }}"
                 class="bg-gray-50 dark:bg-gray-700/50 rounded-lg border border-gray-100 dark:border-gray-600 overflow-hidden">
                 <div class="flex items-center justify-between px-3 py-2 cursor-pointer select-none hover:bg-gray-100 dark:hover:bg-gray-600/50 transition-colors"
                     @click="open = !open">
                     <div class="flex items-center gap-2">
-                        <svg :class="{ 'rotate-90': open }" class="w-3.5 h-3.5 text-gray-400 transition-transform duration-200"
-                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg :class="{ 'rotate-90': open }"
+                            class="w-3.5 h-3.5 text-gray-400 transition-transform duration-200" fill="none"
+                            stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                         </svg>
                         <h4 class="text-xs font-bold text-gray-800 dark:text-gray-200 uppercase tracking-wider">
                             {{ $groupLabels[$group] ?? ucwords(str_replace('-', ' ', $group)) }}
                         </h4>
-                        <span class="text-[10px] bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded-full font-semibold">
+                        <span
+                            class="text-[10px] bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300 px-1.5 py-0.5 rounded-full font-semibold">
                             {{ $checkedCount }}/{{ $groupPerms->count() }}
                         </span>
                     </div>
@@ -119,11 +171,14 @@
                                         type="checkbox"
                                         class="permission-checkbox h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                         {{ $isDirect || $isInherited ? 'checked' : '' }} {{ $isInherited ? 'disabled' : '' }}>
-                                    <span class="text-xs font-medium text-gray-700 dark:text-gray-300 capitalize">{{ str_replace('-', ' ', $actionName) }}</span>
+                                    <span
+                                        class="text-xs font-medium text-gray-700 dark:text-gray-300 capitalize">{{ str_replace('-', ' ', $actionName) }}</span>
                                     @if($isInherited)
-                                        <span class="text-[8px] text-blue-500 font-bold uppercase bg-blue-50 dark:bg-blue-900/30 px-1 py-0.5 rounded">Role</span>
+                                        <span
+                                            class="text-[8px] text-blue-500 font-bold uppercase bg-blue-50 dark:bg-blue-900/30 px-1 py-0.5 rounded">Role</span>
                                     @elseif($isDirect && isset($user))
-                                        <span class="text-[8px] text-green-600 font-bold uppercase bg-green-50 dark:bg-green-900/30 px-1 py-0.5 rounded">Direct</span>
+                                        <span
+                                            class="text-[8px] text-green-600 font-bold uppercase bg-green-50 dark:bg-green-900/30 px-1 py-0.5 rounded">Direct</span>
                                     @endif
                                 </label>
                             @endforeach

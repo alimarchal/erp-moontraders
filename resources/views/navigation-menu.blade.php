@@ -49,11 +49,11 @@
                             {{ __('Settings') }}
                         </x-nav-link>
                     @endcan
-                    @canany(['report-view-financial', 'report-view-inventory', 'report-view-sales', 'report-view-audit'])
+                    @can('view-any-report')
                         <x-nav-link href="{{ route('reports.index') }}" :active="request()->routeIs('reports.*')">
                             {{ __('Reports') }}
                         </x-nav-link>
-                    @endcanany
+                    @endcan
                 </div>
             </div>
 
@@ -227,12 +227,12 @@
                     {{ __('Settings') }}
                 </x-responsive-nav-link>
             @endcan
-            @canany(['report-view-financial', 'report-view-inventory', 'report-view-sales', 'report-view-audit'])
+            @can('view-any-report')
                 <x-responsive-nav-link href="{{ route('reports.general-ledger.index') }}"
                     :active="request()->routeIs('reports.*')">
                     {{ __('Reports') }}
                 </x-responsive-nav-link>
-            @endcanany
+            @endcan
         </div>
 
         <!-- Responsive Settings Options -->

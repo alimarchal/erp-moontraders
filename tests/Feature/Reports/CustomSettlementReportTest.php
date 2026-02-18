@@ -21,13 +21,13 @@ class CustomSettlementReportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Permission::create(['name' => 'report-view-audit']);
+        Permission::create(['name' => 'report-audit-custom-settlement']);
     }
 
     public function test_custom_settlement_report_loads()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-audit');
+        $user->givePermissionTo('report-audit-custom-settlement');
         $this->actingAs($user);
 
         $response = $this->get(route('reports.custom-settlement.index'));
@@ -39,7 +39,7 @@ class CustomSettlementReportTest extends TestCase
     public function test_report_aggregates_multiple_settlements_on_same_day()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-audit');
+        $user->givePermissionTo('report-audit-custom-settlement');
         $this->actingAs($user);
 
         // Setup Dependencies

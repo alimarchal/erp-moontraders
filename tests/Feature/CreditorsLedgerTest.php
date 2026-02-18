@@ -6,9 +6,9 @@ use Database\Seeders\CustomerSeeder;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
-    Permission::create(['name' => 'report-view-audit']);
+    Permission::create(['name' => 'report-audit-creditors-ledger']);
     $this->user = User::factory()->create();
-    $this->user->givePermissionTo('report-view-audit');
+    $this->user->givePermissionTo('report-audit-creditors-ledger');
     $this->seed(CustomerSeeder::class);
 });
 

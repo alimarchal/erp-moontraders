@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
-    Permission::create(['name' => 'report-view-inventory']);
+    Permission::create(['name' => 'report-inventory-daily-stock-register']);
     $this->user = User::factory()->create();
-    $this->user->givePermissionTo('report-view-inventory');
+    $this->user->givePermissionTo('report-inventory-daily-stock-register');
     $this->actingAs($this->user);
 
     $this->category = Category::create(['name' => 'Beverages', 'slug' => 'beverages']);

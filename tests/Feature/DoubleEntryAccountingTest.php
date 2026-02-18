@@ -14,7 +14,11 @@ uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
 
 beforeEach(function () {
     $permissions = [
-        'report-view-financial',
+        'report-financial-general-ledger',
+        'report-financial-trial-balance',
+        'report-financial-account-balances',
+        'report-financial-balance-sheet',
+        'report-financial-income-statement',
         'journal-entry-list',
         'journal-entry-create',
         'journal-entry-edit',

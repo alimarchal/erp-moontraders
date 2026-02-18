@@ -18,13 +18,13 @@ class AdvanceTaxReportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        Permission::create(['name' => 'report-view-audit']);
+        Permission::create(['name' => 'report-audit-advance-tax']);
     }
 
     public function test_advance_tax_report_loads()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-audit');
+        $user->givePermissionTo('report-audit-advance-tax');
         $this->actingAs($user);
 
         $response = $this->get(route('reports.advance-tax.index'));
@@ -36,7 +36,7 @@ class AdvanceTaxReportTest extends TestCase
     public function test_report_shows_data_and_filters_by_designation()
     {
         $user = User::factory()->create();
-        $user->givePermissionTo('report-view-audit');
+        $user->givePermissionTo('report-audit-advance-tax');
         $this->actingAs($user);
 
         // Setup Common Dependencies

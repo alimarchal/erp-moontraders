@@ -20,7 +20,10 @@ beforeEach(function () {
         'promotional-campaign-list', 'promotional-campaign-create', 'promotional-campaign-edit', 'promotional-campaign-delete',
         'setting-view', 'setting-update',
         'inventory-view',
-        'report-view-financial', 'report-view-inventory', 'report-view-sales', 'report-view-audit',
+        'report-financial-general-ledger', 'report-financial-trial-balance', 'report-financial-account-balances', 'report-financial-balance-sheet', 'report-financial-income-statement',
+        'report-inventory-daily-stock-register', 'report-inventory-salesman-stock-register', 'report-inventory-inventory-ledger', 'report-inventory-van-stock-batch', 'report-inventory-van-stock-ledger',
+        'report-sales-daily-sales', 'report-sales-credit-sales', 'report-sales-fmr-amr-comparison', 'report-sales-settlement', 'report-sales-goods-issue', 'report-sales-roi', 'report-sales-scheme-discount', 'report-sales-shop-list', 'report-sales-sku-rates',
+        'report-audit-cash-detail', 'report-audit-custom-settlement', 'report-audit-creditors-ledger', 'report-audit-claim-register', 'report-audit-advance-tax', 'report-audit-percentage-expense',
         'chart-of-account-list', 'account-type-list', 'currency-list', 'accounting-period-list',
         'bank-account-list', 'cost-center-list', 'tax-list',
         'company-list', 'supplier-list', 'customer-list', 'employee-list',
@@ -140,8 +143,8 @@ test('user with inventory-view can access inventory page', function () {
         ->assertSuccessful();
 });
 
-test('user with report-view-inventory can also access inventory page', function () {
-    $this->actingAs(userWithPermissions(['report-view-inventory']))
+test('user with report-inventory-daily-stock-register can also access inventory page', function () {
+    $this->actingAs(userWithPermissions(['report-inventory-daily-stock-register']))
         ->get(route('inventory.current-stock.index'))
         ->assertSuccessful();
 });
@@ -170,20 +173,20 @@ test('user without report permissions cannot access reports index', function () 
         ->assertForbidden();
 });
 
-test('user with report-view-financial can access reports index', function () {
-    $this->actingAs(userWithPermissions(['report-view-financial']))
+test('user with report-financial-general-ledger can access reports index', function () {
+    $this->actingAs(userWithPermissions(['report-financial-general-ledger']))
         ->get(route('reports.index'))
         ->assertSuccessful();
 });
 
-test('user without report-view-financial cannot access general ledger', function () {
-    $this->actingAs(userWithPermissions(['report-view-sales']))
+test('user without report-financial-general-ledger cannot access general ledger', function () {
+    $this->actingAs(userWithPermissions(['report-sales-daily-sales']))
         ->get(route('reports.general-ledger.index'))
         ->assertForbidden();
 });
 
-test('user with report-view-financial can access general ledger', function () {
-    $this->actingAs(userWithPermissions(['report-view-financial']))
+test('user with report-financial-general-ledger can access general ledger', function () {
+    $this->actingAs(userWithPermissions(['report-financial-general-ledger']))
         ->get(route('reports.general-ledger.index'))
         ->assertSuccessful();
 });

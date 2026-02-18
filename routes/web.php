@@ -249,7 +249,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | Inventory Stock Views
     |----------------------------------------------------------------------
     | Read-only views of current warehouse stock, optionally by batch.
-    | Permissions: report-view-inventory
+    | Permissions: inventory-view, report-inventory-* (per controller)
     */
     Route::prefix('inventory')->name('inventory.')->group(function () {
         Route::get('current-stock', [CurrentStockController::class, 'index'])->name('current-stock.index');
@@ -348,7 +348,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     |----------------------------------------------------------------------
     | Centralized reporting: financial statements, settlement reports,
     | stock registers, and operational analytics.
-    | Permissions: report-view-financial, report-view-inventory (per controller)
+    | Permissions: report-financial-*, report-inventory-*, report-sales-*, report-audit-* (per controller)
     */
     Route::prefix('reports')->name('reports.')->group(function () {
         Route::get('/', [ReportsController::class, 'index'])->name('index');

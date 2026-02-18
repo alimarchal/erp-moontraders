@@ -20,7 +20,7 @@ class SalesmanStockRegisterController extends Controller implements HasMiddlewar
     public static function middleware(): array
     {
         return [
-            new Middleware('can:report-view-inventory'),
+            new Middleware('can:report-inventory-salesman-stock-register'),
         ];
     }
 

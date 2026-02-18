@@ -133,18 +133,19 @@
                 </td>
                 <td class="py-1 px-2 text-center">
                     <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full 
-                                {{ $grn->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                {{ $grn->status === 'received' ? 'bg-blue-100 text-blue-700' : '' }}
-                                {{ $grn->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                        {{ $grn->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                        {{ $grn->status === 'received' ? 'bg-blue-100 text-blue-700' : '' }}
+                                        {{ $grn->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                         {{ ucfirst($grn->status) }}
                     </span>
                 </td>
                 <td class="py-1 px-2 text-center">
                     @if ($grn->status === 'posted')
-                        <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full 
-                                        {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
-                                        {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                        {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                        <span
+                            class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full 
+                                                        {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
+                                                        {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                        {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                             {{ ucfirst($grn->payment_status) }}
                         </span>
                         @if ($grn->payment_status !== 'unpaid')
@@ -187,20 +188,16 @@
                                 </a>
                             @endcan
                             @can('goods-receipt-note-delete')
-                                <form action="{{ route('goods-receipt-notes.destroy', $grn->id) }}" method="POST"
-                                    class="inline-block" onsubmit="return confirm('Are you sure you want to delete this GRN?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                        class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
-                                        title="Delete">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                            stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                        </svg>
-                                    </button>
-                                </form>
+                                <button type="button" x-data
+                                    x-on:click="$dispatch('open-delete-modal', { url: '{{ route('goods-receipt-notes.destroy', $grn->id) }}', number: '{{ $grn->grn_number }}' })"
+                                    class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                    title="Delete">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                        stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
                             @endcan
                         @endif
                     </div>
@@ -208,4 +205,11 @@
             </tr>
         @endforeach
     </x-data-table>
+
+    <x-alpine-confirmation-modal eventName="open-delete-modal" title="Delete GRN" confirmButtonText="Delete"
+        confirmButtonClass="bg-red-600 hover:bg-red-700" csrfMethod="DELETE">
+        <p class="text-sm text-gray-600">
+            Are you sure you want to delete this GRN? This action cannot be undone.
+        </p>
+    </x-alpine-confirmation-modal>
 </x-app-layout>

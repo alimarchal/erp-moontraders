@@ -76,21 +76,21 @@ function createTestExcelFile(array $rows): UploadedFile
     $sheet = $spreadsheet->getActiveSheet();
 
     $headers = [
-        'product_code',
-        'qty_in_purchase_uom',
-        'unit_price_per_case',
-        'discount_value',
-        'fmr_allowance',
-        'excise_duty',
-        'sales_tax_value',
-        'advance_income_tax',
-        'selling_price',
-        'promotional_price',
-        'priority_order',
-        'must_sell_before',
-        'batch_number',
-        'manufacturing_date',
-        'expiry_date',
+        'Product Code',
+        'Quantity',
+        'Unit Price Per Case',
+        'Discount Value',
+        'FMR Allowance',
+        'Excise Duty',
+        'Sales Tax Value',
+        'Advance Income Tax',
+        'Selling Price',
+        'Promotional Price',
+        'Priority Order',
+        'Batch Number',
+        'Must Sell Before',
+        'Manufacturing Date',
+        'Expiry Date',
     ];
 
     foreach ($headers as $colIndex => $header) {
@@ -114,38 +114,38 @@ function createTestExcelFile(array $rows): UploadedFile
 it('imports valid excel and creates draft GRN with correct items', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
-            'discount_value' => 200,
-            'fmr_allowance' => 100,
-            'excise_duty' => 50,
-            'sales_tax_value' => '',
-            'advance_income_tax' => 25,
-            'selling_price' => '',
-            'promotional_price' => '',
-            'priority_order' => '',
-            'must_sell_before' => '',
-            'batch_number' => 'BATCH-A1',
-            'manufacturing_date' => '',
-            'expiry_date' => '',
+            'Product Code' => 'TEST-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
+            'Discount Value' => 200,
+            'FMR Allowance' => 100,
+            'Excise Duty' => 50,
+            'Sales Tax Value' => '',
+            'Advance Income Tax' => 25,
+            'Selling Price' => '',
+            'Promotional Price' => '',
+            'Priority Order' => '',
+            'Batch Number' => 'BATCH-A1',
+            'Must Sell Before' => '',
+            'Manufacturing Date' => '',
+            'Expiry Date' => '',
         ],
         [
-            'product_code' => 'TEST-002',
-            'qty_in_purchase_uom' => 5,
-            'unit_price_per_case' => 2000.00,
-            'discount_value' => 0,
-            'fmr_allowance' => 0,
-            'excise_duty' => 0,
-            'sales_tax_value' => '',
-            'advance_income_tax' => 0,
-            'selling_price' => 90,
-            'promotional_price' => '',
-            'priority_order' => '',
-            'must_sell_before' => '',
-            'batch_number' => '',
-            'manufacturing_date' => '',
-            'expiry_date' => '',
+            'Product Code' => 'TEST-002',
+            'Quantity' => 5,
+            'Unit Price Per Case' => 2000.00,
+            'Discount Value' => 0,
+            'FMR Allowance' => 0,
+            'Excise Duty' => 0,
+            'Sales Tax Value' => '',
+            'Advance Income Tax' => 0,
+            'Selling Price' => 90,
+            'Promotional Price' => '',
+            'Priority Order' => '',
+            'Batch Number' => '',
+            'Must Sell Before' => '',
+            'Manufacturing Date' => '',
+            'Expiry Date' => '',
         ],
     ]);
 
@@ -172,9 +172,9 @@ it('imports valid excel and creates draft GRN with correct items', function () {
 it('fetches uom_conversion_factor from product not from excel', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1000.00,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1000.00,
         ],
     ]);
 
@@ -193,9 +193,9 @@ it('fetches uom_conversion_factor from product not from excel', function () {
 it('defaults purchase_uom_id to 33 (Case)', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 5,
-            'unit_price_per_case' => 500.00,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 5,
+            'Unit Price Per Case' => 500.00,
         ],
     ]);
 
@@ -214,9 +214,9 @@ it('defaults purchase_uom_id to 33 (Case)', function () {
 it('calculates extended_value correctly', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
         ],
     ]);
 
@@ -228,18 +228,17 @@ it('calculates extended_value correctly', function () {
     ]);
 
     $item = GoodsReceiptNoteItem::latest()->first();
-    // extended_value = qty_in_purchase_uom × unit_price_per_case = 10 × 1500 = 15000
     expect((float) $item->extended_value)->toBe(15000.00);
 });
 
 it('calculates discounted_value_before_tax correctly', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
-            'discount_value' => 200,
-            'fmr_allowance' => 100,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
+            'Discount Value' => 200,
+            'FMR Allowance' => 100,
         ],
     ]);
 
@@ -251,19 +250,18 @@ it('calculates discounted_value_before_tax correctly', function () {
     ]);
 
     $item = GoodsReceiptNoteItem::latest()->first();
-    // discounted_value = 15000 - 200 - 100 = 14700
     expect((float) $item->discounted_value_before_tax)->toBe(14700.00);
 });
 
 it('auto calculates sales tax from supplier rate when blank', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
-            'discount_value' => 200,
-            'fmr_allowance' => 100,
-            'sales_tax_value' => '',
+            'Product Code' => 'TEST-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
+            'Discount Value' => 200,
+            'FMR Allowance' => 100,
+            'Sales Tax Value' => '',
         ],
     ]);
 
@@ -275,19 +273,18 @@ it('auto calculates sales tax from supplier rate when blank', function () {
     ]);
 
     $item = GoodsReceiptNoteItem::latest()->first();
-    // sales_tax = (14700 × 18) / 100 = 2646
     expect((float) $item->sales_tax_value)->toBe(2646.00);
 });
 
 it('uses provided sales tax value when manually specified', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
-            'discount_value' => 200,
-            'fmr_allowance' => 100,
-            'sales_tax_value' => 999.99,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
+            'Discount Value' => 200,
+            'FMR Allowance' => 100,
+            'Sales Tax Value' => 999.99,
         ],
     ]);
 
@@ -305,14 +302,14 @@ it('uses provided sales tax value when manually specified', function () {
 it('calculates unit_cost including fmr_allowance correctly', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
-            'discount_value' => 200,
-            'fmr_allowance' => 100,
-            'excise_duty' => 50,
-            'sales_tax_value' => 2646,
-            'advance_income_tax' => 25,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
+            'Discount Value' => 200,
+            'FMR Allowance' => 100,
+            'Excise Duty' => 50,
+            'Sales Tax Value' => 2646,
+            'Advance Income Tax' => 25,
         ],
     ]);
 
@@ -324,23 +321,17 @@ it('calculates unit_cost including fmr_allowance correctly', function () {
     ]);
 
     $item = GoodsReceiptNoteItem::latest()->first();
-
-    // discounted_value_before_tax = 15000 - 200 - 100 = 14700
-    // total_value_with_taxes = 14700 + 50 + 2646 + 25 = 17421
     expect((float) $item->total_value_with_taxes)->toBe(17421.00);
-
-    // quantity_received = 10 × 24 = 240
-    // unit_cost = (17421 + 100) / 240 = 17521 / 240 = 73.00416...
     expect(round((float) $item->unit_cost, 2))->toBe(73.00);
 });
 
 it('creates promotional campaign when promotional_price is provided', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
-            'promotional_price' => 65.00,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
+            'Promotional Price' => 65.00,
         ],
     ]);
 
@@ -354,6 +345,7 @@ it('creates promotional campaign when promotional_price is provided', function (
     $item = GoodsReceiptNoteItem::latest()->first();
     expect($item->is_promotional)->toBeTrue();
     expect((float) $item->promotional_price)->toBe(65.00);
+    expect((float) $item->selling_price)->toBe(65.00);
     expect($item->promotional_campaign_id)->not->toBeNull();
 
     $campaign = PromotionalCampaign::find($item->promotional_campaign_id);
@@ -362,12 +354,36 @@ it('creates promotional campaign when promotional_price is provided', function (
     expect($campaign->discount_type)->toBe('special_price');
 });
 
+it('overrides selling_price with promotional_price when promotional_price is set', function () {
+    $file = createTestExcelFile([
+        [
+            'Product Code' => 'TEST-001',
+            'Quantity' => 5,
+            'Unit Price Per Case' => 1000.00,
+            'Selling Price' => 120.00,
+            'Promotional Price' => 55.00,
+        ],
+    ]);
+
+    $this->post(route('goods-receipt-notes.import'), [
+        'supplier_id' => $this->supplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'receipt_date' => '2026-02-17',
+        'import_file' => $file,
+    ]);
+
+    $item = GoodsReceiptNoteItem::latest()->first();
+    expect((float) $item->selling_price)->toBe(55.00);
+    expect((float) $item->promotional_price)->toBe(55.00);
+    expect($item->is_promotional)->toBeTrue();
+});
+
 it('stores GRN header fields from modal correctly', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 5,
-            'unit_price_per_case' => 1000.00,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 5,
+            'Unit Price Per Case' => 1000.00,
         ],
     ]);
 
@@ -391,9 +407,9 @@ it('stores GRN header fields from modal correctly', function () {
 it('returns error for invalid product code with row number', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'INVALID-999',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
+            'Product Code' => 'INVALID-999',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
         ],
     ]);
 
@@ -410,7 +426,7 @@ it('returns error for invalid product code with row number', function () {
 
 it('returns error for product not belonging to supplier', function () {
     $otherSupplier = Supplier::factory()->create(['disabled' => false]);
-    $otherProduct = Product::factory()->create([
+    Product::factory()->create([
         'product_code' => 'OTHER-001',
         'supplier_id' => $otherSupplier->id,
         'is_active' => true,
@@ -418,9 +434,9 @@ it('returns error for product not belonging to supplier', function () {
 
     $file = createTestExcelFile([
         [
-            'product_code' => 'OTHER-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
+            'Product Code' => 'OTHER-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
         ],
     ]);
 
@@ -442,9 +458,9 @@ it('denies import without goods-receipt-note-import permission', function () {
 
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
         ],
     ]);
 
@@ -461,9 +477,9 @@ it('denies import without goods-receipt-note-import permission', function () {
 it('allows import with goods-receipt-note-import permission', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 5,
-            'unit_price_per_case' => 1000.00,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 5,
+            'Unit Price Per Case' => 1000.00,
         ],
     ]);
 
@@ -498,14 +514,14 @@ it('denies template download without import permission', function () {
 it('rolls back transaction when row has errors', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 10,
-            'unit_price_per_case' => 1500.00,
+            'Product Code' => 'TEST-001',
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1500.00,
         ],
         [
-            'product_code' => 'INVALID-PRODUCT',
-            'qty_in_purchase_uom' => 5,
-            'unit_price_per_case' => 2000.00,
+            'Product Code' => 'INVALID-PRODUCT',
+            'Quantity' => 5,
+            'Unit Price Per Case' => 2000.00,
         ],
     ]);
 
@@ -529,10 +545,10 @@ it('validates required fields in import form', function () {
 it('sets selling_price from product when not in excel', function () {
     $file = createTestExcelFile([
         [
-            'product_code' => 'TEST-001',
-            'qty_in_purchase_uom' => 5,
-            'unit_price_per_case' => 1000.00,
-            'selling_price' => '',
+            'Product Code' => 'TEST-001',
+            'Quantity' => 5,
+            'Unit Price Per Case' => 1000.00,
+            'Selling Price' => '',
         ],
     ]);
 

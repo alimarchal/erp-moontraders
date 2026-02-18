@@ -57,9 +57,9 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
                 continue;
             }
 
-            $qtyInPurchaseUom = (float) ($row['qty_in_purchase_uom'] ?? 0);
+            $qtyInPurchaseUom = (float) ($row['quantity'] ?? 0);
             if ($qtyInPurchaseUom <= 0) {
-                $this->rowErrors[$rowNumber] = "Row {$rowNumber}: Qty in purchase UOM must be greater than 0.";
+                $this->rowErrors[$rowNumber] = "Row {$rowNumber}: Quantity must be greater than 0.";
 
                 continue;
             }
@@ -107,6 +107,10 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
                 ? round((float) $row['promotional_price'], 2)
                 : null;
 
+            if ($promotionalPrice !== null && $promotionalPrice > 0) {
+                $sellingPrice = $promotionalPrice;
+            }
+
             $priorityOrder = ($row['priority_order'] ?? null) !== null && $row['priority_order'] !== '' && is_numeric($row['priority_order'])
                 ? (int) $row['priority_order']
                 : 99;
@@ -151,7 +155,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
     {
         return [
             'product_code' => 'required|string',
-            'qty_in_purchase_uom' => 'required|numeric|min:0.01',
+            'quantity' => 'required|numeric|min:0.01',
             'unit_price_per_case' => 'required|numeric|min:0.01',
             'discount_value' => 'nullable|numeric|min:0',
             'fmr_allowance' => 'nullable|numeric|min:0',

@@ -808,7 +808,12 @@
 
                         // If selling price exceeds maximum, show alert and cap it at maximum
                         if (maxPrice > 0 && sellingPrice > maxPrice) {
-                            alert(`Selling price cannot exceed the maximum price of ${this.formatCurrency(maxPrice)}\n\nThe selling price has been set to the maximum allowed value.`);
+                            window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                                detail: {
+                                    title: 'Price Exceeded!',
+                                    message: `<p>Selling price cannot exceed the maximum price of <strong>${this.formatCurrency(maxPrice)}</strong>.</p><p class="mt-2">The selling price has been set to the maximum allowed value.</p>`
+                                }
+                            }));
                             item.selling_price = maxPrice;
                         }
                     },
@@ -860,6 +865,22 @@
                     const productId = $(this).val();
                     const alpineComponent = Alpine.$data(this.closest('form'));
                     if (alpineComponent && alpineComponent.items && alpineComponent.items[index]) {
+                        const isDuplicate = alpineComponent.items.some((item, idx) => {
+                            return idx !== index && String(item.product_id) === String(productId);
+                        });
+
+                        if (isDuplicate && productId) {
+                            window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                                detail: {
+                                    title: 'Duplicate Product!',
+                                    message: '<p>This product is already added to the list.</p><p class="mt-2">Please adjust the quantity in the existing row instead of adding it again.</p>'
+                                }
+                            }));
+                            $(`#product_${index}`).val('').trigger('change.select2');
+                            alpineComponent.items[index].product_id = '';
+                            return;
+                        }
+
                         alpineComponent.items[index].product_id = productId;
                         alpineComponent.updateProduct(index);
                     }
@@ -888,7 +909,12 @@
                     allProducts = await response.json();
                 } catch (error) {
                     console.error('Error loading products:', error);
-                    alert('Failed to load products. Please try again.');
+                    window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                        detail: {
+                            title: 'Error',
+                            message: '<p>Failed to load products. Please try again.</p>'
+                        }
+                    }));
                     allProducts = [];
                 }
             }
@@ -992,11 +1018,14 @@
                     @if(old('supplier_id', $grn->supplier_id))
                         refreshAllProductSelects();
                     @endif
-                    });
+                        });
             }
 
             // Start initialization
             initializeGRNForm();
         </script>
     @endpush
+
+    <x-alpine-alert-modal event-name="open-alert-modal" title="Alert" button-text="OK"
+        button-class="bg-red-600 hover:bg-red-700" icon-bg-class="bg-red-100" icon-color-class="text-red-600" />
 </x-app-layout>

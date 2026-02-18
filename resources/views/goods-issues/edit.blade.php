@@ -294,7 +294,12 @@
                     });
 
                     if (validItems.length === 0) {
-                        alert('⚠️ Cannot update!\n\nNo valid items to update. Please add at least one product with a valid quantity.');
+                        window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                            detail: {
+                                title: 'Cannot Update!',
+                                message: '<p>No valid items to update.</p><p class="mt-2">Please add at least one product with a valid quantity.</p>'
+                            }
+                        }));
                         return false;
                     }
 
@@ -308,12 +313,22 @@
                 addItem() {
                     const warehouseId = document.getElementById('warehouse_id').value;
                     if (!warehouseId) {
-                        alert('Please select a warehouse first');
+                        window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                            detail: {
+                                title: 'Warehouse Required',
+                                message: '<p>Please select a warehouse first.</p>'
+                            }
+                        }));
                         return;
                     }
 
                     if (allProducts.length === 0) {
-                        alert('Please select a supplier first to load products');
+                        window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                            detail: {
+                                title: 'Supplier Required',
+                                message: '<p>Please select a supplier first to load products.</p>'
+                            }
+                        }));
                         return;
                     }
 
@@ -389,10 +404,15 @@
                         item.total_value = 0;
                         item.unit_cost = 0;
 
+                        item.quantity_issued = availableQty;
+                        this.updatePriceBasedOnQuantity(index);
+
                         setTimeout(() => {
-                            alert(`⚠️ INVALID QUANTITY!\n\nYou entered: ${quantity.toFixed(0)} units\nAvailable stock: ${availableQty.toFixed(0)} units\n\nQuantity has been reset to maximum available.`);
-                            item.quantity_issued = availableQty;
-                            this.updatePriceBasedOnQuantity(index);
+                            window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                                detail: {
+                                    message: `<p class="font-semibold text-red-600">You entered: ${quantity.toFixed(0)} units</p><p class="font-semibold text-green-600">Available stock: ${availableQty.toFixed(0)} units</p><p class="mt-2 text-gray-700">Quantity has been reset to maximum available.</p>`
+                                }
+                            }));
                         }, 100);
                         return;
                     }
@@ -694,7 +714,12 @@
             });
 
             if (isDuplicate) {
-                alert('⚠️ DUPLICATE PRODUCT!\n\nThis product is already added to the list.\n\nPlease adjust the quantity in the existing row instead of adding it again.');
+                window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                    detail: {
+                        title: 'Duplicate Product!',
+                        message: '<p>This product is already added to the list.</p><p class="mt-2">Please adjust the quantity in the existing row instead of adding it again.</p>'
+                    }
+                }));
                 $(`#product_${index}`).val('').trigger('change');
                 alpineComponent.items[index].product_id = '';
                 return;
@@ -725,7 +750,12 @@
 
             } catch (error) {
                 console.error('Error fetching product stock:', error);
-                alert('Error loading product stock data');
+                window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                    detail: {
+                        title: 'Error',
+                        message: '<p>Error loading product stock data.</p>'
+                    }
+                }));
             }
         }
 
@@ -815,4 +845,13 @@
         initializeGoodsIssueForm();
     </script>
     @endpush
+
+    <x-alpine-alert-modal
+        event-name="open-alert-modal"
+        title="Alert"
+        button-text="OK"
+        button-class="bg-red-600 hover:bg-red-700"
+        icon-bg-class="bg-red-100"
+        icon-color-class="text-red-600"
+    />
 </x-app-layout>

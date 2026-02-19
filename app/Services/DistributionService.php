@@ -451,6 +451,9 @@ class DistributionService
             // Load relationships including batch details
             $settlement->load(['items.goodsIssueItem', 'items.product', 'items.batches.stockBatch']);
 
+            // Validate financial integrity before any stock or GL operations
+            $this->validateSettlementForPosting($settlement);
+
             // Calculate and store gross profit
             $totalGrossProfit = 0;
 
@@ -694,13 +697,24 @@ class DistributionService
             $ledgerService = app(LedgerService::class);
             $ledgerService->processSalesSettlement($settlement);
 
-            // Update settlement status with gross profit and total COGS
+            // Recalculate cash_sales_amount from child records so the stored value is always
+            // consistent with the GL entry (guards against stale values from formula changes).
+            $freshCashSalesAmount = round(
+                (float) $settlement->items->sum('total_sales_value')
+                - (float) $settlement->creditSales->sum('sale_amount')
+                - (float) $settlement->cheques->sum('amount')
+                - (float) $settlement->bankTransfers->sum('amount'),
+                2
+            );
+
+            // Update settlement status with gross profit, total COGS, and corrected cash_sales_amount
             $settlement->update([
                 'status' => 'posted',
                 'posted_at' => now(),
                 'journal_entry_id' => $journalEntry ? $journalEntry->id : null,
                 'gross_profit' => $totalGrossProfit,
                 'total_cogs' => $totalCOGS,
+                'cash_sales_amount' => $freshCashSalesAmount,
             ]);
 
             DB::commit();
@@ -917,7 +931,15 @@ class DistributionService
                 });
 
             // 5. Cash Sales (Gross)
-            $cashSalesAmount = $settlement->cash_sales_amount ?? 0;
+            // Always recalculate from child records to avoid using a stale stored value.
+            // Formula: total_sales - credit - cheques - bank_transfers (consistent with validateSettlementForPosting)
+            $cashSalesAmount = round(
+                (float) $settlement->items->sum('total_sales_value')
+                - (float) $settlement->creditSales->sum('sale_amount')
+                - (float) $settlement->cheques->sum('amount')
+                - (float) $settlement->bankTransfers->sum('amount'),
+                2
+            );
             if ($cashSalesAmount > 0) {
                 $addLine(
                     $accounts['salesman_clearing']->id,
@@ -1001,7 +1023,8 @@ class DistributionService
                     "Cash Shortage Adjustment - {$employeeLabel} - {$settlementReference}"
                 );
             } elseif ($cashDifference > 0) {
-                // Excess: Dr Salesman Clearing, Cr Misc Income (using Write Off as fallback or 4xxx)
+                // Excess: Dr Salesman Clearing, Cr Round Off (5271)
+                $roundOffAccount = $accounts['round_off'] ?? $accounts['misc_expense'];
                 $addLine(
                     $accounts['salesman_clearing']->id,
                     $cashDifference,
@@ -1009,7 +1032,7 @@ class DistributionService
                     "Cash Excess (Expected: {$expectedClearingBalance}, Actual: {$totalSubmitted}) - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
-                    $accounts['misc_expense']->id, // Ideally a Misc Income account
+                    $roundOffAccount->id,
                     0,
                     $cashDifference,
                     "Cash Excess Adjustment - {$employeeLabel} - {$settlementReference}"
@@ -1204,6 +1227,7 @@ class DistributionService
             'food_salesman_loader' => \App\Models\ChartOfAccount::where('account_code', '5282')->first(),
             'percentage' => \App\Models\ChartOfAccount::where('account_code', '5223')->first(),
             'misc_expense' => \App\Models\ChartOfAccount::where('account_code', '5213')->first(),
+            'round_off' => \App\Models\ChartOfAccount::where('account_code', '5271')->first(),
         ];
     }
 
@@ -1235,5 +1259,91 @@ class DistributionService
         }
 
         return $missing;
+    }
+
+    /**
+     * Validate a settlement's financial and quantity integrity before posting.
+     *
+     * Checks:
+     *   1. cash_sales_amount >= 0 (credit + cheques + bank transfers must not exceed total sales)
+     *   2. Short/Excess >= 0 (physical cash + bank slips must cover expected clearing balance)
+     *   3. Per-item: quantity_sold + quantity_returned + quantity_shortage <= quantity_issued
+     *
+     * @throws \RuntimeException with a descriptive message if any check fails.
+     */
+    private function validateSettlementForPosting(SalesSettlement $settlement): void
+    {
+        $settlement->loadMissing([
+            'creditSales',
+            'cheques',
+            'bankTransfers',
+            'bankSlips',
+            'expenses.expenseAccount',
+            'recoveries',
+            'cashDenominations',
+        ]);
+
+        // 1. Recalculate cash_sales_amount from child records (never trust the stored value)
+        $totalSalesAmount = (float) $settlement->items->sum('total_sales_value');
+        $creditSalesAmount = (float) $settlement->creditSales->sum('sale_amount');
+        $chequeAmount = (float) $settlement->cheques->sum('amount');
+        $bankTransferAmount = (float) $settlement->bankTransfers->sum('amount');
+        $cashSalesAmount = round($totalSalesAmount - $creditSalesAmount - $chequeAmount - $bankTransferAmount, 2);
+
+        if ($cashSalesAmount < 0) {
+            $excess = number_format(abs($cashSalesAmount), 2);
+            throw new \RuntimeException(
+                "Cannot post: credit sales, cheques, and bank transfers exceed total sales by {$excess}. Cash sales amount cannot be negative."
+            );
+        }
+
+        // 2. Short/Excess must be >= 0 (salesman must not have a cash shortage)
+        $totalCashRecoveries = (float) $settlement->recoveries
+            ->where('payment_method', 'cash')
+            ->sum('amount');
+        $totalExpenses = (float) $settlement->expenses->sum('amount');
+        $denomRecord = $settlement->cashDenominations->first();
+        $actualPhysicalCash = $denomRecord
+            ? (float) $denomRecord->total_amount
+            : (float) $settlement->cash_collected;
+        $bankSlipsTotal = (float) $settlement->bankSlips->sum('amount');
+
+        $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries - $totalExpenses;
+        $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal;
+        $shortExcess = round($totalSubmitted - $expectedClearingBalance, 2);
+
+        if ($shortExcess < 0) {
+            $shortfall = number_format(abs($shortExcess), 2);
+            throw new \RuntimeException(
+                "Cannot post: cash shortage of {$shortfall}. Physical cash and bank slips submitted are less than the expected clearing balance. Collect the outstanding amount before posting."
+            );
+        }
+
+        // 3. COGS accounts (511x) must not appear as manual expenses (they are auto-posted via inventory)
+        foreach ($settlement->expenses as $expense) {
+            $accountCode = (string) ($expense->expenseAccount?->account_code ?? '');
+            if (str_starts_with($accountCode, '511')) {
+                $accountName = $expense->expenseAccount?->account_name ?? "Account ID {$expense->expense_account_id}";
+                throw new \RuntimeException(
+                    "Cannot post: expense entry uses COGS account '{$accountName}' ({$accountCode}). COGS is posted automatically via inventory and must not be entered as a manual expense."
+                );
+            }
+        }
+
+        // 4. Per-item quantity integrity: sold + returned + shortage must not exceed issued
+        foreach ($settlement->items as $item) {
+            $totalQty = round(
+                (float) $item->quantity_sold + (float) $item->quantity_returned + (float) $item->quantity_shortage,
+                4
+            );
+            $issuedQty = round((float) $item->quantity_issued, 4);
+
+            if ($totalQty > $issuedQty) {
+                $productName = $item->product?->product_name ?? "Product ID {$item->product_id}";
+                throw new \RuntimeException(
+                    "Cannot post: for '{$productName}', quantities sold ({$item->quantity_sold}) + returned ({$item->quantity_returned}) + shortage ({$item->quantity_shortage}) = {$totalQty} exceeds quantity issued ({$issuedQty})."
+                );
+            }
+        }
     }
 }

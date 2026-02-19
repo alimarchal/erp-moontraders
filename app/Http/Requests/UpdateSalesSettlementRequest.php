@@ -145,7 +145,16 @@ class UpdateSalesSettlementRequest extends FormRequest
             'percentage_expenses.*.notes' => 'nullable|string',
 
             'expenses' => 'nullable|array',
-            'expenses.*.expense_account_id' => 'required_with:expenses|exists:chart_of_accounts,id',
+            'expenses.*.expense_account_id' => [
+                'required_with:expenses',
+                'exists:chart_of_accounts,id',
+                function (string $attribute, mixed $value, \Closure $fail): void {
+                    $account = \App\Models\ChartOfAccount::find($value);
+                    if ($account && str_starts_with((string) $account->account_code, '511')) {
+                        $fail('COGS accounts (511x) cannot be used as settlement expenses — they are posted automatically via inventory.');
+                    }
+                },
+            ],
             'expenses.*.description' => 'nullable|string|max:255',
             'expenses.*.amount' => 'required_with:expenses|numeric|min:0',
 

@@ -233,8 +233,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
         }
 
-        // Get expense posting accounts (accounts starting with 5, non-group, active)
+        // Get expense posting accounts (5xxx, excluding COGS 511x to prevent double-counting)
         $expenseAccounts = \App\Models\ChartOfAccount::where('account_code', 'LIKE', '5%')
+            ->where('account_code', 'NOT LIKE', '511%')
             ->where('is_group', false)
             ->where('is_active', true)
             ->orderBy('account_code')
@@ -433,6 +434,16 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $payload = $this->buildSettlementPayload($request);
             $totals = $payload['totals'];
             $itemFinancials = $payload['items_financials'];
+
+            if ($totals['cash_sales_amount'] < 0) {
+                DB::rollBack();
+                $excess = number_format(abs($totals['cash_sales_amount']), 2);
+
+                return back()
+                    ->withInput()
+                    ->with('error', "Payment breakdown is invalid: credit sales, cheques, and bank transfers exceed total sales by {$excess}. Please correct the payment entries.");
+            }
+
             $settlementNumber = $this->generateSettlementNumber();
 
             $settlement = SalesSettlement::create([
@@ -589,8 +600,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'bankSlips.bankAccount',
         ]);
 
-        // Get expense posting accounts (accounts starting with 5, non-group, active)
+        // Get expense posting accounts (5xxx, excluding COGS 511x to prevent double-counting)
         $expenseAccounts = \App\Models\ChartOfAccount::where('account_code', 'LIKE', '5%')
+            ->where('account_code', 'NOT LIKE', '511%')
             ->where('is_group', false)
             ->where('is_active', true)
             ->orderBy('account_code')
@@ -790,6 +802,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $payload = $this->buildSettlementPayload($request);
             $totals = $payload['totals'];
             $itemFinancials = $payload['items_financials'];
+
+            if ($totals['cash_sales_amount'] < 0) {
+                DB::rollBack();
+                $excess = number_format(abs($totals['cash_sales_amount']), 2);
+
+                return back()
+                    ->withInput()
+                    ->with('error', "Payment breakdown is invalid: credit sales, cheques, and bank transfers exceed total sales by {$excess}. Please correct the payment entries.");
+            }
 
             $salesSettlement->update([
                 'settlement_date' => $request->settlement_date,

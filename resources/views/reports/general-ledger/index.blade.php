@@ -46,10 +46,13 @@
                 display: none;
             }
 
+            .hidden-on-screen {
+                display: none;
+            }
+
             @media print {
                 @page {
-                    margin: 10mm;
-                    size: landscape;
+                    margin: 5mm 10mm;
                 }
 
                 body {
@@ -108,6 +111,10 @@
 
                 .report-table tbody tr:hover {
                     background-color: transparent;
+                }
+
+                .hidden-on-screen {
+                    display: table-cell !important;
                 }
             }
         </style>
@@ -305,7 +312,7 @@
     </div>
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4">
-        <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none">
+        <div class="bg-white overflow-hidden pt-4 pb-4 pl-0 pr-0 shadow-xl sm:rounded-lg mb-4 print:shadow-none">
             <div class="overflow-x-auto">
                 <p class="text-center font-extrabold mb-2">
                     Moon Traders<br>
@@ -335,11 +342,12 @@
                         <tr>
                             <th class="text-center">Sr.#</th>
                             <th class="text-center">Date</th>
-                            <th class="text-center">JE #</th>
-                            <th class="text-center">Ln</th>
-                            <th class="text-left">Acc Code</th>
+                            <th class="text-center hidden-on-screen">JE #</th>
+                            <th class="text-center hidden-on-screen">Ln</th>
+                            <th class="text-left">Code</th>
                             <th class="text-left">Account Name</th>
                             <th class="text-left">Description</th>
+                            <th class="text-left">Line Description</th>
                             <th class="text-right">Debit</th>
                             <th class="text-right">Credit</th>
                             <th class="text-left">Reference</th>
@@ -350,33 +358,30 @@
                     <tbody>
                         @forelse ($entries as $index => $entry)
                             <tr>
-                                <td class="text-center">{{ $entries->firstItem() + $index }}</td>
-                                <td class="text-center whitespace-nowrap">
+                                <td class="text-center text-xs">{{ $entries->firstItem() + $index }}</td>
+                                <td class="text-center whitespace-nowrap text-xs">
                                     {{ $entry->entry_date ? $entry->entry_date->format('d-M-Y') : '-' }}</td>
-                                <td class="text-center font-mono">{{ $entry->journal_entry_id }}</td>
-                                <td class="text-center font-mono">{{ $entry->line_no }}</td>
-                                <td class="text-left font-mono whitespace-nowrap">{{ $entry->account_code }}</td>
-                                <td class="text-left whitespace-nowrap">{{ $entry->account_name }}</td>
-                                <td class="text-left">
-                                    @if($entry->line_description && $entry->line_description !== $entry->journal_description)
-                                        <x-tooltip :text="'LD: ' . $entry->line_description">
-                                            <span class="cursor-help border-b border-dashed border-gray-400">{{ $entry->journal_description ?? '-' }}</span>
-                                        </x-tooltip>
-                                    @else
-                                        {{ $entry->journal_description ?? '-' }}
-                                    @endif
+                                <td class="text-center font-mono hidden-on-screen text-xs">{{ $entry->journal_entry_id }}</td>
+                                <td class="text-center font-mono hidden-on-screen text-xs">{{ $entry->line_no }}</td>
+                                <td class="text-left font-mono whitespace-nowrap text-xs">{{ $entry->account_code }}</td>
+                                <td class="text-left whitespace-nowrap text-xs">{{ $entry->account_name }}</td>
+                                <td class="text-left text-xs">
+                                    {{ $entry->journal_description ?? '-' }}
                                 </td>
-                                <td class="text-right font-mono whitespace-nowrap">
+                                <td class="text-left text-xs">
+                                    {{ $entry->line_description ?? '-' }}
+                                </td>
+                                <td class="text-right font-mono whitespace-nowrap text-xs">
                                     {{ (float) $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}</td>
-                                <td class="text-right font-mono whitespace-nowrap">
+                                <td class="text-right font-mono whitespace-nowrap text-xs">
                                     {{ (float) $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}</td>
-                                <td class="text-left">{{ $entry->reference ?? '-' }}</td>
-                                <td class="text-center whitespace-nowrap">{{ $entry->cost_center_code ?? '-' }}</td>
-                                <td class="text-center whitespace-nowrap">{{ ucfirst($entry->status ?? 'draft') }}</td>
+                                <td class="text-left text-xs">{{ $entry->reference ?? '-' }}</td>
+                                <td class="text-center whitespace-nowrap text-xs">{{ $entry->cost_center_code ?? '-' }}</td>
+                                <td class="text-center whitespace-nowrap text-xs">{{ ucfirst($entry->status ?? 'draft') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="12" class="text-center py-8 text-gray-500">
+                                <td colspan="13" class="text-center py-8 text-gray-500">
                                     No general ledger entries found.
                                 </td>
                             </tr>
@@ -385,7 +390,7 @@
                     @if($entries->isNotEmpty())
                         <tfoot>
                             <tr>
-                                <td class="text-right" colspan="7">Page Total ({{ $entries->count() }} entries):</td>
+                                <td class="text-right" colspan="8">Page Total ({{ $entries->count() }} entries):</td>
                                 <td class="text-right font-mono">{{ number_format($entries->sum('debit'), 2) }}</td>
                                 <td class="text-right font-mono">{{ number_format($entries->sum('credit'), 2) }}</td>
                                 <td colspan="3"></td>

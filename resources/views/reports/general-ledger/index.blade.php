@@ -345,7 +345,7 @@
                             <th class="text-center">Date</th>
                             {{-- <th class="text-center hidden-on-screen">JE #</th>
                             <th class="text-center hidden-on-screen">Ln</th> --}}
-                            {{-- <th class="text-left">Code</th> --}}
+                            <th class="text-left">Code</th>
                             {{-- <th class="text-left">Account Name</th> --}}
                             <th class="text-left">Description / LD / Reference</th>
                             {{-- <th class="text-left">Line Description</th> --}}
@@ -367,11 +367,11 @@
                                     }}
                                 </td>
                                 <td class="text-center font-mono hidden-on-screen text-xs">{{ $entry->line_no }}</td> --}}
-                                {{-- <td class="text-left font-mono whitespace-nowrap text-xs">{{ $entry->account_code }}
+                                <td class="text-left font-mono whitespace-nowrap text-xs">{{ $entry->account_code }}
                                 </td>
-                                <td class="text-left whitespace-nowrap text-xs">{{ $entry->account_name }}</td> --}}
+                                {{-- <td class="text-left whitespace-nowrap text-xs">{{ $entry->account_name }}</td> --}}
                                 <td class="text-left text-xs">
-                                    ({{ $entry->account_code }} - {{ $entry->account_name }} ) ::
+                                    {{ $entry->account_name }} -
                                     {{ $entry->journal_description ?? '-' }} ::
                                     {{ $entry->line_description ?? '-' }} **
                                     Ref: {{ $entry->reference ?? '-' }} -
@@ -409,7 +409,7 @@
                     @if($entries->isNotEmpty())
                         <tfoot>
                             <tr>
-                                <td class="text-right" colspan="3">Page Total ({{ $entries->count() }} entries):</td>
+                                <td class="text-right" colspan="4">Page Total ({{ $entries->count() }} entries):</td>
                                 <td class="text-right font-mono">{{ number_format($entries->sum('debit'), 2) }}</td>
                                 <td class="text-right font-mono">{{ number_format($entries->sum('credit'), 2) }}</td>
                                 <td colspan="3"></td>

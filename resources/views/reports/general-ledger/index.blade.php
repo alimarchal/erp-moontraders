@@ -306,7 +306,8 @@
                 <p class="text-xs text-gray-500 uppercase tracking-wide">Net Difference</p>
                 <p
                     class="text-2xl font-bold font-mono {{ abs($netDifference) < 0.01 ? 'text-emerald-700' : 'text-yellow-600' }}">
-                    {{ number_format($netDifference, 2) }}</p>
+                    {{ number_format($netDifference, 2) }}
+                </p>
             </div>
         </div>
     </div>
@@ -342,16 +343,16 @@
                         <tr>
                             <th class="text-center">Sr.#</th>
                             <th class="text-center">Date</th>
-                            <th class="text-center hidden-on-screen">JE #</th>
-                            <th class="text-center hidden-on-screen">Ln</th>
-                            <th class="text-left">Code</th>
-                            <th class="text-left">Account Name</th>
-                            <th class="text-left">Description</th>
-                            <th class="text-left">Line Description</th>
+                            {{-- <th class="text-center hidden-on-screen">JE #</th>
+                            <th class="text-center hidden-on-screen">Ln</th> --}}
+                            {{-- <th class="text-left">Code</th> --}}
+                            {{-- <th class="text-left">Account Name</th> --}}
+                            <th class="text-left">Description / LD / Reference</th>
+                            {{-- <th class="text-left">Line Description</th> --}}
                             <th class="text-right">Debit</th>
                             <th class="text-right">Credit</th>
-                            <th class="text-left">Reference</th>
-                            <th class="text-center">Cost Center</th>
+                            {{-- <th class="text-left">Reference</th> --}}
+                            {{-- <th class="text-center">Cost Center</th> --}}
                             <th class="text-center">Status</th>
                         </tr>
                     </thead>
@@ -360,24 +361,42 @@
                             <tr>
                                 <td class="text-center text-xs">{{ $entries->firstItem() + $index }}</td>
                                 <td class="text-center whitespace-nowrap text-xs">
-                                    {{ $entry->entry_date ? $entry->entry_date->format('d-M-Y') : '-' }}</td>
-                                <td class="text-center font-mono hidden-on-screen text-xs">{{ $entry->journal_entry_id }}</td>
-                                <td class="text-center font-mono hidden-on-screen text-xs">{{ $entry->line_no }}</td>
-                                <td class="text-left font-mono whitespace-nowrap text-xs">{{ $entry->account_code }}</td>
-                                <td class="text-left whitespace-nowrap text-xs">{{ $entry->account_name }}</td>
-                                <td class="text-left text-xs">
-                                    {{ $entry->journal_description ?? '-' }}
+                                    {{ $entry->entry_date ? $entry->entry_date->format('d-M-Y') : '-' }}
                                 </td>
+                                {{-- <td class="text-center font-mono hidden-on-screen text-xs">{{ $entry->journal_entry_id
+                                    }}
+                                </td>
+                                <td class="text-center font-mono hidden-on-screen text-xs">{{ $entry->line_no }}</td> --}}
+                                {{-- <td class="text-left font-mono whitespace-nowrap text-xs">{{ $entry->account_code }}
+                                </td>
+                                <td class="text-left whitespace-nowrap text-xs">{{ $entry->account_name }}</td> --}}
                                 <td class="text-left text-xs">
+                                    ({{ $entry->account_code }} - {{ $entry->account_name }} ) ::
+                                    {{ $entry->journal_description ?? '-' }} ::
+                                    {{ $entry->line_description ?? '-' }} **
+                                    Ref: {{ $entry->reference ?? '-' }} -
+                                    CC: {{ $entry->cost_center_code ?? '-' }}
+                                    {{-- @php $desc = $entry->journal_description ?? '-'; @endphp
+                                    {{ substr($desc, 0, length: 80) }}
+                                    @if(strlen($desc) > 80)
+                                    <br>{{ substr($desc, 80) }}
+                                    @endif --}}
+                                </td>
+                                {{-- <td class="text-left text-xs">
                                     {{ $entry->line_description ?? '-' }}
+                                </td> --}}
+                                <td class="text-right font-mono whitespace-nowrap text-xs">
+                                    {{ (float) $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
                                 </td>
                                 <td class="text-right font-mono whitespace-nowrap text-xs">
-                                    {{ (float) $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}</td>
-                                <td class="text-right font-mono whitespace-nowrap text-xs">
-                                    {{ (float) $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}</td>
-                                <td class="text-left text-xs">{{ $entry->reference ?? '-' }}</td>
-                                <td class="text-center whitespace-nowrap text-xs">{{ $entry->cost_center_code ?? '-' }}</td>
-                                <td class="text-center whitespace-nowrap text-xs">{{ ucfirst($entry->status ?? 'draft') }}</td>
+                                    {{ (float) $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
+                                </td>
+                                {{-- <td class="text-left text-xs">{{ $entry->reference ?? '-' }}</td> --}}
+                                {{-- <td class="text-center whitespace-nowrap text-xs">{{ $entry->cost_center_code ?? '-' }}
+                                </td> --}}
+                                <td class="text-center whitespace-nowrap text-xs">
+                                    {{ ucfirst($entry->status ?? 'draft') }}
+                                </td>
                             </tr>
                         @empty
                             <tr>
@@ -390,7 +409,7 @@
                     @if($entries->isNotEmpty())
                         <tfoot>
                             <tr>
-                                <td class="text-right" colspan="8">Page Total ({{ $entries->count() }} entries):</td>
+                                <td class="text-right" colspan="3">Page Total ({{ $entries->count() }} entries):</td>
                                 <td class="text-right font-mono">{{ number_format($entries->sum('debit'), 2) }}</td>
                                 <td class="text-right font-mono">{{ number_format($entries->sum('credit'), 2) }}</td>
                                 <td colspan="3"></td>

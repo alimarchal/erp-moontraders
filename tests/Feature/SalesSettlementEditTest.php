@@ -394,7 +394,12 @@ test('update calculates cash_sales_amount as gross cash sales not denomination t
                     'batches' => [],
                 ],
             ],
-            'credit_sales_amount' => 200,
+            'credit_sales' => json_encode([
+                [
+                    'customer_id' => Customer::factory()->create()->id,
+                    'sale_amount' => 200,
+                ],
+            ]),
             'cheques' => [
                 [
                     'cheque_number' => 'CHQ-TEST',

@@ -412,204 +412,29 @@ class SalesSettlementController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
-            // Get goods issue
             $goodsIssue = GoodsIssue::with('items')->findOrFail($request->goods_issue_id);
 
-            // Check if a settlement already exists for this goods issue
             $existingSettlement = SalesSettlement::where('goods_issue_id', $request->goods_issue_id)
                 ->whereIn('status', ['draft', 'posted'])
                 ->first();
 
             if ($existingSettlement) {
-                // If it's posted, prevent creating another one
                 if ($existingSettlement->status === 'posted') {
                     return back()
                         ->withInput()
                         ->with('error', "A posted settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. Cannot create another settlement.");
                 }
 
-                // If it's draft, redirect to show page with message to edit
                 return redirect()
                     ->route('sales-settlements.show', $existingSettlement)
                     ->with('info', "A draft settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. You can view and edit it here.");
             }
 
-            // Debug: Log the incoming request data
-            Log::info('Sales Settlement Request Data', [
-                'goods_issue_id' => $request->goods_issue_id,
-                'items_count' => count($request->items ?? []),
-                'credit_sales' => $request->credit_sales,
-            ]);
-
-            // Debug: Log batch-level details specifically
-            foreach ($request->items as $itemIdx => $item) {
-                if (isset($item['batches']) && is_array($item['batches'])) {
-                    foreach ($item['batches'] as $batchIdx => $batch) {
-                        Log::info("Batch Detail [Item {$itemIdx}][Batch {$batchIdx}]", [
-                            'stock_batch_id' => $batch['stock_batch_id'] ?? 'N/A',
-                            'batch_code' => $batch['batch_code'] ?? 'N/A',
-                            'is_promotional' => $batch['is_promotional'] ?? 'N/A',
-                            'quantity_sold' => $batch['quantity_sold'] ?? 'NOT_SET',
-                            'quantity_returned' => $batch['quantity_returned'] ?? 'NOT_SET',
-                            'quantity_shortage' => $batch['quantity_shortage'] ?? 'NOT_SET',
-                        ]);
-                    }
-                }
-            }
-
-            // Generate settlement number
+            $payload = $this->buildSettlementPayload($request);
+            $totals = $payload['totals'];
+            $itemFinancials = $payload['items_financials'];
             $settlementNumber = $this->generateSettlementNumber();
 
-            // Calculate totals
-            $totalQuantityIssued = 0;
-            $totalValueIssued = 0;
-            $totalQuantitySold = 0;
-            $totalQuantityReturned = 0;
-            $totalQuantityShortage = 0;
-            $totalCogs = 0;
-            $totalSalesValue = 0;
-
-            $itemFinancials = [];
-
-            foreach ($request->items as $index => $item) {
-                $totalQuantityIssued += $item['quantity_issued'];
-                $totalValueIssued += $item['quantity_issued'] * $item['unit_cost'];
-                $totalQuantitySold += $item['quantity_sold'];
-                $totalQuantityReturned += $item['quantity_returned'] ?? 0;
-                $totalQuantityShortage += $item['quantity_shortage'] ?? 0;
-
-                $financials = $this->calculateItemFinancialsUsingBatches($item);
-                $itemFinancials[$index] = $financials;
-
-                $totalCogs += $financials['total_cogs'];
-                $totalSalesValue += $financials['total_sales_value'];
-            }
-
-            // Calculate Gross Profit = Sales Value - COGS
-            $grossProfit = $totalSalesValue - $totalCogs;
-
-            // Calculate denomination total
-            $denomTotal = (float) (
-                (($request->denom_5000 ?? 0) * 5000) +
-                (($request->denom_1000 ?? 0) * 1000) +
-                (($request->denom_500 ?? 0) * 500) +
-                (($request->denom_100 ?? 0) * 100) +
-                (($request->denom_50 ?? 0) * 50) +
-                (($request->denom_20 ?? 0) * 20) +
-                (($request->denom_10 ?? 0) * 10) +
-                (float) ($request->denom_coins ?? 0)
-            );
-
-            // Prepare bank transfer totals
-            $bankTransfersData = [];
-            $totalBankTransfers = 0;
-            if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
-                foreach ($request->bank_transfers as $transfer) {
-                    if (! empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
-                        $bankTransfersData[] = $transfer;
-                        $totalBankTransfers += floatval($transfer['amount'] ?? 0);
-                    }
-                }
-            }
-
-            // Prepare cheque details
-            $chequesData = [];
-            $totalCheques = 0;
-            if ($request->has('cheques') && is_array($request->cheques)) {
-                foreach ($request->cheques as $cheque) {
-                    if (! empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
-                        $chequesData[] = $cheque;
-                        $totalCheques += floatval($cheque['amount'] ?? 0);
-                    }
-                }
-            }
-
-            // Prepare bank slips details
-            $bankSlipsData = [];
-            $totalBankSlips = 0;
-            if ($request->has('bank_slips')) {
-                $entries = is_array($request->bank_slips)
-                    ? $request->bank_slips
-                    : json_decode($request->bank_slips, true);
-
-                if (is_array($entries)) {
-                    foreach ($entries as $slip) {
-                        if (! empty($slip['bank_account_id']) && floatval($slip['amount'] ?? 0) > 0) {
-                            $bankSlipsData[] = $slip;
-                            $totalBankSlips += floatval($slip['amount'] ?? 0);
-                        }
-                    }
-                }
-            }
-
-            // Prepare recoveries details
-            $recoveriesData = [];
-            $totalRecoveries = 0;
-            $cashRecoveries = 0;
-            $bankRecoveries = 0;
-            if ($request->has('recoveries_entries')) {
-                $entries = is_array($request->recoveries_entries)
-                    ? $request->recoveries_entries
-                    : json_decode($request->recoveries_entries, true);
-
-                if (is_array($entries)) {
-                    foreach ($entries as $recovery) {
-                        if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
-                            $recoveriesData[] = $recovery;
-                            $totalRecoveries += floatval($recovery['amount'] ?? 0);
-                            if (($recovery['payment_method'] ?? '') === 'cash') {
-                                $cashRecoveries += floatval($recovery['amount'] ?? 0);
-                            } else {
-                                $bankRecoveries += floatval($recovery['amount'] ?? 0);
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Prepare credit sales details
-            $creditSalesData = [];
-            if ($request->has('credit_sales')) {
-                $entries = is_array($request->credit_sales)
-                    ? $request->credit_sales
-                    : json_decode($request->credit_sales, true);
-
-                if (is_array($entries)) {
-                    foreach ($entries as $creditSale) {
-                        if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
-                            $creditSalesData[] = $creditSale;
-                        }
-                    }
-                }
-            }
-
-            // Calculate Gross Cash Sales = Total Sales Value - Credit - Cheque - Bank
-            // This is the revenue that should be recorded in the GL
-            $grossCashSales = $totalSalesValue - ($request->credit_sales_amount ?? 0) - $totalCheques - $totalBankTransfers;
-
-            // Cash sales field should store the GROSS amount for revenue tracking
-            $cashSalesAmount = $grossCashSales;
-
-            // Total Sales Amount is the total revenue from items sold
-            $totalSalesAmount = $totalSalesValue;
-
-            // Cash collected is strictly physical cash from denominations (Net)
-            $cashCollected = $denomTotal;
-
-            // Calculate total expenses from the expenses array (dynamic from Alpine.js)
-            $totalExpenses = 0;
-            if (! empty($request->expenses) && is_array($request->expenses)) {
-                foreach ($request->expenses as $expense) {
-                    $totalExpenses += floatval($expense['amount'] ?? 0);
-                }
-            }
-
-            // Cash to deposit is what the salesman actually hands over (Physical Cash + Cash Recoveries - Expenses)
-            // Wait, cashRecoveries are already part of the physical cash if he collected them and didn't spend them.
-            // The professional formula for cash to deposit is simply the physical cash he has.
-            $cashToDeposit = $cashCollected;
-
-            // Create sales settlement
             $settlement = SalesSettlement::create([
                 'settlement_number' => $settlementNumber,
                 'settlement_date' => $request->settlement_date,
@@ -618,285 +443,31 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'vehicle_id' => $goodsIssue->vehicle_id,
                 'warehouse_id' => $goodsIssue->warehouse_id,
                 'supplier_id' => $goodsIssue->employee->supplier_id ?? null,
-                'total_quantity_issued' => $totalQuantityIssued,
-                'total_value_issued' => $totalValueIssued,
-                'total_sales_amount' => $totalSalesAmount,
-                'cash_sales_amount' => $cashSalesAmount,
-                'cheque_sales_amount' => $totalCheques,
-                'bank_transfer_amount' => $totalBankTransfers,
-                'bank_slips_amount' => $totalBankSlips,
-                'credit_sales_amount' => $request->credit_sales_amount ?? 0,
-                'credit_recoveries' => $totalRecoveries,
-                'total_quantity_sold' => $totalQuantitySold,
-                'total_quantity_returned' => $totalQuantityReturned,
-                'total_quantity_shortage' => $totalQuantityShortage,
-                'cash_collected' => $cashCollected,
-                'cheques_collected' => $totalCheques,
-                'expenses_claimed' => $totalExpenses,
-                'gross_profit' => $grossProfit,
-                'total_cogs' => $totalCogs,
-                'cash_to_deposit' => $cashToDeposit,
-                // Note: expenses, bank_transfers, cheques, cash_denominations now stored in normalized tables
+                'total_quantity_issued' => $totals['total_quantity_issued'],
+                'total_value_issued' => $totals['total_value_issued'],
+                'total_sales_amount' => $totals['total_sales_amount'],
+                'cash_sales_amount' => $totals['cash_sales_amount'],
+                'cheque_sales_amount' => $totals['cheque_sales_amount'],
+                'bank_transfer_amount' => $totals['bank_transfer_amount'],
+                'bank_slips_amount' => $totals['bank_slips_amount'],
+                'credit_sales_amount' => $totals['credit_sales_amount'],
+                'credit_recoveries' => $totals['credit_recoveries'],
+                'total_quantity_sold' => $totals['total_quantity_sold'],
+                'total_quantity_returned' => $totals['total_quantity_returned'],
+                'total_quantity_shortage' => $totals['total_quantity_shortage'],
+                'cash_collected' => $totals['cash_collected'],
+                'cheques_collected' => $totals['cheques_collected'],
+                'expenses_claimed' => $totals['expenses_claimed'],
+                'gross_profit' => $totals['gross_profit'],
+                'total_cogs' => $totals['total_cogs'],
+                'cash_to_deposit' => $totals['cash_to_deposit'],
                 'status' => 'draft',
                 'notes' => $request->notes,
             ]);
 
-            // Create cash denomination record
-            SalesSettlementCashDenomination::create([
-                'sales_settlement_id' => $settlement->id,
-                'denom_5000' => $request->denom_5000 ?? 0,
-                'denom_1000' => $request->denom_1000 ?? 0,
-                'denom_500' => $request->denom_500 ?? 0,
-                'denom_100' => $request->denom_100 ?? 0,
-                'denom_50' => $request->denom_50 ?? 0,
-                'denom_20' => $request->denom_20 ?? 0,
-                'denom_10' => $request->denom_10 ?? 0,
-                'denom_coins' => $request->denom_coins ?? 0,
-                'total_amount' => $denomTotal,
-            ]);
+            $this->createChildRecords($request, $settlement, $goodsIssue, $itemFinancials, $payload);
 
-            // Process bank transfers through customer_ledgers
-            foreach ($bankTransfersData as $transfer) {
-                if (floatval($transfer['amount'] ?? 0) > 0) {
-                    // Create the bank transfer record for accounting purposes
-                    // Customer ledger entries will be created when settlement is posted via LedgerService
-                    SalesSettlementBankTransfer::create([
-                        'sales_settlement_id' => $settlement->id,
-                        'bank_account_id' => $transfer['bank_account_id'],
-                        'customer_id' => $transfer['customer_id'] ?? null,
-                        'amount' => floatval($transfer['amount'] ?? 0),
-                        'reference_number' => $transfer['reference_number'] ?? null,
-                        'transfer_date' => $transfer['transfer_date'] ?? $request->settlement_date,
-                        'notes' => $transfer['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Process cheques through customer_ledgers
-            foreach ($chequesData as $cheque) {
-                if (floatval($cheque['amount'] ?? 0) > 0) {
-                    // Create the cheque record for tracking
-                    // Customer ledger entries will be created when settlement is posted via LedgerService
-                    SalesSettlementCheque::create([
-                        'sales_settlement_id' => $settlement->id,
-                        'customer_id' => $cheque['customer_id'] ?? null,
-                        'bank_account_id' => $cheque['bank_account_id'] ?? null,
-                        'cheque_number' => $cheque['cheque_number'],
-                        'amount' => floatval($cheque['amount'] ?? 0),
-                        'bank_name' => $cheque['bank_name'] ?? '',
-                        'cheque_date' => $cheque['cheque_date'] ?? $request->settlement_date,
-                        'account_holder_name' => $cheque['account_holder_name'] ?? null,
-                        'status' => 'pending',
-                        'notes' => $cheque['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Create bank slip records
-            foreach ($bankSlipsData as $slip) {
-                \App\Models\SalesSettlementBankSlip::create([
-                    'sales_settlement_id' => $settlement->id,
-                    'employee_id' => $goodsIssue->employee_id,
-                    'bank_account_id' => $slip['bank_account_id'],
-                    'deposit_date' => $slip['deposit_date'] ?? $request->settlement_date,
-                    'reference_number' => $slip['reference_number'] ?? null,
-                    'amount' => floatval($slip['amount'] ?? 0),
-                    'notes' => $slip['note'] ?? null,
-                ]);
-            }
-
-            // Create settlement items with batch breakdown
-            foreach ($request->items as $index => $item) {
-                $financials = $itemFinancials[$index] ?? [
-                    'total_cogs' => 0,
-                    'total_sales_value' => 0,
-                    'unit_cost' => $item['unit_cost'] ?? 0,
-                    'unit_selling_price' => $item['selling_price'] ?? $item['unit_cost'] ?? 0,
-                    'batch_financials' => [],
-                ];
-
-                $settlementItem = SalesSettlementItem::create([
-                    'sales_settlement_id' => $settlement->id,
-                    'goods_issue_item_id' => $item['goods_issue_item_id'] ?? null,
-                    'product_id' => $item['product_id'],
-                    'quantity_issued' => $item['quantity_issued'],
-                    'quantity_sold' => $item['quantity_sold'],
-                    'quantity_returned' => $item['quantity_returned'] ?? 0,
-                    'quantity_shortage' => $item['quantity_shortage'] ?? 0,
-                    'unit_cost' => $financials['unit_cost'],
-                    'unit_selling_price' => $financials['unit_selling_price'],
-                    'total_cogs' => $financials['total_cogs'],
-                    'total_sales_value' => $financials['total_sales_value'],
-                ]);
-
-                if (isset($item['batches']) && is_array($item['batches'])) {
-                    // Auto-distribute item-level quantities to batches if batch-level values are all zero
-                    $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
-                    $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
-                    $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
-
-                    $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
-
-                    $itemQtySold = (float) ($item['quantity_sold'] ?? 0);
-                    $itemQtyReturned = (float) ($item['quantity_returned'] ?? 0);
-                    $itemQtyShortage = (float) ($item['quantity_shortage'] ?? 0);
-
-                    $remainingSold = $itemQtySold;
-                    $remainingReturned = $itemQtyReturned;
-                    $remainingShortage = $itemQtyShortage;
-
-                    foreach ($item['batches'] as $batchIndex => $batch) {
-                        $batchFinancial = $financials['batch_financials'][$batchIndex] ?? null;
-                        $batchQtyIssued = (float) ($batch['quantity_issued'] ?? 0);
-
-                        // If auto-distributing, allocate quantities proportionally based on issued qty
-                        if ($autoDistribute && $batchQtyIssued > 0) {
-                            $batchQtySold = min($batchQtyIssued, $remainingSold);
-                            $batchQtyReturned = min($batchQtyIssued - $batchQtySold, $remainingReturned);
-                            $batchQtyShortage = min($batchQtyIssued - $batchQtySold - $batchQtyReturned, $remainingShortage);
-
-                            $remainingSold -= $batchQtySold;
-                            $remainingReturned -= $batchQtyReturned;
-                            $remainingShortage -= $batchQtyShortage;
-                        } else {
-                            $batchQtySold = (float) ($batch['quantity_sold'] ?? 0);
-                            $batchQtyReturned = (float) ($batch['quantity_returned'] ?? 0);
-                            $batchQtyShortage = (float) ($batch['quantity_shortage'] ?? 0);
-                        }
-
-                        SalesSettlementItemBatch::create([
-                            'sales_settlement_item_id' => $settlementItem->id,
-                            'stock_batch_id' => $batch['stock_batch_id'],
-                            'batch_code' => $batch['batch_code'],
-                            'quantity_issued' => $batchQtyIssued,
-                            'quantity_sold' => $batchQtySold,
-                            'quantity_returned' => $batchQtyReturned,
-                            'quantity_shortage' => $batchQtyShortage,
-                            'unit_cost' => $batchFinancial['unit_cost'] ?? $batch['unit_cost'] ?? $item['unit_cost'],
-                            'selling_price' => $batchFinancial['selling_price'] ?? $batch['selling_price'] ?? $item['unit_cost'],
-                            'is_promotional' => $batch['is_promotional'] ?? false,
-                        ]);
-                    }
-                }
-            }
-
-            // Create advance tax breakdown records if any
-            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
-                foreach ($request->advance_taxes as $advanceTax) {
-                    SalesSettlementAdvanceTax::create([
-                        'sales_settlement_id' => $settlement->id,
-                        'customer_id' => $advanceTax['customer_id'],
-                        'sale_amount' => $advanceTax['sale_amount'] ?? 0,
-                        'tax_rate' => $advanceTax['tax_rate'] ?? 0.25,
-                        'tax_amount' => $advanceTax['tax_amount'],
-                        'invoice_number' => $this->generateAdvanceTaxInvoiceNumber($request->settlement_date),
-                        'notes' => $advanceTax['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Create AMR Powder breakdown records if any
-            if (! empty($request->amr_powders) && is_array($request->amr_powders)) {
-                foreach ($request->amr_powders as $powder) {
-                    SalesSettlementAmrPowder::create([
-                        'sales_settlement_id' => $settlement->id,
-                        'product_id' => $powder['product_id'],
-                        'quantity' => $powder['quantity'],
-                        'amount' => $powder['amount'],
-                        'notes' => $powder['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Create AMR Liquid breakdown records if any
-            if (! empty($request->amr_liquids) && is_array($request->amr_liquids)) {
-                foreach ($request->amr_liquids as $liquid) {
-                    SalesSettlementAmrLiquid::create([
-                        'sales_settlement_id' => $settlement->id,
-                        'product_id' => $liquid['product_id'],
-                        'quantity' => $liquid['quantity'],
-                        'amount' => $liquid['amount'],
-                        'notes' => $liquid['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Create Percentage Expense breakdown records if any
-            $percentageExpenses = is_array($request->percentage_expenses)
-                ? $request->percentage_expenses
-                : json_decode($request->percentage_expenses, true);
-
-            if (! empty($percentageExpenses) && is_array($percentageExpenses)) {
-                foreach ($percentageExpenses as $percentageExpense) {
-                    SalesSettlementPercentageExpense::create([
-                        'sales_settlement_id' => $settlement->id,
-                        'customer_id' => $percentageExpense['customer_id'],
-                        'invoice_number' => $this->generatePercentageExpenseInvoiceNumber($request->settlement_date),
-                        'amount' => $percentageExpense['amount'],
-                        'notes' => $percentageExpense['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Create expense records in sales_settlement_expenses table (store ALL expenses including zero amounts)
-            if (! empty($request->expenses) && is_array($request->expenses)) {
-                foreach ($request->expenses as $expense) {
-                    if (! empty($expense['expense_account_id'])) {
-                        SalesSettlementExpense::create([
-                            'sales_settlement_id' => $settlement->id,
-                            'expense_date' => $request->settlement_date,
-                            'expense_account_id' => $expense['expense_account_id'],
-                            'amount' => floatval($expense['amount'] ?? 0),
-                            'receipt_number' => $expense['receipt_number'] ?? null,
-                            'description' => $expense['description'] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            // Create recovery records in sales_settlement_recoveries table
-            if (! empty($recoveriesData)) {
-                foreach ($recoveriesData as $recovery) {
-                    SalesSettlementRecovery::create([
-                        'sales_settlement_id' => $settlement->id,
-                        'customer_id' => $recovery['customer_id'],
-                        'employee_id' => $goodsIssue->employee_id,
-                        'recovery_number' => $this->generateRecoveryNumber($request->settlement_date),
-                        'payment_method' => $recovery['payment_method'] ?? 'cash',
-                        'bank_account_id' => $recovery['bank_account_id'] ?? null,
-                        'amount' => floatval($recovery['amount'] ?? 0),
-                        'previous_balance' => floatval($recovery['previous_balance'] ?? 0),
-                        'new_balance' => floatval($recovery['new_balance'] ?? 0),
-                        'notes' => $recovery['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Create credit sales records in sales_settlement_credit_sales table
-            if (! empty($creditSalesData)) {
-                Log::info('Creating Credit Sales Records', ['count' => count($creditSalesData)]);
-                foreach ($creditSalesData as $creditSale) {
-                    $record = SalesSettlementCreditSale::create([
-                        'sales_settlement_id' => $settlement->id,
-                        'customer_id' => $creditSale['customer_id'],
-                        'employee_id' => $goodsIssue->employee_id,
-                        'invoice_number' => $this->generateCreditSaleInvoiceNumber($request->settlement_date),
-                        'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
-                        'payment_received' => floatval($creditSale['payment_received'] ?? 0),
-                        'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
-                        'new_balance' => floatval($creditSale['new_balance'] ?? 0),
-                        'notes' => $creditSale['notes'] ?? null,
-                    ]);
-                    Log::info('Credit Sale Record Created', ['id' => $record->id]);
-                }
-            }
-
-            // NOTE: Credit sales are tracked in customer_employee_account_transactions
-            // Ledger entries are created when the settlement is POSTED
-            // Recalculate financials from the persisted batch data to avoid zeroed profit
             $this->recalcSettlementFinancials($settlement);
-
-            // via DistributionService::postSalesSettlement() to avoid duplicates
 
             DB::commit();
 
@@ -1201,10 +772,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
-            // Get goods issue
             $goodsIssue = GoodsIssue::with('items')->findOrFail($request->goods_issue_id);
 
-            // Check if another settlement exists for this goods issue (excluding current one)
             $existingSettlement = SalesSettlement::where('goods_issue_id', $request->goods_issue_id)
                 ->where('id', '!=', $salesSettlement->id)
                 ->whereIn('status', ['draft', 'posted'])
@@ -1218,121 +787,10 @@ class SalesSettlementController extends Controller implements HasMiddleware
                     ->with('error', "Another settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. Cannot change to a Goods Issue that already has a settlement.");
             }
 
-            // Calculate totals
-            $totalQuantityIssued = 0;
-            $totalValueIssued = 0;
-            $totalQuantitySold = 0;
-            $totalQuantityReturned = 0;
-            $totalQuantityShortage = 0;
-            $totalCogs = 0;
-            $totalSalesValue = 0;
+            $payload = $this->buildSettlementPayload($request);
+            $totals = $payload['totals'];
+            $itemFinancials = $payload['items_financials'];
 
-            $itemFinancials = [];
-
-            foreach ($request->items as $index => $item) {
-                $totalQuantityIssued += $item['quantity_issued'];
-                $totalValueIssued += $item['quantity_issued'] * $item['unit_cost'];
-                $totalQuantitySold += $item['quantity_sold'];
-                $totalQuantityReturned += $item['quantity_returned'] ?? 0;
-                $totalQuantityShortage += $item['quantity_shortage'] ?? 0;
-
-                $financials = $this->calculateItemFinancialsUsingBatches($item);
-                $itemFinancials[$index] = $financials;
-
-                $totalCogs += $financials['total_cogs'];
-                $totalSalesValue += $financials['total_sales_value'];
-            }
-
-            // Calculate gross profit
-            $grossProfit = $totalSalesValue - $totalCogs;
-
-            // Calculate denomination total
-            $denomTotal = (float) (
-                (($request->denom_5000 ?? 0) * 5000) +
-                (($request->denom_1000 ?? 0) * 1000) +
-                (($request->denom_500 ?? 0) * 500) +
-                (($request->denom_100 ?? 0) * 100) +
-                (($request->denom_50 ?? 0) * 50) +
-                (($request->denom_20 ?? 0) * 20) +
-                (($request->denom_10 ?? 0) * 10) +
-                (float) ($request->denom_coins ?? 0)
-            );
-
-            // Prepare bank transfer totals
-            $totalBankTransfers = 0;
-            if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
-                foreach ($request->bank_transfers as $transfer) {
-                    $totalBankTransfers += floatval($transfer['amount'] ?? 0);
-                }
-            }
-
-            // Prepare bank slips totals
-            $totalBankSlips = 0;
-            $bankSlipsData = [];
-            if ($request->has('bank_slips')) {
-                $entries = is_array($request->bank_slips)
-                    ? $request->bank_slips
-                    : json_decode($request->bank_slips, true);
-
-                if (is_array($entries)) {
-                    foreach ($entries as $slip) {
-                        if (! empty($slip['bank_account_id']) && floatval($slip['amount'] ?? 0) > 0) {
-                            $bankSlipsData[] = $slip;
-                            $totalBankSlips += floatval($slip['amount'] ?? 0);
-                        }
-                    }
-                }
-            }
-
-            // Prepare cheque totals
-            $totalCheques = 0;
-            if ($request->has('cheques') && is_array($request->cheques)) {
-                foreach ($request->cheques as $cheque) {
-                    $totalCheques += floatval($cheque['amount'] ?? 0);
-                }
-            }
-
-            // Prepare recovery totals and split by payment method
-            $totalRecoveries = 0;
-            $cashRecoveries = 0;
-            $bankRecoveries = 0;
-            if ($request->has('recoveries_entries') && is_array($request->recoveries_entries)) {
-                foreach ($request->recoveries_entries as $recovery) {
-                    $amount = floatval($recovery['amount'] ?? 0);
-                    $totalRecoveries += $amount;
-
-                    if (($recovery['payment_method'] ?? '') === 'cash') {
-                        $cashRecoveries += $amount;
-                    } else {
-                        $bankRecoveries += $amount;
-                    }
-                }
-            }
-
-            // Calculate total expenses (Only from expenses array as it contains all group expenses)
-            $totalExpenses = 0;
-
-            if (! empty($request->expenses) && is_array($request->expenses)) {
-                foreach ($request->expenses as $expense) {
-                    if (! empty($expense['expense_account_id'])) {
-                        $totalExpenses += floatval($expense['amount'] ?? 0);
-                    }
-                }
-            }
-
-            // Calculate Gross Cash Sales = Total Sales Value - Credit - Cheque - Bank
-            $cashSalesAmount = $totalSalesValue - ($request->credit_sales_amount ?? 0) - $totalCheques - $totalBankTransfers;
-
-            // Total Sales Amount is the total revenue from items sold
-            $totalSalesAmount = $totalSalesValue;
-
-            // Cash collected is strictly physical cash from denominations
-            $cashCollected = $denomTotal;
-
-            // Cash to deposit is the physical cash the salesman has
-            $cashToDeposit = $cashCollected;
-
-            // Update sales settlement
             $salesSettlement->update([
                 'settlement_date' => $request->settlement_date,
                 'goods_issue_id' => $goodsIssue->id,
@@ -1340,307 +798,31 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'vehicle_id' => $goodsIssue->vehicle_id,
                 'warehouse_id' => $goodsIssue->warehouse_id,
                 'supplier_id' => $goodsIssue->employee->supplier_id ?? null,
-                'total_quantity_issued' => $totalQuantityIssued,
-                'total_value_issued' => $totalValueIssued,
-                'total_sales_amount' => $totalSalesAmount,
-                'cash_sales_amount' => $cashSalesAmount,
-                'cheque_sales_amount' => $totalCheques,
-                'bank_transfer_amount' => $totalBankTransfers,
-                'bank_slips_amount' => $totalBankSlips,
-                'credit_sales_amount' => $request->credit_sales_amount ?? 0,
-                'credit_recoveries' => $totalRecoveries,
-                'total_quantity_sold' => $totalQuantitySold,
-                'total_quantity_returned' => $totalQuantityReturned,
-                'total_quantity_shortage' => $totalQuantityShortage,
-                'cash_collected' => $cashCollected,
-                'cheques_collected' => $totalCheques,
-                'expenses_claimed' => $totalExpenses,
-                'cash_to_deposit' => $cashToDeposit,
-                'gross_profit' => $grossProfit,
-                'total_cogs' => $totalCogs,
+                'total_quantity_issued' => $totals['total_quantity_issued'],
+                'total_value_issued' => $totals['total_value_issued'],
+                'total_sales_amount' => $totals['total_sales_amount'],
+                'cash_sales_amount' => $totals['cash_sales_amount'],
+                'cheque_sales_amount' => $totals['cheque_sales_amount'],
+                'bank_transfer_amount' => $totals['bank_transfer_amount'],
+                'bank_slips_amount' => $totals['bank_slips_amount'],
+                'credit_sales_amount' => $totals['credit_sales_amount'],
+                'credit_recoveries' => $totals['credit_recoveries'],
+                'total_quantity_sold' => $totals['total_quantity_sold'],
+                'total_quantity_returned' => $totals['total_quantity_returned'],
+                'total_quantity_shortage' => $totals['total_quantity_shortage'],
+                'cash_collected' => $totals['cash_collected'],
+                'cheques_collected' => $totals['cheques_collected'],
+                'expenses_claimed' => $totals['expenses_claimed'],
+                'cash_to_deposit' => $totals['cash_to_deposit'],
+                'gross_profit' => $totals['gross_profit'],
+                'total_cogs' => $totals['total_cogs'],
                 'notes' => $request->notes,
             ]);
 
-            // Delete old items and related records
-            $salesSettlement->items()->delete();
-            $salesSettlement->creditSales()->delete();
-            $salesSettlement->recoveries()->delete();
-            $salesSettlement->cashDenominations()->delete();
-            $salesSettlement->expenses()->delete();
-            $salesSettlement->bankTransfers()->delete();
-            $salesSettlement->bankSlips()->delete();
-            $salesSettlement->cheques()->delete();
-            $salesSettlement->cheques()->delete();
-            $salesSettlement->advanceTaxes()->delete();
-            $salesSettlement->amrPowders()->delete();
-            $salesSettlement->amrLiquids()->delete();
-            $salesSettlement->percentageExpenses()->delete();
+            $this->deleteAllChildRecords($salesSettlement);
 
-            // Create cash denomination record
-            SalesSettlementCashDenomination::create([
-                'sales_settlement_id' => $salesSettlement->id,
-                'denom_5000' => $request->denom_5000 ?? 0,
-                'denom_1000' => $request->denom_1000 ?? 0,
-                'denom_500' => $request->denom_500 ?? 0,
-                'denom_100' => $request->denom_100 ?? 0,
-                'denom_50' => $request->denom_50 ?? 0,
-                'denom_20' => $request->denom_20 ?? 0,
-                'denom_10' => $request->denom_10 ?? 0,
-                'denom_coins' => $request->denom_coins ?? 0,
-                'total_amount' => $denomTotal,
-            ]);
+            $this->createChildRecords($request, $salesSettlement, $goodsIssue, $itemFinancials, $payload);
 
-            // Create settlement items with batch breakdown
-            foreach ($request->items as $index => $item) {
-                $financials = $itemFinancials[$index] ?? [
-                    'total_cogs' => 0,
-                    'total_sales_value' => 0,
-                    'unit_cost' => $item['unit_cost'] ?? 0,
-                    'unit_selling_price' => $item['selling_price'] ?? $item['unit_cost'] ?? 0,
-                    'batch_financials' => [],
-                ];
-
-                $settlementItem = SalesSettlementItem::create([
-                    'sales_settlement_id' => $salesSettlement->id,
-                    'line_no' => $index + 1,
-                    'product_id' => $item['product_id'],
-                    'quantity_issued' => $item['quantity_issued'],
-                    'quantity_sold' => $item['quantity_sold'],
-                    'quantity_returned' => $item['quantity_returned'] ?? 0,
-                    'quantity_shortage' => $item['quantity_shortage'] ?? 0,
-                    'unit_cost' => $financials['unit_cost'],
-                    'unit_selling_price' => $financials['unit_selling_price'],
-                    'total_cogs' => $financials['total_cogs'],
-                    'total_sales_value' => $financials['total_sales_value'],
-                ]);
-
-                // Store batch breakdown if available
-                if (isset($item['batches']) && is_array($item['batches'])) {
-                    // Auto-distribute item-level quantities to batches if batch-level values are all zero
-                    $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
-                    $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
-                    $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
-
-                    $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
-
-                    $itemQtySold = (float) ($item['quantity_sold'] ?? 0);
-                    $itemQtyReturned = (float) ($item['quantity_returned'] ?? 0);
-                    $itemQtyShortage = (float) ($item['quantity_shortage'] ?? 0);
-
-                    $remainingSold = $itemQtySold;
-                    $remainingReturned = $itemQtyReturned;
-                    $remainingShortage = $itemQtyShortage;
-
-                    foreach ($item['batches'] as $batchIndex => $batch) {
-                        $batchFinancial = $financials['batch_financials'][$batchIndex] ?? null;
-                        $batchQtyIssued = (float) ($batch['quantity_issued'] ?? 0);
-
-                        // If auto-distributing, allocate quantities proportionally based on issued qty
-                        if ($autoDistribute && $batchQtyIssued > 0) {
-                            $batchQtySold = min($batchQtyIssued, $remainingSold);
-                            $batchQtyReturned = min($batchQtyIssued - $batchQtySold, $remainingReturned);
-                            $batchQtyShortage = min($batchQtyIssued - $batchQtySold - $batchQtyReturned, $remainingShortage);
-
-                            $remainingSold -= $batchQtySold;
-                            $remainingReturned -= $batchQtyReturned;
-                            $remainingShortage -= $batchQtyShortage;
-                        } else {
-                            $batchQtySold = (float) ($batch['quantity_sold'] ?? 0);
-                            $batchQtyReturned = (float) ($batch['quantity_returned'] ?? 0);
-                            $batchQtyShortage = (float) ($batch['quantity_shortage'] ?? 0);
-                        }
-
-                        SalesSettlementItemBatch::create([
-                            'sales_settlement_item_id' => $settlementItem->id,
-                            'stock_batch_id' => $batch['stock_batch_id'],
-                            'batch_code' => $batch['batch_code'],
-                            'quantity_issued' => $batchQtyIssued,
-                            'quantity_sold' => $batchQtySold,
-                            'quantity_returned' => $batchQtyReturned,
-                            'quantity_shortage' => $batchQtyShortage,
-                            'unit_cost' => $batchFinancial['unit_cost'] ?? $batch['unit_cost'] ?? $item['unit_cost'],
-                            'selling_price' => $batchFinancial['selling_price'] ?? $batch['selling_price'] ?? $item['unit_cost'],
-                            'is_promotional' => $batch['is_promotional'] ?? false,
-                        ]);
-                    }
-                }
-            }
-
-            // Create advance tax breakdown records if any
-            if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
-                foreach ($request->advance_taxes as $advanceTax) {
-                    SalesSettlementAdvanceTax::create([
-                        'sales_settlement_id' => $salesSettlement->id,
-                        'customer_id' => $advanceTax['customer_id'],
-                        'sale_amount' => $advanceTax['sale_amount'] ?? 0,
-                        'tax_rate' => $advanceTax['tax_rate'] ?? 0.25,
-                        'tax_amount' => $advanceTax['tax_amount'],
-                        'invoice_number' => $this->generateAdvanceTaxInvoiceNumber($request->settlement_date),
-                        'notes' => $advanceTax['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Create AMR Powder breakdown records if any
-            if (! empty($request->amr_powders) && is_array($request->amr_powders)) {
-                foreach ($request->amr_powders as $powder) {
-                    SalesSettlementAmrPowder::create([
-                        'sales_settlement_id' => $salesSettlement->id,
-                        'product_id' => $powder['product_id'],
-                        'quantity' => $powder['quantity'],
-                        'amount' => $powder['amount'],
-                        'notes' => $powder['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Create AMR Liquid breakdown records if any
-            if (! empty($request->amr_liquids) && is_array($request->amr_liquids)) {
-                foreach ($request->amr_liquids as $liquid) {
-                    SalesSettlementAmrLiquid::create([
-                        'sales_settlement_id' => $salesSettlement->id,
-                        'product_id' => $liquid['product_id'],
-                        'quantity' => $liquid['quantity'],
-                        'amount' => $liquid['amount'],
-                        'notes' => $liquid['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Create Percentage Expense breakdown records if any
-            $percentageExpenses = is_array($request->percentage_expenses)
-                ? $request->percentage_expenses
-                : json_decode($request->percentage_expenses, true);
-
-            if (! empty($percentageExpenses) && is_array($percentageExpenses)) {
-                foreach ($percentageExpenses as $percentageExpense) {
-                    SalesSettlementPercentageExpense::create([
-                        'sales_settlement_id' => $salesSettlement->id,
-                        'customer_id' => $percentageExpense['customer_id'],
-                        'invoice_number' => $this->generatePercentageExpenseInvoiceNumber($request->settlement_date),
-                        'amount' => $percentageExpense['amount'],
-                        'notes' => $percentageExpense['notes'] ?? null,
-                    ]);
-                }
-            }
-
-            // Create expense records in sales_settlement_expenses table (store ALL expenses including zero amounts)
-            if (! empty($request->expenses) && is_array($request->expenses)) {
-                foreach ($request->expenses as $expense) {
-                    if (! empty($expense['expense_account_id'])) {
-                        SalesSettlementExpense::create([
-                            'sales_settlement_id' => $salesSettlement->id,
-                            'expense_date' => $request->settlement_date,
-                            'expense_account_id' => $expense['expense_account_id'],
-                            'amount' => floatval($expense['amount'] ?? 0),
-                            'receipt_number' => $expense['receipt_number'] ?? null,
-                            'description' => $expense['description'] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            // Create recovery records
-            if ($request->has('recoveries_entries')) {
-                $entries = is_array($request->recoveries_entries)
-                    ? $request->recoveries_entries
-                    : json_decode($request->recoveries_entries, true);
-
-                if (is_array($entries)) {
-                    foreach ($entries as $recovery) {
-                        if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
-                            SalesSettlementRecovery::create([
-                                'sales_settlement_id' => $salesSettlement->id,
-                                'customer_id' => $recovery['customer_id'],
-                                'employee_id' => $goodsIssue->employee_id,
-                                'recovery_number' => $this->generateRecoveryNumber($request->settlement_date),
-                                'payment_method' => $recovery['payment_method'] ?? 'cash',
-                                'bank_account_id' => $recovery['bank_account_id'] ?? null,
-                                'amount' => floatval($recovery['amount'] ?? 0),
-                                'previous_balance' => floatval($recovery['previous_balance'] ?? 0),
-                                'new_balance' => floatval($recovery['new_balance'] ?? 0),
-                                'notes' => $recovery['notes'] ?? null,
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            // Create credit sales records
-            if ($request->has('credit_sales')) {
-                $entries = is_array($request->credit_sales)
-                    ? $request->credit_sales
-                    : json_decode($request->credit_sales, true);
-
-                if (is_array($entries)) {
-                    foreach ($entries as $creditSale) {
-                        if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
-                            SalesSettlementCreditSale::create([
-                                'sales_settlement_id' => $salesSettlement->id,
-                                'customer_id' => $creditSale['customer_id'],
-                                'employee_id' => $goodsIssue->employee_id,
-                                'invoice_number' => $this->generateCreditSaleInvoiceNumber($request->settlement_date),
-                                'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
-                                'payment_received' => floatval($creditSale['payment_received'] ?? 0),
-                                'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
-                                'new_balance' => floatval($creditSale['new_balance'] ?? 0),
-                                'notes' => $creditSale['notes'] ?? null,
-                            ]);
-                        }
-                    }
-                }
-            }
-
-            if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
-                foreach ($request->bank_transfers as $transfer) {
-                    if (! empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
-                        SalesSettlementBankTransfer::create([
-                            'sales_settlement_id' => $salesSettlement->id,
-                            'bank_account_id' => $transfer['bank_account_id'],
-                            'customer_id' => $transfer['customer_id'] ?? null,
-                            'amount' => floatval($transfer['amount'] ?? 0),
-                            'reference_number' => $transfer['reference_number'] ?? null,
-                            'transfer_date' => $transfer['transfer_date'] ?? $request->settlement_date,
-                            'notes' => $transfer['notes'] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            if (! empty($bankSlipsData)) {
-                foreach ($bankSlipsData as $slip) {
-                    \App\Models\SalesSettlementBankSlip::create([
-                        'sales_settlement_id' => $salesSettlement->id,
-                        'employee_id' => $salesSettlement->employee_id,
-                        'bank_account_id' => $slip['bank_account_id'],
-                        'deposit_date' => $slip['deposit_date'] ?? $request->settlement_date,
-                        'reference_number' => $slip['reference_number'] ?? null,
-                        'amount' => floatval($slip['amount'] ?? 0),
-                        'notes' => $slip['note'] ?? null,
-                    ]);
-                }
-            }
-
-            if ($request->has('cheques') && is_array($request->cheques)) {
-                foreach ($request->cheques as $cheque) {
-                    if (! empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
-                        SalesSettlementCheque::create([
-                            'sales_settlement_id' => $salesSettlement->id,
-                            'customer_id' => $cheque['customer_id'] ?? null,
-                            'bank_account_id' => $cheque['bank_account_id'] ?? null,
-                            'cheque_number' => $cheque['cheque_number'],
-                            'amount' => floatval($cheque['amount'] ?? 0),
-                            'bank_name' => $cheque['bank_name'] ?? '',
-                            'cheque_date' => $cheque['cheque_date'] ?? $request->settlement_date,
-                            'account_holder_name' => $cheque['account_holder_name'] ?? null,
-                            'status' => 'pending',
-                            'notes' => $cheque['notes'] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            // Recalculate financials from persisted batches to keep profit in sync
             $this->recalcSettlementFinancials($salesSettlement);
 
             DB::commit();
@@ -1771,12 +953,23 @@ class SalesSettlementController extends Controller implements HasMiddleware
     }
 
     /**
-     * Recalculate item and settlement totals from persisted batch data.
+     * Recalculate ALL settlement totals from persisted child records.
+     *
+     * This ensures the settlement header is always consistent with its
+     * child tables regardless of what the frontend submitted.
      */
     private function recalcSettlementFinancials(SalesSettlement $settlement): void
     {
-        // Force refresh items and batches from database to get newly created records
-        $settlement->load(['items.batches']);
+        $settlement->load([
+            'items.batches',
+            'creditSales',
+            'cheques',
+            'bankTransfers',
+            'bankSlips',
+            'expenses',
+            'recoveries',
+            'cashDenominations',
+        ]);
 
         foreach ($settlement->items as $item) {
             $quantitySold = (float) $item->batches->sum('quantity_sold');
@@ -1801,20 +994,475 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
         }
 
-        // Refresh settlement items to get the updated totals
         $settlement->refresh();
+        $settlement->load([
+            'items',
+            'creditSales',
+            'cheques',
+            'bankTransfers',
+            'bankSlips',
+            'expenses',
+            'recoveries',
+            'cashDenominations',
+        ]);
 
-        $totalSalesValueAll = (float) $settlement->items->sum('total_sales_value');
+        $totalSalesAmount = round((float) $settlement->items->sum('total_sales_value'), 2);
+        $totalCogs = round((float) $settlement->items->sum('total_cogs'), 2);
+
+        $creditSalesAmount = round((float) $settlement->creditSales->sum('sale_amount'), 2);
+        $chequeAmount = round((float) $settlement->cheques->sum('amount'), 2);
+        $bankTransferAmount = round((float) $settlement->bankTransfers->sum('amount'), 2);
+        $bankSlipsAmount = round((float) $settlement->bankSlips->sum('amount'), 2);
+        $expensesClaimed = round((float) $settlement->expenses->sum('amount'), 2);
+        $creditRecoveries = round((float) $settlement->recoveries->sum('amount'), 2);
+
+        $cashSalesAmount = round($totalSalesAmount - $creditSalesAmount - $chequeAmount - $bankTransferAmount, 2);
+        $grossProfit = round($totalSalesAmount - $totalCogs, 2);
+
+        $denomRecord = $settlement->cashDenominations->first();
+        $cashCollected = $denomRecord ? round((float) $denomRecord->total_amount, 2) : (float) $settlement->cash_collected;
 
         $settlement->total_quantity_sold = $settlement->items->sum('quantity_sold');
         $settlement->total_quantity_returned = $settlement->items->sum('quantity_returned');
-        // @phpstan-ignore-next-line decimal columns accept floats
-        $settlement->total_cogs = round($settlement->items->sum('total_cogs'), 2);
-        // Explicitly update total_sales_amount from recalculated items
-        $settlement->total_sales_amount = $totalSalesValueAll;
-        // @phpstan-ignore-next-line decimal columns accept floats
-        $settlement->gross_profit = round($totalSalesValueAll - (float) $settlement->total_cogs, 2);
+        $settlement->total_sales_amount = $totalSalesAmount;
+        $settlement->total_cogs = $totalCogs;
+        $settlement->gross_profit = $grossProfit;
+        $settlement->credit_sales_amount = $creditSalesAmount;
+        $settlement->cheque_sales_amount = $chequeAmount;
+        $settlement->bank_transfer_amount = $bankTransferAmount;
+        $settlement->bank_slips_amount = $bankSlipsAmount;
+        $settlement->cash_sales_amount = $cashSalesAmount;
+        $settlement->expenses_claimed = $expensesClaimed;
+        $settlement->credit_recoveries = $creditRecoveries;
+        $settlement->cheques_collected = $chequeAmount;
+        $settlement->cash_collected = $cashCollected;
+        $settlement->cash_to_deposit = $cashCollected;
         $settlement->save();
+    }
+
+    /**
+     * Delete all child records for a settlement before re-creating them.
+     *
+     * Handles proper deletion order: batches before items to avoid FK issues.
+     */
+    private function deleteAllChildRecords(SalesSettlement $settlement): void
+    {
+        foreach ($settlement->items as $item) {
+            $item->batches()->forceDelete();
+            $item->forceDelete();
+        }
+        $settlement->creditSales()->delete();
+        $settlement->recoveries()->delete();
+        $settlement->cashDenominations()->delete();
+        $settlement->expenses()->delete();
+        $settlement->bankTransfers()->delete();
+        $settlement->bankSlips()->delete();
+        $settlement->cheques()->delete();
+        $settlement->advanceTaxes()->delete();
+        $settlement->amrPowders()->delete();
+        $settlement->amrLiquids()->delete();
+        $settlement->percentageExpenses()->delete();
+    }
+
+    /**
+     * Create all child records for a settlement (shared by store and update).
+     */
+    private function createChildRecords(
+        StoreSalesSettlementRequest|UpdateSalesSettlementRequest $request,
+        SalesSettlement $settlement,
+        GoodsIssue $goodsIssue,
+        array $itemFinancials,
+        array $payload,
+    ): void {
+        $denomTotal = $payload['totals']['denom_total'];
+
+        SalesSettlementCashDenomination::create([
+            'sales_settlement_id' => $settlement->id,
+            'denom_5000' => $request->denom_5000 ?? 0,
+            'denom_1000' => $request->denom_1000 ?? 0,
+            'denom_500' => $request->denom_500 ?? 0,
+            'denom_100' => $request->denom_100 ?? 0,
+            'denom_50' => $request->denom_50 ?? 0,
+            'denom_20' => $request->denom_20 ?? 0,
+            'denom_10' => $request->denom_10 ?? 0,
+            'denom_coins' => $request->denom_coins ?? 0,
+            'total_amount' => $denomTotal,
+        ]);
+
+        foreach ($payload['bank_transfers'] as $transfer) {
+            SalesSettlementBankTransfer::create([
+                'sales_settlement_id' => $settlement->id,
+                'bank_account_id' => $transfer['bank_account_id'],
+                'customer_id' => $transfer['customer_id'] ?? null,
+                'amount' => floatval($transfer['amount'] ?? 0),
+                'reference_number' => $transfer['reference_number'] ?? null,
+                'transfer_date' => $transfer['transfer_date'] ?? $request->settlement_date,
+                'notes' => $transfer['notes'] ?? null,
+            ]);
+        }
+
+        foreach ($payload['cheques'] as $cheque) {
+            SalesSettlementCheque::create([
+                'sales_settlement_id' => $settlement->id,
+                'customer_id' => $cheque['customer_id'] ?? null,
+                'bank_account_id' => $cheque['bank_account_id'] ?? null,
+                'cheque_number' => $cheque['cheque_number'],
+                'amount' => floatval($cheque['amount'] ?? 0),
+                'bank_name' => $cheque['bank_name'] ?? '',
+                'cheque_date' => $cheque['cheque_date'] ?? $request->settlement_date,
+                'account_holder_name' => $cheque['account_holder_name'] ?? null,
+                'status' => 'pending',
+                'notes' => $cheque['notes'] ?? null,
+            ]);
+        }
+
+        foreach ($payload['bank_slips'] as $slip) {
+            \App\Models\SalesSettlementBankSlip::create([
+                'sales_settlement_id' => $settlement->id,
+                'employee_id' => $goodsIssue->employee_id,
+                'bank_account_id' => $slip['bank_account_id'],
+                'deposit_date' => $slip['deposit_date'] ?? $request->settlement_date,
+                'reference_number' => $slip['reference_number'] ?? null,
+                'amount' => floatval($slip['amount'] ?? 0),
+                'notes' => $slip['note'] ?? null,
+            ]);
+        }
+
+        foreach ($request->items as $index => $item) {
+            $financials = $itemFinancials[$index] ?? [
+                'total_cogs' => 0,
+                'total_sales_value' => 0,
+                'unit_cost' => $item['unit_cost'] ?? 0,
+                'unit_selling_price' => $item['selling_price'] ?? $item['unit_cost'] ?? 0,
+                'batch_financials' => [],
+            ];
+
+            $settlementItem = SalesSettlementItem::create([
+                'sales_settlement_id' => $settlement->id,
+                'goods_issue_item_id' => $item['goods_issue_item_id'] ?? null,
+                'product_id' => $item['product_id'],
+                'quantity_issued' => $item['quantity_issued'],
+                'quantity_sold' => $item['quantity_sold'],
+                'quantity_returned' => $item['quantity_returned'] ?? 0,
+                'quantity_shortage' => $item['quantity_shortage'] ?? 0,
+                'unit_cost' => $financials['unit_cost'],
+                'unit_selling_price' => $financials['unit_selling_price'],
+                'total_cogs' => $financials['total_cogs'],
+                'total_sales_value' => $financials['total_sales_value'],
+            ]);
+
+            if (isset($item['batches']) && is_array($item['batches'])) {
+                $batchSoldSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_sold'] ?? 0));
+                $batchReturnedSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_returned'] ?? 0));
+                $batchShortageSum = collect($item['batches'])->sum(fn ($b) => (float) ($b['quantity_shortage'] ?? 0));
+
+                $autoDistribute = ($batchSoldSum == 0 && $batchReturnedSum == 0 && $batchShortageSum == 0);
+
+                $remainingSold = (float) ($item['quantity_sold'] ?? 0);
+                $remainingReturned = (float) ($item['quantity_returned'] ?? 0);
+                $remainingShortage = (float) ($item['quantity_shortage'] ?? 0);
+
+                foreach ($item['batches'] as $batchIndex => $batch) {
+                    $batchFinancial = $financials['batch_financials'][$batchIndex] ?? null;
+                    $batchQtyIssued = (float) ($batch['quantity_issued'] ?? 0);
+
+                    if ($autoDistribute && $batchQtyIssued > 0) {
+                        $batchQtySold = min($batchQtyIssued, $remainingSold);
+                        $batchQtyReturned = min($batchQtyIssued - $batchQtySold, $remainingReturned);
+                        $batchQtyShortage = min($batchQtyIssued - $batchQtySold - $batchQtyReturned, $remainingShortage);
+
+                        $remainingSold -= $batchQtySold;
+                        $remainingReturned -= $batchQtyReturned;
+                        $remainingShortage -= $batchQtyShortage;
+                    } else {
+                        $batchQtySold = (float) ($batch['quantity_sold'] ?? 0);
+                        $batchQtyReturned = (float) ($batch['quantity_returned'] ?? 0);
+                        $batchQtyShortage = (float) ($batch['quantity_shortage'] ?? 0);
+                    }
+
+                    SalesSettlementItemBatch::create([
+                        'sales_settlement_item_id' => $settlementItem->id,
+                        'stock_batch_id' => $batch['stock_batch_id'],
+                        'batch_code' => $batch['batch_code'],
+                        'quantity_issued' => $batchQtyIssued,
+                        'quantity_sold' => $batchQtySold,
+                        'quantity_returned' => $batchQtyReturned,
+                        'quantity_shortage' => $batchQtyShortage,
+                        'unit_cost' => $batchFinancial['unit_cost'] ?? $batch['unit_cost'] ?? $item['unit_cost'],
+                        'selling_price' => $batchFinancial['selling_price'] ?? $batch['selling_price'] ?? $item['unit_cost'],
+                        'is_promotional' => $batch['is_promotional'] ?? false,
+                    ]);
+                }
+            }
+        }
+
+        if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
+            foreach ($request->advance_taxes as $advanceTax) {
+                SalesSettlementAdvanceTax::create([
+                    'sales_settlement_id' => $settlement->id,
+                    'customer_id' => $advanceTax['customer_id'],
+                    'sale_amount' => $advanceTax['sale_amount'] ?? 0,
+                    'tax_rate' => $advanceTax['tax_rate'] ?? 0.25,
+                    'tax_amount' => $advanceTax['tax_amount'],
+                    'invoice_number' => $this->generateAdvanceTaxInvoiceNumber($request->settlement_date),
+                    'notes' => $advanceTax['notes'] ?? null,
+                ]);
+            }
+        }
+
+        if (! empty($request->amr_powders) && is_array($request->amr_powders)) {
+            foreach ($request->amr_powders as $powder) {
+                SalesSettlementAmrPowder::create([
+                    'sales_settlement_id' => $settlement->id,
+                    'product_id' => $powder['product_id'],
+                    'quantity' => $powder['quantity'],
+                    'amount' => $powder['amount'],
+                    'notes' => $powder['notes'] ?? null,
+                ]);
+            }
+        }
+
+        if (! empty($request->amr_liquids) && is_array($request->amr_liquids)) {
+            foreach ($request->amr_liquids as $liquid) {
+                SalesSettlementAmrLiquid::create([
+                    'sales_settlement_id' => $settlement->id,
+                    'product_id' => $liquid['product_id'],
+                    'quantity' => $liquid['quantity'],
+                    'amount' => $liquid['amount'],
+                    'notes' => $liquid['notes'] ?? null,
+                ]);
+            }
+        }
+
+        $percentageExpenses = is_array($request->percentage_expenses)
+            ? $request->percentage_expenses
+            : [];
+
+        if (! empty($percentageExpenses)) {
+            foreach ($percentageExpenses as $percentageExpense) {
+                SalesSettlementPercentageExpense::create([
+                    'sales_settlement_id' => $settlement->id,
+                    'customer_id' => $percentageExpense['customer_id'],
+                    'invoice_number' => $this->generatePercentageExpenseInvoiceNumber($request->settlement_date),
+                    'amount' => $percentageExpense['amount'],
+                    'notes' => $percentageExpense['notes'] ?? null,
+                ]);
+            }
+        }
+
+        if (! empty($request->expenses) && is_array($request->expenses)) {
+            foreach ($request->expenses as $expense) {
+                if (! empty($expense['expense_account_id'])) {
+                    SalesSettlementExpense::create([
+                        'sales_settlement_id' => $settlement->id,
+                        'expense_date' => $request->settlement_date,
+                        'expense_account_id' => $expense['expense_account_id'],
+                        'amount' => floatval($expense['amount'] ?? 0),
+                        'receipt_number' => $expense['receipt_number'] ?? null,
+                        'description' => $expense['description'] ?? null,
+                    ]);
+                }
+            }
+        }
+
+        foreach ($payload['recoveries'] as $recovery) {
+            SalesSettlementRecovery::create([
+                'sales_settlement_id' => $settlement->id,
+                'customer_id' => $recovery['customer_id'],
+                'employee_id' => $goodsIssue->employee_id,
+                'recovery_number' => $this->generateRecoveryNumber($request->settlement_date),
+                'payment_method' => $recovery['payment_method'] ?? 'cash',
+                'bank_account_id' => $recovery['bank_account_id'] ?? null,
+                'amount' => floatval($recovery['amount'] ?? 0),
+                'previous_balance' => floatval($recovery['previous_balance'] ?? 0),
+                'new_balance' => floatval($recovery['new_balance'] ?? 0),
+                'notes' => $recovery['notes'] ?? null,
+            ]);
+        }
+
+        foreach ($payload['credit_sales'] as $creditSale) {
+            SalesSettlementCreditSale::create([
+                'sales_settlement_id' => $settlement->id,
+                'customer_id' => $creditSale['customer_id'],
+                'employee_id' => $goodsIssue->employee_id,
+                'invoice_number' => $this->generateCreditSaleInvoiceNumber($request->settlement_date),
+                'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
+                'payment_received' => floatval($creditSale['payment_received'] ?? 0),
+                'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
+                'new_balance' => floatval($creditSale['new_balance'] ?? 0),
+                'notes' => $creditSale['notes'] ?? null,
+            ]);
+        }
+    }
+
+    /**
+     * Build all calculated totals and filtered child-record arrays from the request.
+     *
+     * Both store() and update() call this so the calculation logic is never duplicated.
+     *
+     * @return array{totals: array, items_financials: array, bank_transfers: array, cheques: array, bank_slips: array, recoveries: array, credit_sales: array, cash_recoveries: float, bank_recoveries: float}
+     */
+    private function buildSettlementPayload(StoreSalesSettlementRequest|UpdateSalesSettlementRequest $request): array
+    {
+        $totalQuantityIssued = 0.0;
+        $totalValueIssued = 0.0;
+        $totalQuantitySold = 0.0;
+        $totalQuantityReturned = 0.0;
+        $totalQuantityShortage = 0.0;
+        $totalCogs = 0.0;
+        $totalSalesValue = 0.0;
+        $itemFinancials = [];
+
+        foreach ($request->items as $index => $item) {
+            $totalQuantityIssued += (float) $item['quantity_issued'];
+            $totalValueIssued += (float) $item['quantity_issued'] * (float) $item['unit_cost'];
+            $totalQuantitySold += (float) $item['quantity_sold'];
+            $totalQuantityReturned += (float) ($item['quantity_returned'] ?? 0);
+            $totalQuantityShortage += (float) ($item['quantity_shortage'] ?? 0);
+
+            $financials = $this->calculateItemFinancialsUsingBatches($item);
+            $itemFinancials[$index] = $financials;
+
+            $totalCogs += $financials['total_cogs'];
+            $totalSalesValue += $financials['total_sales_value'];
+        }
+
+        $denomTotal = (float) (
+            (($request->denom_5000 ?? 0) * 5000) +
+            (($request->denom_1000 ?? 0) * 1000) +
+            (($request->denom_500 ?? 0) * 500) +
+            (($request->denom_100 ?? 0) * 100) +
+            (($request->denom_50 ?? 0) * 50) +
+            (($request->denom_20 ?? 0) * 20) +
+            (($request->denom_10 ?? 0) * 10) +
+            (float) ($request->denom_coins ?? 0)
+        );
+
+        $bankTransfersData = [];
+        $totalBankTransfers = 0.0;
+        if ($request->has('bank_transfers') && is_array($request->bank_transfers)) {
+            foreach ($request->bank_transfers as $transfer) {
+                if (! empty($transfer['bank_account_id']) && floatval($transfer['amount'] ?? 0) > 0) {
+                    $bankTransfersData[] = $transfer;
+                    $totalBankTransfers += floatval($transfer['amount'] ?? 0);
+                }
+            }
+        }
+
+        $chequesData = [];
+        $totalCheques = 0.0;
+        if ($request->has('cheques') && is_array($request->cheques)) {
+            foreach ($request->cheques as $cheque) {
+                if (! empty($cheque['cheque_number']) && floatval($cheque['amount'] ?? 0) > 0) {
+                    $chequesData[] = $cheque;
+                    $totalCheques += floatval($cheque['amount'] ?? 0);
+                }
+            }
+        }
+
+        $bankSlipsData = [];
+        $totalBankSlips = 0.0;
+        if ($request->has('bank_slips')) {
+            $entries = is_array($request->bank_slips)
+                ? $request->bank_slips
+                : json_decode($request->bank_slips, true);
+
+            if (is_array($entries)) {
+                foreach ($entries as $slip) {
+                    if (! empty($slip['bank_account_id']) && floatval($slip['amount'] ?? 0) > 0) {
+                        $bankSlipsData[] = $slip;
+                        $totalBankSlips += floatval($slip['amount'] ?? 0);
+                    }
+                }
+            }
+        }
+
+        $recoveriesData = [];
+        $totalRecoveries = 0.0;
+        $cashRecoveries = 0.0;
+        $bankRecoveries = 0.0;
+        if ($request->has('recoveries_entries')) {
+            $entries = is_array($request->recoveries_entries)
+                ? $request->recoveries_entries
+                : json_decode($request->recoveries_entries, true);
+
+            if (is_array($entries)) {
+                foreach ($entries as $recovery) {
+                    if (! empty($recovery['customer_id']) && floatval($recovery['amount'] ?? 0) > 0) {
+                        $recoveriesData[] = $recovery;
+                        $totalRecoveries += floatval($recovery['amount'] ?? 0);
+                        if (($recovery['payment_method'] ?? '') === 'cash') {
+                            $cashRecoveries += floatval($recovery['amount'] ?? 0);
+                        } else {
+                            $bankRecoveries += floatval($recovery['amount'] ?? 0);
+                        }
+                    }
+                }
+            }
+        }
+
+        $creditSalesData = [];
+        $creditSalesAmount = 0.0;
+        if ($request->has('credit_sales')) {
+            $entries = is_array($request->credit_sales)
+                ? $request->credit_sales
+                : json_decode($request->credit_sales, true);
+
+            if (is_array($entries)) {
+                foreach ($entries as $creditSale) {
+                    if (! empty($creditSale['customer_id']) && floatval($creditSale['sale_amount'] ?? 0) > 0) {
+                        $creditSalesData[] = $creditSale;
+                        $creditSalesAmount += floatval($creditSale['sale_amount'] ?? 0);
+                    }
+                }
+            }
+        }
+
+        $totalExpenses = 0.0;
+        if (! empty($request->expenses) && is_array($request->expenses)) {
+            foreach ($request->expenses as $expense) {
+                if (! empty($expense['expense_account_id'])) {
+                    $totalExpenses += floatval($expense['amount'] ?? 0);
+                }
+            }
+        }
+
+        $grossProfit = $totalSalesValue - $totalCogs;
+        $cashSalesAmount = $totalSalesValue - $creditSalesAmount - $totalCheques - $totalBankTransfers;
+        $cashCollected = $denomTotal;
+        $cashToDeposit = $cashCollected;
+
+        return [
+            'totals' => [
+                'total_quantity_issued' => $totalQuantityIssued,
+                'total_value_issued' => $totalValueIssued,
+                'total_quantity_sold' => $totalQuantitySold,
+                'total_quantity_returned' => $totalQuantityReturned,
+                'total_quantity_shortage' => $totalQuantityShortage,
+                'total_cogs' => $totalCogs,
+                'total_sales_amount' => $totalSalesValue,
+                'cash_sales_amount' => $cashSalesAmount,
+                'cheque_sales_amount' => $totalCheques,
+                'bank_transfer_amount' => $totalBankTransfers,
+                'bank_slips_amount' => $totalBankSlips,
+                'credit_sales_amount' => $creditSalesAmount,
+                'credit_recoveries' => $totalRecoveries,
+                'cash_collected' => $cashCollected,
+                'cheques_collected' => $totalCheques,
+                'expenses_claimed' => $totalExpenses,
+                'gross_profit' => $grossProfit,
+                'cash_to_deposit' => $cashToDeposit,
+                'denom_total' => $denomTotal,
+            ],
+            'items_financials' => $itemFinancials,
+            'bank_transfers' => $bankTransfersData,
+            'cheques' => $chequesData,
+            'bank_slips' => $bankSlipsData,
+            'recoveries' => $recoveriesData,
+            'credit_sales' => $creditSalesData,
+            'cash_recoveries' => $cashRecoveries,
+            'bank_recoveries' => $bankRecoveries,
+        ];
     }
 
     public function post(SalesSettlement $salesSettlement)

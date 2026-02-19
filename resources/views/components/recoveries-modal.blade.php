@@ -27,9 +27,15 @@
     })" x-on:{{ $triggerEvent }}.window="openModal()" x-cloak>
     <input type="hidden" name="{{ $entriesInputId }}" id="{{ $entriesInputId }}" :value="JSON.stringify(entries)">
 
-    <div x-show="show" class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0">
-        <div class="absolute inset-0 bg-gray-900 bg-opacity-70" @click="closeModal()"></div>
+    <div x-show="show" x-on:keydown.escape.window="if (show) { closeModal() }" class="fixed inset-0 z-50" style="display: none;">
+        {{-- Backdrop with blur --}}
+        <div x-show="show"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 backdrop-blur-none" x-transition:enter-end="opacity-100 backdrop-blur-sm"
+             x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 backdrop-blur-sm" x-transition:leave-end="opacity-0 backdrop-blur-none"
+             class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-all" @click="closeModal()">
+        </div>
 
+        <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4" @click.self="closeModal()">
         <div class="relative w-full max-w-5xl bg-white rounded-lg shadow-xl overflow-hidden transform transition-all flex flex-col max-h-[90vh]"
             x-transition:enter="ease-out duration-200"
             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
@@ -42,7 +48,7 @@
                     <h3 class="text-lg font-semibold text-white">Customer Recoveries</h3>
                     <p class="text-xs text-green-100">Record payments received from customers against previous balances.</p>
                 </div>
-                <button type="button" @click="closeModal()" class="text-white hover:text-green-100">
+                <button type="button" @click="closeModal()" class="rounded-lg p-1 text-white/80 hover:bg-white/20 hover:text-white transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -109,7 +115,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">New Balance (₨)</label>
                         <input type="number" :value="calculateCurrentBalance()" readonly
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-blue-50 text-right font-bold text-blue-700"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-green-50 text-right font-bold text-green-700"
                             placeholder="0.00" />
                     </div>
                     <div class="flex items-end md:col-span-2">
@@ -151,13 +157,13 @@
                                         <td class="px-2 py-1.5 text-sm text-gray-500 text-center font-mono" x-text="entry.recovery_number"></td>
                                         <td class="px-2 py-1.5 text-sm text-gray-500 text-center">
                                             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase"
-                                                :class="entry.payment_method === 'cash' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'"
+                                                :class="entry.payment_method === 'cash' ? 'bg-green-100 text-green-700' : 'bg-green-100 text-green-700'"
                                                 x-text="entry.payment_method === 'cash' ? 'Cash' : 'Bank'"></span>
                                         </td>
                                         <td class="px-2 py-1.5 text-sm text-gray-700" x-text="bankAccountName(entry.bank_account_id) || '—'"></td>
                                         <td class="px-2 py-1.5 text-sm text-gray-900 text-right" x-text="formatCurrency(entry.previous_balance)"></td>
                                         <td class="px-2 py-1.5 text-sm text-green-600 font-bold text-right" x-text="formatCurrency(entry.amount)"></td>
-                                        <td class="px-2 py-1.5 text-sm text-blue-600 font-bold text-right" x-text="formatCurrency(entry.new_balance)"></td>
+                                        <td class="px-2 py-1.5 text-sm text-green-600 font-bold text-right" x-text="formatCurrency(entry.new_balance)"></td>
                                         <td class="px-2 py-1.5 text-sm text-center">
                                             <button type="button" @click="removeEntry(index)" class="text-red-600 hover:text-red-900">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -180,7 +186,7 @@
                                     <td colspan="3" class="px-2 py-2 text-right text-xs text-gray-700 uppercase">Grand Totals:</td>
                                     <td class="px-2 py-2 text-right text-sm text-gray-700" x-text="formatCurrency(previousBalanceTotal)"></td>
                                     <td class="px-2 py-2 text-right text-sm text-green-700 bg-green-50" x-text="formatCurrency(recoveryTotal)"></td>
-                                    <td class="px-2 py-2 text-right text-sm text-blue-700 bg-blue-50" x-text="formatCurrency(newBalanceTotal)"></td>
+                                    <td class="px-2 py-2 text-right text-sm text-green-700 bg-green-50" x-text="formatCurrency(newBalanceTotal)"></td>
                                     <td></td>
                                 </tr>
                             </tfoot>
@@ -204,6 +210,7 @@
                     </button>
                 </div>
             </div>
+        </div>
         </div>
     </div>
 </div>

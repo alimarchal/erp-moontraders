@@ -22,9 +22,15 @@
     })" x-on:{{ $triggerEvent }}.window="openModal()" x-cloak>
     <input type="hidden" name="{{ $entriesInputId }}" id="{{ $entriesInputId }}" :value="JSON.stringify(entries)">
 
-    <div x-show="show" class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0">
-        <div class="absolute inset-0 bg-gray-900 bg-opacity-70" @click="closeModal()"></div>
+    <div x-show="show" x-on:keydown.escape.window="if (show) { closeModal() }" class="fixed inset-0 z-50" style="display: none;">
+        {{-- Backdrop with blur --}}
+        <div x-show="show"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 backdrop-blur-none" x-transition:enter-end="opacity-100 backdrop-blur-sm"
+             x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 backdrop-blur-sm" x-transition:leave-end="opacity-0 backdrop-blur-none"
+             class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-all" @click="closeModal()">
+        </div>
 
+        <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4" @click.self="closeModal()">
         <div class="relative w-full max-w-5xl bg-white rounded-lg shadow-xl overflow-hidden transform transition-all flex flex-col max-h-[90vh]"
             x-transition:enter="ease-out duration-200"
             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
@@ -32,12 +38,12 @@
             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" @click.stop>
             <div
-                class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-blue-600 to-blue-700 shrink-0">
+                class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-600 to-green-700 shrink-0">
                 <div>
                     <h3 class="text-lg font-semibold text-white">{{ $title }} ({{ $accountCode }})</h3>
-                    <p class="text-xs text-blue-100">Add per-product expense claims.</p>
+                    <p class="text-xs text-green-100">Add per-product expense claims.</p>
                 </div>
-                <button type="button" @click="closeModal()" class="text-white hover:text-blue-100">
+                <button type="button" @click="closeModal()" class="rounded-lg p-1 text-white/80 hover:bg-white/20 hover:text-white transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -51,7 +57,7 @@
                     <div class="md:col-span-1">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Product Name</label>
                         <select :id="selectId"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-blue-500 focus:ring-blue-500">
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
                             <option value="">Select Product</option>
                             <template x-for="product in products" :key="product.id">
                                 <option :value="product.id" x-text="product.name"></option>
@@ -61,20 +67,20 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Quantity</label>
                         <input type="number" min="0" step="0.01" x-model="form.quantity"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-blue-500 focus:ring-blue-500 text-right"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500 text-right"
                             placeholder="0.00" />
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Amount (₨)</label>
                         <input type="number" min="0" step="0.01" x-model="form.amount"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-blue-500 focus:ring-blue-500 text-right"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500 text-right"
                             placeholder="0.00" @keydown.enter.prevent="addEntry()" />
                     </div>
                 </div>
 
                 <div class="flex justify-end">
                     <button type="button" @click="addEntry()"
-                        class="px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 shadow-sm">
+                        class="px-6 py-2 bg-green-600 text-white text-sm font-semibold rounded-md hover:bg-green-700 shadow-sm">
                         Add Entry
                     </button>
                 </div>
@@ -103,7 +109,7 @@
                                     <td class="px-3 py-2 font-semibold text-gray-700" x-text="index + 1"></td>
                                     <td class="px-3 py-2 text-gray-800" x-text="entry.product_name"></td>
                                     <td class="px-3 py-2 text-right" x-text="parseFloat(entry.quantity).toFixed(2)"></td>
-                                    <td class="px-3 py-2 text-right font-semibold text-blue-700"
+                                    <td class="px-3 py-2 text-right font-semibold text-green-700"
                                         x-text="formatCurrency(entry.amount)"></td>
                                     <td class="px-3 py-2 text-center">
                                         <button type="button" @click="removeEntry(index)"
@@ -114,10 +120,10 @@
                                 </tr>
                             </template>
                         </tbody>
-                        <tfoot class="bg-blue-50 border-t-2 border-blue-200">
+                        <tfoot class="bg-green-50 border-t-2 border-green-200">
                             <tr>
-                                <td colspan="3" class="px-3 py-2 text-right font-bold text-blue-900">Grand Total</td>
-                                <td class="px-3 py-2 text-right font-bold text-blue-900"
+                                <td colspan="3" class="px-3 py-2 text-right font-bold text-green-900">Grand Total</td>
+                                <td class="px-3 py-2 text-right font-bold text-green-900"
                                     x-text="formatCurrency(total)"></td>
                                 <td class="px-3 py-2"></td>
                             </tr>
@@ -132,10 +138,11 @@
                     Cancel
                 </button>
                 <button type="button" @click="saveEntries()"
-                    class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-700 shadow-sm">
+                    class="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 shadow-sm">
                     Save
                 </button>
             </div>
+        </div>
         </div>
     </div>
 </div>

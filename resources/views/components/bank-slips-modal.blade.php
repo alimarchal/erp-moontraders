@@ -24,9 +24,15 @@
     <input type="hidden" name="{{ $entriesInputId }}" id="{{ $entriesInputId }}" :value="JSON.stringify(entries)">
     <input type="hidden" name="{{ $inputId }}" id="{{ $inputId }}" :value="total.toFixed(2)">
 
-    <div x-show="show" class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0">
-        <div class="absolute inset-0 bg-gray-900 bg-opacity-70" @click="closeModal()"></div>
+    <div x-show="show" x-on:keydown.escape.window="if (show) { closeModal() }" class="fixed inset-0 z-50" style="display: none;">
+        {{-- Backdrop with blur --}}
+        <div x-show="show"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 backdrop-blur-none" x-transition:enter-end="opacity-100 backdrop-blur-sm"
+             x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 backdrop-blur-sm" x-transition:leave-end="opacity-0 backdrop-blur-none"
+             class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-all" @click="closeModal()">
+        </div>
 
+        <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4" @click.self="closeModal()">
         <div class="relative w-full max-w-4xl bg-white rounded-lg shadow-xl overflow-hidden transform transition-all flex flex-col max-h-[90vh]"
             x-transition:enter="ease-out duration-200"
             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
@@ -34,12 +40,12 @@
             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" @click.stop>
             
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-600 to-purple-700 flex-shrink-0">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-600 to-green-700 flex-shrink-0">
                 <div>
                     <h3 class="text-lg font-semibold text-white">Bank Slips / Deposits</h3>
-                    <p class="text-xs text-purple-100">Record direct bank deposits made by the salesman.</p>
+                    <p class="text-xs text-green-100">Record direct bank deposits made by the salesman.</p>
                 </div>
-                <button type="button" @click="closeModal()" class="text-white hover:text-purple-100">
+                <button type="button" @click="closeModal()" class="rounded-lg p-1 text-white/80 hover:bg-white/20 hover:text-white transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -53,13 +59,13 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Deposit Date</label>
                         <input type="date" x-model="form.deposit_date"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500"
                             @keydown.enter.prevent="addEntry()" />
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Bank Account *</label>
                         <select id="bank_slips_account_select"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500">
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
                             <option value="">Select Bank Account</option>
                             <template x-for="account in bankAccounts" :key="account.id">
                                 <option :value="account.id" x-text="account.name"></option>
@@ -71,19 +77,19 @@
                     <div class="md:col-span-2">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Slip Number / Reference</label>
                         <input type="text" x-model="form.reference_number"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500"
                             placeholder="e.g., SLIP-12345" @keydown.enter.prevent="addEntry()" />
                     </div>
                     <div class="flex gap-2">
                         <div class="flex-grow">
                             <label class="block text-xs font-semibold text-gray-700 mb-1">Amount (₨) *</label>
                             <input type="number" min="0" step="0.01" x-model="form.amount"
-                                class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500"
+                                class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500"
                                 placeholder="0.00" @keydown.enter.prevent="addEntry()" />
                         </div>
                         <div class="flex items-end">
                             <button type="button" @click="addEntry()"
-                                class="inline-flex items-center justify-center px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-md hover:bg-purple-700 shadow-sm">
+                                class="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-md hover:bg-green-700 shadow-sm">
                                 Add
                             </button>
                         </div>
@@ -93,7 +99,7 @@
                 <div>
                     <label class="block text-xs font-semibold text-gray-700 mb-1">Note (Optional)</label>
                     <input type="text" x-model="form.note"
-                        class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-purple-500 focus:ring-purple-500"
+                        class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500"
                         placeholder="Additional details..." @keydown.enter.prevent="addEntry()" />
                 </div>
 
@@ -126,7 +132,7 @@
                                         <div class="text-xs text-gray-500" x-text="entry.reference_number || 'No Ref'"></div>
                                     </td>
                                     <td class="px-2 py-1.5 text-gray-800" x-text="entry.note || '-'"></td>
-                                    <td class="px-2 py-1.5 text-right font-semibold text-purple-700"
+                                    <td class="px-2 py-1.5 text-right font-semibold text-green-700"
                                         x-text="formatCurrency(entry.amount)"></td>
                                     <td class="px-2 py-1.5 text-center">
                                         <button type="button" @click="removeEntry(index)"
@@ -137,10 +143,10 @@
                                 </tr>
                             </template>
                         </tbody>
-                        <tfoot class="bg-purple-50 border-t-2 border-purple-200">
+                        <tfoot class="bg-green-50 border-t-2 border-green-200">
                             <tr>
-                                <td colspan="4" class="px-2 py-2 text-right font-bold text-purple-900">Total Deposited</td>
-                                <td class="px-2 py-2 text-right font-bold text-purple-900" x-text="formatCurrency(total)">
+                                <td colspan="4" class="px-2 py-2 text-right font-bold text-green-900">Total Deposited</td>
+                                <td class="px-2 py-2 text-right font-bold text-green-900" x-text="formatCurrency(total)">
                                 </td>
                                 <td class="px-2 py-2"></td>
                             </tr>
@@ -155,10 +161,11 @@
                     Cancel
                 </button>
                 <button type="button" @click="saveEntries()"
-                    class="px-4 py-2 text-sm font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 shadow-sm">
+                    class="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 shadow-sm">
                     Save
                 </button>
             </div>
+        </div>
         </div>
     </div>
 </div>

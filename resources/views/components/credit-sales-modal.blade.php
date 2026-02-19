@@ -33,9 +33,15 @@
 <div x-data="creditSalesModal(window['{{ $modalDataId }}'])" x-on:{{ $triggerEvent }}.window="openModal()" x-cloak>
     <input type="hidden" name="{{ $entriesInputId }}" id="{{ $entriesInputId }}" :value="JSON.stringify(entries)">
 
-    <div x-show="show" class="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:px-0">
-        <div class="absolute inset-0 bg-gray-900 bg-opacity-70" @click="closeModal()"></div>
+    <div x-show="show" x-on:keydown.escape.window="if (show) { closeModal() }" class="fixed inset-0 z-50" style="display: none;">
+        {{-- Backdrop with blur --}}
+        <div x-show="show"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 backdrop-blur-none" x-transition:enter-end="opacity-100 backdrop-blur-sm"
+             x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 backdrop-blur-sm" x-transition:leave-end="opacity-0 backdrop-blur-none"
+             class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-all" @click="closeModal()">
+        </div>
 
+        <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4" @click.self="closeModal()">
         <div class="relative w-full max-w-5xl bg-white rounded-lg shadow-xl overflow-hidden transform transition-all flex flex-col max-h-[90vh]"
             x-transition:enter="ease-out duration-200"
             x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
@@ -43,12 +49,12 @@
             x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
             x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" @click.stop>
             <div
-                class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-orange-600 to-orange-700 shrink-0">
+                class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-green-600 to-green-700 shrink-0">
                 <div>
                     <h3 class="text-lg font-semibold text-white">Creditors / Credit Sales Breakdown</h3>
-                    <p class="text-xs text-orange-100">Record credit sales and customer payments.</p>
+                    <p class="text-xs text-green-100">Record credit sales and customer payments.</p>
                 </div>
-                <button type="button" @click="closeModal()" class="text-white hover:text-orange-100">
+                <button type="button" @click="closeModal()" class="rounded-lg p-1 text-white/80 hover:bg-white/20 hover:text-white transition">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
                         stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -62,7 +68,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Customer Name</label>
                         <select id="credit_sales_customer_select" x-model="form.customer_id"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500"
                             @change="onCustomerChange()">
                             <option value="">Select Customer</option>
                             <template x-for="customer in customers" :key="customer.id">
@@ -88,13 +94,13 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Credit Sale (₨)</label>
                         <input type="number" min="0" step="0.01" x-model="form.sale_amount"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500 text-right"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500 text-right"
                             placeholder="0.00" @keydown.enter.prevent="addEntry()" />
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">New Balance (₨)</label>
                         <input type="number" :value="calculateCurrentBalance()" readonly
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-blue-50 text-right font-bold text-blue-700"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 bg-green-50 text-right font-bold text-green-700"
                             placeholder="0.00" />
                     </div>
                 </div>
@@ -103,19 +109,19 @@
                     <div class="md:col-span-11">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Notes (Optional)</label>
                         <input type="text" x-model="form.notes"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-orange-500 focus:ring-orange-500"
+                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500"
                             placeholder="Add any notes..." @keydown.enter.prevent="addEntry()" />
                     </div>
                     <div class="md:col-span-1 flex items-end">
                         <button type="button" @click="addEntry()"
-                            class="w-full md:w-auto inline-flex items-center justify-center px-3 py-2 bg-orange-600 text-white text-sm font-semibold rounded-md hover:bg-orange-700 shadow-sm">
+                            class="w-full md:w-auto inline-flex items-center justify-center px-3 py-2 bg-green-600 text-white text-sm font-semibold rounded-md hover:bg-green-700 shadow-sm">
                             Add
                         </button>
                     </div>
                 </div>
 
                 <div class="bg-gray-50 rounded-lg border border-gray-200 overflow-hidden">
-                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 border-b border-orange-300">
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 px-4 py-2 border-b border-green-300">
                         <h4 class="text-sm font-bold text-white flex items-center gap-2">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -161,7 +167,7 @@
                                         <tr class="hover:bg-gray-50 transition-colors">
                                             <td class="px-2 py-1.5">
                                                 <span
-                                                    class="inline-flex items-center justify-center w-6 h-6 bg-orange-100 text-orange-800 text-xs font-bold rounded-full"
+                                                    class="inline-flex items-center justify-center w-6 h-6 bg-green-100 text-green-800 text-xs font-bold rounded-full"
                                                     x-text="index + 1"></span>
                                             </td>
                                             <td class="px-2 py-1.5">
@@ -171,7 +177,7 @@
                                                         x-text="entry.customer_id"></span></div>
                                             </td>
                                             <td class="px-2 py-1.5 text-center">
-                                                <span class="font-mono text-sm font-semibold text-orange-700"
+                                                <span class="font-mono text-sm font-semibold text-green-700"
                                                     x-text="entry.invoice_number"></span>
                                             </td>
                                             <td class="px-2 py-1.5 text-right">
@@ -179,11 +185,11 @@
                                                     x-text="formatCurrency(entry.previous_balance)"></span>
                                             </td>
                                             <td class="px-2 py-1.5 text-right">
-                                                <span class="font-bold text-orange-700 bg-orange-50 px-2 py-1 rounded"
+                                                <span class="font-bold text-green-700 bg-green-50 px-2 py-1 rounded"
                                                     x-text="formatCurrency(entry.sale_amount)"></span>
                                             </td>
                                             <td class="px-2 py-1.5 text-right">
-                                                <span class="font-bold text-blue-700 bg-blue-50 px-2 py-1 rounded"
+                                                <span class="font-bold text-green-700 bg-green-50 px-2 py-1 rounded"
                                                     x-text="formatCurrency(entry.new_balance)"></span>
                                             </td>
                                             <td class="px-2 py-1.5">
@@ -206,10 +212,10 @@
                                     </template>
                                 </tbody>
                                 <tfoot
-                                    class="bg-gradient-to-r from-orange-50 to-orange-100 border-t-2 border-orange-200">
+                                    class="bg-gradient-to-r from-green-50 to-green-100 border-t-2 border-green-200">
                                     <tr>
                                         <td colspan="3" class="px-2 py-2 text-right">
-                                            <span class="text-sm font-bold text-orange-900">
+                                            <span class="text-sm font-bold text-green-900">
                                                 Grand Totals:
                                             </span>
                                         </td>
@@ -218,11 +224,11 @@
                                                 x-text="formatCurrency(previousBalanceTotal)"></span>
                                         </td>
                                         <td class="px-2 py-2 text-right">
-                                            <span class="text-sm font-bold text-orange-800 bg-orange-200 px-2 py-1 rounded"
+                                            <span class="text-sm font-bold text-green-800 bg-green-200 px-2 py-1 rounded"
                                                 x-text="formatCurrency(creditTotal)"></span>
                                         </td>
                                         <td class="px-2 py-2 text-right">
-                                            <span class="text-sm font-bold text-blue-800 bg-blue-200 px-2 py-1 rounded"
+                                            <span class="text-sm font-bold text-green-800 bg-green-200 px-2 py-1 rounded"
                                                 x-text="formatCurrency(newBalanceTotal)"></span>
                                         </td>
                                         <td colspan="2"></td>
@@ -240,10 +246,11 @@
                     Cancel
                 </button>
                 <button type="button" @click="saveEntries()"
-                    class="px-4 py-2 text-sm font-semibold text-white bg-orange-600 rounded-md hover:bg-orange-700 shadow-sm">
+                    class="px-4 py-2 text-sm font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 shadow-sm">
                     Save
             </button>
     </div>
+        </div>
         </div>
     </div>
 </div>

@@ -828,7 +828,7 @@ class DistributionService
             }
 
             // 2. Recoveries Detail
-            // Recoveries - cash (using salesman_clearing)
+            // Recoveries - cash (Dr Salesman Clearing / Cr Debtors)
             $totalCashRecoveries = $settlement->recoveries
                 ->where('payment_method', 'cash')
                 ->sum('amount');
@@ -848,9 +848,29 @@ class DistributionService
                 );
             }
 
-            // Recoveries - bank/online
+            // Recoveries - cheque (Dr Cheques in Hand / Cr Debtors)
+            $totalChequeRecoveries = $settlement->recoveries
+                ->where('payment_method', 'cheque')
+                ->sum('amount');
+
+            if ($totalChequeRecoveries > 0) {
+                $addLine(
+                    $accounts['cheques_in_hand']->id,
+                    $totalChequeRecoveries,
+                    0,
+                    "Cheque Recovery from Debtor - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
+                );
+                $addLine(
+                    $accounts['debtors']->id,
+                    0,
+                    $totalChequeRecoveries,
+                    "Cheque Recovery from Debtor - {$employeeLabel} - {$settlementReference} ({$settlementDateFormatted})"
+                );
+            }
+
+            // Recoveries - bank/online (Dr Bank / Cr Debtors)
             $settlement->recoveries
-                ->reject(fn ($recovery) => $recovery->payment_method === 'cash')
+                ->whereNotIn('payment_method', ['cash', 'cheque'])
                 ->groupBy('bank_account_id')
                 ->each(function ($group) use (&$addLine, $accounts, $employeeLabel, $settlementReference, $settlementDateFormatted): void {
                     $amount = $group->sum('amount');
@@ -872,26 +892,9 @@ class DistributionService
                     );
                 });
 
-            // 3. Cheque Payments (Recoveries and Sales)
-            // Cheque recoveries
-            $totalChequeRecoveries = $settlement->cheques->sum('amount');
-            if ($totalChequeRecoveries > 0) {
-                $addLine(
-                    $accounts['cheques_in_hand']->id,
-                    $totalChequeRecoveries,
-                    0,
-                    "Cheque Recovery from Debtor - {$employeeLabel} - {$settlementReference}"
-                );
-                $addLine(
-                    $accounts['debtors']->id,
-                    0,
-                    $totalChequeRecoveries,
-                    "Cheque Recovery from Debtor - {$employeeLabel} - {$settlementReference}"
-                );
-            }
-
-            // Cheque sales
-            $chequeSalesAmount = $settlement->cheque_sales_amount ?? 0;
+            // 3. Cheque Sales (Dr Cheques in Hand / Cr Sales)
+            // These are sales where the customer paid by cheque (NOT debt recoveries).
+            $chequeSalesAmount = (float) $settlement->cheques->sum('amount');
             if ($chequeSalesAmount > 0) {
                 $addLine(
                     $accounts['cheques_in_hand']->id,

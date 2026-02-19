@@ -92,8 +92,8 @@
 
             @media print {
                 @page {
-                    margin: 15mm 10mm 20mm 10mm;
-                    size: landscape;
+                    margin: 10mm 10mm 10mm 10mm;
+                    /* size: landscape; */
 
                     @bottom-center {
                         content: "Page " counter(page) " of " counter(pages);
@@ -171,7 +171,7 @@
     @endpush
 
     <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md no-print" />
 
             <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">

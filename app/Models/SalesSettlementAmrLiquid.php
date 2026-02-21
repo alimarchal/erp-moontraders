@@ -13,6 +13,8 @@ class SalesSettlementAmrLiquid extends Model
     protected $fillable = [
         'sales_settlement_id',
         'product_id',
+        'stock_batch_id',
+        'batch_code',
         'quantity',
         'amount',
         'notes',
@@ -31,5 +33,10 @@ class SalesSettlementAmrLiquid extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function stockBatch(): BelongsTo
+    {
+        return $this->belongsTo(StockBatch::class);
     }
 }

@@ -109,12 +109,16 @@ class UpdateSalesSettlementRequest extends FormRequest
 
             'amr_powders' => 'nullable|array',
             'amr_powders.*.product_id' => 'required_with:amr_powders|exists:products,id',
+            'amr_powders.*.stock_batch_id' => config('app.use_batch_expiry') ? 'required_with:amr_powders|exists:stock_batches,id' : 'nullable|exists:stock_batches,id',
+            'amr_powders.*.batch_code' => 'nullable|string|max:100',
             'amr_powders.*.quantity' => 'required_with:amr_powders|numeric|min:0',
             'amr_powders.*.amount' => 'required_with:amr_powders|numeric|min:0',
             'amr_powders.*.notes' => 'nullable|string',
 
             'amr_liquids' => 'nullable|array',
             'amr_liquids.*.product_id' => 'required_with:amr_liquids|exists:products,id',
+            'amr_liquids.*.stock_batch_id' => config('app.use_batch_expiry') ? 'required_with:amr_liquids|exists:stock_batches,id' : 'nullable|exists:stock_batches,id',
+            'amr_liquids.*.batch_code' => 'nullable|string|max:100',
             'amr_liquids.*.quantity' => 'required_with:amr_liquids|numeric|min:0',
             'amr_liquids.*.amount' => 'required_with:amr_liquids|numeric|min:0',
             'amr_liquids.*.notes' => 'nullable|string',

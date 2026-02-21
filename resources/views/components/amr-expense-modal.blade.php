@@ -7,18 +7,22 @@
     'entriesInputId' => '',
     'initialEntries' => [],
     'updatedEvent' => 'amr-expense-updated',
+    'useBatchExpiry' => false,
 ])
 
 <div x-data="amrExpenseModal({
         products: @js($products->map(fn($product) => [
             'id' => $product->id,
             'name' => $product->product_name . ' (' . $product->product_code . ')',
+            'expiry_price' => (float) $product->expiry_price,
         ])->values()),
         inputId: '{{ $inputId }}',
         entriesInputId: '{{ $entriesInputId }}',
         initialEntries: @js($initialEntries),
         updatedEvent: '{{ $updatedEvent }}',
-        selectId: 'select_{{ $entriesInputId }}'
+        selectId: 'select_{{ $entriesInputId }}',
+        batchSelectId: 'batch_select_{{ $entriesInputId }}',
+        useBatchExpiry: @js((bool) $useBatchExpiry),
     })" x-on:{{ $triggerEvent }}.window="openModal()" x-cloak>
     <input type="hidden" name="{{ $entriesInputId }}" id="{{ $entriesInputId }}" :value="JSON.stringify(entries)">
 
@@ -53,9 +57,9 @@
             </div>
 
             <div class="p-6 space-y-4 flex-grow overflow-y-auto">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 gap-4" :class="useBatchExpiry ? 'md:grid-cols-4' : 'md:grid-cols-3'">
                     <div class="md:col-span-1">
-                        <label class="block text-xs font-semibold text-gray-700 mb-1">Product Name</label>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Product Name <span class="text-red-500">*</span></label>
                         <select :id="selectId"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
                             <option value="">Select Product</option>
@@ -64,17 +68,41 @@
                             </template>
                         </select>
                     </div>
+
+                    {{-- Batch dropdown (only when USE_BATCH_EXPIRY=true) --}}
+                    <template x-if="useBatchExpiry">
+                        <div class="md:col-span-1">
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Batch <span class="text-red-500">*</span></label>
+                            <select :id="batchSelectId"
+                                :disabled="!form.product_id"
+                                class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
+                                <option value="">Select Batch</option>
+                            </select>
+                            <template x-if="loadingBatches">
+                                <p class="text-xs text-gray-500 mt-1">Loading batches...</p>
+                            </template>
+                        </div>
+                    </template>
+
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Quantity</label>
                         <input type="number" min="0" step="0.01" x-model="form.quantity"
+                            @input="calculateAmount()"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500 text-right"
                             placeholder="0.00" />
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Amount (₨)</label>
                         <input type="number" min="0" step="0.01" x-model="form.amount"
+                            :readonly="unitPrice > 0"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500 text-right"
+                            :class="unitPrice > 0 ? 'bg-gray-50 cursor-not-allowed' : ''"
                             placeholder="0.00" @keydown.enter.prevent="addEntry()" />
+                        <template x-if="unitPrice > 0">
+                            <p class="text-xs text-blue-600 mt-1 font-medium">
+                                <span x-text="useBatchExpiry ? 'Batch' : 'Expiry'"></span> price: ₨ <span x-text="parseFloat(unitPrice).toFixed(2)"></span>
+                            </p>
+                        </template>
                     </div>
                 </div>
 
@@ -91,7 +119,11 @@
                             <tr>
                                 <th class="px-3 py-2 text-left text-gray-700">S.No</th>
                                 <th class="px-3 py-2 text-left text-gray-700">Product Name</th>
+                                <template x-if="useBatchExpiry">
+                                    <th class="px-3 py-2 text-left text-gray-700">Batch</th>
+                                </template>
                                 <th class="px-3 py-2 text-right text-gray-700">Quantity</th>
+                                <th class="px-3 py-2 text-right text-gray-700">Unit Price</th>
                                 <th class="px-3 py-2 text-right text-gray-700">Amount (₨)</th>
                                 <th class="px-3 py-2 text-center text-gray-700">Action</th>
                             </tr>
@@ -99,7 +131,7 @@
                         <tbody>
                             <template x-if="entries.length === 0">
                                 <tr>
-                                    <td colspan="5" class="px-3 py-4 text-center text-gray-500 italic">
+                                    <td :colspan="useBatchExpiry ? 7 : 6" class="px-3 py-4 text-center text-gray-500 italic">
                                         No entries added yet.
                                     </td>
                                 </tr>
@@ -108,7 +140,11 @@
                                 <tr class="border-t border-gray-200">
                                     <td class="px-3 py-2 font-semibold text-gray-700" x-text="index + 1"></td>
                                     <td class="px-3 py-2 text-gray-800" x-text="entry.product_name"></td>
+                                    <template x-if="useBatchExpiry">
+                                        <td class="px-3 py-2 text-gray-600 text-xs" x-text="entry.batch_code || '-'"></td>
+                                    </template>
                                     <td class="px-3 py-2 text-right" x-text="parseFloat(entry.quantity).toFixed(2)"></td>
+                                    <td class="px-3 py-2 text-right text-blue-600" x-text="entry.unit_price ? formatCurrency(entry.unit_price) : '-'"></td>
                                     <td class="px-3 py-2 text-right font-semibold text-green-700"
                                         x-text="formatCurrency(entry.amount)"></td>
                                     <td class="px-3 py-2 text-center">
@@ -122,7 +158,7 @@
                         </tbody>
                         <tfoot class="bg-green-50 border-t-2 border-green-200">
                             <tr>
-                                <td colspan="3" class="px-3 py-2 text-right font-bold text-green-900">Grand Total</td>
+                                <td :colspan="useBatchExpiry ? 5 : 4" class="px-3 py-2 text-right font-bold text-green-900">Grand Total</td>
                                 <td class="px-3 py-2 text-right font-bold text-green-900"
                                     x-text="formatCurrency(total)"></td>
                                 <td class="px-3 py-2"></td>
@@ -150,28 +186,39 @@
 @once
     @push('scripts')
         <script>
-            function amrExpenseModal({ products, inputId, entriesInputId, initialEntries, updatedEvent, selectId }) {
+            function amrExpenseModal({ products, inputId, entriesInputId, initialEntries, updatedEvent, selectId, batchSelectId, useBatchExpiry }) {
                 return {
                     show: false,
                     products,
+                    useBatchExpiry,
                     form: {
                         product_id: '',
+                        stock_batch_id: '',
+                        batch_code: '',
                         quantity: '',
                         amount: '',
                     },
+                    unitPrice: 0,
+                    batches: [],
+                    loadingBatches: false,
                     entries: initialEntries || [],
                     select2Initialized: false,
+                    batchSelect2Initialized: false,
                     updatedEvent,
                     selectId,
+                    batchSelectId,
 
                     openModal() {
                         this.show = true;
 
-                        // Initialize select2 after the modal is fully rendered
                         this.$nextTick(() => {
                             if (!this.select2Initialized) {
                                 this.initializeSelect2();
                                 this.select2Initialized = true;
+                            }
+                            if (this.useBatchExpiry && !this.batchSelect2Initialized) {
+                                this.initializeBatchSelect2();
+                                this.batchSelect2Initialized = true;
                             }
                         });
                     },
@@ -190,10 +237,112 @@
                             dropdownParent: $select.parent()
                         });
 
-                        // Handle select2 change event
                         $select.on('change', function() {
-                            self.form.product_id = $(this).val();
+                            const newProductId = $(this).val();
+                            self.form.product_id = newProductId;
+                            self.onProductChange(newProductId);
                         });
+                    },
+
+                    initializeBatchSelect2() {
+                        const self = this;
+                        const $batchSelect = $('#' + this.batchSelectId);
+                        $batchSelect.select2({
+                            width: '100%',
+                            placeholder: 'Select Batch',
+                            allowClear: true,
+                            dropdownParent: $batchSelect.parent()
+                        });
+
+                        $batchSelect.on('change', function() {
+                            const batchId = $(this).val();
+                            self.form.stock_batch_id = batchId;
+                            self.onBatchChange(batchId);
+                        });
+                    },
+
+                    onProductChange(productId) {
+                        this.form.stock_batch_id = '';
+                        this.form.batch_code = '';
+                        this.unitPrice = 0;
+                        this.batches = [];
+                        this.form.amount = '';
+
+                        if (!productId) {
+                            if (this.useBatchExpiry) {
+                                this.resetBatchSelect2();
+                            }
+                            return;
+                        }
+
+                        if (this.useBatchExpiry) {
+                            this.fetchBatches(productId);
+                        } else {
+                            const product = this.products.find(p => Number(p.id) === Number(productId));
+                            if (product) {
+                                this.unitPrice = product.expiry_price || 0;
+                                this.calculateAmount();
+                            }
+                        }
+                    },
+
+                    fetchBatches(productId) {
+                        this.loadingBatches = true;
+                        this.resetBatchSelect2();
+
+                        fetch(`/api/products/${productId}/amr-batches`)
+                            .then(response => response.json())
+                            .then(data => {
+                                this.batches = data;
+                                this.loadingBatches = false;
+                                this.populateBatchSelect2(data);
+                            })
+                            .catch(() => {
+                                this.loadingBatches = false;
+                            });
+                    },
+
+                    resetBatchSelect2() {
+                        const $batchSelect = $('#' + this.batchSelectId);
+                        $batchSelect.empty().append('<option value="">Select Batch</option>').val(null).trigger('change');
+                        $batchSelect.prop('disabled', true);
+                    },
+
+                    populateBatchSelect2(batches) {
+                        const $batchSelect = $('#' + this.batchSelectId);
+                        $batchSelect.empty().append('<option value="">Select Batch</option>');
+
+                        batches.forEach(batch => {
+                            const expiryText = batch.expiry_date ? ` (Exp: ${batch.expiry_date})` : '';
+                            const priceText = batch.selling_price ? ` - ₨ ${parseFloat(batch.selling_price).toFixed(2)}` : '';
+                            const text = `${batch.batch_code}${expiryText}${priceText}`;
+                            $batchSelect.append(new Option(text, batch.id, false, false));
+                        });
+
+                        $batchSelect.prop('disabled', false).trigger('change.select2');
+                    },
+
+                    onBatchChange(batchId) {
+                        if (!batchId) {
+                            this.unitPrice = 0;
+                            this.form.batch_code = '';
+                            this.form.amount = '';
+                            return;
+                        }
+
+                        const batch = this.batches.find(b => Number(b.id) === Number(batchId));
+                        if (batch) {
+                            this.unitPrice = parseFloat(batch.selling_price) || 0;
+                            this.form.batch_code = batch.batch_code;
+                            this.calculateAmount();
+                        }
+                    },
+
+                    calculateAmount() {
+                        if (this.unitPrice > 0 && this.form.quantity) {
+                            const qty = parseFloat(this.form.quantity) || 0;
+                            this.form.amount = (qty * this.unitPrice).toFixed(2);
+                        }
                     },
 
                     addEntry() {
@@ -203,6 +352,11 @@
 
                         if (!productId) {
                             alert('Please select a product.');
+                            return;
+                        }
+
+                        if (this.useBatchExpiry && !this.form.stock_batch_id) {
+                            alert('Please select a batch.');
                             return;
                         }
 
@@ -218,20 +372,33 @@
 
                         const productName = this.productName(productId);
 
-                        this.entries.push({
+                        const entry = {
                             product_id: productId,
                             product_name: productName,
                             quantity: quantity,
                             amount: parseFloat(amount.toFixed(2)),
-                        });
+                            unit_price: this.unitPrice || 0,
+                        };
 
-                        // Reset form
+                        if (this.useBatchExpiry) {
+                            entry.stock_batch_id = this.form.stock_batch_id;
+                            entry.batch_code = this.form.batch_code;
+                        }
+
+                        this.entries.push(entry);
+
                         this.form.product_id = '';
+                        this.form.stock_batch_id = '';
+                        this.form.batch_code = '';
                         this.form.quantity = '';
                         this.form.amount = '';
+                        this.unitPrice = 0;
+                        this.batches = [];
 
-                        // Reset select2 dropdown
                         $('#' + this.selectId).val(null).trigger('change');
+                        if (this.useBatchExpiry) {
+                            this.resetBatchSelect2();
+                        }
                     },
 
                     removeEntry(index) {
@@ -245,14 +412,12 @@
 
                     syncTotals() {
                         const total = this.total;
-                        
-                        // Update the hidden entries input
+
                         const entriesInput = document.getElementById(entriesInputId);
                         if (entriesInput) {
                             entriesInput.value = JSON.stringify(this.entries);
                         }
 
-                        // Dispatch event for Alpine.js expense manager
                         window.dispatchEvent(new CustomEvent(this.updatedEvent, {
                             detail: { total: total }
                         }));

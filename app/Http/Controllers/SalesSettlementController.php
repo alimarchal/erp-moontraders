@@ -6,6 +6,7 @@ use App\Http\Requests\StoreSalesSettlementRequest;
 use App\Http\Requests\UpdateSalesSettlementRequest;
 use App\Models\Customer;
 use App\Models\GoodsIssue;
+use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementAdvanceTax;
 use App\Models\SalesSettlementAmrLiquid;
@@ -280,11 +281,12 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'powderProducts' => \App\Models\Product::where('is_powder', true)
                 ->where('is_active', true)
                 ->orderBy('product_name')
-                ->get(['id', 'product_code', 'product_name']),
+                ->get(['id', 'product_code', 'product_name', 'expiry_price']),
             'liquidProducts' => \App\Models\Product::where('is_powder', false)
                 ->where('is_active', true)
                 ->orderBy('product_name')
-                ->get(['id', 'product_code', 'product_name']),
+                ->get(['id', 'product_code', 'product_name', 'expiry_price']),
+            'useBatchExpiry' => (bool) config('app.use_batch_expiry'),
             'predefinedExpenses' => $predefinedExpenses,
         ]);
     }
@@ -309,6 +311,19 @@ class SalesSettlementController extends Controller implements HasMiddleware
             });
 
         return response()->json($goodsIssues);
+    }
+
+    /**
+     * Fetch active stock batches for a given product (AJAX for AMR modals).
+     */
+    public function fetchBatchesForProduct(Product $product): \Illuminate\Http\JsonResponse
+    {
+        $batches = StockBatch::where('product_id', $product->id)
+            ->where('status', 'active')
+            ->orderBy('expiry_date')
+            ->get(['id', 'batch_code', 'selling_price', 'expiry_date']);
+
+        return response()->json($batches);
     }
 
     /**
@@ -707,6 +722,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
         $amrPowdersDecoded = $salesSettlement->amrPowders->map(fn ($p) => [
             'product_id' => $p->product_id,
             'product_name' => $p->product?->product_name ?? 'Unknown',
+            'stock_batch_id' => $p->stock_batch_id,
+            'batch_code' => $p->batch_code,
             'quantity' => (float) $p->quantity,
             'amount' => (float) $p->amount,
         ]);
@@ -714,6 +731,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
         $amrLiquidsDecoded = $salesSettlement->amrLiquids->map(fn ($l) => [
             'product_id' => $l->product_id,
             'product_name' => $l->product?->product_name ?? 'Unknown',
+            'stock_batch_id' => $l->stock_batch_id,
+            'batch_code' => $l->batch_code,
             'quantity' => (float) $l->quantity,
             'amount' => (float) $l->amount,
         ]);
@@ -763,11 +782,12 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'powderProducts' => \App\Models\Product::where('is_powder', true)
                 ->where('is_active', true)
                 ->orderBy('product_name')
-                ->get(['id', 'product_code', 'product_name']),
+                ->get(['id', 'product_code', 'product_name', 'expiry_price']),
             'liquidProducts' => \App\Models\Product::where('is_powder', false)
                 ->where('is_active', true)
                 ->orderBy('product_name')
-                ->get(['id', 'product_code', 'product_name']),
+                ->get(['id', 'product_code', 'product_name', 'expiry_price']),
+            'useBatchExpiry' => (bool) config('app.use_batch_expiry'),
             'savedBatchesData' => $savedBatchesData,
             'creditSalesDecoded' => $creditSalesDecoded,
             'recoveriesDecoded' => $recoveriesDecoded,
@@ -1254,6 +1274,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 SalesSettlementAmrPowder::create([
                     'sales_settlement_id' => $settlement->id,
                     'product_id' => $powder['product_id'],
+                    'stock_batch_id' => $powder['stock_batch_id'] ?? null,
+                    'batch_code' => $powder['batch_code'] ?? null,
                     'quantity' => $powder['quantity'],
                     'amount' => $powder['amount'],
                     'notes' => $powder['notes'] ?? null,
@@ -1266,6 +1288,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 SalesSettlementAmrLiquid::create([
                     'sales_settlement_id' => $settlement->id,
                     'product_id' => $liquid['product_id'],
+                    'stock_batch_id' => $liquid['stock_batch_id'] ?? null,
+                    'batch_code' => $liquid['batch_code'] ?? null,
                     'quantity' => $liquid['quantity'],
                     'amount' => $liquid['amount'],
                     'notes' => $liquid['notes'] ?? null,

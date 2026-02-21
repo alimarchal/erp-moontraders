@@ -168,6 +168,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('api.sales-settlements.goods-issues');
     Route::get('api/sales-settlements/goods-issues/{id}/items', [SalesSettlementController::class, 'fetchGoodsIssueItems'])
         ->name('api.sales-settlements.goods-issues.items');
+    Route::get('api/products/{product}/amr-batches', [SalesSettlementController::class, 'fetchBatchesForProduct'])
+        ->name('api.products.amr-batches');
 
     /*
     |----------------------------------------------------------------------

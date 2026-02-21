@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Employees" :createRoute="route('employees.create')" createLabel="Add Employee"
+        <x-page-header title="Employees" :createRoute="route('employees.create')" createLabel=""
             createPermission="employee-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 

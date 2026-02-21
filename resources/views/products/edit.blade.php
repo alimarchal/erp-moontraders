@@ -19,17 +19,17 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 mt-4 shadow-md" />
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
+                <div class="p-6 space-y-6">
                     <x-validation-errors class="mb-4 mt-4" />
                     <form method="POST" action="{{ route('products.update', $product) }}">
                         @csrf
                         @method('PUT')
 
                         @include('products.partials.form-fields', [
-                        'product' => $product,
-                        'supplierOptions' => $supplierOptions,
-                        'uomOptions' => $uomOptions,
-                        'valuationMethods' => $valuationMethods,
+                            'product' => $product,
+                            'supplierOptions' => $supplierOptions,
+                            'uomOptions' => $uomOptions,
+                            'valuationMethods' => $valuationMethods,
                         ])
 
                         <div class="flex items-center justify-end mt-6">
@@ -41,17 +41,17 @@
                 </div>
             </div>
         </div>
-    </div>
+     </div>
 
     @push('scripts')
-    <script>
-        $(document).ready(function() {
-            $('.select2').select2({
-                width: '100%',
-                placeholder: 'Select an option',
-                allowClear: false,
+        <script>
+            $(document).ready(function() {
+                $('.select2').select2({
+                    width: '100%',
+                    placeholder: 'Select an option',
+                    allowClear: false,
+                });
             });
-        });
-    </script>
+        </script>
     @endpush
 </x-app-layout>

@@ -19,15 +19,15 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 mt-4 shadow-md" />
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
+                <div class="p-6 space-y-6">
                     <x-validation-errors class="mb-4 mt-4" />
                     <form method="POST" action="{{ route('products.store') }}">
                         @csrf
 
                         @include('products.partials.form-fields', [
-                        'supplierOptions' => $supplierOptions,
-                        'uomOptions' => $uomOptions,
-                        'valuationMethods' => $valuationMethods,
+                            'supplierOptions' => $supplierOptions,
+                            'uomOptions' => $uomOptions,
+                            'valuationMethods' => $valuationMethods,
                         ])
 
                         <div class="flex items-center justify-end mt-6">

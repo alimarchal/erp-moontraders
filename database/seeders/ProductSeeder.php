@@ -69,6 +69,7 @@ class ProductSeeder extends Seeder
                     'uom_conversion_factor' => $productData['uom_conversion_factor'] ?? 1,
                     'cost_price' => $productData['cost_price'] ?? 0,
                     'unit_sell_price' => $productData['unit_sell_price'] ?? $productData['unit_sell_price'] ?? 0,
+                    'expiry_price' => $productData['expiry_price'] ??  $productData['unit_sell_price'] ?? 0,
                     'valuation_method' => $productData['valuation_method'] ?? 'FIFO',
                     'is_powder' => $productData['is_powder'] ?? false,
                     'is_active' => $productData['is_active'] ?? true,

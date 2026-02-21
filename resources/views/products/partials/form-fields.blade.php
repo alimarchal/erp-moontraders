@@ -156,6 +156,12 @@
         <x-input id="cost_price" type="number" name="cost_price" step="0.01" min="0" class="mt-1 block w-full"
             :value="old('cost_price', optional($product)->cost_price)" placeholder="950" />
     </div>
+
+    <div>
+        <x-label for="expiry_price" value="Expiry Price" />
+        <x-input id="expiry_price" type="number" name="expiry_price" step="0.01" min="0" class="mt-1 block w-full"
+            :value="old('expiry_price', optional($product)->expiry_price)" placeholder="900" />
+    </div>
 </div>
 
 <div class="mt-4 flex gap-6">

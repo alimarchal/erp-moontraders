@@ -37,6 +37,7 @@ return new class extends Migration
             $table->decimal('reorder_level', 10, 2)->default(0);
             $table->decimal('unit_sell_price', 15, 2)->default(0)->comment('Selling price or trading price');
             $table->decimal('cost_price', 15, 2)->default(0)->comment('Average cost for COGS calculation');
+            $table->decimal('expiry_price', 15, 2)->default(0)->comment('Price to use when product is taken from market of expiry');
             $table->boolean('is_powder')->default(false)->comment('Indicates if the product is a powder type');
             $table->boolean('is_active')->default(true);
             $table->timestamps();

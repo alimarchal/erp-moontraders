@@ -156,6 +156,37 @@
                                         </div>
                                     </a>
                                 @endcan
+
+                                @can('bank-account-list')
+                                    <a href="{{ route('bank-accounts.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M2.25 8.25H21.75M2.25 9H21.75M9.75 15.75H14.25M7.5 12H16.5M6.75 18.75H17.25C18.4926 18.75 19.5 17.7426 19.5 16.5V7.5C19.5 6.25736 18.4926 5.25 17.25 5.25H6.75C5.50736 5.25 4.5 6.25736 4.5 7.5V16.5C4.5 17.7426 5.50736 18.75 6.75 18.75Z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Bank Accounts</div>
+                                                <div class="text-xs text-gray-500">Company bank accounts & balances</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                                {{ \App\Models\BankAccount::count() }}
+                                            </span>
+                                            <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </a>
+                                @endcan
                             </div>
                         </div>
                     </div>
@@ -307,36 +338,7 @@
                                     </a>
                                 @endcan
 
-                                @can('bank-account-list')
-                                    <a href="{{ route('bank-accounts.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M2.25 8.25H21.75M2.25 9H21.75M9.75 15.75H14.25M7.5 12H16.5M6.75 18.75H17.25C18.4926 18.75 19.5 17.7426 19.5 16.5V7.5C19.5 6.25736 18.4926 5.25 17.25 5.25H6.75C5.50736 5.25 4.5 6.25736 4.5 7.5V16.5C4.5 17.7426 5.50736 18.75 6.75 18.75Z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Bank Accounts</div>
-                                                <div class="text-xs text-gray-500">Company bank accounts & balances</div>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center gap-3">
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                                {{ \App\Models\BankAccount::count() }}
-                                            </span>
-                                            <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 5l7 7-7 7" />
-                                            </svg>
-                                        </div>
-                                    </a>
-                                @endcan
+
 
                                 @can('cost-center-list')
                                     <a href="{{ route('cost-centers.index') }}"
@@ -368,6 +370,8 @@
                                         </div>
                                     </a>
                                 @endcan
+
+
                             </div>
                         </div>
                     </div>
@@ -818,6 +822,36 @@
                                         </div>
                                     </a>
                                 @endcan
+                                @can('warehouse-type-list')
+                                    <a href="{{ route('warehouse-types.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center text-cyan-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M9 12H15M9 15H15M21 12C21 13.45 19.54 14.8 17.75 15.73C16.1 16.57 14.04 17 12 17C9.96 17 7.9 16.57 6.25 15.73C4.46 14.8 3 13.45 3 12M21 8C21 9.45 19.54 10.8 17.75 11.73C16.1 12.57 14.04 13 12 13C9.96 13 7.9 12.57 6.25 11.73C4.46 10.8 3 9.45 3 8M21 16C21 17.45 19.54 18.8 17.75 19.73C16.1 20.57 14.04 21 12 21C9.96 21 7.9 20.57 6.25 19.73C4.46 18.8 3 17.45 3 16M21 8C21 6.55 19.54 5.2 17.75 4.27C16.1 3.43 14.04 3 12 3C9.96 3 7.9 3.43 6.25 4.27C4.46 5.2 3 6.55 3 8M21 8V16M3 8V16" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Warehouse Types</div>
+                                                <div class="text-xs text-gray-500">Storage facility classifications</div>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center gap-3">
+                                            <span
+                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                                                {{ \App\Models\WarehouseType::count() }}
+                                            </span>
+                                            <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </div>
+                                    </a>
+                                @endcan
                             </div>
                         </div>
                     </div>
@@ -900,36 +934,7 @@
                                     </a>
                                 @endcan
 
-                                @can('warehouse-type-list')
-                                    <a href="{{ route('warehouse-types.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center text-cyan-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M9 12H15M9 15H15M21 12C21 13.45 19.54 14.8 17.75 15.73C16.1 16.57 14.04 17 12 17C9.96 17 7.9 16.57 6.25 15.73C4.46 14.8 3 13.45 3 12M21 8C21 9.45 19.54 10.8 17.75 11.73C16.1 12.57 14.04 13 12 13C9.96 13 7.9 12.57 6.25 11.73C4.46 10.8 3 9.45 3 8M21 16C21 17.45 19.54 18.8 17.75 19.73C16.1 20.57 14.04 21 12 21C9.96 21 7.9 20.57 6.25 19.73C4.46 18.8 3 17.45 3 16M21 8C21 6.55 19.54 5.2 17.75 4.27C16.1 3.43 14.04 3 12 3C9.96 3 7.9 3.43 6.25 4.27C4.46 5.2 3 6.55 3 8M21 8V16M3 8V16" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Warehouse Types</div>
-                                                <div class="text-xs text-gray-500">Storage facility classifications</div>
-                                            </div>
-                                        </div>
-                                        <div class="flex items-center gap-3">
-                                            <span
-                                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
-                                                {{ \App\Models\WarehouseType::count() }}
-                                            </span>
-                                            <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M9 5l7 7-7 7" />
-                                            </svg>
-                                        </div>
-                                    </a>
-                                @endcan
+
                             </div>
                         </div>
                     </div>

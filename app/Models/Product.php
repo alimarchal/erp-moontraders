@@ -35,6 +35,7 @@ class Product extends Model
         'reorder_level',
         'unit_sell_price',
         'cost_price',
+        'expiry_price',
         'is_powder',
         'is_active',
     ];

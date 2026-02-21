@@ -52,6 +52,7 @@ class ProductController extends Controller implements HasMiddleware
                 AllowedFilter::exact('valuation_method'),
                 AllowedFilter::exact('is_active'),
                 AllowedFilter::exact('is_powder'),
+                AllowedFilter::exact('expiry_price'),
             ])
             ->orderBy('product_name')
             ->paginate(40)

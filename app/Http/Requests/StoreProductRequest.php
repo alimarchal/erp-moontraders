@@ -58,6 +58,7 @@ class StoreProductRequest extends FormRequest
             'reorder_level' => ['nullable', 'numeric', 'min:0'],
             'unit_sell_price' => ['nullable', 'numeric', 'min:0'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
+            'expiry_price' => ['nullable', 'numeric', 'min:0'],
             'is_powder' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
         ];

@@ -40,7 +40,7 @@
                             disabled readonly>{{ $product->description ?? '—' }}</textarea>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <x-label value="Supplier" />
                             <x-input type="text" class="mt-1 block w-full bg-gray-100"
@@ -51,9 +51,30 @@
                             <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="$product->valuation_method" disabled readonly />
                         </div>
+                           <div>
+                            <x-label value="Category" />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
+                                :value="$product->category->name ?? '—'" disabled readonly />
+                        </div>
+
+                                                <div>
+                            <x-label value="Attributes" />
+                            <div class="mt-2">
+                                <span
+                                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $product->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                                    {{ $product->is_active ? 'Active' : 'Inactive' }}
+                                </span>
+                                @if($product->is_powder)
+                                    <span
+                                        class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
+                                        Powder
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <x-label value="Base UOM (Inventory)" />
                             <x-input type="text" class="mt-1 block w-full bg-gray-100"
@@ -99,30 +120,8 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <x-label value="Category" />
-                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
-                                :value="$product->category->name ?? '—'" disabled readonly />
-                        </div>
-                        <div>
-                            <x-label value="Attributes" />
-                            <div class="mt-2 flex space-x-2">
-                                <span
-                                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $product->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
-                                    {{ $product->is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                                @if($product->is_powder)
-                                <span
-                                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700">
-                                    Powder
-                                </span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div>
                             <x-label value="Selling Price" />
                             <x-input type="text" class="mt-1 block w-full bg-gray-100"
@@ -133,12 +132,25 @@
                             <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="number_format((float) $product->cost_price, 2)" disabled readonly />
                         </div>
+
+                         <div>
+                            <x-label value="Expiry Price" />
+                            <x-input type="text" class="mt-1 block w-full bg-gray-100"
+                                :value="number_format((float) $product->expiry_price, 2)" disabled readonly />
+                        </div>
                         <div>
                             <x-label value="Reorder Level" />
                             <x-input type="text" class="mt-1 block w-full bg-gray-100"
                                 :value="number_format((float) $product->reorder_level, 2)" disabled readonly />
                         </div>
+                        
                     </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                     
+
+                    </div>
+
                 </div>
             </div>
         </div>

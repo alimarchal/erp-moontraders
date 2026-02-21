@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\EmployeeExport;
 use App\Http\Requests\StoreEmployeeRequest;
 use App\Http\Requests\UpdateEmployeeRequest;
 use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\Employee;
 use App\Models\Supplier;
 use App\Models\User;
@@ -15,6 +17,7 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -26,47 +29,45 @@ class EmployeeController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:employee-list', only: ['index', 'show']),
+            new Middleware('can:employee-list', only: ['index', 'show', 'exportExcel']),
             new Middleware('can:employee-create', only: ['create', 'store']),
             new Middleware('can:employee-edit', only: ['edit', 'update']),
             new Middleware('can:employee-delete', only: ['destroy']),
         ];
     }
 
+    private const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100, 250];
+
+    private const DEFAULT_PER_PAGE = 15;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $employees = QueryBuilder::for(
-            Employee::query()->with(['warehouse', 'user', 'supplier', 'company'])
-        )
-            ->allowedFilters([
-                AllowedFilter::partial('employee_code'),
-                AllowedFilter::partial('name'),
-                AllowedFilter::partial('company_name'),
-                AllowedFilter::partial('designation'),
-                AllowedFilter::partial('phone'),
-                AllowedFilter::partial('email'),
-                AllowedFilter::exact('warehouse_id'),
-                AllowedFilter::exact('supplier_id'),
-                AllowedFilter::exact('company_id'),
-                AllowedFilter::callback('is_active', fn ($query, $value) => $this->applyBooleanFilter($query, 'is_active', $value)),
-            ])
-            ->orderBy('employee_code')
-            ->paginate(15)
-            ->withQueryString();
+        $perPage = (int) $request->input('per_page', self::DEFAULT_PER_PAGE);
+        if (! in_array($perPage, self::PER_PAGE_OPTIONS)) {
+            $perPage = self::DEFAULT_PER_PAGE;
+        }
 
-        $warehouseOptions = Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']);
-        $supplierOptions = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
-        $companyOptions = Company::orderBy('company_name')->get(['id', 'company_name']);
+        $employees = $this->buildFilteredQuery()
+            ->paginate($perPage)
+            ->withQueryString();
 
         return view('employees.index', [
             'employees' => $employees,
-            'warehouseOptions' => $warehouseOptions,
-            'supplierOptions' => $supplierOptions,
-            'companyOptions' => $companyOptions,
+            ...$this->getFilterOptions(),
         ]);
+    }
+
+    /**
+     * Export filtered employees to Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $query = $this->buildFilteredQuery()->getEloquentBuilder();
+
+        return Excel::download(new EmployeeExport($query), 'employees.xlsx');
     }
 
     /**
@@ -253,6 +254,48 @@ class EmployeeController extends Controller implements HasMiddleware
 
             return back()->with('error', 'Failed to delete employee. Please try again.');
         }
+    }
+
+    /**
+     * Build the filtered query shared by index and export.
+     */
+    private function buildFilteredQuery(): QueryBuilder
+    {
+        return QueryBuilder::for(
+            Employee::query()->with(['warehouse', 'user', 'supplier', 'company', 'costCenter'])
+        )
+            ->allowedFilters([
+                AllowedFilter::partial('employee_code'),
+                AllowedFilter::partial('name'),
+                AllowedFilter::partial('company_name'),
+                AllowedFilter::partial('designation'),
+                AllowedFilter::partial('phone'),
+                AllowedFilter::partial('email'),
+                AllowedFilter::partial('address'),
+                AllowedFilter::exact('warehouse_id'),
+                AllowedFilter::exact('supplier_id'),
+                AllowedFilter::exact('company_id'),
+                AllowedFilter::exact('cost_center_id'),
+                AllowedFilter::exact('user_id'),
+                AllowedFilter::exact('hire_date'),
+                AllowedFilter::callback('is_active', fn ($query, $value) => $this->applyBooleanFilter($query, 'is_active', $value)),
+            ])
+            ->orderBy('employee_code');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getFilterOptions(): array
+    {
+        return [
+            'warehouseOptions' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
+            'supplierOptions' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'companyOptions' => Company::orderBy('company_name')->get(['id', 'company_name']),
+            'costCenterOptions' => CostCenter::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'userOptions' => User::orderBy('name')->get(['id', 'name']),
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
+        ];
     }
 
     /**

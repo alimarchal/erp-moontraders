@@ -334,6 +334,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         /* Partners */
         Route::resource('suppliers', SupplierController::class);
+        Route::get('employees/export/excel', [EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
         Route::resource('employees', EmployeeController::class);
         Route::resource('customers', CustomerController::class);
 

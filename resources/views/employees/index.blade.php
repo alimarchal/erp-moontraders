@@ -4,6 +4,20 @@
             createPermission="employee-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 no-print">
+        <div class="flex justify-end">
+            <a href="{{ route('employees.export.excel', request()->query()) }}"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-md shadow transition-colors duration-150">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export to Excel
+            </a>
+        </div>
+    </div>
+
     <x-filter-section :action="route('employees.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
@@ -43,15 +57,20 @@
             </div>
 
             <div>
+                <x-label for="filter_address" value="Address" />
+                <x-input id="filter_address" name="filter[address]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.address')" placeholder="Street, City" />
+            </div>
+
+            <div>
                 <x-label for="filter_supplier_id" value="Supplier" />
                 <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
                     @foreach ($supplierOptions as $supplier)
-                                    <option value="{{ $supplier->id }}" {{ (string) request('filter.supplier_id') === (string) $supplier->
-                        id ? 'selected' : '' }}>
-                                        {{ $supplier->supplier_name }}
-                                    </option>
+                        <option value="{{ $supplier->id }}" {{ (string) request('filter.supplier_id') === (string) $supplier->id ? 'selected' : '' }}>
+                            {{ $supplier->supplier_name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -59,24 +78,80 @@
             <div>
                 <x-label for="filter_warehouse_id" value="Assigned Warehouse" />
                 <select id="filter_warehouse_id" name="filter[warehouse_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Warehouses</option>
                     @foreach ($warehouseOptions as $warehouse)
-                                    <option value="{{ $warehouse->id }}" {{ (string) request('filter.warehouse_id') === (string) 
-                        $warehouse->id ? 'selected' : '' }}>
-                                        {{ $warehouse->warehouse_name }}
-                                    </option>
+                        <option value="{{ $warehouse->id }}" {{ (string) request('filter.warehouse_id') === (string) $warehouse->id ? 'selected' : '' }}>
+                            {{ $warehouse->warehouse_name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
 
             <div>
+                <x-label for="filter_company_id" value="Company" />
+                <select id="filter_company_id" name="filter[company_id]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Companies</option>
+                    @foreach ($companyOptions as $company)
+                        <option value="{{ $company->id }}" {{ (string) request('filter.company_id') === (string) $company->id ? 'selected' : '' }}>
+                            {{ $company->company_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_cost_center_id" value="Cost Center" />
+                <select id="filter_cost_center_id" name="filter[cost_center_id]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Cost Centers</option>
+                    @foreach ($costCenterOptions as $costCenter)
+                        <option value="{{ $costCenter->id }}" {{ (string) request('filter.cost_center_id') === (string) $costCenter->id ? 'selected' : '' }}>
+                            {{ $costCenter->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_user_id" value="Linked User" />
+                <select id="filter_user_id" name="filter[user_id]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Users</option>
+                    @foreach ($userOptions as $user)
+                        <option value="{{ $user->id }}" {{ (string) request('filter.user_id') === (string) $user->id ? 'selected' : '' }}>
+                            {{ $user->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_hire_date" value="Hire Date" />
+                <x-input id="filter_hire_date" name="filter[hire_date]" type="date" class="mt-1 block w-full"
+                    :value="request('filter.hire_date')" />
+            </div>
+
+            <div>
                 <x-label for="filter_is_active" value="Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
                     <option value="1" {{ request('filter.is_active') === '1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ request('filter.is_active') === '0' ? 'selected' : '' }}>Inactive</option>
+                </select>
+            </div>
+
+            <div>
+                <x-label for="per_page" value="Per Page" />
+                <select id="per_page" name="per_page"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    @foreach ($perPageOptions as $option)
+                        <option value="{{ $option }}" {{ (int) request('per_page', 15) === $option ? 'selected' : '' }}>
+                            {{ $option }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
         </div>
@@ -155,24 +230,27 @@
                             </a>
                         @endcan
                         @role('super-admin')
-                        <form method="POST" action="{{ route('employees.destroy', $employee->id) }}"
-                            onsubmit="return confirm('Delete this employee?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit"
-                                class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
-                                title="Delete">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
-                                    stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                            </button>
-                        </form>
+                        <button type="button" x-data
+                            x-on:click="$dispatch('open-delete-employee-modal', { url: '{{ route('employees.destroy', $employee->id) }}' })"
+                            class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                            title="Delete">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                         @endrole
                     </div>
                 </td>
             </tr>
         @endforeach
     </x-data-table>
+
+    <x-alpine-confirmation-modal eventName="open-delete-employee-modal" title="Delete Employee"
+        confirmButtonText="Delete" confirmButtonClass="bg-red-600 hover:bg-red-700" csrfMethod="DELETE">
+        <p class="text-sm text-gray-600">
+            Are you sure you want to delete this employee? This action cannot be undone.
+        </p>
+    </x-alpine-confirmation-modal>
 </x-app-layout>

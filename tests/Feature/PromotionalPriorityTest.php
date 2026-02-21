@@ -8,6 +8,7 @@ use App\Models\GoodsReceiptNote;
 use App\Models\GoodsReceiptNoteItem;
 use App\Models\Product;
 use App\Models\SalesSettlement;
+use App\Models\SalesSettlementCashDenomination;
 use App\Models\SalesSettlementItem;
 use App\Models\StockBatch;
 use App\Models\StockMovement;
@@ -361,6 +362,19 @@ test('sales settlement calculates COGS from promotional batches first', function
         'total_sales_value' => 2400.00,
         'unit_cost' => 0, // Will be calculated by service
         'total_cogs' => 0, // Will be calculated by service
+    ]);
+
+    SalesSettlementCashDenomination::create([
+        'sales_settlement_id' => $settlement->id,
+        'denom_5000' => 0,
+        'denom_1000' => 2,
+        'denom_500' => 0,
+        'denom_100' => 4,
+        'denom_50' => 0,
+        'denom_20' => 0,
+        'denom_10' => 0,
+        'denom_coins' => 0,
+        'total_amount' => 2400.00,
     ]);
 
     // Post settlement

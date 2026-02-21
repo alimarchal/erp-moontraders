@@ -20,7 +20,11 @@ class SalesSettlementPolicy
      */
     public function view(User $user, SalesSettlement $settlement): bool
     {
-        return $user->can('sales-settlement-list');
+        if (! $user->can('sales-settlement-list')) {
+            return false;
+        }
+
+        return $this->hasOwnership($user, $settlement);
     }
 
     /**
@@ -40,7 +44,11 @@ class SalesSettlementPolicy
             return false;
         }
 
-        return $user->can('sales-settlement-edit');
+        if (! $user->can('sales-settlement-edit')) {
+            return false;
+        }
+
+        return $this->hasOwnership($user, $settlement);
     }
 
     /**
@@ -52,7 +60,11 @@ class SalesSettlementPolicy
             return false;
         }
 
-        return $user->can('sales-settlement-delete');
+        if (! $user->can('sales-settlement-delete')) {
+            return false;
+        }
+
+        return $this->hasOwnership($user, $settlement);
     }
 
     /**
@@ -64,6 +76,22 @@ class SalesSettlementPolicy
             return false;
         }
 
-        return $user->can('sales-settlement-post');
+        if (! $user->can('sales-settlement-post')) {
+            return false;
+        }
+
+        return $this->hasOwnership($user, $settlement);
+    }
+
+    /**
+     * Check if the user owns the settlement or has "view-all" permission.
+     */
+    private function hasOwnership(User $user, SalesSettlement $settlement): bool
+    {
+        if ($user->can('sales-settlement-view-all')) {
+            return true;
+        }
+
+        return $settlement->created_by === $user->id;
     }
 }

@@ -51,7 +51,7 @@ class RoleAndPermissionSeeder extends Seeder
             'uom' => ['list', 'create', 'edit', 'delete'],
 
             // Sales & Distribution
-            'sales-settlement' => ['list', 'create', 'edit', 'delete', 'post'],
+            'sales-settlement' => ['list', 'create', 'edit', 'delete', 'post', 'view-all'],
             'supplier-payment' => ['list', 'create', 'edit', 'delete', 'post', 'reverse'],
             'vehicle' => ['list', 'create', 'edit', 'delete'],
             'promotional-campaign' => ['list', 'create', 'edit', 'delete'],

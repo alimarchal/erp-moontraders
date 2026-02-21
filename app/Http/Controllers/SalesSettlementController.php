@@ -50,9 +50,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function index()
     {
-        $settlementsQuery = QueryBuilder::for(
-            SalesSettlement::query()->with(['employee', 'vehicle', 'warehouse', 'goodsIssue'])
-        )
+        $baseQuery = SalesSettlement::query()->with(['employee', 'vehicle', 'warehouse', 'goodsIssue']);
+
+        if (! auth()->user()->can('sales-settlement-view-all')) {
+            $baseQuery->where('created_by', auth()->id());
+        }
+
+        $settlementsQuery = QueryBuilder::for($baseQuery)
             ->allowedFilters([
                 AllowedFilter::partial('settlement_number'),
                 AllowedFilter::exact('employee_id'),
@@ -83,7 +87,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         // Calculate Totals Helper
         // We reuse the allowed filters logic to get the constrained query for aggregation
-        $filterQuery = QueryBuilder::for(SalesSettlement::class)
+        $filterBaseQuery = SalesSettlement::query();
+
+        if (! auth()->user()->can('sales-settlement-view-all')) {
+            $filterBaseQuery->where('created_by', auth()->id());
+        }
+
+        $filterQuery = QueryBuilder::for($filterBaseQuery)
             ->allowedFilters([
                 AllowedFilter::partial('settlement_number'),
                 AllowedFilter::exact('employee_id'),
@@ -506,6 +516,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function show(SalesSettlement $salesSettlement)
     {
+        $this->authorize('view', $salesSettlement);
+
         $salesSettlement->load([
             'goodsIssue',
             'employee',
@@ -571,6 +583,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function edit(SalesSettlement $salesSettlement)
     {
+        $this->authorize('update', $salesSettlement);
+
         if ($salesSettlement->status !== 'draft') {
             return redirect()
                 ->route('sales-settlements.show', $salesSettlement)
@@ -775,6 +789,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function update(UpdateSalesSettlementRequest $request, SalesSettlement $salesSettlement)
     {
+        $this->authorize('update', $salesSettlement);
+
         if ($salesSettlement->status !== 'draft') {
             return redirect()
                 ->route('sales-settlements.show', $salesSettlement)
@@ -872,6 +888,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function destroy(SalesSettlement $salesSettlement)
     {
+        $this->authorize('delete', $salesSettlement);
+
         if ($salesSettlement->status !== 'draft') {
             return back()->with('error', 'Only draft Sales Settlements can be deleted.');
         }
@@ -1488,6 +1506,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
     public function post(SalesSettlement $salesSettlement)
     {
+        $this->authorize('post', $salesSettlement);
+
         if ($salesSettlement->status !== 'draft') {
             return back()->with('error', 'Only draft Sales Settlements can be posted.');
         }

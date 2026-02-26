@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\VehicleExport;
 use App\Http\Requests\StoreVehicleRequest;
 use App\Http\Requests\UpdateVehicleRequest;
 use App\Models\Company;
@@ -15,7 +16,9 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class VehicleController extends Controller implements HasMiddleware
@@ -26,46 +29,49 @@ class VehicleController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:vehicle-list', only: ['index', 'show', 'exportPdf']),
+            new Middleware('can:vehicle-list', only: ['index', 'show', 'exportPdf', 'exportExcel']),
             new Middleware('can:vehicle-create', only: ['create', 'store']),
             new Middleware('can:vehicle-edit', only: ['edit', 'update']),
             new Middleware('can:vehicle-delete', only: ['destroy']),
         ];
     }
 
+    private const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100, 250];
+
+    private const DEFAULT_PER_PAGE = 40;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $statusOptions = ['1' => 'Active', '0' => 'Inactive'];
+        $perPage = (int) $request->input('per_page', self::DEFAULT_PER_PAGE);
+        if (! in_array($perPage, self::PER_PAGE_OPTIONS)) {
+            $perPage = self::DEFAULT_PER_PAGE;
+        }
 
-        $vehicles = QueryBuilder::for(Vehicle::query()->with(['employee', 'company', 'supplier']))
-            ->allowedFilters([
-                AllowedFilter::partial('vehicle_number'),
-                AllowedFilter::partial('registration_number'),
-                AllowedFilter::partial('vehicle_type'),
-                AllowedFilter::partial('driver_name'),
-                AllowedFilter::exact('company_id'),
-                AllowedFilter::exact('supplier_id'),
-                AllowedFilter::exact('employee_id'),
-                AllowedFilter::exact('is_active'),
-            ])
-            ->orderBy('id')
-            ->paginate(40)
+        $vehicles = $this->buildFilteredQuery()
+            ->paginate($perPage)
             ->withQueryString();
-
-        $employeeOptions = Employee::orderBy('name')->get(['id', 'name']);
-        $companyOptions = Company::orderBy('company_name')->get(['id', 'company_name']);
-        $supplierOptions = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
 
         return view('vehicles.index', [
             'vehicles' => $vehicles,
-            'statusOptions' => $statusOptions,
-            'employeeOptions' => $employeeOptions,
-            'companyOptions' => $companyOptions,
-            'supplierOptions' => $supplierOptions,
+            'statusOptions' => ['1' => 'Active', '0' => 'Inactive'],
+            'employeeOptions' => Employee::orderBy('name')->get(['id', 'name']),
+            'companyOptions' => Company::orderBy('company_name')->get(['id', 'company_name']),
+            'supplierOptions' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
         ]);
+    }
+
+    /**
+     * Export filtered vehicles to Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $query = $this->buildFilteredQuery()->getEloquentBuilder();
+
+        return Excel::download(new VehicleExport($query), 'vehicles.xlsx');
     }
 
     /**
@@ -258,20 +264,7 @@ class VehicleController extends Controller implements HasMiddleware
     public function exportPdf(Request $request)
     {
         try {
-            // Use the same filtering logic as index
-            $vehicles = QueryBuilder::for(Vehicle::query()->with(['employee', 'company', 'supplier']))
-                ->allowedFilters([
-                    AllowedFilter::partial('vehicle_number'),
-                    AllowedFilter::partial('registration_number'),
-                    AllowedFilter::partial('vehicle_type'),
-                    AllowedFilter::partial('driver_name'),
-                    AllowedFilter::exact('company_id'),
-                    AllowedFilter::exact('supplier_id'),
-                    AllowedFilter::exact('employee_id'),
-                    AllowedFilter::exact('is_active'),
-                ])
-                ->orderBy('id')
-                ->get();
+            $vehicles = $this->buildFilteredQuery()->getEloquentBuilder()->get();
 
             $pdf = Pdf::loadView('vehicles.pdf', [
                 'vehicles' => $vehicles,
@@ -289,5 +282,33 @@ class VehicleController extends Controller implements HasMiddleware
 
             return back()->with('error', 'Failed to generate PDF. Please try again.');
         }
+    }
+
+    /**
+     * Build the filtered query shared by index, export Excel, and export PDF.
+     */
+    private function buildFilteredQuery(): QueryBuilder
+    {
+        return QueryBuilder::for(Vehicle::query()->with(['employee', 'company', 'supplier']))
+            ->allowedFilters([
+                AllowedFilter::partial('vehicle_number'),
+                AllowedFilter::partial('registration_number'),
+                AllowedFilter::partial('vehicle_type'),
+                AllowedFilter::partial('driver_name'),
+                AllowedFilter::partial('make_model'),
+                AllowedFilter::partial('driver_phone'),
+                AllowedFilter::exact('year'),
+                AllowedFilter::exact('company_id'),
+                AllowedFilter::exact('supplier_id'),
+                AllowedFilter::exact('employee_id'),
+                AllowedFilter::exact('is_active'),
+            ])
+            ->allowedSorts([
+                AllowedSort::field('vehicle_number'),
+                AllowedSort::field('registration_number'),
+                AllowedSort::field('vehicle_type'),
+                AllowedSort::field('year'),
+            ])
+            ->defaultSort('id');
     }
 }

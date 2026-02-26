@@ -4,6 +4,20 @@
             createPermission="product-create" :showSearch="true" :showRefresh="true" backRoute="settings.index" />
     </x-slot>
 
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-2 no-print">
+        <div class="flex justify-end">
+            <a href="{{ route('products.export.excel', request()->query()) }}"
+                class="inline-flex items-center gap-2 px-4 py-2 bg-green-700 hover:bg-green-800 text-white text-sm font-semibold rounded-md shadow transition-colors duration-150">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24"
+                    stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export to Excel
+            </a>
+        </div>
+    </div>
+
     <x-filter-section :action="route('products.index')">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
@@ -118,6 +132,33 @@
                     <option value="">Both</option>
                     <option value="1" {{ request('filter.is_powder') === '1' ? 'selected' : '' }}>Yes</option>
                     <option value="0" {{ request('filter.is_powder') === '0' ? 'selected' : '' }}>No</option>
+                </select>
+            </div>
+
+            <div>
+                <x-label for="sort" value="Sort By" />
+                <select id="sort" name="sort"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="product_name" {{ request('sort', 'product_name') === 'product_name' ? 'selected' : '' }}>Name (A-Z)</option>
+                    <option value="-product_name" {{ request('sort') === '-product_name' ? 'selected' : '' }}>Name (Z-A)</option>
+                    <option value="product_code" {{ request('sort') === 'product_code' ? 'selected' : '' }}>Code (A-Z)</option>
+                    <option value="-product_code" {{ request('sort') === '-product_code' ? 'selected' : '' }}>Code (Z-A)</option>
+                    <option value="-unit_sell_price" {{ request('sort') === '-unit_sell_price' ? 'selected' : '' }}>Price (High-Low)</option>
+                    <option value="unit_sell_price" {{ request('sort') === 'unit_sell_price' ? 'selected' : '' }}>Price (Low-High)</option>
+                    <option value="-cost_price" {{ request('sort') === '-cost_price' ? 'selected' : '' }}>Cost (High-Low)</option>
+                    <option value="cost_price" {{ request('sort') === 'cost_price' ? 'selected' : '' }}>Cost (Low-High)</option>
+                </select>
+            </div>
+
+            <div>
+                <x-label for="per_page" value="Per Page" />
+                <select id="per_page" name="per_page"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    @foreach ($perPageOptions as $option)
+                        <option value="{{ $option }}" {{ (int) request('per_page', 40) === $option ? 'selected' : '' }}>
+                            {{ $option }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
         </div>

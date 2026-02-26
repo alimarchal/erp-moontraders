@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\CustomerExport;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
 use App\Models\ChartOfAccount;
@@ -13,7 +14,9 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class CustomerController extends Controller implements HasMiddleware
@@ -24,36 +27,29 @@ class CustomerController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:customer-list', only: ['index', 'show']),
+            new Middleware('can:customer-list', only: ['index', 'show', 'exportExcel']),
             new Middleware('can:customer-create', only: ['create', 'store']),
             new Middleware('can:customer-edit', only: ['edit', 'update']),
             new Middleware('can:customer-delete', only: ['destroy']),
         ];
     }
 
+    private const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100, 250];
+
+    private const DEFAULT_PER_PAGE = 40;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $customers = QueryBuilder::for(
-            Customer::query()->with(['salesRep', 'receivableAccount', 'payableAccount'])
-        )
-            ->allowedFilters([
-                AllowedFilter::partial('customer_name'),
-                AllowedFilter::partial('customer_code'),
-                AllowedFilter::partial('business_name'),
-                AllowedFilter::partial('phone'),
-                AllowedFilter::partial('email'),
-                AllowedFilter::partial('city'),
-                AllowedFilter::partial('sub_locality'),
-                AllowedFilter::exact('channel_type'),
-                AllowedFilter::exact('customer_category'),
-                AllowedFilter::exact('sales_rep_id'),
-                AllowedFilter::exact('is_active'),
-            ])
-            ->orderBy('customer_name')
-            ->paginate(40)
+        $perPage = (int) $request->input('per_page', self::DEFAULT_PER_PAGE);
+        if (! in_array($perPage, self::PER_PAGE_OPTIONS)) {
+            $perPage = self::DEFAULT_PER_PAGE;
+        }
+
+        $customers = $this->buildFilteredQuery()
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('customers.index', [
@@ -62,7 +58,18 @@ class CustomerController extends Controller implements HasMiddleware
             'customerCategories' => Customer::CUSTOMER_CATEGORIES,
             'statusOptions' => ['1' => 'Active', '0' => 'Inactive'],
             'salesRepOptions' => $this->salesRepOptions(),
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
         ]);
+    }
+
+    /**
+     * Export filtered customers to Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $query = $this->buildFilteredQuery()->getEloquentBuilder();
+
+        return Excel::download(new CustomerExport($query), 'customers.xlsx');
     }
 
     /**
@@ -255,6 +262,42 @@ class CustomerController extends Controller implements HasMiddleware
 
             return back()->with('error', 'Failed to delete customer. Please try again.');
         }
+    }
+
+    /**
+     * Build the filtered query shared by index and export.
+     */
+    private function buildFilteredQuery(): QueryBuilder
+    {
+        return QueryBuilder::for(
+            Customer::query()->with(['salesRep', 'receivableAccount', 'payableAccount'])
+        )
+            ->allowedFilters([
+                AllowedFilter::partial('customer_name'),
+                AllowedFilter::partial('customer_code'),
+                AllowedFilter::partial('business_name'),
+                AllowedFilter::partial('phone'),
+                AllowedFilter::partial('email'),
+                AllowedFilter::partial('city'),
+                AllowedFilter::partial('sub_locality'),
+                AllowedFilter::partial('address'),
+                AllowedFilter::partial('ntn'),
+                AllowedFilter::partial('state'),
+                AllowedFilter::partial('country'),
+                AllowedFilter::exact('channel_type'),
+                AllowedFilter::exact('customer_category'),
+                AllowedFilter::exact('sales_rep_id'),
+                AllowedFilter::exact('is_active'),
+            ])
+            ->allowedSorts([
+                AllowedSort::field('customer_name'),
+                AllowedSort::field('customer_code'),
+                AllowedSort::field('credit_limit'),
+                AllowedSort::field('credit_used'),
+                AllowedSort::field('city'),
+                AllowedSort::field('channel_type'),
+            ])
+            ->defaultSort('customer_name');
     }
 
     /**

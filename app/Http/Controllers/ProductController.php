@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ProductExport;
 use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
@@ -14,7 +15,9 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class ProductController extends Controller implements HasMiddleware
@@ -25,37 +28,29 @@ class ProductController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:product-list', only: ['index', 'show']),
+            new Middleware('can:product-list', only: ['index', 'show', 'exportExcel']),
             new Middleware('can:product-create', only: ['create', 'store']),
             new Middleware('can:product-edit', only: ['edit', 'update']),
             new Middleware('can:product-delete', only: ['destroy']),
         ];
     }
 
+    private const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100, 250];
+
+    private const DEFAULT_PER_PAGE = 40;
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        $products = QueryBuilder::for(
-            Product::query()->with(['supplier', 'uom', 'salesUom', 'category'])
-        )
-            ->allowedFilters([
-                AllowedFilter::exact('product_name'),
-                AllowedFilter::exact('product_code'),
-                AllowedFilter::partial('brand'),
-                AllowedFilter::partial('barcode'),
-                AllowedFilter::partial('pack_size'),
-                AllowedFilter::exact('supplier_id'),
-                AllowedFilter::exact('category_id'),
-                AllowedFilter::exact('uom_id'),
-                AllowedFilter::exact('valuation_method'),
-                AllowedFilter::exact('is_active'),
-                AllowedFilter::exact('is_powder'),
-                AllowedFilter::exact('expiry_price'),
-            ])
-            ->orderBy('product_name')
-            ->paginate(40)
+        $perPage = (int) $request->input('per_page', self::DEFAULT_PER_PAGE);
+        if (! in_array($perPage, self::PER_PAGE_OPTIONS)) {
+            $perPage = self::DEFAULT_PER_PAGE;
+        }
+
+        $products = $this->buildFilteredQuery()
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('products.index', [
@@ -66,7 +61,18 @@ class ProductController extends Controller implements HasMiddleware
             'uomOptions' => $this->uomOptions(),
             'valuationMethods' => Product::VALUATION_METHODS,
             'statusOptions' => ['1' => 'Active', '0' => 'Inactive'],
+            'perPageOptions' => self::PER_PAGE_OPTIONS,
         ]);
+    }
+
+    /**
+     * Export filtered products to Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $query = $this->buildFilteredQuery()->getEloquentBuilder();
+
+        return Excel::download(new ProductExport($query), 'products.xlsx');
     }
 
     /**
@@ -267,6 +273,40 @@ class ProductController extends Controller implements HasMiddleware
 
             return back()->with('error', 'Failed to delete product. Please try again.');
         }
+    }
+
+    /**
+     * Build the filtered query shared by index and export.
+     */
+    private function buildFilteredQuery(): QueryBuilder
+    {
+        return QueryBuilder::for(
+            Product::query()->with(['supplier', 'uom', 'salesUom', 'category'])
+        )
+            ->allowedFilters([
+                AllowedFilter::exact('product_name'),
+                AllowedFilter::exact('product_code'),
+                AllowedFilter::partial('brand'),
+                AllowedFilter::partial('barcode'),
+                AllowedFilter::partial('pack_size'),
+                AllowedFilter::exact('supplier_id'),
+                AllowedFilter::exact('category_id'),
+                AllowedFilter::exact('uom_id'),
+                AllowedFilter::exact('sales_uom_id'),
+                AllowedFilter::exact('valuation_method'),
+                AllowedFilter::exact('is_active'),
+                AllowedFilter::exact('is_powder'),
+                AllowedFilter::exact('expiry_price'),
+            ])
+            ->allowedSorts([
+                AllowedSort::field('product_name'),
+                AllowedSort::field('product_code'),
+                AllowedSort::field('unit_sell_price'),
+                AllowedSort::field('cost_price'),
+                AllowedSort::field('reorder_level'),
+                AllowedSort::field('brand'),
+            ])
+            ->defaultSort('product_name');
     }
 
     protected function supplierOptions()

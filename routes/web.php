@@ -324,10 +324,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::resource('companies', CompanyController::class);
         Route::resource('warehouses', WarehouseController::class);
         Route::resource('warehouse-types', WarehouseTypeController::class);
+        Route::get('vehicles/export/excel', [VehicleController::class, 'exportExcel'])->name('vehicles.export.excel');
         Route::get('vehicles/export/pdf', [VehicleController::class, 'exportPdf'])->name('vehicles.export.pdf');
         Route::resource('vehicles', VehicleController::class);
 
         /* Products & Inventory */
+        Route::get('products/export/excel', [ProductController::class, 'exportExcel'])->name('products.export.excel');
         Route::resource('products', ProductController::class);
         Route::resource('categories', CategoryController::class);
         Route::resource('uoms', UomController::class);
@@ -336,6 +338,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::resource('suppliers', SupplierController::class);
         Route::get('employees/export/excel', [EmployeeController::class, 'exportExcel'])->name('employees.export.excel');
         Route::resource('employees', EmployeeController::class);
+        Route::get('customers/export/excel', [CustomerController::class, 'exportExcel'])->name('customers.export.excel');
         Route::resource('customers', CustomerController::class);
 
         /* RBAC — Users, Roles & Permissions */
@@ -357,6 +360,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('/', [ReportsController::class, 'index'])->name('index');
 
         /* Financial Statements */
+        Route::get('general-ledger/export/excel', [GeneralLedgerController::class, 'exportExcel'])->name('general-ledger.export.excel');
         Route::get('general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger.index');
         Route::get('trial-balance', [TrialBalanceController::class, 'index'])->name('trial-balance.index');
         Route::get('account-balances', [AccountBalancesController::class, 'index'])->name('account-balances.index');

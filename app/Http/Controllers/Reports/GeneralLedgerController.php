@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Reports;
 
+use App\Exports\GeneralLedgerExport;
 use App\Http\Controllers\Controller;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
@@ -9,6 +10,7 @@ use App\Models\GeneralLedgerEntry;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -35,18 +37,72 @@ class GeneralLedgerController extends Controller implements HasMiddleware
         $perPage = $request->input('per_page', 100);
         $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 100;
 
-        // Handle accounting period selection
         $periodId = $request->input('accounting_period_id');
         $entryDateFrom = $request->input('filter.entry_date_from');
         $entryDateTo = $request->input('filter.entry_date_to');
 
-        // If period is selected, use its date range
+        $this->applyAccountingPeriod($request, $periodId, $entryDateFrom, $entryDateTo);
+
+        $ledgerEntries = $this->buildFilteredQuery()
+            ->paginate($perPage)
+            ->withQueryString();
+
+        $accounts = ChartOfAccount::select('id as account_id', 'account_code', 'account_name')
+            ->whereNotNull('account_code')
+            ->where('is_active', true)
+            ->orderBy('account_code')
+            ->get();
+
+        $costCenters = GeneralLedgerEntry::select(
+            'cost_center_code as code',
+            'cost_center_name as name'
+        )
+            ->distinct()
+            ->whereNotNull('cost_center_code')
+            ->orderBy('cost_center_code')
+            ->get()
+            ->unique('code');
+
+        $accountingPeriods = AccountingPeriod::orderBy('start_date', 'desc')->get();
+
+        return view('reports.general-ledger.index', [
+            'entries' => $ledgerEntries,
+            'statusOptions' => $statusOptions,
+            'accounts' => $accounts,
+            'costCenters' => $costCenters,
+            'accountingPeriods' => $accountingPeriods,
+            'periodId' => $periodId,
+            'entryDateFrom' => $entryDateFrom,
+            'entryDateTo' => $entryDateTo,
+        ]);
+    }
+
+    /**
+     * Export filtered general ledger entries to Excel.
+     */
+    public function exportExcel(Request $request)
+    {
+        $periodId = $request->input('accounting_period_id');
+        $entryDateFrom = $request->input('filter.entry_date_from');
+        $entryDateTo = $request->input('filter.entry_date_to');
+
+        $this->applyAccountingPeriod($request, $periodId, $entryDateFrom, $entryDateTo);
+
+        $query = $this->buildFilteredQuery()->getEloquentBuilder();
+
+        return Excel::download(new GeneralLedgerExport($query), 'general-ledger.xlsx');
+    }
+
+    /**
+     * Apply accounting period date overrides to the request.
+     */
+    private function applyAccountingPeriod(Request $request, ?string $periodId, ?string &$entryDateFrom, ?string &$entryDateTo): void
+    {
         if ($periodId) {
             $period = AccountingPeriod::find($periodId);
             if ($period) {
                 $entryDateFrom = $period->start_date;
                 $entryDateTo = $period->end_date;
-                // Override the filter parameters
                 $request->merge([
                     'filter' => array_merge($request->input('filter', []), [
                         'entry_date_from' => $entryDateFrom,
@@ -55,10 +111,15 @@ class GeneralLedgerController extends Controller implements HasMiddleware
                 ]);
             }
         }
+    }
 
-        $ledgerEntries = QueryBuilder::for(GeneralLedgerEntry::query())
+    /**
+     * Build the filtered query shared by index and export.
+     */
+    private function buildFilteredQuery(): QueryBuilder
+    {
+        return QueryBuilder::for(GeneralLedgerEntry::query())
             ->allowedFilters([
-                // Text/partial matches
                 AllowedFilter::partial('account_code'),
                 AllowedFilter::partial('account_name'),
                 AllowedFilter::partial('reference'),
@@ -67,14 +128,10 @@ class GeneralLedgerController extends Controller implements HasMiddleware
                 AllowedFilter::partial('cost_center_code'),
                 AllowedFilter::partial('cost_center_name'),
                 AllowedFilter::partial('currency_code'),
-
-                // Exact matches
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('journal_entry_id'),
                 AllowedFilter::exact('line_no'),
                 AllowedFilter::exact('account_id'),
-
-                // Date range
                 AllowedFilter::callback('entry_date_from', function ($query, $value) {
                     if (filled($value)) {
                         $query->whereDate('entry_date', '>=', $value);
@@ -85,8 +142,6 @@ class GeneralLedgerController extends Controller implements HasMiddleware
                         $query->whereDate('entry_date', '<=', $value);
                     }
                 }),
-
-                // Numeric ranges
                 AllowedFilter::callback('debit_min', function ($query, $value) {
                     if (filled($value)) {
                         $query->where('debit', '>=', $value);
@@ -131,39 +186,6 @@ class GeneralLedgerController extends Controller implements HasMiddleware
             ])
             ->orderBy('entry_date', 'asc')
             ->orderBy('journal_entry_id', 'asc')
-            ->orderBy('line_no', 'asc')
-            ->paginate($perPage)
-            ->withQueryString();
-
-        // Get distinct values for dropdowns - show all accounts from ChartOfAccount
-        $accounts = ChartOfAccount::select('id as account_id', 'account_code', 'account_name')
-            ->whereNotNull('account_code')
-            ->where('is_active', true)
-            ->orderBy('account_code')
-            ->get();
-
-        $costCenters = GeneralLedgerEntry::select(
-            'cost_center_code as code',
-            'cost_center_name as name'
-        )
-            ->distinct()
-            ->whereNotNull('cost_center_code')
-            ->orderBy('cost_center_code')
-            ->get()
-            ->unique('code');
-
-        // Get accounting periods for dropdown
-        $accountingPeriods = AccountingPeriod::orderBy('start_date', 'desc')->get();
-
-        return view('reports.general-ledger.index', [
-            'entries' => $ledgerEntries,
-            'statusOptions' => $statusOptions,
-            'accounts' => $accounts,
-            'costCenters' => $costCenters,
-            'accountingPeriods' => $accountingPeriods,
-            'periodId' => $periodId,
-            'entryDateFrom' => $entryDateFrom,
-            'entryDateTo' => $entryDateTo,
-        ]);
+            ->orderBy('line_no', 'asc');
     }
 }

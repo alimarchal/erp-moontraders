@@ -39,8 +39,8 @@ class RoleAndPermissionSeeder extends Seeder
             'employee' => ['list', 'create', 'edit', 'delete'],
 
             // Inventory & Production
-            'goods-receipt-note' => ['list', 'create', 'edit', 'delete', 'post', 'reverse', 'import'],
-            'goods-issue' => ['list', 'create', 'edit', 'delete', 'post'],
+            'goods-receipt-note' => ['list', 'create', 'edit', 'delete', 'post', 'reverse', 'import', 'view-own', 'view-all'],
+            'goods-issue' => ['list', 'create', 'edit', 'delete', 'post', 'view-own', 'view-all'],
             'stock-transfer' => ['list', 'create', 'edit', 'delete', 'post'],
             'stock-adjustment' => ['list', 'create', 'edit', 'delete', 'post'],
             'product-recall' => ['list', 'create', 'edit', 'delete', 'post', 'cancel'],
@@ -51,7 +51,7 @@ class RoleAndPermissionSeeder extends Seeder
             'uom' => ['list', 'create', 'edit', 'delete'],
 
             // Sales & Distribution
-            'sales-settlement' => ['list', 'create', 'edit', 'delete', 'post', 'view-all'],
+            'sales-settlement' => ['list', 'create', 'edit', 'delete', 'post', 'view-own', 'view-all'],
             'supplier-payment' => ['list', 'create', 'edit', 'delete', 'post', 'reverse'],
             'vehicle' => ['list', 'create', 'edit', 'delete'],
             'promotional-campaign' => ['list', 'create', 'edit', 'delete'],
@@ -145,10 +145,12 @@ class RoleAndPermissionSeeder extends Seeder
             'goods-receipt-note-create',
             'goods-receipt-note-edit',
             'goods-receipt-note-post',
+            'goods-receipt-note-view-all',
             'goods-issue-list',
             'goods-issue-create',
             'goods-issue-edit',
             'goods-issue-post',
+            'goods-issue-view-all',
             'stock-transfer-list',
             'stock-transfer-create',
             'stock-transfer-edit',
@@ -180,6 +182,7 @@ class RoleAndPermissionSeeder extends Seeder
             'sales-settlement-create',
             'sales-settlement-edit',
             'sales-settlement-post',
+            'sales-settlement-view-own',
             'customer-list',
             'customer-create',
             'customer-edit',

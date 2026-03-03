@@ -45,9 +45,13 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      */
     public function index(Request $request)
     {
-        $grns = QueryBuilder::for(
-            GoodsReceiptNote::query()->with(['supplier', 'warehouse', 'receivedBy'])
-        )
+        $query = GoodsReceiptNote::query()->with(['supplier', 'warehouse', 'receivedBy']);
+
+        if (! auth()->user()->can('goods-receipt-note-view-all')) {
+            $query->where('received_by', auth()->id());
+        }
+
+        $grns = QueryBuilder::for($query)
             ->allowedFilters([
                 AllowedFilter::partial('grn_number'),
                 AllowedFilter::partial('supplier_invoice_number'),

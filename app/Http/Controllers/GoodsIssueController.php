@@ -43,9 +43,13 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function index()
     {
-        $goodsIssues = QueryBuilder::for(
-            GoodsIssue::query()->with(['warehouse', 'vehicle', 'employee', 'supplier', 'issuedBy'])
-        )
+        $query = GoodsIssue::query()->with(['warehouse', 'vehicle', 'employee', 'supplier', 'issuedBy']);
+
+        if (! auth()->user()->can('goods-issue-view-all')) {
+            $query->where('issued_by', auth()->id());
+        }
+
+        $goodsIssues = QueryBuilder::for($query)
             ->allowedFilters([
                 AllowedFilter::partial('issue_number'),
                 AllowedFilter::exact('warehouse_id'),
@@ -66,7 +70,13 @@ class GoodsIssueController extends Controller implements HasMiddleware
             ->withQueryString();
 
         // Calculate totals based on the same filters (excluding pagination)
-        $totalValue = QueryBuilder::for(GoodsIssue::class)
+        $totalQuery = GoodsIssue::query();
+
+        if (! auth()->user()->can('goods-issue-view-all')) {
+            $totalQuery->where('issued_by', auth()->id());
+        }
+
+        $totalValue = QueryBuilder::for($totalQuery)
             ->allowedFilters([
                 AllowedFilter::partial('issue_number'),
                 AllowedFilter::exact('warehouse_id'),

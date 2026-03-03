@@ -43,7 +43,19 @@ class DistributionService
                     ->lockForUpdate()
                     ->first();
 
-                if (! $warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
+                // When exclude_promotional is set, validate against non-promotional stock only
+                if ($item->exclude_promotional) {
+                    $availableNonPromoStock = StockValuationLayer::where('product_id', $item->product_id)
+                        ->where('warehouse_id', $goodsIssue->warehouse_id)
+                        ->where('is_depleted', false)
+                        ->where('quantity_remaining', '>', 0)
+                        ->where('is_promotional', false)
+                        ->sum('quantity_remaining');
+
+                    if ($availableNonPromoStock < $item->quantity_issued) {
+                        throw new \Exception("Insufficient non-promotional stock for product ID {$item->product_id}. Available (non-promo): {$availableNonPromoStock}, Required: {$item->quantity_issued}");
+                    }
+                } elseif (! $warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
                     throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: ".($warehouseStock->quantity_on_hand ?? 0).", Required: {$item->quantity_issued}");
                 }
 
@@ -51,7 +63,8 @@ class DistributionService
                 $batchAllocations = $this->allocateStockFromBatches(
                     $item->product_id,
                     $goodsIssue->warehouse_id,
-                    $item->quantity_issued
+                    $item->quantity_issued,
+                    (bool) $item->exclude_promotional
                 );
 
                 if ($batchAllocations['total_allocated'] < $item->quantity_issued) {
@@ -327,18 +340,23 @@ class DistributionService
      *
      * @return array ['batches' => [...], 'total_allocated' => float]
      */
-    private function allocateStockFromBatches(int $productId, int $warehouseId, float $quantityNeeded): array
+    private function allocateStockFromBatches(int $productId, int $warehouseId, float $quantityNeeded, bool $excludePromotional = false): array
     {
         $allocations = [];
         $remainingQty = $quantityNeeded;
 
         // Get available batches ordered by PROMOTIONAL PRIORITY, then FIFO
-        $batches = CurrentStockByBatch::where('product_id', $productId)
+        $query = CurrentStockByBatch::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
             ->where('quantity_on_hand', '>', 0)
             ->where('status', 'active')
-            ->with('stockBatch')
-            ->get()
+            ->with('stockBatch');
+
+        if ($excludePromotional) {
+            $query->where('is_promotional', false);
+        }
+
+        $batches = $query->get()
             ->sortBy(function ($stockByBatch) {
                 $batch = $stockByBatch->stockBatch;
 

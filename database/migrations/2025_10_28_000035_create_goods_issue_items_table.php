@@ -21,6 +21,7 @@ return new class extends Migration
             $table->decimal('selling_price', 15, 2)->default(0);
             $table->decimal('total_value', 15, 2)->default(0);
             $table->foreignId('uom_id')->constrained('uoms')->cascadeOnDelete();
+            $table->boolean('exclude_promotional')->default(false);
             $table->timestamps();
 
             $table->index('goods_issue_id');

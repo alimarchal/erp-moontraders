@@ -110,15 +110,22 @@ class GoodsIssueController extends Controller implements HasMiddleware
      * Returns selling price from the first priority stock layer with batch breakdown
      * Database-agnostic: Works with PostgreSQL, MySQL, and MariaDB
      */
-    public function getProductStock($warehouseId, $productId)
+    public function getProductStock(Request $request, $warehouseId, $productId)
     {
+        $excludePromotional = $request->boolean('exclude_promotional');
+
         // Get total available quantity
-        $totalStock = DB::table('stock_valuation_layers')
+        $totalStockQuery = DB::table('stock_valuation_layers')
             ->where('warehouse_id', $warehouseId)
             ->where('product_id', $productId)
             ->where('is_depleted', false)
-            ->where('quantity_remaining', '>', 0)
-            ->sum('quantity_remaining');
+            ->where('quantity_remaining', '>', 0);
+
+        if ($excludePromotional) {
+            $totalStockQuery->where('is_promotional', false);
+        }
+
+        $totalStock = $totalStockQuery->sum('quantity_remaining');
 
         // Calculate urgent date threshold (30 days from now)
         $urgentDate = now()->addDays(30)->toDateString();
@@ -128,14 +135,19 @@ class GoodsIssueController extends Controller implements HasMiddleware
         // 1) URGENT EXPIRY: Items expiring within 30 days (urgency_level = 1)
         // 2) PRIORITY ORDER: Lower numbers first (1 = Urgent, 99 = Normal FIFO)
         // 3) FIFO: Oldest receipt date first
-        $stockLayers = DB::table('stock_valuation_layers as svl')
+        $stockLayersQuery = DB::table('stock_valuation_layers as svl')
             ->join('goods_receipt_note_items as grni', 'svl.grn_item_id', '=', 'grni.id')
             ->leftJoin('stock_batches as sb', 'svl.stock_batch_id', '=', 'sb.id')
             ->where('svl.warehouse_id', $warehouseId)
             ->where('svl.product_id', $productId)
             ->where('svl.is_depleted', false)
-            ->where('svl.quantity_remaining', '>', 0)
-            ->selectRaw('
+            ->where('svl.quantity_remaining', '>', 0);
+
+        if ($excludePromotional) {
+            $stockLayersQuery->where('svl.is_promotional', false);
+        }
+
+        $stockLayers = $stockLayersQuery->selectRaw('
                 grni.selling_price,
                 svl.unit_cost,
                 svl.priority_order,
@@ -233,6 +245,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
                     'selling_price' => $item['selling_price'],
                     'uom_id' => $item['uom_id'],
                     'total_value' => $item['quantity_issued'] * $item['selling_price'],
+                    'exclude_promotional' => (bool) ($item['exclude_promotional'] ?? false),
                 ]);
             }
 
@@ -311,14 +324,19 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 // For draft goods issues, show THEORETICAL batch breakdown
                 $urgentDate = now()->addDays(30)->toDateString();
 
-                $stockLayers = DB::table('stock_valuation_layers as svl')
+                $stockLayersQuery = DB::table('stock_valuation_layers as svl')
                     ->join('goods_receipt_note_items as grni', 'svl.grn_item_id', '=', 'grni.id')
                     ->leftJoin('stock_batches as sb', 'svl.stock_batch_id', '=', 'sb.id')
                     ->where('svl.warehouse_id', $goodsIssue->warehouse_id)
                     ->where('svl.product_id', $item->product_id)
                     ->where('svl.is_depleted', false)
-                    ->where('svl.quantity_remaining', '>', 0)
-                    ->selectRaw('
+                    ->where('svl.quantity_remaining', '>', 0);
+
+                if ($item->exclude_promotional) {
+                    $stockLayersQuery->where('svl.is_promotional', false);
+                }
+
+                $stockLayers = $stockLayersQuery->selectRaw('
                         grni.selling_price,
                         svl.unit_cost,
                         svl.priority_order,
@@ -439,6 +457,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
                     'selling_price' => $item['selling_price'],
                     'uom_id' => $item['uom_id'],
                     'total_value' => $item['quantity_issued'] * $item['selling_price'],
+                    'exclude_promotional' => (bool) ($item['exclude_promotional'] ?? false),
                 ]);
             }
 

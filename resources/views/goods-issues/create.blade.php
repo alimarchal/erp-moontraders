@@ -87,13 +87,14 @@
 
 
                         <x-form-table title="Products to Issue" :headers="[
-        ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
-        ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '120px'],
-        ['label' => 'Qty<br>Issued', 'align' => 'text-center', 'width' => '120px'],
-        ['label' => 'UOM', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'Product', 'align' => 'text-left', 'width' => '300px'],
+        ['label' => 'Non-Promo<br>Only', 'align' => 'text-center', 'width' => '70px'],
+        ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '110px'],
+        ['label' => 'Qty<br>Issued', 'align' => 'text-center', 'width' => '110px'],
+        ['label' => 'UOM', 'align' => 'text-center', 'width' => '110px'],
         ['label' => 'Price<br>Breakdown', 'align' => 'text-left', 'width' => '200px'],
-        ['label' => 'Total<br>Value', 'align' => 'text-right', 'width' => '140px'],
-        ['label' => 'Action', 'align' => 'text-center', 'width' => '8-px'],
+        ['label' => 'Total<br>Value', 'align' => 'text-right', 'width' => '130px'],
+        ['label' => 'Action', 'align' => 'text-center', 'width' => '70px'],
     ]">
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(item, index) in items" :key="index">
@@ -104,6 +105,16 @@
                                                 class="product-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">Select Product</option>
                                             </select>
+                                        </td>
+                                        <td class="px-2 py-2 text-center align-middle">
+                                            <input type="hidden" :name="`items[${index}][exclude_promotional]`" value="0">
+                                            <input type="checkbox" :name="`items[${index}][exclude_promotional]`"
+                                                x-model="item.exclude_promotional"
+                                                @change="onExcludePromotionalChange(index)"
+                                                value="1"
+                                                :disabled="!item.product_id"
+                                                class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 h-5 w-5"
+                                                title="Check to exclude promotional batches">
                                         </td>
                                         <td class="px-2 py-2 align-middle">
                                             <input type="text" :id="`available_qty_${index}`" readonly
@@ -162,7 +173,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr class="font-semibold bg-gray-100">
-                                    <td class="px-2 py-2 text-right" colspan="2">Totals:</td>
+                                    <td class="px-2 py-2 text-right" colspan="3">Totals:</td>
                                     <td class="px-2 py-2 text-right"
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_issued) || 0), 0))">
                                     </td>
@@ -174,7 +185,7 @@
                                     <td class="px-2 py-2"></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="7" class="px-2 py-2">
+                                    <td colspan="8" class="px-2 py-2">
                                         <button type="button" @click="addItem()"
                                             class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
@@ -267,6 +278,7 @@
                         selling_price: parseFloat(item.selling_price) || 0,
                         total_value: parseFloat(item.total_value) || 0,
                         available_qty: 0,
+                        exclude_promotional: item.exclude_promotional == 1 || item.exclude_promotional === true || false,
                     })) : [{
                         product_id: '',
                         uom_id: '',
@@ -275,6 +287,7 @@
                         selling_price: 0,
                         total_value: 0,
                         available_qty: 0,
+                        exclude_promotional: false,
                     }],
 
                     validateAndSubmit() {
@@ -331,6 +344,7 @@
                             selling_price: 0,
                             total_value: 0,
                             available_qty: 0,
+                            exclude_promotional: false,
                         });
 
                         this.$nextTick(() => {
@@ -342,8 +356,9 @@
                         if (this.items.length > 1) {
                             const productId = this.items[index].product_id;
 
-                            if (productId && productBatches[productId]) {
+                            if (productId) {
                                 delete productBatches[productId];
+                                delete productBatches[`${productId}_np`];
                             }
 
                             this.items.splice(index, 1);
@@ -367,8 +382,10 @@
                         const productId = item.product_id;
                         const quantity = parseFloat(item.quantity_issued) || 0;
                         const availableQty = parseFloat(item.available_qty) || 0;
+                        const excludePromo = item.exclude_promotional;
+                        const batchKey = excludePromo ? `${productId}_np` : productId;
 
-                        if (!productId || !productBatches[productId]) {
+                        if (!productId || !productBatches[batchKey]) {
                             document.getElementById(`price_breakdown_${index}`).innerHTML = '';
                             document.getElementById(`batch_info_${index}`).innerHTML = '';
                             item.total_value = 0;
@@ -407,7 +424,7 @@
                             return;
                         }
 
-                        const batches = productBatches[productId];
+                        const batches = productBatches[batchKey];
                         let remainingQty = quantity;
                         let totalValue = 0;
                         let totalCost = 0;
@@ -478,6 +495,28 @@
 
                         item.total_value = totalValue;
                         item.unit_cost = quantity > 0 ? totalCost / quantity : 0;
+                    },
+
+                    async onExcludePromotionalChange(index) {
+                        const item = this.items[index];
+                        if (!item.product_id) return;
+
+                        const savedQty = parseFloat(item.quantity_issued) || 0;
+
+                        const batchInfoDiv = document.getElementById(`batch_info_${index}`);
+                        const priceDiv = document.getElementById(`price_breakdown_${index}`);
+                        if (batchInfoDiv) batchInfoDiv.innerHTML = '<div class="text-gray-400">Loading...</div>';
+                        if (priceDiv) priceDiv.innerHTML = '';
+
+                        const warehouseId = document.getElementById('warehouse_id').value;
+                        if (warehouseId && item.product_id) {
+                            await onProductChange(index, item.product_id, warehouseId);
+
+                            item.quantity_issued = savedQty;
+                            if (savedQty > 0) {
+                                this.updatePriceBasedOnQuantity(index);
+                            }
+                        }
                     },
 
                     get grandTotal() {
@@ -704,10 +743,12 @@
                 }
 
                 try {
-                    const response = await fetch(`/api/warehouses/${warehouseId}/products/${productId}/stock`);
+                    const excludePromo = alpineComponent.items[index].exclude_promotional ? 1 : 0;
+                    const response = await fetch(`/api/warehouses/${warehouseId}/products/${productId}/stock?exclude_promotional=${excludePromo}`);
                     const data = await response.json();
 
-                    productBatches[productId] = data.batches || [];
+                    const batchKey = excludePromo ? `${productId}_np` : productId;
+                    productBatches[batchKey] = data.batches || [];
 
                     alpineComponent.items[index].available_qty = parseFloat(data.available_quantity || 0).toFixed(2);
                     alpineComponent.items[index].uom_id = data.stock_uom_id || '';
@@ -718,7 +759,7 @@
                         alpineComponent.items[index].selling_price = 0;
                     }
 
-                    displayBatchInfo(index, data.batches, data.has_multiple_prices);
+                    displayBatchInfo(index, data.batches, data.has_multiple_prices, !!excludePromo);
 
                     if (alpineComponent.items[index].quantity_issued === 0 || alpineComponent.items[index].quantity_issued === null || alpineComponent.items[index].quantity_issued === undefined) {
                         alpineComponent.items[index].total_value = 0;
@@ -737,23 +778,27 @@
                 }
             }
 
-            function displayBatchInfo(index, batches, hasMultiplePrices) {
+            function displayBatchInfo(index, batches, hasMultiplePrices, excludePromo = false) {
                 const batchInfoDiv = document.getElementById(`batch_info_${index}`);
 
                 if (!batches || batches.length === 0) {
-                    batchInfoDiv.innerHTML = '';
+                    batchInfoDiv.innerHTML = excludePromo
+                        ? '<div class="text-amber-600 font-semibold text-xs">🚫 No non-promotional stock available</div>'
+                        : '';
                     return;
                 }
 
+                let filterBadge = excludePromo ? '<div class="text-indigo-600 font-semibold text-xs mb-1">🔒 Non-Promo Only</div>' : '';
+
                 if (hasMultiplePrices) {
-                    let batchHtml = '<div class="text-orange-600 font-semibold mt-1">⚠️ Multiple batch prices:</div>';
+                    let batchHtml = filterBadge + '<div class="text-orange-600 font-semibold mt-1">⚠️ Multiple batch prices:</div>';
                     batches.forEach((batch, idx) => {
                         const promo = batch.is_promotional ? ' 🎁' : '';
                         batchHtml += `<div class="ml-2">Batch ${idx + 1}: ${batch.quantity.toFixed(0)} @ ₨${batch.selling_price.toFixed(2)}${promo}</div>`;
                     });
                     batchInfoDiv.innerHTML = batchHtml;
                 } else {
-                    batchInfoDiv.innerHTML = `<div class="text-green-600">✓ Single price: ₨${batches[0].selling_price.toFixed(2)}</div>`;
+                    batchInfoDiv.innerHTML = filterBadge + `<div class="text-green-600">✓ Single price: ₨${batches[0].selling_price.toFixed(2)}</div>`;
                 }
             }
 

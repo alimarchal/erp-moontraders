@@ -19,14 +19,19 @@ class GoodsIssueItem extends Model
         'selling_price',
         'total_value',
         'uom_id',
+        'exclude_promotional',
     ];
 
-    protected $casts = [
-        'quantity_issued' => 'decimal:3',
-        'unit_cost' => 'decimal:2',
-        'selling_price' => 'decimal:2',
-        'total_value' => 'decimal:2',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'quantity_issued' => 'decimal:3',
+            'unit_cost' => 'decimal:2',
+            'selling_price' => 'decimal:2',
+            'total_value' => 'decimal:2',
+            'exclude_promotional' => 'boolean',
+        ];
+    }
 
     public function goodsIssue(): BelongsTo
     {

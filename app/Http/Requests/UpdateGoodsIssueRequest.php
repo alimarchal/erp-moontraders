@@ -47,18 +47,25 @@ class UpdateGoodsIssueRequest extends FormRequest
                     $index = explode('.', $attribute)[1];
                     $productId = $this->input("items.{$index}.product_id");
                     $warehouseId = $this->input('warehouse_id');
+                    $excludePromotional = (bool) $this->input("items.{$index}.exclude_promotional");
 
                     if ($productId && $warehouseId) {
-                        $availableStock = DB::table('stock_valuation_layers')
+                        $query = DB::table('stock_valuation_layers')
                             ->where('warehouse_id', $warehouseId)
                             ->where('product_id', $productId)
                             ->where('is_depleted', false)
-                            ->where('quantity_remaining', '>', 0)
-                            ->sum('quantity_remaining');
+                            ->where('quantity_remaining', '>', 0);
+
+                        if ($excludePromotional) {
+                            $query->where('is_promotional', false);
+                        }
+
+                        $availableStock = $query->sum('quantity_remaining');
 
                         if ($value > $availableStock) {
                             $productName = DB::table('products')->where('id', $productId)->value('product_name');
-                            $fail("The quantity for {$productName} ({$value}) exceeds available stock ({$availableStock}).");
+                            $suffix = $excludePromotional ? ' (non-promotional only)' : '';
+                            $fail("The quantity for {$productName} ({$value}) exceeds available stock ({$availableStock}){$suffix}.");
                         }
                     }
                 },
@@ -66,6 +73,7 @@ class UpdateGoodsIssueRequest extends FormRequest
             'items.*.unit_cost' => 'required|numeric|min:0',
             'items.*.selling_price' => 'required|numeric|min:0',
             'items.*.uom_id' => 'required|exists:uoms,id',
+            'items.*.exclude_promotional' => 'nullable|boolean',
         ];
     }
 }

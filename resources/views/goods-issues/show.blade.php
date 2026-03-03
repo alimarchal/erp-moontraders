@@ -234,7 +234,13 @@
                                     <td style="vertical-align: middle;" class="font-semibold">
                                         {{ $item->product->product_code }}
                                     </td>
-                                    <td style="vertical-align: middle;">{{ $item->product->product_name }}</td>
+                                    <td style="vertical-align: middle;">
+                                        {{ $item->product->product_name }}
+                                        @if($item->exclude_promotional)
+                                            <span
+                                                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 print:border print:border-indigo-300">Non-Promo</span>
+                                        @endif
+                                    </td>
                                     <td class="text-right tabular-nums" style="vertical-align: middle;">
                                         {{ number_format($item->quantity_issued, 2) }}
                                     </td>
@@ -292,14 +298,8 @@
         </div>
     </div>
 
-    <x-alpine-confirmation-modal
-        event-name="open-post-gi-modal"
-        title="Post Goods Issue"
+    <x-alpine-confirmation-modal event-name="open-post-gi-modal" title="Post Goods Issue"
         message="Are you sure you want to post this Goods Issue? This will transfer inventory from warehouse to vehicle."
-        confirm-button-text="Post Issue"
-        confirm-button-class="bg-emerald-600 hover:bg-emerald-700"
-        icon-bg-class="bg-emerald-100"
-        icon-color-class="text-emerald-600"
-        icon-path="M5 13l4 4L19 7"
-    />
+        confirm-button-text="Post Issue" confirm-button-class="bg-emerald-600 hover:bg-emerald-700"
+        icon-bg-class="bg-emerald-100" icon-color-class="text-emerald-600" icon-path="M5 13l4 4L19 7" />
 </x-app-layout>

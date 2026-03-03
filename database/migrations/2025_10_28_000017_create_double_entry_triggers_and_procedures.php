@@ -36,12 +36,10 @@ return new class extends Migration
             $this->createPostgreSQLSoftDeleteProtection();
             $this->createPostgreSQLSnapshotHelpers();
         } elseif (in_array($driver, ['mysql', 'mariadb'])) {
-            $this->enableBinLogTrustForMySQL();
             $this->createMySQLTriggers();
             $this->createMySQLAuditTriggers();
             $this->createMySQLSoftDeleteProtection();
             $this->createMySQLSnapshotHelpers();
-            $this->restoreBinLogTrustForMySQL();
         }
     }
 
@@ -799,32 +797,6 @@ return new class extends Migration
     // ──────────────────────────────────────────
     // MYSQL / MARIADB TRIGGERS
     // ──────────────────────────────────────────
-
-    /**
-     * Enable log_bin_trust_function_creators so triggers/procedures can be
-     * created without SUPER privilege when binary logging is active.
-     */
-    private function enableBinLogTrustForMySQL(): void
-    {
-        try {
-            $this->originalBinLogTrust = DB::selectOne("SHOW VARIABLES LIKE 'log_bin_trust_function_creators'")?->Value ?? 'OFF';
-            DB::unprepared('SET GLOBAL log_bin_trust_function_creators = 1');
-        } catch (\Exception $e) {
-            \Log::warning('Could not set log_bin_trust_function_creators: '.$e->getMessage());
-        }
-    }
-
-    private function restoreBinLogTrustForMySQL(): void
-    {
-        try {
-            $original = ($this->originalBinLogTrust ?? 'OFF') === 'ON' ? 1 : 0;
-            DB::unprepared("SET GLOBAL log_bin_trust_function_creators = {$original}");
-        } catch (\Exception $e) {
-            \Log::warning('Could not restore log_bin_trust_function_creators: '.$e->getMessage());
-        }
-    }
-
-    private ?string $originalBinLogTrust = null;
 
     private function createMySQLTriggers(): void
     {

@@ -130,17 +130,14 @@
                                         </td>
                                         @if($canEnterCartons)
                                         <td class="px-2 py-2 align-middle">
-                                            <div class="flex flex-col gap-1">
-                                                <input type="number"
-                                                    x-model="item.carton_qty"
-                                                    @input="recalcFromCartonPieces(index)"
-                                                    min="0" step="1"
-                                                    :disabled="parseFloat(item.available_qty) <= 0 || !item.conversion_factor"
-                                                    :class="(parseFloat(item.available_qty) <= 0 || !item.conversion_factor) ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
-                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full text-center"
-                                                    placeholder="0">
-                                                <span x-show="item.conversion_factor > 1" class="text-xs text-indigo-600 text-center font-medium" x-text="'×' + item.conversion_factor"></span>
-                                            </div>
+                                            <input type="number"
+                                                x-model="item.carton_qty"
+                                                @input="recalcFromCartonPieces(index)"
+                                                min="0" step="1"
+                                                :disabled="parseFloat(item.available_qty) <= 0 || !item.conversion_factor"
+                                                :class="(parseFloat(item.available_qty) <= 0 || !item.conversion_factor) ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full text-center"
+                                                placeholder="0">
                                         </td>
                                         <td class="px-2 py-2 align-middle">
                                             <input type="number"
@@ -177,6 +174,11 @@
                                             </select>
                                         </td>
                                         <td class="px-2 py-2 align-middle">
+                                            @if($canEnterCartons)
+                                            <div x-show="item.conversion_factor > 1" class="text-xs text-indigo-600 font-medium mb-1">
+                                                <span x-text="'1 Ctn = ' + item.conversion_factor + ' Pcs'"></span>
+                                            </div>
+                                            @endif
                                             <div :id="`batch_info_${index}`" class="text-xs text-gray-600 max-w-xs">
                                             </div>
                                             <div :id="`price_breakdown_${index}`"
@@ -448,25 +450,43 @@
                     }
 
                     if (quantity > availableQty) {
+                        const factor = parseFloat(item.conversion_factor) || 1;
+                        let enteredLabel = `${quantity.toFixed(0)} pcs`;
+                        let availableLabel = `${availableQty.toFixed(0)} pcs`;
+                        let excessLabel = `${(quantity - availableQty).toFixed(0)} pcs`;
+
+                        if (canEnterCartons && factor > 1) {
+                            const enteredCtns = parseInt(item.carton_qty) || 0;
+                            const enteredPcs = parseInt(item.pieces_qty) || 0;
+                            enteredLabel = `${enteredCtns} ctn + ${enteredPcs} pcs (${quantity.toFixed(0)} pcs)`;
+                            const availCtns = Math.floor(availableQty / factor);
+                            const availPcs = Math.round(availableQty % factor);
+                            availableLabel = `${availCtns} ctn + ${availPcs} pcs (${availableQty.toFixed(0)} pcs)`;
+                            excessLabel = `${(quantity - availableQty).toFixed(0)} pcs`;
+                        }
+
                         document.getElementById(`batch_info_${index}`).innerHTML = `
                             <div class="text-red-600 font-bold">⚠️ ERROR: Quantity exceeds available stock!</div>
                         `;
                         document.getElementById(`price_breakdown_${index}`).innerHTML = `
-                            <div class="text-red-600 font-semibold">Entered: ${quantity.toFixed(0)} units</div>
-                            <div class="text-green-600 font-semibold">Available: ${availableQty.toFixed(0)} units</div>
-                            <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${(quantity - availableQty).toFixed(0)} units</div>
+                            <div class="text-red-600 font-semibold">Entered: ${enteredLabel}</div>
+                            <div class="text-green-600 font-semibold">Available: ${availableLabel}</div>
+                            <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${excessLabel}</div>
                         `;
                         item.total_value = 0;
                         item.unit_cost = 0;
 
                         item.quantity_issued = availableQty;
+                        if (canEnterCartons && factor > 1) {
+                            item.carton_qty = Math.floor(availableQty / factor);
+                            item.pieces_qty = Math.round(availableQty % factor);
+                        }
                         this.updatePriceBasedOnQuantity(index);
 
                         setTimeout(() => {
+                            let alertMsg = `<p class="font-semibold text-red-600">You entered: ${enteredLabel}</p><p class="font-semibold text-green-600">Available stock: ${availableLabel}</p><p class="mt-2 text-gray-700">Quantity has been reset to maximum available.</p>`;
                             window.dispatchEvent(new CustomEvent('open-alert-modal', {
-                                detail: {
-                                    message: `<p class="font-semibold text-red-600">You entered: ${quantity.toFixed(0)} units</p><p class="font-semibold text-green-600">Available stock: ${availableQty.toFixed(0)} units</p><p class="mt-2 text-gray-700">Quantity has been reset to maximum available.</p>`
-                                }
+                                detail: { message: alertMsg }
                             }));
                         }, 100);
                         return;

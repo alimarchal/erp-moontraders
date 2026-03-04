@@ -112,6 +112,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
+            'canEnterCartons' => auth()->user()->can('goods-issue-carton-entry'),
         ]);
     }
 
@@ -179,7 +180,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
         // Get the first layer for default price
         $firstLayer = $stockLayers->first();
 
-        $product = Product::with('uom')->find($productId);
+        $product = Product::with(['uom', 'salesUom'])->find($productId);
 
         // Format batch breakdown for display
         $batches = $stockLayers->map(function ($layer) {
@@ -199,6 +200,9 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'unit_cost' => $firstLayer->unit_cost ?? 0,
             'stock_uom_id' => $product->uom_id ?? null,
             'stock_uom_name' => $product->uom->uom_name ?? 'Piece',
+            'sales_uom_id' => $product->sales_uom_id ?? null,
+            'sales_uom_name' => $product->salesUom->uom_name ?? null,
+            'conversion_factor' => (float) ($product->uom_conversion_factor ?? 1),
             'batches' => $batches,
             'has_multiple_prices' => $stockLayers->pluck('selling_price')->unique()->count() > 1,
         ]);
@@ -414,6 +418,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
+            'canEnterCartons' => auth()->user()->can('goods-issue-carton-entry'),
         ]);
     }
 
@@ -598,7 +603,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 $query->orWhereNull('supplier_id');
             })
             ->orderBy('product_name')
-            ->get(['id', 'product_code', 'product_name', 'uom_id', 'supplier_id']);
+            ->get(['id', 'product_code', 'product_name', 'uom_id', 'sales_uom_id', 'uom_conversion_factor', 'supplier_id']);
 
         return response()->json($products);
     }

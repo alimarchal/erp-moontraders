@@ -90,16 +90,18 @@
 
                     
 
-                        <x-form-table title="Products to Issue" :headers="[
+                        <x-form-table title="Products to Issue" :headers="array_filter([
                             ['label' => 'Product', 'align' => 'text-left', 'width' => '300px'],
                             ['label' => 'Non-Promo<br>Only', 'align' => 'text-center', 'width' => '70px'],
                             ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '110px'],
-                            ['label' => 'Quantity<br>Issued', 'align' => 'text-center', 'width' => '110px'],
+                            $canEnterCartons ? ['label' => 'Carton', 'align' => 'text-center', 'width' => '90px'] : null,
+                            $canEnterCartons ? ['label' => 'Pieces', 'align' => 'text-center', 'width' => '90px'] : null,
+                            ['label' => 'Qty<br>Issued', 'align' => 'text-center', 'width' => '110px'],
                             ['label' => 'UOM', 'align' => 'text-center', 'width' => '110px'],
                             ['label' => 'Price<br>Breakdown', 'align' => 'text-left', 'width' => '250px'],
                             ['label' => 'Total<br>Value', 'align' => 'text-right', 'width' => '130px'],
                             ['label' => 'Action', 'align' => 'text-center', 'width' => '70px'],
-                        ]">
+                        ])">
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(item, index) in items" :key="index">
                                     <tr class="align-top">
@@ -126,15 +128,41 @@
                                                 :class="parseFloat(item.available_qty) <= 0 ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-gray-100'"
                                                 class="rounded-md shadow-sm text-sm w-full text-center font-semibold">
                                         </td>
+                                        @if($canEnterCartons)
+                                        <td class="px-2 py-2 align-middle">
+                                            <div class="flex flex-col gap-1">
+                                                <input type="number"
+                                                    x-model="item.carton_qty"
+                                                    @input="recalcFromCartonPieces(index)"
+                                                    min="0" step="1"
+                                                    :disabled="parseFloat(item.available_qty) <= 0 || !item.conversion_factor"
+                                                    :class="(parseFloat(item.available_qty) <= 0 || !item.conversion_factor) ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
+                                                    class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full text-center"
+                                                    placeholder="0">
+                                                <span x-show="item.conversion_factor > 1" class="text-xs text-indigo-600 text-center font-medium" x-text="'×' + item.conversion_factor"></span>
+                                            </div>
+                                        </td>
+                                        <td class="px-2 py-2 align-middle">
+                                            <input type="number"
+                                                x-model="item.pieces_qty"
+                                                @input="recalcFromCartonPieces(index)"
+                                                min="0" step="1"
+                                                :disabled="parseFloat(item.available_qty) <= 0"
+                                                :class="parseFloat(item.available_qty) <= 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full text-center"
+                                                placeholder="0">
+                                        </td>
+                                        @endif
                                         <td class="px-2 py-2 align-middle">
                                             <input type="number" :name="`items[${index}][quantity_issued]`"
                                                 x-model="item.quantity_issued"
-                                                @input="updatePriceBasedOnQuantity(index)" step="0.001"
+                                                @input="onDirectQtyInput(index)" step="0.001"
                                                 :max="item.available_qty" min="0.001"
                                                 :disabled="parseFloat(item.available_qty) <= 0"
                                                 :required="parseFloat(item.available_qty) > 0"
                                                 :class="parseFloat(item.available_qty) <= 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
-                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                @if($canEnterCartons) readonly title="Auto-calculated from Carton + Pieces" @endif>
                                         </td>
                                         <td class="px-2 py-2 align-middle">
                                             <select :name="`items[${index}][uom_id]`" x-model="item.uom_id"
@@ -177,7 +205,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr class="font-semibold bg-gray-100">
-                                    <td class="px-2 py-2 text-right" colspan="3">Totals:</td>
+                                    <td class="px-2 py-2 text-right" colspan="{{ $canEnterCartons ? 5 : 3 }}">Totals:</td>
                                     <td class="px-2 py-2 text-right"
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_issued) || 0), 0))">
                                     </td>
@@ -189,7 +217,7 @@
                                     <td class="px-2 py-2"></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="8" class="px-2 py-2">
+                                    <td colspan="{{ $canEnterCartons ? 10 : 8 }}" class="px-2 py-2">
                                         <button type="button" @click="addItem()"
                                             class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
@@ -277,6 +305,7 @@
         const existingItems = @json($goodsIssue->items);
         const existingEmployeeId = @json(old('employee_id', $goodsIssue->employee_id));
         const existingVehicleId = @json(old('vehicle_id', $goodsIssue->vehicle_id));
+        const canEnterCartons = @json($canEnterCartons);
 
         function goodsIssueForm() {
             return {
@@ -289,6 +318,9 @@
                     total_value: parseFloat(item.total_value) || 0,
                     available_qty: 0,
                     exclude_promotional: item.exclude_promotional == 1 || item.exclude_promotional === true || false,
+                    carton_qty: 0,
+                    pieces_qty: 0,
+                    conversion_factor: 1,
                 })) : existingItems.map(item => ({
                     product_id: item.product_id || '',
                     uom_id: item.uom_id || '',
@@ -298,6 +330,9 @@
                     total_value: parseFloat(item.total_value) || 0,
                     available_qty: 0,
                     exclude_promotional: item.exclude_promotional == 1 || item.exclude_promotional === true || false,
+                    carton_qty: 0,
+                    pieces_qty: 0,
+                    conversion_factor: 1,
                 })),
 
                 validateAndSubmit() {
@@ -355,6 +390,9 @@
                         total_value: 0,
                         available_qty: 0,
                         exclude_promotional: false,
+                        carton_qty: 0,
+                        pieces_qty: 0,
+                        conversion_factor: 1,
                     });
 
                     this.$nextTick(() => {
@@ -527,6 +565,21 @@
                             this.updatePriceBasedOnQuantity(index);
                         }
                     }
+                },
+
+                recalcFromCartonPieces(index) {
+                    if (!canEnterCartons) return;
+                    const item = this.items[index];
+                    const cartons = parseInt(item.carton_qty) || 0;
+                    const pieces = parseInt(item.pieces_qty) || 0;
+                    const factor = parseFloat(item.conversion_factor) || 1;
+                    item.quantity_issued = (cartons * factor) + pieces;
+                    this.updatePriceBasedOnQuantity(index);
+                },
+
+                onDirectQtyInput(index) {
+                    if (canEnterCartons) return;
+                    this.updatePriceBasedOnQuantity(index);
                 },
 
                 get grandTotal() {
@@ -774,6 +827,19 @@
 
                 alpineComponent.items[index].available_qty = parseFloat(data.available_quantity || 0).toFixed(2);
                 alpineComponent.items[index].uom_id = data.stock_uom_id || '';
+
+                if (canEnterCartons) {
+                    const factor = parseFloat(data.conversion_factor) || 1;
+                    alpineComponent.items[index].conversion_factor = factor;
+                    const totalQty = parseFloat(alpineComponent.items[index].quantity_issued) || 0;
+                    if (totalQty > 0 && factor > 1) {
+                        alpineComponent.items[index].carton_qty = Math.floor(totalQty / factor);
+                        alpineComponent.items[index].pieces_qty = Math.round(totalQty % factor);
+                    } else {
+                        alpineComponent.items[index].carton_qty = 0;
+                        alpineComponent.items[index].pieces_qty = 0;
+                    }
+                }
 
                 if (data.batches && data.batches.length > 0) {
                     alpineComponent.items[index].selling_price = parseFloat(data.batches[0].selling_price || 0);

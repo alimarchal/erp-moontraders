@@ -76,6 +76,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
             $fmrAllowance = (float) ($row['fmr_allowance'] ?? 0);
             $exciseDuty = (float) ($row['excise_duty'] ?? 0);
             $advanceIncomeTax = (float) ($row['advance_income_tax'] ?? 0);
+            $otherCharges = (float) ($row['other_charges'] ?? 0);
 
             // Calculations - exact same logic as the JS in create.blade.php
             $qtyInStockUom = round($qtyInPurchaseUom * $uomConversionFactor, 2);
@@ -89,7 +90,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
                 ? round((float) $salesTaxRaw, 2)
                 : round(($discountedValueBeforeTax * $this->salesTaxRate) / 100, 2);
 
-            $totalValueWithTaxes = round($discountedValueBeforeTax + $exciseDuty + $salesTaxValue + $advanceIncomeTax, 2);
+            $totalValueWithTaxes = round($discountedValueBeforeTax + $exciseDuty + $salesTaxValue + $advanceIncomeTax + $otherCharges, 2);
 
             $quantityReceived = $qtyInStockUom;
             $quantityAccepted = $quantityReceived;
@@ -133,6 +134,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
                 'excise_duty' => $exciseDuty,
                 'sales_tax_value' => $salesTaxValue,
                 'advance_income_tax' => $advanceIncomeTax,
+                'other_charges' => $otherCharges,
                 'total_value_with_taxes' => $totalValueWithTaxes,
                 'quantity_received' => $quantityReceived,
                 'quantity_accepted' => $quantityAccepted,
@@ -162,6 +164,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
             'excise_duty' => 'nullable|numeric|min:0',
             'sales_tax_value' => 'nullable|numeric|min:0',
             'advance_income_tax' => 'nullable|numeric|min:0',
+            'other_charges' => 'nullable|numeric|min:0',
             'selling_price' => 'nullable|numeric|min:0',
             'promotional_price' => 'nullable|numeric|min:0',
             'priority_order' => 'nullable|integer|min:1|max:99',

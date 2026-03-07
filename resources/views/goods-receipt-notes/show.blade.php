@@ -255,6 +255,7 @@
                                     <th class="text-right">Excise</th>
                                     <th class="text-right">Sales Tax</th>
                                     <th class="text-right">Adv. IT</th>
+                                    <th class="text-right">Other Chg</th>
                                     <th class="text-right">Qty Rec</th>
                                     <th class="text-right">Unit Cost</th>
                                     <th class="text-right">Sell Price</th>
@@ -309,6 +310,8 @@
                                             {{ number_format($item->sales_tax_value ?? 0, 2) }}</td>
                                         <td class="text-right tabular-nums" style="vertical-align: middle;">
                                             {{ number_format($item->advance_income_tax ?? 0, 2) }}</td>
+                                        <td class="text-right tabular-nums" style="vertical-align: middle;">
+                                            {{ number_format($item->other_charges ?? 0, 2) }}</td>
                                         <td class="text-right tabular-nums" style="vertical-align: middle;">
                                             {{ number_format($item->quantity_received, 2) }}
                                             @if ($item->quantity_rejected > 0)

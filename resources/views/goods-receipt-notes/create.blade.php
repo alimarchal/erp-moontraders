@@ -104,6 +104,7 @@
         ['label' => 'Excise<br>Duty', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Sales Tax<br>Value', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Advance<br>Income Tax', 'align' => 'text-center', 'width' => '130px'],
+        ['label' => 'Other<br>Charges', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Qty<br>Received', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Unit<br>Cost', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Selling<br>Price', 'align' => 'text-center', 'width' => '120px'],
@@ -203,6 +204,13 @@
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][advance_income_tax]`"
                                                 x-model="item.advance_income_tax" @input="calculateTaxes(index)"
+                                                step="0.01" min="0"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                placeholder="0.00">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="number" :name="`items[${index}][other_charges]`"
+                                                x-model="item.other_charges" @input="calculateTaxes(index)"
                                                 step="0.01" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="0.00">
@@ -326,6 +334,9 @@
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.advance_income_tax) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.other_charges) || 0), 0))">
+                                    </td>
+                                    <td class="px-2 py-2 text-right"
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_received) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
@@ -339,7 +350,7 @@
                                     <td class="px-2 py-2"></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="19" class="px-2 py-2">
+                                    <td colspan="20" class="px-2 py-2">
                                         <div class="flex items-center gap-2">
                                             <button type="button" @click="addItems()"
                                                 class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
@@ -582,6 +593,7 @@
                         sales_tax_value: parseFloat(item.sales_tax_value) || 0,
                         sales_tax_manually_edited: !!(item.sales_tax_value && parseFloat(item.sales_tax_value) > 0),
                         advance_income_tax: parseFloat(item.advance_income_tax) || 0,
+                        other_charges: parseFloat(item.other_charges) || 0,
                         total_value_with_taxes: parseFloat(item.total_value_with_taxes) || 0,
                         manufacturing_date: item.manufacturing_date || '',
                         expiry_date: item.expiry_date || '',
@@ -615,6 +627,7 @@
                         sales_tax_value: 0,
                         sales_tax_manually_edited: false,
                         advance_income_tax: 0,
+                        other_charges: 0,
                         total_value_with_taxes: 0,
                         manufacturing_date: '',
                         expiry_date: '',
@@ -774,8 +787,9 @@
                             item.sales_tax_value = salesTaxValue;
                         }
 
-                        // Total Value with Taxes = Discounted Value Before Tax + Excise Duty + Sales Tax + Advance Income Tax
-                        item.total_value_with_taxes = parseFloat((item.discounted_value_before_tax + exciseDuty + salesTaxValue + advanceIncomeTax).toFixed(2));
+                        // Total Value with Taxes = Discounted Value Before Tax + Excise Duty + Sales Tax + Advance Income Tax + Other Charges
+                        const otherCharges = parseFloat(item.other_charges) || 0;
+                        item.total_value_with_taxes = parseFloat((item.discounted_value_before_tax + exciseDuty + salesTaxValue + advanceIncomeTax + otherCharges).toFixed(2));
 
                         // Calculate Unit Cost: (Total Value with Taxes + FMR Allowance) / Qty Received
                         const qtyReceived = parseFloat(item.quantity_received) || 0;

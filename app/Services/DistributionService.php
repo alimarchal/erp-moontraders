@@ -1367,12 +1367,22 @@ class DistributionService
 
             $bfIn = 0.0;
             if ($giEntry) {
-                $bfIn = (float) \App\Models\InventoryLedgerEntry::where('product_id', $item->product_id)
+                // Stock physically on van before this GI was issued (historical snapshot)
+                $preGiStock = (float) \App\Models\InventoryLedgerEntry::where('product_id', $item->product_id)
                     ->where('vehicle_id', $settlement->vehicle_id)
                     ->where('id', '<', $giEntry->id)
                     ->sum(\Illuminate\Support\Facades\DB::raw('debit_qty - credit_qty'));
 
-                $bfIn = max(0.0, $bfIn);
+                // Of that pre-GI stock, how much has already been settled by OTHER settlements
+                // posted after this GI (those credits reduce the effective B/F for this settlement)
+                $alreadySettledByOthers = (float) \App\Models\InventoryLedgerEntry::where('product_id', $item->product_id)
+                    ->where('vehicle_id', $settlement->vehicle_id)
+                    ->where('id', '>', $giEntry->id)
+                    ->whereNotNull('sales_settlement_id')
+                    ->where('sales_settlement_id', '!=', $settlement->id)
+                    ->sum('credit_qty');
+
+                $bfIn = max(0.0, $preGiStock - $alreadySettledByOthers);
             }
 
             $issuedQty = round((float) $item->quantity_issued, 4);

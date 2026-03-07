@@ -193,6 +193,136 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     /*
     |----------------------------------------------------------------------
+    | Van Stock Reconciliation — vrs-fix
+    |----------------------------------------------------------------------
+    | Diagnoses and auto-repairs discrepancies between van_stock_batches /
+    | van_stock_balances and the authoritative inventory_ledger_entries.
+    | Idempotent — safe to run repeatedly. Super-admin only.
+    */
+    Route::get('/vrs-fix', function () {
+        abort_unless(auth()->user()?->is_super_admin === 'Yes', 403);
+
+        $rows = [];
+        $fixedCount = 0;
+        $okCount = 0;
+
+        \Illuminate\Support\Facades\DB::beginTransaction();
+        try {
+            // All (vehicle_id, product_id) pairs across both denormalized tables
+            $pairs = \Illuminate\Support\Facades\DB::table('van_stock_batches')
+                ->select('vehicle_id', 'product_id')
+                ->union(\Illuminate\Support\Facades\DB::table('van_stock_balances')->select('vehicle_id', 'product_id'))
+                ->distinct()
+                ->get();
+
+            foreach ($pairs as $pair) {
+                $vehicleId = $pair->vehicle_id;
+                $productId = $pair->product_id;
+
+                // Authoritative balance from ledger
+                $ledgerBalance = (float) \Illuminate\Support\Facades\DB::table('inventory_ledger_entries')
+                    ->where('vehicle_id', $vehicleId)
+                    ->where('product_id', $productId)
+                    ->sum(\Illuminate\Support\Facades\DB::raw('debit_qty - credit_qty'));
+                $ledgerBalance = max(0.0, $ledgerBalance);
+
+                // Current denormalized totals
+                $vsbTotal = (float) \Illuminate\Support\Facades\DB::table('van_stock_batches')
+                    ->where('vehicle_id', $vehicleId)
+                    ->where('product_id', $productId)
+                    ->sum('quantity_on_hand');
+
+                $aggRecord = \Illuminate\Support\Facades\DB::table('van_stock_balances')
+                    ->where('vehicle_id', $vehicleId)
+                    ->where('product_id', $productId)
+                    ->first();
+                $vsbAgg = $aggRecord ? (float) $aggRecord->quantity_on_hand : null;
+
+                $vehicleReg = \Illuminate\Support\Facades\DB::table('vehicles')->where('id', $vehicleId)->value('registration_number') ?? "Vehicle #{$vehicleId}";
+                $productName = \Illuminate\Support\Facades\DB::table('products')->where('id', $productId)->value('product_name') ?? "Product #{$productId}";
+
+                $discrepancy = round($vsbTotal - $ledgerBalance, 3);
+                $aggDiscrepancy = $vsbAgg !== null ? round($vsbAgg - $ledgerBalance, 3) : null;
+
+                if (abs($discrepancy) > 0.001 || ($aggDiscrepancy !== null && abs($aggDiscrepancy) > 0.001)) {
+                    // Rebuild van_stock_batches FIFO from ledger balance
+                    $batches = \Illuminate\Support\Facades\DB::table('van_stock_batches')
+                        ->where('vehicle_id', $vehicleId)
+                        ->where('product_id', $productId)
+                        ->orderBy('created_at')
+                        ->get();
+
+                    $remaining = $ledgerBalance;
+                    foreach ($batches as $batch) {
+                        $maxCap = $batch->goods_issue_item_id
+                            ? (float) (\Illuminate\Support\Facades\DB::table('goods_issue_items')->where('id', $batch->goods_issue_item_id)->value('quantity_issued') ?? $batch->quantity_on_hand)
+                            : (float) $batch->quantity_on_hand;
+                        $newQty = min($maxCap, $remaining);
+                        \Illuminate\Support\Facades\DB::table('van_stock_batches')->where('id', $batch->id)->update(['quantity_on_hand' => $newQty]);
+                        $remaining -= $newQty;
+                    }
+                    // Ledger shows more than all batches can absorb — add remainder to last batch
+                    if ($remaining > 0.001 && $batches->isNotEmpty()) {
+                        \Illuminate\Support\Facades\DB::table('van_stock_batches')
+                            ->where('id', $batches->last()->id)
+                            ->increment('quantity_on_hand', $remaining);
+                    }
+
+                    // Update or create aggregate van_stock_balances record
+                    if ($aggRecord) {
+                        \Illuminate\Support\Facades\DB::table('van_stock_balances')
+                            ->where('vehicle_id', $vehicleId)
+                            ->where('product_id', $productId)
+                            ->update(['quantity_on_hand' => $ledgerBalance, 'last_updated' => now(), 'updated_at' => now()]);
+                    } else {
+                        \Illuminate\Support\Facades\DB::table('van_stock_balances')->insert([
+                            'vehicle_id' => $vehicleId,
+                            'product_id' => $productId,
+                            'quantity_on_hand' => $ledgerBalance,
+                            'opening_balance' => 0,
+                            'average_cost' => 0,
+                            'last_unit_cost' => 0,
+                            'last_selling_price' => 0,
+                            'last_updated' => now(),
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+                    }
+
+                    $rows[] = [
+                        'vehicle' => $vehicleReg,
+                        'product' => $productName,
+                        'ledger' => $ledgerBalance,
+                        'was_vsb' => $vsbTotal,
+                        'was_agg' => $vsbAgg,
+                        'status' => 'FIXED',
+                    ];
+                    $fixedCount++;
+                } else {
+                    $rows[] = [
+                        'vehicle' => $vehicleReg,
+                        'product' => $productName,
+                        'ledger' => $ledgerBalance,
+                        'was_vsb' => $vsbTotal,
+                        'was_agg' => $vsbAgg,
+                        'status' => 'OK',
+                    ];
+                    $okCount++;
+                }
+            }
+
+            \Illuminate\Support\Facades\DB::commit();
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\DB::rollBack();
+
+            return back()->with('error', 'VRS Fix failed: '.$e->getMessage());
+        }
+
+        return response()->view('vrs-fix', compact('rows', 'fixedCount', 'okCount'));
+    })->name('vrs-fix');
+
+    /*
+    |----------------------------------------------------------------------
     | Accounting — Journal Entries
     |----------------------------------------------------------------------
     | CRUD + post/reverse workflow. Quick helpers for common transactions.

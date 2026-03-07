@@ -89,6 +89,110 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     /*
     |----------------------------------------------------------------------
+    | Database Object Sync — import-fun-pro
+    |----------------------------------------------------------------------
+    | Re-creates all missing stored procedures, functions, triggers, and views.
+    | Safe to run repeatedly (idempotent). Supports MySQL/MariaDB and PostgreSQL.
+    | Super-admin only.
+    */
+    Route::get('/import-fun-pro', function () {
+        abort_unless(auth()->user()?->is_super_admin === 'Yes', 403);
+
+        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $results = [];
+        $hasErrors = false;
+
+        if (! in_array($driver, ['mysql', 'mariadb', 'pgsql'])) {
+            $results['error'] = "Unsupported database driver: {$driver}. Supported: MySQL, MariaDB, PostgreSQL.";
+            $hasErrors = true;
+        } else {
+            \Illuminate\Support\Facades\Artisan::call('db:sync-objects');
+
+            $db = \Illuminate\Support\Facades\DB::connection()->getDatabaseName();
+
+            if (in_array($driver, ['mysql', 'mariadb'])) {
+                $procedures = \Illuminate\Support\Facades\DB::table('information_schema.ROUTINES')
+                    ->where('ROUTINE_SCHEMA', $db)->where('ROUTINE_TYPE', 'PROCEDURE')
+                    ->pluck('ROUTINE_NAME')->map('strtolower')->toArray();
+
+                $functions = \Illuminate\Support\Facades\DB::table('information_schema.ROUTINES')
+                    ->where('ROUTINE_SCHEMA', $db)->where('ROUTINE_TYPE', 'FUNCTION')
+                    ->pluck('ROUTINE_NAME')->map('strtolower')->toArray();
+
+                $views = \Illuminate\Support\Facades\DB::table('information_schema.VIEWS')
+                    ->where('TABLE_SCHEMA', $db)->pluck('TABLE_NAME')->map('strtolower')->toArray();
+
+                $results = [
+                    'sp_check_journal_balance' => in_array('sp_check_journal_balance', $procedures) ? 'OK' : 'MISSING',
+                    'sp_create_period_snapshots' => in_array('sp_create_period_snapshots', $procedures) ? 'OK' : 'MISSING',
+                    'fn_account_balance_fast' => in_array('fn_account_balance_fast', $functions) ? 'OK' : 'MISSING',
+                    'vw_trial_balance' => in_array('vw_trial_balance', $views) ? 'OK' : 'MISSING',
+                    'vw_account_balances' => in_array('vw_account_balances', $views) ? 'OK' : 'MISSING',
+                    'vw_general_ledger' => in_array('vw_general_ledger', $views) ? 'OK' : 'MISSING',
+                    'vw_balance_sheet' => in_array('vw_balance_sheet', $views) ? 'OK' : 'MISSING',
+                    'vw_income_statement' => in_array('vw_income_statement', $views) ? 'OK' : 'MISSING',
+                ];
+            } else {
+                // PostgreSQL — check via pg_proc and information_schema
+                $pgFunctions = \Illuminate\Support\Facades\DB::select(
+                    "SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public'"
+                );
+                $pgFunctionNames = collect($pgFunctions)->pluck('proname')->toArray();
+
+                $pgTriggers = \Illuminate\Support\Facades\DB::select(
+                    "SELECT trigger_name FROM information_schema.triggers WHERE trigger_schema = 'public'"
+                );
+                $pgTriggerNames = collect($pgTriggers)->pluck('trigger_name')->toArray();
+
+                $pgViews = \Illuminate\Support\Facades\DB::select(
+                    "SELECT table_name FROM information_schema.views WHERE table_schema = 'public'"
+                );
+                $pgViewNames = collect($pgViews)->pluck('table_name')->toArray();
+
+                $expectedFunctions = [
+                    'check_journal_balance', 'check_leaf_account_only', 'check_accounting_period',
+                    'check_single_base_currency', 'block_posted_journal_changes', 'block_posted_journal_deletes',
+                    'block_posted_detail_changes', 'auto_set_accounting_period', 'audit_accounting_changes',
+                    'prevent_hard_delete_posted', 'fn_trial_balance', 'fn_trial_balance_summary',
+                    'fn_account_balances', 'fn_general_ledger', 'fn_balance_sheet', 'fn_income_statement',
+                    'sp_create_period_snapshots', 'fn_account_balance_fast',
+                ];
+
+                $auditTables = [
+                    'chart_of_accounts', 'journal_entries', 'journal_entry_details',
+                    'accounting_periods', 'account_types', 'cost_centers',
+                ];
+                $expectedTriggers = array_merge(
+                    ['trg_journal_balance', 'trg_leaf_account_only', 'trg_check_accounting_period',
+                        'trg_single_base_currency', 'trg_block_posted_journal_updates', 'trg_block_posted_journal_deletes',
+                        'trg_block_posted_detail_updates', 'trg_block_posted_detail_deletes',
+                        'trg_auto_set_accounting_period', 'trg_prevent_hard_delete'],
+                    array_map(fn ($t) => "trg_audit_{$t}", $auditTables)
+                );
+
+                $expectedViews = ['vw_trial_balance', 'vw_account_balances', 'vw_general_ledger', 'vw_balance_sheet', 'vw_income_statement'];
+
+                foreach ($expectedFunctions as $name) {
+                    $results[$name] = in_array($name, $pgFunctionNames) ? 'OK' : 'MISSING';
+                }
+                foreach ($expectedTriggers as $name) {
+                    $results[$name] = in_array($name, $pgTriggerNames) ? 'OK' : 'MISSING';
+                }
+                foreach ($expectedViews as $name) {
+                    $results[$name] = in_array($name, $pgViewNames) ? 'OK' : 'MISSING';
+                }
+            }
+
+            $hasErrors = in_array('MISSING', $results);
+        }
+
+        $rows = collect($results)->map(fn ($status, $name) => compact('name', 'status'))->values();
+
+        return response()->view('import-fun-pro', compact('rows', 'hasErrors', 'driver'));
+    })->name('import-fun-pro');
+
+    /*
+    |----------------------------------------------------------------------
     | Accounting — Journal Entries
     |----------------------------------------------------------------------
     | CRUD + post/reverse workflow. Quick helpers for common transactions.

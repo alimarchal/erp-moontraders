@@ -33,6 +33,17 @@ class StoreGoodsIssueRequest extends FormRequest
                         $fail('The selected vehicle does not belong to the selected salesman.');
                     }
                 },
+                function ($attribute, $value, $fail) {
+                    $unposted = DB::table('sales_settlements')
+                        ->where('vehicle_id', $value)
+                        ->whereIn('status', ['draft', 'verified'])
+                        ->whereNull('deleted_at')
+                        ->first();
+
+                    if ($unposted) {
+                        $fail("Cannot create a Goods Issue for this vehicle: settlement {$unposted->settlement_number} is not yet posted. Post all pending settlements before issuing new stock.");
+                    }
+                },
             ],
             'employee_id' => 'required|exists:employees,id',
             'notes' => 'nullable|string',

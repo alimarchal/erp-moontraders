@@ -554,3 +554,54 @@ it('store allows when a non-COGS 5xxx account is used as a settlement expense', 
     $response->assertSessionMissing('error');
     expect(SalesSettlement::count())->toBe(1);
 });
+
+// ──────────────────────────────────────────────────────
+// B/F Out must be zero before posting
+// ──────────────────────────────────────────────────────
+
+it('post blocks when B/F Out is not zero (stock left unaccounted on van)', function () {
+    $setup = makePostingSetup();
+
+    $settlement = makeDraftSettlement($setup);
+
+    // issued=10, sold=8, returned=0, shortage=0 → bfOut=2 (2 units unaccounted) — must block
+    SalesSettlementItem::where('sales_settlement_id', $settlement->id)->update([
+        'quantity_issued' => 10,
+        'quantity_sold' => 8,
+        'quantity_returned' => 0,
+        'quantity_shortage' => 0,
+        'total_sales_value' => 1200,
+    ]);
+
+    $response = $this->actingAs($setup['user'])
+        ->post(route('sales-settlements.post', $settlement));
+
+    $response->assertRedirect();
+    $response->assertSessionHas('error');
+    expect(session('error'))->toContain('B/F Out');
+
+    $settlement->refresh();
+    expect($settlement->status)->toBe('draft');
+});
+
+it('post allows when B/F Out is zero with mixed sold, returned, shortage', function () {
+    $setup = makePostingSetup();
+
+    $settlement = makeDraftSettlement($setup);
+
+    // issued=10, sold=7, returned=2, shortage=1 → total=10 → bfOut=0 — must pass
+    SalesSettlementItem::where('sales_settlement_id', $settlement->id)->update([
+        'quantity_issued' => 10,
+        'quantity_sold' => 7,
+        'quantity_returned' => 2,
+        'quantity_shortage' => 1,
+        'total_sales_value' => 1050,
+    ]);
+
+    $response = $this->actingAs($setup['user'])
+        ->post(route('sales-settlements.post', $settlement));
+
+    $response->assertRedirect();
+    $errorMessage = session('error') ?? '';
+    expect($errorMessage)->not->toContain('B/F Out');
+});

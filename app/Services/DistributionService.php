@@ -1351,18 +1351,47 @@ class DistributionService
             }
         }
 
-        // 4. Per-item quantity integrity: sold + returned + shortage must not exceed issued
+        // 4. Per-item quantity integrity: B/F Out must be exactly 0
+        // B/F In  = van stock already on hand before this goods issue (from prior unsettled GIs)
+        // Total Available = B/F In + Quantity Issued
+        // B/F Out = Total Available - Sold - Returned - Shortage (must equal 0)
         foreach ($settlement->items as $item) {
-            $totalQty = round(
+            $productName = $item->product?->product_name ?? "Product ID {$item->product_id}";
+
+            // Locate the ledger entry for this GI transfer-in to calculate B/F In
+            $giEntry = \App\Models\InventoryLedgerEntry::where('goods_issue_id', $settlement->goods_issue_id)
+                ->where('product_id', $item->product_id)
+                ->where('vehicle_id', $settlement->vehicle_id)
+                ->where('transaction_type', \App\Models\InventoryLedgerEntry::TYPE_TRANSFER_IN)
+                ->first();
+
+            $bfIn = 0.0;
+            if ($giEntry) {
+                $bfIn = (float) \App\Models\InventoryLedgerEntry::where('product_id', $item->product_id)
+                    ->where('vehicle_id', $settlement->vehicle_id)
+                    ->where('id', '<', $giEntry->id)
+                    ->sum(\Illuminate\Support\Facades\DB::raw('debit_qty - credit_qty'));
+
+                $bfIn = max(0.0, $bfIn);
+            }
+
+            $issuedQty = round((float) $item->quantity_issued, 4);
+            $totalAvailable = round($bfIn + $issuedQty, 4);
+            $totalAccounted = round(
                 (float) $item->quantity_sold + (float) $item->quantity_returned + (float) $item->quantity_shortage,
                 4
             );
-            $issuedQty = round((float) $item->quantity_issued, 4);
+            $bfOut = round($totalAvailable - $totalAccounted, 4);
 
-            if ($totalQty > $issuedQty) {
-                $productName = $item->product?->product_name ?? "Product ID {$item->product_id}";
+            if ($totalAccounted > $totalAvailable) {
                 throw new \RuntimeException(
-                    "Cannot post: for '{$productName}', quantities sold ({$item->quantity_sold}) + returned ({$item->quantity_returned}) + shortage ({$item->quantity_shortage}) = {$totalQty} exceeds quantity issued ({$issuedQty})."
+                    "Cannot post: for '{$productName}', quantities sold + returned + shortage = {$totalAccounted} exceeds total available {$totalAvailable} (Issued: {$issuedQty} + B/F In: {$bfIn})."
+                );
+            }
+
+            if (abs($bfOut) > 0.001) {
+                throw new \RuntimeException(
+                    "Cannot post: for '{$productName}', B/F Out is {$bfOut}. All stock must be fully accounted for (sold + returned + shortage must equal issued + B/F In = {$totalAvailable})."
                 );
             }
         }

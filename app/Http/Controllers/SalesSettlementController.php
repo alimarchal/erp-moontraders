@@ -271,6 +271,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
         ];
 
         return view('sales-settlements.create', [
+            'suppliers' => \App\Models\Supplier::where('disabled', false)
+                ->orderBy('supplier_name')
+                ->get(['id', 'supplier_name']),
             'customers' => Customer::where('is_active', true)
                 ->orderBy('customer_name')
                 ->get(['id', 'customer_code', 'customer_name']),
@@ -296,17 +299,24 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function fetchGoodsIssues()
     {
-        $goodsIssues = GoodsIssue::where('status', 'issued')
+        $query = GoodsIssue::where('status', 'issued')
             ->whereDoesntHave('settlement', function ($query) {
                 $query->where('status', 'posted');
             })
-            ->with(['employee'])
-            ->orderBy('issue_date', 'desc')
+            ->with(['employee', 'vehicle']);
+
+        if (request()->filled('supplier_id')) {
+            $query->where('supplier_id', request('supplier_id'));
+        }
+
+        $goodsIssues = $query->orderBy('issue_date', 'desc')
             ->get()
             ->map(function ($gi) {
+                $vehicle = $gi->vehicle?->registration_number ?? 'No Vehicle';
+
                 return [
                     'id' => $gi->id,
-                    'text' => $gi->issue_number.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
+                    'text' => $gi->issue_number.' - '.$vehicle.' - '.$gi->employee->full_name.' ('.$gi->issue_date->format('d M Y').')',
                 ];
             });
 
@@ -612,6 +622,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'goodsIssue.employee',
             'goodsIssue.vehicle',
             'goodsIssue.warehouse',
+            'goodsIssue.supplier',
             'items.product',
             'items.batches',
             'creditSales.customer',
@@ -774,6 +785,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         return view('sales-settlements.edit', [
             'settlement' => $salesSettlement,
+            'suppliers' => \App\Models\Supplier::where('disabled', false)
+                ->orderBy('supplier_name')
+                ->get(['id', 'supplier_name']),
             'expenseAccounts' => $expenseAccounts,
             'customers' => $customers,
             'bankAccounts' => \App\Models\BankAccount::where('is_active', true)

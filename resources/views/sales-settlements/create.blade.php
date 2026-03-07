@@ -28,7 +28,7 @@
 
                     <div class="pt-6 pl-6 pr-6">
                         {{-- Section 1: Date & Goods Issue Selection --}}
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-2" x-data="goodsIssueSelector()">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-2" x-data="goodsIssueSelector()">
                             <div>
                                 <x-label for="settlement_date" value="Settlement Date" class="required" />
                                 <x-input id="settlement_date" name="settlement_date" type="date"
@@ -37,11 +37,22 @@
                             </div>
 
                             <div>
+                                <x-label for="supplier_id" value="Supplier" class="required" />
+                                <select id="supplier_id" required
+                                    class="select2-supplier border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
+                                    <option value="">Select Supplier</option>
+                                    @foreach ($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}">{{ $supplier->supplier_name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
                                 <x-label for="goods_issue_id" value="Select Goods Issue" class="required" />
                                 <select id="goods_issue_id" name="goods_issue_id"
                                     class="select2-goods-issue border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full"
-                                    required>
-                                    <option value="">Select Goods Issue</option>
+                                    required disabled>
+                                    <option value="">Select Supplier first</option>
                                 </select>
                                 <x-input-error for="goods_issue_id" class="mt-2" />
                             </div>
@@ -957,6 +968,31 @@
 
             // Initialize Select2 with AJAX on-demand loading
             $(document).ready(function () {
+                $('.select2-supplier').select2({
+                    width: '100%',
+                    placeholder: 'Select Supplier',
+                    allowClear: false,
+                });
+
+                $('#supplier_id').on('change', function () {
+                    const supplierId = $(this).val();
+                    const $giSelect = $('#goods_issue_id');
+
+                    $giSelect.val(null).trigger('change');
+                    $('#settlementTableContainer').hide();
+                    $('#settlementItemsBody').empty();
+                    $('#noItemsMessage').show().text('Select a Goods Issue to load product details');
+                    $('#expenseAndSalesSummarySection').hide();
+
+                    if (supplierId) {
+                        $giSelect.prop('disabled', false);
+                        $giSelect.find('option:first').text('Select Goods Issue');
+                    } else {
+                        $giSelect.prop('disabled', true);
+                        $giSelect.find('option:first').text('Select Supplier first');
+                    }
+                });
+
                 $('.select2-goods-issue').select2({
                     width: '100%',
                     placeholder: 'Select a Goods Issue',
@@ -965,12 +1001,18 @@
                         url: '{{ route('api.sales-settlements.goods-issues') }}',
                         dataType: 'json',
                         delay: 250,
+                        data: function (params) {
+                            return {
+                                q: params.term,
+                                supplier_id: $('#supplier_id').val() || '',
+                            };
+                        },
                         processResults: function (data) {
                             return {
                                 results: data
                             };
                         },
-                        cache: true
+                        cache: false
                     }
                 });
 

@@ -90,6 +90,7 @@
                         <hr class="my-6 border-gray-200">
 
                         <x-form-table title="Line Items" :sticky-header="true" :headers="[
+        ['label' => '#', 'align' => 'text-center', 'width' => '50px'],
         ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
         ['label' => 'Purchase<br>UOM', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Qty<br>Purchase UOM', 'align' => 'text-center', 'width' => '100px'],
@@ -112,6 +113,8 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 <template x-for="(item, index) in items" :key="index">
                                     <tr>
+                                        <td class="px-2 py-2 text-center text-gray-500 font-medium text-sm"
+                                            x-text="index + 1"></td>
                                         <td class="px-2 py-2">
                                             <select :id="`product_${index}`" :name="`items[${index}][product_id]`"
                                                 required
@@ -290,6 +293,7 @@
                             </tbody>
                             <tfoot class="bg-gray-50">
                                 <tr class="font-semibold bg-gray-100">
+                                    <td class="px-2 py-2"></td>
                                     <td class="px-2 py-2 text-right">Totals:</td>
                                     <td class="px-2 py-2"></td>
                                     <td class="px-2 py-2 text-right"
@@ -335,7 +339,7 @@
                                     <td class="px-2 py-2"></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="18" class="px-2 py-2">
+                                    <td colspan="19" class="px-2 py-2">
                                         <div class="flex items-center gap-2">
                                             <button type="button" @click="addItems()"
                                                 class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">

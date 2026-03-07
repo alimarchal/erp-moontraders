@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Employee;
+use App\Models\GoodsIssue;
 use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\Uom;
@@ -26,8 +27,13 @@ beforeEach(function () {
 });
 
 it('blocks goods issue creation when vehicle has a draft settlement', function () {
+    $gi = GoodsIssue::factory()->create([
+        'vehicle_id' => $this->vehicle->id,
+        'status' => 'issued',
+    ]);
     SalesSettlement::factory()->create([
         'vehicle_id' => $this->vehicle->id,
+        'goods_issue_id' => $gi->id,
         'status' => 'draft',
         'settlement_number' => 'SETTLE-TEST-9001',
     ]);
@@ -47,14 +53,18 @@ it('blocks goods issue creation when vehicle has a draft settlement', function (
     ]);
 
     $response->assertSessionHasErrors('vehicle_id');
-    expect(session('errors')->get('vehicle_id')[0])->toContain('SETTLE-TEST-9001');
+    expect(session('errors')->get('vehicle_id')[0])->toContain($gi->issue_number);
 });
 
 it('blocks goods issue creation when vehicle has a verified (unposted) settlement', function () {
+    $gi = GoodsIssue::factory()->create([
+        'vehicle_id' => $this->vehicle->id,
+        'status' => 'issued',
+    ]);
     SalesSettlement::factory()->create([
         'vehicle_id' => $this->vehicle->id,
+        'goods_issue_id' => $gi->id,
         'status' => 'verified',
-        'settlement_number' => 'SETTLE-TEST-9002',
     ]);
 
     $response = $this->post(route('goods-issues.store'), [
@@ -75,8 +85,13 @@ it('blocks goods issue creation when vehicle has a verified (unposted) settlemen
 });
 
 it('allows goods issue creation when vehicle has only posted settlements', function () {
+    $gi = GoodsIssue::factory()->create([
+        'vehicle_id' => $this->vehicle->id,
+        'status' => 'issued',
+    ]);
     SalesSettlement::factory()->create([
         'vehicle_id' => $this->vehicle->id,
+        'goods_issue_id' => $gi->id,
         'status' => 'posted',
     ]);
 
@@ -114,6 +129,30 @@ it('allows goods issue creation when vehicle has no settlements at all', functio
     ]);
 
     $response->assertSessionDoesntHaveErrors('vehicle_id');
+});
+
+it('blocks goods issue creation when vehicle has an issued GI with no settlement yet', function () {
+    // A GI was issued to the van but no settlement has been created for it at all
+    GoodsIssue::factory()->create([
+        'vehicle_id' => $this->vehicle->id,
+        'status' => 'issued',
+    ]);
+
+    $response = $this->post(route('goods-issues.store'), [
+        'issue_date' => now()->toDateString(),
+        'warehouse_id' => $this->warehouse->id,
+        'vehicle_id' => $this->vehicle->id,
+        'employee_id' => $this->employee->id,
+        'items' => [[
+            'product_id' => $this->product->id,
+            'quantity_issued' => 10,
+            'unit_cost' => 100,
+            'selling_price' => 150,
+            'uom_id' => $this->uom->id,
+        ]],
+    ]);
+
+    $response->assertSessionHasErrors('vehicle_id');
 });
 
 it('only blocks for the specific vehicle and not other vehicles', function () {

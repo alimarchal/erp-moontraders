@@ -922,6 +922,38 @@
                     $('.product-select').each(function (index) {
                         initializeProductSelect2(index);
                     });
+
+                    // Restore dynamic dropdowns when redirected back after validation error
+                    const oldEmployeeId = @json(old('employee_id'));
+                    const oldVehicleId  = @json(old('vehicle_id'));
+                    const supplierVal   = $('#supplier_ids').val();
+                    const supplierIds   = supplierVal
+                        ? (Array.isArray(supplierVal) ? supplierVal : [supplierVal])
+                        : [];
+
+                    if (supplierIds.length > 0 && (oldEmployeeId || oldItems.length > 0)) {
+                        Promise.all([
+                            loadEmployeesBySuppliers(supplierIds),
+                            loadProductsBySuppliers(supplierIds),
+                        ]).then(() => {
+                            // Restore employee selection
+                            if (oldEmployeeId) {
+                                $('#employee_id').val(oldEmployeeId).trigger('change.select2');
+
+                                // Load vehicles for this employee then restore vehicle
+                                loadVehiclesByEmployee(oldEmployeeId).then(() => {
+                                    if (oldVehicleId) {
+                                        $('#vehicle_id').val(oldVehicleId).trigger('change.select2');
+                                    }
+                                });
+                            }
+
+                            // Restore product selects (allProducts is now populated)
+                            if (oldItems.length > 0) {
+                                refreshAllProductSelects();
+                            }
+                        });
+                    }
                 });
             }
 

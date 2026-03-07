@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
 
@@ -10,6 +11,21 @@ class StoreGoodsIssueRequest extends FormRequest
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function failedValidation(Validator $validator): void
+    {
+        // Flash the vehicle block error as a session alert (beep + red notification)
+        // so it appears prominently via <x-status-message>, not just in the validation list.
+        $vehicleErrors = $validator->errors()->get('vehicle_id');
+        foreach ($vehicleErrors as $message) {
+            if (str_contains($message, 'Cannot create a Goods Issue for vehicle')) {
+                $this->session()->flash('error', 'Failed to create Goods Issue: '.$message);
+                break;
+            }
+        }
+
+        parent::failedValidation($validator);
     }
 
     public function rules(): array
@@ -34,14 +50,35 @@ class StoreGoodsIssueRequest extends FormRequest
                     }
                 },
                 function ($attribute, $value, $fail) {
-                    $unposted = DB::table('sales_settlements')
-                        ->where('vehicle_id', $value)
-                        ->whereIn('status', ['draft', 'verified'])
-                        ->whereNull('deleted_at')
+                    $unsettled = DB::table('goods_issues')
+                        ->select(
+                            'goods_issues.id',
+                            'goods_issues.issue_number',
+                            'sales_settlements.settlement_number',
+                            'sales_settlements.status as settlement_status',
+                            'vehicles.registration_number'
+                        )
+                        ->leftJoin('sales_settlements', function ($join) {
+                            $join->on('sales_settlements.goods_issue_id', '=', 'goods_issues.id')
+                                ->whereNull('sales_settlements.deleted_at');
+                        })
+                        ->leftJoin('vehicles', 'vehicles.id', '=', 'goods_issues.vehicle_id')
+                        ->where('goods_issues.vehicle_id', $value)
+                        ->where('goods_issues.status', 'issued')
+                        ->where(function ($q) {
+                            $q->whereNull('sales_settlements.id')
+                                ->orWhereIn('sales_settlements.status', ['draft', 'verified']);
+                        })
                         ->first();
 
-                    if ($unposted) {
-                        $fail("Cannot create a Goods Issue for this vehicle: settlement {$unposted->settlement_number} is not yet posted. Post all pending settlements before issuing new stock.");
+                    if ($unsettled) {
+                        $vehicle = $unsettled->registration_number ?? "Vehicle #{$value}";
+                        if ($unsettled->settlement_number) {
+                            $status = ucfirst($unsettled->settlement_status);
+                            $fail("Cannot create a Goods Issue for vehicle {$vehicle}: settlement {$unsettled->settlement_number} ({$status}) for {$unsettled->issue_number} is not yet posted. Post all pending settlements before issuing new stock.");
+                        } else {
+                            $fail("Cannot create a Goods Issue for vehicle {$vehicle}: {$unsettled->issue_number} has been issued but has no settlement yet. Create and post its settlement before issuing new stock.");
+                        }
                     }
                 },
             ],

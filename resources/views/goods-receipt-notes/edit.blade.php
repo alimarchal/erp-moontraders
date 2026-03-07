@@ -79,7 +79,7 @@
 
                         <hr class="my-6 border-gray-200">
 
-                        <x-form-table title="Line Items" :headers="[
+                        <x-form-table title="Line Items" :sticky-header="true" :headers="[
         ['label' => 'Product', 'align' => 'text-left', 'width' => '350px'],
         ['label' => 'Purchase<br>UOM', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Qty<br>Purchase UOM', 'align' => 'text-center', 'width' => '100px'],
@@ -326,15 +326,21 @@
                                 </tr>
                                 <tr>
                                     <td colspan="18" class="px-2 py-2">
-                                        <button type="button" @click="addItem()"
-                                            class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
-                                                viewBox="0 0 24 24" stroke="currentColor">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M12 4v16m8-8H4" />
-                                            </svg>
-                                            Add Line
-                                        </button>
+                                        <div class="flex items-center gap-2">
+                                            <button type="button" @click="addItems()"
+                                                class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M12 4v16m8-8H4" />
+                                                </svg>
+                                                Add Line
+                                            </button>
+                                            <input type="number" x-model.number="addLineCount" min="1"
+                                                class="w-16 text-center border border-gray-300 rounded-md shadow-sm text-sm px-1 py-1"
+                                                placeholder="1">
+                                            <span class="text-xs text-gray-500">lines</span>
+                                        </div>
                                     </td>
                                 </tr>
                             </tfoot>
@@ -558,7 +564,7 @@
                         discounted_value_before_tax: parseFloat(item.discounted_value_before_tax) || 0,
                         excise_duty: parseFloat(item.excise_duty) || 0,
                         sales_tax_value: parseFloat(item.sales_tax_value) || 0,
-                        sales_tax_manually_edited: !!(item.sales_tax_value && parseFloat(item.sales_tax_value) > 0),
+                        sales_tax_manually_edited: false,
                         advance_income_tax: parseFloat(item.advance_income_tax) || 0,
                         total_value_with_taxes: parseFloat(item.total_value_with_taxes) || 0,
                         manufacturing_date: item.manufacturing_date || '',
@@ -591,7 +597,7 @@
                         discounted_value_before_tax: parseFloat(item.discounted_value_before_tax) || 0,
                         excise_duty: parseFloat(item.excise_duty) || 0,
                         sales_tax_value: parseFloat(item.sales_tax_value) || 0,
-                        sales_tax_manually_edited: !!(item.sales_tax_value && parseFloat(item.sales_tax_value) > 0),
+                        sales_tax_manually_edited: false,
                         advance_income_tax: parseFloat(item.advance_income_tax) || 0,
                         total_value_with_taxes: parseFloat(item.total_value_with_taxes) || 0,
                         manufacturing_date: item.manufacturing_date || '',
@@ -611,6 +617,15 @@
                         quality_status: item.quality_status || 'approved',
                         total: parseFloat(item.quantity_accepted || 0) * parseFloat(item.unit_cost || 0)
                     })),
+
+                    addLineCount: 1,
+
+                    addItems() {
+                        const count = parseInt(this.addLineCount) || 1;
+                        for (let i = 0; i < count; i++) {
+                            this.addItem();
+                        }
+                    },
 
                     addItem() {
                         const newIndex = this.items.length;

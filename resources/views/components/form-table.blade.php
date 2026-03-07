@@ -1,6 +1,7 @@
 @props([
     'headers' => [],
     'title' => null,
+    'stickyHeader' => false,
 ])
 
 <style>
@@ -9,6 +10,17 @@
         overflow-x: scroll !important;
         scrollbar-width: thin;
         scrollbar-color: #10b981 #f1f5f9;
+    }
+
+    .form-table-scroll.sticky-header {
+        max-height: 65vh;
+        overflow-y: auto;
+    }
+
+    .form-table-scroll.sticky-header thead tr {
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
 
     .form-table-scroll::-webkit-scrollbar {
@@ -38,7 +50,7 @@
         <h3 class="text-lg font-semibold text-gray-900 mb-4">{{ $title }}</h3>
     @endif
 
-    <div class="form-table-scroll relative rounded-lg">
+    <div class="form-table-scroll relative rounded-lg{{ $stickyHeader ? ' sticky-header' : '' }}">
         <table class="min-w-full table-auto text-sm">
             <thead>
                 <tr class="bg-green-800 text-white uppercase text-xs">

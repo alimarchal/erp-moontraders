@@ -21,6 +21,8 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
 
     private float $salesTaxRate;
 
+    private bool $isUnileverPakistan;
+
     /** @var array<int, array<string, mixed>> */
     private array $processedItems = [];
 
@@ -32,6 +34,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
     ) {
         $this->supplier = Supplier::findOrFail($supplierId);
         $this->salesTaxRate = (float) ($this->supplier->sales_tax ?? 18.00);
+        $this->isUnileverPakistan = $this->supplier->supplier_name === 'Unilever Pakistan';
     }
 
     public function collection(Collection $rows): void
@@ -90,7 +93,18 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
                 ? round((float) $salesTaxRaw, 2)
                 : round(($discountedValueBeforeTax * $this->salesTaxRate) / 100, 2);
 
-            $totalValueWithTaxes = round($discountedValueBeforeTax + $exciseDuty + $salesTaxValue + $advanceIncomeTax + $otherCharges, 2);
+            $totalBeforeWht = round($discountedValueBeforeTax + $exciseDuty + $salesTaxValue + $advanceIncomeTax + $otherCharges, 2);
+
+            // Withholding tax: only for Unilever Pakistan
+            $withholdingTaxRaw = $row['withholding_tax'] ?? null;
+            $withholdingTax = 0;
+            if ($this->isUnileverPakistan) {
+                $withholdingTax = is_numeric($withholdingTaxRaw)
+                    ? round((float) $withholdingTaxRaw, 2)
+                    : round($totalBeforeWht * 0.001, 2);
+            }
+
+            $totalValueWithTaxes = round($totalBeforeWht + $withholdingTax, 2);
 
             $quantityReceived = $qtyInStockUom;
             $quantityAccepted = $quantityReceived;
@@ -135,6 +149,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
                 'sales_tax_value' => $salesTaxValue,
                 'advance_income_tax' => $advanceIncomeTax,
                 'other_charges' => $otherCharges,
+                'withholding_tax' => $withholdingTax,
                 'total_value_with_taxes' => $totalValueWithTaxes,
                 'quantity_received' => $quantityReceived,
                 'quantity_accepted' => $quantityAccepted,
@@ -165,6 +180,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
             'sales_tax_value' => 'nullable|numeric|min:0',
             'advance_income_tax' => 'nullable|numeric|min:0',
             'other_charges' => 'nullable|numeric|min:0',
+            'withholding_tax' => 'nullable|numeric|min:0',
             'selling_price' => 'nullable|numeric|min:0',
             'promotional_price' => 'nullable|numeric|min:0',
             'priority_order' => 'nullable|integer|min:1|max:99',

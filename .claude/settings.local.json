@@ -40,7 +40,8 @@
       "Bash(xargs:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(git stash)"
+      "Bash(git stash)",
+      "Bash(find /Users/alirazamarhcal/Herd/moontraders -type f \\\\\\(-name *[Gg]oods*[Rr]eceipt* -o -path *livewire* -o -path *models* \\\\\\))"
     ],
     "deny": [],
     "ask": []

@@ -95,6 +95,7 @@
         ['label' => 'Sales Tax<br>Value', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Advance<br>Income Tax', 'align' => 'text-center', 'width' => '130px'],
         ['label' => 'Other<br>Charges', 'align' => 'text-center', 'width' => '120px'],
+        ['label' => 'Withholding<br>Tax', 'align' => 'text-center', 'width' => '130px', 'x_show' => 'isUnileverPakistan'],
         ['label' => 'Qty<br>Received', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Unit<br>Cost', 'align' => 'text-center', 'width' => '120px'],
         ['label' => 'Selling<br>Price', 'align' => 'text-center', 'width' => '120px'],
@@ -201,6 +202,14 @@
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][other_charges]`"
                                                 x-model="item.other_charges" @input="calculateTaxes(index)"
+                                                step="0.01" min="0"
+                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
+                                                placeholder="0.00">
+                                        </td>
+                                        <td class="px-2 py-2" x-show="isUnileverPakistan">
+                                            <input type="number" :name="`items[${index}][withholding_tax]`"
+                                                x-model="item.withholding_tax"
+                                                @input="onWithholdingTaxManualEdit(index)"
                                                 step="0.01" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="0.00">
@@ -326,6 +335,9 @@
                                     <td class="px-2 py-2 text-right"
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.other_charges) || 0), 0))">
                                     </td>
+                                    <td class="px-2 py-2 text-right" x-show="isUnileverPakistan"
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.withholding_tax) || 0), 0))">
+                                    </td>
                                     <td class="px-2 py-2 text-right"
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_received) || 0), 0))">
                                     </td>
@@ -340,7 +352,7 @@
                                     <td class="px-2 py-2"></td>
                                 </tr>
                                 <tr>
-                                    <td colspan="20" class="px-2 py-2">
+                                    <td colspan="21" class="px-2 py-2">
                                         <div class="flex items-center gap-2">
                                             <button type="button" @click="addItems()"
                                                 class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
@@ -564,6 +576,7 @@
                     showPromoModal: false,
                     currentEditIndex: null,
                     supplierSalesTaxRate: {{ $grn->supplier->sales_tax ?? 18.00 }}, // Supplier's sales tax rate
+                    isUnileverPakistan: {{ $grn->supplier->supplier_name === 'Unilever Pakistan' ? 'true' : 'false' }},
 
                     items: oldItems.length > 0 ? oldItems.map(item => ({
                         product_id: item.product_id || '',
@@ -582,6 +595,8 @@
                         sales_tax_manually_edited: false,
                         advance_income_tax: parseFloat(item.advance_income_tax) || 0,
                         other_charges: parseFloat(item.other_charges) || 0,
+                        withholding_tax: parseFloat(item.withholding_tax) || 0,
+                        withholding_tax_manually_edited: !!(item.withholding_tax && parseFloat(item.withholding_tax) > 0),
                         total_value_with_taxes: parseFloat(item.total_value_with_taxes) || 0,
                         manufacturing_date: item.manufacturing_date || '',
                         expiry_date: item.expiry_date || '',
@@ -616,6 +631,8 @@
                         sales_tax_manually_edited: false,
                         advance_income_tax: parseFloat(item.advance_income_tax) || 0,
                         other_charges: parseFloat(item.other_charges) || 0,
+                        withholding_tax: parseFloat(item.withholding_tax) || 0,
+                        withholding_tax_manually_edited: !!(item.withholding_tax && parseFloat(item.withholding_tax) > 0),
                         total_value_with_taxes: parseFloat(item.total_value_with_taxes) || 0,
                         manufacturing_date: item.manufacturing_date || '',
                         expiry_date: item.expiry_date || '',
@@ -663,6 +680,8 @@
                             sales_tax_manually_edited: false,
                             advance_income_tax: 0,
                             other_charges: 0,
+                            withholding_tax: 0,
+                            withholding_tax_manually_edited: false,
                             total_value_with_taxes: 0,
                             manufacturing_date: '',
                             expiry_date: '',
@@ -765,6 +784,7 @@
                         const exciseDuty = parseFloat(item.excise_duty) || 0;
                         let salesTaxValue = parseFloat(item.sales_tax_value) || 0;
                         const advanceIncomeTax = parseFloat(item.advance_income_tax) || 0;
+                        const otherCharges = parseFloat(item.other_charges) || 0;
 
                         // Discounted Value Before Sales Tax = Extended Value - Discount Value - FMR Allowance
                         item.discounted_value_before_tax = parseFloat((extendedValue - discountValue - fmrAllowance).toFixed(2));
@@ -776,9 +796,20 @@
                             item.sales_tax_value = salesTaxValue;
                         }
 
-                        // Total Value with Taxes = Discounted Value Before Tax + Excise Duty + Sales Tax + Advance Income Tax + Other Charges
-                        const otherCharges = parseFloat(item.other_charges) || 0;
-                        item.total_value_with_taxes = parseFloat((item.discounted_value_before_tax + exciseDuty + salesTaxValue + advanceIncomeTax + otherCharges).toFixed(2));
+                        // Total before WHT
+                        const totalBeforeWht = parseFloat((item.discounted_value_before_tax + exciseDuty + salesTaxValue + advanceIncomeTax + otherCharges).toFixed(2));
+
+                        // Withholding Tax: 0.1% of totalBeforeWht, only for Unilever Pakistan
+                        if (this.isUnileverPakistan && !item.withholding_tax_manually_edited) {
+                            item.withholding_tax = parseFloat((totalBeforeWht * 0.001).toFixed(2));
+                        } else if (!this.isUnileverPakistan) {
+                            item.withholding_tax = 0;
+                            item.withholding_tax_manually_edited = false;
+                        }
+                        const withholdingTax = parseFloat(item.withholding_tax) || 0;
+
+                        // Total Value with Taxes = totalBeforeWht + Withholding Tax
+                        item.total_value_with_taxes = parseFloat((totalBeforeWht + withholdingTax).toFixed(2));
 
                         // Calculate Unit Cost: (Total Value with Taxes + FMR Allowance) / Qty Received
                         const qtyReceived = parseFloat(item.quantity_received) || 0;
@@ -832,6 +863,11 @@
                         // Mark that sales tax was manually edited
                         this.items[index].sales_tax_manually_edited = true;
                         // Recalculate total with taxes
+                        this.calculateTaxes(index);
+                    },
+
+                    onWithholdingTaxManualEdit(index) {
+                        this.items[index].withholding_tax_manually_edited = true;
                         this.calculateTaxes(index);
                     },
 
@@ -1030,17 +1066,21 @@
                         const supplierId = $(this).val();
                         const supplier = allSuppliers.find(s => s.id == supplierId);
 
-                        // Update Alpine.js component's sales tax rate
+                        // Update Alpine.js component's sales tax rate and Unilever flag
                         if (supplier && Alpine && Alpine.$data) {
                             const grnFormData = Alpine.$data(document.querySelector('[x-data="grnForm()"]'));
                             if (grnFormData) {
                                 grnFormData.supplierSalesTaxRate = parseFloat(supplier.sales_tax) || 18.00;
+                                grnFormData.isUnileverPakistan = supplier.supplier_name === 'Unilever Pakistan';
 
-                                // Recalculate sales tax for all items that weren't manually edited
+                                // Reset manually edited WHT flags when supplier changes
+                                grnFormData.items.forEach((item) => {
+                                    item.withholding_tax_manually_edited = false;
+                                });
+
+                                // Recalculate taxes for all items
                                 grnFormData.items.forEach((item, index) => {
-                                    if (!item.sales_tax_manually_edited && item.discounted_value_before_tax > 0) {
-                                        grnFormData.calculateTaxes(index);
-                                    }
+                                    grnFormData.calculateTaxes(index);
                                 });
                             }
                         }

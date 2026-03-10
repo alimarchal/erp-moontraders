@@ -22,6 +22,7 @@ class GoodsReceiptNoteTemplateExport implements FromArray, WithHeadings
             'Sales Tax Value',
             'Advance Income Tax',
             'Other Charges',
+            'Withholding Tax',
             'Selling Price',
             'Promotional Price',
             'Priority Order',
@@ -38,7 +39,7 @@ class GoodsReceiptNoteTemplateExport implements FromArray, WithHeadings
     public function array(): array
     {
         return [
-            ['DBP 2.5 KG Tin', 10, 1411.20, 0, 0, 0, null, 0, 0, 1450.68, null, 99, null, null, null, null],
+            ['DBP 2.5 KG Tin', 10, 1411.20, 0, 0, 0, null, 0, 0, null, 1450.68, null, 99, null, null, null, null],
         ];
     }
 }

@@ -256,6 +256,9 @@
                                     <th class="text-right">Sales Tax</th>
                                     <th class="text-right">Adv. IT</th>
                                     <th class="text-right">Other Chg</th>
+                                    @if($grn->supplier->supplier_name === 'Unilever Pakistan')
+                                        <th class="text-right">WHT</th>
+                                    @endif
                                     <th class="text-right">Qty Rec</th>
                                     <th class="text-right">Unit Cost</th>
                                     <th class="text-right">Sell Price</th>
@@ -312,6 +315,10 @@
                                             {{ number_format($item->advance_income_tax ?? 0, 2) }}</td>
                                         <td class="text-right tabular-nums" style="vertical-align: middle;">
                                             {{ number_format($item->other_charges ?? 0, 2) }}</td>
+                                        @if($grn->supplier->supplier_name === 'Unilever Pakistan')
+                                            <td class="text-right tabular-nums" style="vertical-align: middle;">
+                                                {{ number_format($item->withholding_tax ?? 0, 2) }}</td>
+                                        @endif
                                         <td class="text-right tabular-nums" style="vertical-align: middle;">
                                             {{ number_format($item->quantity_received, 2) }}
                                             @if ($item->quantity_rejected > 0)

@@ -44,6 +44,7 @@ class SyncDatabaseObjects extends Command
     {
         $this->syncMySQLProcedures();
         $this->syncMySQLFunctions();
+        $this->syncMySQLTriggers();
         $this->syncViews();
     }
 
@@ -148,6 +149,54 @@ class SyncDatabaseObjects extends Command
                 END
             ");
         });
+    }
+
+    private function syncMySQLTriggers(): void
+    {
+        $triggers = [
+            'trg_block_posted_claim_updates' => [
+                'table' => 'claim_registers',
+                'drop' => 'DROP TRIGGER IF EXISTS trg_block_posted_claim_updates',
+                'sql' => "
+                    CREATE TRIGGER trg_block_posted_claim_updates
+                    BEFORE UPDATE ON claim_registers
+                    FOR EACH ROW
+                    BEGIN
+                        IF OLD.posted_at IS NOT NULL THEN
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = 'Posted claim registers are immutable. Cannot update posted claims.';
+                        END IF;
+                    END
+                ",
+            ],
+            'trg_block_posted_claim_deletes' => [
+                'table' => 'claim_registers',
+                'drop' => 'DROP TRIGGER IF EXISTS trg_block_posted_claim_deletes',
+                'sql' => "
+                    CREATE TRIGGER trg_block_posted_claim_deletes
+                    BEFORE DELETE ON claim_registers
+                    FOR EACH ROW
+                    BEGIN
+                        IF OLD.posted_at IS NOT NULL THEN
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = 'Cannot delete posted claim registers. Posted claims are immutable.';
+                        END IF;
+                    END
+                ",
+            ],
+        ];
+
+        foreach ($triggers as $name => $def) {
+            try {
+                DB::unprepared($def['drop']);
+                DB::unprepared($def['sql']);
+                $this->results[$name] = 'Created';
+                $this->line("  <info>OK</info>  TRIGGER <comment>{$name}</comment>");
+            } catch (\Throwable $e) {
+                $this->results[$name] = 'FAILED: '.$e->getMessage();
+                $this->line("  <error>FAIL</error> TRIGGER <comment>{$name}</comment>: {$e->getMessage()}");
+            }
+        }
     }
 
     private function syncMySQLObject(string $type, string $name, callable $creator): void
@@ -527,7 +576,17 @@ class SyncDatabaseObjects extends Command
                     JOIN journal_entries je ON je.id = jed.journal_entry_id
                     WHERE je.status = 'posted' AND je.entry_date <= p_as_of_date
                 ) d ON d.chart_of_account_id = a.id
-                WHERE at.report_group = 'BalanceSheet' AND a.is_active = true
+                WHERE at.report_group = 'BalanceSheet'
+                AND (
+                    a.is_active = true
+                    OR EXISTS (
+                        SELECT 1
+                        FROM journal_entry_details jed2
+                        JOIN journal_entries je2 ON je2.id = jed2.journal_entry_id
+                        WHERE jed2.chart_of_account_id = a.id
+                        AND je2.status = 'posted'
+                    )
+                )
                 GROUP BY a.id, a.account_code, a.account_name, at.type_name, at.report_group, a.normal_balance
                 HAVING COALESCE(SUM(d.debit), 0) <> 0 OR COALESCE(SUM(d.credit), 0) <> 0
                 ORDER BY a.account_code;
@@ -561,7 +620,17 @@ class SyncDatabaseObjects extends Command
                     AND (p_start_date IS NULL OR je.entry_date >= p_start_date)
                     AND je.entry_date <= p_end_date
                 ) d ON d.chart_of_account_id = a.id
-                WHERE at.report_group = 'IncomeStatement' AND a.is_active = true
+                WHERE at.report_group = 'IncomeStatement'
+                AND (
+                    a.is_active = true
+                    OR EXISTS (
+                        SELECT 1
+                        FROM journal_entry_details jed2
+                        JOIN journal_entries je2 ON je2.id = jed2.journal_entry_id
+                        WHERE jed2.chart_of_account_id = a.id
+                        AND je2.status = 'posted'
+                    )
+                )
                 GROUP BY a.id, a.account_code, a.account_name, at.type_name, at.report_group, a.normal_balance
                 HAVING COALESCE(SUM(d.debit), 0) <> 0 OR COALESCE(SUM(d.credit), 0) <> 0
                 ORDER BY a.account_code;
@@ -634,6 +703,30 @@ class SyncDatabaseObjects extends Command
             END;
             \$\$ LANGUAGE plpgsql;
         "));
+
+        $this->syncPGObject('FUNCTION', 'fn_block_posted_claim_updates', fn () => DB::unprepared(<<<'SQL'
+            CREATE OR REPLACE FUNCTION fn_block_posted_claim_updates()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                IF OLD.posted_at IS NOT NULL THEN
+                    RAISE EXCEPTION 'Posted claim registers are immutable. Cannot update posted claims.';
+                END IF;
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        SQL));
+
+        $this->syncPGObject('FUNCTION', 'fn_block_posted_claim_deletes', fn () => DB::unprepared(<<<'SQL'
+            CREATE OR REPLACE FUNCTION fn_block_posted_claim_deletes()
+            RETURNS TRIGGER AS $$
+            BEGIN
+                IF OLD.posted_at IS NOT NULL THEN
+                    RAISE EXCEPTION 'Cannot delete posted claim registers. Posted claims are immutable.';
+                END IF;
+                RETURN OLD;
+            END;
+            $$ LANGUAGE plpgsql;
+        SQL));
     }
 
     private function syncPGTriggers(): void
@@ -729,6 +822,24 @@ class SyncDatabaseObjects extends Command
                     CREATE TRIGGER trg_prevent_hard_delete
                     BEFORE DELETE ON journal_entries
                     FOR EACH ROW EXECUTE FUNCTION prevent_hard_delete_posted();
+                ',
+            ],
+            'trg_block_posted_claim_updates' => [
+                'table' => 'claim_registers',
+                'sql' => '
+                    DROP TRIGGER IF EXISTS trg_block_posted_claim_updates ON claim_registers;
+                    CREATE TRIGGER trg_block_posted_claim_updates
+                    BEFORE UPDATE ON claim_registers
+                    FOR EACH ROW EXECUTE FUNCTION fn_block_posted_claim_updates();
+                ',
+            ],
+            'trg_block_posted_claim_deletes' => [
+                'table' => 'claim_registers',
+                'sql' => '
+                    DROP TRIGGER IF EXISTS trg_block_posted_claim_deletes ON claim_registers;
+                    CREATE TRIGGER trg_block_posted_claim_deletes
+                    BEFORE DELETE ON claim_registers
+                    FOR EACH ROW EXECUTE FUNCTION fn_block_posted_claim_deletes();
                 ',
             ],
         ];

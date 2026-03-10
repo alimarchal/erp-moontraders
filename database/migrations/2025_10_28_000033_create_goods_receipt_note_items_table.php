@@ -38,6 +38,8 @@ return new class extends Migration
             $table->decimal('excise_duty', 15, 2)->nullable()->default(0)->comment('Excise duty amount');
             $table->decimal('sales_tax_value', 15, 2)->nullable()->default(0)->comment('Sales tax amount');
             $table->decimal('advance_income_tax', 15, 2)->nullable()->default(0)->comment('Advance income tax amount');
+            $table->decimal('other_charges', 15, 2)->default(0);
+            $table->decimal('withholding_tax', 15, 2)->default(0);
             $table->decimal('total_value_with_taxes', 15, 2)->nullable()->default(0)->comment('Final total including all taxes');
 
             // Quantities

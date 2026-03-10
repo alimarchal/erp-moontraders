@@ -30,6 +30,7 @@ return new class extends Migration
             // Costing
             $table->decimal('unit_cost', 15, 2);
             $table->decimal('total_value', 15, 2)->default(0);
+            $table->decimal('value_remaining', 15, 2)->default(0);
 
             // Priority Info (for priority-based issuing)
             $table->integer('priority_order')->default(99)->index();

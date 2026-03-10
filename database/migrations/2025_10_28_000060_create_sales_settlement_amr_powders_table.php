@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('sales_settlement_id')->constrained('sales_settlements')->cascadeOnDelete();
             $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
+            $table->foreignId('stock_batch_id')->nullable()->constrained('stock_batches')->nullOnDelete();
+            $table->string('batch_code', 100)->nullable();
             $table->decimal('quantity', 15, 2)->default(0);
             $table->decimal('amount', 15, 2)->default(0);
             $table->text('notes')->nullable();

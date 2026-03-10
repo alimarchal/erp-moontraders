@@ -132,6 +132,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
                     'vw_balance_sheet' => in_array('vw_balance_sheet', $views) ? 'OK' : 'MISSING',
                     'vw_income_statement' => in_array('vw_income_statement', $views) ? 'OK' : 'MISSING',
                 ];
+
+                $triggers = \Illuminate\Support\Facades\DB::select(
+                    'SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = ?', [$db]
+                );
+                $triggerNames = collect($triggers)->pluck('TRIGGER_NAME')->map('strtolower')->toArray();
+                $results['trg_block_posted_claim_updates'] = in_array('trg_block_posted_claim_updates', $triggerNames) ? 'OK' : 'MISSING';
+                $results['trg_block_posted_claim_deletes'] = in_array('trg_block_posted_claim_deletes', $triggerNames) ? 'OK' : 'MISSING';
             } else {
                 // PostgreSQL — check via pg_proc and information_schema
                 $pgFunctions = \Illuminate\Support\Facades\DB::select(
@@ -156,6 +163,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
                     'prevent_hard_delete_posted', 'fn_trial_balance', 'fn_trial_balance_summary',
                     'fn_account_balances', 'fn_general_ledger', 'fn_balance_sheet', 'fn_income_statement',
                     'sp_create_period_snapshots', 'fn_account_balance_fast',
+                    'fn_block_posted_claim_updates', 'fn_block_posted_claim_deletes',
                 ];
 
                 $auditTables = [
@@ -166,7 +174,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
                     ['trg_journal_balance', 'trg_leaf_account_only', 'trg_check_accounting_period',
                         'trg_single_base_currency', 'trg_block_posted_journal_updates', 'trg_block_posted_journal_deletes',
                         'trg_block_posted_detail_updates', 'trg_block_posted_detail_deletes',
-                        'trg_auto_set_accounting_period', 'trg_prevent_hard_delete'],
+                        'trg_auto_set_accounting_period', 'trg_prevent_hard_delete',
+                        'trg_block_posted_claim_updates', 'trg_block_posted_claim_deletes'],
                     array_map(fn ($t) => "trg_audit_{$t}", $auditTables)
                 );
 

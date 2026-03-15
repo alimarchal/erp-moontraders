@@ -34,7 +34,7 @@
                     <x-validation-errors class="mb-4 mt-4" />
 
                     <form method="POST" action="{{ route('goods-receipt-notes.store') }}" id="grnForm"
-                        x-data="grnForm()">
+                        x-data="grnForm(@js($withholdingTaxRate))">
                         @csrf
 
                         <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
@@ -211,16 +211,15 @@
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][other_charges]`"
-                                                x-model="item.other_charges" @input="calculateTaxes(index)"
-                                                step="0.01" min="0"
+                                                x-model="item.other_charges" @input="calculateTaxes(index)" step="0.01"
+                                                min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="0.00">
                                         </td>
                                         <td class="px-2 py-2" x-show="isUnileverPakistan">
                                             <input type="number" :name="`items[${index}][withholding_tax]`"
                                                 x-model="item.withholding_tax"
-                                                @input="onWithholdingTaxManualEdit(index)"
-                                                step="0.01" min="0"
+                                                @input="onWithholdingTaxManualEdit(index)" step="0.01" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="0.00">
                                         </td>
@@ -583,11 +582,12 @@
             const defaultUomId = 24; // Piece UOM
             const defaultPurchaseUomId = 33; // Case UOM
 
-            function grnForm() {
+            function grnForm(withholdingTaxRate = 0) {
                 return {
                     showPromoModal: false,
                     currentEditIndex: null,
                     supplierSalesTaxRate: 18.00, // Default sales tax rate
+                    withholdingTaxRate: parseFloat(withholdingTaxRate) || 0,
                     isUnileverPakistan: false,
 
                     items: oldItems.length > 0 ? oldItems.map(item => ({
@@ -811,9 +811,9 @@
                         // Total before WHT
                         const totalBeforeWht = parseFloat((item.discounted_value_before_tax + exciseDuty + salesTaxValue + advanceIncomeTax + otherCharges).toFixed(2));
 
-                        // Withholding Tax: 0.1% of totalBeforeWht, only for Unilever Pakistan
+                        // Withholding Tax: applied only for Unilever Pakistan
                         if (this.isUnileverPakistan && !item.withholding_tax_manually_edited) {
-                            item.withholding_tax = parseFloat((totalBeforeWht * 0.001).toFixed(2));
+                            item.withholding_tax = parseFloat(((totalBeforeWht * this.withholdingTaxRate) / 100).toFixed(2));
                         } else if (!this.isUnileverPakistan) {
                             item.withholding_tax = 0;
                             item.withholding_tax_manually_edited = false;
@@ -1080,7 +1080,7 @@
 
                         // Update Alpine.js component's sales tax rate and Unilever flag
                         if (supplier && Alpine && Alpine.$data) {
-                            const grnFormData = Alpine.$data(document.querySelector('[x-data="grnForm()"]'));
+                            const grnFormData = Alpine.$data(document.getElementById('grnForm'));
                             if (grnFormData) {
                                 grnFormData.supplierSalesTaxRate = parseFloat(supplier.sales_tax) || 18.00;
                                 grnFormData.isUnileverPakistan = supplier.supplier_name === 'Unilever Pakistan';
@@ -1104,7 +1104,7 @@
                     @if(old('supplier_id'))
                         refreshAllProductSelects();
                     @endif
-                                                    });
+                                                            });
             }
 
             // Start initialization

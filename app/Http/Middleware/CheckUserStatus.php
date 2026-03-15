@@ -16,8 +16,11 @@ class CheckUserStatus
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check() && Auth::user()->is_active === 'No') {
-            Auth::logout();
+        $webGuard = Auth::guard('web');
+        $user = $webGuard->user();
+
+        if ($user && $user->is_active === 'No') {
+            $webGuard->logout();
 
             $request->session()->invalidate();
             $request->session()->regenerateToken();

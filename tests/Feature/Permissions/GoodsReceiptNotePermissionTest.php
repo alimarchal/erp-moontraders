@@ -29,7 +29,10 @@ it('denies create without goods-receipt-note-create permission', function () {
 
 it('allows create with goods-receipt-note-create permission', function () {
     $this->user->givePermissionTo('goods-receipt-note-create');
-    $this->get(route('goods-receipt-notes.create'))->assertSuccessful();
+
+    $this->get(route('goods-receipt-notes.create'))
+        ->assertSuccessful()
+        ->assertSee("document.getElementById('grnForm')", false);
 });
 
 it('denies store without goods-receipt-note-create permission', function () {
@@ -44,6 +47,19 @@ it('denies show without goods-receipt-note-list permission', function () {
 it('denies edit without goods-receipt-note-edit permission', function () {
     $grn = GoodsReceiptNote::factory()->create(['supplier_id' => Supplier::factory()->create()->id]);
     $this->get(route('goods-receipt-notes.edit', $grn))->assertForbidden();
+});
+
+it('allows edit with goods-receipt-note-edit permission for a draft grn', function () {
+    $this->user->givePermissionTo('goods-receipt-note-edit');
+
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => Supplier::factory()->create()->id,
+        'status' => 'draft',
+    ]);
+
+    $this->get(route('goods-receipt-notes.edit', $grn))
+        ->assertSuccessful()
+        ->assertSee("document.getElementById('grnForm')", false);
 });
 
 it('denies update without goods-receipt-note-edit permission', function () {

@@ -9,9 +9,12 @@ use App\Models\GoodsReceiptNote;
 use App\Models\Product;
 use App\Models\PromotionalCampaign;
 use App\Models\Supplier;
+use App\Models\TaxCode;
+use App\Models\TaxRate;
 use App\Models\Uom;
 use App\Models\Warehouse;
 use App\Services\InventoryService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -83,6 +86,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             // Don't load all products - will be loaded via AJAX when supplier is selected
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
+            'withholdingTaxRate' => $this->resolveActiveWithholdingTaxRate(),
         ]);
     }
 
@@ -312,6 +316,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax']),
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
+            'withholdingTaxRate' => $this->resolveActiveWithholdingTaxRate(),
         ]);
     }
 
@@ -641,11 +646,12 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     public function importItems(ImportGoodsReceiptNoteRequest $request)
     {
         $validated = $request->validated();
+        $withholdingTaxRate = $this->resolveActiveWithholdingTaxRate();
 
         DB::beginTransaction();
 
         try {
-            $import = new GoodsReceiptNoteItemsImport($validated['supplier_id']);
+            $import = new GoodsReceiptNoteItemsImport($validated['supplier_id'], $withholdingTaxRate);
             Excel::import($import, $request->file('import_file'));
 
             if ($import->hasErrors()) {
@@ -797,6 +803,34 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 ->withInput()
                 ->with('error', 'Unable to import GRN: '.$e->getMessage());
         }
+    }
+
+    private function resolveActiveWithholdingTaxRate(): float
+    {
+        $taxCode = TaxCode::query()
+            ->where('tax_code', 'WHT-0.1')
+            ->where('tax_type', 'withholding_tax')
+            ->where('is_active', true)
+            ->first();
+
+        if (! $taxCode) {
+            return 0.0;
+        }
+
+        $today = Carbon::today()->toDateString();
+
+        $taxRate = TaxRate::query()
+            ->where('tax_code_id', $taxCode->id)
+            ->where('is_active', true)
+            ->where('effective_from', '<=', $today)
+            ->where(function ($query) use ($today) {
+                $query->whereNull('effective_to')
+                    ->orWhere('effective_to', '>=', $today);
+            })
+            ->orderByDesc('effective_from')
+            ->first();
+
+        return (float) ($taxRate?->rate ?? 0.0);
     }
 
     /**

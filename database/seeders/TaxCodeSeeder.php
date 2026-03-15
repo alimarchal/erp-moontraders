@@ -122,8 +122,8 @@ class TaxCodeSeeder extends Seeder
             ],
             [
                 'tax_code' => 'WHT-0.1',
-                'name' => 'Withholding Tax @ 0.1%',
-                'description' => 'Withholding Tax at 0.1% - Applicable on Unilever Pakistan GRNs',
+                'name' => 'Withholding Tax @ 0.1% (Unilever Pakistan GRNs)',
+                'description' => 'Withholding Tax at 0.1% - Applicable only on Unilever Pakistan GRNs',
                 'tax_type' => 'withholding_tax',
                 'calculation_method' => 'percentage',
                 'tax_payable_account_id' => $gstPayableAccount->id,

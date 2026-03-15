@@ -180,9 +180,9 @@ class VanStockBatchConsumptionTest extends TestCase
             'sales_settlement_id' => $settlement->id,
             'product_id' => $product->id,
             'quantity_issued' => 20, // Total issued from goods issue
-            'quantity_sold' => 15, // Should consume all A (10) and half B (5)
+            'quantity_sold' => 15,
             'quantity_returned' => 0,
-            'quantity_shortage' => 0,
+            'quantity_shortage' => 5, // All stock must be accounted: sold(15) + shortage(5) = issued(20)
             'unit_selling_price' => 200,
             'total_sales_value' => 3000,
             'unit_cost' => 110, // Average of batches A(100) and B(120)
@@ -206,7 +206,7 @@ class VanStockBatchConsumptionTest extends TestCase
 
         $this->assertDatabaseHas('van_stock_batches', [
             'id' => $batchB->id,
-            'quantity_on_hand' => 5,
+            'quantity_on_hand' => 0, // All stock consumed FIFO: B/F Out must be 0
         ]);
     }
 }

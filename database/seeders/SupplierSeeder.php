@@ -66,6 +66,7 @@ class SupplierSeeder extends Seeder
                 'country' => 'Pakistan',
                 'supplier_group' => 'Multinational',
                 'supplier_type' => 'FMCG',
+                'supplier_details' => 'Apply 0.1% withholding tax on GRNs for this supplier only.',
                 'is_transporter' => false,
                 'sales_tax' => 18.00,
                 'is_internal_supplier' => false,

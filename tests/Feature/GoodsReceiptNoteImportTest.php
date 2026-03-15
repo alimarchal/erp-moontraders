@@ -5,6 +5,8 @@ use App\Models\GoodsReceiptNoteItem;
 use App\Models\Product;
 use App\Models\PromotionalCampaign;
 use App\Models\Supplier;
+use App\Models\TaxCode;
+use App\Models\TaxRate;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -509,6 +511,60 @@ it('denies template download without import permission', function () {
     $response = $this->get(route('goods-receipt-notes.import-template'));
 
     $response->assertForbidden();
+});
+
+it('uses the database withholding tax rate for unilever pakistan imports', function () {
+    $supplier = Supplier::factory()->create([
+        'supplier_name' => 'Unilever Pakistan',
+        'disabled' => false,
+        'sales_tax' => 18.00,
+    ]);
+
+    $product = Product::factory()->create([
+        'product_code' => 'UNI-001',
+        'product_name' => 'Unilever Test Product',
+        'supplier_id' => $supplier->id,
+        'uom_conversion_factor' => 24,
+        'unit_sell_price' => 75.00,
+        'is_active' => true,
+        'is_powder' => false,
+    ]);
+
+    $taxCode = TaxCode::factory()->create([
+        'tax_code' => 'WHT-0.1',
+        'tax_type' => 'withholding_tax',
+        'is_active' => true,
+    ]);
+
+    TaxRate::factory()->create([
+        'tax_code_id' => $taxCode->id,
+        'rate' => 0.25,
+        'effective_from' => now()->subDay(),
+        'effective_to' => null,
+        'is_active' => true,
+    ]);
+
+    $file = createTestExcelFile([
+        [
+            'Product Code' => $product->product_code,
+            'Quantity' => 10,
+            'Unit Price Per Case' => 1000.00,
+            'Sales Tax Value' => '',
+        ],
+    ]);
+
+    $this->post(route('goods-receipt-notes.import'), [
+        'supplier_id' => $supplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'receipt_date' => '2026-02-17',
+        'import_file' => $file,
+    ])->assertRedirect();
+
+    $item = GoodsReceiptNoteItem::latest()->first();
+
+    expect((float) $item->sales_tax_value)->toBe(1800.00);
+    expect((float) $item->withholding_tax)->toBe(29.50);
+    expect((float) $item->total_value_with_taxes)->toBe(11829.50);
 });
 
 it('rolls back transaction when row has errors', function () {

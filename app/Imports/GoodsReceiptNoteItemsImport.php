@@ -21,6 +21,8 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
 
     private float $salesTaxRate;
 
+    private float $withholdingTaxRate;
+
     private bool $isUnileverPakistan;
 
     /** @var array<int, array<string, mixed>> */
@@ -31,9 +33,11 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
 
     public function __construct(
         private int $supplierId,
+        float $withholdingTaxRate,
     ) {
         $this->supplier = Supplier::findOrFail($supplierId);
         $this->salesTaxRate = (float) ($this->supplier->sales_tax ?? 18.00);
+        $this->withholdingTaxRate = $withholdingTaxRate;
         $this->isUnileverPakistan = $this->supplier->supplier_name === 'Unilever Pakistan';
     }
 
@@ -101,7 +105,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
             if ($this->isUnileverPakistan) {
                 $withholdingTax = is_numeric($withholdingTaxRaw)
                     ? round((float) $withholdingTaxRaw, 2)
-                    : round($totalBeforeWht * 0.001, 2);
+                    : round(($totalBeforeWht * $this->withholdingTaxRate) / 100, 2);
             }
 
             $totalValueWithTaxes = round($totalBeforeWht + $withholdingTax, 2);

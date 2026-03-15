@@ -115,6 +115,20 @@ class TaxRateSeeder extends Seeder
             ];
         }
 
+        // Withholding Tax @ 0.1%
+        if (isset($taxCodes['WHT-0.1'])) {
+            $taxRates[] = [
+                'tax_code_id' => $taxCodes['WHT-0.1']->id,
+                'rate' => 0.10,
+                'effective_from' => Carbon::create(2024, 1, 1),
+                'effective_to' => null,
+                'region' => null,
+                'is_active' => true,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+
         // Insert tax rates
         if (! empty($taxRates)) {
             DB::table('tax_rates')->insert($taxRates);

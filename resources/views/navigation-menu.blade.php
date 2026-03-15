@@ -21,12 +21,6 @@
                             {{ __('GRN') }}
                         </x-nav-link>
                     @endcan
-                    @can('supplier-payment-list')
-                        <x-nav-link href="{{ route('supplier-payments.index') }}"
-                            :active="request()->routeIs('supplier-payments.*')">
-                            {{ __('Payments') }}
-                        </x-nav-link>
-                    @endcan
                     @can('inventory-view')
                         <x-nav-link href="{{ route('inventory.current-stock.index') }}"
                             :active="request()->routeIs('inventory.*')">
@@ -196,12 +190,6 @@
                 <x-responsive-nav-link href="{{ route('goods-receipt-notes.index') }}"
                     :active="request()->routeIs('goods-receipt-notes.*')">
                     {{ __('GRN') }}
-                </x-responsive-nav-link>
-            @endcan
-            @can('supplier-payment-list')
-                <x-responsive-nav-link href="{{ route('supplier-payments.index') }}"
-                    :active="request()->routeIs('supplier-payments.*')">
-                    {{ __('Payments') }}
                 </x-responsive-nav-link>
             @endcan
             @can('inventory-view')

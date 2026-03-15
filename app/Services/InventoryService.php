@@ -132,6 +132,10 @@ class InventoryService
      */
     protected function createGrnJournalEntry(GoodsReceiptNote $grn)
     {
+        if ($grn->is_opening_stock) {
+            return $this->createOpeningStockJournalEntry($grn);
+        }
+
         try {
             // Load supplier and items with products relationship
             $grn->loadMissing('supplier', 'items.product');
@@ -301,6 +305,76 @@ class InventoryService
 
         } catch (\Exception $e) {
             Log::error("Exception creating journal entry for GRN {$grn->id}: ".$e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * Opening Stock JE: Dr. Inventory (1151), Cr. Opening Balance Equity
+     */
+    protected function createOpeningStockJournalEntry(GoodsReceiptNote $grn)
+    {
+        try {
+            $grn->loadMissing('supplier', 'items');
+
+            $inventoryAccount = ChartOfAccount::where('account_code', '1151')->first();
+            $openingBalanceEquityAccount = ChartOfAccount::where('account_name', 'Opening Balance Equity')->first();
+            $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
+
+            if (! $inventoryAccount || ! $openingBalanceEquityAccount) {
+                Log::warning("Opening stock JE skipped for GRN {$grn->id}: missing Inventory (1151) or Opening Balance Equity account.");
+
+                return null;
+            }
+
+            $totalCost = $grn->items->sum('total_cost');
+
+            if ($totalCost <= 0) {
+                Log::warning("Opening stock JE skipped for GRN {$grn->id}: total cost is zero.");
+
+                return null;
+            }
+
+            $journalLines = [
+                [
+                    'line_no' => 1,
+                    'account_id' => $inventoryAccount->id,
+                    'debit' => $totalCost,
+                    'credit' => 0,
+                    'description' => "Opening stock - {$grn->supplier->supplier_name}",
+                    'cost_center_id' => $warehouseCostCenter?->id,
+                ],
+                [
+                    'line_no' => 2,
+                    'account_id' => $openingBalanceEquityAccount->id,
+                    'debit' => 0,
+                    'credit' => $totalCost,
+                    'description' => "Opening stock equity - {$grn->supplier->supplier_name}",
+                    'cost_center_id' => $warehouseCostCenter?->id,
+                ],
+            ];
+
+            $accountingService = app(AccountingService::class);
+            $result = $accountingService->createJournalEntry([
+                'entry_date' => Carbon::parse($grn->receipt_date)->toDateString(),
+                'reference' => $grn->grn_number,
+                'description' => "Opening Stock - {$grn->supplier->supplier_name} ({$grn->grn_number})",
+                'lines' => $journalLines,
+                'auto_post' => true,
+            ]);
+
+            if ($result['success']) {
+                Log::info("Opening stock JE created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Amount: {$totalCost}");
+
+                return $result['data'];
+            }
+
+            Log::error("Failed to create opening stock JE for GRN {$grn->grn_number}: ".$result['message']);
+
+            return null;
+        } catch (\Exception $e) {
+            Log::error("Exception creating opening stock JE for GRN {$grn->id}: ".$e->getMessage());
 
             return null;
         }

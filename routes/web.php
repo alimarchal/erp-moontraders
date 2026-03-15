@@ -352,6 +352,20 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     /*
     |----------------------------------------------------------------------
+    | Inventory — Opening Stock (one-time import)
+    |----------------------------------------------------------------------
+    | Import existing inventory as opening stock per supplier.
+    | Creates a GRN with is_opening_stock=true, posts to inventory,
+    | JE: Dr Inventory / Cr Opening Balance Equity, no payment created.
+    | Permission: opening-stock-create
+    */
+    Route::post('opening-stock', [\App\Http\Controllers\OpeningStockController::class, 'store'])
+        ->name('opening-stock.store');
+    Route::get('opening-stock/template/{supplier}', [\App\Http\Controllers\OpeningStockController::class, 'downloadTemplate'])
+        ->name('opening-stock.template');
+
+    /*
+    |----------------------------------------------------------------------
     | Inventory — Goods Receipt Notes (GRN)
     |----------------------------------------------------------------------
     | Inbound inventory from suppliers. Post creates journal entries and

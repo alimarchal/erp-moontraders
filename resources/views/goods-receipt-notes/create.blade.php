@@ -15,6 +15,17 @@
                     Import Excel
                 </button>
             @endcan
+            @can('opening-stock-create')
+                <button type="button" x-data @click="$dispatch('open-opening-stock-modal')"
+                    class="inline-flex items-center px-4 py-2 bg-indigo-700 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-indigo-800 focus:bg-indigo-800 active:bg-indigo-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
+                    <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    Opening Stock
+                </button>
+            @endcan
             <a href="{{ route('goods-receipt-notes.index') }}"
                 class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
                 <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
@@ -1104,7 +1115,7 @@
                     @if(old('supplier_id'))
                         refreshAllProductSelects();
                     @endif
-                                                            });
+                                                                });
             }
 
             // Start initialization
@@ -1290,5 +1301,177 @@
 
         <x-alpine-alert-modal event-name="open-alert-modal" title="Alert" button-text="OK"
             button-class="bg-red-600 hover:bg-red-700" icon-bg-class="bg-red-100" icon-color-class="text-red-600" />
+    @endcan
+
+    {{-- Opening Stock Modal --}}
+    @can('opening-stock-create')
+        <div x-data="{ show: false }" x-on:open-opening-stock-modal.window="show = true"
+            x-on:keydown.escape.window="show = false" x-show="show" x-cloak class="fixed inset-0 z-50"
+            style="display: none;" aria-labelledby="opening-stock-modal-title" role="dialog" aria-modal="true">
+
+            {{-- Backdrop --}}
+            <div x-show="show" x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-all" @click="show = false">
+            </div>
+
+            {{-- Modal Panel --}}
+            <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4">
+                <div x-show="show" x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-lg"
+                    @click.outside="show = false">
+
+                    {{-- Header --}}
+                    <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="flex size-10 items-center justify-center rounded-lg bg-white/20">
+                                    <svg class="size-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                        viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                    </svg>
+                                </div>
+                                <h3 class="text-lg font-semibold text-white" id="opening-stock-modal-title">
+                                    Import Opening Stock
+                                </h3>
+                            </div>
+                            <button type="button" @click="show = false"
+                                class="rounded-lg p-1 text-white/80 hover:bg-white/20 hover:text-white transition">
+                                <svg class="size-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ route('opening-stock.store') }}" enctype="multipart/form-data">
+                        @csrf
+                        <div class="px-6 py-5 space-y-5">
+                            @if($errors->has('opening_stock_file'))
+                                <div class="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                    <div class="flex items-center gap-2 font-semibold mb-2">
+                                        <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                            stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                                        </svg>
+                                        Import Errors:
+                                    </div>
+                                    <ul class="list-disc list-inside space-y-1">
+                                        @foreach($errors->get('opening_stock_file') as $error)
+                                            <li>{{ is_array($error) ? implode(', ', $error) : $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <x-label for="os_supplier_id" value="Supplier *" />
+                                    <select id="os_supplier_id" name="supplier_id" required
+                                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full text-sm">
+                                        <option value="">Select Supplier</option>
+                                        @foreach ($suppliers as $supplier)
+                                            <option value="{{ $supplier->id }}">
+                                                {{ $supplier->supplier_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <x-label for="os_warehouse_id" value="Warehouse *" />
+                                    <select id="os_warehouse_id" name="warehouse_id" required
+                                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full text-sm">
+                                        <option value="">Select Warehouse</option>
+                                        @foreach ($warehouses as $warehouse)
+                                            <option value="{{ $warehouse->id }}">
+                                                {{ $warehouse->warehouse_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <x-label for="os_receipt_date" value="Cutoff Date *" />
+                                    <x-input id="os_receipt_date" name="receipt_date" type="date"
+                                        class="mt-1 block w-full text-sm" :value="date('Y-m-d')" required />
+                                </div>
+                            </div>
+
+                            {{-- File Upload --}}
+                            <div
+                                class="rounded-lg border-2 border-dashed border-gray-300 p-4 text-center hover:border-indigo-400 transition-colors">
+                                <svg class="mx-auto size-8 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none"
+                                    viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                        d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                                </svg>
+                                <input type="file" id="os_import_file" name="import_file" required accept=".xlsx,.xls,.csv"
+                                    class="mt-2 block w-full text-sm text-gray-500 file:mr-4 file:rounded-full file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100">
+                                <p class="mt-1 text-xs text-gray-500">Accepted: .xlsx, .xls, .csv (max 5MB)</p>
+                            </div>
+
+                            {{-- Template Download --}}
+                            <a href="#" onclick="return downloadOpeningStockTemplate()"
+                                class="inline-flex items-center gap-1.5 rounded-md bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700 hover:bg-indigo-100 transition">
+                                <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                Download Template (select supplier first)
+                            </a>
+                        </div>
+
+                        {{-- Footer --}}
+                        <div class="flex justify-end gap-3 border-t border-gray-200 bg-gray-50 px-6 py-4">
+                            <button type="button" @click="show = false"
+                                class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 transition">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                class="inline-flex items-center gap-1.5 rounded-md border border-transparent bg-indigo-700 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-800 transition">
+                                <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                </svg>
+                                Import Opening Stock
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        @push('scripts')
+            <script>
+                function downloadOpeningStockTemplate() {
+                    const supplierId = document.getElementById('os_supplier_id').value;
+                    if (!supplierId) {
+                        alert('Please select a supplier first.');
+                        return false;
+                    }
+                    window.location.href = '/opening-stock/template/' + supplierId;
+                    return false;
+                }
+
+                @if($errors->has('opening_stock_file'))
+                    document.addEventListener('DOMContentLoaded', function () {
+                        window.dispatchEvent(new CustomEvent('open-opening-stock-modal'));
+                    });
+                @endif
+            </script>
+        @endpush
     @endcan
 </x-app-layout>

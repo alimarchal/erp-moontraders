@@ -34,6 +34,7 @@ class GoodsReceiptNote extends Model
         'reversed_by',
         'journal_entry_id',
         'notes',
+        'is_opening_stock',
     ];
 
     protected $casts = [

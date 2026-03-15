@@ -48,6 +48,7 @@ return new class extends Migration
             $table->foreignId('journal_entry_id')->nullable()->constrained('journal_entries')->nullOnDelete()->comment('Auto-posted accounting entry');
 
             $table->text('notes')->nullable();
+            $table->boolean('is_opening_stock')->default(false);
             $table->timestamps();
             $table->softDeletes();
 

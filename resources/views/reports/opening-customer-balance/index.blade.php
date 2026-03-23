@@ -197,6 +197,9 @@
                             @if ($customer->address)
                                 — {{ $customer->address }}
                             @endif
+                            @if ($customer->phone)
+                                — {{ $customer->phone }}
+                            @endif
                         </option>
                     @endforeach
                 </select>
@@ -440,7 +443,7 @@
                                                             @foreach ($customers as $customer)
                                                                 <option value="{{ $customer->id }}"
                                                                     {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
-                                                                    {{ $customer->customer_code }} — {{ $customer->customer_name }}{{ $customer->address ? ' — ' . Str::limit($customer->address, 25) : '' }}
+                                                                    {{ $customer->customer_code }} — {{ $customer->customer_name }}{{ $customer->address ? ' — ' . Str::limit($customer->address, 25) : '' }}{{ $customer->phone ? ' — ' . $customer->phone : '' }}
                                                                 </option>
                                                             @endforeach
                                                         </select>

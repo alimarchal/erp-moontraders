@@ -49,7 +49,7 @@ class OpeningCustomerBalanceReportController extends Controller implements HasMi
 
         $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'short_name']);
         $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'employee_code', 'name', 'supplier_id']);
-        $customers = Customer::where('is_active', true)->orderBy('customer_name')->get(['id', 'customer_code', 'customer_name', 'address', 'city']);
+        $customers = Customer::where('is_active', true)->orderBy('customer_name')->get(['id', 'customer_code', 'customer_name', 'address', 'city', 'phone']);
 
         if (! $hasFilters) {
             $transactions = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage === 'all' ? 1 : (int) $perPage, 1, ['path' => $request->url(), 'query' => $request->query()]);

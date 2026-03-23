@@ -46,6 +46,7 @@ use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\GoodsIssueReportController;
 use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\InventoryLedgerReportController;
+use App\Http\Controllers\Reports\InvoiceSummaryReportController;
 use App\Http\Controllers\Reports\LegerRegisterController;
 use App\Http\Controllers\Reports\PercentageExpenseReportController;
 use App\Http\Controllers\Reports\RoiReportController;
@@ -641,7 +642,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
 
         /* Claim Register */
-        Route::get('claim-register', [ClaimRegisterReportController::class, 'index'])->name('claim-register.index');
+        Route::prefix('claim-register')->name('claim-register.')->group(function () {
+            Route::get('/', [ClaimRegisterReportController::class, 'index'])->name('index');
+            Route::post('/', [ClaimRegisterReportController::class, 'store'])->name('store');
+            Route::put('/{claimRegister}', [ClaimRegisterReportController::class, 'update'])->name('update');
+            Route::delete('/{claimRegister}', [ClaimRegisterReportController::class, 'destroy'])->name('destroy');
+        });
 
         /* Analytics & Tax */
         Route::get('roi', [RoiReportController::class, 'index'])->name('roi.index');
@@ -655,6 +661,14 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             Route::post('/', [LegerRegisterController::class, 'store'])->name('store');
             Route::put('/{legerRegister}', [LegerRegisterController::class, 'update'])->name('update');
             Route::delete('/{legerRegister}', [LegerRegisterController::class, 'destroy'])->name('destroy');
+        });
+
+        /* Invoice Summary */
+        Route::prefix('invoice-summary')->name('invoice-summary.')->group(function () {
+            Route::get('/', [InvoiceSummaryReportController::class, 'index'])->name('index');
+            Route::post('/', [InvoiceSummaryReportController::class, 'store'])->name('store');
+            Route::put('/{invoiceSummary}', [InvoiceSummaryReportController::class, 'update'])->name('update');
+            Route::delete('/{invoiceSummary}', [InvoiceSummaryReportController::class, 'destroy'])->name('destroy');
         });
     });
 });

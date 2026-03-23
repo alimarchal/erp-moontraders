@@ -27,7 +27,7 @@ class LegerRegisterController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         $perPage = $request->input('per_page', 50);
-        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 50;
+        $perPage = \in_array($perPage, [10, 25, 50, 100, 250, 'all']) ? $perPage : 50;
 
         // Default supplier: Nestlé
         $defaultSupplier = Supplier::where('short_name', 'Nestle')->first();
@@ -94,7 +94,18 @@ class LegerRegisterController extends Controller implements HasMiddleware
             COUNT(*) as total_entries
         ')->first();
 
-        $entries = $query->paginate($perPage)->withQueryString();
+        if ($perPage === 'all') {
+            $allEntries = $query->get();
+            $entries = new \Illuminate\Pagination\LengthAwarePaginator(
+                $allEntries,
+                $allEntries->count(),
+                $allEntries->count() ?: 1,
+                1,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        } else {
+            $entries = $query->paginate((int) $perPage)->withQueryString();
+        }
 
         // Opening balance (sum of all entries for this supplier BEFORE dateFrom)
         $openingBalance = 0;
@@ -108,8 +119,8 @@ class LegerRegisterController extends Controller implements HasMiddleware
         // Calculate running balance for displayed entries
         // Account for entries before current page within the filtered range
         $balanceBeforePage = $openingBalance;
-        if ($entries->currentPage() > 1) {
-            $entriesBeforePage = ($entries->currentPage() - 1) * $perPage;
+        if ($entries->currentPage() > 1 && $perPage !== 'all') {
+            $entriesBeforePage = ($entries->currentPage() - 1) * (int) $perPage;
             $beforePageBalance = (clone $allFilteredQuery)
                 ->orderBy('transaction_date', $sortDirection)
                 ->orderBy('id', $sortDirection)

@@ -243,6 +243,7 @@
                     <option value="50" {{ request('per_page', 50) == 50 ? 'selected' : '' }}>50</option>
                     <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
                     <option value="250" {{ request('per_page') == 250 ? 'selected' : '' }}>250</option>
+                    <option value="all" {{ request('per_page') === 'all' ? 'selected' : '' }}>All</option>
                 </select>
             </div>
         </div>
@@ -641,16 +642,38 @@
         </div>
     </div>
 
-    {{-- Edit Modal --}}
+    {{-- Edit Modal with Backdrop Blur --}}
     @can('report-audit-leger-register-manage')
         <div x-data="editModal()" x-show="open" x-cloak
-            class="fixed inset-0 z-50 overflow-y-auto no-print" style="display: none;">
-            <div class="flex items-center justify-center min-h-screen px-4">
-                <div class="fixed inset-0 bg-black bg-opacity-50 transition-opacity" @click="close()"></div>
+            class="fixed inset-0 z-50 overflow-y-auto no-print" style="display: none;"
+            aria-labelledby="edit-modal-title" role="dialog" aria-modal="true">
 
-                <div class="bg-white rounded-lg shadow-xl transform transition-all w-full max-w-2xl relative z-10">
-                    <div class="bg-gray-800 text-white px-6 py-3 rounded-t-lg flex justify-between items-center">
-                        <h3 class="text-lg font-bold">Edit Ledger Entry</h3>
+            {{-- Backdrop with blur --}}
+            <div x-show="open"
+                x-transition:enter="ease-out duration-300"
+                x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100"
+                x-transition:leave="ease-in duration-200"
+                x-transition:leave-start="opacity-100"
+                x-transition:leave-end="opacity-0"
+                class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-all"
+                @click="close()">
+            </div>
+
+            {{-- Modal Panel --}}
+            <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4">
+                <div x-show="open"
+                    x-transition:enter="ease-out duration-300"
+                    x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave="ease-in duration-200"
+                    x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+                    x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                    class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-2xl"
+                    @click.outside="close()">
+
+                    <div class="bg-gray-800 text-white px-6 py-3 rounded-t-xl flex justify-between items-center">
+                        <h3 class="text-lg font-bold" id="edit-modal-title">Edit Ledger Entry</h3>
                         <button @click="close()" class="text-gray-300 hover:text-white">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -745,6 +768,7 @@
             </div>
         </div>
     @endcan
+
 
     @push('scripts')
         <script>

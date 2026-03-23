@@ -72,7 +72,7 @@ class RoleAndPermissionSeeder extends Seeder
             'report-inventory' => ['daily-stock-register', 'salesman-stock-register', 'inventory-ledger', 'van-stock-batch', 'van-stock-ledger'],
 
             // Reports - Audit & Operational (granular per report)
-            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'claim-register', 'advance-tax', 'percentage-expense', 'leger-register', 'leger-register-manage'],
+            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'claim-register', 'advance-tax', 'percentage-expense', 'leger-register', 'leger-register-manage', 'invoice-summary', 'invoice-summary-manage'],
 
             // Settings & Navigation
             'setting' => ['view', 'update'],
@@ -138,6 +138,8 @@ class RoleAndPermissionSeeder extends Seeder
             'report-financial-income-statement',
             'report-audit-leger-register',
             'report-audit-leger-register-manage',
+            'report-audit-invoice-summary',
+            'report-audit-invoice-summary-manage',
             'setting-view',
         ]);
 

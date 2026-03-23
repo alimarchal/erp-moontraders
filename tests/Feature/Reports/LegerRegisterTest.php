@@ -1,0 +1,292 @@
+<?php
+
+use App\Enums\DocumentType;
+use App\Models\LegerRegister;
+use App\Models\Supplier;
+use App\Models\User;
+use Spatie\Permission\Models\Permission;
+
+beforeEach(function () {
+    Permission::create(['name' => 'report-audit-leger-register']);
+    Permission::create(['name' => 'report-audit-leger-register-manage']);
+
+    $this->user = User::factory()->create();
+    $this->user->givePermissionTo('report-audit-leger-register');
+    $this->user->givePermissionTo('report-audit-leger-register-manage');
+
+    $this->supplier = Supplier::factory()->create([
+        'supplier_name' => 'Nestlé Pakistan',
+        'short_name' => 'Nestle',
+        'disabled' => false,
+    ]);
+});
+
+test('leger register page loads for authenticated user', function () {
+    $this->actingAs($this->user)
+        ->get(route('reports.leger-register.index'))
+        ->assertSuccessful();
+});
+
+test('leger register loads with default nestle supplier', function () {
+    $this->actingAs($this->user)
+        ->get(route('reports.leger-register.index'))
+        ->assertSuccessful()
+        ->assertSee('Nestlé Pakistan');
+});
+
+test('leger register requires authentication', function () {
+    $this->get(route('reports.leger-register.index'))
+        ->assertRedirect(route('login'));
+});
+
+test('leger register requires permission', function () {
+    $userWithoutPermission = User::factory()->create();
+
+    $this->actingAs($userWithoutPermission)
+        ->get(route('reports.leger-register.index'))
+        ->assertForbidden();
+});
+
+test('leger register shows entries for selected supplier', function () {
+    LegerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => now()->format('Y-m-d'),
+        'online_amount' => 5000000,
+    ]);
+    LegerRegister::recalculateBalances($this->supplier->id);
+
+    $this->actingAs($this->user)
+        ->get(route('reports.leger-register.index', [
+            'filter' => ['supplier_id' => $this->supplier->id],
+        ]))
+        ->assertSuccessful()
+        ->assertSee('5,000,000.00');
+});
+
+test('leger register filters by date range', function () {
+    LegerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-01-15',
+        'online_amount' => 1234567,
+    ]);
+    LegerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-02-15',
+        'online_amount' => 2000000,
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->get(route('reports.leger-register.index', [
+            'filter' => [
+                'supplier_id' => $this->supplier->id,
+                'date_from' => '2026-02-01',
+                'date_to' => '2026-02-28',
+            ],
+        ]));
+
+    $response->assertSuccessful()
+        ->assertSee('2,000,000.00');
+
+    // The Jan entry amount should not appear as a table entry (only as opening balance)
+    expect($response->getContent())->not->toContain('1,234,567.00</td>');
+});
+
+test('leger register filters by document type', function () {
+    LegerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => now()->format('Y-m-d'),
+        'online_amount' => 5000000,
+    ]);
+    LegerRegister::factory()->invoice()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => now()->format('Y-m-d'),
+        'invoice_amount' => 1000000,
+    ]);
+
+    $this->actingAs($this->user)
+        ->get(route('reports.leger-register.index', [
+            'filter' => [
+                'supplier_id' => $this->supplier->id,
+                'document_type' => [DocumentType::Dz->value],
+            ],
+        ]))
+        ->assertSuccessful()
+        ->assertSee('5,000,000.00');
+});
+
+test('can store a new leger register entry', function () {
+    $this->actingAs($this->user)
+        ->post(route('reports.leger-register.store'), [
+            'supplier_id' => $this->supplier->id,
+            'transaction_date' => '2026-02-02',
+            'document_type' => DocumentType::Dz->value,
+            'online_amount' => 5000000,
+        ])
+        ->assertRedirect();
+
+    $this->assertDatabaseHas('leger_registers', [
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-02-02',
+        'document_type' => DocumentType::Dz->value,
+        'online_amount' => 5000000,
+    ]);
+});
+
+test('can update a leger register entry', function () {
+    $entry = LegerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-02-02',
+        'online_amount' => 5000000,
+    ]);
+
+    $this->actingAs($this->user)
+        ->put(route('reports.leger-register.update', $entry), [
+            'supplier_id' => $this->supplier->id,
+            'transaction_date' => '2026-02-02',
+            'document_type' => DocumentType::Dz->value,
+            'online_amount' => 7000000,
+        ])
+        ->assertRedirect();
+
+    $entry->refresh();
+    expect((float) $entry->online_amount)->toBe(7000000.00);
+});
+
+test('can delete a leger register entry', function () {
+    $entry = LegerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-02-02',
+        'online_amount' => 5000000,
+    ]);
+
+    $this->actingAs($this->user)
+        ->delete(route('reports.leger-register.destroy', $entry))
+        ->assertRedirect();
+
+    $this->assertSoftDeleted('leger_registers', ['id' => $entry->id]);
+});
+
+test('balance recalculates correctly after store', function () {
+    // First entry: Online 5M
+    $this->actingAs($this->user)
+        ->post(route('reports.leger-register.store'), [
+            'supplier_id' => $this->supplier->id,
+            'transaction_date' => '2026-02-01',
+            'document_type' => DocumentType::Dz->value,
+            'online_amount' => 5000000,
+        ]);
+
+    // Second entry: Invoice 2M with ZA 10000
+    $this->actingAs($this->user)
+        ->post(route('reports.leger-register.store'), [
+            'supplier_id' => $this->supplier->id,
+            'transaction_date' => '2026-02-02',
+            'document_type' => DocumentType::Dr->value,
+            'document_number' => '1073527835',
+            'invoice_amount' => 2000000,
+            'za_point_five_percent_amount' => 10000,
+        ]);
+
+    $entries = LegerRegister::where('supplier_id', $this->supplier->id)
+        ->orderBy('transaction_date')
+        ->orderBy('id')
+        ->get();
+
+    // First entry balance: 0 + 5000000 = 5000000
+    expect((float) $entries[0]->balance)->toBe(5000000.00);
+    // Second entry balance: 5000000 - 2000000 + 10000 = 3010000
+    expect((float) $entries[1]->balance)->toBe(3010000.00);
+});
+
+test('balance recalculates correctly after update', function () {
+    $entry1 = LegerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-02-01',
+        'online_amount' => 5000000,
+    ]);
+    $entry2 = LegerRegister::factory()->invoice()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-02-02',
+        'invoice_amount' => 2000000,
+        'za_point_five_percent_amount' => 10000,
+    ]);
+    LegerRegister::recalculateBalances($this->supplier->id);
+
+    // Update first entry to 3M
+    $this->actingAs($this->user)
+        ->put(route('reports.leger-register.update', $entry1), [
+            'supplier_id' => $this->supplier->id,
+            'transaction_date' => '2026-02-01',
+            'document_type' => DocumentType::Dz->value,
+            'online_amount' => 3000000,
+        ]);
+
+    $entry1->refresh();
+    $entry2->refresh();
+
+    // First entry balance: 0 + 3000000 = 3000000
+    expect((float) $entry1->balance)->toBe(3000000.00);
+    // Second entry balance: 3000000 - 2000000 + 10000 = 1010000
+    expect((float) $entry2->balance)->toBe(1010000.00);
+});
+
+test('balance recalculates correctly after delete', function () {
+    $entry1 = LegerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-02-01',
+        'online_amount' => 5000000,
+    ]);
+    $entry2 = LegerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-02-02',
+        'online_amount' => 3000000,
+    ]);
+    $entry3 = LegerRegister::factory()->invoice()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-02-03',
+        'invoice_amount' => 1000000,
+        'za_point_five_percent_amount' => 5000,
+    ]);
+    LegerRegister::recalculateBalances($this->supplier->id);
+
+    // Delete middle entry
+    $this->actingAs($this->user)
+        ->delete(route('reports.leger-register.destroy', $entry2));
+
+    $entry1->refresh();
+    $entry3->refresh();
+
+    // First entry balance: 0 + 5000000 = 5000000
+    expect((float) $entry1->balance)->toBe(5000000.00);
+    // Third entry balance: 5000000 - 1000000 + 5000 = 4005000 (skips deleted entry2)
+    expect((float) $entry3->balance)->toBe(4005000.00);
+});
+
+test('store requires authentication', function () {
+    $this->post(route('reports.leger-register.store'), [
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-02-02',
+        'document_type' => DocumentType::Dz->value,
+        'online_amount' => 5000000,
+    ])->assertRedirect(route('login'));
+});
+
+test('store requires manage permission', function () {
+    $viewOnlyUser = User::factory()->create();
+    $viewOnlyUser->givePermissionTo('report-audit-leger-register');
+
+    $this->actingAs($viewOnlyUser)
+        ->post(route('reports.leger-register.store'), [
+            'supplier_id' => $this->supplier->id,
+            'transaction_date' => '2026-02-02',
+            'document_type' => DocumentType::Dz->value,
+            'online_amount' => 5000000,
+        ])
+        ->assertForbidden();
+});
+
+test('store validates required fields', function () {
+    $this->actingAs($this->user)
+        ->post(route('reports.leger-register.store'), [])
+        ->assertSessionHasErrors(['supplier_id', 'transaction_date']);
+});

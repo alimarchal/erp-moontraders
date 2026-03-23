@@ -46,6 +46,7 @@ use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\GoodsIssueReportController;
 use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\InventoryLedgerReportController;
+use App\Http\Controllers\Reports\LegerRegisterController;
 use App\Http\Controllers\Reports\PercentageExpenseReportController;
 use App\Http\Controllers\Reports\RoiReportController;
 use App\Http\Controllers\Reports\SalesmanStockRegisterController;
@@ -647,5 +648,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('scheme-discount', [SchemeDiscountReportController::class, 'index'])->name('scheme-discount.index');
         Route::get('percentage-expense', [PercentageExpenseReportController::class, 'index'])->name('percentage-expense.index');
         Route::get('advance-tax', [AdvanceTaxReportController::class, 'index'])->name('advance-tax.index');
+
+        /* Supplier Ledger Register */
+        Route::prefix('leger-register')->name('leger-register.')->group(function () {
+            Route::get('/', [LegerRegisterController::class, 'index'])->name('index');
+            Route::post('/', [LegerRegisterController::class, 'store'])->name('store');
+            Route::put('/{legerRegister}', [LegerRegisterController::class, 'update'])->name('update');
+            Route::delete('/{legerRegister}', [LegerRegisterController::class, 'destroy'])->name('destroy');
+        });
     });
 });

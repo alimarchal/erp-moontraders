@@ -464,6 +464,51 @@
                     </div>
                 @endcanany
 
+                <!-- Supplier -->
+                @canany(['report-audit-leger-register'])
+                    <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
+                        <button @click="open = !open" type="button"
+                            class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-8 rounded-full bg-teal-500"></div>
+                                <h3 class="text-lg font-bold text-gray-800">Supplier</h3>
+                            </div>
+                            <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
+                                :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-collapse>
+                            <div class="border-t border-gray-100 divide-y divide-gray-100">
+                                @can('report-audit-leger-register')
+                                    <a href="{{ route('reports.leger-register.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Supplier Ledger Register</div>
+                                                <div class="text-xs text-gray-500">Supplier transaction ledger with running balance</div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+                            </div>
+                        </div>
+                    </div>
+                @endcanany
+
                 <!-- Sales & Revenue -->
                 @canany(['report-sales-daily-sales', 'report-sales-credit-sales', 'report-sales-settlement', 'report-sales-roi', 'report-sales-fmr-amr-comparison', 'report-sales-scheme-discount'])
                     <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">

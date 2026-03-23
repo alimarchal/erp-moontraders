@@ -17,6 +17,7 @@ class ProductSeeder extends Seeder
 
         if (! file_exists($jsonPath)) {
             $this->command->warn('⚠️  sku.json not found. Skipping product seeding.');
+
             return;
         }
 
@@ -56,23 +57,25 @@ class ProductSeeder extends Seeder
                     $salesUomId = null;
                 }
 
-                Product::create([
-                    'product_code' => $productData['product_code'],
-                    'product_name' => $productData['product_name'],
-                    'description' => $productData['description'] ?? null,
-                    'supplier_id' => $supplierId,
-                    'brand' => $productData['brand'] ?? null,
-                    'pack_size' => $productData['pack_size'] ?? null,
-                    'uom_id' => $uomId,
-                    'sales_uom_id' => $salesUomId,
-                    'uom_conversion_factor' => $productData['uom_conversion_factor'] ?? 1,
-                    'cost_price' => $productData['cost_price'] ?? 0,
-                    'unit_sell_price' => $productData['unit_sell_price'] ?? $productData['unit_sell_price'] ?? 0,
-                    'expiry_price' => $productData['expiry_price'] ??  $productData['unit_sell_price'] ?? 0,
-                    'valuation_method' => $productData['valuation_method'] ?? 'FIFO',
-                    'is_powder' => $productData['is_powder'] ?? false,
-                    'is_active' => $productData['is_active'] ?? true,
-                ]);
+                Product::updateOrCreate(
+                    ['product_code' => $productData['product_code']],
+                    [
+                        'product_name' => $productData['product_name'],
+                        'description' => $productData['description'] ?? null,
+                        'supplier_id' => $supplierId,
+                        'brand' => $productData['brand'] ?? null,
+                        'pack_size' => $productData['pack_size'] ?? null,
+                        'uom_id' => $uomId,
+                        'sales_uom_id' => $salesUomId,
+                        'uom_conversion_factor' => $productData['uom_conversion_factor'] ?? 1,
+                        'cost_price' => $productData['cost_price'] ?? 0,
+                        'unit_sell_price' => $productData['unit_sell_price'] ?? $productData['unit_sell_price'] ?? 0,
+                        'expiry_price' => $productData['expiry_price'] ?? $productData['unit_sell_price'] ?? 0,
+                        'valuation_method' => $productData['valuation_method'] ?? 'FIFO',
+                        'is_powder' => $productData['is_powder'] ?? false,
+                        'is_active' => $productData['is_active'] ?? true,
+                    ]
+                );
             }
 
             DB::commit();

@@ -17,7 +17,6 @@ class ProductSeeder extends Seeder
 
         if (! file_exists($jsonPath)) {
             $this->command->warn('⚠️  sku.json not found. Skipping product seeding.');
-
             return;
         }
 

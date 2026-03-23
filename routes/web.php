@@ -28,6 +28,7 @@ use App\Http\Controllers\EmployeeSalaryTransactionController;
 use App\Http\Controllers\GoodsIssueController;
 use App\Http\Controllers\GoodsReceiptNoteController;
 use App\Http\Controllers\JournalEntryController;
+use App\Http\Controllers\OpeningCustomerBalanceController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductTaxMappingController;
@@ -48,6 +49,7 @@ use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\InventoryLedgerReportController;
 use App\Http\Controllers\Reports\InvoiceSummaryReportController;
 use App\Http\Controllers\Reports\LegerRegisterController;
+use App\Http\Controllers\Reports\OpeningCustomerBalanceReportController;
 use App\Http\Controllers\Reports\PercentageExpenseReportController;
 use App\Http\Controllers\Reports\RoiReportController;
 use App\Http\Controllers\Reports\SalesmanStockRegisterController;
@@ -368,6 +370,21 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     /*
     |----------------------------------------------------------------------
+    | Opening Customer Balances (per salesman)
+    |----------------------------------------------------------------------
+    | CRUD for opening customer balances per employee/salesman.
+    | Creates CustomerEmployeeAccount + opening_balance transaction via LedgerService.
+    | Permissions: opening-customer-balance-list, -create, -edit, -delete
+    */
+    Route::post('opening-customer-balances/manual', [OpeningCustomerBalanceController::class, 'storeManual'])
+        ->name('opening-customer-balances.store-manual');
+    Route::post('opening-customer-balances/{opening_customer_balance}/post', [OpeningCustomerBalanceController::class, 'post'])
+        ->name('opening-customer-balances.post');
+    Route::resource('opening-customer-balances', OpeningCustomerBalanceController::class)
+        ->except(['store']);
+
+    /*
+    |----------------------------------------------------------------------
     | Inventory — Goods Receipt Notes (GRN)
     |----------------------------------------------------------------------
     | Inbound inventory from suppliers. Post creates journal entries and
@@ -647,6 +664,16 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             Route::post('/', [ClaimRegisterReportController::class, 'store'])->name('store');
             Route::put('/{claimRegister}', [ClaimRegisterReportController::class, 'update'])->name('update');
             Route::delete('/{claimRegister}', [ClaimRegisterReportController::class, 'destroy'])->name('destroy');
+        });
+
+        /* Opening Customer Balance */
+        Route::prefix('opening-customer-balance')->name('opening-customer-balance.')->group(function () {
+            Route::get('/', [OpeningCustomerBalanceReportController::class, 'index'])->name('index');
+            Route::get('/export/excel', [OpeningCustomerBalanceReportController::class, 'exportExcel'])->name('export.excel');
+            Route::post('/', [OpeningCustomerBalanceReportController::class, 'store'])->name('store');
+            Route::put('/{openingCustomerBalance}', [OpeningCustomerBalanceReportController::class, 'update'])->name('update');
+            Route::post('/{openingCustomerBalance}/post', [OpeningCustomerBalanceReportController::class, 'post'])->name('post');
+            Route::delete('/{openingCustomerBalance}', [OpeningCustomerBalanceReportController::class, 'destroy'])->name('destroy');
         });
 
         /* Analytics & Tax */

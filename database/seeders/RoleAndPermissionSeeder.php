@@ -40,6 +40,7 @@ class RoleAndPermissionSeeder extends Seeder
 
             // Inventory & Production
             'opening-stock' => ['create'],
+            'opening-customer-balance' => ['list', 'create', 'edit', 'delete', 'post'],
             'goods-receipt-note' => ['list', 'create', 'edit', 'delete', 'post', 'reverse', 'import', 'view-own', 'view-all'],
             'goods-issue' => ['list', 'create', 'edit', 'delete', 'post', 'view-own', 'view-all', 'carton-entry'],
             'stock-transfer' => ['list', 'create', 'edit', 'delete', 'post'],
@@ -72,7 +73,7 @@ class RoleAndPermissionSeeder extends Seeder
             'report-inventory' => ['daily-stock-register', 'salesman-stock-register', 'inventory-ledger', 'van-stock-batch', 'van-stock-ledger'],
 
             // Reports - Audit & Operational (granular per report)
-            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'claim-register', 'advance-tax', 'percentage-expense', 'leger-register', 'leger-register-manage', 'invoice-summary', 'invoice-summary-manage'],
+            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'claim-register', 'advance-tax', 'percentage-expense', 'leger-register', 'leger-register-manage', 'invoice-summary', 'invoice-summary-manage', 'opening-customer-balance'],
 
             // Settings & Navigation
             'setting' => ['view', 'update'],

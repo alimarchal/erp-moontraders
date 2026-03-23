@@ -27,6 +27,9 @@ class CustomerEmployeeAccountTransaction extends Model
         'bank_account_id',
         'notes',
         'created_by',
+        'journal_entry_id',
+        'posted_at',
+        'posted_by',
     ];
 
     protected $casts = [
@@ -34,6 +37,7 @@ class CustomerEmployeeAccountTransaction extends Model
         'cheque_date' => 'date',
         'debit' => 'decimal:2',
         'credit' => 'decimal:2',
+        'posted_at' => 'datetime',
     ];
 
     /**
@@ -57,6 +61,21 @@ class CustomerEmployeeAccountTransaction extends Model
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function journalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class);
+    }
+
+    public function postedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'posted_by');
+    }
+
+    public function isPosted(): bool
+    {
+        return $this->posted_at !== null;
     }
 
     /**

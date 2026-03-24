@@ -44,12 +44,19 @@ class CreditSalesReportController extends Controller implements HasMiddleware
 
         $query = Employee::query()
             ->select('employees.*')
-            // Opening Balance: sum of (debit - credit) for all transactions BEFORE start_date
-            ->selectSub(function ($query) use ($startDate) {
+            // Opening Balance: sum of (debit - credit) for all transactions BEFORE start_date,
+            // PLUS any 'opening_balance' type transactions within the period (historical data entry)
+            ->selectSub(function ($query) use ($startDate, $endDate) {
                 $query->from('customer_employee_account_transactions as ceat')
                     ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
                     ->whereColumn('cea.employee_id', 'employees.id')
-                    ->where('ceat.transaction_date', '<', $startDate)
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->where('ceat.transaction_date', '<', $startDate)
+                            ->orWhere(function ($q2) use ($startDate, $endDate) {
+                                $q2->where('ceat.transaction_type', 'opening_balance')
+                                    ->whereBetween('ceat.transaction_date', [$startDate, $endDate]);
+                            });
+                    })
                     ->whereNull('ceat.deleted_at')
                     ->selectRaw('COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0)');
             }, 'opening_balance')
@@ -178,7 +185,7 @@ class CreditSalesReportController extends Controller implements HasMiddleware
 
         $totals = DB::table('customer_employee_account_transactions as ceat')
             ->whereNull('ceat.deleted_at')
-            ->selectRaw('SUM(CASE WHEN ceat.transaction_date < ? THEN (ceat.debit - ceat.credit) ELSE 0 END) as total_opening_balance', [$startDate])
+            ->selectRaw('SUM(CASE WHEN ceat.transaction_date < ? OR (ceat.transaction_type = \'opening_balance\' AND ceat.transaction_date BETWEEN ? AND ?) THEN (ceat.debit - ceat.credit) ELSE 0 END) as total_opening_balance', [$startDate, $startDate, $endDate])
             ->selectRaw("SUM(CASE WHEN ceat.transaction_type = 'credit_sale' AND ceat.transaction_date BETWEEN ? AND ? THEN ceat.debit ELSE 0 END) as total_credit_sales", [$startDate, $endDate])
             ->selectRaw("SUM(CASE WHEN ceat.transaction_type = 'recovery' AND ceat.transaction_date BETWEEN ? AND ? THEN ceat.credit ELSE 0 END) as total_recoveries", [$startDate, $endDate])
             ->first();

@@ -230,7 +230,6 @@
         $recoveryBank = (float) $settlement->recoveries->where('payment_method', 'bank_transfer')->sum('amount');
         $recoveryTotal = (float) ($settlement->credit_recoveries ?? 0);
         $totalSale = $netSale + $recoveryTotal;
-        $totalSaleAmount = $totalSale;
 
         // Expenses & Taxes
         // Note: Advance tax is already stored as an expense row (account_code 1161),
@@ -520,7 +519,7 @@
     
                             {{-- Recoveries --}}
                             <div>
-                                <h4 class="ffont-bold text-sm border-x border-t border-black  text-center">Recoveries Breakdown</h4>
+                                <h4 class="font-bold text-sm border-x border-t border-black  text-center">Recoveries Breakdown</h4>
                                 <table class="report-table w-full">
                                     <thead>
                                         <tr class="bg-gray-100">
@@ -1279,29 +1278,30 @@
                     <div class="w-full clear-both mt-8 print:mt-16 block h-8 print:h-16" style="clear: both;">&nbsp;</div>
                     
                     @php
-                        // Fetch all accounts for this employee to generate the Credit Report
-                        // We need: Customer Name, Date (Settlement Date), Credit (Today), Recovery (Today), Closing Balance (As of Date)
-
                         $employeeId = $settlement->employee_id;
-                        $settlementDate = $settlement->settlement_date; // Assuming Y-m-d format
+                        $settlementDate = $settlement->settlement_date;
 
-                        // 1. Get all active customers for this salesman
                         $customerAccounts = \App\Models\CustomerEmployeeAccount::with('customer')
                             ->where('employee_id', $employeeId)
                             ->where('status', 'active')
                             ->get();
 
-                        // 2. Pre-fetch this settlement's Credit Sales and Recoveries
                         $settlementCredits = $settlement->creditSales->groupBy('customer_id');
                         $settlementRecoveries = $settlement->recoveries->groupBy('customer_id');
 
-                        // 3. Process data
                         $isPosted = $settlement->status === 'posted';
+                        $accountIds = $customerAccounts->pluck('id');
 
-                        $creditReportData = $customerAccounts->map(function ($account) use ($settlement, $settlementDate, $settlementCredits, $settlementRecoveries, $isPosted) {
+                        $balanceMap = \App\Models\CustomerEmployeeAccountTransaction::query()
+                            ->whereIn('customer_employee_account_id', $accountIds)
+                            ->whereDate('transaction_date', '<=', $settlementDate)
+                            ->groupBy('customer_employee_account_id')
+                            ->selectRaw('customer_employee_account_id, SUM(debit - credit) as balance')
+                            ->pluck('balance', 'customer_employee_account_id');
+
+                        $creditReportData = $customerAccounts->map(function ($account) use ($settlement, $settlementDate, $settlementCredits, $settlementRecoveries, $isPosted, $balanceMap) {
                             $customerId = $account->customer_id;
 
-                            // A. Get Activity strictly for THIS settlement
                             $myCredits = $settlementCredits->get($customerId);
                             $myRecoveries = $settlementRecoveries->get($customerId);
 
@@ -1310,24 +1310,10 @@
                             $hasActivity = ($creditAmount > 0 || $recoveryAmount > 0);
 
                             if ($isPosted) {
-                                // B. Posted: Closing from ACTUAL LEDGER (transactions exist)
-                                $closingBalance = $account->transactions()
-                                    ->where(function ($q) use ($settlement) {
-                                        $q->where('sales_settlement_id', '<=', $settlement->id)
-                                          ->orWhereNull('sales_settlement_id');
-                                    })
-                                    ->whereDate('transaction_date', '<=', $settlementDate)
-                                    ->sum(\DB::raw('debit - credit'));
-
-                                // Opening = Closing - Credit + Recovery
+                                $closingBalance = (float) ($balanceMap[$account->id] ?? 0);
                                 $openingBalance = $closingBalance - $creditAmount + $recoveryAmount;
                             } else {
-                                // C. Draft: No ledger transactions yet, so current ledger = opening
-                                $openingBalance = $account->transactions()
-                                    ->whereDate('transaction_date', '<=', $settlementDate)
-                                    ->sum(\DB::raw('debit - credit'));
-
-                                // Closing = Opening + Credit - Recovery (projected)
+                                $openingBalance = (float) ($balanceMap[$account->id] ?? 0);
                                 $closingBalance = $openingBalance + $creditAmount - $recoveryAmount;
                             }
 
@@ -1342,13 +1328,11 @@
                                 'has_activity' => $hasActivity || abs($closingBalance) > 1
                             ];
                         })->filter(function ($row) {
-                            // Show if there is activity OR non-zero balance
                             return $row->has_activity;
                         })->sortBy('customer_name');
 
                         $totalCreditGiven = $creditReportData->sum('credit_amount');
                         $totalRecoveryReceived = $creditReportData->sum('recovery_amount');
-                        // Closing balance total is sum of all individual closing balances
                         $totalClosingBalance = $creditReportData->sum('balance');
                     @endphp
 

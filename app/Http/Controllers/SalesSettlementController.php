@@ -436,6 +436,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'employee' => $goodsIssue->employee->full_name,
             'employee_id' => $goodsIssue->employee_id,
             'vehicle' => $goodsIssue->vehicle->vehicle_number,
+            'supplier_id' => $goodsIssue->supplier_id,
             'items' => $formattedItems,
         ]);
     }
@@ -1505,7 +1506,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
         }
 
         $grossProfit = $totalSalesValue - $totalCogs;
-        $cashSalesAmount = $totalSalesValue - $creditSalesAmount - $totalCheques - $totalBankTransfers;
+        $cashSalesAmount = round($totalSalesValue - $creditSalesAmount - $totalCheques - $totalBankTransfers, 2);
         $cashCollected = $denomTotal;
         $cashToDeposit = $cashCollected;
 

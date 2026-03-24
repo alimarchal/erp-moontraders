@@ -1296,7 +1296,9 @@
                         $settlementRecoveries = $settlement->recoveries->groupBy('customer_id');
 
                         // 3. Process data
-                        $creditReportData = $customerAccounts->map(function ($account) use ($settlement, $settlementDate, $settlementCredits, $settlementRecoveries) {
+                        $isPosted = $settlement->status === 'posted';
+
+                        $creditReportData = $customerAccounts->map(function ($account) use ($settlement, $settlementDate, $settlementCredits, $settlementRecoveries, $isPosted) {
                             $customerId = $account->customer_id;
 
                             // A. Get Activity strictly for THIS settlement
@@ -1307,20 +1309,27 @@
                             $recoveryAmount = $myRecoveries ? $myRecoveries->sum('amount') : 0;
                             $hasActivity = ($creditAmount > 0 || $recoveryAmount > 0);
 
-                            // B. Determine Closing Balance from ACTUAL LEDGER (not stored snapshots)
-                            // The ledger transactions are the single source of truth.
-                            // Closing = sum of all debits - credits for this account up to and including this settlement.
-                            $closingBalance = $account->transactions()
-                                ->where(function ($q) use ($settlement) {
-                                    $q->where('sales_settlement_id', '<=', $settlement->id)
-                                      ->orWhereNull('sales_settlement_id');
-                                })
-                                ->whereDate('transaction_date', '<=', $settlementDate)
-                                ->sum(\DB::raw('debit - credit'));
+                            if ($isPosted) {
+                                // B. Posted: Closing from ACTUAL LEDGER (transactions exist)
+                                $closingBalance = $account->transactions()
+                                    ->where(function ($q) use ($settlement) {
+                                        $q->where('sales_settlement_id', '<=', $settlement->id)
+                                          ->orWhereNull('sales_settlement_id');
+                                    })
+                                    ->whereDate('transaction_date', '<=', $settlementDate)
+                                    ->sum(\DB::raw('debit - credit'));
 
-                            // C. Back-Calculate Opening Balance for THIS settlement
-                            // Opening = Closing - Credit + Recovery
-                            $openingBalance = $closingBalance - $creditAmount + $recoveryAmount;
+                                // Opening = Closing - Credit + Recovery
+                                $openingBalance = $closingBalance - $creditAmount + $recoveryAmount;
+                            } else {
+                                // C. Draft: No ledger transactions yet, so current ledger = opening
+                                $openingBalance = $account->transactions()
+                                    ->whereDate('transaction_date', '<=', $settlementDate)
+                                    ->sum(\DB::raw('debit - credit'));
+
+                                // Closing = Opening + Credit - Recovery (projected)
+                                $closingBalance = $openingBalance + $creditAmount - $recoveryAmount;
+                            }
 
                             return (object) [
                                 'customer_name' => $account->customer->customer_name,

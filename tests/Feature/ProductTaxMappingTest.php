@@ -4,13 +4,14 @@ use App\Models\Product;
 use App\Models\ProductTaxMapping;
 use App\Models\TaxCode;
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
+    $this->withoutMiddleware(PreventRequestForgery::class);
 
     foreach (['tax-list', 'tax-manage-mapping'] as $perm) {
         Permission::create(['name' => $perm]);

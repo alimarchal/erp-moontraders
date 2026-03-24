@@ -3,13 +3,14 @@
 use App\Models\TaxCode;
 use App\Models\TaxRate;
 use App\Models\User;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
+    $this->withoutMiddleware(PreventRequestForgery::class);
 
     foreach (['tax-list', 'tax-create', 'tax-edit', 'tax-delete'] as $perm) {
         Permission::create(['name' => $perm]);

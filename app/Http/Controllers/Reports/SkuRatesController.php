@@ -33,7 +33,7 @@ class SkuRatesController extends Controller implements HasMiddleware
         $perPage = $this->getPerPage($request);
 
         $products = QueryBuilder::for(
-            Product::query()->with(['supplier', 'uom', 'salesUom'])
+            Product::query()->with(['category', 'supplier', 'uom', 'salesUom'])
         )
             ->allowedFilters([
                 AllowedFilter::partial('product_name'),
@@ -41,6 +41,7 @@ class SkuRatesController extends Controller implements HasMiddleware
                 AllowedFilter::exact('category_id'),
                 AllowedFilter::partial('barcode'),
                 AllowedFilter::partial('pack_size'),
+                AllowedFilter::exact('expiry_price'),
                 AllowedFilter::exact('supplier_id'),
                 AllowedFilter::exact('uom_id'),
                 AllowedFilter::exact('valuation_method'),

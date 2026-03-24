@@ -24,6 +24,15 @@
                 display: none;
             }
 
+            .sku-link {
+                color: inherit;
+                text-decoration: none;
+            }
+
+            .sku-link:hover {
+                text-decoration: underline;
+            }
+
             @media print {
                 @page {
                     margin: 15mm 10mm 20mm 10mm;
@@ -90,6 +99,13 @@
                 .page-footer {
                     display: none;
                 }
+
+                .sku-link,
+                .sku-link:visited,
+                .sku-link:hover {
+                    color: #000 !important;
+                    text-decoration: none !important;
+                }
             }
         </style>
     @endpush
@@ -145,6 +161,12 @@
                 <x-label for="filter_pack_size" value="Pack Size" />
                 <x-input id="filter_pack_size" name="filter[pack_size]" type="text" class="mt-1 block w-full"
                     :value="request('filter.pack_size')" placeholder="Search pack size" />
+            </div>
+
+            <div>
+                <x-label for="filter_expiry_price" value="Expiry Price" />
+                <x-input id="filter_expiry_price" name="filter[expiry_price]" type="number" step="0.01" min="0"
+                    class="mt-1 block w-full" :value="request('filter.expiry_price')" placeholder="0.00" />
             </div>
 
             <div>
@@ -222,6 +244,7 @@
                             <th style="width: 80px;">Units</th>
                             <th style="width: 100px;">Invoice Price</th>
                             <th style="width: 100px;">Retail Price</th>
+                            <th style="width: 100px;">Expiry Price</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -241,7 +264,11 @@
                                         </td>
                                     @endif
                                     <td style="vertical-align: middle;">{{ $product->category->name ?? '-' }}</td>
-                                    <td style="vertical-align: middle;">{{ $product->product_code }}</td>
+                                    <td style="vertical-align: middle;">
+                                        <a href="{{ route('products.edit', $product) }}" class="sku-link">
+                                            {{ $product->product_code }}
+                                        </a>
+                                    </td>
                                     <td class="text-center" style="vertical-align: middle;">
                                         {{ number_format($product->uom_conversion_factor, 3) }}
                                     </td>
@@ -251,11 +278,14 @@
                                     <td class="text-right" style="vertical-align: middle;">
                                         {{ number_format($product->unit_sell_price, 2) }}
                                     </td>
+                                    <td class="text-right" style="vertical-align: middle;">
+                                        {{ number_format((float) $product->expiry_price, 2) }}
+                                    </td>
                                 </tr>
                             @endforeach
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center py-4 text-gray-500">No records found.</td>
+                                <td colspan="8" class="text-center py-4 text-gray-500">No records found.</td>
                             </tr>
                         @endforelse
                     </tbody>

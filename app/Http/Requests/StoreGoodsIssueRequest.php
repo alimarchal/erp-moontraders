@@ -83,6 +83,8 @@ class StoreGoodsIssueRequest extends FormRequest
                 },
             ],
             'employee_id' => 'required|exists:employees,id',
+            'supplier_ids' => 'required|array|min:1',
+            'supplier_ids.*' => 'required|exists:suppliers,id',
             'notes' => 'nullable|string',
 
             'items' => 'required|array|min:1',

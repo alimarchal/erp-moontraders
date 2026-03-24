@@ -227,8 +227,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 $totalQuantity += $item['quantity_issued'];
             }
 
-            // Get supplier_id from employee
-            $employee = Employee::findOrFail($request->employee_id);
+            // Get supplier_id from form submission, fallback to employee's supplier
+            $supplierId = $request->input('supplier_ids.0') ?? Employee::findOrFail($request->employee_id)->supplier_id;
 
             // Create goods issue
             $goodsIssue = GoodsIssue::create([
@@ -237,7 +237,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 'warehouse_id' => $request->warehouse_id,
                 'vehicle_id' => $request->vehicle_id,
                 'employee_id' => $request->employee_id,
-                'supplier_id' => $employee->supplier_id,
+                'supplier_id' => $supplierId,
                 'issued_by' => auth()->id(),
                 // Resolve default GL accounts from COA codes for this row (stored on the record)
                 'stock_in_hand_account_id' => optional(\App\Models\ChartOfAccount::where('account_code', '1151')->first())->id,

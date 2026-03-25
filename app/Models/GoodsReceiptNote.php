@@ -48,6 +48,7 @@ class GoodsReceiptNote extends Model
         'grand_total' => 'decimal:2',
         'posted_at' => 'datetime',
         'reversed_at' => 'datetime',
+        'is_opening_stock' => 'boolean',
     ];
 
     public function supplier(): BelongsTo
@@ -87,12 +88,12 @@ class GoodsReceiptNote extends Model
 
     public function paymentAllocations(): HasMany
     {
-        return $this->hasMany(\App\Models\PaymentGrnAllocation::class, 'grn_id');
+        return $this->hasMany(PaymentGrnAllocation::class, 'grn_id');
     }
 
     public function payments()
     {
-        return $this->belongsToMany(\App\Models\SupplierPayment::class, 'payment_grn_allocations', 'grn_id', 'supplier_payment_id')
+        return $this->belongsToMany(SupplierPayment::class, 'payment_grn_allocations', 'grn_id', 'supplier_payment_id')
             ->withPivot('allocated_amount');
     }
 

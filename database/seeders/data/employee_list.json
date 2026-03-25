@@ -26,7 +26,7 @@
     "warehouse_id": null,
     "company": "Nestlé Pakistan",
     "name": "Sadiq Naseer",
-    "designation": "Supervisor",
+    "designation": "Market Supervisor",
     "phone": "0343-5436834"
   },
   {
@@ -36,7 +36,7 @@
     "warehouse_id": null,
     "company": "Nestlé Pakistan",
     "name": "Farrukh Shah",
-    "designation": "Store Keeper",
+    "designation": "KPO",
     "phone": "0302-8344100"
   },
   {
@@ -165,7 +165,7 @@
     "supplier_id": 3,
     "warehouse_id": null,
     "company": "Nestlé Pakistan",
-    "name": "Taveer Malik",
+    "name": "Tanveer Malik",
     "designation": "Deliveryman",
     "phone": "0344-5920529"
   },
@@ -315,9 +315,9 @@
     "supplier_id": 3,
     "warehouse_id": null,
     "company": "Nestlé Pakistan",
-    "name": "Asim Choudry",
+    "name": "Rameez Fiaz",
     "designation": "Helper",
-    "phone": "0311-8956635"
+    "phone": "0346-9651826"
   },
   {
     "serial": 33,
@@ -402,6 +402,26 @@
   {
     "serial": 41,
     "company_id": 1,
+    "supplier_id": 3,
+    "warehouse_id": null,
+    "company": "Nestlé Pakistan",
+    "name": "Altaf Hussan",
+    "designation": "Driver",
+    "phone": "0355-8450520"
+  },
+  {
+    "serial": 42,
+    "company_id": 1,
+    "supplier_id": 3,
+    "warehouse_id": null,
+    "company": "Nestlé Pakistan",
+    "name": "Waleed Khan",
+    "designation": "KPO",
+    "phone": "0340-8446531"
+  },
+  {
+    "serial": 43,
+    "company_id": 1,
     "supplier_id": 2,
     "warehouse_id": null,
     "company": "Mezan Oil & Ghee",
@@ -410,7 +430,7 @@
     "phone": "0312-9046346"
   },
   {
-    "serial": 42,
+    "serial": 44,
     "company_id": 1,
     "supplier_id": 2,
     "warehouse_id": null,
@@ -420,7 +440,7 @@
     "phone": "0332-8973937"
   },
   {
-    "serial": 43,
+    "serial": 45,
     "company_id": 1,
     "supplier_id": 2,
     "warehouse_id": null,
@@ -430,7 +450,7 @@
     "phone": "0346-5172823"
   },
   {
-    "serial": 44,
+    "serial": 46,
     "company_id": 1,
     "supplier_id": 2,
     "warehouse_id": null,
@@ -440,7 +460,7 @@
     "phone": "0311-9769985"
   },
   {
-    "serial": 45,
+    "serial": 47,
     "company_id": 1,
     "supplier_id": 2,
     "warehouse_id": null,
@@ -450,7 +470,7 @@
     "phone": "Nil"
   },
   {
-    "serial": 46,
+    "serial": 48,
     "company_id": 1,
     "supplier_id": 2,
     "warehouse_id": null,
@@ -460,7 +480,7 @@
     "phone": "0319-5985465"
   },
   {
-    "serial": 47,
+    "serial": 49,
     "company_id": 1,
     "supplier_id": 2,
     "warehouse_id": null,
@@ -470,7 +490,7 @@
     "phone": "0341-1500220"
   },
   {
-    "serial": 48,
+    "serial": 50,
     "company_id": 1,
     "supplier_id": 2,
     "warehouse_id": null,
@@ -480,7 +500,7 @@
     "phone": "0345-9095249"
   },
   {
-    "serial": 49,
+    "serial": 51,
     "company_id": 1,
     "supplier_id": 7,
     "warehouse_id": null,
@@ -490,27 +510,27 @@
     "phone": "0334-8523969"
   },
   {
-    "serial": 50,
+    "serial": 52,
     "company_id": 1,
     "supplier_id": 7,
     "warehouse_id": null,
     "company": "Kausar Oil & Ghee",
     "name": "Sheikh Abdul Rahmen",
-    "designation": "Salesman",
+    "designation": "Deliveryman",
     "phone": "0311-6713334"
   },
   {
-    "serial": 51,
+    "serial": 53,
     "company_id": 1,
     "supplier_id": 7,
     "warehouse_id": null,
     "company": "Kausar Oil & Ghee",
     "name": "Mubashir Hussain",
-    "designation": "Salesman",
+    "designation": "Deliveryman",
     "phone": "0345-1958973"
   },
   {
-    "serial": 52,
+    "serial": 54,
     "company_id": 1,
     "supplier_id": 7,
     "warehouse_id": null,
@@ -520,7 +540,7 @@
     "phone": "0344-5152027"
   },
   {
-    "serial": 53,
+    "serial": 55,
     "company_id": 1,
     "supplier_id": 7,
     "warehouse_id": null,
@@ -530,7 +550,7 @@
     "phone": "0347-5436896"
   },
   {
-    "serial": 54,
+    "serial": 56,
     "company_id": 1,
     "supplier_id": 7,
     "warehouse_id": null,
@@ -540,7 +560,7 @@
     "phone": "0303-0810479"
   },
   {
-    "serial": 55,
+    "serial": 57,
     "company_id": 1,
     "supplier_id": 7,
     "warehouse_id": null,
@@ -550,7 +570,7 @@
     "phone": "0312-9222504"
   },
   {
-    "serial": 56,
+    "serial": 58,
     "company_id": 1,
     "supplier_id": 7,
     "warehouse_id": null,
@@ -560,7 +580,7 @@
     "phone": "0317-3963927"
   },
   {
-    "serial": 57,
+    "serial": 59,
     "company_id": 1,
     "supplier_id": 4,
     "warehouse_id": null,
@@ -570,34 +590,14 @@
     "phone": "0311-8939992"
   },
   {
-    "serial": 58,
-    "company_id": 1,
-    "supplier_id": 4,
-    "warehouse_id": null,
-    "company": "Engro Corporation",
-    "name": "Arsalan Khalid",
-    "designation": "OB",
-    "phone": "0334-5391650"
-  },
-  {
-    "serial": 59,
-    "company_id": 1,
-    "supplier_id": 4,
-    "warehouse_id": null,
-    "company": "Engro Corporation",
-    "name": "Inzamam Ahmed",
-    "designation": "OB",
-    "phone": "0300-8855296"
-  },
-  {
     "serial": 60,
     "company_id": 1,
     "supplier_id": 4,
     "warehouse_id": null,
     "company": "Engro Corporation",
-    "name": "Faizan Aftab",
-    "designation": "OB",
-    "phone": "0370-0128118"
+    "name": "Arsalan Khalid",
+    "designation": "Order Booker",
+    "phone": "0334-5391650"
   },
   {
     "serial": 61,
@@ -605,9 +605,9 @@
     "supplier_id": 4,
     "warehouse_id": null,
     "company": "Engro Corporation",
-    "name": "Raza Ali Feroz",
-    "designation": "OB",
-    "phone": "0341-8874380"
+    "name": "Inzamam Ahmed",
+    "designation": "Order Booker",
+    "phone": "0300-8855296"
   },
   {
     "serial": 62,
@@ -615,9 +615,9 @@
     "supplier_id": 4,
     "warehouse_id": null,
     "company": "Engro Corporation",
-    "name": "Azkar Shah",
-    "designation": "DM",
-    "phone": "0347-5064410"
+    "name": "Faizan Aftab",
+    "designation": "Order Booker",
+    "phone": "0370-0128118"
   },
   {
     "serial": 63,
@@ -625,9 +625,9 @@
     "supplier_id": 4,
     "warehouse_id": null,
     "company": "Engro Corporation",
-    "name": "Adnan Awan",
-    "designation": "DM",
-    "phone": "0341-5558439"
+    "name": "Raza Ali Feroz",
+    "designation": "Order Booker",
+    "phone": "0341-8874380"
   },
   {
     "serial": 64,
@@ -635,12 +635,32 @@
     "supplier_id": 4,
     "warehouse_id": null,
     "company": "Engro Corporation",
-    "name": "Seerat Abbas",
-    "designation": "DM",
-    "phone": "0314-4925112"
+    "name": "Rabat Mughal",
+    "designation": "Driver",
+    "phone": "0334-8082320"
   },
   {
     "serial": 65,
+    "company_id": 1,
+    "supplier_id": 4,
+    "warehouse_id": null,
+    "company": "Engro Corporation",
+    "name": "Adnan Awan",
+    "designation": "Deliveryman",
+    "phone": "0341-5558439"
+  },
+  {
+    "serial": 66,
+    "company_id": 1,
+    "supplier_id": 4,
+    "warehouse_id": null,
+    "company": "Engro Corporation",
+    "name": "Seerat Abbas",
+    "designation": "Deliveryman",
+    "phone": "0314-4925112"
+  },
+  {
+    "serial": 67,
     "company_id": 1,
     "supplier_id": 4,
     "warehouse_id": null,
@@ -650,17 +670,17 @@
     "phone": "0345-9716536"
   },
   {
-    "serial": 66,
+    "serial": 68,
     "company_id": 1,
     "supplier_id": 4,
     "warehouse_id": null,
     "company": "Engro Corporation",
     "name": "Zeeshan Ismail",
-    "designation": "Driver",
+    "designation": "Deliveryman",
     "phone": "0311-7620776"
   },
   {
-    "serial": 67,
+    "serial": 69,
     "company_id": 1,
     "supplier_id": 4,
     "warehouse_id": null,
@@ -670,7 +690,7 @@
     "phone": "0340-1538915"
   },
   {
-    "serial": 68,
+    "serial": 70,
     "company_id": 1,
     "supplier_id": 4,
     "warehouse_id": null,
@@ -680,7 +700,7 @@
     "phone": "0340-7173603"
   },
   {
-    "serial": 69,
+    "serial": 71,
     "company_id": 1,
     "supplier_id": 4,
     "warehouse_id": null,
@@ -690,7 +710,7 @@
     "phone": "0346-8719381"
   },
   {
-    "serial": 70,
+    "serial": 72,
     "company_id": 1,
     "supplier_id": 4,
     "warehouse_id": null,
@@ -700,7 +720,7 @@
     "phone": "0355-8017477"
   },
   {
-    "serial": 71,
+    "serial": 73,
     "company_id": 1,
     "supplier_id": 4,
     "warehouse_id": null,
@@ -710,147 +730,147 @@
     "phone": "0311-5422717"
   },
   {
-    "serial": 72,
-    "company_id": 1,
-    "supplier_id": 10,
-    "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "RABIA MUMTAZ KHAN",
-    "designation": "KPO",
-    "phone": "0340-5047086"
-  },
-  {
-    "serial": 73,
-    "company_id": 1,
-    "supplier_id": 10,
-    "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "SHAFIQUE MASTANVI",
-    "designation": "FSO",
-    "phone": "0312-9592755"
-  },
-  {
     "serial": 74,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "JABRAN SHAH",
-    "designation": "SALESMAN",
-    "phone": "0346-9633377"
+    "company": "Pakistan Tobbaco Company",
+    "name": "RABIA MUMTAZ KHAN",
+    "designation": "KPO",
+    "phone": "0340-5047086"
   },
   {
     "serial": 75,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "ZAHID SHAH",
-    "designation": "SALESMAN",
-    "phone": "0346-3040607"
+    "company": "Pakistan Tobbaco Company",
+    "name": "SHAFIQUE MASTANVI",
+    "designation": "FSO",
+    "phone": "0312-9592755"
   },
   {
     "serial": 76,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "YASIR MEHMOOD",
-    "designation": "SALESMAN",
-    "phone": "0345-5548974"
+    "company": "Pakistan Tobbaco Company",
+    "name": "JABRAN SHAH",
+    "designation": "Deliveryman",
+    "phone": "0346-9633377"
   },
   {
     "serial": 77,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "TASLEEM CHOUDARY",
-    "designation": "SALESMAN",
-    "phone": "0346-5270128"
+    "company": "Pakistan Tobbaco Company",
+    "name": "ZAHID SHAH",
+    "designation": "Deliveryman",
+    "phone": "0346-3040607"
   },
   {
     "serial": 78,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "ADEEB",
-    "designation": "SALESMAN",
-    "phone": "0342-5535930"
+    "company": "Pakistan Tobbaco Company",
+    "name": "YASIR MEHMOOD",
+    "designation": "Deliveryman",
+    "phone": "0345-5548974"
   },
   {
     "serial": 79,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "KAZIM",
-    "designation": "SALESMAN",
-    "phone": "0355-6091252"
+    "company": "Pakistan Tobbaco Company",
+    "name": "TASLEEM CHOUDARY",
+    "designation": "Deliveryman",
+    "phone": "0346-5270128"
   },
   {
     "serial": 80,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "KHALIQUE",
-    "designation": "SALESMAN",
-    "phone": "0345-9594716"
+    "company": "Pakistan Tobbaco Company",
+    "name": "ADEEB",
+    "designation": "Deliveryman",
+    "phone": "0342-5535930"
   },
   {
     "serial": 81,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "WASEEM",
-    "designation": "SALESMAN",
-    "phone": "0348-7668180"
+    "company": "Pakistan Tobbaco Company",
+    "name": "KAZIM",
+    "designation": "Deliveryman",
+    "phone": "0355-6091252"
   },
   {
     "serial": 82,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "SAFEER SHAH",
-    "designation": "EXTRA SALEMAN",
-    "phone": "0346-6089721"
+    "company": "Pakistan Tobbaco Company",
+    "name": "KHALIQUE",
+    "designation": "Deliveryman",
+    "phone": "0345-9594716"
   },
   {
     "serial": 83,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "MUSSADAQ",
-    "designation": "DRIVER",
-    "phone": "0303-9574227"
+    "company": "Pakistan Tobbaco Company",
+    "name": "WASEEM",
+    "designation": "Deliveryman",
+    "phone": "0348-7668180"
   },
   {
     "serial": 84,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "RAFAQAT SHAH",
-    "designation": "DRIVER",
-    "phone": "0344-2209120"
+    "company": "Pakistan Tobbaco Company",
+    "name": "SAFEER SHAH",
+    "designation": "EXTRA SALEMAN",
+    "phone": "0346-6089721"
   },
   {
     "serial": 85,
     "company_id": 1,
     "supplier_id": 10,
     "warehouse_id": null,
-    "company": "Pakistan Tobacco Company",
-    "name": "ALTAF HUSSAIN",
+    "company": "Pakistan Tobbaco Company",
+    "name": "MUSSADAQ",
     "designation": "DRIVER",
-    "phone": "0355-8450520"
+    "phone": "0303-9574227"
   },
   {
     "serial": 86,
+    "company_id": 1,
+    "supplier_id": 10,
+    "warehouse_id": null,
+    "company": "Pakistan Tobbaco Company",
+    "name": "RAFAQAT SHAH",
+    "designation": "DRIVER",
+    "phone": "0344-2209120"
+  },
+  {
+    "serial": 87,
+    "company_id": 1,
+    "supplier_id": 10,
+    "warehouse_id": null,
+    "company": "Pakistan Tobbaco Company",
+    "name": "Faizan Shah",
+    "designation": "DRIVER",
+    "phone": "0317-9370942"
+  },
+  {
+    "serial": 88,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -860,7 +880,7 @@
     "phone": "0346-9571401"
   },
   {
-    "serial": 87,
+    "serial": 89,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -870,7 +890,7 @@
     "phone": "0340-5225995"
   },
   {
-    "serial": 88,
+    "serial": 90,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -880,7 +900,7 @@
     "phone": "0344-9547159"
   },
   {
-    "serial": 89,
+    "serial": 91,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -890,7 +910,7 @@
     "phone": "0311-8854260"
   },
   {
-    "serial": 90,
+    "serial": 92,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -900,7 +920,7 @@
     "phone": "0348-5158990"
   },
   {
-    "serial": 91,
+    "serial": 93,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -910,7 +930,7 @@
     "phone": "0341-5260063"
   },
   {
-    "serial": 92,
+    "serial": 94,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -920,7 +940,7 @@
     "phone": "0318-4824046"
   },
   {
-    "serial": 93,
+    "serial": 95,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -930,7 +950,7 @@
     "phone": "0311-9743538"
   },
   {
-    "serial": 94,
+    "serial": 96,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -940,7 +960,7 @@
     "phone": "0346-5517617"
   },
   {
-    "serial": 95,
+    "serial": 97,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -950,7 +970,7 @@
     "phone": "0344-8804883"
   },
   {
-    "serial": 96,
+    "serial": 98,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -960,7 +980,7 @@
     "phone": "0317-9469378"
   },
   {
-    "serial": 97,
+    "serial": 99,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -970,7 +990,7 @@
     "phone": "0344-5809471"
   },
   {
-    "serial": 98,
+    "serial": 100,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -980,7 +1000,7 @@
     "phone": "0343-5011759"
   },
   {
-    "serial": 99,
+    "serial": 101,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -990,7 +1010,7 @@
     "phone": "0312-9561132"
   },
   {
-    "serial": 100,
+    "serial": 102,
     "company_id": 1,
     "supplier_id": 1,
     "warehouse_id": null,
@@ -1000,7 +1020,7 @@
     "phone": "0343-5873166"
   },
   {
-    "serial": 101,
+    "serial": 103,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1010,7 +1030,7 @@
     "phone": "0308-1876625"
   },
   {
-    "serial": 102,
+    "serial": 104,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1020,7 +1040,7 @@
     "phone": "0311-8992582"
   },
   {
-    "serial": 103,
+    "serial": 105,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1030,7 +1050,7 @@
     "phone": "0317-5023926"
   },
   {
-    "serial": 104,
+    "serial": 106,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1040,7 +1060,7 @@
     "phone": "0315-5571776"
   },
   {
-    "serial": 105,
+    "serial": 107,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1050,7 +1070,7 @@
     "phone": "0343-1083507"
   },
   {
-    "serial": 106,
+    "serial": 108,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1060,7 +1080,7 @@
     "phone": "0342-5353859"
   },
   {
-    "serial": 107,
+    "serial": 109,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1070,7 +1090,7 @@
     "phone": "0313-1516885"
   },
   {
-    "serial": 108,
+    "serial": 110,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1080,7 +1100,7 @@
     "phone": "0310-9293472"
   },
   {
-    "serial": 109,
+    "serial": 111,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1090,7 +1110,7 @@
     "phone": "0330-9157245"
   },
   {
-    "serial": 110,
+    "serial": 112,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1100,7 +1120,7 @@
     "phone": "0340-8147756"
   },
   {
-    "serial": 111,
+    "serial": 113,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1110,7 +1130,7 @@
     "phone": "0344-2172371"
   },
   {
-    "serial": 112,
+    "serial": 114,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1120,7 +1140,7 @@
     "phone": "0370-0860072"
   },
   {
-    "serial": 113,
+    "serial": 115,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1130,7 +1150,7 @@
     "phone": "0341-5572602"
   },
   {
-    "serial": 114,
+    "serial": 116,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1140,7 +1160,7 @@
     "phone": "0341-5782921"
   },
   {
-    "serial": 115,
+    "serial": 117,
     "company_id": 1,
     "supplier_id": 8,
     "warehouse_id": null,
@@ -1150,7 +1170,7 @@
     "phone": "0343-6271851"
   },
   {
-    "serial": 116,
+    "serial": 118,
     "company_id": 1,
     "supplier_id": 9,
     "warehouse_id": null,
@@ -1160,7 +1180,7 @@
     "phone": "0312-7082864"
   },
   {
-    "serial": 117,
+    "serial": 119,
     "company_id": 1,
     "supplier_id": 9,
     "warehouse_id": null,
@@ -1170,34 +1190,14 @@
     "phone": "0341-5574614"
   },
   {
-    "serial": 118,
-    "company_id": 1,
-    "supplier_id": 9,
-    "warehouse_id": null,
-    "company": "National Foods",
-    "name": "Fasil",
-    "designation": "Salesman",
-    "phone": "0346-9648409"
-  },
-  {
-    "serial": 119,
-    "company_id": 1,
-    "supplier_id": 9,
-    "warehouse_id": null,
-    "company": "National Foods",
-    "name": "Aqib",
-    "designation": "Salesman",
-    "phone": "0343-5011759"
-  },
-  {
     "serial": 120,
     "company_id": 1,
     "supplier_id": 9,
     "warehouse_id": null,
     "company": "National Foods",
-    "name": "Hafeez",
-    "designation": "Salesman",
-    "phone": "0311-8650727"
+    "name": "Fasil",
+    "designation": "Deliveryman",
+    "phone": "0346-9648409"
   },
   {
     "serial": 121,
@@ -1205,9 +1205,9 @@
     "supplier_id": 9,
     "warehouse_id": null,
     "company": "National Foods",
-    "name": "Shafqat",
-    "designation": "OB",
-    "phone": "0342-8384241"
+    "name": "Aqib",
+    "designation": "Deliveryman",
+    "phone": "0343-5011759"
   },
   {
     "serial": 122,
@@ -1215,9 +1215,9 @@
     "supplier_id": 9,
     "warehouse_id": null,
     "company": "National Foods",
-    "name": "Danish",
-    "designation": "OB",
-    "phone": "0343-8855142"
+    "name": "Hafeez",
+    "designation": "Deliveryman",
+    "phone": "0311-8650727"
   },
   {
     "serial": 123,
@@ -1225,9 +1225,9 @@
     "supplier_id": 9,
     "warehouse_id": null,
     "company": "National Foods",
-    "name": "Ikram",
-    "designation": "OB",
-    "phone": "0347-5384258"
+    "name": "Shafqat",
+    "designation": "Order Booker",
+    "phone": "0342-8384241"
   },
   {
     "serial": 124,
@@ -1235,9 +1235,9 @@
     "supplier_id": 9,
     "warehouse_id": null,
     "company": "National Foods",
-    "name": "Amjid",
-    "designation": "OB",
-    "phone": "0346-1084394"
+    "name": "Danish",
+    "designation": "Order Booker",
+    "phone": "0343-8855142"
   },
   {
     "serial": 125,
@@ -1245,12 +1245,32 @@
     "supplier_id": 9,
     "warehouse_id": null,
     "company": "National Foods",
-    "name": "Ahmad",
-    "designation": "OB",
-    "phone": "0305-8969247"
+    "name": "Ikram",
+    "designation": "Order Booker",
+    "phone": "0347-5384258"
   },
   {
     "serial": 126,
+    "company_id": 1,
+    "supplier_id": 9,
+    "warehouse_id": null,
+    "company": "National Foods",
+    "name": "Amjid",
+    "designation": "Order Booker",
+    "phone": "0346-1084394"
+  },
+  {
+    "serial": 127,
+    "company_id": 1,
+    "supplier_id": 9,
+    "warehouse_id": null,
+    "company": "National Foods",
+    "name": "Ahmad",
+    "designation": "Order Booker",
+    "phone": "0305-8969247"
+  },
+  {
+    "serial": 128,
     "company_id": 1,
     "supplier_id": 9,
     "warehouse_id": null,
@@ -1260,7 +1280,7 @@
     "phone": "0344-5123101"
   },
   {
-    "serial": 127,
+    "serial": 129,
     "company_id": 1,
     "supplier_id": 9,
     "warehouse_id": null,
@@ -1270,7 +1290,7 @@
     "phone": "0316-9006539"
   },
   {
-    "serial": 128,
+    "serial": 130,
     "company_id": 1,
     "supplier_id": 9,
     "warehouse_id": null,
@@ -1280,7 +1300,7 @@
     "phone": "0349-6122437"
   },
   {
-    "serial": 129,
+    "serial": 131,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1290,7 +1310,7 @@
     "phone": "0314-4407743"
   },
   {
-    "serial": 130,
+    "serial": 132,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1300,7 +1320,7 @@
     "phone": "0303-9890002"
   },
   {
-    "serial": 131,
+    "serial": 133,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1310,7 +1330,7 @@
     "phone": "0342-5574105"
   },
   {
-    "serial": 132,
+    "serial": 134,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1320,7 +1340,7 @@
     "phone": "0300-9180694"
   },
   {
-    "serial": 133,
+    "serial": 135,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1330,7 +1350,7 @@
     "phone": "0343-7783078"
   },
   {
-    "serial": 134,
+    "serial": 136,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1340,7 +1360,7 @@
     "phone": "0317-5525270"
   },
   {
-    "serial": 135,
+    "serial": 137,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1350,7 +1370,7 @@
     "phone": "0310-9288396"
   },
   {
-    "serial": 136,
+    "serial": 138,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1360,7 +1380,7 @@
     "phone": "0349-5004210"
   },
   {
-    "serial": 137,
+    "serial": 139,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1370,7 +1390,7 @@
     "phone": "0316-9288322"
   },
   {
-    "serial": 138,
+    "serial": 140,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1380,7 +1400,7 @@
     "phone": "0343-9664754"
   },
   {
-    "serial": 139,
+    "serial": 141,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1390,7 +1410,7 @@
     "phone": "0344-8868140"
   },
   {
-    "serial": 140,
+    "serial": 142,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1400,7 +1420,7 @@
     "phone": "0341-9472620"
   },
   {
-    "serial": 141,
+    "serial": 143,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1410,7 +1430,7 @@
     "phone": "0343-3054899"
   },
   {
-    "serial": 142,
+    "serial": 144,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1420,7 +1440,7 @@
     "phone": "0349-8484051"
   },
   {
-    "serial": 143,
+    "serial": 145,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1430,7 +1450,7 @@
     "phone": "0317-5525270"
   },
   {
-    "serial": 144,
+    "serial": 146,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1440,7 +1460,7 @@
     "phone": "0345-9079458"
   },
   {
-    "serial": 145,
+    "serial": 147,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1450,7 +1470,7 @@
     "phone": "0320-3534387"
   },
   {
-    "serial": 146,
+    "serial": 148,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1460,7 +1480,7 @@
     "phone": "0349-8964146"
   },
   {
-    "serial": 147,
+    "serial": 149,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
@@ -1470,34 +1490,14 @@
     "phone": "0310-6646717"
   },
   {
-    "serial": 148,
-    "company_id": 1,
-    "supplier_id": 5,
-    "warehouse_id": null,
-    "company": "Unilever Pakistan",
-    "name": "Hamza Iqbal",
-    "designation": "OB",
-    "phone": "0344-8869203"
-  },
-  {
-    "serial": 149,
-    "company_id": 1,
-    "supplier_id": 5,
-    "warehouse_id": null,
-    "company": "Unilever Pakistan",
-    "name": "Ch Javed",
-    "designation": "OB",
-    "phone": "0341-8836909"
-  },
-  {
     "serial": 150,
     "company_id": 1,
     "supplier_id": 5,
     "warehouse_id": null,
     "company": "Unilever Pakistan",
-    "name": "Saad Sadheer",
-    "designation": "OB",
-    "phone": "0349-5723076"
+    "name": "Hamza Iqbal",
+    "designation": "Order Booker",
+    "phone": "0344-8869203"
   },
   {
     "serial": 151,
@@ -1505,9 +1505,9 @@
     "supplier_id": 5,
     "warehouse_id": null,
     "company": "Unilever Pakistan",
-    "name": "Umair Makhdoom",
-    "designation": "OB",
-    "phone": "0314-5733201"
+    "name": "Ch Javed",
+    "designation": "Order Booker",
+    "phone": "0341-8836909"
   },
   {
     "serial": 152,
@@ -1515,9 +1515,9 @@
     "supplier_id": 5,
     "warehouse_id": null,
     "company": "Unilever Pakistan",
-    "name": "Riaz",
-    "designation": "OB",
-    "phone": "0344-8833933"
+    "name": "Saad Sadheer",
+    "designation": "Order Booker",
+    "phone": "0349-5723076"
   },
   {
     "serial": 153,
@@ -1525,9 +1525,9 @@
     "supplier_id": 5,
     "warehouse_id": null,
     "company": "Unilever Pakistan",
-    "name": "Mansoor Awan",
-    "designation": "Salesman",
-    "phone": "0340-8166686"
+    "name": "Umair Makhdoom",
+    "designation": "Order Booker",
+    "phone": "0314-5733201"
   },
   {
     "serial": 154,
@@ -1535,9 +1535,9 @@
     "supplier_id": 5,
     "warehouse_id": null,
     "company": "Unilever Pakistan",
-    "name": "Ch . Atif",
-    "designation": "Salesman",
-    "phone": "0341-9618396"
+    "name": "Riaz",
+    "designation": "Order Booker",
+    "phone": "0344-8833933"
   },
   {
     "serial": 155,
@@ -1545,9 +1545,9 @@
     "supplier_id": 5,
     "warehouse_id": null,
     "company": "Unilever Pakistan",
-    "name": "Khalid Hussain",
-    "designation": "Salesman",
-    "phone": "0340-8203027"
+    "name": "Mansoor Awan",
+    "designation": "Deliveryman",
+    "phone": "0340-8166686"
   },
   {
     "serial": 156,
@@ -1555,9 +1555,9 @@
     "supplier_id": 5,
     "warehouse_id": null,
     "company": "Unilever Pakistan",
-    "name": "Ch. Naseer",
-    "designation": "Salesman",
-    "phone": "0347-8228236"
+    "name": "Ch . Atif",
+    "designation": "Deliveryman",
+    "phone": "0341-9618396"
   },
   {
     "serial": 157,
@@ -1565,12 +1565,42 @@
     "supplier_id": 5,
     "warehouse_id": null,
     "company": "Unilever Pakistan",
-    "name": "Kashif",
-    "designation": "Salesman",
-    "phone": "0343-5643815"
+    "name": "Khalid Hussain",
+    "designation": "Deliveryman",
+    "phone": "0340-8203027"
   },
   {
     "serial": 158,
+    "company_id": 1,
+    "supplier_id": 5,
+    "warehouse_id": null,
+    "company": "Unilever Pakistan",
+    "name": "Ch. Naseer",
+    "designation": "Deliveryman",
+    "phone": "0347-8228236"
+  },
+  {
+    "serial": 159,
+    "company_id": 1,
+    "supplier_id": 5,
+    "warehouse_id": null,
+    "company": "Unilever Pakistan",
+    "name": "Kashif",
+    "designation": "Deliveryman",
+    "phone": "0343-5643815"
+  },
+  {
+    "serial": 160,
+    "company_id": 1,
+    "supplier_id": 5,
+    "warehouse_id": null,
+    "company": "Unilever Pakistan",
+    "name": "Syed Waris Hussain Shah",
+    "designation": "KPO",
+    "phone": "0310-1870614"
+  },
+  {
+    "serial": 161,
     "company_id": 1,
     "supplier_id": 6,
     "warehouse_id": null,
@@ -1580,7 +1610,7 @@
     "phone": "0343-5300321"
   },
   {
-    "serial": 159,
+    "serial": 162,
     "company_id": 1,
     "supplier_id": 6,
     "warehouse_id": null,
@@ -1590,7 +1620,7 @@
     "phone": "0340-8974734"
   },
   {
-    "serial": 160,
+    "serial": 163,
     "company_id": 1,
     "supplier_id": 6,
     "warehouse_id": null,
@@ -1600,27 +1630,27 @@
     "phone": "0340-8133930"
   },
   {
-    "serial": 161,
+    "serial": 164,
     "company_id": 1,
     "supplier_id": 6,
     "warehouse_id": null,
     "company": "Lipton Pakistan",
     "name": "M. Saleem",
-    "designation": "Salesman",
+    "designation": "Deliveryman",
     "phone": "0312-9510198"
   },
   {
-    "serial": 162,
+    "serial": 165,
     "company_id": 1,
     "supplier_id": 6,
     "warehouse_id": null,
     "company": "Lipton Pakistan",
     "name": "Zeeshan Shah",
-    "designation": "Salesman",
+    "designation": "Deliveryman",
     "phone": "0347-7890064"
   },
   {
-    "serial": 163,
+    "serial": 166,
     "company_id": 1,
     "supplier_id": null,
     "warehouse_id": 1,
@@ -1630,7 +1660,7 @@
     "phone": "0345-6939162"
   },
   {
-    "serial": 164,
+    "serial": 167,
     "company_id": 1,
     "supplier_id": null,
     "warehouse_id": 1,
@@ -1640,7 +1670,7 @@
     "phone": "0345-4769759"
   },
   {
-    "serial": 165,
+    "serial": 168,
     "company_id": 1,
     "supplier_id": null,
     "warehouse_id": 1,
@@ -1650,7 +1680,7 @@
     "phone": "0346-5702577"
   },
   {
-    "serial": 166,
+    "serial": 169,
     "company_id": 1,
     "supplier_id": null,
     "warehouse_id": 2,
@@ -1660,7 +1690,7 @@
     "phone": "0342-0525958"
   },
   {
-    "serial": 167,
+    "serial": 170,
     "company_id": 1,
     "supplier_id": null,
     "warehouse_id": 1,
@@ -1670,7 +1700,7 @@
     "phone": "0318-8350986"
   },
   {
-    "serial": 168,
+    "serial": 171,
     "company_id": 1,
     "supplier_id": null,
     "warehouse_id": 1,
@@ -1680,7 +1710,7 @@
     "phone": "0345-9480919"
   },
   {
-    "serial": 169,
+    "serial": 172,
     "company_id": 1,
     "supplier_id": null,
     "warehouse_id": 1,
@@ -1690,7 +1720,7 @@
     "phone": "0355-6147415"
   },
   {
-    "serial": 170,
+    "serial": 173,
     "company_id": 1,
     "supplier_id": null,
     "warehouse_id": null,
@@ -1700,7 +1730,7 @@
     "phone": "0307-5351244"
   },
   {
-    "serial": 171,
+    "serial": 174,
     "company_id": 1,
     "supplier_id": null,
     "warehouse_id": null,
@@ -1710,7 +1740,7 @@
     "phone": "0347-1512201"
   },
   {
-    "serial": 172,
+    "serial": 175,
     "company_id": 1,
     "supplier_id": null,
     "warehouse_id": null,

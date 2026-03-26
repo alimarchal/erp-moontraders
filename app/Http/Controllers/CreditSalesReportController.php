@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Customer;
-use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
@@ -236,50 +236,179 @@ class CreditSalesReportController extends Controller implements HasMiddleware
 
     public function salesmanCreditDetails(Request $request, Employee $employee)
     {
-        $perPage = $request->input('per_page', 50);
-        $perPage = in_array($perPage, [25, 50, 100, 250]) ? $perPage : 50;
+        $perPage = $request->input('per_page', 100);
+        $showAll = $perPage === 'all';
+        if (! $showAll) {
+            $perPage = in_array((int) $perPage, [25, 50, 100, 250]) ? (int) $perPage : 100;
+        }
 
-        $creditSalesQuery = CustomerEmployeeAccountTransaction::query()
-            ->select('customer_employee_account_transactions.*', 'cea.customer_id', 'ss.settlement_number')
-            ->join('customer_employee_accounts as cea', 'customer_employee_account_transactions.customer_employee_account_id', '=', 'cea.id')
-            ->leftJoin('sales_settlements as ss', 'customer_employee_account_transactions.sales_settlement_id', '=', 'ss.id')
+        $dateFrom = $request->input('filter.date_from');
+        $dateTo = $request->input('filter.date_to');
+        $customerId = $request->input('filter.customer_id');
+
+        // Helper to apply common filters
+        $applyFilters = function ($query) use ($request, $dateFrom, $dateTo, $customerId) {
+            if ($customerId) {
+                $query->where('cea.customer_id', $customerId);
+            }
+            if ($dateFrom) {
+                $query->where('ceat.transaction_date', '>=', $dateFrom);
+            }
+            if ($dateTo) {
+                $query->where('ceat.transaction_date', '<=', $dateTo);
+            }
+            if ($request->filled('filter.transaction_type')) {
+                $query->where('ceat.transaction_type', $request->input('filter.transaction_type'));
+            }
+            if ($request->filled('filter.invoice_number')) {
+                $query->where('ceat.invoice_number', 'like', '%'.$request->input('filter.invoice_number').'%');
+            }
+            if ($request->filled('filter.description')) {
+                $query->where('ceat.description', 'like', '%'.$request->input('filter.description').'%');
+            }
+            if ($request->filled('filter.amount_min')) {
+                $query->where(function ($q) use ($request) {
+                    $q->where('ceat.debit', '>=', $request->input('filter.amount_min'))
+                        ->orWhere('ceat.credit', '>=', $request->input('filter.amount_min'));
+                });
+            }
+            if ($request->filled('filter.amount_max')) {
+                $query->where(function ($q) use ($request) {
+                    $q->where(function ($inner) use ($request) {
+                        $inner->where('ceat.debit', '>', 0)
+                            ->where('ceat.debit', '<=', $request->input('filter.amount_max'));
+                    })->orWhere(function ($inner) use ($request) {
+                        $inner->where('ceat.credit', '>', 0)
+                            ->where('ceat.credit', '<=', $request->input('filter.amount_max'));
+                    });
+                });
+            }
+
+            return $query;
+        };
+
+        // All transaction types for this salesman (not just credit_sale)
+        $entriesQuery = DB::table('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->leftJoin('customers as c', 'cea.customer_id', '=', 'c.id')
+            ->leftJoin('sales_settlements as ss', 'ceat.sales_settlement_id', '=', 'ss.id')
             ->where('cea.employee_id', $employee->id)
-            ->where('customer_employee_account_transactions.transaction_type', 'credit_sale')
-            ->with(['account.customer', 'salesSettlement']);
+            ->whereNull('ceat.deleted_at')
+            ->select(
+                'ceat.*',
+                'c.customer_name',
+                'c.customer_code',
+                'cea.customer_id',
+                'ss.settlement_number'
+            );
 
-        // Filters
-        if ($request->filled('filter.customer_id')) {
-            $creditSalesQuery->where('cea.customer_id', $request->input('filter.customer_id'));
+        $applyFilters($entriesQuery);
+
+        $entriesQuery->orderBy('ceat.transaction_date')->orderBy('ceat.id');
+
+        if ($showAll) {
+            $allResults = $entriesQuery->get();
+            $entries = new LengthAwarePaginator(
+                $allResults,
+                $allResults->count(),
+                $allResults->count() ?: 1,
+                1,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        } else {
+            $entries = $entriesQuery->paginate($perPage)->withQueryString();
         }
 
-        if ($request->filled('filter.date_from')) {
-            $creditSalesQuery->whereDate('customer_employee_account_transactions.transaction_date', '>=', $request->input('filter.date_from'));
+        // Calculate opening balance (transactions before date_from)
+        $openingBalance = 0;
+        if ($dateFrom) {
+            $openingBalanceQuery = DB::table('customer_employee_account_transactions as ceat')
+                ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                ->where('cea.employee_id', $employee->id)
+                ->whereNull('ceat.deleted_at')
+                ->where('ceat.transaction_date', '<', $dateFrom);
+
+            if ($customerId) {
+                $openingBalanceQuery->where('cea.customer_id', $customerId);
+            }
+
+            $openingBalanceResult = $openingBalanceQuery
+                ->selectRaw('COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0) as balance')
+                ->first();
+            $openingBalance = $openingBalanceResult ? (float) $openingBalanceResult->balance : 0;
         }
 
-        if ($request->filled('filter.date_to')) {
-            $creditSalesQuery->whereDate('customer_employee_account_transactions.transaction_date', '<=', $request->input('filter.date_to'));
+        // Calculate balance before current page (for pagination running balance)
+        $balanceBeforePage = $openingBalance;
+        if ($entries->currentPage() > 1) {
+            $beforePageQuery = DB::table('customer_employee_account_transactions as ceat')
+                ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                ->where('cea.employee_id', $employee->id)
+                ->whereNull('ceat.deleted_at');
+
+            $applyFilters($beforePageQuery);
+
+            $entriesBeforePage = ($entries->currentPage() - 1) * $entries->perPage();
+            $beforePageResult = $beforePageQuery
+                ->orderBy('ceat.transaction_date')
+                ->orderBy('ceat.id')
+                ->limit($entriesBeforePage)
+                ->selectRaw('COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0) as balance')
+                ->first();
+
+            $balanceBeforePage = $openingBalance + ($beforePageResult ? (float) $beforePageResult->balance : 0);
         }
 
-        $creditSales = $creditSalesQuery
-            ->orderBy('customer_employee_account_transactions.transaction_date', 'desc')
-            ->paginate($perPage)
-            ->withQueryString();
+        // Calculate running balance for each entry
+        $runningBalance = $balanceBeforePage;
+        $entries->getCollection()->transform(function ($entry) use (&$runningBalance) {
+            $entry->row_opening_balance = $runningBalance;
+            $runningBalance += (float) ($entry->debit ?? 0) - (float) ($entry->credit ?? 0);
+            $entry->balance = $runningBalance;
 
-        $customerSummaries = DB::table('customer_employee_account_transactions as ceat')
+            return $entry;
+        });
+
+        // Customer summaries with opening/closing balance per customer — respect date filter
+        // Opening balance subquery per customer (transactions before date_from for this salesman)
+        $custOpeningBalSql = $dateFrom
+            ? "(SELECT COALESCE(SUM(ob.debit), 0) - COALESCE(SUM(ob.credit), 0)
+                FROM customer_employee_account_transactions ob
+                JOIN customer_employee_accounts ob_cea ON ob.customer_employee_account_id = ob_cea.id
+                WHERE ob_cea.customer_id = cea.customer_id
+                AND ob_cea.employee_id = ?
+                AND ob.deleted_at IS NULL
+                AND ob.transaction_date < ?)"
+            : '0';
+        $custOpeningBindings = $dateFrom ? [$employee->id, $dateFrom] : [];
+
+        $customerSummariesQuery = DB::table('customer_employee_account_transactions as ceat')
             ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
             ->join('customers as c', 'cea.customer_id', '=', 'c.id')
             ->where('cea.employee_id', $employee->id)
-            ->where('ceat.transaction_type', 'credit_sale')
-            ->whereNull('ceat.deleted_at')
+            ->whereNull('ceat.deleted_at');
+
+        if ($dateFrom) {
+            $customerSummariesQuery->where('ceat.transaction_date', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $customerSummariesQuery->where('ceat.transaction_date', '<=', $dateTo);
+        }
+
+        $customerSummaries = $customerSummariesQuery
             ->select(
                 'c.id as customer_id',
                 'c.customer_name',
                 'c.customer_code'
             )
-            ->selectRaw('COUNT(*) as sales_count')
-            ->selectRaw('SUM(ceat.debit) as total_amount')
+            ->selectRaw("$custOpeningBalSql as opening_balance", $custOpeningBindings)
+            ->selectRaw('COUNT(*) as txn_count')
+            ->selectRaw("COALESCE(SUM(CASE WHEN ceat.transaction_type = 'credit_sale' THEN ceat.debit ELSE 0 END), 0) as credit_sales")
+            ->selectRaw("COALESCE(SUM(CASE WHEN ceat.transaction_type = 'recovery' THEN ceat.credit ELSE 0 END), 0) as recoveries")
+            ->selectRaw('COALESCE(SUM(ceat.debit), 0) as total_debits')
+            ->selectRaw('COALESCE(SUM(ceat.credit), 0) as total_credits')
             ->groupBy('c.id', 'c.customer_name', 'c.customer_code')
-            ->orderByDesc('total_amount')
+            ->orderByRaw('(COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0)) DESC')
             ->get();
 
         // Get customers for filter dropdown
@@ -287,28 +416,58 @@ class CreditSalesReportController extends Controller implements HasMiddleware
             $q->where('employee_id', $employee->id);
         })->orderBy('customer_name')->get();
 
-        // Calculate summary including recoveries
-        $summaryData = DB::table('customer_employee_account_transactions as ceat')
+        // Grand totals — respect date filter
+        $totalsQuery = DB::table('customer_employee_account_transactions as ceat')
             ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
             ->where('cea.employee_id', $employee->id)
-            ->whereIn('ceat.transaction_type', ['credit_sale', 'recovery'])
-            ->whereNull('ceat.deleted_at')
-            ->selectRaw("SUM(CASE WHEN ceat.transaction_type = 'credit_sale' THEN ceat.debit ELSE 0 END) as total_credit_sales")
-            ->selectRaw("SUM(CASE WHEN ceat.transaction_type = 'recovery' THEN ceat.credit ELSE 0 END) as total_recoveries")
+            ->whereNull('ceat.deleted_at');
+
+        if ($dateFrom) {
+            $totalsQuery->where('ceat.transaction_date', '>=', $dateFrom);
+        }
+        if ($dateTo) {
+            $totalsQuery->where('ceat.transaction_date', '<=', $dateTo);
+        }
+
+        if ($customerId) {
+            $totalsQuery->where('cea.customer_id', $customerId);
+        }
+
+        $totalsData = $totalsQuery
+            ->selectRaw("COALESCE(SUM(CASE WHEN ceat.transaction_type = 'credit_sale' THEN ceat.debit ELSE 0 END), 0) as total_credit_sales")
+            ->selectRaw("COALESCE(SUM(CASE WHEN ceat.transaction_type = 'recovery' THEN ceat.credit ELSE 0 END), 0) as total_recoveries")
+            ->selectRaw('COALESCE(SUM(ceat.debit), 0) as total_debits')
+            ->selectRaw('COALESCE(SUM(ceat.credit), 0) as total_credits')
             ->first();
 
+        $closingBalance = $openingBalance + (float) ($totalsData->total_debits ?? 0) - (float) ($totalsData->total_credits ?? 0);
+
         $summary = [
-            'total_credit_sales' => $summaryData->total_credit_sales ?? 0,
-            'total_recoveries' => $summaryData->total_recoveries ?? 0,
-            'balance' => ($summaryData->total_credit_sales ?? 0) - ($summaryData->total_recoveries ?? 0),
+            'opening_balance' => $openingBalance,
+            'total_credit_sales' => $totalsData->total_credit_sales ?? 0,
+            'total_recoveries' => $totalsData->total_recoveries ?? 0,
+            'total_debits' => $totalsData->total_debits ?? 0,
+            'total_credits' => $totalsData->total_credits ?? 0,
+            'closing_balance' => $closingBalance,
         ];
+
+        // Get transaction types for filter
+        $transactionTypes = DB::table('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->where('cea.employee_id', $employee->id)
+            ->whereNull('ceat.deleted_at')
+            ->distinct()
+            ->pluck('ceat.transaction_type');
 
         return view('reports.credit-sales.salesman-details', [
             'employee' => $employee->load('supplier'),
-            'creditSales' => $creditSales,
+            'entries' => $entries,
             'customerSummaries' => $customerSummaries,
             'customers' => $customers,
             'summary' => $summary,
+            'transactionTypes' => $transactionTypes,
+            'dateFrom' => $dateFrom,
+            'dateTo' => $dateTo,
         ]);
     }
 }

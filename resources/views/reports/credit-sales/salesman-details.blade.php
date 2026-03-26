@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Credit Sales Details - {{ $employee->full_name }}" :createRoute="null" createLabel=""
+        <x-page-header title="Salesman Ledger - {{ $employee->full_name }}" :createRoute="null" createLabel=""
             :showSearch="true" :showRefresh="true" backRoute="reports.credit-sales.salesman-history" />
     </x-slot>
 
@@ -74,7 +74,9 @@
 
                 .text-green-700,
                 .text-blue-700,
-                .text-orange-700 {
+                .text-orange-700,
+                .text-gray-700,
+                .text-purple-700 {
                     color: #000 !important;
                 }
 
@@ -106,19 +108,19 @@
             <div>
                 <x-label for="filter_date_from" value="Date From" />
                 <x-input id="filter_date_from" name="filter[date_from]" type="date" class="mt-1 block w-full"
-                    :value="request('filter.date_from')" />
+                    :value="$dateFrom" />
             </div>
 
             <div>
                 <x-label for="filter_date_to" value="Date To" />
                 <x-input id="filter_date_to" name="filter[date_to]" type="date" class="mt-1 block w-full"
-                    :value="request('filter.date_to')" />
+                    :value="$dateTo" />
             </div>
 
             <div>
                 <x-label for="filter_customer_id" value="Customer" />
                 <select id="filter_customer_id" name="filter[customer_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Customers</option>
                     @foreach($customers as $customer)
                         <option value="{{ $customer->id }}" {{ request('filter.customer_id') == (string) $customer->id ? 'selected' : '' }}>
@@ -129,34 +131,103 @@
             </div>
 
             <div>
+                <x-label for="filter_transaction_type" value="Transaction Type" />
+                <select id="filter_transaction_type" name="filter[transaction_type]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Types</option>
+                    @foreach($transactionTypes as $type)
+                        <option value="{{ $type }}" {{ request('filter.transaction_type') === $type ? 'selected' : '' }}>
+                            {{ ucwords(str_replace('_', ' ', $type)) }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_invoice_number" value="Invoice Number" />
+                <x-input id="filter_invoice_number" name="filter[invoice_number]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.invoice_number')" placeholder="Search invoice..." />
+            </div>
+
+            <div>
+                <x-label for="filter_description" value="Description" />
+                <x-input id="filter_description" name="filter[description]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.description')" placeholder="Search description..." />
+            </div>
+
+            <div>
+                <x-label for="filter_amount_min" value="Amount (Min)" />
+                <x-input id="filter_amount_min" name="filter[amount_min]" type="number" step="0.01"
+                    class="mt-1 block w-full" :value="request('filter.amount_min')" placeholder="0.00" />
+            </div>
+
+            <div>
+                <x-label for="filter_amount_max" value="Amount (Max)" />
+                <x-input id="filter_amount_max" name="filter[amount_max]" type="number" step="0.01"
+                    class="mt-1 block w-full" :value="request('filter.amount_max')" placeholder="Any" />
+            </div>
+
+            <div>
                 <x-label for="per_page" value="Records Per Page" />
                 <select id="per_page" name="per_page"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page', 50) == 50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page') == 250 ? 'selected' : '' }}>250</option>
+                    <option value="25" {{ request('per_page') == '25' ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page') == '50' ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page', '100') == '100' ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page') == '250' ? 'selected' : '' }}>250</option>
+                    <option value="all" {{ request('per_page') === 'all' ? 'selected' : '' }}>All</option>
                 </select>
             </div>
         </div>
     </x-filter-section>
 
+    {{-- Employee Info Card --}}
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
+        <div class="bg-white rounded-lg shadow p-4 mb-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                    <span class="text-gray-500">Employee Code:</span>
+                    <span class="font-semibold ml-1">{{ $employee->employee_code }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">Name:</span>
+                    <span class="font-semibold ml-1">{{ $employee->full_name }}</span>
+                </div>
+                @if($employee->supplier)
+                    <div>
+                        <span class="text-gray-500">Supplier:</span>
+                        <span class="font-semibold ml-1">{{ $employee->supplier->supplier_name }}</span>
+                    </div>
+                @endif
+                @if($employee->designation)
+                    <div>
+                        <span class="text-gray-500">Designation:</span>
+                        <span class="font-semibold ml-1">{{ $employee->designation }}</span>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
     {{-- Summary Cards --}}
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 no-print">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-gray-500">
+                <div class="text-sm text-gray-500">Opening Bal.</div>
+                <div class="text-xl font-bold text-gray-700">{{ number_format($summary['opening_balance'], 2) }}</div>
+            </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-                <div class="text-sm text-gray-500">Total Credit Sales</div>
-                <div class="text-xl font-bold text-blue-700">{{ number_format($summary['total_credit_sales'], 2) }}
-                </div>
+                <div class="text-sm text-gray-500">Credit Sales</div>
+                <div class="text-xl font-bold text-blue-700">{{ number_format($summary['total_credit_sales'], 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-                <div class="text-sm text-gray-500">Total Recoveries</div>
+                <div class="text-sm text-gray-500">Recoveries</div>
                 <div class="text-xl font-bold text-green-700">{{ number_format($summary['total_recoveries'], 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
-                <div class="text-sm text-gray-500">Outstanding Balance</div>
-                <div class="text-xl font-bold {{ $summary['balance'] > 0 ? 'text-orange-700' : 'text-green-700' }}">
-                    {{ number_format($summary['balance'], 2) }}
+                <div class="text-sm text-gray-500">Closing Bal.</div>
+                <div class="text-xl font-bold {{ $summary['closing_balance'] > 0 ? 'text-orange-700' : 'text-green-700' }}">
+                    {{ number_format($summary['closing_balance'], 2) }}
                 </div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
@@ -172,31 +243,42 @@
             <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg print:shadow-none">
                 <div class="overflow-x-auto">
                     <p class="text-center font-extrabold mb-2">
-                        Credit Sales by Customer
+                        Customer-wise Summary
                     </p>
-                    <table class="report-table">
+                    <table class="report-table" style="table-layout: auto;">
                         <thead>
-                            <tr class="bg-gray-50">
-                                <th style="width: 40px;">Sr#</th>
-                                <th style="width: 100px;">Code</th>
-                                <th style="width: 180px;">Customer Name</th>
-                                <th style="width: 80px;">Sales</th>
-                                <th style="width: 120px;">Total Amount</th>
-                                <th style="width: 80px;" class="no-print">Action</th>
+                            <tr class="bg-gray-50 text-center">
+                                <th>Sr#</th>
+                                <th>Code</th>
+                                <th>Customer Name</th>
+                                <th>Credit Sales</th>
+                                <th>Recoveries</th>
+                                <th>Balance</th>
+                                <th>Txns</th>
+                                <th class="no-print">Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach ($customerSummaries as $index => $customer)
+                            @foreach ($customerSummaries as $index => $custSummary)
+                                @php
+                                    $custBalance = $custSummary->total_debits - $custSummary->total_credits;
+                                @endphp
                                 <tr>
                                     <td class="text-center" style="vertical-align: middle;">{{ $index + 1 }}</td>
-                                    <td class="font-mono" style="vertical-align: middle;">{{ $customer->customer_code }}</td>
-                                    <td style="vertical-align: middle;">{{ $customer->customer_name }}</td>
-                                    <td class="text-center" style="vertical-align: middle;">{{ $customer->sales_count }}</td>
-                                    <td class="text-right font-mono font-bold text-blue-700" style="vertical-align: middle;">
-                                        {{ number_format($customer->total_amount, 2) }}
+                                    <td class="font-mono" style="vertical-align: middle;">{{ $custSummary->customer_code }}</td>
+                                    <td style="vertical-align: middle;">{{ $custSummary->customer_name }}</td>
+                                    <td class="text-right font-mono text-blue-700" style="vertical-align: middle;">
+                                        {{ number_format($custSummary->credit_sales, 2) }}
                                     </td>
+                                    <td class="text-right font-mono text-green-700" style="vertical-align: middle;">
+                                        {{ number_format($custSummary->recoveries, 2) }}
+                                    </td>
+                                    <td class="text-right font-mono font-bold {{ $custBalance > 0 ? 'text-orange-700' : 'text-green-700' }}" style="vertical-align: middle;">
+                                        {{ number_format($custBalance, 2) }}
+                                    </td>
+                                    <td class="text-center" style="vertical-align: middle;">{{ $custSummary->txn_count }}</td>
                                     <td class="text-center no-print" style="vertical-align: middle;">
-                                        <a href="{{ route('reports.credit-sales.salesman-details', $employee) }}?filter[customer_id]={{ $customer->customer_id }}"
+                                        <a href="{{ route('reports.credit-sales.salesman-details', $employee) }}?filter[customer_id]={{ $custSummary->customer_id }}{{ $dateFrom ? '&filter[date_from]='.$dateFrom : '' }}{{ $dateTo ? '&filter[date_to]='.$dateTo : '' }}"
                                             class="text-blue-600 hover:text-blue-800 font-semibold text-xs">
                                             Filter
                                         </a>
@@ -206,14 +288,17 @@
                         </tbody>
                         <tfoot class="bg-gray-100 font-extrabold">
                             <tr>
-                                <td colspan="3" class="text-center px-2 py-1">Total ({{ $customerSummaries->count() }}
-                                    customers)</td>
-                                <td class="text-center px-2 py-1">
-                                    {{ $customerSummaries->sum('sales_count') }}
-                                </td>
+                                <td colspan="3" class="text-center px-2 py-1">Total ({{ $customerSummaries->count() }} customers)</td>
                                 <td class="text-right font-mono px-2 py-1 text-blue-700">
-                                    {{ number_format($customerSummaries->sum('total_amount'), 2) }}
+                                    {{ number_format($customerSummaries->sum('credit_sales'), 2) }}
                                 </td>
+                                <td class="text-right font-mono px-2 py-1 text-green-700">
+                                    {{ number_format($customerSummaries->sum('recoveries'), 2) }}
+                                </td>
+                                <td class="text-right font-mono px-2 py-1 text-orange-700">
+                                    {{ number_format($customerSummaries->sum('total_debits') - $customerSummaries->sum('total_credits'), 2) }}
+                                </td>
+                                <td class="text-center px-2 py-1">{{ $customerSummaries->sum('txn_count') }}</td>
                                 <td class="no-print"></td>
                             </tr>
                         </tfoot>
@@ -226,97 +311,162 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
-                <p class="text-center font-extrabold mb-2">
+                <p class="text-center font-extrabold mb-1">
                     Moon Traders<br>
-                    Salesman Credit Sales Details - {{ $employee->full_name }} ({{ $employee->employee_code }})<br>
+                    Salesman Ledger
+                </p>
+                <div class="text-center text-sm mb-1">
+                    <span class="font-bold">{{ $employee->full_name }}</span>
+                    <span class="text-gray-600">({{ $employee->employee_code }})</span>
                     @if($employee->supplier)
-                        Supplier: {{ $employee->supplier->supplier_name }}<br>
+                        <span class="text-gray-500">- {{ $employee->supplier->supplier_name }}</span>
                     @endif
-                    @if(request('filter.date_from') && request('filter.date_to'))
-                        For the period {{ \Carbon\Carbon::parse(request('filter.date_from'))->format('d-M-Y') }} to
-                        {{ \Carbon\Carbon::parse(request('filter.date_to'))->format('d-M-Y') }}
+                </div>
+                <div class="text-center text-xs text-gray-600 mb-1">
+                    @if($dateFrom && $dateTo)
+                        Period: {{ \Carbon\Carbon::parse($dateFrom)->format('d-M-Y') }} to {{ \Carbon\Carbon::parse($dateTo)->format('d-M-Y') }}
+                    @elseif($dateFrom)
+                        From {{ \Carbon\Carbon::parse($dateFrom)->format('d-M-Y') }}
+                    @elseif($dateTo)
+                        Up to {{ \Carbon\Carbon::parse($dateTo)->format('d-M-Y') }}
                     @else
                         All Transactions
                     @endif
-                    <br>
-                    <span class="print-only print-info text-xs text-center">
-                        Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
-                    </span>
-                </p>
+                    |
+                    Opening Bal.: {{ number_format($summary['opening_balance'], 2) }} |
+                    Closing Bal.: {{ number_format($summary['closing_balance'], 2) }}
+                </div>
+                <div class="print-only print-info text-xs text-center mb-2">
+                    Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
+                </div>
 
-                <table class="report-table">
+                <table class="report-table" style="table-layout: auto;">
                     <thead>
-                        <tr class="bg-gray-50">
-                            <th style="width: 40px;">Sr#</th>
-                            <th style="width: 90px;">Date</th>
-                            <th style="width: 150px;">Settlement</th>
-                            <th style="width: 150px;">Customer</th>
-                            <th style="width: 150px;">Code</th>
-                            <th style="width: 100px;">Invoice #</th>
-                            <th style="width: 100px;">Amount</th>
-                            <th style="width: 150px;">Notes</th>
+                        <tr class="bg-gray-50 text-center">
+                            <th>Sr#</th>
+                            <th>Date</th>
+                            <th>Customer</th>
+                            <th>Settlement</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Opening Bal.</th>
+                            <th>Debit</th>
+                            <th>Credit</th>
+                            <th>Closing Bal.</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($creditSales as $index => $sale)
+                        @if($summary['opening_balance'] != 0)
+                            <tr class="bg-gray-50 font-semibold">
+                                <td class="text-center">-</td>
+                                <td colspan="5">Opening Balance</td>
+                                <td class="text-right font-mono">{{ number_format($summary['opening_balance'], 2) }}</td>
+                                <td class="text-right font-mono">0.00</td>
+                                <td class="text-right font-mono">0.00</td>
+                                <td class="text-right font-mono font-bold {{ $summary['opening_balance'] > 0 ? 'text-orange-700' : 'text-green-700' }}">
+                                    {{ number_format($summary['opening_balance'], 2) }}
+                                </td>
+                            </tr>
+                        @endif
+                        @forelse ($entries as $index => $entry)
                             <tr>
                                 <td class="text-center" style="vertical-align: middle;">
-                                    {{ $creditSales->firstItem() + $index }}
+                                    {{ $entries->firstItem() + $index }}
+                                </td>
+                                <td class="whitespace-nowrap" style="vertical-align: middle;">
+                                    {{ \Carbon\Carbon::parse($entry->transaction_date)->format('d-m-Y') }}
                                 </td>
                                 <td style="vertical-align: middle;">
-                                    {{ \Carbon\Carbon::parse($sale->transaction_date)->format('d-m-Y') }}
+                                    {{ $entry->customer_name ?? 'N/A' }}
+                                    <div class="text-xs text-gray-500">{{ $entry->customer_code }}</div>
                                 </td>
                                 <td style="vertical-align: middle;">
-                                    @if($sale->salesSettlement)
-                                        <a href="{{ route('sales-settlements.show', $sale->salesSettlement) }}"
+                                    @if($entry->sales_settlement_id)
+                                        <a href="{{ route('sales-settlements.show', $entry->sales_settlement_id) }}"
                                             class="text-blue-600 hover:text-blue-800 font-semibold no-print" target="_blank">
-                                            {{ $sale->salesSettlement->settlement_number }}
+                                            {{ $entry->settlement_number ?? $entry->reference_number }}
                                         </a>
-                                        <span class="print-only">{{ $sale->salesSettlement->settlement_number }}</span>
+                                        <span class="print-only">{{ $entry->settlement_number ?? $entry->reference_number }}</span>
                                     @else
-                                        -
+                                        {{ $entry->reference_number ?? '-' }}
                                     @endif
                                 </td>
+                                <td class="text-center whitespace-nowrap" style="vertical-align: middle;">
+                                    {{ ucwords(str_replace('_', ' ', $entry->transaction_type)) }}
+                                </td>
                                 <td style="vertical-align: middle;">
-                                    {{ $sale->account->customer->customer_name ?? 'N/A' }}
-
+                                    {{ $entry->description ?? ($entry->invoice_number ? 'Inv: '.$entry->invoice_number : '-') }}
                                 </td>
-
-                                <td style="vertical-align: middle;">
-                                    {{ $sale->account->customer->customer_code }}
-
+                                <td class="text-right font-mono" style="vertical-align: middle;">
+                                    {{ number_format($entry->row_opening_balance, 2) }}
                                 </td>
-                                <td class="font-mono" style="vertical-align: middle;">{{ $sale->invoice_number ?? '-' }}
+                                <td class="text-right font-mono {{ $entry->debit > 0 ? 'text-blue-700' : '' }}" style="vertical-align: middle;">
+                                    {{ number_format($entry->debit ?? 0, 2) }}
                                 </td>
-                                <td class="text-right font-mono font-bold text-blue-700" style="vertical-align: middle;">
-                                    {{ number_format($sale->debit, 2) }}
+                                <td class="text-right font-mono {{ $entry->credit > 0 ? 'text-green-700' : '' }}" style="vertical-align: middle;">
+                                    {{ number_format($entry->credit ?? 0, 2) }}
                                 </td>
-                                <td style="vertical-align: middle;">{{ $sale->notes ?? '-' }}</td>
+                                <td class="text-right font-mono font-bold {{ $entry->balance > 0 ? 'text-orange-700' : 'text-green-700' }}" style="vertical-align: middle;">
+                                    {{ number_format($entry->balance, 2) }}
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-gray-500">No credit sales found.</td>
+                                <td colspan="10" class="text-center py-4 text-gray-500">No transactions found.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
-                            <td colspan="5" class="text-center px-2 py-1">Page Total ({{ $creditSales->count() }}
-                                entries)</td>
-                            <td class="text-right font-mono px-2 py-1 text-blue-700">
-                                {{ number_format($creditSales->sum('debit'), 2) }}
+                            <td colspan="6" class="text-center px-2 py-1">
+                                Page Total ({{ $entries->count() }} entries)
                             </td>
-                            <td></td>
+                            <td class="text-right font-mono px-2 py-1">-</td>
+                            <td class="text-right font-mono px-2 py-1 text-blue-700">
+                                {{ number_format($entries->sum('debit'), 2) }}
+                            </td>
+                            <td class="text-right font-mono px-2 py-1 text-green-700">
+                                {{ number_format($entries->sum('credit'), 2) }}
+                            </td>
+                            <td class="text-right font-mono px-2 py-1 text-orange-700">
+                                {{ number_format($summary['closing_balance'], 2) }}
+                            </td>
+                        </tr>
+                        <tr class="bg-gray-200">
+                            <td colspan="10" class="text-center px-2 py-1 text-xs">
+                                Opening Bal.: {{ number_format($summary['opening_balance'], 2) }} |
+                                Credit Sales: {{ number_format($summary['total_credit_sales'], 2) }} |
+                                Recoveries: {{ number_format($summary['total_recoveries'], 2) }} |
+                                Closing Bal.: {{ number_format($summary['closing_balance'], 2) }}
+                            </td>
                         </tr>
                     </tfoot>
                 </table>
 
-                @if ($creditSales->hasPages())
+                @if ($entries->hasPages())
                     <div class="mt-4 no-print">
-                        {{ $creditSales->links() }}
+                        {{ $entries->links() }}
                     </div>
                 @endif
             </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            $(document).ready(function () {
+                $('#filter_customer_id').select2({
+                    width: '100%',
+                    placeholder: 'All Customers',
+                    allowClear: true
+                });
+
+                $('#filter_transaction_type').select2({
+                    width: '100%',
+                    placeholder: 'All Types',
+                    allowClear: true
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>

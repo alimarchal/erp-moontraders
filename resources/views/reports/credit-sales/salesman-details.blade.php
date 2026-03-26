@@ -131,19 +131,6 @@
             </div>
 
             <div>
-                <x-label for="filter_transaction_type" value="Transaction Type" />
-                <select id="filter_transaction_type" name="filter[transaction_type]"
-                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Types</option>
-                    @foreach($transactionTypes as $type)
-                        <option value="{{ $type }}" {{ request('filter.transaction_type') === $type ? 'selected' : '' }}>
-                            {{ ucwords(str_replace('_', ' ', $type)) }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
-            <div>
                 <x-label for="filter_invoice_number" value="Invoice Number" />
                 <x-input id="filter_invoice_number" name="filter[invoice_number]" type="text" class="mt-1 block w-full"
                     :value="request('filter.invoice_number')" placeholder="Search invoice..." />
@@ -213,7 +200,7 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 no-print">
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-gray-500">
-                <div class="text-sm text-gray-500">Opening Bal.</div>
+                <div class="text-sm text-gray-500">Opening Balance</div>
                 <div class="text-xl font-bold text-gray-700">{{ number_format($summary['opening_balance'], 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
@@ -225,7 +212,7 @@
                 <div class="text-xl font-bold text-green-700">{{ number_format($summary['total_recoveries'], 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
-                <div class="text-sm text-gray-500">Closing Bal.</div>
+                <div class="text-sm text-gray-500">Closing Balance</div>
                 <div class="text-xl font-bold {{ $summary['closing_balance'] > 0 ? 'text-orange-700' : 'text-green-700' }}">
                     {{ number_format($summary['closing_balance'], 2) }}
                 </div>
@@ -251,9 +238,10 @@
                                 <th>Sr#</th>
                                 <th>Code</th>
                                 <th>Customer Name</th>
+                                <th>Opening Balance</th>
                                 <th>Credit Sales</th>
                                 <th>Recoveries</th>
-                                <th>Balance</th>
+                                <th>Closing Balance</th>
                                 <th>Txns</th>
                                 <th class="no-print">Action</th>
                             </tr>
@@ -261,20 +249,24 @@
                         <tbody>
                             @foreach ($customerSummaries as $index => $custSummary)
                                 @php
-                                    $custBalance = $custSummary->total_debits - $custSummary->total_credits;
+                                    $custOpening = $custSummary->opening_balance ?? 0;
+                                    $custClosing = $custOpening + $custSummary->credit_sales - $custSummary->recoveries;
                                 @endphp
                                 <tr>
                                     <td class="text-center" style="vertical-align: middle;">{{ $index + 1 }}</td>
                                     <td class="font-mono" style="vertical-align: middle;">{{ $custSummary->customer_code }}</td>
                                     <td style="vertical-align: middle;">{{ $custSummary->customer_name }}</td>
+                                    <td class="text-right font-mono text-gray-700" style="vertical-align: middle;">
+                                        {{ number_format($custOpening, 2) }}
+                                    </td>
                                     <td class="text-right font-mono text-blue-700" style="vertical-align: middle;">
                                         {{ number_format($custSummary->credit_sales, 2) }}
                                     </td>
                                     <td class="text-right font-mono text-green-700" style="vertical-align: middle;">
                                         {{ number_format($custSummary->recoveries, 2) }}
                                     </td>
-                                    <td class="text-right font-mono font-bold {{ $custBalance > 0 ? 'text-orange-700' : 'text-green-700' }}" style="vertical-align: middle;">
-                                        {{ number_format($custBalance, 2) }}
+                                    <td class="text-right font-mono font-bold {{ $custClosing > 0 ? 'text-orange-700' : 'text-green-700' }}" style="vertical-align: middle;">
+                                        {{ number_format($custClosing, 2) }}
                                     </td>
                                     <td class="text-center" style="vertical-align: middle;">{{ $custSummary->txn_count }}</td>
                                     <td class="text-center no-print" style="vertical-align: middle;">
@@ -289,6 +281,9 @@
                         <tfoot class="bg-gray-100 font-extrabold">
                             <tr>
                                 <td colspan="3" class="text-center px-2 py-1">Total ({{ $customerSummaries->count() }} customers)</td>
+                                <td class="text-right font-mono px-2 py-1 text-gray-700">
+                                    {{ number_format($customerSummaries->sum('opening_balance'), 2) }}
+                                </td>
                                 <td class="text-right font-mono px-2 py-1 text-blue-700">
                                     {{ number_format($customerSummaries->sum('credit_sales'), 2) }}
                                 </td>
@@ -296,7 +291,7 @@
                                     {{ number_format($customerSummaries->sum('recoveries'), 2) }}
                                 </td>
                                 <td class="text-right font-mono px-2 py-1 text-orange-700">
-                                    {{ number_format($customerSummaries->sum('total_debits') - $customerSummaries->sum('total_credits'), 2) }}
+                                    {{ number_format($customerSummaries->sum('opening_balance') + $customerSummaries->sum('credit_sales') - $customerSummaries->sum('recoveries'), 2) }}
                                 </td>
                                 <td class="text-center px-2 py-1">{{ $customerSummaries->sum('txn_count') }}</td>
                                 <td class="no-print"></td>
@@ -333,8 +328,8 @@
                         All Transactions
                     @endif
                     |
-                    Opening Bal.: {{ number_format($summary['opening_balance'], 2) }} |
-                    Closing Bal.: {{ number_format($summary['closing_balance'], 2) }}
+                    Opening Balance: {{ number_format($summary['opening_balance'], 2) }} |
+                    Closing Balance: {{ number_format($summary['closing_balance'], 2) }}
                 </div>
                 <div class="print-only print-info text-xs text-center mb-2">
                     Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
@@ -347,19 +342,18 @@
                             <th>Date</th>
                             <th>Customer</th>
                             <th>Settlement</th>
-                            <th>Type</th>
                             <th>Description</th>
-                            <th>Opening Bal.</th>
-                            <th>Debit</th>
-                            <th>Credit</th>
-                            <th>Closing Bal.</th>
+                            <th>Opening Balance</th>
+                            <th>Credit Sales</th>
+                            <th>Recoveries</th>
+                            <th>Closing Balance</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if($summary['opening_balance'] != 0)
                             <tr class="bg-gray-50 font-semibold">
                                 <td class="text-center">-</td>
-                                <td colspan="5">Opening Balance</td>
+                                <td colspan="4">Opening Balance</td>
                                 <td class="text-right font-mono">{{ number_format($summary['opening_balance'], 2) }}</td>
                                 <td class="text-right font-mono">0.00</td>
                                 <td class="text-right font-mono">0.00</td>
@@ -391,13 +385,10 @@
                                         {{ $entry->reference_number ?? '-' }}
                                     @endif
                                 </td>
-                                <td class="text-center whitespace-nowrap" style="vertical-align: middle;">
-                                    {{ ucwords(str_replace('_', ' ', $entry->transaction_type)) }}
-                                </td>
                                 <td style="vertical-align: middle;">
                                     {{ $entry->description ?? ($entry->invoice_number ? 'Inv: '.$entry->invoice_number : '-') }}
                                 </td>
-                                <td class="text-right font-mono" style="vertical-align: middle;">
+                                <td class="text-right font-mono text-gray-700" style="vertical-align: middle;">
                                     {{ number_format($entry->row_opening_balance, 2) }}
                                 </td>
                                 <td class="text-right font-mono {{ $entry->debit > 0 ? 'text-blue-700' : '' }}" style="vertical-align: middle;">
@@ -412,13 +403,13 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center py-4 text-gray-500">No transactions found.</td>
+                                <td colspan="9" class="text-center py-4 text-gray-500">No transactions found.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
-                            <td colspan="6" class="text-center px-2 py-1">
+                            <td colspan="5" class="text-center px-2 py-1">
                                 Page Total ({{ $entries->count() }} entries)
                             </td>
                             <td class="text-right font-mono px-2 py-1">-</td>
@@ -433,11 +424,11 @@
                             </td>
                         </tr>
                         <tr class="bg-gray-200">
-                            <td colspan="10" class="text-center px-2 py-1 text-xs">
-                                Opening Bal.: {{ number_format($summary['opening_balance'], 2) }} |
+                            <td colspan="9" class="text-center px-2 py-1 text-xs">
+                                Opening Balance: {{ number_format($summary['opening_balance'], 2) }} |
                                 Credit Sales: {{ number_format($summary['total_credit_sales'], 2) }} |
                                 Recoveries: {{ number_format($summary['total_recoveries'], 2) }} |
-                                Closing Bal.: {{ number_format($summary['closing_balance'], 2) }}
+                                Closing Balance: {{ number_format($summary['closing_balance'], 2) }}
                             </td>
                         </tr>
                     </tfoot>
@@ -461,11 +452,6 @@
                     allowClear: true
                 });
 
-                $('#filter_transaction_type').select2({
-                    width: '100%',
-                    placeholder: 'All Types',
-                    allowClear: true
-                });
             });
         </script>
     @endpush

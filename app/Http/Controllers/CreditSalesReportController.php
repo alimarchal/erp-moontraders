@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
@@ -205,7 +207,7 @@ class CreditSalesReportController extends Controller implements HasMiddleware
         $employees = $employeesQuery->get(['id', 'name', 'employee_code']);
 
         // Get all suppliers for filter
-        $suppliers = \App\Models\Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+        $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
 
         // Get unique designations
         $designations = Employee::distinct()->whereNotNull('designation')->orderBy('designation')->pluck('designation');
@@ -316,10 +318,28 @@ class CreditSalesReportController extends Controller implements HasMiddleware
     public function customerCreditHistory(Request $request)
     {
         $perPage = $request->input('per_page', 50);
-        $perPage = in_array($perPage, [25, 50, 100, 250]) ? $perPage : 50;
+        $perPage = in_array($perPage, [10, 25, 50, 100, 250, 'all']) ? $perPage : 50;
+
+        // Cross-DB subquery for closing balance (works on MySQL, MariaDB, PostgreSQL)
+        $balanceSubquery = '(
+            SELECT COALESCE(SUM(ceat_b.debit), 0) - COALESCE(SUM(ceat_b.credit), 0)
+            FROM customer_employee_account_transactions ceat_b
+            JOIN customer_employee_accounts cea_b ON ceat_b.customer_employee_account_id = cea_b.id
+            WHERE cea_b.customer_id = customers.id AND ceat_b.deleted_at IS NULL
+        )';
 
         $query = Customer::query()
             ->select('customers.*')
+            // Opening Balance: sum of opening_balance type transactions
+            ->selectSub(function ($query) {
+                $query->from('customer_employee_account_transactions as ceat')
+                    ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                    ->whereColumn('cea.customer_id', 'customers.id')
+                    ->where('ceat.transaction_type', 'opening_balance')
+                    ->whereNull('ceat.deleted_at')
+                    ->selectRaw('COALESCE(SUM(ceat.debit), 0)');
+            }, 'opening_balance')
+            // Credit Sales count
             ->selectSub(function ($query) {
                 $query->from('customer_employee_account_transactions as ceat')
                     ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
@@ -328,28 +348,28 @@ class CreditSalesReportController extends Controller implements HasMiddleware
                     ->whereNull('ceat.deleted_at')
                     ->selectRaw('COUNT(*)');
             }, 'credit_sales_count')
+            // Credit Sales amount (non-opening_balance debits)
             ->selectSub(function ($query) {
                 $query->from('customer_employee_account_transactions as ceat')
                     ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
                     ->whereColumn('cea.customer_id', 'customers.id')
-                    ->where('ceat.transaction_type', 'credit_sale')
+                    ->where('ceat.transaction_type', '!=', 'opening_balance')
                     ->whereNull('ceat.deleted_at')
                     ->selectRaw('COALESCE(SUM(ceat.debit), 0)');
-            }, 'credit_sales_sum_sale_amount')
+            }, 'credit_sales_amount')
+            // Recoveries amount
             ->selectSub(function ($query) {
                 $query->from('customer_employee_account_transactions as ceat')
                     ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
                     ->whereColumn('cea.customer_id', 'customers.id')
-                    ->where('ceat.transaction_type', 'recovery')
                     ->whereNull('ceat.deleted_at')
                     ->selectRaw('COALESCE(SUM(ceat.credit), 0)');
-            }, 'recoveries_sum_amount')
+            }, 'recoveries_amount')
             ->whereExists(function ($query) {
                 $query->select(DB::raw(1))
                     ->from('customer_employee_account_transactions as ceat_exists')
                     ->join('customer_employee_accounts as cea_exists', 'ceat_exists.customer_employee_account_id', '=', 'cea_exists.id')
                     ->whereColumn('cea_exists.customer_id', 'customers.id')
-                    ->where('ceat_exists.transaction_type', 'credit_sale')
                     ->whereNull('ceat_exists.deleted_at');
             });
 
@@ -374,49 +394,103 @@ class CreditSalesReportController extends Controller implements HasMiddleware
             $query->where('city', $request->input('filter.city'));
         }
 
+        if ($request->filled('filter.sub_locality')) {
+            $query->where('sub_locality', 'like', '%'.$request->input('filter.sub_locality').'%');
+        }
+
         if ($request->filled('filter.channel_type')) {
             $query->where('channel_type', $request->input('filter.channel_type'));
         }
 
+        if ($request->filled('filter.customer_category')) {
+            $query->where('customer_category', $request->input('filter.customer_category'));
+        }
+
+        if ($request->filled('filter.is_active')) {
+            $query->where('is_active', $request->input('filter.is_active'));
+        }
+
+        if ($request->filled('filter.it_status')) {
+            $query->where('it_status', $request->input('filter.it_status'));
+        }
+
+        if ($request->filled('filter.employee_id')) {
+            $query->whereHas('employeeAccounts', function ($q) use ($request) {
+                $q->where('employee_id', $request->input('filter.employee_id'));
+            });
+        }
+
+        if ($request->filled('filter.credit_limit_min')) {
+            $query->where('credit_limit', '>=', $request->input('filter.credit_limit_min'));
+        }
+
+        if ($request->filled('filter.credit_limit_max')) {
+            $query->where('credit_limit', '<=', $request->input('filter.credit_limit_max'));
+        }
+
+        if ($request->filled('filter.has_balance')) {
+            if ($request->input('filter.has_balance') === 'yes') {
+                $query->whereRaw("$balanceSubquery > 0");
+            } elseif ($request->input('filter.has_balance') === 'no') {
+                $query->whereRaw("$balanceSubquery <= 0");
+            }
+        }
+
+        if ($request->filled('filter.balance_min')) {
+            $query->whereRaw("$balanceSubquery >= ?", [$request->input('filter.balance_min')]);
+        }
+
+        if ($request->filled('filter.balance_max')) {
+            $query->whereRaw("$balanceSubquery <= ?", [$request->input('filter.balance_max')]);
+        }
+
         // Sorting
-        $sort = $request->input('sort', '-credit_sales');
+        $sort = $request->input('sort', '-closing_balance');
         $direction = str_starts_with($sort, '-') ? 'desc' : 'asc';
         $column = ltrim($sort, '-');
 
-        switch ($column) {
-            case 'credit_sales':
-                $query->orderBy('credit_sales_sum_sale_amount', $direction);
-                break;
-            case 'balance':
-                $query->orderByRaw('(credit_sales_sum_sale_amount - recoveries_sum_amount) '.$direction);
-                break;
-            case 'customer_name':
-                $query->orderBy('customer_name', $direction);
-                break;
-            case 'sales_count':
-                $query->orderBy('credit_sales_count', $direction);
-                break;
-            default:
-                $query->orderBy('credit_sales_sum_sale_amount', 'desc');
+        if (in_array($column, ['customer_name', 'customer_code', 'city', 'opening_balance', 'credit_sales_amount', 'recoveries_amount', 'credit_sales_count'])) {
+            $query->orderBy($column, $direction);
+        } elseif ($column === 'closing_balance') {
+            $query->orderByRaw("$balanceSubquery $direction");
+        } else {
+            $query->orderByRaw("$balanceSubquery DESC");
         }
 
-        $customersWithCredits = $query->paginate($perPage)->withQueryString();
+        if ($perPage === 'all') {
+            $allCustomers = $query->get();
+            $customers = new LengthAwarePaginator(
+                $allCustomers,
+                $allCustomers->count(),
+                $allCustomers->count() ?: 1,
+                1,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+        } else {
+            $customers = $query->paginate((int) $perPage)->withQueryString();
+        }
 
         // Calculate totals
         $totals = DB::table('customer_employee_account_transactions as ceat')
             ->whereNull('ceat.deleted_at')
-            ->selectRaw("SUM(CASE WHEN ceat.transaction_type = 'credit_sale' THEN ceat.debit ELSE 0 END) as total_credit_sales")
-            ->selectRaw("SUM(CASE WHEN ceat.transaction_type = 'recovery' THEN ceat.credit ELSE 0 END) as total_recoveries")
+            ->selectRaw('SUM(CASE WHEN ceat.transaction_type = \'opening_balance\' THEN ceat.debit ELSE 0 END) as total_opening_balance')
+            ->selectRaw('SUM(CASE WHEN ceat.transaction_type != \'opening_balance\' THEN ceat.debit ELSE 0 END) as total_credit_sales')
+            ->selectRaw('SUM(ceat.credit) as total_recoveries')
+            ->selectRaw('SUM(ceat.debit) as total_debits')
             ->first();
 
         $cities = Customer::whereNotNull('city')->distinct()->pluck('city')->sort();
+        $subLocalities = Customer::whereNotNull('sub_locality')->distinct()->pluck('sub_locality')->sort();
         $channelTypes = Customer::whereNotNull('channel_type')->distinct()->pluck('channel_type')->sort();
+        $employees = Employee::whereHas('customerAccounts')->orderBy('name')->get();
 
         return view('reports.credit-sales.customer-history', [
-            'customers' => $customersWithCredits,
+            'customers' => $customers,
             'totals' => $totals,
             'cities' => $cities,
+            'subLocalities' => $subLocalities,
             'channelTypes' => $channelTypes,
+            'employees' => $employees,
         ]);
     }
 

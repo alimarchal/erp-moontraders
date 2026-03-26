@@ -117,9 +117,22 @@
             </div>
 
             <div>
+                <x-label for="filter_employee_id" value="Salesman" />
+                <select id="filter_employee_id" name="filter[employee_id]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Salesmen</option>
+                    @foreach($employees as $employee)
+                        <option value="{{ $employee->id }}" {{ request('filter.employee_id')==(string)$employee->id ? 'selected' : '' }}>
+                            {{ $employee->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
                 <x-label for="filter_transaction_type" value="Transaction Type" />
                 <select id="filter_transaction_type" name="filter[transaction_type]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Types</option>
                     @foreach($transactionTypes as $type)
                         <option value="{{ $type }}" {{ request('filter.transaction_type')===$type ? 'selected' : '' }}>
@@ -136,48 +149,113 @@
             </div>
 
             <div>
-                <x-label for="filter_employee_id" value="Salesman" />
-                <select id="filter_employee_id" name="filter[employee_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Salesmen</option>
-                    @foreach($employees as $employee)
-                        <option value="{{ $employee->id }}" {{ request('filter.employee_id')==(string)$employee->id ? 'selected' : '' }}>
-                            {{ $employee->name }}
+                <x-label for="filter_invoice_number" value="Invoice Number" />
+                <x-input id="filter_invoice_number" name="filter[invoice_number]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.invoice_number')" placeholder="Search invoice..." />
+            </div>
+
+            <div>
+                <x-label for="filter_description" value="Description" />
+                <x-input id="filter_description" name="filter[description]" type="text" class="mt-1 block w-full"
+                    :value="request('filter.description')" placeholder="Search description..." />
+            </div>
+
+            <div>
+                <x-label for="filter_payment_method" value="Payment Method" />
+                <select id="filter_payment_method" name="filter[payment_method]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Methods</option>
+                    @foreach($paymentMethods as $method)
+                        <option value="{{ $method }}" {{ request('filter.payment_method')===$method ? 'selected' : '' }}>
+                            {{ ucwords(str_replace('_', ' ', $method)) }}
                         </option>
                     @endforeach
                 </select>
             </div>
 
             <div>
+                <x-label for="filter_amount_min" value="Amount (Min)" />
+                <x-input id="filter_amount_min" name="filter[amount_min]" type="number" step="0.01"
+                    class="mt-1 block w-full" :value="request('filter.amount_min')" placeholder="0.00" />
+            </div>
+
+            <div>
+                <x-label for="filter_amount_max" value="Amount (Max)" />
+                <x-input id="filter_amount_max" name="filter[amount_max]" type="number" step="0.01"
+                    class="mt-1 block w-full" :value="request('filter.amount_max')" placeholder="Any" />
+            </div>
+
+            <div>
                 <x-label for="per_page" value="Records Per Page" />
                 <select id="per_page" name="per_page"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page')==50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page', 100)==100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
+                    <option value="25" {{ request('per_page')=='25' ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page')=='50' ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page', '100')=='100' ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page')=='250' ? 'selected' : '' }}>250</option>
+                    <option value="all" {{ request('per_page')==='all' ? 'selected' : '' }}>All</option>
                 </select>
             </div>
         </div>
     </x-filter-section>
 
+    {{-- Customer Info Card --}}
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
+        <div class="bg-white rounded-lg shadow p-4 mb-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div>
+                    <span class="text-gray-500">Customer Code:</span>
+                    <span class="font-semibold ml-1">{{ $customer->customer_code }}</span>
+                </div>
+                <div>
+                    <span class="text-gray-500">Customer Name:</span>
+                    <span class="font-semibold ml-1">{{ $customer->customer_name }}</span>
+                </div>
+                @if($customer->business_name)
+                    <div>
+                        <span class="text-gray-500">Business:</span>
+                        <span class="font-semibold ml-1">{{ $customer->business_name }}</span>
+                    </div>
+                @endif
+                @if($customer->city)
+                    <div>
+                        <span class="text-gray-500">City:</span>
+                        <span class="font-semibold ml-1">{{ $customer->city }}</span>
+                    </div>
+                @endif
+                @if($customer->phone)
+                    <div>
+                        <span class="text-gray-500">Phone:</span>
+                        <span class="font-semibold ml-1">{{ $customer->phone }}</span>
+                    </div>
+                @endif
+                @if($customer->channel_type)
+                    <div>
+                        <span class="text-gray-500">Channel:</span>
+                        <span class="font-semibold ml-1">{{ $customer->channel_type }}</span>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
     {{-- Summary Cards --}}
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 no-print">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-gray-500">
-                <div class="text-sm text-gray-500">Opening Balance</div>
+                <div class="text-sm text-gray-500">Opening Bal.</div>
                 <div class="text-xl font-bold text-gray-700">{{ number_format($summary['opening_balance'], 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-                <div class="text-sm text-gray-500">Total Debits (Credit Sales)</div>
+                <div class="text-sm text-gray-500">Credit Sales</div>
                 <div class="text-xl font-bold text-blue-700">{{ number_format($summary['total_debits'], 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-                <div class="text-sm text-gray-500">Total Credits (Recoveries)</div>
+                <div class="text-sm text-gray-500">Recoveries</div>
                 <div class="text-xl font-bold text-green-700">{{ number_format($summary['total_credits'], 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
-                <div class="text-sm text-gray-500">Closing Balance</div>
+                <div class="text-sm text-gray-500">Closing Bal.</div>
                 <div class="text-xl font-bold {{ $summary['closing_balance'] > 0 ? 'text-orange-700' : 'text-green-700' }}">
                     {{ number_format($summary['closing_balance'], 2) }}
                 </div>
@@ -188,54 +266,65 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
-                <p class="text-center font-extrabold mb-2">
+                <p class="text-center font-extrabold mb-1">
                     Moon Traders<br>
-                    Customer Ledger - {{ $customer->customer_name }} ({{ $customer->customer_code }})<br>
+                    Customer Ledger
+                </p>
+                <div class="text-center text-sm mb-1">
+                    <span class="font-bold">{{ $customer->customer_name }}</span>
+                    <span class="text-gray-600">({{ $customer->customer_code }})</span>
+                    @if($customer->business_name)
+                        <span class="text-gray-500">- {{ $customer->business_name }}</span>
+                    @endif
+                </div>
+                <div class="text-center text-xs text-gray-600 mb-1">
                     @if($dateFrom && $dateTo)
-                        For the period {{ \Carbon\Carbon::parse($dateFrom)->format('d-M-Y') }} to {{ \Carbon\Carbon::parse($dateTo)->format('d-M-Y') }}
+                        Period: {{ \Carbon\Carbon::parse($dateFrom)->format('d-M-Y') }} to {{ \Carbon\Carbon::parse($dateTo)->format('d-M-Y') }}
                     @else
                         All Transactions
                     @endif
-                    <br>
-                    <span class="print-only print-info text-xs text-center">
-                        Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
-                    </span>
-                </p>
+                    |
+                    Opening Bal.: {{ number_format($summary['opening_balance'], 2) }} |
+                    Closing Bal.: {{ number_format($summary['closing_balance'], 2) }}
+                </div>
+                <div class="print-only print-info text-xs text-center mb-2">
+                    Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
+                </div>
 
-                <table class="report-table">
+                <table class="report-table" style="table-layout: auto;">
                     <thead>
-                        <tr class="bg-gray-50">
-                            <th style="width: 40px;">Sr#</th>
-                            <th style="width: 90px;">Date</th>
-                            <th style="width: 100px;">Type</th>
-                            <th style="width: 100px;">Reference</th>
-                            <th style="width: 180px;">Description</th>
-                            <th style="width: 100px;">Salesman</th>
-                            <th style="width: 90px;">Debit</th>
-                            <th style="width: 90px;">Credit</th>
-                            <th style="width: 90px;">Balance</th>
+                        <tr class="bg-gray-50 text-center">
+                            <th>Sr#</th>
+                            <th>Date</th>
+                            <th>Salesman</th>
+                            <th>Reference</th>
+                            <th>Description</th>
+                            <th>Type</th>
+                            <th>Opening Balance</th>
+                            <th>Credit Sales</th>
+                            <th>Recoveries</th>
+                            <th>Closing Balance</th>
                         </tr>
                     </thead>
                     <tbody>
                         @if($summary['opening_balance'] != 0)
                             <tr class="bg-gray-50 font-semibold">
-                                <td class="text-center" style="vertical-align: middle;">-</td>
-                                <td colspan="5" style="vertical-align: middle;">Opening Balance</td>
-                                <td class="text-right font-mono" style="vertical-align: middle;">-</td>
-                                <td class="text-right font-mono" style="vertical-align: middle;">-</td>
-                                <td class="text-right font-mono font-bold {{ $summary['opening_balance'] > 0 ? 'text-orange-700' : 'text-green-700' }}" style="vertical-align: middle;">
+                                <td class="text-center">-</td>
+                                <td colspan="5">Opening Balance</td>
+                                <td class="text-right font-mono">{{ number_format($summary['opening_balance'], 2) }}</td>
+                                <td class="text-right font-mono">0.00</td>
+                                <td class="text-right font-mono">0.00</td>
+                                <td class="text-right font-mono font-bold {{ $summary['opening_balance'] > 0 ? 'text-orange-700' : 'text-green-700' }}">
                                     {{ number_format($summary['opening_balance'], 2) }}
                                 </td>
                             </tr>
                         @endif
                         @forelse ($entries as $index => $entry)
                             <tr>
-                                <td class="text-center" style="vertical-align: middle;">{{ $entries->firstItem() + $index }}</td>
-                                <td style="vertical-align: middle;">{{ \Carbon\Carbon::parse($entry->transaction_date)->format('d-m-Y') }}</td>
-                                <td style="vertical-align: middle;">
-                                    {{ ucwords(str_replace('_', ' ', $entry->transaction_type)) }}
-                                </td>
-                                <td style="vertical-align: middle;">
+                                <td class="text-center">{{ $entries->firstItem() + $index }}</td>
+                                <td class="whitespace-nowrap">{{ \Carbon\Carbon::parse($entry->transaction_date)->format('d-m-Y') }}</td>
+                                <td class="text-center">{{ $entry->employee_name ?? '-' }}</td>
+                                <td class="text-center">
                                     @if($entry->sales_settlement_id)
                                         <a href="{{ route('sales-settlements.show', $entry->sales_settlement_id) }}"
                                             class="text-blue-600 hover:text-blue-800 font-semibold no-print" target="_blank">
@@ -246,29 +335,35 @@
                                         {{ $entry->reference_number ?? '-' }}
                                     @endif
                                 </td>
-                                <td style="vertical-align: middle;">
-                                    {{ $entry->description ?? '-' }}
+                                <td>{{ $entry->description ?? '-' }}</td>
+                                <td class="text-center whitespace-nowrap">{{ ucwords(str_replace('_', ' ', $entry->transaction_type)) }}</td>
+                                <td class="text-right font-mono">
+                                    {{ number_format($entry->row_opening_balance, 2) }}
                                 </td>
-                                <td style="vertical-align: middle;">{{ $entry->employee_name ?? '-' }}</td>
-                                <td class="text-right font-mono {{ $entry->debit > 0 ? 'text-blue-700' : '' }}" style="vertical-align: middle;">
-                                    {{ $entry->debit > 0 ? number_format($entry->debit, 2) : '-' }}
+                                <td class="text-right font-mono {{ $entry->debit > 0 ? 'text-blue-700' : '' }}">
+                                    {{ number_format($entry->debit ?? 0, 2) }}
                                 </td>
-                                <td class="text-right font-mono {{ $entry->credit > 0 ? 'text-green-700' : '' }}" style="vertical-align: middle;">
-                                    {{ $entry->credit > 0 ? number_format($entry->credit, 2) : '-' }}
+                                <td class="text-right font-mono {{ $entry->credit > 0 ? 'text-green-700' : '' }}">
+                                    {{ number_format($entry->credit ?? 0, 2) }}
                                 </td>
-                                <td class="text-right font-mono font-bold {{ $entry->balance > 0 ? 'text-orange-700' : 'text-green-700' }}" style="vertical-align: middle;">
+                                <td class="text-right font-mono font-bold {{ $entry->balance > 0 ? 'text-orange-700' : 'text-green-700' }}">
                                     {{ number_format($entry->balance, 2) }}
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center py-4 text-gray-500">No ledger entries found.</td>
+                                <td colspan="10" class="text-center py-4 text-gray-500">No ledger entries found.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
-                            <td colspan="6" class="text-center px-2 py-1">Page Total ({{ $entries->count() }} entries)</td>
+                            <td colspan="6" class="text-center px-2 py-1">
+                                Page Total ({{ $entries->count() }} entries)
+                            </td>
+                            <td class="text-right font-mono px-2 py-1">
+                                -
+                            </td>
                             <td class="text-right font-mono px-2 py-1 text-blue-700">
                                 {{ number_format($entries->sum('debit'), 2) }}
                             </td>
@@ -277,6 +372,14 @@
                             </td>
                             <td class="text-right font-mono px-2 py-1 text-orange-700">
                                 {{ number_format($summary['closing_balance'], 2) }}
+                            </td>
+                        </tr>
+                        <tr class="bg-gray-200">
+                            <td colspan="10" class="text-center px-2 py-1 text-xs">
+                                Opening Bal.: {{ number_format($summary['opening_balance'], 2) }} |
+                                Credit Sales: {{ number_format($summary['total_debits'], 2) }} |
+                                Recoveries: {{ number_format($summary['total_credits'], 2) }} |
+                                Closing Bal.: {{ number_format($summary['closing_balance'], 2) }}
                             </td>
                         </tr>
                     </tfoot>

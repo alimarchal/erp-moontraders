@@ -128,9 +128,22 @@
             </div>
 
             <div>
+                <x-label for="filter_employee_id" value="Salesman" />
+                <select id="filter_employee_id" name="filter[employee_id]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Salesmen</option>
+                    @foreach($employees as $employee)
+                        <option value="{{ $employee->id }}" {{ request('filter.employee_id')==(string)$employee->id ? 'selected' : '' }}>
+                            {{ $employee->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
                 <x-label for="filter_city" value="City" />
                 <select id="filter_city" name="filter[city]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Cities</option>
                     @foreach($cities as $city)
                         <option value="{{ $city }}" {{ request('filter.city')===$city ? 'selected' : '' }}>
@@ -141,14 +154,38 @@
             </div>
 
             <div>
+                <x-label for="filter_sub_locality" value="Sub Locality" />
+                <select id="filter_sub_locality" name="filter[sub_locality]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Localities</option>
+                    @foreach($subLocalities as $locality)
+                        <option value="{{ $locality }}" {{ request('filter.sub_locality')===$locality ? 'selected' : '' }}>
+                            {{ $locality }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
                 <x-label for="filter_channel_type" value="Channel" />
                 <select id="filter_channel_type" name="filter[channel_type]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Channels</option>
                     @foreach($channelTypes as $type)
                         <option value="{{ $type }}" {{ request('filter.channel_type')===$type ? 'selected' : '' }}>
                             {{ $type }}
                         </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_customer_category" value="Category" />
+                <select id="filter_customer_category" name="filter[customer_category]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Categories</option>
+                    @foreach(['A', 'B', 'C', 'D'] as $cat)
+                        <option value="{{ $cat }}" {{ request('filter.customer_category')===$cat ? 'selected' : '' }}>{{ $cat }}</option>
                     @endforeach
                 </select>
             </div>
@@ -160,6 +197,26 @@
                     <option value="">All Status</option>
                     <option value="1" {{ request('filter.is_active')==='1' ? 'selected' : '' }}>Active</option>
                     <option value="0" {{ request('filter.is_active')==='0' ? 'selected' : '' }}>Inactive</option>
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_it_status" value="IT Status" />
+                <select id="filter_it_status" name="filter[it_status]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All</option>
+                    <option value="1" {{ request('filter.it_status')==='1' ? 'selected' : '' }}>Filer</option>
+                    <option value="0" {{ request('filter.it_status')==='0' ? 'selected' : '' }}>Non-Filer</option>
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_has_balance" value="Outstanding" />
+                <select id="filter_has_balance" name="filter[has_balance]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All</option>
+                    <option value="yes" {{ request('filter.has_balance')==='yes' ? 'selected' : '' }}>With Balance</option>
+                    <option value="no" {{ request('filter.has_balance')==='no' ? 'selected' : '' }}>Zero / Settled</option>
                 </select>
             </div>
 
@@ -176,14 +233,28 @@
             </div>
 
             <div>
+                <x-label for="filter_credit_limit_min" value="Credit Limit (Min)" />
+                <x-input id="filter_credit_limit_min" name="filter[credit_limit_min]" type="number" step="0.01"
+                    class="mt-1 block w-full" :value="request('filter.credit_limit_min')" placeholder="0.00" />
+            </div>
+
+            <div>
+                <x-label for="filter_credit_limit_max" value="Credit Limit (Max)" />
+                <x-input id="filter_credit_limit_max" name="filter[credit_limit_max]" type="number" step="0.01"
+                    class="mt-1 block w-full" :value="request('filter.credit_limit_max')" placeholder="Any" />
+            </div>
+
+            <div>
                 <x-label for="sort" value="Sort By" />
                 <select id="sort" name="sort"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="-balance" {{ request('sort', '-balance' )==='-balance' ? 'selected' : '' }}>Balance (High to Low)</option>
-                    <option value="balance" {{ request('sort')==='balance' ? 'selected' : '' }}>Balance (Low to High)</option>
+                    <option value="-balance" {{ request('sort', '-balance')==='-balance' ? 'selected' : '' }}>Closing Bal. (High to Low)</option>
+                    <option value="balance" {{ request('sort')==='balance' ? 'selected' : '' }}>Closing Bal. (Low to High)</option>
                     <option value="customer_name" {{ request('sort')==='customer_name' ? 'selected' : '' }}>Name (A-Z)</option>
                     <option value="-customer_name" {{ request('sort')==='-customer_name' ? 'selected' : '' }}>Name (Z-A)</option>
-                    <option value="-total_debits" {{ request('sort')==='-total_debits' ? 'selected' : '' }}>Total Credit Sales (High)</option>
+                    <option value="-opening_balance" {{ request('sort')==='-opening_balance' ? 'selected' : '' }}>Opening Bal. (High)</option>
+                    <option value="-credit_sales" {{ request('sort')==='-credit_sales' ? 'selected' : '' }}>Credit Sales (High)</option>
+                    <option value="-total_credits" {{ request('sort')==='-total_credits' ? 'selected' : '' }}>Recoveries (High)</option>
                     <option value="-ledger_entries_count" {{ request('sort')==='-ledger_entries_count' ? 'selected' : '' }}>Transactions (Most)</option>
                 </select>
             </div>
@@ -192,11 +263,12 @@
                 <x-label for="per_page" value="Records Per Page" />
                 <select id="per_page" name="per_page"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="10" {{ request('per_page')==10 ? 'selected' : '' }}>10</option>
-                    <option value="25" {{ request('per_page')==25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page', 50)==50 ? 'selected' : '' }}>50</option>
-                    <option value="100" {{ request('per_page')==100 ? 'selected' : '' }}>100</option>
-                    <option value="250" {{ request('per_page')==250 ? 'selected' : '' }}>250</option>
+                    <option value="10" {{ request('per_page')=='10' ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page')=='25' ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', '50')=='50' ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page')=='100' ? 'selected' : '' }}>100</option>
+                    <option value="250" {{ request('per_page')=='250' ? 'selected' : '' }}>250</option>
+                    <option value="all" {{ request('per_page')==='all' ? 'selected' : '' }}>All</option>
                 </select>
             </div>
         </div>
@@ -204,17 +276,21 @@
 
     {{-- Summary Cards --}}
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mt-4 no-print">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            <div class="bg-white rounded-lg shadow p-4 border-l-4 border-gray-500">
+                <div class="text-sm text-gray-500">Opening Bal.</div>
+                <div class="text-2xl font-bold text-gray-700">{{ number_format($totals->total_opening_balance ?? 0, 2) }}</div>
+            </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
-                <div class="text-sm text-gray-500">Total Credit Sales</div>
-                <div class="text-2xl font-bold text-blue-700">{{ number_format($totals->total_debits ?? 0, 2) }}</div>
+                <div class="text-sm text-gray-500">Credit Sales</div>
+                <div class="text-2xl font-bold text-blue-700">{{ number_format($totals->total_credit_sales ?? 0, 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
-                <div class="text-sm text-gray-500">Total Recoveries</div>
+                <div class="text-sm text-gray-500">Recoveries</div>
                 <div class="text-2xl font-bold text-green-700">{{ number_format($totals->total_credits ?? 0, 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
-                <div class="text-sm text-gray-500">Outstanding Balance</div>
+                <div class="text-sm text-gray-500">Closing Bal.</div>
                 <div class="text-2xl font-bold text-orange-700">{{ number_format(($totals->total_debits ?? 0) - ($totals->total_credits ?? 0), 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
@@ -231,7 +307,7 @@
                     Moon Traders<br>
                     Creditors Ledger (Accounts Receivable)<br>
                     Total Customers: {{ number_format($customers->total()) }} |
-                    Outstanding: {{ number_format(($totals->total_debits ?? 0) - ($totals->total_credits ?? 0), 2) }}
+                    Closing Bal.: {{ number_format(($totals->total_debits ?? 0) - ($totals->total_credits ?? 0), 2) }}
                     <br>
                     <span class="print-only print-info text-xs text-center">
                         Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
@@ -243,19 +319,20 @@
                         <tr class="bg-gray-50">
                             <th style="width: 40px;">Sr#</th>
                             <th style="width: 100px;">Code</th>
-                            <th style="width: 180px;">Customer Name</th>
-                            <th style="width: 100px;">City</th>
-                            <th style="width: 100px;">Credit Sales</th>
-                            <th style="width: 100px;">Recoveries</th>
-                            <th style="width: 100px;">Balance</th>
-                            <th style="width: 60px;">Txns</th>
-                            <th style="width: 80px;" class="no-print">Actions</th>
+                            <th style="width: 170px;">Customer Name</th>
+                            <th style="width: 80px;">City</th>
+                            <th style="width: 95px;">Opening Bal.</th>
+                            <th style="width: 95px;">Credit Sales</th>
+                            <th style="width: 95px;">Recoveries</th>
+                            <th style="width: 95px;">Closing Bal.</th>
+                            <th style="width: 50px;">Txns</th>
+                            <th style="width: 60px;" class="no-print">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse ($customers as $index => $customer)
                             @php
-                                $balance = ($customer->total_debits ?? 0) - ($customer->total_credits ?? 0);
+                                $closingBalance = ($customer->total_debits ?? 0) - ($customer->total_credits ?? 0);
                             @endphp
                             <tr>
                                 <td class="text-center" style="vertical-align: middle;">{{ $customers->firstItem() + $index }}</td>
@@ -267,14 +344,17 @@
                                     @endif
                                 </td>
                                 <td style="vertical-align: middle;">{{ $customer->city ?? '-' }}</td>
+                                <td class="text-right font-mono text-gray-700" style="vertical-align: middle;">
+                                    {{ number_format($customer->opening_balance ?? 0, 2) }}
+                                </td>
                                 <td class="text-right font-mono text-blue-700" style="vertical-align: middle;">
-                                    {{ number_format($customer->total_debits ?? 0, 2) }}
+                                    {{ number_format($customer->credit_sales ?? 0, 2) }}
                                 </td>
                                 <td class="text-right font-mono text-green-700" style="vertical-align: middle;">
                                     {{ number_format($customer->total_credits ?? 0, 2) }}
                                 </td>
-                                <td class="text-right font-mono font-bold {{ $balance > 0 ? 'text-orange-700' : 'text-green-700' }}" style="vertical-align: middle;">
-                                    {{ number_format($balance, 2) }}
+                                <td class="text-right font-mono font-bold {{ $closingBalance > 0 ? 'text-orange-700' : 'text-green-700' }}" style="vertical-align: middle;">
+                                    {{ number_format($closingBalance, 2) }}
                                 </td>
                                 <td class="text-center" style="vertical-align: middle;">
                                     {{ $customer->ledger_entries_count }}
@@ -294,15 +374,18 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center py-4 text-gray-500">No creditors found.</td>
+                                <td colspan="10" class="text-center py-4 text-gray-500">No creditors found.</td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
                             <td colspan="4" class="text-center px-2 py-1">Page Total ({{ $customers->count() }} customers)</td>
+                            <td class="text-right font-mono px-2 py-1 text-gray-700">
+                                {{ number_format($customers->sum('opening_balance'), 2) }}
+                            </td>
                             <td class="text-right font-mono px-2 py-1 text-blue-700">
-                                {{ number_format($customers->sum('total_debits'), 2) }}
+                                {{ number_format($customers->sum('credit_sales'), 2) }}
                             </td>
                             <td class="text-right font-mono px-2 py-1 text-green-700">
                                 {{ number_format($customers->sum('total_credits'), 2) }}

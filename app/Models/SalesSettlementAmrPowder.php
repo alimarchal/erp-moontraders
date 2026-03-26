@@ -10,6 +10,23 @@ class SalesSettlementAmrPowder extends Model
 {
     use HasFactory;
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $record) {
+            if (! $record->isDirty('is_disposed')) {
+                return;
+            }
+
+            if ($record->is_disposed && ! $record->disposed_at) {
+                $record->disposed_at = now();
+            }
+
+            if (! $record->is_disposed) {
+                $record->disposed_at = null;
+            }
+        });
+    }
+
     protected $fillable = [
         'sales_settlement_id',
         'product_id',
@@ -19,12 +36,14 @@ class SalesSettlementAmrPowder extends Model
         'amount',
         'notes',
         'is_disposed',
+        'disposed_at',
     ];
 
     protected $casts = [
         'quantity' => 'decimal:2',
         'amount' => 'decimal:2',
         'is_disposed' => 'boolean',
+        'disposed_at' => 'datetime',
     ];
 
     public function salesSettlement(): BelongsTo

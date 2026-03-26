@@ -100,7 +100,39 @@ class CreditSalesReportController extends Controller implements HasMiddleware
                     ->whereBetween('ceat.transaction_date', [$startDate, $endDate])
                     ->whereNull('ceat.deleted_at')
                     ->selectRaw('COUNT(DISTINCT cea.customer_id)');
-            }, 'customers_count');
+            }, 'customers_count')
+            // Closing Balance: opening_balance + credit_sales - recoveries in a single subquery
+            // (PostgreSQL cannot reference SELECT aliases inside ORDER BY expressions)
+            ->selectSub(function ($query) use ($startDate, $endDate) {
+                $query->from('customer_employee_account_transactions as ceat')
+                    ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+                    ->whereColumn('cea.employee_id', 'employees.id')
+                    ->where(function ($q) use ($startDate, $endDate) {
+                        $q->where('ceat.transaction_date', '<', $startDate)
+                            ->orWhere(function ($q2) use ($startDate, $endDate) {
+                                $q2->where('ceat.transaction_type', 'opening_balance')
+                                    ->whereBetween('ceat.transaction_date', [$startDate, $endDate]);
+                            })
+                            ->orWhere(function ($q2) use ($startDate, $endDate) {
+                                $q2->whereIn('ceat.transaction_type', ['credit_sale', 'recovery'])
+                                    ->whereBetween('ceat.transaction_date', [$startDate, $endDate]);
+                            });
+                    })
+                    ->whereNull('ceat.deleted_at')
+                    ->selectRaw('
+                        COALESCE(SUM(
+                            CASE
+                                WHEN ceat.transaction_date < ? OR (ceat.transaction_type = ? AND ceat.transaction_date BETWEEN ? AND ?)
+                                    THEN ceat.debit - ceat.credit
+                                WHEN ceat.transaction_type = ? AND ceat.transaction_date BETWEEN ? AND ?
+                                    THEN ceat.debit
+                                WHEN ceat.transaction_type = ? AND ceat.transaction_date BETWEEN ? AND ?
+                                    THEN -ceat.credit
+                                ELSE 0
+                            END
+                        ), 0)
+                    ', [$startDate, 'opening_balance', $startDate, $endDate, 'credit_sale', $startDate, $endDate, 'recovery', $startDate, $endDate]);
+            }, 'closing_balance');
 
         // Filter by supplier
         if ($request->filled('filter.supplier_id')) {
@@ -160,7 +192,7 @@ class CreditSalesReportController extends Controller implements HasMiddleware
                 $query->orderByRaw('opening_balance '.$direction);
                 break;
             case 'closing_balance':
-                $query->orderByRaw('(opening_balance + credit_sales_amount - recoveries_amount) '.$direction);
+                $query->orderByRaw('closing_balance '.$direction);
                 break;
             case 'name':
                 $query->orderBy('name', $direction);
@@ -172,7 +204,7 @@ class CreditSalesReportController extends Controller implements HasMiddleware
                 $query->orderByRaw('credit_sales_count '.$direction);
                 break;
             default:
-                $query->orderByRaw('(opening_balance + credit_sales_amount - recoveries_amount) desc');
+                $query->orderByRaw('closing_balance desc');
         }
 
         $salesmenWithCredits = $query->paginate($perPage)->withQueryString();

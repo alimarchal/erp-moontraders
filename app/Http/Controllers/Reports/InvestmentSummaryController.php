@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class InvestmentSummaryController extends Controller implements HasMiddleware
 {
@@ -53,12 +54,12 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         ];
 
         // Part 2: Investment Summary
-        $powderExpiry = $this->getPowderExpiry($supplierId);
-        $liquidExpiry = $this->getLiquidExpiry($supplierId);
-        $claimAmount = $this->getClaimAmount($supplierId);
-        $stockAmount = $this->getStockAmount($supplierId);
+        $powderExpiry = $this->getPowderExpiry($supplierId, $date);
+        $liquidExpiry = $this->getLiquidExpiry($supplierId, $date);
+        $claimAmount = $this->getClaimAmount($supplierId, $date);
+        $stockAmount = $this->getStockAmount($supplierId, $date);
         $creditAmount = (float) $creditGrandTotals->total_credit;
-        $ledgerAmount = $this->getLedgerAmount($supplierId);
+        $ledgerAmount = $this->getLedgerAmount($supplierId, $date);
 
         $currentTotal = $powderExpiry + $liquidExpiry + $claimAmount + $stockAmount + $creditAmount + $ledgerAmount;
 
@@ -66,8 +67,13 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         $previousDate = Carbon::parse($date)->subDay()->format('Y-m-d');
         $previousCreditData = $this->getSalesmanCreditData($previousDate, $supplierId, $designation, $employeeIds);
         $previousCreditAmount = (float) $previousCreditData->sum('total_credit');
+        $previousPowderExpiry = $this->getPowderExpiry($supplierId, $previousDate);
+        $previousLiquidExpiry = $this->getLiquidExpiry($supplierId, $previousDate);
+        $previousStockAmount = $this->getStockAmount($supplierId, $previousDate);
+        $previousClaimAmount = $this->getClaimAmount($supplierId, $previousDate);
+        $previousLedgerAmount = $this->getLedgerAmount($supplierId, $previousDate);
 
-        $previousTotal = $powderExpiry + $liquidExpiry + $claimAmount + $stockAmount + $previousCreditAmount + $ledgerAmount;
+        $previousTotal = $previousPowderExpiry + $previousLiquidExpiry + $previousClaimAmount + $previousStockAmount + $previousCreditAmount + $previousLedgerAmount;
 
         $difference = $currentTotal - $previousTotal;
         $differencePercent = $previousTotal != 0 ? ($difference / abs($previousTotal)) * 100 : 0;
@@ -107,7 +113,13 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
                 $query->from('customer_employee_account_transactions as ceat')
                     ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
                     ->whereColumn('cea.employee_id', 'employees.id')
-                    ->where('ceat.transaction_date', '<', $date)
+                    ->where(function ($q) use ($date) {
+                        $q->where('ceat.transaction_date', '<', $date)
+                            ->orWhere(function ($q2) use ($date) {
+                                $q2->where('ceat.transaction_date', '=', $date)
+                                    ->where('ceat.transaction_type', 'opening_balance');
+                            });
+                    })
                     ->whereNull('ceat.deleted_at')
                     ->selectRaw('COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0)');
             }, 'opening_credit')
@@ -154,12 +166,40 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         });
     }
 
-    private function getPowderExpiry(?int $supplierId): float
+    private function getPowderExpiry(?int $supplierId, ?string $date = null): float
     {
+        $asOfDate = $date ?? now()->toDateString();
+        $asOfDateTime = Carbon::parse($asOfDate)->endOfDay();
+        $hasDisposedAt = Schema::hasColumn('sales_settlement_amr_powders', 'disposed_at');
+
         $query = DB::table('sales_settlement_amr_powders as p')
             ->join('sales_settlements as ss', 'p.sales_settlement_id', '=', 'ss.id')
-            ->where('p.is_disposed', false)
+            ->whereDate('ss.settlement_date', '<=', $asOfDate)
             ->whereNull('ss.deleted_at');
+
+        if ($hasDisposedAt) {
+            $query->where(function ($q) use ($asOfDateTime) {
+                $q->where('p.is_disposed', false)
+                    ->orWhere(function ($q2) use ($asOfDateTime) {
+                        $q2->where('p.is_disposed', true)
+                            ->where(function ($q3) use ($asOfDateTime) {
+                                $q3->where('p.disposed_at', '>', $asOfDateTime)
+                                    ->orWhere(function ($q4) use ($asOfDateTime) {
+                                        $q4->whereNull('p.disposed_at')
+                                            ->where('p.updated_at', '>', $asOfDateTime);
+                                    });
+                            });
+                    });
+            });
+        } else {
+            $query->where(function ($q) use ($asOfDateTime) {
+                $q->where('p.is_disposed', false)
+                    ->orWhere(function ($q2) use ($asOfDateTime) {
+                        $q2->where('p.is_disposed', true)
+                            ->where('p.updated_at', '>', $asOfDateTime);
+                    });
+            });
+        }
 
         if ($supplierId) {
             $query->where('ss.supplier_id', $supplierId);
@@ -168,12 +208,40 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         return (float) $query->sum('p.amount');
     }
 
-    private function getLiquidExpiry(?int $supplierId): float
+    private function getLiquidExpiry(?int $supplierId, ?string $date = null): float
     {
+        $asOfDate = $date ?? now()->toDateString();
+        $asOfDateTime = Carbon::parse($asOfDate)->endOfDay();
+        $hasDisposedAt = Schema::hasColumn('sales_settlement_amr_liquids', 'disposed_at');
+
         $query = DB::table('sales_settlement_amr_liquids as l')
             ->join('sales_settlements as ss', 'l.sales_settlement_id', '=', 'ss.id')
-            ->where('l.is_disposed', false)
+            ->whereDate('ss.settlement_date', '<=', $asOfDate)
             ->whereNull('ss.deleted_at');
+
+        if ($hasDisposedAt) {
+            $query->where(function ($q) use ($asOfDateTime) {
+                $q->where('l.is_disposed', false)
+                    ->orWhere(function ($q2) use ($asOfDateTime) {
+                        $q2->where('l.is_disposed', true)
+                            ->where(function ($q3) use ($asOfDateTime) {
+                                $q3->where('l.disposed_at', '>', $asOfDateTime)
+                                    ->orWhere(function ($q4) use ($asOfDateTime) {
+                                        $q4->whereNull('l.disposed_at')
+                                            ->where('l.updated_at', '>', $asOfDateTime);
+                                    });
+                            });
+                    });
+            });
+        } else {
+            $query->where(function ($q) use ($asOfDateTime) {
+                $q->where('l.is_disposed', false)
+                    ->orWhere(function ($q2) use ($asOfDateTime) {
+                        $q2->where('l.is_disposed', true)
+                            ->where('l.updated_at', '>', $asOfDateTime);
+                    });
+            });
+        }
 
         if ($supplierId) {
             $query->where('ss.supplier_id', $supplierId);
@@ -182,7 +250,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         return (float) $query->sum('l.amount');
     }
 
-    private function getClaimAmount(?int $supplierId): float
+    private function getClaimAmount(?int $supplierId, ?string $date = null): float
     {
         $query = ClaimRegister::whereNotNull('posted_at');
 
@@ -190,31 +258,57 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             $query->where('supplier_id', $supplierId);
         }
 
+        if ($date) {
+            $query->where('transaction_date', '<=', $date);
+        }
+
         return (float) $query->selectRaw('COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0) as balance')
             ->value('balance');
     }
 
-    private function getStockAmount(?int $supplierId): float
+    private function getStockAmount(?int $supplierId, ?string $date = null): float
     {
-        $query = DB::table('current_stock_by_batch as csb')
-            ->join('products as p', 'csb.product_id', '=', 'p.id')
-            ->where('csb.status', 'active')
+        $today = now()->format('Y-m-d');
+
+        // For today or future dates, use current stock
+        if (! $date || $date >= $today) {
+            $query = DB::table('current_stock_by_batch as csb')
+                ->join('products as p', 'csb.product_id', '=', 'p.id')
+                ->where('csb.status', 'active')
+                ->whereNull('p.deleted_at');
+
+            if ($supplierId) {
+                $query->where('p.supplier_id', $supplierId);
+            }
+
+            return (float) $query->selectRaw('COALESCE(SUM(csb.quantity_on_hand * csb.unit_cost), 0) as total')
+                ->value('total');
+        }
+
+        // For past dates, use daily inventory snapshots
+        $query = DB::table('daily_inventory_snapshots as dis')
+            ->join('products as p', 'dis.product_id', '=', 'p.id')
+            ->where('dis.date', $date)
             ->whereNull('p.deleted_at');
 
         if ($supplierId) {
             $query->where('p.supplier_id', $supplierId);
         }
 
-        return (float) $query->selectRaw('COALESCE(SUM(csb.quantity_on_hand * csb.unit_cost), 0) as total')
+        return (float) $query->selectRaw('COALESCE(SUM(dis.total_value), 0) as total')
             ->value('total');
     }
 
-    private function getLedgerAmount(?int $supplierId): float
+    private function getLedgerAmount(?int $supplierId, ?string $date = null): float
     {
         $query = LegerRegister::query();
 
         if ($supplierId) {
             $query->where('supplier_id', $supplierId);
+        }
+
+        if ($date) {
+            $query->where('transaction_date', '<=', $date);
         }
 
         return (float) $query->orderByDesc('transaction_date')

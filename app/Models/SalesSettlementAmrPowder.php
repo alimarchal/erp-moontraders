@@ -18,11 +18,13 @@ class SalesSettlementAmrPowder extends Model
         'quantity',
         'amount',
         'notes',
+        'is_disposed',
     ];
 
     protected $casts = [
         'quantity' => 'decimal:2',
         'amount' => 'decimal:2',
+        'is_disposed' => 'boolean',
     ];
 
     public function salesSettlement(): BelongsTo

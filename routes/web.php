@@ -49,6 +49,7 @@ use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\GoodsIssueReportController;
 use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\InventoryLedgerReportController;
+use App\Http\Controllers\Reports\InvestmentSummaryController;
 use App\Http\Controllers\Reports\InvoiceSummaryReportController;
 use App\Http\Controllers\Reports\LegerRegisterController;
 use App\Http\Controllers\Reports\OpeningCustomerBalanceReportController;
@@ -654,6 +655,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('custom-settlement', [CustomSettlementReportController::class, 'index'])->name('custom-settlement.index');
         Route::get('goods-issue', [GoodsIssueReportController::class, 'index'])->name('goods-issue.index');
         Route::get('cash-detail', [CashDetailController::class, 'index'])->name('cash-detail.index');
+        Route::get('investment-summary', [InvestmentSummaryController::class, 'index'])->name('investment-summary.index');
 
         /* Inventory & Stock Reports */
         Route::get('daily-stock-register', [DailyStockRegisterController::class, 'index'])->name('daily-stock-register.index');

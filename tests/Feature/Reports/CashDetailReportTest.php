@@ -38,7 +38,12 @@ class CashDetailReportTest extends TestCase
     {
         $user = User::factory()->create();
         $user->givePermissionTo('report-audit-cash-detail');
-        $employee = Employee::factory()->create(['name' => 'John Doe']);
+        $supplier = Supplier::factory()->create(['supplier_name' => 'Nestlé Pakistan']);
+        $employee = Employee::factory()->create([
+            'name' => 'John Doe',
+            'supplier_id' => $supplier->id,
+            'designation' => 'Salesman',
+        ]);
 
         $settlement = SalesSettlement::factory()->create([
             'employee_id' => $employee->id,

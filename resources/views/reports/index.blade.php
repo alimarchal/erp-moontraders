@@ -161,6 +161,234 @@
                 @endcanany
 
 
+
+                <!-- Receivables & Collections -->
+                @canany(['report-audit-creditors-ledger', 'report-sales-credit-sales', 'report-audit-cash-detail', 'report-audit-custom-settlement', 'report-audit-claim-register', 'report-audit-percentage-expense', 'report-audit-advance-tax', 'report-audit-opening-customer-balance'])
+                    <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
+                        <button @click="open = !open" type="button"
+                            class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
+                            <div class="flex items-center gap-3">
+                                <div class="w-1.5 h-8 rounded-full bg-amber-500"></div>
+                                <h3 class="text-lg font-bold text-gray-800">Receivables & Core Reports</h3>
+                            </div>
+                            <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
+                                :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </button>
+                        <div x-show="open" x-collapse>
+                            <div class="border-t border-gray-100 divide-y divide-gray-100">
+                                @can('report-audit-creditors-ledger')
+                                    <a href="{{ route('reports.creditors-ledger.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Creditors Ledger</div>
+                                                <div class="text-xs text-gray-500">Outstanding balances by creditor</div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
+                                @can('report-sales-credit-sales')
+                                    <a href="{{ route('reports.credit-sales.salesman-history') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center text-cyan-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Salesman Credit History
+                                                </div>
+                                                <div class="text-xs text-gray-500">Credit sales history per salesman</div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
+                                @can('report-audit-cash-detail')
+                                    <a href="{{ route('reports.cash-detail.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Cash Collection Detail
+                                                </div>
+                                                <div class="text-xs text-gray-500">Daily cash collection breakdown</div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
+                                @can('report-audit-custom-settlement')
+                                    <a href="{{ route('reports.custom-settlement.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Custom Settlement</div>
+                                                <div class="text-xs text-gray-500">Custom settlement transactions</div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
+                                @can('report-audit-claim-register')
+                                    <a href="{{ route('reports.claim-register.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Claim Register</div>
+                                                <div class="text-xs text-gray-500">Supplier claims and recovery tracking
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
+                                @can('report-audit-opening-customer-balance')
+                                    <a href="{{ route('reports.opening-customer-balance.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center text-cyan-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Opening Customer Balance</div>
+                                                <div class="text-xs text-gray-500">Customer opening balances per salesman</div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
+                                @can('report-audit-percentage-expense')
+                                    <a href="{{ route('reports.percentage-expense.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Expense Analysis</div>
+                                                <div class="text-xs text-gray-500">Expense percentage and distribution
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
+                                @can('report-audit-advance-tax')
+                                    <a href="{{ route('reports.advance-tax.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Advance Tax Report</div>
+                                                <div class="text-xs text-gray-500">Advance tax computation and records
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+                            </div>
+                        </div>
+                    </div>
+                @endcanany
+
                 <!-- Inventory Management -->
                 @canany(['report-inventory-daily-stock-register', 'report-inventory-salesman-stock-register', 'report-inventory-inventory-ledger', 'report-inventory-van-stock-batch', 'report-inventory-van-stock-ledger'])
                     <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
@@ -765,232 +993,7 @@
                 @endcanany
 
 
-                <!-- Receivables & Collections -->
-                @canany(['report-audit-creditors-ledger', 'report-sales-credit-sales', 'report-audit-cash-detail', 'report-audit-custom-settlement', 'report-audit-claim-register', 'report-audit-percentage-expense', 'report-audit-advance-tax', 'report-audit-opening-customer-balance'])
-                    <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
-                        <button @click="open = !open" type="button"
-                            class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
-                            <div class="flex items-center gap-3">
-                                <div class="w-1.5 h-8 rounded-full bg-amber-500"></div>
-                                <h3 class="text-lg font-bold text-gray-800">Receivables & Collections</h3>
-                            </div>
-                            <svg class="w-5 h-5 text-gray-400 transition-transform duration-200"
-                                :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                            </svg>
-                        </button>
-                        <div x-show="open" x-collapse>
-                            <div class="border-t border-gray-100 divide-y divide-gray-100">
-                                @can('report-audit-creditors-ledger')
-                                    <a href="{{ route('reports.creditors-ledger.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Creditors Ledger</div>
-                                                <div class="text-xs text-gray-500">Outstanding balances by creditor</div>
-                                            </div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                @endcan
 
-                                @can('report-sales-credit-sales')
-                                    <a href="{{ route('reports.credit-sales.salesman-history') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center text-cyan-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Salesman Credit History
-                                                </div>
-                                                <div class="text-xs text-gray-500">Credit sales history per salesman</div>
-                                            </div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                @endcan
-
-                                @can('report-audit-cash-detail')
-                                    <a href="{{ route('reports.cash-detail.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Cash Collection Detail
-                                                </div>
-                                                <div class="text-xs text-gray-500">Daily cash collection breakdown</div>
-                                            </div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                @endcan
-
-                                @can('report-audit-custom-settlement')
-                                    <a href="{{ route('reports.custom-settlement.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 0 0-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.664m-5.8 0A2.251 2.251 0 0 1 13.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25ZM6.75 12h.008v.008H6.75V12Zm0 3h.008v.008H6.75V15Zm0 3h.008v.008H6.75V18Z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Custom Settlement</div>
-                                                <div class="text-xs text-gray-500">Custom settlement transactions</div>
-                                            </div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                @endcan
-
-                                @can('report-audit-claim-register')
-                                    <a href="{{ route('reports.claim-register.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Claim Register</div>
-                                                <div class="text-xs text-gray-500">Supplier claims and recovery tracking
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                @endcan
-
-                                @can('report-audit-opening-customer-balance')
-                                    <a href="{{ route('reports.opening-customer-balance.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center text-cyan-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M2.25 18.75a60.07 60.07 0 0 1 15.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 0 1-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Zm3 0h.008v.008H18V10.5Zm-12 0h.008v.008H6V10.5Z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Opening Customer Balance</div>
-                                                <div class="text-xs text-gray-500">Customer opening balances per salesman</div>
-                                            </div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                @endcan
-
-                                @can('report-audit-percentage-expense')
-                                    <a href="{{ route('reports.percentage-expense.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M10.5 6a7.5 7.5 0 1 0 7.5 7.5h-7.5V6Z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Expense Analysis</div>
-                                                <div class="text-xs text-gray-500">Expense percentage and distribution
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                @endcan
-
-                                @can('report-audit-advance-tax')
-                                    <a href="{{ route('reports.advance-tax.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0 0 12 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 0 1-2.031.352 5.988 5.988 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971Zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0 2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 0 1-2.031.352 5.989 5.989 0 0 1-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971Z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Advance Tax Report</div>
-                                                <div class="text-xs text-gray-500">Advance tax computation and records
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                @endcan
-                            </div>
-                        </div>
-                    </div>
-                @endcanany
 
             </div>
         </div>

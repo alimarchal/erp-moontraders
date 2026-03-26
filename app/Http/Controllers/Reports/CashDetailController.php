@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
+use App\Models\Employee;
 use App\Models\SalesSettlement;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
@@ -21,16 +22,16 @@ class CashDetailController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         $date = $request->input('date', now()->format('Y-m-d'));
-        $supplierId = $request->input('supplier_id');
-        $designation = $request->input('designation');
+        $supplierId = $request->input('supplier_id', Supplier::where('supplier_name', 'Nestlé Pakistan')->value('id'));
+        $designation = $request->input('designation', 'Salesman');
         $employeeIds = $request->input('employee_ids', []); // Array of selected employee IDs
 
         $suppliers = Supplier::orderBy('supplier_name')->get();
         // Fetch unique designations
-        $designations = \App\Models\Employee::distinct()->whereNotNull('designation')->orderBy('designation')->pluck('designation');
+        $designations = Employee::distinct()->whereNotNull('designation')->orderBy('designation')->pluck('designation');
 
         // Fetch all employees (Salesmen) to populate the filter
-        $allEmployees = \App\Models\Employee::query();
+        $allEmployees = Employee::query();
 
         if ($supplierId) {
             $allEmployees->where('supplier_id', $supplierId);
@@ -46,7 +47,7 @@ class CashDetailController extends Controller implements HasMiddleware
         // The user said: "agar mein supplier select kro tou us supplier k saray salesman show honey chieyay"
         // So we start with Employees, then left join settlements.
 
-        $employeesQuery = \App\Models\Employee::query();
+        $employeesQuery = Employee::query();
 
         if ($supplierId) {
             $employeesQuery->where('supplier_id', $supplierId);

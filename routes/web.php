@@ -7,7 +7,7 @@
  * Authorization is enforced at the controller level using Spatie permission
  * middleware (HasMiddleware interface) — not in this file.
  *
- * @see \App\Providers\AppServiceProvider  Gate::before() bypass for "Super Admin"
+ * @see AppServiceProvider  Gate::before() bypass for "Super Admin"
  */
 
 use App\Http\Controllers\AccountingPeriodController;
@@ -29,8 +29,10 @@ use App\Http\Controllers\GoodsIssueController;
 use App\Http\Controllers\GoodsReceiptNoteController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\OpeningCustomerBalanceController;
+use App\Http\Controllers\OpeningStockController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductRecallController;
 use App\Http\Controllers\ProductTaxMappingController;
 use App\Http\Controllers\PromotionalCampaignController;
 use App\Http\Controllers\Reports\AccountBalancesController;
@@ -64,6 +66,7 @@ use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalesSettlementController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\StockAdjustmentController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\TaxCodeController;
@@ -74,6 +77,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseTypeController;
+use App\Providers\AppServiceProvider;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => to_route('login'));
@@ -102,7 +108,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::get('/import-fun-pro', function () {
         abort_unless(auth()->user()?->is_super_admin === 'Yes', 403);
 
-        $driver = \Illuminate\Support\Facades\DB::connection()->getDriverName();
+        $driver = DB::connection()->getDriverName();
         $results = [];
         $hasErrors = false;
 
@@ -110,20 +116,20 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             $results['error'] = "Unsupported database driver: {$driver}. Supported: MySQL, MariaDB, PostgreSQL.";
             $hasErrors = true;
         } else {
-            \Illuminate\Support\Facades\Artisan::call('db:sync-objects');
+            Artisan::call('db:sync-objects');
 
-            $db = \Illuminate\Support\Facades\DB::connection()->getDatabaseName();
+            $db = DB::connection()->getDatabaseName();
 
             if (in_array($driver, ['mysql', 'mariadb'])) {
-                $procedures = \Illuminate\Support\Facades\DB::table('information_schema.ROUTINES')
+                $procedures = DB::table('information_schema.ROUTINES')
                     ->where('ROUTINE_SCHEMA', $db)->where('ROUTINE_TYPE', 'PROCEDURE')
                     ->pluck('ROUTINE_NAME')->map('strtolower')->toArray();
 
-                $functions = \Illuminate\Support\Facades\DB::table('information_schema.ROUTINES')
+                $functions = DB::table('information_schema.ROUTINES')
                     ->where('ROUTINE_SCHEMA', $db)->where('ROUTINE_TYPE', 'FUNCTION')
                     ->pluck('ROUTINE_NAME')->map('strtolower')->toArray();
 
-                $views = \Illuminate\Support\Facades\DB::table('information_schema.VIEWS')
+                $views = DB::table('information_schema.VIEWS')
                     ->where('TABLE_SCHEMA', $db)->pluck('TABLE_NAME')->map('strtolower')->toArray();
 
                 $results = [
@@ -137,7 +143,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
                     'vw_income_statement' => in_array('vw_income_statement', $views) ? 'OK' : 'MISSING',
                 ];
 
-                $triggers = \Illuminate\Support\Facades\DB::select(
+                $triggers = DB::select(
                     'SELECT TRIGGER_NAME FROM information_schema.TRIGGERS WHERE TRIGGER_SCHEMA = ?', [$db]
                 );
                 $triggerNames = collect($triggers)->pluck('TRIGGER_NAME')->map('strtolower')->toArray();
@@ -145,17 +151,17 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
                 $results['trg_block_posted_claim_deletes'] = in_array('trg_block_posted_claim_deletes', $triggerNames) ? 'OK' : 'MISSING';
             } else {
                 // PostgreSQL — check via pg_proc and information_schema
-                $pgFunctions = \Illuminate\Support\Facades\DB::select(
+                $pgFunctions = DB::select(
                     "SELECT p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace WHERE n.nspname = 'public'"
                 );
                 $pgFunctionNames = collect($pgFunctions)->pluck('proname')->toArray();
 
-                $pgTriggers = \Illuminate\Support\Facades\DB::select(
+                $pgTriggers = DB::select(
                     "SELECT trigger_name FROM information_schema.triggers WHERE trigger_schema = 'public'"
                 );
                 $pgTriggerNames = collect($pgTriggers)->pluck('trigger_name')->toArray();
 
-                $pgViews = \Illuminate\Support\Facades\DB::select(
+                $pgViews = DB::select(
                     "SELECT table_name FROM information_schema.views WHERE table_schema = 'public'"
                 );
                 $pgViewNames = collect($pgViews)->pluck('table_name')->toArray();
@@ -219,12 +225,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         $fixedCount = 0;
         $okCount = 0;
 
-        \Illuminate\Support\Facades\DB::beginTransaction();
+        DB::beginTransaction();
         try {
             // All (vehicle_id, product_id) pairs across both denormalized tables
-            $pairs = \Illuminate\Support\Facades\DB::table('van_stock_batches')
+            $pairs = DB::table('van_stock_batches')
                 ->select('vehicle_id', 'product_id')
-                ->union(\Illuminate\Support\Facades\DB::table('van_stock_balances')->select('vehicle_id', 'product_id'))
+                ->union(DB::table('van_stock_balances')->select('vehicle_id', 'product_id'))
                 ->distinct()
                 ->get();
 
@@ -233,33 +239,33 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
                 $productId = $pair->product_id;
 
                 // Authoritative balance from ledger
-                $ledgerBalance = (float) \Illuminate\Support\Facades\DB::table('inventory_ledger_entries')
+                $ledgerBalance = (float) DB::table('inventory_ledger_entries')
                     ->where('vehicle_id', $vehicleId)
                     ->where('product_id', $productId)
-                    ->sum(\Illuminate\Support\Facades\DB::raw('debit_qty - credit_qty'));
+                    ->sum(DB::raw('debit_qty - credit_qty'));
                 $ledgerBalance = max(0.0, $ledgerBalance);
 
                 // Current denormalized totals
-                $vsbTotal = (float) \Illuminate\Support\Facades\DB::table('van_stock_batches')
+                $vsbTotal = (float) DB::table('van_stock_batches')
                     ->where('vehicle_id', $vehicleId)
                     ->where('product_id', $productId)
                     ->sum('quantity_on_hand');
 
-                $aggRecord = \Illuminate\Support\Facades\DB::table('van_stock_balances')
+                $aggRecord = DB::table('van_stock_balances')
                     ->where('vehicle_id', $vehicleId)
                     ->where('product_id', $productId)
                     ->first();
                 $vsbAgg = $aggRecord ? (float) $aggRecord->quantity_on_hand : null;
 
-                $vehicleReg = \Illuminate\Support\Facades\DB::table('vehicles')->where('id', $vehicleId)->value('registration_number') ?? "Vehicle #{$vehicleId}";
-                $productName = \Illuminate\Support\Facades\DB::table('products')->where('id', $productId)->value('product_name') ?? "Product #{$productId}";
+                $vehicleReg = DB::table('vehicles')->where('id', $vehicleId)->value('registration_number') ?? "Vehicle #{$vehicleId}";
+                $productName = DB::table('products')->where('id', $productId)->value('product_name') ?? "Product #{$productId}";
 
                 $discrepancy = round($vsbTotal - $ledgerBalance, 3);
                 $aggDiscrepancy = $vsbAgg !== null ? round($vsbAgg - $ledgerBalance, 3) : null;
 
                 if (abs($discrepancy) > 0.001 || ($aggDiscrepancy !== null && abs($aggDiscrepancy) > 0.001)) {
                     // Rebuild van_stock_batches FIFO from ledger balance
-                    $batches = \Illuminate\Support\Facades\DB::table('van_stock_batches')
+                    $batches = DB::table('van_stock_batches')
                         ->where('vehicle_id', $vehicleId)
                         ->where('product_id', $productId)
                         ->orderBy('created_at')
@@ -268,27 +274,27 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
                     $remaining = $ledgerBalance;
                     foreach ($batches as $batch) {
                         $maxCap = $batch->goods_issue_item_id
-                            ? (float) (\Illuminate\Support\Facades\DB::table('goods_issue_items')->where('id', $batch->goods_issue_item_id)->value('quantity_issued') ?? $batch->quantity_on_hand)
+                            ? (float) (DB::table('goods_issue_items')->where('id', $batch->goods_issue_item_id)->value('quantity_issued') ?? $batch->quantity_on_hand)
                             : (float) $batch->quantity_on_hand;
                         $newQty = min($maxCap, $remaining);
-                        \Illuminate\Support\Facades\DB::table('van_stock_batches')->where('id', $batch->id)->update(['quantity_on_hand' => $newQty]);
+                        DB::table('van_stock_batches')->where('id', $batch->id)->update(['quantity_on_hand' => $newQty]);
                         $remaining -= $newQty;
                     }
                     // Ledger shows more than all batches can absorb — add remainder to last batch
                     if ($remaining > 0.001 && $batches->isNotEmpty()) {
-                        \Illuminate\Support\Facades\DB::table('van_stock_batches')
+                        DB::table('van_stock_batches')
                             ->where('id', $batches->last()->id)
                             ->increment('quantity_on_hand', $remaining);
                     }
 
                     // Update or create aggregate van_stock_balances record
                     if ($aggRecord) {
-                        \Illuminate\Support\Facades\DB::table('van_stock_balances')
+                        DB::table('van_stock_balances')
                             ->where('vehicle_id', $vehicleId)
                             ->where('product_id', $productId)
                             ->update(['quantity_on_hand' => $ledgerBalance, 'last_updated' => now(), 'updated_at' => now()]);
                     } else {
-                        \Illuminate\Support\Facades\DB::table('van_stock_balances')->insert([
+                        DB::table('van_stock_balances')->insert([
                             'vehicle_id' => $vehicleId,
                             'product_id' => $productId,
                             'quantity_on_hand' => $ledgerBalance,
@@ -324,9 +330,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
                 }
             }
 
-            \Illuminate\Support\Facades\DB::commit();
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\DB::rollBack();
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
 
             return back()->with('error', 'VRS Fix failed: '.$e->getMessage());
         }
@@ -363,9 +369,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | JE: Dr Inventory / Cr Opening Balance Equity, no payment created.
     | Permission: opening-stock-create
     */
-    Route::post('opening-stock', [\App\Http\Controllers\OpeningStockController::class, 'store'])
+    Route::post('opening-stock', [OpeningStockController::class, 'store'])
         ->name('opening-stock.store');
-    Route::get('opening-stock/template/{supplier}', [\App\Http\Controllers\OpeningStockController::class, 'downloadTemplate'])
+    Route::get('opening-stock/template/{supplier}', [OpeningStockController::class, 'downloadTemplate'])
         ->name('opening-stock.template');
 
     /*
@@ -483,10 +489,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | Posts to inventory ledger and creates GL journal entry.
     | Permissions: stock-adjustment-list, -create, -edit, -delete, -post
     */
-    Route::resource('stock-adjustments', \App\Http\Controllers\StockAdjustmentController::class);
-    Route::post('stock-adjustments/{stockAdjustment}/post', [\App\Http\Controllers\StockAdjustmentController::class, 'post'])
+    Route::resource('stock-adjustments', StockAdjustmentController::class);
+    Route::post('stock-adjustments/{stockAdjustment}/post', [StockAdjustmentController::class, 'post'])
         ->name('stock-adjustments.post');
-    Route::get('api/products/{product}/batches/{warehouse}', [\App\Http\Controllers\StockAdjustmentController::class, 'getBatchesForProduct'])
+    Route::get('api/products/{product}/batches/{warehouse}', [StockAdjustmentController::class, 'getBatchesForProduct'])
         ->name('api.products.batches');
 
     /*
@@ -497,14 +503,14 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | Creates stock adjustment on posting, can generate claim register.
     | Permissions: product-recall-list, -create, -edit, -delete, -post, -cancel
     */
-    Route::resource('product-recalls', \App\Http\Controllers\ProductRecallController::class);
-    Route::post('product-recalls/{productRecall}/post', [\App\Http\Controllers\ProductRecallController::class, 'post'])
+    Route::resource('product-recalls', ProductRecallController::class);
+    Route::post('product-recalls/{productRecall}/post', [ProductRecallController::class, 'post'])
         ->name('product-recalls.post');
-    Route::post('product-recalls/{productRecall}/cancel', [\App\Http\Controllers\ProductRecallController::class, 'cancel'])
+    Route::post('product-recalls/{productRecall}/cancel', [ProductRecallController::class, 'cancel'])
         ->name('product-recalls.cancel');
-    Route::post('product-recalls/{productRecall}/create-claim', [\App\Http\Controllers\ProductRecallController::class, 'createClaim'])
+    Route::post('product-recalls/{productRecall}/create-claim', [ProductRecallController::class, 'createClaim'])
         ->name('product-recalls.create-claim');
-    Route::get('api/suppliers/{supplier}/batches', [\App\Http\Controllers\ProductRecallController::class, 'getBatchesForSupplier'])
+    Route::get('api/suppliers/{supplier}/batches', [ProductRecallController::class, 'getBatchesForSupplier'])
         ->name('api.suppliers.batches');
 
     /*
@@ -551,8 +557,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::prefix('reports/credit-sales')->name('reports.credit-sales.')->group(function () {
         Route::get('/salesman-history', [CreditSalesReportController::class, 'salesmanCreditHistory'])->name('salesman-history');
         Route::get('/salesman/{employee}', [CreditSalesReportController::class, 'salesmanCreditDetails'])->name('salesman-details');
-        Route::get('/customer-history', [CreditSalesReportController::class, 'customerCreditHistory'])->name('customer-history');
-        Route::get('/customer/{customer}', [CreditSalesReportController::class, 'customerCreditDetails'])->name('customer-details');
     });
 
     Route::prefix('reports/creditors-ledger')->name('reports.creditors-ledger.')->group(function () {

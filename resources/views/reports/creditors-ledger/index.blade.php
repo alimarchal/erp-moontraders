@@ -104,6 +104,18 @@
     <x-filter-section :action="route('reports.creditors-ledger.index')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
+                <x-label for="filter_date_from" value="Date From" />
+                <x-input id="filter_date_from" name="filter[date_from]" type="date" class="mt-1 block w-full"
+                    :value="request('filter.date_from')" />
+            </div>
+
+            <div>
+                <x-label for="filter_date_to" value="Date To" />
+                <x-input id="filter_date_to" name="filter[date_to]" type="date" class="mt-1 block w-full"
+                    :value="request('filter.date_to')" />
+            </div>
+
+            <div>
                 <x-label for="filter_customer_name" value="Customer Name" />
                 <x-input id="filter_customer_name" name="filter[customer_name]" type="text" class="mt-1 block w-full"
                     :value="request('filter.customer_name')" placeholder="Customer name..." />
@@ -306,6 +318,13 @@
                 <p class="text-center font-extrabold mb-2">
                     Moon Traders<br>
                     Creditors Ledger (Accounts Receivable)<br>
+                    @if($dateFrom && $dateTo)
+                        For the period {{ \Carbon\Carbon::parse($dateFrom)->format('d-M-Y') }} to {{ \Carbon\Carbon::parse($dateTo)->format('d-M-Y') }}<br>
+                    @elseif($dateFrom)
+                        From {{ \Carbon\Carbon::parse($dateFrom)->format('d-M-Y') }}<br>
+                    @elseif($dateTo)
+                        Up to {{ \Carbon\Carbon::parse($dateTo)->format('d-M-Y') }}<br>
+                    @endif
                     Total Customers: {{ number_format($customers->total()) }} |
                     Closing Bal.: {{ number_format(($totals->total_debits ?? 0) - ($totals->total_credits ?? 0), 2) }}
                     <br>

@@ -807,32 +807,6 @@
                                 @endcan
 
                                 @can('report-sales-credit-sales')
-                                    <a href="{{ route('reports.credit-sales.customer-history') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
-                                        <div class="flex items-center gap-4">
-                                            <div
-                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                                                    stroke-width="1.5">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-900">Customer Credit History
-                                                </div>
-                                                <div class="text-xs text-gray-500">Credit sales history per customer</div>
-                                            </div>
-                                        </div>
-                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
-                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M9 5l7 7-7 7" />
-                                        </svg>
-                                    </a>
-                                @endcan
-
-                                @can('report-sales-credit-sales')
                                     <a href="{{ route('reports.credit-sales.salesman-history') }}"
                                         class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">

@@ -121,15 +121,6 @@ it('allows scheme discount report with report-sales-scheme-discount permission',
     $this->get(route('reports.scheme-discount.index'))->assertSuccessful();
 });
 
-it('denies credit sales customer-history without report-sales-credit-sales permission', function () {
-    $this->get(route('reports.credit-sales.customer-history'))->assertForbidden();
-});
-
-it('allows credit sales customer-history with report-sales-credit-sales permission', function () {
-    $this->user->givePermissionTo('report-sales-credit-sales');
-    $this->get(route('reports.credit-sales.customer-history'))->assertSuccessful();
-});
-
 it('denies credit sales salesman-history without report-sales-credit-sales permission', function () {
     $this->get(route('reports.credit-sales.salesman-history'))->assertForbidden();
 });

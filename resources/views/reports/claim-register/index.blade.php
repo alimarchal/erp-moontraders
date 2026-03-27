@@ -401,6 +401,16 @@
                                         <td class="text-center no-print" style="vertical-align: middle;">
                                             @if (!$claim->isPosted())
                                                 <div class="flex justify-center gap-1">
+                                                    @can('claim-register-post')
+                                                        <button type="button" x-data
+                                                            x-on:click="$dispatch('open-claim-post-modal', { url: '{{ route('reports.claim-register.post', $claim) }}' })"
+                                                            class="inline-flex items-center px-1.5 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                                                            title="Post to GL">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                        </button>
+                                                    @endcan
                                                     @can('claim-register-edit')
                                                     <button type="button"
                                                         @click="openEditModal({{ json_encode([
@@ -424,16 +434,6 @@
                                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
                                                     </button>
-                                                    @endcan
-                                                    @can('claim-register-post')
-                                                        <button type="button" x-data
-                                                            x-on:click="$dispatch('open-claim-post-modal', { url: '{{ route('reports.claim-register.post', $claim) }}' })"
-                                                            class="inline-flex items-center px-1.5 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-                                                            title="Post to GL">
-                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                            </svg>
-                                                        </button>
                                                     @endcan
                                                     @can('claim-register-delete')
                                                         <form

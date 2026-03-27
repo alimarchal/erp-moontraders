@@ -59,6 +59,21 @@ class RecallAccountsSeeder extends Seeder
                 'account_name' => 'Stock Loss - Other',
                 'description' => 'Other inventory losses and adjustments',
             ],
+            [
+                'account_name' => 'Short Amount',
+                'description' => 'Short amount in sales settlement',
+                'code' => '5293',
+            ],
+            [
+                'account_name' => 'Excess Amount',
+                'description' => 'Excess amount in sales settlement',
+                'code' => '5294',
+            ],
+            [
+                'account_name' => 'Difference in Taz Due To Discount',
+                'description' => 'Difference in tax due to discount',
+                'code' => '5295',
+            ],
         ];
 
         // Generate codes that won't conflict

@@ -27,9 +27,11 @@ class LedgerRegister extends Model
         'expenses_amount',
         'za_point_five_percent_amount',
         'claim_adjust_amount',
-        'advance_tax_amount',
         'balance',
         'remarks',
+        'posted_at',
+        'posted_by',
+        'journal_entry_id',
     ];
 
     /**
@@ -45,9 +47,24 @@ class LedgerRegister extends Model
             'expenses_amount' => 'decimal:2',
             'za_point_five_percent_amount' => 'decimal:2',
             'claim_adjust_amount' => 'decimal:2',
-            'advance_tax_amount' => 'decimal:2',
             'balance' => 'decimal:2',
+            'posted_at' => 'datetime',
         ];
+    }
+
+    public function isPosted(): bool
+    {
+        return $this->posted_at !== null;
+    }
+
+    public function journalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class);
+    }
+
+    public function postedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'posted_by');
     }
 
     public function supplier(): BelongsTo

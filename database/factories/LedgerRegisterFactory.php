@@ -30,7 +30,6 @@ class LedgerRegisterFactory extends Factory
             'expenses_amount' => 0,
             'za_point_five_percent_amount' => $type === DocumentType::Dr ? fake()->randomFloat(2, 100, 60000) : 0,
             'claim_adjust_amount' => $type === DocumentType::Dg ? fake()->randomFloat(2, 50000, 300000) : 0,
-            'advance_tax_amount' => 0,
             'balance' => 0,
             'remarks' => fake()->optional(0.2)->sentence(),
         ];
@@ -46,7 +45,6 @@ class LedgerRegisterFactory extends Factory
             'expenses_amount' => 0,
             'za_point_five_percent_amount' => 0,
             'claim_adjust_amount' => 0,
-            'advance_tax_amount' => 0,
         ]);
     }
 
@@ -62,7 +60,6 @@ class LedgerRegisterFactory extends Factory
             'expenses_amount' => 0,
             'za_point_five_percent_amount' => round($invoiceAmount * 0.005, 2),
             'claim_adjust_amount' => 0,
-            'advance_tax_amount' => 0,
         ]);
     }
 
@@ -76,7 +73,6 @@ class LedgerRegisterFactory extends Factory
             'expenses_amount' => 0,
             'za_point_five_percent_amount' => 0,
             'claim_adjust_amount' => fake()->randomFloat(2, 50000, 300000),
-            'advance_tax_amount' => 0,
         ]);
     }
 }

@@ -330,7 +330,7 @@
                     <thead>
                         <tr>
                             <th style="width: 35px;">Sr#</th>
-                            <th style="width: 90px;">Date</th>
+                            <th class="text-center" style="width: 90px;">Date</th>
                             <th style="width: 55px;">Type</th>
                             <th style="width: 100px;">Document #</th>
                             <th style="width: 100px;">Online Amount</th>
@@ -338,7 +338,6 @@
                             <th style="width: 90px;">Expenses</th>
                             <th style="width: 90px;">ZA(0.5%)</th>
                             <th style="width: 90px;">Claim Adjust</th>
-                            <th style="width: 80px;">Adv.Tax</th>
                             <th style="width: 110px;">Balance</th>
                             <th style="width: 70px;" class="no-print">Actions</th>
                         </tr>
@@ -355,7 +354,6 @@
                                 <td class="amount-cell">-</td>
                                 <td class="amount-cell">-</td>
                                 <td class="amount-cell">-</td>
-                                <td class="amount-cell">-</td>
                                 <td class="amount-cell font-bold {{ $openingBalance >= 0 ? 'text-green-700' : 'text-red-700' }}">
                                     {{ number_format($openingBalance, 2) }}
                                 </td>
@@ -367,7 +365,7 @@
                             <tr class="{{ $loop->even ? 'bg-gray-50' : '' }}">
                                 <td class="text-center" style="vertical-align: middle;">
                                     {{ $entries->firstItem() + $index }}</td>
-                                <td style="vertical-align: middle;">
+                                <td class="text-center" style="vertical-align: middle;">
                                     {{ $entry->transaction_date->format('d.m.Y') }}</td>
                                 <td class="text-center" style="vertical-align: middle;">
                                     @if ($entry->document_type)
@@ -397,65 +395,82 @@
                                 <td class="amount-cell" style="vertical-align: middle;">
                                     {{ $entry->claim_adjust_amount > 0 ? number_format($entry->claim_adjust_amount, 2) : '-' }}
                                 </td>
-                                <td class="amount-cell" style="vertical-align: middle;">
-                                    {{ $entry->advance_tax_amount > 0 ? number_format($entry->advance_tax_amount, 2) : '-' }}
-                                </td>
                                 <td class="amount-cell font-bold {{ $entry->running_balance >= 0 ? 'text-green-700' : 'text-red-700' }}"
                                     style="vertical-align: middle;">
                                     {{ number_format($entry->running_balance, 2) }}
                                 </td>
                                 <td class="text-center no-print" style="vertical-align: middle;">
-                                    @can('report-audit-ledger-register-manage')
+                                    @canany(['report-audit-ledger-register-post', 'report-audit-ledger-register-manage'])
                                         <div class="flex justify-center gap-1">
-                                            <button type="button"
-                                                @click="openEditModal({{ json_encode([
-                                                    'id' => $entry->id,
-                                                    'supplier_id' => $entry->supplier_id,
-                                                    'transaction_date' => $entry->transaction_date->format('Y-m-d'),
-                                                    'document_type' => $entry->document_type?->value,
-                                                    'document_number' => $entry->document_number,
-                                                    'sap_code' => $entry->sap_code,
-                                                    'online_amount' => $entry->online_amount,
-                                                    'invoice_amount' => $entry->invoice_amount,
-                                                    'expenses_amount' => $entry->expenses_amount,
-                                                    'za_point_five_percent_amount' => $entry->za_point_five_percent_amount,
-                                                    'claim_adjust_amount' => $entry->claim_adjust_amount,
-                                                    'advance_tax_amount' => $entry->advance_tax_amount,
-                                                    'remarks' => $entry->remarks,
-                                                ]) }})"
-                                                class="inline-flex items-center px-1.5 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
-                                                title="Edit">
-                                                <svg class="w-3 h-3" fill="none" stroke="currentColor"
-                                                    viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                </svg>
-                                            </button>
-                                            <form
-                                                action="{{ route('reports.ledger-register.destroy', $entry) }}"
-                                                method="POST"
-                                                onsubmit="return confirm('Are you sure you want to delete this entry?');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit"
-                                                    class="inline-flex items-center px-1.5 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-                                                    title="Delete">
-                                                    <svg class="w-3 h-3" fill="none" stroke="currentColor"
-                                                        viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round"
-                                                            stroke-width="2"
-                                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            @if ($entry->isPosted())
+                                                <span class="inline-flex items-center px-1.5 py-1 text-xs text-green-700"
+                                                    title="Posted on {{ $entry->posted_at->format('d.m.Y H:i') }}">
+                                                    <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z" />
                                                     </svg>
-                                                </button>
-                                            </form>
+                                                </span>
+                                            @else
+                                                @can('report-audit-ledger-register-post')
+                                                    <button type="button"
+                                                        x-on:click="$dispatch('open-ledger-post-modal', { url: '{{ route('reports.ledger-register.post', $entry) }}' })"
+                                                        class="inline-flex items-center px-1.5 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                                                        title="Post to GL">
+                                                        <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M8 5v14l11-7z" />
+                                                        </svg>
+                                                    </button>
+                                                @endcan
+                                                @can('report-audit-ledger-register-manage')
+                                                    <button type="button"
+                                                        @click="openEditModal({{ json_encode([
+                                                            'id' => $entry->id,
+                                                            'supplier_id' => $entry->supplier_id,
+                                                            'transaction_date' => $entry->transaction_date->format('Y-m-d'),
+                                                            'document_type' => $entry->document_type?->value,
+                                                            'document_number' => $entry->document_number,
+                                                            'sap_code' => $entry->sap_code,
+                                                            'online_amount' => $entry->online_amount,
+                                                            'invoice_amount' => $entry->invoice_amount,
+                                                            'expenses_amount' => $entry->expenses_amount,
+                                                            'za_point_five_percent_amount' => $entry->za_point_five_percent_amount,
+                                                            'claim_adjust_amount' => $entry->claim_adjust_amount,
+                                                            'remarks' => $entry->remarks,
+                                                        ]) }})"
+                                                        class="inline-flex items-center px-1.5 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                                                        title="Edit">
+                                                        <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                            viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                    <form
+                                                        action="{{ route('reports.ledger-register.destroy', $entry) }}"
+                                                        method="POST"
+                                                        onsubmit="return confirm('Are you sure you want to delete this entry?');">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit"
+                                                            class="inline-flex items-center px-1.5 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                                                            title="Delete">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor"
+                                                                viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                </svg>
+                                                        </button>
+                                                    </form>
+                                                @endcan
+                                            @endif
                                         </div>
-                                    @endcan
+                                    @endcanany
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="12" class="text-center py-4 text-gray-500">No ledger entries found for the
+                                <td colspan="11" class="text-center py-4 text-gray-500">No ledger entries found for the
                                     selected filters.</td>
                             </tr>
                         @endforelse
@@ -463,7 +478,7 @@
                         {{-- Inline Add Form Row --}}
                         @can('report-audit-ledger-register-manage')
                             <tr x-show="showAddRow" x-cloak class="bg-indigo-50 no-print">
-                                <td colspan="12" class="p-0">
+                                <td colspan="11" class="p-0">
                                     <form action="{{ route('reports.ledger-register.store') }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="supplier_id"
@@ -522,11 +537,6 @@
                                                         min="0" value="{{ old('claim_adjust_amount') }}"
                                                         class="inline-input" placeholder="0.00">
                                                 </td>
-                                                <td style="width: 80px; padding: 4px;">
-                                                    <input type="number" name="advance_tax_amount" step="0.01"
-                                                        min="0" value="{{ old('advance_tax_amount') }}"
-                                                        class="inline-input" placeholder="0.00">
-                                                </td>
                                                 <td style="width: 110px; padding: 4px; text-align: center;">
                                                     <span class="text-xs text-gray-500">Auto</span>
                                                 </td>
@@ -564,9 +574,6 @@
                             </td>
                             <td class="amount-cell px-2 py-1">
                                 {{ number_format($entries->sum('claim_adjust_amount'), 2) }}
-                            </td>
-                            <td class="amount-cell px-2 py-1">
-                                {{ number_format($entries->sum('advance_tax_amount'), 2) }}
                             </td>
                             <td class="amount-cell px-2 py-1">
                                 {{ $entries->count() > 0 ? number_format($entries->last()->running_balance, 2) : '0.00' }}
@@ -744,11 +751,6 @@
                                 <x-input type="number" name="claim_adjust_amount" step="0.01" min="0"
                                     x-model="entry.claim_adjust_amount" class="mt-1 block w-full" />
                             </div>
-                            <div>
-                                <x-label value="Advance Tax" />
-                                <x-input type="number" name="advance_tax_amount" step="0.01" min="0"
-                                    x-model="entry.advance_tax_amount" class="mt-1 block w-full" />
-                            </div>
                             <div class="col-span-2">
                                 <x-label value="Remarks" />
                                 <textarea name="remarks" x-model="entry.remarks" rows="2"
@@ -773,6 +775,15 @@
         </div>
     @endcan
 
+
+    @can('report-audit-ledger-register-post')
+        <x-alpine-confirmation-modal eventName="open-ledger-post-modal" title="Post to General Ledger"
+            confirmButtonText="Post to GL" confirmButtonClass="bg-green-600 hover:bg-green-700">
+            <p class="text-sm text-gray-700">
+                Are you sure you want to post this entry to the General Ledger? This action cannot be reversed.
+            </p>
+        </x-alpine-confirmation-modal>
+    @endcan
 
     @push('scripts')
         <script>

@@ -25,9 +25,11 @@ return new class extends Migration
             $table->decimal('expenses_amount', 15, 2)->default(0);
             $table->decimal('za_point_five_percent_amount', 15, 2)->default(0);
             $table->decimal('claim_adjust_amount', 15, 2)->default(0);
-            $table->decimal('advance_tax_amount', 15, 2)->default(0);
             $table->decimal('balance', 15, 2)->default(0);
             $table->text('remarks')->nullable();
+            $table->timestamp('posted_at')->nullable();
+            $table->foreignId('posted_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('journal_entry_id')->nullable()->constrained('journal_entries')->nullOnDelete();
 
             // System Fields
             $table->userTracking();

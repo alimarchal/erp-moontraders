@@ -60,8 +60,8 @@ use App\Http\Controllers\Reports\SalesSettlementReportController;
 use App\Http\Controllers\Reports\SchemeDiscountReportController;
 use App\Http\Controllers\Reports\ShopListController;
 use App\Http\Controllers\Reports\SkuFmrAmrController;
-use App\Http\Controllers\Reports\StockAvailabilityReportController;
 use App\Http\Controllers\Reports\SkuRatesController;
+use App\Http\Controllers\Reports\StockAvailabilityReportController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\Reports\VanStockBatchReportController;
 use App\Http\Controllers\Reports\VanStockLedgerController;
@@ -699,6 +699,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             Route::post('/', [LedgerRegisterController::class, 'store'])->name('store');
             Route::put('/{ledgerRegister}', [LedgerRegisterController::class, 'update'])->name('update');
             Route::delete('/{ledgerRegister}', [LedgerRegisterController::class, 'destroy'])->name('destroy');
+            Route::post('/{ledgerRegister}/post', [LedgerRegisterController::class, 'post'])->name('post');
         });
 
         /* Invoice Summary */

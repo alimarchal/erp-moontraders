@@ -18,9 +18,10 @@ class RecallAccountsSeeder extends Seeder
 
         // Find the parent account (Indirect Expenses)
         $parentAccount = ChartOfAccount::where('account_name', 'Indirect Expenses')->first();
-        
+
         if (! $parentAccount) {
             $this->command->error('Parent account "Indirect Expenses" not found. Please run ChartOfAccountSeeder first.');
+
             return;
         }
 
@@ -32,7 +33,7 @@ class RecallAccountsSeeder extends Seeder
         // Calculate next codes based on existing pattern
         // The parent is at level 1, children are at level 2 with pattern like 5210, 5220, etc.
         $baseCode = (int) substr($parentAccount->account_code, 0, 2); // Get "52" from "5200"
-        
+
         // Find the next available slot
         $existingCodes = ChartOfAccount::where('parent_id', $parentAccount->id)
             ->pluck('account_code')
@@ -83,6 +84,7 @@ class RecallAccountsSeeder extends Seeder
 
             if ($existing) {
                 $this->command->info("Account '{$accountData['account_name']}' already exists with code {$existing->account_code}.");
+
                 continue;
             }
 
@@ -90,14 +92,14 @@ class RecallAccountsSeeder extends Seeder
             $childIndex = count($existingCodes) + 1;
             $a = (($childIndex - 1) % 9) + 1;
             $b = intdiv(($childIndex - 1), 9);
-            $newCode = $baseCode . $a . $b;
+            $newCode = $baseCode.$a.$b;
 
             // Make sure code doesn't already exist
             while (in_array($newCode, $existingCodes)) {
                 $childIndex++;
                 $a = (($childIndex - 1) % 9) + 1;
                 $b = intdiv(($childIndex - 1), 9);
-                $newCode = $baseCode . $a . $b;
+                $newCode = $baseCode.$a.$b;
             }
 
             $account = ChartOfAccount::create([
@@ -114,6 +116,48 @@ class RecallAccountsSeeder extends Seeder
 
             $existingCodes[] = $newCode;
             $this->command->info("Created account {$newCode} - {$accountData['account_name']}");
+        }
+
+        // --- Income Accounts (Indirect Income) ---
+        $incomeType = AccountType::where('type_name', 'Income')->first();
+        $incomeParent = ChartOfAccount::where('account_name', 'Indirect Income')->first();
+
+        if (! $incomeParent) {
+            $this->command->error('Parent account "Indirect Income" not found.');
+
+            return;
+        }
+
+        $incomeAccounts = [
+            [
+                'code' => '4240',
+                'account_name' => 'ZA 0.5% Incentive Income',
+                'description' => '0.5% incentive income on GRN invoice amount from supplier',
+            ],
+        ];
+
+        foreach ($incomeAccounts as $accountData) {
+            $existing = ChartOfAccount::where('account_name', $accountData['account_name'])->first();
+
+            if ($existing) {
+                $this->command->info("Account '{$accountData['account_name']}' already exists with code {$existing->account_code}.");
+
+                continue;
+            }
+
+            ChartOfAccount::create([
+                'account_code' => $accountData['code'],
+                'account_name' => $accountData['account_name'],
+                'description' => $accountData['description'],
+                'account_type_id' => $incomeType?->id,
+                'parent_id' => $incomeParent->id,
+                'currency_id' => $incomeParent->currency_id,
+                'is_active' => true,
+                'is_group' => false,
+                'normal_balance' => 'credit',
+            ]);
+
+            $this->command->info("Created account {$accountData['code']} - {$accountData['account_name']}");
         }
     }
 }

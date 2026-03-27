@@ -29,7 +29,6 @@ class UpdateLedgerRegisterRequest extends FormRequest
             'expenses_amount' => 'nullable|numeric|min:0',
             'za_point_five_percent_amount' => 'nullable|numeric|min:0',
             'claim_adjust_amount' => 'nullable|numeric|min:0',
-            'advance_tax_amount' => 'nullable|numeric|min:0',
             'remarks' => 'nullable|string|max:1000',
         ];
     }
@@ -54,7 +53,6 @@ class UpdateLedgerRegisterRequest extends FormRequest
             'expenses_amount' => $this->expenses_amount ?: 0,
             'za_point_five_percent_amount' => $this->za_point_five_percent_amount ?: 0,
             'claim_adjust_amount' => $this->claim_adjust_amount ?: 0,
-            'advance_tax_amount' => $this->advance_tax_amount ?: 0,
         ]);
     }
 }

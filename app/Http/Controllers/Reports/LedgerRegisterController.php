@@ -8,6 +8,7 @@ use App\Http\Requests\StoreLedgerRegisterRequest;
 use App\Http\Requests\UpdateLedgerRegisterRequest;
 use App\Models\LedgerRegister;
 use App\Models\Supplier;
+use App\Services\LedgerRegisterService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -18,11 +19,14 @@ use Illuminate\Support\Facades\Log;
 
 class LedgerRegisterController extends Controller implements HasMiddleware
 {
+    public function __construct(private LedgerRegisterService $ledgerService) {}
+
     public static function middleware(): array
     {
         return [
             new Middleware('can:report-audit-ledger-register', only: ['index']),
             new Middleware('can:report-audit-ledger-register-manage', only: ['store', 'update', 'destroy']),
+            new Middleware('can:report-audit-ledger-register-post', only: ['post']),
         ];
     }
 
@@ -92,7 +96,6 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             COALESCE(SUM(expenses_amount), 0) as total_expenses,
             COALESCE(SUM(za_point_five_percent_amount), 0) as total_za,
             COALESCE(SUM(claim_adjust_amount), 0) as total_claim_adjust,
-            COALESCE(SUM(advance_tax_amount), 0) as total_advance_tax,
             COUNT(*) as total_entries
         ')->first();
 
@@ -123,10 +126,16 @@ class LedgerRegisterController extends Controller implements HasMiddleware
         $balanceBeforePage = $openingBalance;
         if ($entries->currentPage() > 1 && $perPage !== 'all') {
             $entriesBeforePage = ($entries->currentPage() - 1) * (int) $perPage;
-            $beforePageBalance = (clone $allFilteredQuery)
+
+            $limitedQuery = (clone $allFilteredQuery)
                 ->orderBy('transaction_date', $sortDirection)
                 ->orderBy('id', $sortDirection)
                 ->limit($entriesBeforePage)
+                ->select(['online_amount', 'invoice_amount', 'expenses_amount', 'za_point_five_percent_amount', 'claim_adjust_amount']);
+
+            $beforePageBalance = DB::table(
+                DB::raw('('.$limitedQuery->toSql().') as limited_entries')
+            )->addBinding($limitedQuery->getBindings(), 'where')
                 ->selectRaw('COALESCE(SUM(online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount), 0) as balance')
                 ->value('balance');
 
@@ -200,6 +209,21 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
             return redirect()->back()->withInput()->with('error', 'Failed to update ledger entry. Please try again.');
         }
+    }
+
+    public function post(LedgerRegister $ledgerRegister)
+    {
+        if ($ledgerRegister->isPosted()) {
+            return redirect()->back()->with('error', 'Entry is already posted.');
+        }
+
+        $result = $this->ledgerService->postEntry($ledgerRegister);
+
+        if ($result['success']) {
+            return redirect()->back()->with('success', $result['message']);
+        }
+
+        return redirect()->back()->with('error', $result['message']);
     }
 
     public function destroy(LedgerRegister $ledgerRegister)

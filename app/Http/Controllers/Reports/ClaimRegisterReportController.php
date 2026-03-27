@@ -11,6 +11,7 @@ use App\Models\ClaimRegister;
 use App\Models\Supplier;
 use App\Services\ClaimRegisterService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,7 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
             new Middleware('can:report-audit-claim-register', only: ['index']),
             new Middleware('can:claim-register-create', only: ['store']),
             new Middleware('can:claim-register-edit', only: ['update']),
+            new Middleware('can:claim-register-post', only: ['post']),
             new Middleware('can:claim-register-delete', only: ['destroy']),
         ];
     }
@@ -111,7 +113,7 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
         if ($perPage === 'all') {
             $claims = $query->get();
-            $claims = new \Illuminate\Pagination\LengthAwarePaginator(
+            $claims = new LengthAwarePaginator(
                 $claims,
                 $claims->count(),
                 $claims->count() ?: 1,
@@ -203,6 +205,21 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
             return redirect()->back()->with('error', 'Failed to delete claim. Please try again.');
         }
+    }
+
+    public function post(ClaimRegister $claimRegister)
+    {
+        if ($claimRegister->isPosted()) {
+            return redirect()->back()->with('error', 'Claim is already posted.');
+        }
+
+        $result = $this->claimService->postClaim($claimRegister);
+
+        if ($result['success']) {
+            return redirect()->back()->with('success', $result['message']);
+        }
+
+        return redirect()->back()->with('error', $result['message']);
     }
 
     /**

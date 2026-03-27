@@ -295,7 +295,37 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             $query->where('p.supplier_id', $supplierId);
         }
 
-        return (float) $query->selectRaw('COALESCE(SUM(dis.total_value), 0) as total')
+        $snapshotCount = (clone $query)->count();
+
+        if ($snapshotCount > 0) {
+            return (float) $query->selectRaw('COALESCE(SUM(dis.total_value), 0) as total')
+                ->value('total');
+        }
+
+        // Fallback: if snapshot job has not populated this date yet,
+        // derive stock value as-of date from stock ledger running balances.
+        return $this->getHistoricalStockFromLedger($supplierId, $date);
+    }
+
+    private function getHistoricalStockFromLedger(?int $supplierId, string $date): float
+    {
+        $latestEntryIds = DB::table('stock_ledger_entries as sle')
+            ->join('products as p', 'sle.product_id', '=', 'p.id')
+            ->whereDate('sle.entry_date', '<=', $date)
+            ->whereNull('p.deleted_at');
+
+        if ($supplierId) {
+            $latestEntryIds->where('p.supplier_id', $supplierId);
+        }
+
+        $latestEntryIds->selectRaw('MAX(sle.id) as latest_id')
+            ->groupBy('sle.product_id', 'sle.warehouse_id', 'sle.stock_batch_id');
+
+        return (float) DB::table('stock_ledger_entries as sle')
+            ->joinSub($latestEntryIds, 'latest', function ($join) {
+                $join->on('sle.id', '=', 'latest.latest_id');
+            })
+            ->selectRaw('COALESCE(SUM(sle.stock_value), 0) as total')
             ->value('total');
     }
 

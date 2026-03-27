@@ -397,10 +397,11 @@
                                         style="vertical-align: middle;">
                                         {{ number_format($rowClosingBalance, 2) }}
                                     </td>
-                                    <td class="text-center no-print" style="vertical-align: middle;">
-                                        @if (!$claim->isPosted())
-                                            @can('claim-register-edit')
+                                    @canany(['claim-register-edit', 'claim-register-post', 'claim-register-delete'])
+                                        <td class="text-center no-print" style="vertical-align: middle;">
+                                            @if (!$claim->isPosted())
                                                 <div class="flex justify-center gap-1">
+                                                    @can('claim-register-edit')
                                                     <button type="button"
                                                         @click="openEditModal({{ json_encode([
                                                             'id' => $claim->id,
@@ -423,6 +424,17 @@
                                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
                                                     </button>
+                                                    @endcan
+                                                    @can('claim-register-post')
+                                                        <button type="button" x-data
+                                                            x-on:click="$dispatch('open-claim-post-modal', { url: '{{ route('reports.claim-register.post', $claim) }}' })"
+                                                            class="inline-flex items-center px-1.5 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                                                            title="Post to GL">
+                                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                            </svg>
+                                                        </button>
+                                                    @endcan
                                                     @can('claim-register-delete')
                                                         <form
                                                             action="{{ route('reports.claim-register.destroy', $claim) }}"
@@ -443,15 +455,15 @@
                                                         </form>
                                                     @endcan
                                                 </div>
-                                            @endcan
-                                        @else
-                                            <span class="text-xs text-gray-400" title="Posted">
-                                                <svg class="w-4 h-4 inline text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                </svg>
-                                            </span>
-                                        @endif
-                                    </td>
+                                            @else
+                                                <span class="text-xs text-gray-400" title="Posted">
+                                                    <svg class="w-4 h-4 inline text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                    </svg>
+                                                </span>
+                                            @endif
+                                        </td>
+                                    @endcanany
                                 </tr>
                             @empty
                                 <tr>
@@ -728,6 +740,17 @@
                 </div>
             </div>
         </div>
+    @endcan
+
+    @can('claim-register-post')
+        <x-alpine-confirmation-modal eventName="open-claim-post-modal" title="Post to General Ledger"
+            confirmButtonText="Post to GL" confirmButtonClass="bg-green-600 hover:bg-green-700"
+            iconBgClass="bg-green-100" iconColorClass="text-green-600"
+            iconPath="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
+            <p class="text-sm text-gray-600">
+                Are you sure you want to post this claim to the General Ledger? This action cannot be reversed.
+            </p>
+        </x-alpine-confirmation-modal>
     @endcan
 
     @push('scripts')

@@ -14,8 +14,8 @@
     'dynamicAction' => false,
 ])
 
-<div x-data="{ show: false, actionUrl: '{{ $formAction }}', dynamicData: {} }"
-     x-on:{{ $eventName }}.window="show = true; if ($event.detail) { dynamicData = $event.detail; if ($event.detail.url) { actionUrl = $event.detail.url; } }"
+<div x-data="{ show: false, actionUrl: '{{ $formAction }}', dynamicData: {}, isSubmitting: false }"
+    x-on:{{ $eventName }}.window="show = true; isSubmitting = false; if ($event.detail) { dynamicData = $event.detail; if ($event.detail.url) { actionUrl = $event.detail.url; } }"
      x-on:keydown.escape.window="if (show) { show = false }"
      x-show="show"
      x-cloak
@@ -64,14 +64,16 @@
                     class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50">
                     {{ $cancelButtonText }}
                 </button>
-                <form :action="actionUrl" method="POST">
+                <form :action="actionUrl" method="POST"
+                    @submit="if (isSubmitting) { $event.preventDefault(); return; } isSubmitting = true;">
                     @csrf
                     @if ($csrfMethod)
                         @method($csrfMethod)
                     @endif
-                    <button type="submit"
+                    <button type="submit" :disabled="isSubmitting"
                         class="inline-flex items-center rounded-md border border-transparent px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition {{ $confirmButtonClass }}">
-                        {{ $confirmButtonText }}
+                        <span x-show="!isSubmitting">{{ $confirmButtonText }}</span>
+                        <span x-show="isSubmitting">Processing...</span>
                     </button>
                 </form>
             </div>

@@ -669,6 +669,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             Route::get('/', [ClaimRegisterReportController::class, 'index'])->name('index');
             Route::post('/', [ClaimRegisterReportController::class, 'store'])->name('store');
             Route::put('/{claimRegister}', [ClaimRegisterReportController::class, 'update'])->name('update');
+            Route::post('/{claimRegister}/post', [ClaimRegisterReportController::class, 'post'])->name('post');
             Route::delete('/{claimRegister}', [ClaimRegisterReportController::class, 'destroy'])->name('destroy');
         });
 

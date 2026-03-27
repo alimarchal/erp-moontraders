@@ -190,54 +190,47 @@
                 @if($reportData->isEmpty())
                     <p class="text-center text-gray-500 py-8 italic">No SKUs found for the selected supplier and filters.</p>
                 @else
-                    <table class="report-table tabular-nums">
+                    <table class="report-table">
                         <thead>
-                            <tr class="bg-gray-100">
-                                <th class="text-center w-10 px-1 py-0.5">Sr#</th>
-                                <th class="text-left px-1 py-0.5" style="width: 90px;">SKU Code</th>
-                                <th class="text-left px-1 py-0.5">Product Name</th>
-                                <th class="text-center px-1 py-0.5" style="width: 65px;">Type</th>
-                                <th class="text-right px-1 py-0.5" style="width: 110px;">FMR<br><span class="font-normal text-xs">(from GRN)</span></th>
-                                <th class="text-right px-1 py-0.5" style="width: 110px;">AMR Liquid<br><span class="font-normal text-xs">(Settlement)</span></th>
-                                <th class="text-right px-1 py-0.5" style="width: 110px;">AMR Powder<br><span class="font-normal text-xs">(Settlement)</span></th>
-                                <th class="text-right px-1 py-0.5" style="width: 110px;">Total AMR</th>
-                                <th class="text-right px-1 py-0.5" style="width: 120px;">Net Benefit/(Cost)</th>
+                            <tr class="bg-gray-50">
+                                <th style="width: 40px;">Sr#</th>
+                                <th style="width: 280px;">Product</th>
+                                <th style="width: 65px;">Type</th>
+                                <th style="width: 110px;">FMR<br><span class="font-normal text-xs">(from GRN)</span></th>
+                                <th style="width: 110px;">AMR Liquid<br><span class="font-normal text-xs">(Settlement)</span></th>
+                                <th style="width: 110px;">AMR Powder<br><span class="font-normal text-xs">(Settlement)</span></th>
+                                <th style="width: 110px;">Total AMR</th>
+                                <th style="width: 120px;">Net Benefit/(Cost)</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($reportData as $index => $row)
                                 <tr>
-                                    <td class="text-center px-1 py-0.5">{{ $index + 1 }}</td>
-                                    <td class="font-mono text-xs px-1 py-0.5">{{ $row->product_code }}</td>
-                                    <td class="px-1 py-0.5">
-                                        {{ $row->product_name }}
-                                        @if($row->brand)
-                                            <span class="text-xs text-gray-400">({{ $row->brand }})</span>
-                                        @endif
-                                    </td>
-                                    <td class="text-center px-1 py-0.5">
+                                    <td class="text-center" style="vertical-align: middle;">{{ $index + 1 }}</td>
+                                    <td style="vertical-align: middle;">{{ $row->product_name }}</td>
+                                    <td class="text-center" style="vertical-align: middle;">
                                         <span class="{{ $row->is_powder ? 'text-yellow-700' : 'text-blue-600' }} text-xs font-semibold">
                                             {{ $row->type_label }}
                                         </span>
                                     </td>
-                                    <td class="text-right font-mono px-1 py-0.5">{{ number_format($row->fmr_amount, 2) }}</td>
-                                    <td class="text-right font-mono px-1 py-0.5">{{ number_format($row->amr_liquid_amount, 2) }}</td>
-                                    <td class="text-right font-mono px-1 py-0.5">{{ number_format($row->amr_powder_amount, 2) }}</td>
-                                    <td class="text-right font-mono px-1 py-0.5">{{ number_format($row->total_amr, 2) }}</td>
-                                    <td class="text-right font-mono font-bold px-1 py-0.5 {{ $row->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                    <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->fmr_amount, 2) }}</td>
+                                    <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->amr_liquid_amount, 2) }}</td>
+                                    <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->amr_powder_amount, 2) }}</td>
+                                    <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->total_amr, 2) }}</td>
+                                    <td class="text-right font-mono font-bold {{ $row->difference >= 0 ? 'text-green-600' : 'text-red-600' }}" style="vertical-align: middle;">
                                         {{ number_format($row->difference, 2) }}
                                     </td>
                                 </tr>
                             @endforeach
                         </tbody>
-                        <tfoot class="bg-gray-50 font-bold">
+                        <tfoot class="bg-gray-100 font-extrabold">
                             <tr>
-                                <td colspan="4" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
-                                <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ number_format($grandTotals->fmr_amount, 2) }}</td>
-                                <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ number_format($grandTotals->amr_liquid_amount, 2) }}</td>
-                                <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ number_format($grandTotals->amr_powder_amount, 2) }}</td>
-                                <td class="text-right font-mono px-1 py-0.5 border-t border-black">{{ number_format($grandTotals->total_amr, 2) }}</td>
-                                <td class="text-right font-mono px-1 py-0.5 border-t border-black {{ $grandTotals->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
+                                <td colspan="3" class="text-center px-2 py-1">Total:</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->fmr_amount, 2) }}</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->amr_liquid_amount, 2) }}</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->amr_powder_amount, 2) }}</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->total_amr, 2) }}</td>
+                                <td class="text-right font-mono px-2 py-1 {{ $grandTotals->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ number_format($grandTotals->difference, 2) }}
                                 </td>
                             </tr>

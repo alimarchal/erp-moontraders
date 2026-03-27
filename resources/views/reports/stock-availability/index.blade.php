@@ -10,14 +10,14 @@
                 width: 100%;
                 border-collapse: collapse;
                 border: 1px solid black;
-                font-size: 13px;
-                line-height: 1.3;
+                font-size: 14px;
+                line-height: 1.2;
             }
 
             .report-table th,
             .report-table td {
                 border: 1px solid black;
-                padding: 4px 6px;
+                padding: 3px 4px;
                 word-wrap: break-word;
             }
 
@@ -188,28 +188,28 @@
                 @else
                     <table class="report-table">
                         <thead>
-                            <tr class="bg-gray-100">
-                                <th class="text-center w-12">Sr#</th>
-                                <th class="text-left">Supplier</th>
-                                <th class="text-right">Stock In Quantity</th>
-                                <th class="text-right">Stock Amount (Rs.)</th>
+                            <tr class="bg-gray-50">
+                                <th style="width: 40px;">Sr#</th>
+                                <th style="width: 250px;">Supplier</th>
+                                <th style="width: 120px;">Stock In Quantity</th>
+                                <th style="width: 120px;">Stock Amount (Rs.)</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach ($stockData as $index => $row)
-                                <tr class="{{ $loop->even ? 'bg-gray-50' : 'bg-white' }}">
-                                    <td class="text-center">{{ $index + 1 }}</td>
-                                    <td>{{ $row->supplier_name }}</td>
-                                    <td class="text-right">{{ number_format($row->total_quantity, 2) }}</td>
-                                    <td class="text-right">{{ number_format($row->total_amount, 2) }}</td>
+                                <tr>
+                                    <td class="text-center" style="vertical-align: middle;">{{ $index + 1 }}</td>
+                                    <td style="vertical-align: middle;">{{ $row->supplier_name }}</td>
+                                    <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->total_quantity, 2) }}</td>
+                                    <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->total_amount, 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
-                        <tfoot>
-                            <tr class="font-bold bg-gray-200">
-                                <td colspan="2" class="text-right">Grand Total</td>
-                                <td class="text-right">{{ number_format($grandTotalQuantity, 2) }}</td>
-                                <td class="text-right">{{ number_format($grandTotalAmount, 2) }}</td>
+                        <tfoot class="bg-gray-100 font-extrabold">
+                            <tr>
+                                <td colspan="2" class="text-center px-2 py-1">Grand Total</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotalQuantity, 2) }}</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotalAmount, 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>

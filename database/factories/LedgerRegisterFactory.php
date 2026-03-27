@@ -3,13 +3,14 @@
 namespace Database\Factories;
 
 use App\Enums\DocumentType;
+use App\Models\LedgerRegister;
 use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\LegerRegister>
+ * @extends Factory<LedgerRegister>
  */
-class LegerRegisterFactory extends Factory
+class LedgerRegisterFactory extends Factory
 {
     /**
      * @return array<string, mixed>

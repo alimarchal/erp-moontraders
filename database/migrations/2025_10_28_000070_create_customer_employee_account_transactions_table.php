@@ -52,6 +52,9 @@ return new class extends Migration
                 ->name('fk_ceat_bank_account_id');
 
             $table->text('notes')->nullable();
+            $table->foreignId('journal_entry_id')->nullable()->constrained('journal_entries')->nullOnDelete();
+            $table->timestamp('posted_at')->nullable();
+            $table->foreignId('posted_by')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('created_by')
                 ->nullable()
                 ->constrained('users')

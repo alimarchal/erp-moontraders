@@ -20,6 +20,8 @@ return new class extends Migration
             $table->decimal('quantity', 15, 2)->default(0);
             $table->decimal('amount', 15, 2)->default(0);
             $table->text('notes')->nullable();
+            $table->boolean('is_disposed')->default(false);
+            $table->timestamp('disposed_at')->nullable();
             $table->timestamps();
 
             $table->index('sales_settlement_id');

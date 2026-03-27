@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Reports;
 use App\Http\Controllers\Controller;
 use App\Models\ClaimRegister;
 use App\Models\Employee;
-use App\Models\LegerRegister;
+use App\Models\LedgerRegister;
 use App\Models\Supplier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -331,7 +331,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
 
     private function getLedgerAmount(?int $supplierId, ?string $date = null): float
     {
-        $query = LegerRegister::query();
+        $query = LedgerRegister::query();
 
         if ($supplierId) {
             $query->where('supplier_id', $supplierId);

@@ -369,14 +369,14 @@
                                 <tr class="{{ $loop->even ? 'bg-gray-50' : '' }}">
                                     <td class="text-center" style="vertical-align: middle;">
                                         {{ $claims->firstItem() + $index }}</td>
-                                    <td style="vertical-align: middle;">
+                                    <td class="text-center" style="vertical-align: middle;">
                                         {{ $claim->transaction_date->format('d.m.Y') }}</td>
-                                    <td class="font-semibold" style="vertical-align: middle;">
+                                    <td class="font-semibold text-center" style="vertical-align: middle;">
                                         {{ $claim->supplier?->short_name ?? $claim->supplier?->supplier_name ?? '-' }}
                                     </td>
-                                    <td style="vertical-align: middle;">
+                                    <td class="text-center" style="vertical-align: middle;">
                                         {{ $claim->reference_number ?? '-' }}</td>
-                                    <td class="text-xs" style="vertical-align: middle;">
+                                    <td class="text-xs text-center" style="vertical-align: middle;">
                                         {{ $claim->description ?? '-' }}</td>
                                     <td class="text-center text-xs" style="vertical-align: middle;">
                                         {{ $claim->claim_month ?? '-' }}</td>
@@ -486,6 +486,8 @@
                                                     <td style="width: 90px; padding: 4px;">
                                                         <input type="date" name="transaction_date"
                                                             value="{{ old('transaction_date', now()->format('Y-m-d')) }}"
+                                                            max="{{ now()->format('Y-m-d') }}"
+                                                            @if(!$claimRegisterDateEditable) min="{{ now()->format('Y-m-d') }}" @endif
                                                             class="inline-input" required>
                                                     </td>
                                                     <td style="width: 120px; padding: 4px;">
@@ -680,6 +682,8 @@
                             <div>
                                 <x-label value="Transaction Date" />
                                 <input type="date" name="transaction_date" x-model="entry.transaction_date"
+                                    max="{{ now()->format('Y-m-d') }}"
+                                    @if(!$claimRegisterDateEditable) min="{{ now()->format('Y-m-d') }}" @endif
                                     class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                     required>
                             </div>

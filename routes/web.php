@@ -51,7 +51,7 @@ use App\Http\Controllers\Reports\IncomeStatementController;
 use App\Http\Controllers\Reports\InventoryLedgerReportController;
 use App\Http\Controllers\Reports\InvestmentSummaryController;
 use App\Http\Controllers\Reports\InvoiceSummaryReportController;
-use App\Http\Controllers\Reports\LegerRegisterController;
+use App\Http\Controllers\Reports\LedgerRegisterController;
 use App\Http\Controllers\Reports\OpeningCustomerBalanceReportController;
 use App\Http\Controllers\Reports\PercentageExpenseReportController;
 use App\Http\Controllers\Reports\RoiReportController;
@@ -59,6 +59,8 @@ use App\Http\Controllers\Reports\SalesmanStockRegisterController;
 use App\Http\Controllers\Reports\SalesSettlementReportController;
 use App\Http\Controllers\Reports\SchemeDiscountReportController;
 use App\Http\Controllers\Reports\ShopListController;
+use App\Http\Controllers\Reports\SkuFmrAmrController;
+use App\Http\Controllers\Reports\StockAvailabilityReportController;
 use App\Http\Controllers\Reports\SkuRatesController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\Reports\VanStockBatchReportController;
@@ -656,6 +658,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('goods-issue', [GoodsIssueReportController::class, 'index'])->name('goods-issue.index');
         Route::get('cash-detail', [CashDetailController::class, 'index'])->name('cash-detail.index');
         Route::get('investment-summary', [InvestmentSummaryController::class, 'index'])->name('investment-summary.index');
+        Route::get('sku-fmr-amr', [SkuFmrAmrController::class, 'index'])->name('sku-fmr-amr.index');
 
         /* Inventory & Stock Reports */
         Route::get('daily-stock-register', [DailyStockRegisterController::class, 'index'])->name('daily-stock-register.index');
@@ -663,6 +666,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('inventory-ledger', [InventoryLedgerReportController::class, 'index'])->name('inventory-ledger.index');
         Route::get('shop-list', [ShopListController::class, 'index'])->name('shop-list.index');
         Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
+        Route::get('stock-availability', [StockAvailabilityReportController::class, 'index'])->name('stock-availability.index');
 
         /* Claim Register */
         Route::prefix('claim-register')->name('claim-register.')->group(function () {
@@ -690,11 +694,11 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('advance-tax', [AdvanceTaxReportController::class, 'index'])->name('advance-tax.index');
 
         /* Supplier Ledger Register */
-        Route::prefix('leger-register')->name('leger-register.')->group(function () {
-            Route::get('/', [LegerRegisterController::class, 'index'])->name('index');
-            Route::post('/', [LegerRegisterController::class, 'store'])->name('store');
-            Route::put('/{legerRegister}', [LegerRegisterController::class, 'update'])->name('update');
-            Route::delete('/{legerRegister}', [LegerRegisterController::class, 'destroy'])->name('destroy');
+        Route::prefix('ledger-register')->name('ledger-register.')->group(function () {
+            Route::get('/', [LedgerRegisterController::class, 'index'])->name('index');
+            Route::post('/', [LedgerRegisterController::class, 'store'])->name('store');
+            Route::put('/{ledgerRegister}', [LedgerRegisterController::class, 'update'])->name('update');
+            Route::delete('/{ledgerRegister}', [LedgerRegisterController::class, 'destroy'])->name('destroy');
         });
 
         /* Invoice Summary */

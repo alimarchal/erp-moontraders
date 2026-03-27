@@ -132,6 +132,7 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $closingBalance = $openingBalance + $totals['net_balance'];
 
         $selectedSupplier = $supplierId ? Supplier::find($supplierId) : null;
+        $claimRegisterDateEditable = filter_var(env('CLAIM_REGISTER_DATE_EDITABLE', true), FILTER_VALIDATE_BOOLEAN);
 
         return view('reports.claim-register.index', compact(
             'claims',
@@ -150,7 +151,8 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
             'openingBalances',
             'closingBalance',
             'totals',
-            'perPage'
+            'perPage',
+            'claimRegisterDateEditable'
         ));
     }
 

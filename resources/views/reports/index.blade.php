@@ -163,7 +163,7 @@
 
 
                 <!-- Receivables & Collections -->
-                @canany(['report-audit-creditors-ledger', 'report-sales-credit-sales', 'report-audit-cash-detail', 'report-audit-investment-summary', 'report-audit-custom-settlement', 'report-audit-claim-register', 'report-audit-percentage-expense', 'report-audit-advance-tax', 'report-audit-opening-customer-balance'])
+                @canany(['report-audit-creditors-ledger', 'report-sales-credit-sales', 'report-audit-cash-detail', 'report-audit-investment-summary', 'report-audit-sku-fmr-amr', 'report-audit-custom-settlement', 'report-audit-claim-register', 'report-audit-percentage-expense', 'report-audit-advance-tax', 'report-audit-opening-customer-balance', 'report-audit-stock-availability'])
                     <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
                         <button @click="open = !open" type="button"
                             class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
@@ -270,6 +270,31 @@
                                             <div>
                                                 <div class="text-sm font-semibold text-gray-900">Investment Summary</div>
                                                 <div class="text-xs text-gray-500">Daily investment position summary</div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
+                                @can('report-audit-sku-fmr-amr')
+                                    <a href="{{ route('reports.sku-fmr-amr.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25A2.25 2.25 0 0 1 13.5 18v-2.25Z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">SKU-wise FMR vs AMR</div>
+                                                <div class="text-xs text-gray-500">Product-level FMR & AMR breakdown by SKU</div>
                                             </div>
                                         </div>
                                         <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
@@ -400,6 +425,31 @@
                                                 <div class="text-sm font-semibold text-gray-900">Advance Tax Report</div>
                                                 <div class="text-xs text-gray-500">Advance tax computation and records
                                                 </div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
+                                @can('report-audit-stock-availability')
+                                    <a href="{{ route('reports.stock-availability.index') }}"
+                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Stock Availability</div>
+                                                <div class="text-xs text-gray-500">Current & historical stock by supplier</div>
                                             </div>
                                         </div>
                                         <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
@@ -694,7 +744,7 @@
                 @endcanany
 
                 <!-- Supplier -->
-                @canany(['report-audit-leger-register', 'report-audit-claim-register', 'report-audit-invoice-summary', 'report-audit-opening-customer-balance'])
+                @canany(['report-audit-ledger-register', 'report-audit-claim-register', 'report-audit-invoice-summary', 'report-audit-opening-customer-balance'])
                     <div x-data="{ open: true }" class="bg-white rounded-lg shadow overflow-hidden">
                         <button @click="open = !open" type="button"
                             class="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50 transition-colors duration-150">
@@ -709,8 +759,8 @@
                         </button>
                         <div x-show="open" x-collapse>
                             <div class="border-t border-gray-100 divide-y divide-gray-100">
-                                @can('report-audit-leger-register')
-                                    <a href="{{ route('reports.leger-register.index') }}"
+                                @can('report-audit-ledger-register')
+                                    <a href="{{ route('reports.ledger-register.index') }}"
                                         class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
                                             <div

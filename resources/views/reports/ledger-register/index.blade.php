@@ -168,7 +168,7 @@
     @endif
 
     {{-- Filter Section --}}
-    <x-filter-section :action="route('reports.leger-register.index')" class="no-print">
+    <x-filter-section :action="route('reports.ledger-register.index')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <x-label for="filter_supplier_id" value="Supplier" />
@@ -325,7 +325,7 @@
                 </div>
 
                 {{-- Data Table --}}
-                <div x-data="legerRegister()">
+                <div x-data="ledgerRegister()">
                 <table class="report-table">
                     <thead>
                         <tr>
@@ -405,7 +405,7 @@
                                     {{ number_format($entry->running_balance, 2) }}
                                 </td>
                                 <td class="text-center no-print" style="vertical-align: middle;">
-                                    @can('report-audit-leger-register-manage')
+                                    @can('report-audit-ledger-register-manage')
                                         <div class="flex justify-center gap-1">
                                             <button type="button"
                                                 @click="openEditModal({{ json_encode([
@@ -433,7 +433,7 @@
                                                 </svg>
                                             </button>
                                             <form
-                                                action="{{ route('reports.leger-register.destroy', $entry) }}"
+                                                action="{{ route('reports.ledger-register.destroy', $entry) }}"
                                                 method="POST"
                                                 onsubmit="return confirm('Are you sure you want to delete this entry?');">
                                                 @csrf
@@ -461,10 +461,10 @@
                         @endforelse
 
                         {{-- Inline Add Form Row --}}
-                        @can('report-audit-leger-register-manage')
+                        @can('report-audit-ledger-register-manage')
                             <tr x-show="showAddRow" x-cloak class="bg-indigo-50 no-print">
                                 <td colspan="12" class="p-0">
-                                    <form action="{{ route('reports.leger-register.store') }}" method="POST">
+                                    <form action="{{ route('reports.ledger-register.store') }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="supplier_id"
                                             value="{{ $selectedSupplier?->id ?? '' }}">
@@ -476,6 +476,8 @@
                                                 <td style="width: 90px; padding: 4px;">
                                                     <input type="date" name="transaction_date"
                                                         value="{{ old('transaction_date', now()->format('Y-m-d')) }}"
+                                                        max="{{ now()->format('Y-m-d') }}"
+                                                        @if(!$supplierLedgerDateEditable) min="{{ now()->format('Y-m-d') }}" @endif
                                                         class="inline-input" required>
                                                 </td>
                                                 <td style="width: 55px; padding: 4px;">
@@ -575,7 +577,7 @@
                 </table>
 
                 {{-- Add Entry Toggle Button --}}
-                @can('report-audit-leger-register-manage')
+                @can('report-audit-ledger-register-manage')
                     <div class="mt-3 no-print">
                         <button type="button" @click="showAddRow = !showAddRow"
                             class="inline-flex items-center px-3 py-1.5 text-white text-sm rounded-md transition-colors"
@@ -643,7 +645,7 @@
     </div>
 
     {{-- Edit Modal with Backdrop Blur --}}
-    @can('report-audit-leger-register-manage')
+    @can('report-audit-ledger-register-manage')
         <div x-data="editModal()" x-show="open" x-cloak
             class="fixed inset-0 z-50 overflow-y-auto no-print" style="display: none;"
             aria-labelledby="edit-modal-title" role="dialog" aria-modal="true">
@@ -691,6 +693,8 @@
                             <div>
                                 <x-label value="Transaction Date" />
                                 <input type="date" name="transaction_date" x-model="entry.transaction_date"
+                                    max="{{ now()->format('Y-m-d') }}"
+                                    @if(!$supplierLedgerDateEditable) min="{{ now()->format('Y-m-d') }}" @endif
                                     class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                     required>
                             </div>
@@ -772,7 +776,7 @@
 
     @push('scripts')
         <script>
-            function legerRegister() {
+            function ledgerRegister() {
                 return {
                     showAddRow: false,
                     openEditModal(data) {
@@ -791,7 +795,7 @@
                     init() {
                         window.addEventListener('open-edit-modal', (e) => {
                             this.entry = e.detail;
-                            this.formAction = '{{ url("reports/leger-register") }}/' + this.entry.id;
+                            this.formAction = '{{ url("reports/ledger-register") }}/' + this.entry.id;
                             this.open = true;
                         });
                     },

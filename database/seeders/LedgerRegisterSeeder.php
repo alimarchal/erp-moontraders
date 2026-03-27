@@ -2,11 +2,11 @@
 
 namespace Database\Seeders;
 
-use App\Models\LegerRegister;
+use App\Models\LedgerRegister;
 use App\Models\Supplier;
 use Illuminate\Database\Seeder;
 
-class LegerRegisterSeeder extends Seeder
+class LedgerRegisterSeeder extends Seeder
 {
     public function run(): void
     {
@@ -17,7 +17,7 @@ class LegerRegisterSeeder extends Seeder
         }
 
         // Create a mix of ledger entries for Nestle (February 2026)
-        LegerRegister::factory()
+        LedgerRegister::factory()
             ->count(5)
             ->online()
             ->sequence(
@@ -29,7 +29,7 @@ class LegerRegisterSeeder extends Seeder
             )
             ->create(['supplier_id' => $nestle->id]);
 
-        LegerRegister::factory()
+        LedgerRegister::factory()
             ->count(5)
             ->invoice()
             ->sequence(
@@ -41,7 +41,7 @@ class LegerRegisterSeeder extends Seeder
             )
             ->create(['supplier_id' => $nestle->id]);
 
-        LegerRegister::factory()
+        LedgerRegister::factory()
             ->count(3)
             ->claim()
             ->sequence(
@@ -52,6 +52,6 @@ class LegerRegisterSeeder extends Seeder
             ->create(['supplier_id' => $nestle->id]);
 
         // Recalculate balances
-        LegerRegister::recalculateBalances($nestle->id);
+        LedgerRegister::recalculateBalances($nestle->id);
     }
 }

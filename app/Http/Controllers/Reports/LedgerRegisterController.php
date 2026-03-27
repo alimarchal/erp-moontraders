@@ -4,23 +4,25 @@ namespace App\Http\Controllers\Reports;
 
 use App\Enums\DocumentType;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreLegerRegisterRequest;
-use App\Http\Requests\UpdateLegerRegisterRequest;
-use App\Models\LegerRegister;
+use App\Http\Requests\StoreLedgerRegisterRequest;
+use App\Http\Requests\UpdateLedgerRegisterRequest;
+use App\Models\LedgerRegister;
 use App\Models\Supplier;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-class LegerRegisterController extends Controller implements HasMiddleware
+class LedgerRegisterController extends Controller implements HasMiddleware
 {
     public static function middleware(): array
     {
         return [
-            new Middleware('can:report-audit-leger-register', only: ['index']),
-            new Middleware('can:report-audit-leger-register-manage', only: ['store', 'update', 'destroy']),
+            new Middleware('can:report-audit-ledger-register', only: ['index']),
+            new Middleware('can:report-audit-ledger-register-manage', only: ['store', 'update', 'destroy']),
         ];
     }
 
@@ -37,7 +39,7 @@ class LegerRegisterController extends Controller implements HasMiddleware
         $dateFrom = $request->input('filter.date_from', now()->startOfMonth()->toDateString());
         $dateTo = $request->input('filter.date_to', now()->endOfMonth()->toDateString());
 
-        $query = LegerRegister::query()
+        $query = LedgerRegister::query()
             ->with('supplier')
             ->when($supplierId, fn ($q) => $q->forSupplier($supplierId))
             ->dateRange($dateFrom, $dateTo);
@@ -69,7 +71,7 @@ class LegerRegisterController extends Controller implements HasMiddleware
         $query->orderBy('transaction_date', $sortDirection)->orderBy('id', $sortDirection);
 
         // Calculate running balance considering entries before the current page
-        $allFilteredQuery = LegerRegister::query()
+        $allFilteredQuery = LedgerRegister::query()
             ->when($supplierId, fn ($q) => $q->forSupplier($supplierId))
             ->dateRange($dateFrom, $dateTo);
 
@@ -96,7 +98,7 @@ class LegerRegisterController extends Controller implements HasMiddleware
 
         if ($perPage === 'all') {
             $allEntries = $query->get();
-            $entries = new \Illuminate\Pagination\LengthAwarePaginator(
+            $entries = new LengthAwarePaginator(
                 $allEntries,
                 $allEntries->count(),
                 $allEntries->count() ?: 1,
@@ -110,7 +112,7 @@ class LegerRegisterController extends Controller implements HasMiddleware
         // Opening balance (sum of all entries for this supplier BEFORE dateFrom)
         $openingBalance = 0;
         if ($supplierId && $dateFrom) {
-            $openingBalance = (float) LegerRegister::where('supplier_id', $supplierId)
+            $openingBalance = (float) LedgerRegister::where('supplier_id', $supplierId)
                 ->where('transaction_date', '<', $dateFrom)
                 ->selectRaw('COALESCE(SUM(online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount), 0) as balance')
                 ->value('balance');
@@ -152,8 +154,9 @@ class LegerRegisterController extends Controller implements HasMiddleware
 
         $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get();
         $selectedSupplier = $supplierId ? Supplier::find($supplierId) : null;
+        $supplierLedgerDateEditable = filter_var(env('SUPPLIER_LEDGER_DATE_EDITABLE', true), FILTER_VALIDATE_BOOLEAN);
 
-        return view('reports.leger-register.index', [
+        return view('reports.ledger-register.index', [
             'entries' => $entries,
             'totals' => $totals,
             'openingBalance' => $openingBalance,
@@ -163,54 +166,55 @@ class LegerRegisterController extends Controller implements HasMiddleware
             'documentTypes' => DocumentType::cases(),
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
+            'supplierLedgerDateEditable' => $supplierLedgerDateEditable,
         ]);
     }
 
-    public function store(StoreLegerRegisterRequest $request)
+    public function store(StoreLedgerRegisterRequest $request)
     {
         try {
             DB::transaction(function () use ($request) {
-                LegerRegister::create($request->validated());
-                LegerRegister::recalculateBalances($request->validated()['supplier_id']);
+                LedgerRegister::create($request->validated());
+                LedgerRegister::recalculateBalances($request->validated()['supplier_id']);
             });
 
             return redirect()->back()->with('success', 'Ledger entry added successfully.');
-        } catch (\Illuminate\Database\QueryException $e) {
-            Log::error('LegerRegister store error: '.$e->getMessage());
+        } catch (QueryException $e) {
+            Log::error('LedgerRegister store error: '.$e->getMessage());
 
             return redirect()->back()->withInput()->with('error', 'Failed to add ledger entry. Please try again.');
         }
     }
 
-    public function update(UpdateLegerRegisterRequest $request, LegerRegister $legerRegister)
+    public function update(UpdateLedgerRegisterRequest $request, LedgerRegister $ledgerRegister)
     {
         try {
-            DB::transaction(function () use ($request, $legerRegister) {
-                $legerRegister->update($request->validated());
-                LegerRegister::recalculateBalances($legerRegister->supplier_id);
+            DB::transaction(function () use ($request, $ledgerRegister) {
+                $ledgerRegister->update($request->validated());
+                LedgerRegister::recalculateBalances($ledgerRegister->supplier_id);
             });
 
             return redirect()->back()->with('success', 'Ledger entry updated successfully.');
-        } catch (\Illuminate\Database\QueryException $e) {
-            Log::error('LegerRegister update error: '.$e->getMessage());
+        } catch (QueryException $e) {
+            Log::error('LedgerRegister update error: '.$e->getMessage());
 
             return redirect()->back()->withInput()->with('error', 'Failed to update ledger entry. Please try again.');
         }
     }
 
-    public function destroy(LegerRegister $legerRegister)
+    public function destroy(LedgerRegister $ledgerRegister)
     {
         try {
-            $supplierId = $legerRegister->supplier_id;
+            $supplierId = $ledgerRegister->supplier_id;
 
-            DB::transaction(function () use ($legerRegister, $supplierId) {
-                $legerRegister->delete();
-                LegerRegister::recalculateBalances($supplierId);
+            DB::transaction(function () use ($ledgerRegister, $supplierId) {
+                $ledgerRegister->delete();
+                LedgerRegister::recalculateBalances($supplierId);
             });
 
             return redirect()->back()->with('success', 'Ledger entry deleted successfully.');
         } catch (\Throwable $e) {
-            Log::error('LegerRegister destroy error: '.$e->getMessage());
+            Log::error('LedgerRegister destroy error: '.$e->getMessage());
 
             return redirect()->back()->with('error', 'Failed to delete ledger entry. Please try again.');
         }

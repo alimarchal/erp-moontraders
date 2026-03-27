@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('leger_registers', function (Blueprint $table) {
+        Schema::create('ledger_registers', function (Blueprint $table) {
             $table->id();
 
             // Supplier & Transaction Details
@@ -41,6 +41,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('leger_registers');
+        Schema::dropIfExists('ledger_registers');
     }
 };

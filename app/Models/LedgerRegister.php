@@ -10,9 +10,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class LegerRegister extends Model
+class LedgerRegister extends Model
 {
     use HasFactory, SoftDeletes, UserTracking;
+
+    protected $table = 'ledger_registers';
 
     protected $fillable = [
         'supplier_id',

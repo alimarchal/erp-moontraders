@@ -6,7 +6,7 @@ use App\Enums\DocumentType;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
-class UpdateLegerRegisterRequest extends FormRequest
+class UpdateLedgerRegisterRequest extends FormRequest
 {
     public function authorize(): bool
     {

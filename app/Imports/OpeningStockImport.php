@@ -11,8 +11,6 @@ class OpeningStockImport implements ToCollection, WithHeadingRow
 {
     private const STOCK_UOM_ID = 24; // Piece
 
-    private const PURCHASE_UOM_ID = 33; // Case
-
     /** @var array<int, array<string, mixed>> */
     private array $processedItems = [];
 
@@ -67,21 +65,17 @@ class OpeningStockImport implements ToCollection, WithHeadingRow
 
             $extendedValue = round($invoicePrice * $quantity, 2);
 
-            $conversionFactor = (float) ($product->uom_conversion_factor ?: 1);
-            $qtyInPurchaseUom = $conversionFactor > 0 ? round($quantity / $conversionFactor, 2) : $quantity;
-            $unitPricePerCase = round($invoicePrice * $conversionFactor, 2);
-
             $this->processedItems[] = [
                 'product_id' => $product->id,
                 'product_code' => $product->product_code,
                 'product_name' => $product->product_name,
                 'is_powder' => (bool) $product->is_powder,
                 'stock_uom_id' => self::STOCK_UOM_ID,
-                'purchase_uom_id' => self::PURCHASE_UOM_ID,
-                'qty_in_purchase_uom' => $qtyInPurchaseUom,
-                'uom_conversion_factor' => $conversionFactor,
+                'purchase_uom_id' => self::STOCK_UOM_ID,
+                'qty_in_purchase_uom' => $quantity,
+                'uom_conversion_factor' => 1,
                 'qty_in_stock_uom' => $quantity,
-                'unit_price_per_case' => $unitPricePerCase,
+                'unit_price_per_case' => $invoicePrice,
                 'extended_value' => $extendedValue,
                 'discount_value' => 0,
                 'fmr_allowance' => 0,

@@ -91,6 +91,12 @@
                 .page-footer {
                     display: none;
                 }
+
+                .grid.md\:grid-cols-2 {
+                    display: grid !important;
+                    grid-template-columns: 1fr 1fr !important;
+                    gap: 8px !important;
+                }
             }
 
             /* Select2 Styling to match Tailwind Inputs */
@@ -182,7 +188,7 @@
                 <table class="report-table tabular-nums mb-4">
                     <thead>
                         <tr class="bg-gray-100">
-                            <th class="text-center w-10 px-1 py-0.5">Sr#</th>
+                            <th class="text-center w-10 px-1 py-0.5">#</th>
                             <th class="text-left px-1 py-0.5">Salesman Name</th>
                             <th class="text-right px-1 py-0.5">Opening Credit</th>
                             <th class="text-right px-1 py-0.5">Credit</th>
@@ -224,7 +230,7 @@
                         <table class="report-table tabular-nums w-full">
                             <thead>
                                 <tr class="bg-gray-100">
-                                    <th class="text-center w-10 px-1 py-0.5">Sr#</th>
+                                    <th class="text-center w-10 px-1 py-0.5">#</th>
                                     <th colspan="2" class="text-center px-2 py-1 text-base font-extrabold">
                                         SHAHZAIN TRADERS INVESTMENT
                                     </th>
@@ -300,7 +306,7 @@
                         <table class="report-table tabular-nums w-full">
                             <thead>
                                 <tr class="bg-gray-100">
-                                    <th class="text-center w-10 px-1 py-0.5">Sr#</th>
+                                    <th class="text-center w-10 px-1 py-0.5">#</th>
                                     <th colspan="2" class="text-center px-2 py-1 text-base font-extrabold">
                                         Expenses Detail
                                     </th>
@@ -361,7 +367,7 @@
                         <table class="report-table tabular-nums w-full">
                             <thead>
                                 <tr class="bg-gray-100">
-                                    <th class="text-center w-10 px-1 py-0.5">Sr#</th>
+                                    <th class="text-center w-10 px-1 py-0.5">#</th>
                                     <th colspan="2" class="text-center px-2 py-1 text-base font-extrabold">
                                         Bank / Cash Summary — {{ $currentMonthName }}
                                     </th>
@@ -412,7 +418,7 @@
                         <table class="report-table tabular-nums w-full">
                             <thead>
                                 <tr class="bg-gray-100">
-                                    <th class="text-center w-10 px-1 py-0.5">Sr#</th>
+                                    <th class="text-center w-10 px-1 py-0.5">#</th>
                                     <th colspan="2" class="text-center px-2 py-1 text-base font-extrabold">
                                         Investment Comparison — {{ $currentMonthName }}
                                     </th>

@@ -56,7 +56,7 @@ class UomSeeder extends Seeder
             ['uom_name' => 'Carton', 'symbol' => 'Ctn', 'description' => 'Carton quantity', 'must_be_whole_number' => true, 'enabled' => false],
             ['uom_name' => 'Bag', 'symbol' => 'Bag', 'description' => 'Bag quantity', 'must_be_whole_number' => true, 'enabled' => false],
             ['uom_name' => 'Pack', 'symbol' => 'Pk', 'description' => 'Package quantity', 'must_be_whole_number' => true, 'enabled' => false],
-            ['uom_name' => 'Case', 'symbol' => 'Case', 'description' => 'Case quantity', 'must_be_whole_number' => true, 'enabled' => false],
+            ['uom_name' => 'Case', 'symbol' => 'Case', 'description' => 'Case quantity', 'must_be_whole_number' => true, 'enabled' => true],
             ['uom_name' => 'Pallet', 'symbol' => 'Plt', 'description' => 'Pallet quantity', 'must_be_whole_number' => true, 'enabled' => false],
             ['uom_name' => 'Bundle', 'symbol' => 'Bdl', 'description' => 'Bundle quantity', 'must_be_whole_number' => true, 'enabled' => false],
 

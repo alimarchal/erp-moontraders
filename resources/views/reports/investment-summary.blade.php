@@ -62,7 +62,7 @@
                 }
 
                 .report-table {
-                    font-size: 11px !important;
+                    font-size: 10px !important;
                     width: 100% !important;
                 }
 

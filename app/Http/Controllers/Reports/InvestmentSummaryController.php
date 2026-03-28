@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClaimRegister;
 use App\Models\Employee;
 use App\Models\LedgerRegister;
+use App\Models\SalesSettlement;
 use App\Models\Supplier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -75,10 +76,40 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
 
         $previousTotal = $previousPowderExpiry + $previousLiquidExpiry + $previousClaimAmount + $previousStockAmount + $previousCreditAmount + $previousLedgerAmount;
 
-        $difference = $currentTotal - $previousTotal;
-        $differencePercent = $previousTotal != 0 ? ($difference / abs($previousTotal)) * 100 : 0;
+        // Daily Cash & Investment calculations
+        $dailyCash = $this->getDailyCash($date, $supplierId);
+        $totalInvestment = $currentTotal + $dailyCash;
+        $bankOnline = $this->getBankOnline($date, $supplierId);
+        $increaseInInvestment = $totalInvestment - $previousTotal - $bankOnline;
+
+        // Bank/Cash summary
+        $bankOpeningAmount = 0;
+        $totalCashReceivedMonth = $this->getMonthlyDailyCash($date, $supplierId);
+        $totalBankAmount = $totalCashReceivedMonth + $bankOpeningAmount;
+        $totalOnlineAmountMonth = $this->getMonthlyOnlineAmount($date, $supplierId);
+        $closingBalanceBeforeExpenses = $totalBankAmount - $totalOnlineAmountMonth;
+        $totalExpensesMonth = 0;
+        $closingBalanceAfterExpenses = $closingBalanceBeforeExpenses - $totalExpensesMonth;
+
+        // Last month main investment
+        $lastDayPrevMonth = Carbon::parse($date)->subMonthNoOverflow()->endOfMonth()->toDateString();
+        $lastMonthCreditData = $this->getSalesmanCreditData($lastDayPrevMonth, $supplierId, $designation, $employeeIds);
+        $lastMonthMainInvestment = $this->getPowderExpiry($supplierId, $lastDayPrevMonth)
+            + $this->getLiquidExpiry($supplierId, $lastDayPrevMonth)
+            + $this->getClaimAmount($supplierId, $lastDayPrevMonth)
+            + $this->getStockAmount($supplierId, $lastDayPrevMonth)
+            + (float) $lastMonthCreditData->sum('total_credit')
+            + $this->getLedgerAmount($supplierId, $lastDayPrevMonth);
+
+        $currentMonthMainInvestment = $currentTotal;
+        $netInvestment = $closingBalanceBeforeExpenses - $currentMonthMainInvestment;
+        $increaseInInvestmentMonth = $lastMonthMainInvestment - $netInvestment;
 
         $selectedSupplier = $supplierId ? $suppliers->find($supplierId) : null;
+        $formattedDate = Carbon::parse($date)->format('d.m.Y');
+        $formattedPreviousDate = Carbon::parse($previousDate)->format('d.m.Y');
+        $formattedLastDayPrevMonth = Carbon::parse($lastDayPrevMonth)->format('d.m.Y');
+        $currentMonthName = Carbon::parse($date)->format('F Y');
 
         return view('reports.investment-summary', compact(
             'date',
@@ -99,9 +130,26 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             'currentTotal',
             'previousDate',
             'previousTotal',
-            'difference',
-            'differencePercent',
+            'dailyCash',
+            'totalInvestment',
+            'bankOnline',
+            'increaseInInvestment',
+            'bankOpeningAmount',
+            'totalCashReceivedMonth',
+            'totalBankAmount',
+            'totalOnlineAmountMonth',
+            'closingBalanceBeforeExpenses',
+            'totalExpensesMonth',
+            'closingBalanceAfterExpenses',
+            'lastMonthMainInvestment',
+            'currentMonthMainInvestment',
+            'netInvestment',
+            'increaseInInvestmentMonth',
             'selectedSupplier',
+            'formattedDate',
+            'formattedPreviousDate',
+            'formattedLastDayPrevMonth',
+            'currentMonthName',
         ));
     }
 
@@ -331,7 +379,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
 
     private function getLedgerAmount(?int $supplierId, ?string $date = null): float
     {
-        $query = LedgerRegister::query();
+        $query = LedgerRegister::whereNotNull('posted_at');
 
         if ($supplierId) {
             $query->where('supplier_id', $supplierId);
@@ -341,8 +389,72 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             $query->where('transaction_date', '<=', $date);
         }
 
-        return (float) $query->orderByDesc('transaction_date')
-            ->orderByDesc('id')
-            ->value('balance');
+        return (float) $query->selectRaw(
+            'COALESCE(SUM(online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount), 0) as balance'
+        )->value('balance');
+    }
+
+    private function getDailyCash(string $date, ?int $supplierId): float
+    {
+        $query = SalesSettlement::with('cashDenominations')
+            ->whereDate('settlement_date', $date);
+
+        if ($supplierId) {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        return (float) $query->get()->sum(function ($settlement) {
+            $cashDenom = $settlement->cashDenominations->first();
+
+            return ($cashDenom && $cashDenom->total_amount > 0)
+                ? (float) $cashDenom->total_amount
+                : (float) $settlement->cash_collected;
+        });
+    }
+
+    private function getBankOnline(string $date, ?int $supplierId): float
+    {
+        $query = LedgerRegister::whereNotNull('posted_at')
+            ->where('transaction_date', $date);
+
+        if ($supplierId) {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        return (float) $query->sum('online_amount');
+    }
+
+    private function getMonthlyDailyCash(string $upToDate, ?int $supplierId): float
+    {
+        $startOfMonth = Carbon::parse($upToDate)->startOfMonth()->toDateString();
+
+        $query = SalesSettlement::with('cashDenominations')
+            ->whereBetween('settlement_date', [$startOfMonth, $upToDate]);
+
+        if ($supplierId) {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        return (float) $query->get()->sum(function ($settlement) {
+            $cashDenom = $settlement->cashDenominations->first();
+
+            return ($cashDenom && $cashDenom->total_amount > 0)
+                ? (float) $cashDenom->total_amount
+                : (float) $settlement->cash_collected;
+        });
+    }
+
+    private function getMonthlyOnlineAmount(string $upToDate, ?int $supplierId): float
+    {
+        $startOfMonth = Carbon::parse($upToDate)->startOfMonth()->toDateString();
+
+        $query = LedgerRegister::whereNotNull('posted_at')
+            ->whereBetween('transaction_date', [$startOfMonth, $upToDate]);
+
+        if ($supplierId) {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        return (float) $query->sum('online_amount');
     }
 }

@@ -217,74 +217,237 @@
                     </tfoot>
                 </table>
 
-                {{-- Part 2: Investment Summary --}}
-                <div class="mt-6">
-                    <table class="report-table tabular-nums" style="max-width: 500px;">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th colspan="2" class="text-center px-2 py-1 text-base font-extrabold">
-                                    SHAHZAIN TRADERS INVESTMENT
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="px-2 py-1">Investment {{ \Carbon\Carbon::parse($previousDate)->format('d.m.Y') }}</td>
-                                <td class="text-right px-2 py-1 font-bold">{{ number_format($previousTotal, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="px-2 py-1">Powder Expiry</td>
-                                <td class="text-right px-2 py-1">{{ number_format($powderExpiry, 0) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="px-2 py-1">Liquid Expiry</td>
-                                <td class="text-right px-2 py-1">{{ number_format($liquidExpiry, 0) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="px-2 py-1">Claim Amount</td>
-                                <td class="text-right px-2 py-1">{{ number_format($claimAmount, 0) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="px-2 py-1">Stock Amount</td>
-                                <td class="text-right px-2 py-1">{{ number_format($stockAmount, 2) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="px-2 py-1">Credit Amount</td>
-                                <td class="text-right px-2 py-1">{{ number_format($creditAmount, 0) }}</td>
-                            </tr>
-                            <tr>
-                                <td class="px-2 py-1">Ledger Amount</td>
-                                <td class="text-right px-2 py-1">{{ number_format($ledgerAmount, 0) }}</td>
-                            </tr>
-                        </tbody>
-                        <tfoot class="bg-gray-50 font-extrabold">
-                            <tr>
-                                <td class="px-2 py-1 border-t-2 border-black">Total:</td>
-                                <td class="text-right px-2 py-1 border-t-2 border-black">{{ number_format($currentTotal, 2) }}</td>
-                            </tr>
-                        </tfoot>
-                    </table>
+                {{-- Part 2: Investment Summary & Expenses --}}
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- SHAHZAIN TRADERS INVESTMENT Table --}}
+                    <div>
+                        <table class="report-table tabular-nums w-full">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="text-center w-10 px-1 py-0.5">Sr#</th>
+                                    <th colspan="2" class="text-center px-2 py-1 text-base font-extrabold">
+                                        SHAHZAIN TRADERS INVESTMENT
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center px-1 py-1">1</td>
+                                    <td class="px-2 py-1">Powder Expiry</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($powderExpiry, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">2</td>
+                                    <td class="px-2 py-1">Liquid Expiry</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($liquidExpiry, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">3</td>
+                                    <td class="px-2 py-1">Claim Amount</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($claimAmount, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">4</td>
+                                    <td class="px-2 py-1">Stock Amount</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($stockAmount, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">5</td>
+                                    <td class="px-2 py-1">Credit Amount</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($creditAmount, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">6</td>
+                                    <td class="px-2 py-1">Ledger Amount</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($ledgerAmount, 2) }}</td>
+                                </tr>
+                                <tr class="bg-gray-50 font-extrabold">
+                                    <td class="text-center px-1 py-1 border-t-2 border-black">7</td>
+                                    <td class="px-2 py-1 border-t-2 border-black">Total Main Investment as on {{ $formattedDate }}</td>
+                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">{{ number_format($currentTotal, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">8</td>
+                                    <td class="px-2 py-1">Daily Cash as on {{ $formattedDate }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($dailyCash, 2) }}</td>
+                                </tr>
+                                <tr class="bg-gray-50 font-bold">
+                                    <td class="text-center px-1 py-1 border-t border-black">9</td>
+                                    <td class="px-2 py-1 border-t border-black">Total Investment as on {{ $formattedDate }}</td>
+                                    <td class="text-right px-2 py-1 border-t border-black font-mono">{{ number_format($totalInvestment, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">10</td>
+                                    <td class="px-2 py-1">Total Main Investment as on {{ $formattedPreviousDate }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($previousTotal, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">11</td>
+                                    <td class="px-2 py-1">Bank Online as on {{ $formattedDate }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($bankOnline, 2) }}</td>
+                                </tr>
+                                <tr class="bg-gray-50 font-bold">
+                                    <td class="text-center px-1 py-1 border-t border-black">12</td>
+                                    <td class="px-2 py-1 border-t border-black">Increase in Investment as on {{ $formattedDate }}</td>
+                                    <td class="text-right px-2 py-1 border-t border-black font-mono {{ $increaseInInvestment >= 0 ? 'text-red-600' : 'text-green-600' }}">{{ number_format($increaseInInvestment, 2) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                    {{-- Comparison with Previous Date --}}
-                    <div class="mt-4 p-3 border border-gray-300 rounded-md" style="max-width: 500px;">
-                        <h4 class="font-bold text-sm mb-2">Comparison with {{ \Carbon\Carbon::parse($previousDate)->format('d-M-Y') }}</h4>
-                        <div class="grid grid-cols-2 gap-2 text-sm tabular-nums">
-                            <div>Previous Total:</div>
-                            <div class="text-right font-bold">{{ number_format($previousTotal, 2) }}</div>
+                    {{-- Expenses Detail Table --}}
+                    <div>
+                        <table class="report-table tabular-nums w-full">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="text-center w-10 px-1 py-0.5">Sr#</th>
+                                    <th colspan="2" class="text-center px-2 py-1 text-base font-extrabold">
+                                        Expenses Detail
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center px-1 py-1">1</td>
+                                    <td class="px-2 py-1">Stationary</td>
+                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">2</td>
+                                    <td class="px-2 py-1">TCS</td>
+                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">3</td>
+                                    <td class="px-2 py-1">Tonner & IT</td>
+                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">4</td>
+                                    <td class="px-2 py-1">Salaries</td>
+                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">5</td>
+                                    <td class="px-2 py-1">Fuel</td>
+                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">6</td>
+                                    <td class="px-2 py-1">Van Work</td>
+                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                </tr>
+                                <tr class="bg-gray-50 font-extrabold">
+                                    <td class="text-center px-1 py-1 border-t-2 border-black">7</td>
+                                    <td class="px-2 py-1 border-t-2 border-black">Total Expenses</td>
+                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">0.00</td>
+                                </tr>
+                                @for ($i = 8; $i <= 12; $i++)
+                                <tr>
+                                    <td class="text-center px-1 py-1">{{ $i }}</td>
+                                    <td class="text-center px-2 py-1">-</td>
+                                    <td class="text-center px-2 py-1">-</td>
+                                </tr>
+                                @endfor
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
 
-                            <div>Current Total:</div>
-                            <div class="text-right font-bold">{{ number_format($currentTotal, 2) }}</div>
+                {{-- Part 3: Bank/Cash Summary --}}
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {{-- Bank/Cash Summary Table --}}
+                    <div>
+                        <table class="report-table tabular-nums w-full">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="text-center w-10 px-1 py-0.5">Sr#</th>
+                                    <th colspan="2" class="text-center px-2 py-1 text-base font-extrabold">
+                                        Bank / Cash Summary — {{ $currentMonthName }}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center px-1 py-1">1</td>
+                                    <td class="px-2 py-1">Bank Opening Amount</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($bankOpeningAmount, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">2</td>
+                                    <td class="px-2 py-1">Total Cash Received in Current Month</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($totalCashReceivedMonth, 2) }}</td>
+                                </tr>
+                                <tr class="font-bold">
+                                    <td class="text-center px-1 py-1 border-t border-black">3</td>
+                                    <td class="px-2 py-1 border-t border-black">Total Bank Amount</td>
+                                    <td class="text-right px-2 py-1 border-t border-black font-mono">{{ number_format($totalBankAmount, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">4</td>
+                                    <td class="px-2 py-1">Total Online Amount in Current Month</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($totalOnlineAmountMonth, 2) }}</td>
+                                </tr>
+                                <tr class="font-bold">
+                                    <td class="text-center px-1 py-1 border-t border-black">5</td>
+                                    <td class="px-2 py-1 border-t border-black">Closing Balance before Expenses</td>
+                                    <td class="text-right px-2 py-1 border-t border-black font-mono">{{ number_format($closingBalanceBeforeExpenses, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">6</td>
+                                    <td class="px-2 py-1">Total Expenses in Current Month</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($totalExpensesMonth, 2) }}</td>
+                                </tr>
+                                <tr class="bg-gray-50 font-extrabold">
+                                    <td class="text-center px-1 py-1 border-t-2 border-black">7</td>
+                                    <td class="px-2 py-1 border-t-2 border-black">Closing Balance After Expenses</td>
+                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">{{ number_format($closingBalanceAfterExpenses, 2) }}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
 
-                            <div class="border-t border-gray-300 pt-1">Difference:</div>
-                            <div class="text-right font-bold border-t border-gray-300 pt-1 {{ $difference >= 0 ? 'text-red-600' : 'text-green-600' }}">
-                                {{ $difference >= 0 ? '+' : '' }}{{ number_format($difference, 2) }}
-                            </div>
-
-                            <div>Change (%):</div>
-                            <div class="text-right font-bold {{ $differencePercent >= 0 ? 'text-red-600' : 'text-green-600' }}">
-                                {{ $differencePercent >= 0 ? '+' : '' }}{{ number_format($differencePercent, 2) }}%
-                            </div>
-                        </div>
+                    {{-- Investment Comparison Table --}}
+                    <div>
+                        <table class="report-table tabular-nums w-full">
+                            <thead>
+                                <tr class="bg-gray-100">
+                                    <th class="text-center w-10 px-1 py-0.5">Sr#</th>
+                                    <th colspan="2" class="text-center px-2 py-1 text-base font-extrabold">
+                                        Investment Comparison — {{ $currentMonthName }}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-center px-1 py-1">1</td>
+                                    <td class="px-2 py-1">Last Month Main Investment ({{ $formattedLastDayPrevMonth }})</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($lastMonthMainInvestment, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">2</td>
+                                    <td class="px-2 py-1">Current Month Main Investment ({{ $formattedDate }})</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($currentMonthMainInvestment, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-center px-1 py-1">3</td>
+                                    <td class="px-2 py-1">Net Investment</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($netInvestment, 2) }}</td>
+                                </tr>
+                                <tr class="bg-gray-50 font-extrabold">
+                                    <td class="text-center px-1 py-1 border-t-2 border-black">4</td>
+                                    <td class="px-2 py-1 border-t-2 border-black">Increase In Investment Current Month</td>
+                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono {{ $increaseInInvestmentMonth >= 0 ? 'text-red-600' : 'text-green-600' }}">{{ number_format($increaseInInvestmentMonth, 2) }}</td>
+                                </tr>
+                                @for ($i = 5; $i <= 7; $i++)
+                                <tr>
+                                    <td class="text-center px-1 py-1">{{ $i }}</td>
+                                    <td class="text-center px-2 py-1">-</td>
+                                    <td class="text-center px-2 py-1">-</td>
+                                </tr>
+                                @endfor
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

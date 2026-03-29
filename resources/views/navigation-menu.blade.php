@@ -201,13 +201,13 @@
             @can('goods-issue-list')
                 <x-responsive-nav-link href="{{ route('goods-issues.index') }}"
                     :active="request()->routeIs('goods-issues.*')">
-                    {{ __('Distribution') }}
+                    {{ __('Goods Issue') }}
                 </x-responsive-nav-link>
             @endcan
             @can('sales-settlement-list')
                 <x-responsive-nav-link href="{{ route('sales-settlements.index') }}"
                     :active="request()->routeIs('sales-settlements.*')">
-                    {{ __('Sales') }}
+                    {{ __('Sales Settlement') }}
                 </x-responsive-nav-link>
             @endcan
             @can('setting-view')
@@ -216,7 +216,7 @@
                 </x-responsive-nav-link>
             @endcan
             @can('view-any-report')
-                <x-responsive-nav-link href="{{ route('reports.general-ledger.index') }}"
+                <x-responsive-nav-link href="{{ route('reports.index') }}"
                     :active="request()->routeIs('reports.*')">
                     {{ __('Reports') }}
                 </x-responsive-nav-link>

@@ -1,44 +1,36 @@
-https://moontraders.test/reports/investment-summary?date=2026-03-24&supplier_id=3&designation=Salesman
-is report Claim Amount, aur Ledger Amount srf posted ko filter krna hai agar us din do amount hain tou closing balance posted amount ka batana hai nh k us ka joh post nhi hui
+joh is sheet mein https://moontraders.test/reports/investment-summary hai us mein Expenses Detail hai us ka report ke tra system banawo
 
-aur next task yeh hai k stock amount correct snapshot ho rhe ho sab historical data sab ka thek ho kse bhi date mein yeh check krna hai
+https://moontraders.test/reports/claim-register make sure yeh jab add krin tou date ke input ho phr category ke
 
-us k bad important
-SHAHZAIN TRADERS INVESTMENT is table mein Total: ka jagha yeh lekhah hua ana chieyay
+category kse file sa lana yeh categoreis hain
+Stationary
+TCS
+Tonner & IT
+Salaries
+Fuel
+Van Work
 
-Total Main Investment as on yeh (Powder Expiry + Liquid Expiry + Claim Amount + Stock Amount + Credit Amount + Ledger Amount) aur make sure sab figures up to 2 decimal palces honay chieya properly formated use font-mono for numbers
-phr us k bad yeh ana chieyay next row mein
-Daily Cash as on OrignalDateOfThatDay yeh salesmane ke cash hai is k liyay yeh report banai hui hai you can understand that report https://moontraders.test/reports/cash-detail is ko sae in depth deep thinkgin kr k check krna yeh settlement sa joh daily cash hai wou hai make sure it matched with that date and historically bhi correct hone chieyay
+aur mry Chart of acocunt ko bhi dekho aur us k relavent us mein add krna poray double entry system ho cross database compatability psql/mariadb/mysql
 
-phr Total Investment as on OrignalDateOfThatDay: is mein hona chieyay joh sum ho gah daily cash + Total Main Investment
-phr us ka bad Total Main Investment as on Previous Day Date yeh gramer aur sentences sab joh oper hain sae lekhna as on aur previous date ka ta k professional lagay
+aur code bhi us file mein lagana ks ko credit aur ks ko debit krna hai auto ho jab post ho thek wsay he jsay claim register hai seprate table mein store ho us mein yeh hona chieyay
 
-phr us k bad yeh row rakhna hai Bank Online as on OrignalDateOfThatDay: yeh tun my dekhna hai us din ke date ledger register ke reports/ledger-register us din ke Online Amount of that company yad rakhna is mein joh supplier company ho ge us ke dekhna hai agar nestle ka hai nestle ka ledger ke Online Amount
+            $table->userTracking();
+            $table->softDeletes();
 
-phr yeh rakhna Increase in Investment as on OrignalDateOfThatDay: (Total Investment as on OrignalDateOfThatDay - Total Main Investment as on Previous Day - Bank Online as on OrignalDateOfThatDay
+user ke tracking tract already add hai aur transaction use krna proper ly aur prevent from double clikcing aur component wo he use krna joh claim register mein hain
+agar Fuel ho tou yeh inputs ane chieyay
 
-phr is table SHAHZAIN TRADERS INVESTMENT kay right side par yeh new table banawo filhal in mein data 0 rakho bad mein btwo gah is mein kai data rakhna hai
+VAN# yeh select2 class k sath van load krna humay pas joh vehicles hain phr vehicle type jab database mein entry kro tou yeh khod he kr dena yeh user sa puchnay ke zarorart nhi hai q k vehicle Vehicle Type already hai phr driver name joh humary employee hain Driver ka designation walay person utana yeh meery seeder mein hai employee waly mein aur liter aur amount puchay
 
-Expenses Detail
-Stationary: 0.00
-TCS: 0.00
-Tonner & IT: 0.00
-Salaries: 0.00
-Fuel: 0.00
-Van Work: 0.00
-Total Expenses: 0.00
+agar TCS ho srf amount date tou ho ge he like cliam register
+agar Salaries hou tou employee_no, aur employee name auto add krn dena aur phr us k bad us ke amount
 
-phr us ka bad yeh tables banana hai
+agar fuel ho tou srf amount
 
-Bank Opening Amount: filhal 0 rakho hard coded using variable bad mein btwo gah
-Total Cash Received in Current Month: Yeh dekh lo cash waly ko ta k sae sa data rakhna ta k pata chalay yeh sae hai make sure deep think
-Total Bank Amount: Total Cash Received in Current Month + Bank Opening Amount
-Total Online Amount in Current Month: yeh leger sa dekhna us company ko ktne online amount dee hai us month
-Closing Balance before Expenses: yeh Total Bank Amount - Total Online Amount in Current Month yeh ho gah
-Total Expenses in Current Month: yeh joh oper table dia hai us ka sum ho gah Total Expenses
-Closing Balance After Expenses: yeh Closing Balance before Expenses - Total Expenses in Current Month yeh ho gah
+Tonner & IT ho tou srf amount
 
-Last Month Main Investment: yeh calcualted hai dkeh lo
-Curent Month Main Investment: yeh calcualted hai dkeh lo
-Net Investment: Closing Balance before Expenses - Curent Month Main Investment
-Increase In Investment Current Month: Last Month Main Investment - Net Investment
+make sure yeh post bhi houn aur edit bhi aur delete bhi agar posted houn tou nhi hona chieyay is k relavent permssion aur middleware restriction bhi lagana
+
+phr yeh report check krna expense https://moontraders.test/reports/investment-summary us date tak ka ho us month mein mean jab report load ho tou us month ke starting date sa us current date tak ka sara expense is mein ho gah aur is k related yeh report ko bhi dekho ta k expense sae sa kam kry
+
+aur jab is expense k table mein double entry walay sysetm ho ta k sae balance track calculated ho is ka balance calcuate ho dekhna yah koi garbar nhi hone chieyay

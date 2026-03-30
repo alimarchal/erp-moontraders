@@ -140,6 +140,12 @@
             </div>
 
             <div>
+                <x-label for="filter_owner_cnic" value="Owner CNIC" />
+                <x-input id="filter_owner_cnic" name="filter[owner_cnic]" type="text"
+                    class="mt-1 block w-full" :value="request('filter.owner_cnic')" placeholder="Search CNIC" />
+            </div>
+
+            <div>
                 <x-label for="filter_city" value="City" />
                 <x-input id="filter_city" name="filter[city]" type="text"
                     class="mt-1 block w-full" :value="request('filter.city')" placeholder="Muzaffarabad" />
@@ -228,6 +234,7 @@
                             <th style="width: 40px;">Sr#</th>
                             <th style="width: 100px;">Store Code</th>
                             <th style="width: 180px;">Store Name</th>
+                            <th style="width: 120px;">Owner CNIC</th>
                             <th style="width: 100px;">Channel</th>
                             <th style="width: 120px;">NTN</th>
                             <th style="width: 250px;">Address</th>
@@ -238,8 +245,9 @@
                         @forelse ($customers as $index => $customer)
                             <tr>
                                 <td class="text-center" style="vertical-align: middle;">{{ $customers->firstItem() + $index }}</td>
-                                <td style="vertical-align: middle;">{{ $customer->customer_code }}</td>
+                                 <td style="vertical-align: middle;">{{ $customer->customer_code }}</td>
                                 <td style="vertical-align: middle;">{{ $customer->customer_name }}</td>
+                                <td style="vertical-align: middle;">{{ $customer->owner_cnic ?? '-' }}</td>
                                 <td style="vertical-align: middle;">{{ $customer->channel_type }}</td>
                                 <td style="vertical-align: middle;">{{ $customer->ntn ?? '-' }}</td>
                                 <td style="vertical-align: middle;">{{ $customer->address ?? '-' }}</td>
@@ -249,7 +257,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center py-4 text-gray-500">No records found.</td>
+                                <td colspan="8" class="text-center py-4 text-gray-500">No records found.</td>
                             </tr>
                         @endforelse
                     </tbody>

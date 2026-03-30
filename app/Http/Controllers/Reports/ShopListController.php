@@ -42,6 +42,7 @@ class ShopListController extends Controller implements HasMiddleware
                 AllowedFilter::partial('city'),
                 AllowedFilter::partial('sub_locality'),
                 AllowedFilter::partial('ntn'),
+                AllowedFilter::partial('owner_cnic'),
                 AllowedFilter::exact('channel_type'),
                 AllowedFilter::exact('customer_category'),
                 AllowedFilter::exact('sales_rep_id'),

@@ -128,6 +128,18 @@ class SupplierSeeder extends Seeder
                 'is_internal_supplier' => false,
                 'default_currency_id' => $defaultCurrency?->id,
             ],
+
+            [
+                'supplier_name' => 'Nestle Pakistan-HOD 19L',
+                'short_name' => 'NPH19L',
+                'country' => 'Pakistan',
+                'supplier_group' => 'Local',
+                'supplier_type' => 'Water & Beverages',
+                'is_transporter' => false,
+                'sales_tax' => 18.00,
+                'is_internal_supplier' => false,
+                'default_currency_id' => $defaultCurrency?->id,
+            ],
         ];
 
         foreach ($suppliers as $supplier) {

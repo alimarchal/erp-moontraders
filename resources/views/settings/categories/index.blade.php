@@ -24,57 +24,63 @@
         </div>
     </x-filter-section>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <x-data-table :headers="[
+    <x-data-table :headers="[
+        ['label' => '#', 'align' => 'text-center'],
         ['label' => 'Name', 'align' => 'text-left'],
         ['label' => 'Status', 'align' => 'text-center'],
         ['label' => 'Actions', 'align' => 'text-center'],
-    ]" :items="$categories">
-                    @foreach ($categories as $category)
-                        <tr class="hover:bg-gray-50 transition-colors duration-200">
-                            <td class="py-2 px-2">
-                                <div class="font-semibold">{{ $category->name }}</div>
-                                <div class="text-xs text-gray-500">{{ $category->slug }}</div>
-                            </td>
-                            <td class="py-2 px-2 text-center">
-                                <span
-                                    class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $category->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
-                                    {{ $category->is_active ? 'Active' : 'Inactive' }}
-                                </span>
-                            </td>
-                            <td class="py-2 px-2 text-center">
-                                <div class="flex justify-center space-x-2">
-                                    @can('category-edit')
-                                        <a href="{{ route('categories.edit', $category) }}"
-                                            class="text-indigo-600 hover:text-indigo-900" title="Edit">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                            </svg>
-                                        </a>
-                                    @endcan
-                                    @role('super-admin')
-                                    <form action="{{ route('categories.destroy', $category) }}" method="POST"
-                                        onsubmit="return confirm('Are you sure you want to delete this category?');"
-                                        class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900" title="Delete">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
-                                    </form>
-                                    @endrole
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </x-data-table>
-            </div>
-        </div>
-    </div>
+    ]" :items="$categories" emptyMessage="No categories found." :emptyRoute="route('categories.create')"
+        emptyLinkText="Add Category">
+        @foreach ($categories as $index => $category)
+            <tr class="border-b border-gray-200 text-sm hover:bg-gray-50 transition-colors duration-150">
+                <td class="py-1 px-2 text-center">
+                    {{ $categories->firstItem() + $index }}
+                </td>
+                <td class="py-1 px-2 font-semibold">
+                    {{ $category->name }}
+                    @if ($category->slug)
+                        <div class="text-xs text-gray-500 font-normal">{{ $category->slug }}</div>
+                    @endif
+                </td>
+                <td class="py-1 px-2 text-center">
+                    <span
+                        class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $category->is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700' }}">
+                        {{ $category->is_active ? 'Active' : 'Inactive' }}
+                    </span>
+                </td>
+                <td class="py-1 px-2 text-center">
+                    <div class="flex justify-center space-x-2">
+                        @can('category-edit')
+                            <a href="{{ route('categories.edit', $category) }}"
+                                class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
+                                title="Edit">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </a>
+                        @endcan
+                        @role('super-admin')
+                        <form action="{{ route('categories.destroy', $category) }}" method="POST"
+                            onsubmit="return confirm('Are you sure you want to delete this category?');" class="inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
+                                title="Delete">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </form>
+                        @endrole
+                    </div>
+                </td>
+            </tr>
+        @endforeach
+    </x-data-table>
+
 </x-app-layout>

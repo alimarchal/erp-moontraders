@@ -57,7 +57,7 @@ class VehicleController extends Controller implements HasMiddleware
         return view('vehicles.index', [
             'vehicles' => $vehicles,
             'statusOptions' => ['1' => 'Active', '0' => 'Inactive'],
-            'employeeOptions' => Employee::orderBy('name')->get(['id', 'name']),
+            'employeeOptions' => Employee::orderBy('name')->get(['id', 'employee_code', 'name']),
             'companyOptions' => Company::orderBy('company_name')->get(['id', 'company_name']),
             'supplierOptions' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
             'perPageOptions' => self::PER_PAGE_OPTIONS,
@@ -79,7 +79,7 @@ class VehicleController extends Controller implements HasMiddleware
      */
     public function create()
     {
-        $employeeOptions = Employee::orderBy('name')->get(['id', 'name']);
+        $employeeOptions = Employee::orderBy('name')->get(['id', 'employee_code', 'name']);
         $companyOptions = Company::orderBy('company_name')->get(['id', 'company_name']);
         $supplierOptions = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
 
@@ -160,7 +160,7 @@ class VehicleController extends Controller implements HasMiddleware
      */
     public function edit(Vehicle $vehicle)
     {
-        $employeeOptions = Employee::orderBy('name')->get(['id', 'name']);
+        $employeeOptions = Employee::orderBy('name')->get(['id', 'employee_code', 'name']);
         $companyOptions = Company::orderBy('company_name')->get(['id', 'company_name']);
         $supplierOptions = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
 

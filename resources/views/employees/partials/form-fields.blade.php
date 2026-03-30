@@ -37,7 +37,7 @@ $companyOptions = $companyOptions ?? collect();
     <div>
         <x-label for="supplier_id" value="Supplier" />
         <select id="supplier_id" name="supplier_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">No supplier</option>
             @foreach ($supplierOptions as $supplier)
             <option value="{{ $supplier->id }}" {{ (int) old('supplier_id', optional($employee)->supplier_id) ===
@@ -51,7 +51,7 @@ $companyOptions = $companyOptions ?? collect();
     <div>
         <x-label for="company_id" value="Company Entity" />
         <select id="company_id" name="company_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not assigned</option>
             @foreach ($companyOptions as $company)
             <option value="{{ $company->id }}" {{ (int) old('company_id', optional($employee)->company_id) ===
@@ -77,7 +77,7 @@ $companyOptions = $companyOptions ?? collect();
     <div>
         <x-label for="warehouse_id" value="Primary Warehouse" />
         <select id="warehouse_id" name="warehouse_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not assigned</option>
             @foreach ($warehouseOptions as $warehouse)
             <option value="{{ $warehouse->id }}" {{ (int) old('warehouse_id', optional($employee)->warehouse_id) ===
@@ -91,7 +91,7 @@ $companyOptions = $companyOptions ?? collect();
     <div>
         <x-label for="user_id" value="Linked User" />
         <select id="user_id" name="user_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">No linked user</option>
             @foreach ($userOptions as $user)
             <option value="{{ $user->id }}" {{ (int) old('user_id', optional($employee)->user_id) === $user->id ?

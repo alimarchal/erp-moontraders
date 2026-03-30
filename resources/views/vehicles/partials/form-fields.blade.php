@@ -41,7 +41,7 @@
     <div>
         <x-label for="company_id" value="Company" />
         <select id="company_id" name="company_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($companyOptions as $company)
                 <option value="{{ $company->id }}" {{ (int) old('company_id', optional($vehicle)->company_id) === $company->id ? 'selected' : '' }}>
@@ -54,7 +54,7 @@
     <div>
         <x-label for="supplier_id" value="Transporter / Supplier" />
         <select id="supplier_id" name="supplier_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($supplierOptions as $supplier)
                 <option value="{{ $supplier->id }}" {{ (int) old('supplier_id', optional($vehicle)->supplier_id) === $supplier->id ? 'selected' : '' }}>
@@ -67,11 +67,11 @@
     <div>
         <x-label for="employee_id" value="Assigned Driver" />
         <select id="employee_id" name="employee_id"
-            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Unassigned</option>
             @foreach ($employeeOptions as $employee)
                 <option value="{{ $employee->id }}" {{ (int) old('employee_id', optional($vehicle)->employee_id) === $employee->id ? 'selected' : '' }}>
-                    {{ $employee->name }}
+                    {{ $employee->employee_code }} - {{ $employee->name }}
                 </option>
             @endforeach
         </select>

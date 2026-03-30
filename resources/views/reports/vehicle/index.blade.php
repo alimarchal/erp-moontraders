@@ -128,7 +128,7 @@
             <div>
                 <x-label for="filter_supplier_id" value="Supplier" />
                 <select id="filter_supplier_id" name="filter[supplier_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
                     @foreach ($supplierOptions as $supplier)
                         <option value="{{ $supplier->id }}" {{ request('filter.supplier_id') == $supplier->id ? 'selected' : '' }}>
@@ -141,11 +141,11 @@
             <div>
                 <x-label for="filter_employee_id" value="Salesman (Assigned)" />
                 <select id="filter_employee_id" name="filter[employee_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Salesmen</option>
                     @foreach ($employeeOptions as $employee)
                         <option value="{{ $employee->id }}" {{ request('filter.employee_id') == $employee->id ? 'selected' : '' }}>
-                            {{ $employee->name }}
+                            {{ $employee->employee_code }} - {{ $employee->name }}
                         </option>
                     @endforeach
                 </select>
@@ -154,7 +154,7 @@
             <div>
                 <x-label for="filter_vehicle_type" value="Vehicle Type" />
                 <select id="filter_vehicle_type" name="filter[vehicle_type]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Types</option>
                     @foreach ($typeOptions as $type)
                         <option value="{{ $type }}" {{ request('filter.vehicle_type') == $type ? 'selected' : '' }}>
@@ -167,7 +167,7 @@
             <div>
                 <x-label for="filter_is_active" value="Status" />
                 <select id="filter_is_active" name="filter[is_active]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     @foreach ($statusOptions as $value => $label)
                         <option value="{{ $value }}" {{ request('filter.is_active') === (string) $value ? 'selected' : '' }}>
                             {{ $label }}
@@ -179,7 +179,7 @@
             <div>
                 <x-label for="per_page" value="Records Per Page" />
                 <select id="per_page" name="per_page"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     @foreach ($perPageOptions as $option)
                         <option value="{{ $option }}" {{ $currentPerPage === $option ? 'selected' : '' }}>
                             {{ number_format($option) }}

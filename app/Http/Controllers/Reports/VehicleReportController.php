@@ -58,7 +58,7 @@ class VehicleReportController extends Controller implements HasMiddleware
             'vehicles' => $vehicles,
             'companyOptions' => Company::orderBy('company_name')->get(['id', 'company_name']),
             'supplierOptions' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
-            'employeeOptions' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'employeeOptions' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'employee_code', 'name']),
             'typeOptions' => Vehicle::distinct()->pluck('vehicle_type')->filter()->values(),
             'statusOptions' => ['' => 'All', '1' => 'Active', '0' => 'Inactive'],
             'perPageOptions' => self::PER_PAGE_OPTIONS,

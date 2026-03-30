@@ -526,13 +526,16 @@
                                                             @endforeach
                                                         </select>
                                                     </td>
-                                                    <td colspan="2" style="padding: 4px;">
+                                                    <td style="width: 110px; padding: 4px;">
                                                         <input type="number" name="amount" step="0.01"
                                                             min="0" value="{{ old('amount') }}"
                                                             class="inline-input" placeholder="Amount" required>
                                                     </td>
+                                                    <td style="width: 110px; padding: 4px; text-align: center;">
+                                                        <span class="text-xs text-gray-400">-</span>
+                                                    </td>
                                                     <td style="width: 120px; padding: 4px; text-align: center;">
-                                                        <span class="text-xs text-gray-500">Auto</span>
+                                                        <span class="text-xs text-gray-400">-</span>
                                                     </td>
                                                     <td style="width: 70px; padding: 4px; text-align: center;">
                                                         <button type="submit"

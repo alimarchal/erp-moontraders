@@ -42,6 +42,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,              // Add categories and assign to products
             BankAccountSeeder::class,           // Add bank accounts after chart of accounts
             AttachmentSeeder::class,            // Add attachments last
+            ClaimRegisterSeeder::class,
         ]);
 
         // Seed product recall permissions after roles exist

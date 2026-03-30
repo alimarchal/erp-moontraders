@@ -516,7 +516,7 @@
                                                             value="{{ old('claim_month') }}" class="inline-input"
                                                             placeholder="Jun-Aug">
                                                     </td>
-                                                    <td style="width: 80px; padding: 4px;">
+                                                    <td style="width: 120px; padding: 4px;">
                                                         <select name="transaction_type" class="inline-select" required>
                                                             @foreach ($transactionTypeOptions as $value => $label)
                                                                 <option value="{{ $value }}"
@@ -526,13 +526,10 @@
                                                             @endforeach
                                                         </select>
                                                     </td>
-                                                    <td style="width: 110px; padding: 4px;">
+                                                    <td colspan="2" style="padding: 4px;">
                                                         <input type="number" name="amount" step="0.01"
                                                             min="0" value="{{ old('amount') }}"
                                                             class="inline-input" placeholder="Amount" required>
-                                                    </td>
-                                                    <td style="width: 110px; padding: 4px; text-align: center;">
-                                                        <span class="text-xs text-gray-400">-</span>
                                                     </td>
                                                     <td style="width: 120px; padding: 4px; text-align: center;">
                                                         <span class="text-xs text-gray-400">-</span>

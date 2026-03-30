@@ -778,6 +778,32 @@
                                     </a>
                                 @endcan
 
+                                @can('report-sales-vehicle')
+                                    <a href="{{ route('reports.vehicle.index') }}"
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
+                                        <div class="flex items-center gap-4">
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">3</span>
+                                            <div
+                                                class="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                                    stroke-width="1.5">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M8.25 18.75a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 01-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m3 0h1.125c.621 0 1.125-.504 1.125-1.125V13.5m-9-3.75h3.375c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125h-3.375m0 0H6.375c-.621 0-1.125-.504-1.125-1.125v-1.5c0-.621.504-1.125 1.125-1.125h3.375m0 0v-2.25" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-900">Vehicle Report</div>
+                                                <div class="text-xs text-gray-500">Fleet details and assignments</div>
+                                            </div>
+                                        </div>
+                                        <svg class="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors"
+                                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </a>
+                                @endcan
+
                             </div>
                         </div>
                     </div>

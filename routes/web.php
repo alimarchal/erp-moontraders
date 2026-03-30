@@ -63,6 +63,7 @@ use App\Http\Controllers\Reports\SchemeDiscountReportController;
 use App\Http\Controllers\Reports\ShopListController;
 use App\Http\Controllers\Reports\SkuFmrAmrController;
 use App\Http\Controllers\Reports\SkuRatesController;
+use App\Http\Controllers\Reports\VehicleReportController;
 use App\Http\Controllers\Reports\StockAvailabilityReportController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\Reports\VanStockBatchReportController;
@@ -680,6 +681,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('inventory-ledger', [InventoryLedgerReportController::class, 'index'])->name('inventory-ledger.index');
         Route::get('shop-list', [ShopListController::class, 'index'])->name('shop-list.index');
         Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
+        Route::get('vehicle', [VehicleReportController::class, 'index'])->name('vehicle.index');
         Route::get('stock-availability', [StockAvailabilityReportController::class, 'index'])->name('stock-availability.index');
 
         /* Claim Register */

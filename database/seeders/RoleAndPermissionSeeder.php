@@ -68,7 +68,7 @@ class RoleAndPermissionSeeder extends Seeder
             'report-financial' => ['general-ledger', 'trial-balance', 'account-balances', 'balance-sheet', 'income-statement'],
 
             // Reports - Sales (granular per report)
-            'report-sales' => ['daily-sales', 'credit-sales', 'fmr-amr-comparison', 'settlement', 'goods-issue', 'roi', 'scheme-discount', 'shop-list', 'sku-rates'],
+            'report-sales' => ['daily-sales', 'credit-sales', 'fmr-amr-comparison', 'settlement', 'goods-issue', 'roi', 'scheme-discount', 'shop-list', 'sku-rates', 'vehicle'],
 
             // Reports - Inventory (granular per report)
             'report-inventory' => ['daily-stock-register', 'salesman-stock-register', 'inventory-ledger', 'van-stock-batch', 'van-stock-ledger'],

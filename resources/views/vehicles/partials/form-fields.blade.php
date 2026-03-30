@@ -8,16 +8,16 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
     <div>
         <x-label for="vehicle_number" value="Vehicle Number" :required="true" />
-        <x-input id="vehicle_number" type="text" name="vehicle_number"
-            class="mt-1 block w-full uppercase" required maxlength="191"
-            :value="old('vehicle_number', optional($vehicle)->vehicle_number)" placeholder="e.g., RLF-4328" />
+        <x-input id="vehicle_number" type="text" name="vehicle_number" class="mt-1 block w-full uppercase" required
+            maxlength="191" :value="old('vehicle_number', optional($vehicle)->vehicle_number)"
+            placeholder="e.g., RLF-4328" />
     </div>
 
     <div>
         <x-label for="registration_number" value="Registration Number" :required="true" />
-        <x-input id="registration_number" type="text" name="registration_number"
-            class="mt-1 block w-full uppercase" required maxlength="191"
-            :value="old('registration_number', optional($vehicle)->registration_number)" placeholder="e.g., RLF-4328" />
+        <x-input id="registration_number" type="text" name="registration_number" class="mt-1 block w-full uppercase"
+            required maxlength="191" :value="old('registration_number', optional($vehicle)->registration_number)"
+            placeholder="e.g., RLF-4328" />
     </div>
 
     <div>
@@ -44,8 +44,7 @@
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($companyOptions as $company)
-                <option value="{{ $company->id }}"
-                    {{ (int) old('company_id', optional($vehicle)->company_id) === $company->id ? 'selected' : '' }}>
+                <option value="{{ $company->id }}" {{ (int) old('company_id', optional($vehicle)->company_id) === $company->id ? 'selected' : '' }}>
                     {{ $company->company_name }}
                 </option>
             @endforeach
@@ -58,8 +57,7 @@
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Not linked</option>
             @foreach ($supplierOptions as $supplier)
-                <option value="{{ $supplier->id }}"
-                    {{ (int) old('supplier_id', optional($vehicle)->supplier_id) === $supplier->id ? 'selected' : '' }}>
+                <option value="{{ $supplier->id }}" {{ (int) old('supplier_id', optional($vehicle)->supplier_id) === $supplier->id ? 'selected' : '' }}>
                     {{ $supplier->supplier_name }}
                 </option>
             @endforeach
@@ -72,8 +70,7 @@
             class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
             <option value="">Unassigned</option>
             @foreach ($employeeOptions as $employee)
-                <option value="{{ $employee->id }}"
-                    {{ (int) old('employee_id', optional($vehicle)->employee_id) === $employee->id ? 'selected' : '' }}>
+                <option value="{{ $employee->id }}" {{ (int) old('employee_id', optional($vehicle)->employee_id) === $employee->id ? 'selected' : '' }}>
                     {{ $employee->name }}
                 </option>
             @endforeach

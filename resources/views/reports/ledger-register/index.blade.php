@@ -278,6 +278,64 @@
 
     {{-- Main Report --}}
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+
+        {{-- Opening Balance Setting (only shows when suppliers without opening balance exist) --}}
+        @can('report-audit-ledger-register-manage')
+            @if ($suppliersWithoutOpeningBalance->count() > 0)
+                <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 no-print" x-data="{ showOpeningBalance: false, selectedSupplierId: '' }">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <h3 class="text-sm font-semibold text-gray-700">Set Supplier Opening Balance</h3>
+                            <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full font-medium">{{ $suppliersWithoutOpeningBalance->count() }} remaining</span>
+                        </div>
+                        <button type="button" @click="showOpeningBalance = !showOpeningBalance"
+                            class="inline-flex items-center px-3 py-1 text-xs font-medium rounded-md transition-colors"
+                            :class="showOpeningBalance ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' : 'bg-indigo-600 text-white hover:bg-indigo-700'">
+                            <span x-text="showOpeningBalance ? 'Cancel' : 'Set Opening Balance'"></span>
+                        </button>
+                    </div>
+                    <div x-show="showOpeningBalance" x-cloak class="mt-4 border-t pt-4">
+                        <form :action="'/reports/ledger-register/opening-balance/' + selectedSupplierId" method="POST">
+                            @csrf
+                            @method('PUT')
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+                                <div>
+                                    <x-label for="ob_supplier_id" value="Supplier" />
+                                    <select id="ob_supplier_id" x-model="selectedSupplierId"
+                                        class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full text-sm">
+                                        <option value="">-- Select Supplier --</option>
+                                        @foreach ($suppliersWithoutOpeningBalance as $sup)
+                                            <option value="{{ $sup->id }}">
+                                                {{ $sup->supplier_name }}
+                                                @if ($sup->short_name) ({{ $sup->short_name }}) @endif
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <x-label for="ledger_opening_balance" value="Opening Balance Amount" />
+                                    <x-input id="ledger_opening_balance" name="ledger_opening_balance" type="number" step="0.01"
+                                        class="mt-1 block w-full" :value="old('ledger_opening_balance', 0)" required />
+                                </div>
+                                <div>
+                                    <x-label for="ledger_opening_balance_date" value="Balance Date" />
+                                    <x-input id="ledger_opening_balance_date" name="ledger_opening_balance_date" type="date"
+                                        class="mt-1 block w-full" :value="old('ledger_opening_balance_date')" />
+                                </div>
+                                <div>
+                                    <button type="submit" :disabled="!selectedSupplierId"
+                                        class="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-md hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                                        Save
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 mt-2">+ve = supplier owes you, -ve = you owe supplier. An entry will be created in the table below — post it to GL from the Actions column.</p>
+                        </form>
+                    </div>
+                </div>
+            @endif
+        @endcan
+
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
                 {{-- Report Header (Excel-style) --}}
@@ -378,23 +436,29 @@
                                 </td>
                                 <td class="font-mono text-xs" style="vertical-align: middle;">
                                     {{ $entry->document_number ?? '-' }}</td>
-                                <td class="amount-cell {{ $entry->online_amount > 0 ? 'text-green-700' : '' }}"
-                                    style="vertical-align: middle;">
-                                    {{ $entry->online_amount > 0 ? number_format($entry->online_amount, 2) : '-' }}
-                                </td>
-                                <td class="amount-cell {{ $entry->invoice_amount > 0 ? 'text-blue-700' : '' }}"
-                                    style="vertical-align: middle;">
-                                    {{ $entry->invoice_amount > 0 ? number_format($entry->invoice_amount, 2) : '-' }}
-                                </td>
-                                <td class="amount-cell" style="vertical-align: middle;">
-                                    {{ $entry->expenses_amount > 0 ? number_format($entry->expenses_amount, 2) : '-' }}
-                                </td>
-                                <td class="amount-cell" style="vertical-align: middle;">
-                                    {{ $entry->za_point_five_percent_amount > 0 ? number_format($entry->za_point_five_percent_amount, 2) : '-' }}
-                                </td>
-                                <td class="amount-cell" style="vertical-align: middle;">
-                                    {{ $entry->claim_adjust_amount > 0 ? number_format($entry->claim_adjust_amount, 2) : '-' }}
-                                </td>
+                                @if ($entry->document_type === \App\Enums\DocumentType::Ob)
+                                    <td class="amount-cell" style="vertical-align: middle;" colspan="5">
+                                        <span class="text-xs text-gray-500 italic">Opening Balance</span>
+                                    </td>
+                                @else
+                                    <td class="amount-cell {{ $entry->online_amount > 0 ? 'text-green-700' : '' }}"
+                                        style="vertical-align: middle;">
+                                        {{ $entry->online_amount > 0 ? number_format($entry->online_amount, 2) : '-' }}
+                                    </td>
+                                    <td class="amount-cell {{ $entry->invoice_amount > 0 ? 'text-blue-700' : '' }}"
+                                        style="vertical-align: middle;">
+                                        {{ $entry->invoice_amount > 0 ? number_format($entry->invoice_amount, 2) : '-' }}
+                                    </td>
+                                    <td class="amount-cell" style="vertical-align: middle;">
+                                        {{ $entry->expenses_amount > 0 ? number_format($entry->expenses_amount, 2) : '-' }}
+                                    </td>
+                                    <td class="amount-cell" style="vertical-align: middle;">
+                                        {{ $entry->za_point_five_percent_amount > 0 ? number_format($entry->za_point_five_percent_amount, 2) : '-' }}
+                                    </td>
+                                    <td class="amount-cell" style="vertical-align: middle;">
+                                        {{ $entry->claim_adjust_amount > 0 ? number_format($entry->claim_adjust_amount, 2) : '-' }}
+                                    </td>
+                                @endif
                                 <td class="amount-cell font-bold {{ $entry->running_balance >= 0 ? 'text-green-700' : 'text-red-700' }}"
                                     style="vertical-align: middle;">
                                     {{ number_format($entry->running_balance, 2) }}

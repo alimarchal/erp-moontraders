@@ -14,7 +14,7 @@ class LedgerRegister extends Model
 {
     use HasFactory, SoftDeletes, UserTracking;
 
-    protected $table = 'ledger_registers';
+    protected $table = 'supplier_ledger_registers';
 
     protected $fillable = [
         'supplier_id',
@@ -95,12 +95,12 @@ class LedgerRegister extends Model
      */
     public static function recalculateBalances(int $supplierId): void
     {
+        $runningBalance = 0;
+
         $entries = static::where('supplier_id', $supplierId)
             ->orderBy('transaction_date')
             ->orderBy('id')
             ->get();
-
-        $runningBalance = 0;
 
         foreach ($entries as $entry) {
             $runningBalance = $runningBalance

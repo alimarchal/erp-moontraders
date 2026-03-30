@@ -45,6 +45,10 @@ return new class extends Migration
             $table->decimal('sales_tax', 5, 2)->default(18.00)->comment('Sales tax percentage');
             $table->string('pan_number')->nullable();
 
+            // Ledger Opening Balance
+            $table->decimal('ledger_opening_balance', 15, 2)->default(0);
+            $table->date('ledger_opening_balance_date')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
 

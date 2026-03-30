@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Reports;
 use App\Http\Controllers\Controller;
 use App\Models\ClaimRegister;
 use App\Models\Employee;
+use App\Models\ExpenseDetail;
 use App\Models\LedgerRegister;
 use App\Models\SalesSettlement;
 use App\Models\Supplier;
@@ -88,7 +89,8 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         $totalBankAmount = $totalCashReceivedMonth + $bankOpeningAmount;
         $totalOnlineAmountMonth = $this->getMonthlyOnlineAmount($date, $supplierId);
         $closingBalanceBeforeExpenses = $totalBankAmount - $totalOnlineAmountMonth;
-        $totalExpensesMonth = 0;
+        $expenseCategoryTotals = $this->getMonthlyExpenses($date, $supplierId);
+        $totalExpensesMonth = array_sum($expenseCategoryTotals);
         $closingBalanceAfterExpenses = $closingBalanceBeforeExpenses - $totalExpensesMonth;
 
         // Last month main investment
@@ -140,6 +142,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             'totalOnlineAmountMonth',
             'closingBalanceBeforeExpenses',
             'totalExpensesMonth',
+            'expenseCategoryTotals',
             'closingBalanceAfterExpenses',
             'lastMonthMainInvestment',
             'currentMonthMainInvestment',
@@ -442,6 +445,34 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
                 ? (float) $cashDenom->total_amount
                 : (float) $settlement->cash_collected;
         });
+    }
+
+    /**
+     * @return array<string, float>
+     */
+    /**
+     * @return array<string, float>
+     */
+    private function getMonthlyExpenses(string $upToDate, ?int $supplierId = null): array
+    {
+        $startOfMonth = Carbon::parse($upToDate)->startOfMonth()->toDateString();
+
+        $categories = ['stationary', 'tcs', 'tonner_it', 'salaries', 'fuel', 'van_work'];
+        $totals = [];
+
+        foreach ($categories as $category) {
+            $query = ExpenseDetail::where('category', $category)
+                ->whereNotNull('posted_at')
+                ->whereBetween('transaction_date', [$startOfMonth, $upToDate]);
+
+            if ($supplierId) {
+                $query->where('supplier_id', $supplierId);
+            }
+
+            $totals[$category] = (float) $query->sum('amount');
+        }
+
+        return $totals;
     }
 
     private function getMonthlyOnlineAmount(string $upToDate, ?int $supplierId): float

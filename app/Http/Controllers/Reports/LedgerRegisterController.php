@@ -25,7 +25,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('can:report-audit-ledger-register', only: ['index']),
-            new Middleware('can:report-audit-ledger-register-manage', only: ['store', 'update', 'destroy']),
+            new Middleware('can:report-audit-ledger-register-manage', only: ['store', 'update', 'destroy', 'updateOpeningBalance']),
             new Middleware('can:report-audit-ledger-register-post', only: ['post']),
         ];
     }
@@ -89,8 +89,8 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             $allFilteredQuery->where('sap_code', 'like', '%'.$request->input('filter.sap_code').'%');
         }
 
-        // Column totals (for all filtered entries, not just current page)
-        $totals = (clone $allFilteredQuery)->selectRaw('
+        // Column totals (exclude OB entries — OB is a balance, not an amount)
+        $totals = (clone $allFilteredQuery)->where('document_type', '!=', DocumentType::Ob->value)->selectRaw('
             COALESCE(SUM(online_amount), 0) as total_online,
             COALESCE(SUM(invoice_amount), 0) as total_invoice,
             COALESCE(SUM(expenses_amount), 0) as total_expenses,
@@ -98,6 +98,11 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             COALESCE(SUM(claim_adjust_amount), 0) as total_claim_adjust,
             COUNT(*) as total_entries
         ')->first();
+
+        // Sum of OB entries within the date range (stored in online_amount/invoice_amount for formula)
+        $obTotalInRange = (float) (clone $allFilteredQuery)->where('document_type', DocumentType::Ob->value)
+            ->selectRaw('COALESCE(SUM(online_amount - invoice_amount), 0) as balance')
+            ->value('balance');
 
         if ($perPage === 'all') {
             $allEntries = $query->get();
@@ -112,7 +117,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             $entries = $query->paginate((int) $perPage)->withQueryString();
         }
 
-        // Opening balance (sum of all entries for this supplier BEFORE dateFrom)
+        // Opening balance: sum of entries before dateFrom
         $openingBalance = 0;
         if ($supplierId && $dateFrom) {
             $openingBalance = (float) LedgerRegister::where('supplier_id', $supplierId)
@@ -155,6 +160,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
         });
 
         $currentBalance = $openingBalance
+            + (float) $obTotalInRange
             + (float) ($totals->total_online ?? 0)
             - (float) ($totals->total_invoice ?? 0)
             - (float) ($totals->total_expenses ?? 0)
@@ -162,6 +168,12 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             + (float) ($totals->total_claim_adjust ?? 0);
 
         $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get();
+        $suppliersWithoutOpeningBalance = Supplier::where('disabled', false)
+            ->where(function ($q) {
+                $q->where('ledger_opening_balance', 0)->orWhereNull('ledger_opening_balance');
+            })
+            ->orderBy('supplier_name')
+            ->get();
         $selectedSupplier = $supplierId ? Supplier::find($supplierId) : null;
         $supplierLedgerDateEditable = filter_var(env('SUPPLIER_LEDGER_DATE_EDITABLE', true), FILTER_VALIDATE_BOOLEAN);
 
@@ -171,6 +183,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             'openingBalance' => $openingBalance,
             'currentBalance' => $currentBalance,
             'suppliers' => $suppliers,
+            'suppliersWithoutOpeningBalance' => $suppliersWithoutOpeningBalance,
             'selectedSupplier' => $selectedSupplier,
             'documentTypes' => DocumentType::cases(),
             'dateFrom' => $dateFrom,
@@ -241,6 +254,44 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             Log::error('LedgerRegister destroy error: '.$e->getMessage());
 
             return redirect()->back()->with('error', 'Failed to delete ledger entry. Please try again.');
+        }
+    }
+
+    public function updateOpeningBalance(Request $request, Supplier $supplier)
+    {
+        $validated = $request->validate([
+            'ledger_opening_balance' => ['required', 'numeric'],
+            'ledger_opening_balance_date' => ['nullable', 'date'],
+        ]);
+
+        $amount = (float) $validated['ledger_opening_balance'];
+        $date = $validated['ledger_opening_balance_date'] ?? now()->toDateString();
+
+        try {
+            DB::transaction(function () use ($supplier, $validated, $amount, $date) {
+                $supplier->update($validated);
+
+                LedgerRegister::create([
+                    'supplier_id' => $supplier->id,
+                    'transaction_date' => $date,
+                    'document_type' => DocumentType::Ob,
+                    'document_number' => "OB-{$supplier->short_name}",
+                    'online_amount' => $amount > 0 ? $amount : 0,
+                    'invoice_amount' => $amount < 0 ? abs($amount) : 0,
+                    'expenses_amount' => 0,
+                    'za_point_five_percent_amount' => 0,
+                    'claim_adjust_amount' => 0,
+                    'remarks' => 'Opening Balance',
+                ]);
+
+                LedgerRegister::recalculateBalances($supplier->id);
+            });
+
+            return redirect()->back()->with('success', "Opening balance set for {$supplier->supplier_name}. You can post it to GL from the table.");
+        } catch (\Throwable $e) {
+            Log::error('Failed to set opening balance: '.$e->getMessage());
+
+            return redirect()->back()->with('error', 'Failed to set opening balance. Please try again.');
         }
     }
 }

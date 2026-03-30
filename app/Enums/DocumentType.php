@@ -14,6 +14,7 @@ enum DocumentType: string
     case Mr = 'MR';
     case Zd = 'ZD';
     case Mi = 'MI';
+    case Ob = 'OB';
 
     public function label(): string
     {
@@ -28,6 +29,7 @@ enum DocumentType: string
             self::Mr => 'Abnormalities',
             self::Zd => 'Cash Discount/Rates Diff',
             self::Mi => 'Miscellaneous',
+            self::Ob => 'Opening Balance',
         };
     }
 
@@ -44,6 +46,7 @@ enum DocumentType: string
             self::Mr => 'bg-pink-100 text-pink-800',
             self::Zd => 'bg-indigo-100 text-indigo-800',
             self::Mi => 'bg-gray-100 text-gray-800',
+            self::Ob => 'bg-amber-100 text-amber-800',
         };
     }
 }

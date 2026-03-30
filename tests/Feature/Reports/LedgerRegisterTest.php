@@ -124,7 +124,7 @@ test('can store a new ledger register entry', function () {
         ])
         ->assertRedirect();
 
-    $this->assertDatabaseHas('ledger_registers', [
+    $this->assertDatabaseHas('supplier_ledger_registers', [
         'supplier_id' => $this->supplier->id,
         'transaction_date' => '2026-02-02',
         'document_type' => DocumentType::Dz->value,
@@ -163,7 +163,7 @@ test('can delete a ledger register entry', function () {
         ->delete(route('reports.ledger-register.destroy', $entry))
         ->assertRedirect();
 
-    $this->assertSoftDeleted('ledger_registers', ['id' => $entry->id]);
+    $this->assertSoftDeleted('supplier_ledger_registers', ['id' => $entry->id]);
 });
 
 test('balance recalculates correctly after store', function () {
@@ -289,4 +289,89 @@ test('store validates required fields', function () {
     $this->actingAs($this->user)
         ->post(route('reports.ledger-register.store'), [])
         ->assertSessionHasErrors(['supplier_id', 'transaction_date']);
+});
+
+test('can update supplier opening balance', function () {
+    $this->actingAs($this->user)
+        ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [
+            'ledger_opening_balance' => 500000,
+            'ledger_opening_balance_date' => '2026-01-01',
+        ])
+        ->assertRedirect();
+
+    $this->supplier->refresh();
+    expect((float) $this->supplier->ledger_opening_balance)->toBe(500000.00);
+    expect($this->supplier->ledger_opening_balance_date->format('Y-m-d'))->toBe('2026-01-01');
+});
+
+test('opening balance is included in running balance calculation', function () {
+    $this->supplier->update([
+        'ledger_opening_balance' => 500000,
+        'ledger_opening_balance_date' => '2026-01-01',
+    ]);
+
+    $this->actingAs($this->user)
+        ->post(route('reports.ledger-register.store'), [
+            'supplier_id' => $this->supplier->id,
+            'transaction_date' => '2026-02-01',
+            'document_type' => DocumentType::Dz->value,
+            'online_amount' => 3000000,
+        ]);
+
+    $entry = LedgerRegister::where('supplier_id', $this->supplier->id)->first();
+    // Balance should be opening_balance + online = 500000 + 3000000 = 3500000
+    expect((float) $entry->balance)->toBe(3500000.00);
+});
+
+test('opening balance shows on ledger register page', function () {
+    $this->supplier->update([
+        'ledger_opening_balance' => 250000,
+        'ledger_opening_balance_date' => '2026-01-01',
+    ]);
+
+    LedgerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => '2026-01-15',
+        'online_amount' => 1000000,
+    ]);
+    LedgerRegister::recalculateBalances($this->supplier->id);
+
+    $this->actingAs($this->user)
+        ->get(route('reports.ledger-register.index', [
+            'filter' => [
+                'supplier_id' => $this->supplier->id,
+                'date_from' => '2026-02-01',
+                'date_to' => '2026-02-28',
+            ],
+        ]))
+        ->assertSuccessful()
+        ->assertSee('1,250,000.00'); // 250000 opening + 1000000 entry before Feb
+});
+
+test('opening balance requires manage permission', function () {
+    $viewOnlyUser = User::factory()->create();
+    $viewOnlyUser->givePermissionTo('report-audit-ledger-register');
+
+    $this->actingAs($viewOnlyUser)
+        ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [
+            'ledger_opening_balance' => 500000,
+        ])
+        ->assertForbidden();
+});
+
+test('opening balance validates required fields', function () {
+    $this->actingAs($this->user)
+        ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [])
+        ->assertSessionHasErrors(['ledger_opening_balance']);
+});
+
+test('negative opening balance works correctly', function () {
+    $this->actingAs($this->user)
+        ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [
+            'ledger_opening_balance' => -200000,
+        ])
+        ->assertRedirect();
+
+    $this->supplier->refresh();
+    expect((float) $this->supplier->ledger_opening_balance)->toBe(-200000.00);
 });

@@ -316,37 +316,37 @@
                                 <tr>
                                     <td class="text-center px-1 py-1">1</td>
                                     <td class="px-2 py-1">Stationary</td>
-                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['stationary'] ?? 0, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">2</td>
                                     <td class="px-2 py-1">TCS</td>
-                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['tcs'] ?? 0, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">3</td>
                                     <td class="px-2 py-1">Tonner & IT</td>
-                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['tonner_it'] ?? 0, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">4</td>
                                     <td class="px-2 py-1">Salaries</td>
-                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['salaries'] ?? 0, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">5</td>
                                     <td class="px-2 py-1">Fuel</td>
-                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['fuel'] ?? 0, 2) }}</td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">6</td>
                                     <td class="px-2 py-1">Van Work</td>
-                                    <td class="text-right px-2 py-1 font-mono">0.00</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['van_work'] ?? 0, 2) }}</td>
                                 </tr>
                                 <tr class="bg-gray-50 font-extrabold">
                                     <td class="text-center px-1 py-1 border-t-2 border-black">7</td>
                                     <td class="px-2 py-1 border-t-2 border-black">Total Expenses</td>
-                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">0.00</td>
+                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">{{ number_format($totalExpensesMonth, 2) }}</td>
                                 </tr>
                                 @for ($i = 8; $i <= 12; $i++)
                                 <tr>

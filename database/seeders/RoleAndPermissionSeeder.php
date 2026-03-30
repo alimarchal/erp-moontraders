@@ -58,6 +58,7 @@ class RoleAndPermissionSeeder extends Seeder
             'vehicle' => ['list', 'create', 'edit', 'delete'],
             'promotional-campaign' => ['list', 'create', 'edit', 'delete'],
             'claim-register' => ['list', 'create', 'edit', 'delete', 'post'],
+            'expense-detail' => ['list', 'create', 'edit', 'delete', 'post'],
 
             // Employee Salary Management
             'employee-salary' => ['list', 'create', 'edit', 'delete'],
@@ -73,7 +74,7 @@ class RoleAndPermissionSeeder extends Seeder
             'report-inventory' => ['daily-stock-register', 'salesman-stock-register', 'inventory-ledger', 'van-stock-batch', 'van-stock-ledger'],
 
             // Reports - Audit & Operational (granular per report)
-            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'claim-register', 'advance-tax', 'percentage-expense', 'ledger-register', 'ledger-register-manage', 'ledger-register-post', 'invoice-summary', 'invoice-summary-manage', 'opening-customer-balance', 'investment-summary', 'sku-fmr-amr', 'stock-availability'],
+            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'claim-register', 'expense-detail', 'advance-tax', 'percentage-expense', 'ledger-register', 'ledger-register-manage', 'ledger-register-post', 'invoice-summary', 'invoice-summary-manage', 'opening-customer-balance', 'investment-summary', 'sku-fmr-amr', 'stock-availability'],
 
             // Settings & Navigation
             'setting' => ['view', 'update'],

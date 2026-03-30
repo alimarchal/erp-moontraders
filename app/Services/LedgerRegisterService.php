@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\DocumentType;
 use App\Models\ChartOfAccount;
 use App\Models\JournalEntry;
 use App\Models\LedgerRegister;
@@ -12,6 +13,61 @@ use Illuminate\Support\Facades\Log;
 class LedgerRegisterService
 {
     public function __construct(private AccountingService $accountingService) {}
+
+    /**
+     * Build and create the journal entry for an opening balance ledger entry.
+     *
+     * Positive balance (online_amount): DR 2111 Creditors / CR 3300 Opening Balance Equity
+     * Negative balance (invoice_amount): DR 3300 Opening Balance Equity / CR 2111 Creditors
+     */
+    protected function createOpeningBalanceJournalEntry(LedgerRegister $entry): ?JournalEntry
+    {
+        $entry->loadMissing('supplier');
+        $supplierName = $entry->supplier?->supplier_name ?? 'Unknown';
+
+        $creditorsAccount = ChartOfAccount::where('account_code', '2111')->first();
+        $openingBalanceEquity = ChartOfAccount::where('account_code', '3300')->first();
+
+        if (! $creditorsAccount || ! $openingBalanceEquity) {
+            throw new \Exception('Missing GL accounts: Creditors (2111) or Opening Balance Equity (3300).');
+        }
+
+        $lines = [];
+
+        if ((float) $entry->online_amount > 0) {
+            $lines[] = ['account_id' => $creditorsAccount->id, 'debit' => (float) $entry->online_amount, 'credit' => 0, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
+            $lines[] = ['account_id' => $openingBalanceEquity->id, 'debit' => 0, 'credit' => (float) $entry->online_amount, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
+        }
+
+        if ((float) $entry->invoice_amount > 0) {
+            $lines[] = ['account_id' => $openingBalanceEquity->id, 'debit' => (float) $entry->invoice_amount, 'credit' => 0, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
+            $lines[] = ['account_id' => $creditorsAccount->id, 'debit' => 0, 'credit' => (float) $entry->invoice_amount, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
+        }
+
+        if (empty($lines)) {
+            throw new \Exception('No non-zero amounts found — nothing to post.');
+        }
+
+        $result = $this->accountingService->createJournalEntry([
+            'entry_date' => Carbon::parse($entry->transaction_date)->toDateString(),
+            'reference' => $entry->document_number ?? "OB-{$entry->id}",
+            'description' => "Supplier Opening Balance - {$supplierName}",
+            'reference_type' => LedgerRegister::class,
+            'reference_id' => $entry->id,
+            'lines' => $lines,
+            'auto_post' => true,
+        ]);
+
+        if ($result['success']) {
+            Log::info("Opening balance JE created for ledger register #{$entry->id}: JE #{$result['data']->id}");
+
+            return $result['data'];
+        }
+
+        Log::error("Failed to create OB JE for ledger register #{$entry->id}: ".$result['message']);
+
+        return null;
+    }
 
     /**
      * Post a ledger register entry to the GL.
@@ -34,8 +90,12 @@ class LedgerRegisterService
                 throw new \Exception('Entry is already posted.');
             }
 
-            $accounts = $this->resolveAccounts();
-            $journalEntry = $this->createJournalEntry($entry, $accounts);
+            if ($entry->document_type === DocumentType::Ob) {
+                $journalEntry = $this->createOpeningBalanceJournalEntry($entry);
+            } else {
+                $accounts = $this->resolveAccounts();
+                $journalEntry = $this->createJournalEntry($entry, $accounts);
+            }
 
             if (! $journalEntry) {
                 throw new \Exception('Failed to create journal entry — check GL account configuration.');

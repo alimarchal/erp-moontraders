@@ -25,6 +25,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeSalaryController;
 use App\Http\Controllers\EmployeeSalaryTransactionController;
+use App\Http\Controllers\ExpenseDetailController;
 use App\Http\Controllers\GoodsIssueController;
 use App\Http\Controllers\GoodsReceiptNoteController;
 use App\Http\Controllers\JournalEntryController;
@@ -44,6 +45,7 @@ use App\Http\Controllers\Reports\CreditorsLedgerController;
 use App\Http\Controllers\Reports\CustomSettlementReportController;
 use App\Http\Controllers\Reports\DailySalesReportController;
 use App\Http\Controllers\Reports\DailyStockRegisterController;
+use App\Http\Controllers\Reports\ExpenseDetailReportController;
 use App\Http\Controllers\Reports\FmrAmrComparisonController;
 use App\Http\Controllers\Reports\GeneralLedgerController;
 use App\Http\Controllers\Reports\GoodsIssueReportController;
@@ -486,6 +488,18 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
     /*
     |----------------------------------------------------------------------
+    | Expense Details
+    |----------------------------------------------------------------------
+    | Track category-based expenses (Stationary, TCS, Tonner & IT, Salaries,
+    | Fuel, Van Work) with double-entry GL posting.
+    | Permissions: expense-detail-list, -create, -edit, -delete, -post
+    */
+    Route::resource('expense-details', ExpenseDetailController::class);
+    Route::post('expense-details/{expenseDetail}/post', [ExpenseDetailController::class, 'post'])
+        ->name('expense-details.post');
+
+    /*
+    |----------------------------------------------------------------------
     | Stock Adjustments
     |----------------------------------------------------------------------
     | Manual inventory adjustments (damage, theft, expiry, recall).
@@ -677,6 +691,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             Route::delete('/{claimRegister}', [ClaimRegisterReportController::class, 'destroy'])->name('destroy');
         });
 
+        /* Expense Detail */
+        Route::prefix('expense-detail')->name('expense-detail.')->group(function () {
+            Route::get('/', [ExpenseDetailReportController::class, 'index'])->name('index');
+            Route::post('/', [ExpenseDetailReportController::class, 'store'])->name('store');
+            Route::put('/{expenseDetail}', [ExpenseDetailReportController::class, 'update'])->name('update');
+            Route::post('/{expenseDetail}/post', [ExpenseDetailReportController::class, 'post'])->name('post');
+            Route::delete('/{expenseDetail}', [ExpenseDetailReportController::class, 'destroy'])->name('destroy');
+        });
+
         /* Opening Customer Balance */
         Route::prefix('opening-customer-balance')->name('opening-customer-balance.')->group(function () {
             Route::get('/', [OpeningCustomerBalanceReportController::class, 'index'])->name('index');
@@ -700,6 +723,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             Route::put('/{ledgerRegister}', [LedgerRegisterController::class, 'update'])->name('update');
             Route::delete('/{ledgerRegister}', [LedgerRegisterController::class, 'destroy'])->name('destroy');
             Route::post('/{ledgerRegister}/post', [LedgerRegisterController::class, 'post'])->name('post');
+            Route::put('/opening-balance/{supplier}', [LedgerRegisterController::class, 'updateOpeningBalance'])->name('opening-balance.update');
         });
 
         /* Invoice Summary */

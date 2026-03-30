@@ -71,9 +71,30 @@ class RecallAccountsSeeder extends Seeder
                 'code' => '5294',
             ],
             [
-                'account_name' => 'Difference in Taz Due To Discount',
+                'account_name' => 'Difference in Tax Due To Discount',
                 'description' => 'Difference in tax due to discount',
                 'code' => '5295',
+            ],
+            // Expense Detail module accounts
+            [
+                'account_name' => 'TCS Expense',
+                'description' => 'Tax Collected at Source expense',
+                'code' => '5296',
+            ],
+            [
+                'account_name' => 'Tonner & IT Expense',
+                'description' => 'Tonner and IT related expenses',
+                'code' => '5297',
+            ],
+            [
+                'account_name' => 'Fuel Expense',
+                'description' => 'Vehicle fuel expenses',
+                'code' => '5298',
+            ],
+            [
+                'account_name' => 'Van Work Expense',
+                'description' => 'Van maintenance and repair expenses',
+                'code' => '5299',
             ],
         ];
 
@@ -88,21 +109,25 @@ class RecallAccountsSeeder extends Seeder
                 continue;
             }
 
-            // Find next available code
-            $childIndex = count($existingCodes) + 1;
-            $a = (($childIndex - 1) % 9) + 1;
-            $b = intdiv(($childIndex - 1), 9);
-            $newCode = $baseCode.$a.$b;
-
-            // Make sure code doesn't already exist
-            while (in_array($newCode, $existingCodes)) {
-                $childIndex++;
+            // Use explicit code if provided, otherwise auto-generate
+            if (isset($accountData['code'])) {
+                $newCode = $accountData['code'];
+            } else {
+                $childIndex = count($existingCodes) + 1;
                 $a = (($childIndex - 1) % 9) + 1;
                 $b = intdiv(($childIndex - 1), 9);
                 $newCode = $baseCode.$a.$b;
+
+                // Make sure code doesn't already exist
+                while (in_array($newCode, $existingCodes)) {
+                    $childIndex++;
+                    $a = (($childIndex - 1) % 9) + 1;
+                    $b = intdiv(($childIndex - 1), 9);
+                    $newCode = $baseCode.$a.$b;
+                }
             }
 
-            $account = ChartOfAccount::create([
+            ChartOfAccount::create([
                 'account_code' => $newCode,
                 'account_name' => $accountData['account_name'],
                 'description' => $accountData['description'],

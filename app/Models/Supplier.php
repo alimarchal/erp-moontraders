@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\SupplierFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Supplier extends Model
 {
-    /** @use HasFactory<\Database\Factories\SupplierFactory> */
+    /** @use HasFactory<SupplierFactory> */
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
@@ -33,12 +34,16 @@ class Supplier extends Model
         'tax_id',
         'sales_tax',
         'pan_number',
+        'ledger_opening_balance',
+        'ledger_opening_balance_date',
     ];
 
     protected $casts = [
         'is_transporter' => 'boolean',
         'is_internal_supplier' => 'boolean',
         'disabled' => 'boolean',
+        'ledger_opening_balance' => 'decimal:2',
+        'ledger_opening_balance_date' => 'date',
     ];
 
     /**

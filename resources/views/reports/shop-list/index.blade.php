@@ -87,6 +87,11 @@
                     display: block !important;
                 }
 
+                .report-table td a {
+                    color: inherit !important;
+                    text-decoration: none !important;
+                }
+
                 .page-footer {
                     display: none;
                 }
@@ -246,7 +251,15 @@
                             <tr>
                                 <td class="text-center" style="vertical-align: middle;">{{ $customers->firstItem() + $index }}</td>
                                  <td style="vertical-align: middle;">{{ $customer->customer_code }}</td>
-                                <td style="vertical-align: middle;">{{ $customer->customer_name }}</td>
+                                <td style="vertical-align: middle;">
+                                    @can('customer-edit')
+                                        <a href="{{ route('customers.edit', $customer) }}" class="text-blue-600 hover:text-blue-900 hover:underline">
+                                            {{ $customer->customer_name }}
+                                        </a>
+                                    @else
+                                        {{ $customer->customer_name }}
+                                    @endcan
+                                </td>
                                 <td style="vertical-align: middle;">{{ $customer->owner_cnic ?? '-' }}</td>
                                 <td style="vertical-align: middle;">{{ $customer->channel_type }}</td>
                                 <td style="vertical-align: middle;">{{ $customer->ntn ?? '-' }}</td>

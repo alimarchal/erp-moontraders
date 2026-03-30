@@ -40,6 +40,7 @@ class CustomerSeeder extends Seeder
                     'business_name' => $customer['business_name'],
                     'it_status' => $customer['it_status'] ?? false,
                     'ntn' => $customer['ntn'] ?? null,
+                    'owner_cnic' => $customer['owener_cnic'] ?? null,
                     'channel_type' => $this->normalizeChannelType($customer['channel_type'] ?? 'General Store'),
                     'address' => $customer['address'] ?? null,
                     'sub_locality' => $customer['sub_locality'] ?? null,

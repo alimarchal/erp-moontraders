@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Customer;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -27,6 +28,8 @@ class UpdateCustomerRequest extends FormRequest
             'business_name' => $this->business_name ? trim((string) $this->business_name) : null,
             'phone' => $this->phone ? trim((string) $this->phone) : null,
             'email' => $this->email ? strtolower(trim((string) $this->email)) : null,
+            'ntn' => $this->ntn ? trim((string) $this->ntn) : null,
+            'owner_cnic' => $this->owner_cnic ? trim((string) $this->owner_cnic) : null,
             'sub_locality' => $this->sub_locality ? trim((string) $this->sub_locality) : null,
             'city' => $this->city ? trim((string) $this->city) : null,
             'state' => $this->state ? trim((string) $this->state) : null,
@@ -35,13 +38,14 @@ class UpdateCustomerRequest extends FormRequest
             'customer_category' => $this->customer_category ? trim((string) $this->customer_category) : null,
             'notes' => $this->notes ? trim((string) $this->notes) : null,
             'is_active' => $this->boolean('is_active'),
+            'it_status' => $this->boolean('it_status'),
         ]);
     }
 
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -70,6 +74,9 @@ class UpdateCustomerRequest extends FormRequest
             'payable_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
             'sales_rep_id' => ['nullable', 'exists:users,id'],
             'last_sale_date' => ['nullable', 'date'],
+            'ntn' => ['nullable', 'string', 'max:191'],
+            'owner_cnic' => ['nullable', 'string', 'max:191'],
+            'it_status' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string'],
             'is_active' => ['nullable', 'boolean'],
         ];

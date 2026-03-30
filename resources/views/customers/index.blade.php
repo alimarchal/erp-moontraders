@@ -139,12 +139,13 @@
 
     <x-data-table :items="$customers" :headers="[
         ['label' => '#', 'align' => 'text-center'],
-        ['label' => 'Code', 'align' => 'text-left'],
-        ['label' => 'Customer', 'align' => 'text-left'],
-        ['label' => 'Contact', 'align' => 'text-left'],
+        ['label' => 'Customer/Code', 'align' => 'text-left'],
+        ['label' => 'NTN', 'align' => 'text-left'],
+        ['label' => 'Owner CNIC', 'align' => 'text-left'],
+        ['label' => 'Address', 'align' => 'text-left'],
+        ['label' => 'IT Status', 'align' => 'text-center'],
         ['label' => 'Channel & Location', 'align' => 'text-left'],
         ['label' => 'Credit Snapshot', 'align' => 'text-left'],
-        ['label' => 'Sales Rep', 'align' => 'text-left'],
         ['label' => 'Status', 'align' => 'text-center'],
         ['label' => 'Actions', 'align' => 'text-center'],
     ]" emptyMessage="No customers found."
@@ -162,21 +163,30 @@
                 </td>
                 <td class="py-2 px-2 font-semibold text-gray-900">
                     <div>{{ $customer->customer_code }}</div>
-                    <div class="text-xs text-gray-500">ID: {{ $customer->id }}</div>
-                </td>
-                <td class="py-2 px-2">
-                    <div class="font-semibold">{{ $customer->customer_name }}</div>
-                    <div class="text-xs text-gray-500">{{ $customer->business_name ?? '—' }}</div>
+                    <div class="text-xs text-gray-500">{{ $customer->customer_name }}</div>
                 </td>
                 <td class="py-2 px-2 text-sm">
-                    <div>{{ $customer->phone ?? '—' }}</div>
-                    <div class="text-xs text-gray-500">{{ $customer->email ?? '—' }}</div>
+                    {{ $customer->ntn ?? '—' }}
+                </td>
+                <td class="py-2 px-2 text-sm">
+                    {{ $customer->owner_cnic ?? '—' }}
+                </td>
+                <td class="py-2 px-2 text-sm">
+                    <div>{{ $customer->address ?? '—' }}</div>
+                    <div class="text-xs text-gray-500">
+                        {{ $customer->sub_locality ? $customer->sub_locality . ',' : '' }}
+                        {{ $customer->city ?? '—' }}
+                    </div>
+                </td>
+                <td class="py-2 px-2 text-center">
+                    <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $customer->it_status ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700' }}">
+                        {{ $customer->it_status ? 'Yes' : 'No' }}
+                    </span>
                 </td>
                 <td class="py-2 px-2 text-sm">
                     <div>{{ $customer->channel_type }} · Category {{ $customer->customer_category }}</div>
                     <div class="text-xs text-gray-500">
-                        {{ $customer->sub_locality ? $customer->sub_locality . ',' : '' }}
-                        {{ $customer->city ?? '—' }}
+                        Phone: {{ $customer->phone ?? '—' }}
                     </div>
                 </td>
                 <td class="py-2 px-2 text-sm">
@@ -193,14 +203,6 @@
                         AR: {{ number_format((float) $customer->receivable_balance, 0) }} · AP:
                         {{ number_format((float) $customer->payable_balance, 0) }}
                     </div>
-                </td>
-                <td class="py-2 px-2 text-sm">
-                    @if ($customer->salesRep)
-                        <div>{{ $customer->salesRep->name }}</div>
-                        <div class="text-xs text-gray-500">Rep ID: {{ $customer->salesRep->id }}</div>
-                    @else
-                        <span class="text-gray-500">Unassigned</span>
-                    @endif
                 </td>
                 <td class="py-2 px-2 text-center">
                     <span

@@ -43,6 +43,7 @@ class Customer extends Model
         'business_name',
         'it_status',
         'ntn',
+        'owner_cnic',
         'phone',
         'email',
         'address',

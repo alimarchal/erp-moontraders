@@ -59,6 +59,7 @@ return new class extends Migration
 
             $table->boolean('it_status')->default(false)->index();
             $table->string('ntn')->nullable();
+            $table->string('owner_cnic')->nullable()->comment('Owner CNIC/NIC');
             $table->boolean('is_active')->default(true)->index();
             $table->timestamps();
             $table->softDeletes();

@@ -151,6 +151,35 @@ $salesRepOptions = $salesRepOptions ?? collect();
     </div>
 </div>
 
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+    <div>
+        <x-label for="ntn" value="NTN (Tax Registration Number)" />
+        <x-input id="ntn" type="text" name="ntn" class="mt-1 block w-full" maxlength="191"
+            :value="old('ntn', optional($customer)->ntn)" placeholder="NTN" />
+    </div>
+
+    <div>
+        <x-label for="owner_cnic" value="Owner CNIC" />
+        <x-input id="owner_cnic" type="text" name="owner_cnic" class="mt-1 block w-full" maxlength="191"
+            :value="old('owner_cnic', optional($customer)->owner_cnic)" placeholder="12345-6789012-1" />
+    </div>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+    <div>
+        <x-label for="it_status" value="IT Status (FBR Registration)" />
+        <select id="it_status" name="it_status"
+            class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+            <option value="0" {{ old('it_status', optional($customer)->it_status ?? 0) === 0 || old('it_status', optional($customer)->it_status ?? 0) === '0' ? 'selected' : '' }}>
+                No
+            </option>
+            <option value="1" {{ old('it_status', optional($customer)->it_status ?? 0) === 1 || old('it_status', optional($customer)->it_status ?? 0) === '1' ? 'selected' : '' }}>
+                Yes
+            </option>
+        </select>
+    </div>
+</div>
+
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
     <div>
         <x-label for="receivable_balance" value="Receivable Balance" />

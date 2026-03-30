@@ -521,7 +521,7 @@
                                                             @foreach ($transactionTypeOptions as $value => $label)
                                                                 <option value="{{ $value }}"
                                                                     {{ old('transaction_type', 'claim') === $value ? 'selected' : '' }}>
-                                                                    {{ $value === 'claim' ? 'DR' : 'CR' }}
+                                                                    {{ $value === 'claim' ? 'DR (Claim)' : 'CR (Recovery)' }}
                                                                 </option>
                                                             @endforeach
                                                         </select>

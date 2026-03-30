@@ -27,9 +27,9 @@
                             <div class="border-t border-gray-100 divide-y divide-gray-100">
                                 @can('report-financial-general-ledger')
                                     <a href="{{ route('reports.general-ledger.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#1</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">1</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -54,9 +54,9 @@
 
                                 @can('report-financial-trial-balance')
                                     <a href="{{ route('reports.trial-balance.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#2</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">2</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -81,9 +81,9 @@
 
                                 @can('report-financial-account-balances')
                                     <a href="{{ route('reports.account-balances.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#3</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">3</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -107,9 +107,9 @@
 
                                 @can('report-financial-balance-sheet')
                                     <a href="{{ route('reports.balance-sheet.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#4</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">4</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -134,9 +134,9 @@
 
                                 @can('report-financial-income-statement')
                                     <a href="{{ route('reports.income-statement.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#5</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">5</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -161,9 +161,9 @@
 
                                 @can('report-audit-opening-customer-balance')
                                     <a href="{{ route('reports.opening-customer-balance.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#6</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">6</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center text-cyan-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -207,9 +207,9 @@
                             <div class="border-t border-gray-100 divide-y divide-gray-100">
                                 @can('report-audit-creditors-ledger')
                                     <a href="{{ route('reports.creditors-ledger.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#1</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">1</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -233,9 +233,9 @@
 
                                 @can('report-sales-credit-sales')
                                     <a href="{{ route('reports.credit-sales.salesman-history') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#2</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">2</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-cyan-50 flex items-center justify-center text-cyan-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -260,9 +260,9 @@
 
                                 @can('report-audit-cash-detail')
                                     <a href="{{ route('reports.cash-detail.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#3</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">3</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -287,9 +287,9 @@
 
                                 @can('report-audit-investment-summary')
                                     <a href="{{ route('reports.investment-summary.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#4</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">4</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -313,9 +313,9 @@
 
                                 @can('report-audit-claim-register')
                                     <a href="{{ route('reports.claim-register.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#5</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">5</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -340,9 +340,9 @@
 
                                 @can('report-audit-ledger-register')
                                     <a href="{{ route('reports.ledger-register.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#6</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">6</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -387,9 +387,9 @@
                             <div class="border-t border-gray-100 divide-y divide-gray-100">
                                 @can('report-sales-fmr-amr-comparison')
                                     <a href="{{ route('reports.fmr-amr-comparison.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#1</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">1</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -415,9 +415,9 @@
 
                                 @can('report-audit-sku-fmr-amr')
                                     <a href="{{ route('reports.sku-fmr-amr.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#2</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">2</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-rose-50 flex items-center justify-center text-rose-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -441,9 +441,9 @@
 
                                 @can('report-audit-stock-availability')
                                     <a href="{{ route('reports.stock-availability.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#3</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">3</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -467,9 +467,9 @@
 
                                 @can('report-sales-shop-list')
                                     <a href="{{ route('reports.shop-list.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#4</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">4</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-sky-50 flex items-center justify-center text-sky-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -494,9 +494,9 @@
 
                                 @can('report-sales-sku-rates')
                                     <a href="{{ route('reports.sku-rates.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#5</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">5</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-amber-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -521,9 +521,9 @@
 
                                 @can('report-audit-expense-detail')
                                     <a href="{{ route('reports.expense-detail.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#6</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">6</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -568,9 +568,9 @@
 
                                 @can('report-inventory-daily-stock-register')
                                     <a href="{{ route('reports.daily-stock-register.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#1</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">1</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -594,9 +594,9 @@
 
                                 @can('report-inventory-salesman-stock-register')
                                     <a href="{{ route('reports.salesman-stock-register.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#2</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">2</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -621,9 +621,9 @@
 
                                 @can('report-inventory-van-stock-ledger')
                                     <a href="{{ route('reports.van-stock-ledger.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#3</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">3</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -647,9 +647,9 @@
 
                                 @can('report-inventory-van-stock-batch')
                                     <a href="{{ route('reports.van-stock-batch.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#4</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">4</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -673,9 +673,9 @@
 
                                 @can('report-inventory-inventory-ledger')
                                     <a href="{{ route('reports.inventory-ledger.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#5</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">5</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -726,9 +726,9 @@
                             <div class="border-t border-gray-100 divide-y divide-gray-100">
                                 @can('report-sales-goods-issue')
                                     <a href="{{ route('reports.goods-issue.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#1</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">1</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -754,9 +754,9 @@
 
                                 @can('report-sales-daily-sales')
                                     <a href="{{ route('reports.daily-sales.van-stock') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#2</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">2</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -801,9 +801,9 @@
                             <div class="border-t border-gray-100 divide-y divide-gray-100">
                                 @can('report-audit-invoice-summary')
                                     <a href="{{ route('reports.invoice-summary.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#1</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">1</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -828,9 +828,9 @@
 
                                 @can('report-audit-custom-settlement')
                                     <a href="{{ route('reports.custom-settlement.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#2</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">2</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -854,9 +854,9 @@
 
                                 @can('report-audit-percentage-expense')
                                     <a href="{{ route('reports.percentage-expense.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#3</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">3</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -883,9 +883,9 @@
 
                                 @can('report-audit-advance-tax')
                                     <a href="{{ route('reports.advance-tax.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#4</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">4</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-red-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -930,9 +930,9 @@
                             <div class="border-t border-gray-100 divide-y divide-gray-100">
                                 @can('report-sales-daily-sales')
                                     <a href="{{ route('reports.daily-sales.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#1</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">1</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -957,9 +957,9 @@
 
                                 @can('report-sales-daily-sales')
                                     <a href="{{ route('reports.daily-sales.product-wise') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#2</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">2</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -984,9 +984,9 @@
 
                                 @can('report-sales-daily-sales')
                                     <a href="{{ route('reports.daily-sales.salesman-wise') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#3</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">3</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -1011,9 +1011,9 @@
 
                                 @can('report-sales-settlement')
                                     <a href="{{ route('reports.sales-settlement.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#4</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">4</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-teal-50 flex items-center justify-center text-teal-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -1038,9 +1038,9 @@
 
                                 @can('report-sales-roi')
                                     <a href="{{ route('reports.roi.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#5</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">5</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"
@@ -1064,9 +1064,9 @@
 
                                 @can('report-sales-scheme-discount')
                                     <a href="{{ route('reports.scheme-discount.index') }}"
-                                        class="flex items-center justify-between px-6 py-3 hover:bg-gray-50 transition-colors duration-150 group">
+                                        class="flex items-center justify-between px-4 py-2 hover:bg-gray-50 transition-colors duration-150 group">
                                         <div class="flex items-center gap-4">
-                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">#6</span>
+                                            <span class="flex-shrink-0 w-5 text-xs font-bold text-gray-400 text-right">6</span>
                                             <div
                                                 class="flex-shrink-0 w-10 h-10 rounded-lg bg-pink-50 flex items-center justify-center text-pink-600">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"

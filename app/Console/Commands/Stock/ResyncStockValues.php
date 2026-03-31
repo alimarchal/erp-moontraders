@@ -341,6 +341,103 @@ class ResyncStockValues extends Command
             $this->info('Done. Stock Availability Report, /inventory/current-stock, and GL should now all agree.');
         }
 
+        // ─────────────────────────────────────────────────────────────
+        // PHASE D — Populate daily_inventory_snapshots for opening stock date
+        //
+        // The historical Stock Availability Report first checks
+        // daily_inventory_snapshots. If that table is empty it falls back to
+        // stock_ledger_entries whose stock_value is a *cumulative running balance*
+        // per product+warehouse, causing the per-batch GROUP BY in the fallback
+        // query to double-count values. Creating accurate snapshots from the
+        // now-fixed current_stock_by_batch data bypasses that fallback entirely.
+        // ─────────────────────────────────────────────────────────────
+        $this->newLine();
+        $this->info('Phase D — Creating daily_inventory_snapshots for opening stock date ...');
+
+        $openingDates = DB::table('goods_receipt_notes')
+            ->where('is_opening_stock', true)
+            ->distinct()
+            ->pluck('receipt_date');
+
+        if ($openingDates->isEmpty()) {
+            $this->warn('  No opening stock GRNs found — skipping Phase D.');
+        }
+
+        $snapCreated = 0;
+        $snapUpdated = 0;
+
+        foreach ($openingDates as $snapDate) {
+            $this->line("  Snapshotting date: {$snapDate}");
+
+            // Aggregate correct values from current_stock_by_batch per product+warehouse
+            $csbAgg = DB::table('current_stock_by_batch')
+                ->where('status', 'active')
+                ->whereNotNull('warehouse_id')
+                ->selectRaw('product_id, warehouse_id, SUM(quantity_on_hand) as qty, SUM(total_value) as val')
+                ->groupBy('product_id', 'warehouse_id')
+                ->get();
+
+            $this->output->progressStart($csbAgg->count());
+
+            foreach ($csbAgg as $row) {
+                $qty = (float) $row->qty;
+                $val = round((float) $row->val, 2);
+                $avgCost = $qty > 0 ? round($val / $qty, 2) : 0.0;
+
+                $exists = DB::table('daily_inventory_snapshots')
+                    ->where('date', $snapDate)
+                    ->where('product_id', $row->product_id)
+                    ->where('warehouse_id', $row->warehouse_id)
+                    ->whereNull('vehicle_id')
+                    ->exists();
+
+                if ($isDryRun) {
+                    $this->line(sprintf(
+                        '  [D] %s p=%d w=%d qty=%.2f avg=%.2f val=%.2f [%s]',
+                        $snapDate, $row->product_id, $row->warehouse_id, $qty, $avgCost, $val,
+                        $exists ? 'UPDATE' : 'INSERT'
+                    ));
+                    $exists ? $snapUpdated++ : $snapCreated++;
+                } else {
+                    DB::table('daily_inventory_snapshots')->updateOrInsert(
+                        [
+                            'date' => $snapDate,
+                            'product_id' => $row->product_id,
+                            'warehouse_id' => $row->warehouse_id,
+                            'vehicle_id' => null,
+                        ],
+                        [
+                            'quantity_on_hand' => $qty,
+                            'average_cost' => $avgCost,
+                            'total_value' => $val,
+                            'updated_at' => now(),
+                            'created_at' => now(),
+                        ]
+                    );
+                    $exists ? $snapUpdated++ : $snapCreated++;
+                }
+
+                $this->output->progressAdvance();
+            }
+
+            $this->output->progressFinish();
+        }
+
+        $this->newLine();
+        $this->table(
+            ['Phase D Metric', 'Value'],
+            [
+                ['Snapshots inserted', $snapCreated],
+                ['Snapshots updated', $snapUpdated],
+            ]
+        );
+
+        if ($isDryRun) {
+            $this->warn('Re-run without --dry-run to apply changes.');
+        } else {
+            $this->info('Done. Historical Stock Availability Report for the opening stock date will now show correct values.');
+        }
+
         return self::SUCCESS;
     }
 }

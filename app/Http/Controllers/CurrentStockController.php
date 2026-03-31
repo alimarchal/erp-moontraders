@@ -43,6 +43,15 @@ class CurrentStockController extends Controller implements HasMiddleware
                 AllowedFilter::callback('supplier_id', function ($query, $value) {
                     $query->whereHas('product', fn ($q) => $q->where('supplier_id', $value));
                 }),
+                AllowedFilter::callback('has_reserved', function ($query) {
+                    $query->where('quantity_reserved', '>', 0);
+                }),
+                AllowedFilter::callback('min_value', function ($query, $value) {
+                    $query->where('total_value', '>=', (float) $value);
+                }),
+                AllowedFilter::callback('max_value', function ($query, $value) {
+                    $query->where('total_value', '<=', (float) $value);
+                }),
                 AllowedFilter::callback('has_promotional', function ($query) {
                     $query->where('promotional_batches', '>', 0);
                 }),
@@ -80,7 +89,7 @@ class CurrentStockController extends Controller implements HasMiddleware
                 }),
             ])
             ->defaultSort('product_id')
-            ->paginate(50)
+            ->paginate($this->resolvePerPage($request))
             ->withQueryString();
 
         return view('inventory.current-stock.index', [
@@ -89,7 +98,20 @@ class CurrentStockController extends Controller implements HasMiddleware
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'perPage' => $request->get('per_page', 50),
         ]);
+    }
+
+    private function resolvePerPage(Request $request): int
+    {
+        $value = $request->get('per_page', 50);
+        $allowed = [50, 100, 200, 500, 1000];
+
+        if ($value === 'all' || (int) $value >= 9999) {
+            return 9999;
+        }
+
+        return in_array((int) $value, $allowed) ? (int) $value : 50;
     }
 
     /**

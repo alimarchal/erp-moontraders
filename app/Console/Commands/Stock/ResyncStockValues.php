@@ -3,17 +3,16 @@
 namespace App\Console\Commands\Stock;
 
 use App\Models\CurrentStock;
-use App\Models\StockValuationLayer;
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
-#[Signature('stock:resync-values {--dry-run : Preview changes without saving}')]
-#[Description('Re-syncs current_stock_by_batch, stock_valuation_layers, and current_stock total_value columns from authoritative GRN item total_cost to eliminate float precision drift.')]
 class ResyncStockValues extends Command
 {
+    protected $signature = 'stock:resync-values {--dry-run : Preview changes without saving}';
+
+    protected $description = 'Re-syncs current_stock_by_batch, stock_valuation_layers, and current_stock total_value columns from authoritative GRN item total_cost to eliminate float precision drift.';
+
     public function handle(): int
     {
         $isDryRun = (bool) $this->option('dry-run');

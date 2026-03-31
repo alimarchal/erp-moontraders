@@ -167,6 +167,28 @@
                     <option value="zero_available" {{ request('filter.stock_level') == 'zero_available' ? 'selected' : '' }}>Zero Available</option>
                 </select>
             </div>
+
+            <div>
+                <x-label for="filter_has_reserved" value="Reserved Stock" />
+                <select id="filter_has_reserved" name="filter[has_reserved]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All</option>
+                    <option value="1" {{ request('filter.has_reserved') == '1' ? 'selected' : '' }}>Has Reserved Qty
+                    </option>
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_min_value" value="Min Total Value (Rs.)" />
+                <x-input id="filter_min_value" name="filter[min_value]" type="number" min="0" step="0.01"
+                    class="mt-1 block w-full" :value="request('filter.min_value')" placeholder="e.g. 10000" />
+            </div>
+
+            <div>
+                <x-label for="filter_max_value" value="Max Total Value (Rs.)" />
+                <x-input id="filter_max_value" name="filter[max_value]" type="number" min="0" step="0.01"
+                    class="mt-1 block w-full" :value="request('filter.max_value')" placeholder="e.g. 500000" />
+            </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
@@ -197,6 +219,18 @@
                         (High-Low)</option>
                     <option value="total_batches" {{ request('sort') == 'total_batches' ? 'selected' : '' }}>Batches
                         (Low-High)</option>
+                </select>
+            </div>
+
+            <div>
+                <x-label for="per_page" value="Per Page" />
+                <select id="per_page" name="per_page"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    @foreach([50, 100, 200, 500, 1000, 'all'] as $size)
+                        <option value="{{ $size }}" {{ (string) $perPage === (string) $size || ($size === 'all' && $perPage >= 9999) ? 'selected' : '' }}>
+                            {{ $size === 'all' ? 'All' : $size }}
+                        </option>
+                    @endforeach
                 </select>
             </div>
         </div>

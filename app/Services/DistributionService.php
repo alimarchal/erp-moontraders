@@ -128,9 +128,13 @@ class DistributionService
                         ->first();
 
                     if ($valuationLayer) {
+                        $deductedValue = round($qtyFromBatch * (float) $valuationLayer->unit_cost, 2);
                         $valuationLayer->quantity_remaining -= $qtyFromBatch;
-                        if ($valuationLayer->quantity_remaining < 0) {
+                        if ($valuationLayer->quantity_remaining <= 0) {
                             $valuationLayer->quantity_remaining = 0;
+                            $valuationLayer->total_value = 0.0;
+                        } else {
+                            $valuationLayer->total_value = max(0.0, round((float) ($valuationLayer->total_value ?? 0) - $deductedValue, 2));
                         }
                         $valuationLayer->save();
                     }
@@ -602,7 +606,9 @@ class DistributionService
                             ->first();
 
                         if ($valuationLayer) {
+                            $restoredValue = round($returnedQty * (float) $itemBatch->unit_cost, 2);
                             $valuationLayer->quantity_remaining += $returnedQty;
+                            $valuationLayer->total_value = round((float) ($valuationLayer->total_value ?? 0) + $restoredValue, 2);
                             $valuationLayer->save();
                         }
                     }

@@ -5,6 +5,7 @@ use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\CostCenter;
 use App\Models\Currency;
+use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntryDetail;
@@ -222,6 +223,41 @@ it('resync command reports zero drift on freshly posted data', function () {
     app(InventoryService::class)->postGrnToInventory($grn);
 
     $this->artisan('stock:resync-values', ['--dry-run' => true])
-        ->expectsOutputToContain('Records updated (or would update) | 0')
+        ->expectsOutputToContain('[Phase A] CSB records updated (or would update) | 0')
+        ->expectsOutputToContain('SVL records updated (or would update) | 0')
+        ->expectsOutputToContain('current_stock records updated (or would update) | 0')
         ->assertSuccessful();
+});
+
+it('current_stock total_value matches the sum of svl total_value after posting opening stock', function () {
+    $price = 186.27;
+    $qty = 90247;
+    $expectedTotal = round($price * $qty, 2);
+
+    $file = makeOpeningStockFile([
+        ['SKU' => 'SKU-PREC-001', 'Invoice Price' => $price, 'Retail Price' => 200.00, 'Total Inventory in Pieces' => $qty],
+    ]);
+
+    $this->post(route('opening-stock.store'), [
+        'supplier_id' => $this->supplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'receipt_date' => now()->toDateString(),
+        'import_file' => $file,
+    ]);
+
+    $grn = GoodsReceiptNote::where('is_opening_stock', true)->first();
+    app(InventoryService::class)->postGrnToInventory($grn);
+
+    $svlTotal = StockValuationLayer::where('product_id', $this->product->id)
+        ->where('warehouse_id', $this->warehouse->id)
+        ->where('quantity_remaining', '>', 0)
+        ->sum('total_value');
+
+    $currentStock = CurrentStock::where('product_id', $this->product->id)
+        ->where('warehouse_id', $this->warehouse->id)
+        ->first();
+
+    expect($currentStock)->not->toBeNull();
+    expect((float) $currentStock->total_value)->toBe($expectedTotal);
+    expect((float) $currentStock->total_value)->toBe((float) $svlTotal);
 });

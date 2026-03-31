@@ -2,6 +2,8 @@
 
 namespace App\Console\Commands\Stock;
 
+use App\Models\CurrentStock;
+use App\Models\StockValuationLayer;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -9,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 #[Signature('stock:resync-values {--dry-run : Preview changes without saving}')]
-#[Description('Re-syncs current_stock_by_batch.total_value from authoritative GRN item total_cost to eliminate float precision drift from the GL entries.')]
+#[Description('Re-syncs current_stock_by_batch, stock_valuation_layers, and current_stock total_value columns from authoritative GRN item total_cost to eliminate float precision drift.')]
 class ResyncStockValues extends Command
 {
     public function handle(): int
@@ -141,18 +143,203 @@ class ResyncStockValues extends Command
         $this->table(
             ['Metric', 'Value'],
             [
-                ['Records inspected', $rows->count()],
-                ['Records updated (or would update)', $updated],
-                ['Records skipped (no drift)', $skipped],
-                ['Total drift corrected (Rs.)', number_format($totalDrift, 4)],
+                ['[Phase A] CSB records inspected', $rows->count()],
+                ['[Phase A] CSB records updated (or would update)', $updated],
+                ['[Phase A] CSB records skipped (no drift)', $skipped],
+                ['[Phase A] CSB total drift corrected (Rs.)', number_format($totalDrift, 4)],
                 ['Mode', $isDryRun ? 'DRY RUN' : 'LIVE'],
+            ]
+        );
+
+        // ─────────────────────────────────────────────────────────────
+        // PHASE B — Fix stock_valuation_layers.total_value
+        // Same strategy as Phase A but applied to the FIFO layer rows.
+        // ─────────────────────────────────────────────────────────────
+        $this->newLine();
+        $this->info('Phase B — Fixing stock_valuation_layers.total_value ...');
+
+        $svlRows = DB::table('stock_valuation_layers as svl')
+            ->join('goods_receipt_note_items as grni', 'grni.id', '=', 'svl.grn_item_id')
+            ->select(
+                'svl.id',
+                'svl.product_id',
+                'svl.quantity_remaining',
+                'svl.unit_cost',
+                'svl.total_value as current_total_value',
+                'grni.quantity_accepted',
+                'grni.total_cost as grn_total_cost',
+            )
+            ->get();
+
+        $svlUpdated = 0;
+        $svlSkipped = 0;
+        $svlTotalDrift = 0.0;
+
+        $this->output->progressStart($svlRows->count());
+
+        foreach ($svlRows as $row) {
+            $qtyRemaining = (float) $row->quantity_remaining;
+            $unitCost = (float) $row->unit_cost;
+            $qtyAccepted = (float) $row->quantity_accepted;
+            $grniTotalCost = (float) $row->grn_total_cost;
+            $currentTotalValue = (float) $row->current_total_value;
+
+            if (abs($qtyRemaining - $qtyAccepted) < 0.001) {
+                $correctValue = $grniTotalCost;
+            } elseif ($qtyRemaining <= 0) {
+                $correctValue = 0.0;
+            } else {
+                $correctValue = round($qtyRemaining * $unitCost, 2);
+            }
+
+            $drift = abs($correctValue - $currentTotalValue);
+
+            if ($drift < 0.001) {
+                $svlSkipped++;
+                $this->output->progressAdvance();
+
+                continue;
+            }
+
+            $svlTotalDrift += $drift;
+
+            $this->line(sprintf(
+                '  SVL#%d | product_id=%d | qty_remaining=%.2f | old=%.2f | new=%.2f | drift=%.4f',
+                $row->id,
+                $row->product_id,
+                $qtyRemaining,
+                $currentTotalValue,
+                $correctValue,
+                $drift
+            ));
+
+            if (! $isDryRun) {
+                DB::table('stock_valuation_layers')
+                    ->where('id', $row->id)
+                    ->update(['total_value' => $correctValue]);
+
+                Log::info('ResyncStockValues: updated SVL total_value', [
+                    'svl_id' => $row->id,
+                    'product_id' => $row->product_id,
+                    'old_value' => $currentTotalValue,
+                    'new_value' => $correctValue,
+                    'drift' => $drift,
+                ]);
+            }
+
+            $svlUpdated++;
+            $this->output->progressAdvance();
+        }
+
+        $this->output->progressFinish();
+
+        $this->newLine();
+        $this->table(
+            ['Phase B Metric', 'Value'],
+            [
+                ['SVL records inspected', $svlRows->count()],
+                ['SVL records updated (or would update)', $svlUpdated],
+                ['SVL records skipped (no drift)', $svlSkipped],
+                ['SVL total drift corrected (Rs.)', number_format($svlTotalDrift, 4)],
+            ]
+        );
+
+        // ─────────────────────────────────────────────────────────────
+        // PHASE C — Re-sync current_stock.total_value from SVL
+        // After Phase B fixes SVL, re-aggregate into current_stock so
+        // the /inventory/current-stock page shows the correct totals.
+        // ─────────────────────────────────────────────────────────────
+        $this->newLine();
+        $this->info('Phase C — Re-syncing current_stock from fixed valuation layers ...');
+
+        $productWarehousePairs = DB::table('stock_valuation_layers')
+            ->select('product_id', 'warehouse_id')
+            ->distinct()
+            ->get();
+
+        $csUpdated = 0;
+        $csTotalDrift = 0.0;
+
+        $this->output->progressStart($productWarehousePairs->count());
+
+        foreach ($productWarehousePairs as $pair) {
+            $layerData = DB::table('stock_valuation_layers')
+                ->where('product_id', $pair->product_id)
+                ->where('warehouse_id', $pair->warehouse_id)
+                ->where('quantity_remaining', '>', 0)
+                ->selectRaw('COALESCE(SUM(quantity_remaining), 0) as total_qty, COALESCE(SUM(total_value), 0) as total_value')
+                ->first();
+
+            $totalQty = (float) ($layerData->total_qty ?? 0);
+            $totalValue = round((float) ($layerData->total_value ?? 0), 2);
+            $avgCost = $totalQty > 0 ? round($totalValue / $totalQty, 6) : 0.0;
+
+            $currentStock = CurrentStock::where('product_id', $pair->product_id)
+                ->where('warehouse_id', $pair->warehouse_id)
+                ->first();
+
+            if (! $currentStock) {
+                $this->output->progressAdvance();
+
+                continue;
+            }
+
+            $drift = abs($totalValue - (float) $currentStock->total_value);
+
+            if ($drift < 0.001) {
+                $this->output->progressAdvance();
+
+                continue;
+            }
+
+            $csTotalDrift += $drift;
+
+            $this->line(sprintf(
+                '  CS product_id=%d warehouse_id=%d | old=%.2f | new=%.2f | drift=%.4f',
+                $pair->product_id,
+                $pair->warehouse_id,
+                (float) $currentStock->total_value,
+                $totalValue,
+                $drift
+            ));
+
+            if (! $isDryRun) {
+                $currentStock->total_value = $totalValue;
+                $currentStock->average_cost = $avgCost;
+                $currentStock->quantity_on_hand = $totalQty;
+                $currentStock->quantity_available = max(0, $totalQty - ($currentStock->quantity_reserved ?? 0));
+                $currentStock->last_updated = now();
+                $currentStock->save();
+
+                Log::info('ResyncStockValues: updated current_stock total_value', [
+                    'product_id' => $pair->product_id,
+                    'warehouse_id' => $pair->warehouse_id,
+                    'old_value' => (float) $currentStock->getOriginal('total_value'),
+                    'new_value' => $totalValue,
+                    'drift' => $drift,
+                ]);
+            }
+
+            $csUpdated++;
+            $this->output->progressAdvance();
+        }
+
+        $this->output->progressFinish();
+
+        $this->newLine();
+        $this->table(
+            ['Phase C Metric', 'Value'],
+            [
+                ['current_stock pairs inspected', $productWarehousePairs->count()],
+                ['current_stock records updated (or would update)', $csUpdated],
+                ['current_stock total drift corrected (Rs.)', number_format($csTotalDrift, 4)],
             ]
         );
 
         if ($isDryRun) {
             $this->warn('Re-run without --dry-run to apply changes.');
         } else {
-            $this->info('Done. Run the Stock Availability Report to verify amounts now match the GL.');
+            $this->info('Done. Stock Availability Report, /inventory/current-stock, and GL should now all agree.');
         }
 
         return self::SUCCESS;

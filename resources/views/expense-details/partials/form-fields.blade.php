@@ -113,6 +113,7 @@
 <script>
     $(document).ready(function () {
         const driversData = @json($drivers->keyBy('id'));
+        const simplifiedEntry = @json(config('app.expense_simplified_entry'));
 
         // Initialize select2
         $('#vehicle_id').select2({ width: '100%', placeholder: 'Select Vehicle', allowClear: true });
@@ -120,8 +121,8 @@
 
         function toggleCategoryFields() {
             const category = $('#category').val();
-            $('#fuel-fields').toggle(category === 'fuel');
-            $('#salaries-fields').toggle(category === 'salaries');
+            $('#fuel-fields').toggle(category === 'fuel' && !simplifiedEntry);
+            $('#salaries-fields').toggle(category === 'salaries' && !simplifiedEntry);
         }
 
         // Toggle on change

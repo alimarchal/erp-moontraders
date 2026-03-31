@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class StoreExpenseDetailRequest extends FormRequest
 {
@@ -16,6 +17,8 @@ class StoreExpenseDetailRequest extends FormRequest
      */
     public function rules(): array
     {
+        $simplified = config('app.expense_simplified_entry');
+
         return [
             'category' => ['required', 'in:stationary,tcs,tonner_it,salaries,fuel,van_work'],
             'supplier_id' => ['nullable', 'exists:suppliers,id'],
@@ -24,11 +27,11 @@ class StoreExpenseDetailRequest extends FormRequest
             'amount' => ['required', 'numeric', 'min:0.01'],
 
             // Fuel-specific
-            'vehicle_id' => ['nullable', 'required_if:category,fuel', 'exists:vehicles,id'],
-            'liters' => ['nullable', 'required_if:category,fuel', 'numeric', 'min:0.01'],
+            'vehicle_id' => ['nullable', Rule::requiredIf(fn () => $this->category === 'fuel' && ! $simplified), 'exists:vehicles,id'],
+            'liters' => ['nullable', Rule::requiredIf(fn () => $this->category === 'fuel' && ! $simplified), 'numeric', 'min:0.01'],
 
             // Salaries-specific
-            'employee_id' => ['nullable', 'required_if:category,salaries', 'exists:employees,id'],
+            'employee_id' => ['nullable', Rule::requiredIf(fn () => $this->category === 'salaries' && ! $simplified), 'exists:employees,id'],
 
             'notes' => ['nullable', 'string'],
         ];
@@ -40,9 +43,9 @@ class StoreExpenseDetailRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'vehicle_id.required_if' => 'Vehicle is required for Fuel expenses.',
-            'liters.required_if' => 'Liters is required for Fuel expenses.',
-            'employee_id.required_if' => 'Employee is required for Salary expenses.',
+            'vehicle_id.required' => 'Vehicle is required for Fuel expenses.',
+            'liters.required' => 'Liters is required for Fuel expenses.',
+            'employee_id.required' => 'Employee is required for Salary expenses.',
         ];
     }
 }

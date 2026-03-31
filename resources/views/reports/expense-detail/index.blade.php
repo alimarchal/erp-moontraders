@@ -293,7 +293,7 @@
                 </div>
 
                 {{-- Data Table --}}
-                <div x-data="expenseReport()">
+                <div x-data="expenseReport(@json(config('app.expense_simplified_entry')))">
                     <table class="report-table">
                         <thead>
                             <tr>
@@ -498,7 +498,7 @@
                                                     </td>
                                                 </tr>
                                                 {{-- Dynamic fields for Fuel --}}
-                                                <tr x-show="addCategory === 'fuel'" x-cloak>
+                                                <tr x-show="addCategory === 'fuel' && !simplifiedEntry" x-cloak>
                                                     <td></td>
                                                     <td colspan="7" style="padding: 4px;">
                                                         <div class="flex gap-2">
@@ -514,7 +514,7 @@
                                                     </td>
                                                 </tr>
                                                 {{-- Dynamic fields for Salaries --}}
-                                                <tr x-show="addCategory === 'salaries'" x-cloak>
+                                                <tr x-show="addCategory === 'salaries' && !simplifiedEntry" x-cloak>
                                                     <td></td>
                                                     <td colspan="7" style="padding: 4px;">
                                                         <select name="employee_id" id="add_employee_id" class="select2-inline inline-select" style="width: 250px;">
@@ -607,7 +607,7 @@
 
     {{-- Edit Modal --}}
     @can('expense-detail-edit')
-        <div x-data="expenseEditModal()" x-show="open" x-cloak
+        <div x-data="expenseEditModal(@json(config('app.expense_simplified_entry')))" x-show="open" x-cloak
             class="fixed inset-0 z-50 overflow-y-auto no-print" style="display: none;"
             aria-labelledby="edit-modal-title" role="dialog" aria-modal="true">
 
@@ -689,7 +689,7 @@
                             </div>
 
                             {{-- Fuel fields --}}
-                            <template x-if="entry.category === 'fuel'">
+                            <template x-if="entry.category === 'fuel' && !simplifiedEntry">
                                 <div class="col-span-2 grid grid-cols-2 gap-4">
                                     <div>
                                         <x-label value="VAN #" />
@@ -710,7 +710,7 @@
                             </template>
 
                             {{-- Salaries fields --}}
-                            <template x-if="entry.category === 'salaries'">
+                            <template x-if="entry.category === 'salaries' && !simplifiedEntry">
                                 <div class="col-span-2">
                                     <x-label value="Employee" />
                                     <select name="employee_id" x-model="entry.employee_id"
@@ -760,10 +760,11 @@
 
     @push('scripts')
         <script>
-            function expenseReport() {
+            function expenseReport(simplifiedEntry) {
                 return {
                     showAddRow: false,
                     addCategory: '',
+                    simplifiedEntry: simplifiedEntry,
                     toggleAddRow() {
                         this.showAddRow = !this.showAddRow;
                         if (this.showAddRow) {
@@ -791,11 +792,12 @@
                 }
             }
 
-            function expenseEditModal() {
+            function expenseEditModal(simplifiedEntry) {
                 return {
                     open: false,
                     entry: {},
                     formAction: '',
+                    simplifiedEntry: simplifiedEntry,
                     init() {
                         window.addEventListener('open-expense-edit-modal', (e) => {
                             this.entry = e.detail;

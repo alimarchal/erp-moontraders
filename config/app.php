@@ -65,7 +65,7 @@ return [
     |
     */
 
-    'timezone' => 'Asia/Karachi',
+    'timezone' => env('APP_TIMEZONE', 'Asia/Karachi'),
 
     /*
     |--------------------------------------------------------------------------
@@ -124,5 +124,7 @@ return [
     ],
 
     'use_batch_expiry' => env('USE_BATCH_EXPIRY', false),
+
+    'expense_simplified_entry' => env('EXPENSE_SIMPLIFIED_ENTRY', false),
 
 ];

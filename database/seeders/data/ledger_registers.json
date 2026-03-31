@@ -1,0 +1,25 @@
+[
+    {
+        "id": 1,
+        "supplier_id": 3,
+        "transaction_date": "2026-03-30T19:00:00.000000Z",
+        "document_type": "OB",
+        "document_number": "OB-Nestle",
+        "sap_code": null,
+        "online_amount": "9206335.48",
+        "invoice_amount": "0.00",
+        "expenses_amount": "0.00",
+        "za_point_five_percent_amount": "0.00",
+        "claim_adjust_amount": "0.00",
+        "balance": "9206335.48",
+        "remarks": "Opening Balance",
+        "posted_at": null,
+        "posted_by": null,
+        "journal_entry_id": null,
+        "created_by": 1,
+        "updated_by": 1,
+        "deleted_at": null,
+        "created_at": "2026-03-31 17:00:00",
+        "updated_at": "2026-03-31 17:00:00"
+    }
+]

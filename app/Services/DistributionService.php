@@ -6,11 +6,13 @@ use App\Models\ChartOfAccount;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\GoodsIssue;
+use App\Models\InventoryLedgerEntry;
 use App\Models\SalesSettlement;
 use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
 use App\Models\VanStockBalance;
 use App\Models\VanStockBatch;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -108,8 +110,10 @@ class DistributionService
 
                     if ($stockByBatch) {
                         $stockByBatch->quantity_on_hand -= $qtyFromBatch;
+                        $stockByBatch->total_value = max(0.0, round(($stockByBatch->total_value ?? 0) - round($qtyFromBatch * (float) $stockByBatch->unit_cost, 2), 2));
                         if ($stockByBatch->quantity_on_hand <= 0) {
                             $stockByBatch->quantity_on_hand = 0;
+                            $stockByBatch->total_value = 0;
                             $stockByBatch->status = 'depleted';
                         }
                         $stockByBatch->last_updated = now();
@@ -181,7 +185,7 @@ class DistributionService
                 $vanStock->save();
 
                 // Create granular VanStockBatch record
-                \App\Models\VanStockBatch::create([
+                VanStockBatch::create([
                     'vehicle_id' => $goodsIssue->vehicle_id,
                     'product_id' => $item->product_id,
                     'goods_issue_item_id' => $item->id,
@@ -399,11 +403,14 @@ class DistributionService
     private function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
     {
         // Calculate totals from stock_valuation_layers (source of truth)
+        // Use stored total_value column (= grni.total_cost at receipt, proportionally reduced on issue)
+        // to avoid decimal multiplication drift vs the GL.
         $layerData = StockValuationLayer::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
+            ->where('quantity_remaining', '>', 0)
             ->selectRaw('
                 COALESCE(SUM(quantity_remaining), 0) as total_qty,
-                COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value
+                COALESCE(SUM(total_value), 0) as total_value
             ')
             ->first();
 
@@ -571,6 +578,7 @@ class DistributionService
 
                         if ($stockByBatch) {
                             $stockByBatch->quantity_on_hand += $returnedQty;
+                            $stockByBatch->total_value = round(($stockByBatch->total_value ?? 0) + round($returnedQty * (float) $itemBatch->unit_cost, 2), 2);
                             $stockByBatch->status = 'active';
                             $stockByBatch->last_updated = now();
                             $stockByBatch->save();
@@ -581,6 +589,8 @@ class DistributionService
                                 'product_id' => $item->product_id,
                                 'warehouse_id' => $settlement->warehouse_id,
                                 'quantity_on_hand' => $returnedQty,
+                                'unit_cost' => $itemBatch->unit_cost,
+                                'total_value' => round($returnedQty * (float) $itemBatch->unit_cost, 2),
                                 'status' => 'active',
                                 'last_updated' => now(),
                             ]);
@@ -817,7 +827,7 @@ class DistributionService
             $employeeLabel = $settlement->employee_id
                 ? "{$employeeName} (ID: {$settlement->employee_id})"
                 : $employeeName;
-            $settlementDateFormatted = \Carbon\Carbon::parse($settlement->settlement_date)->format('d M Y');
+            $settlementDateFormatted = Carbon::parse($settlement->settlement_date)->format('d M Y');
             $settlementReference = $settlement->settlement_number;
 
             // 1. Credit Sales
@@ -1230,25 +1240,25 @@ class DistributionService
     {
         return [
             // Cash & equivalents
-            'cash' => \App\Models\ChartOfAccount::where('account_code', '1121')->first(),
-            'cheques_in_hand' => \App\Models\ChartOfAccount::where('account_code', '1122')->first(),
-            'salesman_clearing' => \App\Models\ChartOfAccount::where('account_code', '1123')->first(),
-            'bank_fallback' => \App\Models\ChartOfAccount::where('account_code', '1171')->first(),
-            'debtors' => \App\Models\ChartOfAccount::where('account_code', '1111')->first(),
-            'earnest_money' => \App\Models\ChartOfAccount::where('account_code', '1141')->first(),
-            'advance_tax' => \App\Models\ChartOfAccount::where('account_code', '1161')->first(),
-            'stock_in_hand' => \App\Models\ChartOfAccount::where('account_code', '1151')->first(),
-            'inventory' => \App\Models\ChartOfAccount::where('account_code', '1155')->first(),
-            'sales' => \App\Models\ChartOfAccount::where('account_code', '4110')->first(),
-            'cogs' => \App\Models\ChartOfAccount::where('account_code', '5111')->first(),
-            'toll_tax' => \App\Models\ChartOfAccount::where('account_code', '5272')->first(),
-            'amr_powder' => \App\Models\ChartOfAccount::where('account_code', '5252')->first(),
-            'amr_liquid' => \App\Models\ChartOfAccount::where('account_code', '5262')->first(),
-            'scheme' => \App\Models\ChartOfAccount::where('account_code', '5292')->first(),
-            'food_salesman_loader' => \App\Models\ChartOfAccount::where('account_code', '5282')->first(),
-            'percentage' => \App\Models\ChartOfAccount::where('account_code', '5223')->first(),
-            'misc_expense' => \App\Models\ChartOfAccount::where('account_code', '5213')->first(),
-            'round_off' => \App\Models\ChartOfAccount::where('account_code', '5271')->first(),
+            'cash' => ChartOfAccount::where('account_code', '1121')->first(),
+            'cheques_in_hand' => ChartOfAccount::where('account_code', '1122')->first(),
+            'salesman_clearing' => ChartOfAccount::where('account_code', '1123')->first(),
+            'bank_fallback' => ChartOfAccount::where('account_code', '1171')->first(),
+            'debtors' => ChartOfAccount::where('account_code', '1111')->first(),
+            'earnest_money' => ChartOfAccount::where('account_code', '1141')->first(),
+            'advance_tax' => ChartOfAccount::where('account_code', '1161')->first(),
+            'stock_in_hand' => ChartOfAccount::where('account_code', '1151')->first(),
+            'inventory' => ChartOfAccount::where('account_code', '1155')->first(),
+            'sales' => ChartOfAccount::where('account_code', '4110')->first(),
+            'cogs' => ChartOfAccount::where('account_code', '5111')->first(),
+            'toll_tax' => ChartOfAccount::where('account_code', '5272')->first(),
+            'amr_powder' => ChartOfAccount::where('account_code', '5252')->first(),
+            'amr_liquid' => ChartOfAccount::where('account_code', '5262')->first(),
+            'scheme' => ChartOfAccount::where('account_code', '5292')->first(),
+            'food_salesman_loader' => ChartOfAccount::where('account_code', '5282')->first(),
+            'percentage' => ChartOfAccount::where('account_code', '5223')->first(),
+            'misc_expense' => ChartOfAccount::where('account_code', '5213')->first(),
+            'round_off' => ChartOfAccount::where('account_code', '5271')->first(),
         ];
     }
 
@@ -1359,23 +1369,23 @@ class DistributionService
             $productName = $item->product?->product_name ?? "Product ID {$item->product_id}";
 
             // Locate the ledger entry for this GI transfer-in to calculate B/F In
-            $giEntry = \App\Models\InventoryLedgerEntry::where('goods_issue_id', $settlement->goods_issue_id)
+            $giEntry = InventoryLedgerEntry::where('goods_issue_id', $settlement->goods_issue_id)
                 ->where('product_id', $item->product_id)
                 ->where('vehicle_id', $settlement->vehicle_id)
-                ->where('transaction_type', \App\Models\InventoryLedgerEntry::TYPE_TRANSFER_IN)
+                ->where('transaction_type', InventoryLedgerEntry::TYPE_TRANSFER_IN)
                 ->first();
 
             $bfIn = 0.0;
             if ($giEntry) {
                 // Stock physically on van before this GI was issued (historical snapshot)
-                $preGiStock = (float) \App\Models\InventoryLedgerEntry::where('product_id', $item->product_id)
+                $preGiStock = (float) InventoryLedgerEntry::where('product_id', $item->product_id)
                     ->where('vehicle_id', $settlement->vehicle_id)
                     ->where('id', '<', $giEntry->id)
-                    ->sum(\Illuminate\Support\Facades\DB::raw('debit_qty - credit_qty'));
+                    ->sum(DB::raw('debit_qty - credit_qty'));
 
                 // Of that pre-GI stock, how much has already been settled by OTHER settlements
                 // posted after this GI (those credits reduce the effective B/F for this settlement)
-                $alreadySettledByOthers = (float) \App\Models\InventoryLedgerEntry::where('product_id', $item->product_id)
+                $alreadySettledByOthers = (float) InventoryLedgerEntry::where('product_id', $item->product_id)
                     ->where('vehicle_id', $settlement->vehicle_id)
                     ->where('id', '>', $giEntry->id)
                     ->whereNotNull('sales_settlement_id')

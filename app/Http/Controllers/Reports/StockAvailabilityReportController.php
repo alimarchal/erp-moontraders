@@ -92,7 +92,7 @@ class StockAvailabilityReportController extends Controller implements HasMiddlew
                 ->select(
                     'p.supplier_id',
                     DB::raw('COALESCE(SUM(csb.quantity_on_hand), 0) as total_quantity'),
-                    DB::raw('COALESCE(SUM(csb.quantity_on_hand * csb.unit_cost), 0) as total_amount')
+                    DB::raw('COALESCE(SUM(csb.total_value), 0) as total_amount')
                 )
                 ->groupBy('p.supplier_id');
 

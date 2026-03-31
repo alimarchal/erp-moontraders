@@ -80,7 +80,7 @@ class InventoryService
                 $this->updateCurrentStock($item->product_id, $grn->warehouse_id, $stockBatch->id, $item);
 
                 // Create Inventory Ledger Entry (Double Entry System)
-                $ledgerService = app(\App\Services\InventoryLedgerService::class);
+                $ledgerService = app(InventoryLedgerService::class);
                 $ledgerService->recordPurchase(
                     $item->product_id,
                     $grn->warehouse_id,
@@ -695,7 +695,7 @@ class InventoryService
             'quantity_received' => $item->quantity_accepted,
             'quantity_remaining' => $item->quantity_accepted,
             'unit_cost' => $item->unit_cost,
-            'total_value' => $item->quantity_accepted * $item->unit_cost,
+            'total_value' => $item->total_cost,
             'priority_order' => $item->priority_order,
             'must_sell_before' => $item->must_sell_before,
             'is_promotional' => $item->is_promotional,
@@ -719,7 +719,7 @@ class InventoryService
         $stockByBatch->selling_price = $item->is_promotional
             ? ($item->promotional_price ?? $item->selling_price)
             : $item->selling_price;
-        $stockByBatch->total_value = $stockByBatch->quantity_on_hand * $stockByBatch->unit_cost;
+        $stockByBatch->total_value = ($stockByBatch->total_value ?? 0) + $item->total_cost;
         $stockByBatch->is_promotional = $item->is_promotional;
         $stockByBatch->promotional_price = $item->promotional_price;
         $stockByBatch->priority_order = $item->priority_order;
@@ -740,11 +740,14 @@ class InventoryService
     public function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
     {
         // Calculate totals from stock_valuation_layers (source of truth)
+        // Use stored total_value column (= grni.total_cost at receipt, proportionally reduced on issue)
+        // to avoid decimal multiplication drift vs the GL.
         $layerData = StockValuationLayer::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
+            ->where('quantity_remaining', '>', 0)
             ->selectRaw('
                 COALESCE(SUM(quantity_remaining), 0) as total_qty,
-                COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value
+                COALESCE(SUM(total_value), 0) as total_value
             ')
             ->first();
 

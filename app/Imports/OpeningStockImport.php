@@ -42,14 +42,14 @@ class OpeningStockImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            $invoicePrice = (float) ($row['invoice_price'] ?? 0);
+            $invoicePrice = round((float) ($row['invoice_price'] ?? 0), 2);
             if ($invoicePrice <= 0) {
                 $this->rowErrors[$rowNumber] = "Row {$rowNumber}: Invoice Price must be greater than 0.";
 
                 continue;
             }
 
-            $retailPrice = (float) ($row['retail_price'] ?? 0);
+            $retailPrice = round((float) ($row['retail_price'] ?? 0), 2);
             if ($retailPrice <= 0) {
                 $this->rowErrors[$rowNumber] = "Row {$rowNumber}: Retail Price must be greater than 0.";
 

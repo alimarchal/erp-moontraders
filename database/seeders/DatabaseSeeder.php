@@ -44,6 +44,7 @@ class DatabaseSeeder extends Seeder
             AttachmentSeeder::class,            // Add attachments last
             ClaimRegisterSeeder::class,
             OpeningCustomerBalanceSeeder::class,
+            ExpenseDetailSeeder::class,
         ]);
 
         // Seed product recall permissions after roles exist

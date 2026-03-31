@@ -15570,5 +15570,22 @@
     "credit_limit": 10000000,
     "payment_terms": 30,
     "is_active": true
+  },
+  {
+    "customer_code": "N00000509159",
+    "customer_name": "Best Price Dhani",
+    "channel_type": "Minimart",
+    "ntn": "3710117901968",
+    "owener_cnic": "3710117901968",
+    "address": "Dhani (Old Al Madina Mark)",
+    "it_status": true,
+    "business_name": "Best Price Dhani",
+    "sub_locality": null,
+    "city": "Muzaffarabad",
+    "phone": "0333-5462037",
+    "email": null,
+    "credit_limit": 10000000,
+    "payment_terms": 30,
+    "is_active": true
   }
 ]

@@ -31,6 +31,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         $supplierId = $request->input('supplier_id', Supplier::where('supplier_name', 'Nestlé Pakistan')->value('id'));
         $designation = $request->input('designation', 'Salesman');
         $employeeIds = $request->input('employee_ids', []);
+        $showBankSummary = $request->boolean('show_bank_summary', false);
 
         $suppliers = Supplier::orderBy('supplier_name')->get();
         $designations = Employee::distinct()->whereNotNull('designation')->orderBy('designation')->pluck('designation');
@@ -153,6 +154,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             'formattedPreviousDate',
             'formattedLastDayPrevMonth',
             'currentMonthName',
+            'showBankSummary',
         ));
     }
 

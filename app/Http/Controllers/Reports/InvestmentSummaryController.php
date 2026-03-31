@@ -332,7 +332,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
                 $query->where('p.supplier_id', $supplierId);
             }
 
-            return (float) $query->selectRaw('COALESCE(SUM(csb.quantity_on_hand * csb.unit_cost), 0) as total')
+            return (float) $query->selectRaw('COALESCE(SUM(csb.total_value), 0) as total')
                 ->value('total');
         }
 

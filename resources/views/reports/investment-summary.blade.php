@@ -126,7 +126,8 @@
             {{-- Supplier Filter --}}
             <div>
                 <x-label for="supplier_id" value="{{ __('Supplier') }}" />
-                <select id="supplier_id" name="supplier_id" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                <select id="supplier_id" name="supplier_id"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Suppliers</option>
                     @foreach($suppliers as $supplier)
                         <option value="{{ $supplier->id }}" {{ $supplierId == $supplier->id ? 'selected' : '' }}>
@@ -139,7 +140,8 @@
             {{-- Designation Filter --}}
             <div>
                 <x-label for="designation" value="{{ __('Designation') }}" />
-                <select id="designation" name="designation" class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                <select id="designation" name="designation"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Designations</option>
                     @foreach($designations as $desig)
                         <option value="{{ $desig }}" {{ $designation == $desig ? 'selected' : '' }}>
@@ -201,10 +203,18 @@
                             <tr>
                                 <td class="text-center px-1 py-0.5">{{ $loop->iteration }}</td>
                                 <td class="px-1 py-0.5">{{ $salesman->name }}</td>
-                                <td class="text-right px-1 py-0.5">{{ number_format($salesman->opening_credit, 0) }}</td>
-                                <td class="text-right px-1 py-0.5">{{ number_format($salesman->credit_amount, 0) }}</td>
-                                <td class="text-right px-1 py-0.5">{{ number_format($salesman->recovery_amount, 0) }}</td>
-                                <td class="text-right font-bold px-1 py-0.5">{{ number_format($salesman->total_credit, 0) }}</td>
+                                <td class="text-right font-mono px-1 py-0.5">
+                                    {{ number_format($salesman->opening_credit, 2) }}
+                                </td>
+                                <td class="text-right font-mono px-1 py-0.5">
+                                    {{ number_format($salesman->credit_amount, 2) }}
+                                </td>
+                                <td class="text-right font-mono px-1 py-0.5">
+                                    {{ number_format($salesman->recovery_amount, 2) }}
+                                </td>
+                                <td class="text-right font-bold font-mono px-1 py-0.5">
+                                    {{ number_format($salesman->total_credit, 2) }}
+                                </td>
                             </tr>
                         @empty
                             <tr>
@@ -215,10 +225,18 @@
                     <tfoot class="bg-gray-50 font-bold">
                         <tr>
                             <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
-                            <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($creditGrandTotals->opening_credit, 0) }}</td>
-                            <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($creditGrandTotals->credit_amount, 0) }}</td>
-                            <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($creditGrandTotals->recovery_amount, 0) }}</td>
-                            <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($creditGrandTotals->total_credit, 0) }}</td>
+                            <td class="text-right font-mono px-1 py-0.5 border-t border-black">
+                                {{ number_format($creditGrandTotals->opening_credit, 2) }}
+                            </td>
+                            <td class="text-right font-mono px-1 py-0.5 border-t border-black">
+                                {{ number_format($creditGrandTotals->credit_amount, 2) }}
+                            </td>
+                            <td class="text-right font-mono px-1 py-0.5 border-t border-black">
+                                {{ number_format($creditGrandTotals->recovery_amount, 2) }}
+                            </td>
+                            <td class="text-right font-mono px-1 py-0.5 border-t border-black">
+                                {{ number_format($creditGrandTotals->total_credit, 2) }}
+                            </td>
                         </tr>
                     </tfoot>
                 </table>
@@ -240,12 +258,14 @@
                                 <tr>
                                     <td class="text-center px-1 py-1">1</td>
                                     <td class="px-2 py-1">Powder Expiry</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($powderExpiry, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($powderExpiry, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">2</td>
                                     <td class="px-2 py-1">Liquid Expiry</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($liquidExpiry, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($liquidExpiry, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">3</td>
@@ -260,17 +280,23 @@
                                 <tr>
                                     <td class="text-center px-1 py-1">5</td>
                                     <td class="px-2 py-1">Credit Amount</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($creditAmount, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($creditAmount, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">6</td>
                                     <td class="px-2 py-1">Ledger Amount</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($ledgerAmount, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($ledgerAmount, 2) }}
+                                    </td>
                                 </tr>
                                 <tr class="bg-gray-50 font-extrabold">
                                     <td class="text-center px-1 py-1 border-t-2 border-black">7</td>
-                                    <td class="px-2 py-1 border-t-2 border-black">Total Main Investment as on {{ $formattedDate }}</td>
-                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">{{ number_format($currentTotal, 2) }}</td>
+                                    <td class="px-2 py-1 border-t-2 border-black">Total Main Investment as on
+                                        {{ $formattedDate }}
+                                    </td>
+                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">
+                                        {{ number_format($currentTotal, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">8</td>
@@ -279,13 +305,18 @@
                                 </tr>
                                 <tr class="bg-gray-50 font-bold">
                                     <td class="text-center px-1 py-1 border-t border-black">9</td>
-                                    <td class="px-2 py-1 border-t border-black">Total Investment as on {{ $formattedDate }}</td>
-                                    <td class="text-right px-2 py-1 border-t border-black font-mono">{{ number_format($totalInvestment, 2) }}</td>
+                                    <td class="px-2 py-1 border-t border-black">Total Investment as on
+                                        {{ $formattedDate }}
+                                    </td>
+                                    <td class="text-right px-2 py-1 border-t border-black font-mono">
+                                        {{ number_format($totalInvestment, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">10</td>
                                     <td class="px-2 py-1">Total Main Investment as on {{ $formattedPreviousDate }}</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($previousTotal, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($previousTotal, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">11</td>
@@ -294,8 +325,13 @@
                                 </tr>
                                 <tr class="bg-gray-50 font-bold">
                                     <td class="text-center px-1 py-1 border-t border-black">12</td>
-                                    <td class="px-2 py-1 border-t border-black">Increase in Investment as on {{ $formattedDate }}</td>
-                                    <td class="text-right px-2 py-1 border-t border-black font-mono {{ $increaseInInvestment >= 0 ? 'text-red-600' : 'text-green-600' }}">{{ number_format($increaseInInvestment, 2) }}</td>
+                                    <td class="px-2 py-1 border-t border-black">Increase in Investment as on
+                                        {{ $formattedDate }}
+                                    </td>
+                                    <td
+                                        class="text-right px-2 py-1 border-t border-black font-mono {{ $increaseInInvestment >= 0 ? 'text-red-600' : 'text-green-600' }}">
+                                        {{ number_format($increaseInInvestment, 2) }}
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -316,44 +352,58 @@
                                 <tr>
                                     <td class="text-center px-1 py-1">1</td>
                                     <td class="px-2 py-1">Stationary</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['stationary'] ?? 0, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($expenseCategoryTotals['stationary'] ?? 0, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">2</td>
                                     <td class="px-2 py-1">TCS</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['tcs'] ?? 0, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($expenseCategoryTotals['tcs'] ?? 0, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">3</td>
                                     <td class="px-2 py-1">Tonner & IT</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['tonner_it'] ?? 0, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($expenseCategoryTotals['tonner_it'] ?? 0, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">4</td>
                                     <td class="px-2 py-1">Salaries</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['salaries'] ?? 0, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($expenseCategoryTotals['salaries'] ?? 0, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">5</td>
                                     <td class="px-2 py-1">Fuel</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['fuel'] ?? 0, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($expenseCategoryTotals['fuel'] ?? 0, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">6</td>
                                     <td class="px-2 py-1">Van Work</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($expenseCategoryTotals['van_work'] ?? 0, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($expenseCategoryTotals['van_work'] ?? 0, 2) }}
+                                    </td>
                                 </tr>
                                 <tr class="bg-gray-50 font-extrabold">
                                     <td class="text-center px-1 py-1 border-t-2 border-black">7</td>
                                     <td class="px-2 py-1 border-t-2 border-black">Total Expenses</td>
-                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">{{ number_format($totalExpensesMonth, 2) }}</td>
+                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">
+                                        {{ number_format($totalExpensesMonth, 2) }}
+                                    </td>
                                 </tr>
                                 @for ($i = 8; $i <= 12; $i++)
-                                <tr>
-                                    <td class="text-center px-1 py-1">{{ $i }}</td>
-                                    <td class="text-center px-2 py-1">-</td>
-                                    <td class="text-center px-2 py-1">-</td>
-                                </tr>
+                                    <tr>
+                                        <td class="text-center px-1 py-1">{{ $i }}</td>
+                                        <td class="text-center px-2 py-1">-</td>
+                                        <td class="text-center px-2 py-1">-</td>
+                                    </tr>
                                 @endfor
                             </tbody>
                         </table>
@@ -377,37 +427,51 @@
                                 <tr>
                                     <td class="text-center px-1 py-1">1</td>
                                     <td class="px-2 py-1">Bank Opening Amount</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($bankOpeningAmount, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($bankOpeningAmount, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">2</td>
                                     <td class="px-2 py-1">Total Cash Received in Current Month</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($totalCashReceivedMonth, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($totalCashReceivedMonth, 2) }}
+                                    </td>
                                 </tr>
                                 <tr class="font-bold">
                                     <td class="text-center px-1 py-1 border-t border-black">3</td>
                                     <td class="px-2 py-1 border-t border-black">Total Bank Amount</td>
-                                    <td class="text-right px-2 py-1 border-t border-black font-mono">{{ number_format($totalBankAmount, 2) }}</td>
+                                    <td class="text-right px-2 py-1 border-t border-black font-mono">
+                                        {{ number_format($totalBankAmount, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">4</td>
                                     <td class="px-2 py-1">Total Online Amount in Current Month</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($totalOnlineAmountMonth, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($totalOnlineAmountMonth, 2) }}
+                                    </td>
                                 </tr>
                                 <tr class="font-bold">
                                     <td class="text-center px-1 py-1 border-t border-black">5</td>
                                     <td class="px-2 py-1 border-t border-black">Closing Balance before Expenses</td>
-                                    <td class="text-right px-2 py-1 border-t border-black font-mono">{{ number_format($closingBalanceBeforeExpenses, 2) }}</td>
+                                    <td class="text-right px-2 py-1 border-t border-black font-mono">
+                                        {{ number_format($closingBalanceBeforeExpenses, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">6</td>
                                     <td class="px-2 py-1">Total Expenses in Current Month</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($totalExpensesMonth, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($totalExpensesMonth, 2) }}
+                                    </td>
                                 </tr>
                                 <tr class="bg-gray-50 font-extrabold">
                                     <td class="text-center px-1 py-1 border-t-2 border-black">7</td>
                                     <td class="px-2 py-1 border-t-2 border-black">Closing Balance After Expenses</td>
-                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">{{ number_format($closingBalanceAfterExpenses, 2) }}</td>
+                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono">
+                                        {{ number_format($closingBalanceAfterExpenses, 2) }}
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -427,30 +491,40 @@
                             <tbody>
                                 <tr>
                                     <td class="text-center px-1 py-1">1</td>
-                                    <td class="px-2 py-1">Last Month Main Investment ({{ $formattedLastDayPrevMonth }})</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($lastMonthMainInvestment, 2) }}</td>
+                                    <td class="px-2 py-1">Last Month Main Investment ({{ $formattedLastDayPrevMonth }})
+                                    </td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($lastMonthMainInvestment, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">2</td>
                                     <td class="px-2 py-1">Current Month Main Investment ({{ $formattedDate }})</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($currentMonthMainInvestment, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">
+                                        {{ number_format($currentMonthMainInvestment, 2) }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td class="text-center px-1 py-1">3</td>
                                     <td class="px-2 py-1">Net Investment</td>
-                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($netInvestment, 2) }}</td>
+                                    <td class="text-right px-2 py-1 font-mono">{{ number_format($netInvestment, 2) }}
+                                    </td>
                                 </tr>
                                 <tr class="bg-gray-50 font-extrabold">
                                     <td class="text-center px-1 py-1 border-t-2 border-black">4</td>
-                                    <td class="px-2 py-1 border-t-2 border-black">Increase In Investment Current Month</td>
-                                    <td class="text-right px-2 py-1 border-t-2 border-black font-mono {{ $increaseInInvestmentMonth >= 0 ? 'text-red-600' : 'text-green-600' }}">{{ number_format($increaseInInvestmentMonth, 2) }}</td>
+                                    <td class="px-2 py-1 border-t-2 border-black">Increase In Investment Current Month
+                                    </td>
+                                    <td
+                                        class="text-right px-2 py-1 border-t-2 border-black font-mono {{ $increaseInInvestmentMonth >= 0 ? 'text-red-600' : 'text-green-600' }}">
+                                        {{ number_format($increaseInInvestmentMonth, 2) }}
+                                    </td>
                                 </tr>
                                 @for ($i = 5; $i <= 7; $i++)
-                                <tr>
-                                    <td class="text-center px-1 py-1">{{ $i }}</td>
-                                    <td class="text-center px-2 py-1">-</td>
-                                    <td class="text-center px-2 py-1">-</td>
-                                </tr>
+                                    <tr>
+                                        <td class="text-center px-1 py-1">{{ $i }}</td>
+                                        <td class="text-center px-2 py-1">-</td>
+                                        <td class="text-center px-2 py-1">-</td>
+                                    </tr>
                                 @endfor
                             </tbody>
                         </table>

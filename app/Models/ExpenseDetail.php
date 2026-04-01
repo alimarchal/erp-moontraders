@@ -55,6 +55,7 @@ class ExpenseDetail extends Model
             'salaries' => 'Salaries',
             'fuel' => 'Fuel',
             'van_work' => 'Van Work',
+            'van_wash' => 'Van Wash',
         ];
     }
 
@@ -70,6 +71,7 @@ class ExpenseDetail extends Model
             'salaries' => 'Salary',
             'fuel' => 'Fuel Expense',
             'van_work' => 'Van Work Expense',
+            'van_wash' => 'Van Wash Expense',
         ];
     }
 

@@ -4,13 +4,18 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSalesSettlementRequest;
 use App\Http\Requests\UpdateSalesSettlementRequest;
+use App\Models\BankAccount;
+use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\Employee;
 use App\Models\GoodsIssue;
+use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementAdvanceTax;
 use App\Models\SalesSettlementAmrLiquid;
 use App\Models\SalesSettlementAmrPowder;
+use App\Models\SalesSettlementBankSlip;
 use App\Models\SalesSettlementBankTransfer;
 use App\Models\SalesSettlementCashDenomination;
 use App\Models\SalesSettlementCheque;
@@ -21,8 +26,13 @@ use App\Models\SalesSettlementItemBatch;
 use App\Models\SalesSettlementPercentageExpense;
 use App\Models\SalesSettlementRecovery;
 use App\Models\StockBatch;
+use App\Models\Supplier;
+use App\Models\User;
 use App\Models\VanStockBalance;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use App\Services\DistributionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
@@ -51,7 +61,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function index()
     {
-        $baseQuery = SalesSettlement::query()->with(['employee', 'vehicle', 'warehouse', 'goodsIssue']);
+        $baseQuery = SalesSettlement::query()->with(['employee', 'vehicle', 'warehouse', 'goodsIssue', 'creator']);
 
         if (! auth()->user()->can('sales-settlement-view-all')) {
             $baseQuery->where('created_by', auth()->id());
@@ -64,6 +74,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 AllowedFilter::exact('vehicle_id'),
                 AllowedFilter::exact('warehouse_id'),
                 AllowedFilter::exact('status'),
+                AllowedFilter::exact('created_by'),
                 AllowedFilter::scope('settlement_date_from'),
                 AllowedFilter::scope('settlement_date_to'),
                 AllowedFilter::callback('product_id', function ($query, $value) {
@@ -101,6 +112,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 AllowedFilter::exact('vehicle_id'),
                 AllowedFilter::exact('warehouse_id'),
                 AllowedFilter::exact('status'),
+                AllowedFilter::exact('created_by'),
                 AllowedFilter::scope('settlement_date_from'),
                 AllowedFilter::scope('settlement_date_to'),
                 AllowedFilter::callback('product_id', function ($query, $value) {
@@ -115,25 +127,25 @@ class SalesSettlementController extends Controller implements HasMiddleware
         // Note: Using clone logic or re-instantiating is safer to avoid modifying the reference if used multiple times,
         // but here we just pass the builder/query object to whereIn which compiles it to a subquery.
 
-        $totalSales = \App\Models\SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
+        $totalSales = SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
             ->sum('total_sales_value');
 
-        $totalCogs = \App\Models\SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
+        $totalCogs = SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
             ->sum('total_cogs');
 
-        $totalSoldQty = \App\Models\SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
+        $totalSoldQty = SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
             ->sum('quantity_sold');
 
-        $totalReturnedQty = \App\Models\SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
+        $totalReturnedQty = SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
             ->sum('quantity_returned');
 
-        $totalShortageQty = \App\Models\SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
+        $totalShortageQty = SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
             ->sum('quantity_shortage');
 
         // Expenses Summation
         // The sales_settlement_expenses table contains ALL expenses including the totals of the breakdown tables.
         // So we only need to sum this one table to avoid double counting.
-        $totalExpenses = \App\Models\SalesSettlementExpense::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
+        $totalExpenses = SalesSettlementExpense::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
 
         $totalGrossProfit = $totalSales - $totalCogs;
         $totalNetProfit = $totalGrossProfit - $totalExpenses;
@@ -143,11 +155,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
         // User asked to verify tables. Let's try to sum tables if they exist.
         // sales_settlement_cash_denominations (total_amount), bank_transfers, cheques, recoveries, credit_sales.
 
-        $totalCashCollected = \App\Models\SalesSettlementCashDenomination::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('total_amount');
-        $totalBankTransfers = \App\Models\SalesSettlementBankTransfer::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
-        $totalCheques = \App\Models\SalesSettlementCheque::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
-        $totalRecoveries = \App\Models\SalesSettlementRecovery::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
-        $totalCreditSales = \App\Models\SalesSettlementCreditSale::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('sale_amount');
+        $totalCashCollected = SalesSettlementCashDenomination::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('total_amount');
+        $totalBankTransfers = SalesSettlementBankTransfer::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
+        $totalCheques = SalesSettlementCheque::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
+        $totalRecoveries = SalesSettlementRecovery::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
+        $totalCreditSales = SalesSettlementCreditSale::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('sale_amount');
 
         // Cash Sales (Gross) = Total Sales - Credit - Cheque - Bank
         // Note: This logic depends on business rule. Usually Cash Sales is stored.
@@ -175,9 +187,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'total_cash_deposit' => $totalCashDeposit,
         ];
 
-        $employees = \App\Models\Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']);
-        $vehicles = \App\Models\Vehicle::where('is_active', true)->orderBy('registration_number')->get(['id', 'registration_number']);
-        $warehouses = \App\Models\Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']);
+        $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        $vehicles = Vehicle::where('is_active', true)->orderBy('registration_number')->get(['id', 'registration_number']);
+        $warehouses = Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']);
+
+        $creators = User::whereIn('id', SalesSettlement::distinct()->pluck('created_by'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         return view('sales-settlements.index', [
             'settlements' => $settlements,
@@ -185,6 +201,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'employees' => $employees,
             'vehicles' => $vehicles,
             'warehouses' => $warehouses,
+            'creators' => $creators,
         ]);
     }
 
@@ -245,7 +262,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
         }
 
         // Get expense posting accounts (5xxx, excluding COGS 511x to prevent double-counting)
-        $expenseAccounts = \App\Models\ChartOfAccount::where('account_code', 'LIKE', '5%')
+        $expenseAccounts = ChartOfAccount::where('account_code', 'LIKE', '5%')
             ->where('account_code', 'NOT LIKE', '511%')
             ->where('is_group', false)
             ->where('is_active', true)
@@ -254,7 +271,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         // Dynamically resolve predefined expense account IDs from account codes
         $predefinedExpenseAccountCodes = ['5272', '5252', '5262', '5292', '1161', '5282', '5223', '5221'];
-        $predefinedAccountsMap = \App\Models\ChartOfAccount::whereIn('account_code', $predefinedExpenseAccountCodes)
+        $predefinedAccountsMap = ChartOfAccount::whereIn('account_code', $predefinedExpenseAccountCodes)
             ->pluck('id', 'account_code')
             ->toArray();
 
@@ -271,21 +288,21 @@ class SalesSettlementController extends Controller implements HasMiddleware
         ];
 
         return view('sales-settlements.create', [
-            'suppliers' => \App\Models\Supplier::where('disabled', false)
+            'suppliers' => Supplier::where('disabled', false)
                 ->orderBy('supplier_name')
                 ->get(['id', 'supplier_name']),
             'customers' => Customer::where('is_active', true)
                 ->orderBy('customer_name')
                 ->get(['id', 'customer_code', 'customer_name']),
             'expenseAccounts' => $expenseAccounts,
-            'bankAccounts' => \App\Models\BankAccount::where('is_active', true)
+            'bankAccounts' => BankAccount::where('is_active', true)
                 ->orderBy('account_name')
                 ->get(['id', 'account_name', 'bank_name', 'account_number']),
-            'powderProducts' => \App\Models\Product::where('is_powder', true)
+            'powderProducts' => Product::where('is_powder', true)
                 ->where('is_active', true)
                 ->orderBy('product_name')
                 ->get(['id', 'product_code', 'product_name', 'expiry_price']),
-            'liquidProducts' => \App\Models\Product::where('is_powder', false)
+            'liquidProducts' => Product::where('is_powder', false)
                 ->where('is_active', true)
                 ->orderBy('product_name')
                 ->get(['id', 'product_code', 'product_name', 'expiry_price']),
@@ -326,7 +343,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
     /**
      * Fetch active stock batches for a given product (AJAX for AMR modals).
      */
-    public function fetchBatchesForProduct(Product $product): \Illuminate\Http\JsonResponse
+    public function fetchBatchesForProduct(Product $product): JsonResponse
     {
         $batches = StockBatch::where('product_id', $product->id)
             ->where('status', 'active')
@@ -349,15 +366,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
         foreach ($goodsIssue->items as $item) {
             // Calculate BF Logic: BF = Sum of (Debit - Credit) from InventoryLedgerEntry strictly BEFORE this Goods Issue transaction
             // Find the specific ledger entry for this Goods Issue Item (Transfer In to Van)
-            $giEntry = \App\Models\InventoryLedgerEntry::where('goods_issue_id', $goodsIssue->id)
+            $giEntry = InventoryLedgerEntry::where('goods_issue_id', $goodsIssue->id)
                 ->where('product_id', $item->product_id)
                 ->where('vehicle_id', $goodsIssue->vehicle_id)
-                ->where('transaction_type', \App\Models\InventoryLedgerEntry::TYPE_TRANSFER_IN)
+                ->where('transaction_type', InventoryLedgerEntry::TYPE_TRANSFER_IN)
                 ->first();
 
             if ($giEntry) {
                 // Sum all previous transactions for this vehicle/product
-                $bfQty = \App\Models\InventoryLedgerEntry::where('product_id', $item->product_id)
+                $bfQty = InventoryLedgerEntry::where('product_id', $item->product_id)
                     ->where('vehicle_id', $goodsIssue->vehicle_id)
                     ->where('id', '<', $giEntry->id)
                     ->sum(\DB::raw('debit_qty - credit_qty'));
@@ -575,15 +592,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 $vehicleId = $goodsIssue->vehicle_id;
 
                 // Find the specific ledger entry for this Goods Issue (Transfer In to Van)
-                $giEntry = \App\Models\InventoryLedgerEntry::where('goods_issue_id', $goodsIssue->id)
+                $giEntry = InventoryLedgerEntry::where('goods_issue_id', $goodsIssue->id)
                     ->where('product_id', $productId)
                     ->where('vehicle_id', $vehicleId)
-                    ->where('transaction_type', \App\Models\InventoryLedgerEntry::TYPE_TRANSFER_IN)
+                    ->where('transaction_type', InventoryLedgerEntry::TYPE_TRANSFER_IN)
                     ->first();
 
                 if ($giEntry) {
                     // Sum all previous transactions for this vehicle/product
-                    $bfQty = \App\Models\InventoryLedgerEntry::where('product_id', $productId)
+                    $bfQty = InventoryLedgerEntry::where('product_id', $productId)
                         ->where('vehicle_id', $vehicleId)
                         ->where('id', '<', $giEntry->id)
                         ->sum(\DB::raw('debit_qty - credit_qty'));
@@ -642,7 +659,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
         ]);
 
         // Get expense posting accounts (5xxx, excluding COGS 511x to prevent double-counting)
-        $expenseAccounts = \App\Models\ChartOfAccount::where('account_code', 'LIKE', '5%')
+        $expenseAccounts = ChartOfAccount::where('account_code', 'LIKE', '5%')
             ->where('account_code', 'NOT LIKE', '511%')
             ->where('is_group', false)
             ->where('is_active', true)
@@ -768,7 +785,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         // Dynamically resolve predefined expense account IDs from account codes
         $predefinedExpenseAccountCodes = ['5272', '5252', '5262', '5292', '1161', '5282', '5223', '5221'];
-        $predefinedAccountsMap = \App\Models\ChartOfAccount::whereIn('account_code', $predefinedExpenseAccountCodes)
+        $predefinedAccountsMap = ChartOfAccount::whereIn('account_code', $predefinedExpenseAccountCodes)
             ->pluck('id', 'account_code')
             ->toArray();
 
@@ -786,19 +803,19 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         return view('sales-settlements.edit', [
             'settlement' => $salesSettlement,
-            'suppliers' => \App\Models\Supplier::where('disabled', false)
+            'suppliers' => Supplier::where('disabled', false)
                 ->orderBy('supplier_name')
                 ->get(['id', 'supplier_name']),
             'expenseAccounts' => $expenseAccounts,
             'customers' => $customers,
-            'bankAccounts' => \App\Models\BankAccount::where('is_active', true)
+            'bankAccounts' => BankAccount::where('is_active', true)
                 ->orderBy('account_name')
                 ->get(['id', 'account_name', 'bank_name', 'account_number']),
-            'powderProducts' => \App\Models\Product::where('is_powder', true)
+            'powderProducts' => Product::where('is_powder', true)
                 ->where('is_active', true)
                 ->orderBy('product_name')
                 ->get(['id', 'product_code', 'product_name', 'expiry_price']),
-            'liquidProducts' => \App\Models\Product::where('is_powder', false)
+            'liquidProducts' => Product::where('is_powder', false)
                 ->where('is_active', true)
                 ->orderBy('product_name')
                 ->get(['id', 'product_code', 'product_name', 'expiry_price']),
@@ -1191,7 +1208,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
         }
 
         foreach ($payload['bank_slips'] as $slip) {
-            \App\Models\SalesSettlementBankSlip::create([
+            SalesSettlementBankSlip::create([
                 'sales_settlement_id' => $settlement->id,
                 'employee_id' => $goodsIssue->employee_id,
                 'bank_account_id' => $slip['bank_account_id'],

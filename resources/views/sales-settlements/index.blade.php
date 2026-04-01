@@ -213,6 +213,21 @@
                 </select>
             </div>
 
+            @role('super-admin|admin')
+            <div>
+                <x-label for="filter_created_by" value="Created By" />
+                <select id="filter_created_by" name="filter[created_by]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
+                    <option value="">All Users</option>
+                    @foreach($creators as $creator)
+                        <option value="{{ $creator->id }}" {{ request('filter.created_by') == $creator->id ? 'selected' : '' }}>
+                            {{ $creator->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            @endrole
+
         </div>
     </x-filter-section>
 
@@ -285,6 +300,9 @@
                                 <th class="text-center">Expenses</th>
                                 <th class="text-center">Net Profit</th>
 
+                                @role('super-admin|admin')
+                                <th class="text-center no-print">Created By</th>
+                                @endrole
                                 <th class="text-center no-print">Status</th>
                             </tr>
                         </thead>
@@ -372,6 +390,12 @@
                                         class="text-right tabular-nums font-bold {{ $netProfit > 0 ? 'text-green-700' : 'text-red-700' }}">
                                         {{ number_format($netProfit, 2) }}
                                     </td>
+
+                                    @role('super-admin|admin')
+                                    <td class="text-center no-print text-black">
+                                        {{ $settlement->creator->name ?? 'N/A' }}
+                                    </td>
+                                    @endrole
 
                                     <td class="text-center no-print relative overflow-visible group">
                                         <x-tooltip :text="ucfirst($settlement->status)">
@@ -600,6 +624,11 @@
                 $('#filter_vehicle_id').select2({
                     width: '100%',
                     placeholder: "All Vehicles",
+                    allowClear: true
+                });
+                $('#filter_created_by').select2({
+                    width: '100%',
+                    placeholder: "All Users",
                     allowClear: true
                 });
             });

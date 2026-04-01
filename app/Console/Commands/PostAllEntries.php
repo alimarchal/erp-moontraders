@@ -14,16 +14,16 @@ use App\Services\ClaimRegisterService;
 use App\Services\ExpenseDetailService;
 use App\Services\InventoryService;
 use App\Services\LedgerRegisterService;
-use Illuminate\Console\Attributes\Description;
-use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
-#[Signature('app:post-all-entries')]
-#[Description('Fix all unposted entry dates to 2026-03-31 17:00:00 and post them')]
 class PostAllEntries extends Command
 {
+    protected $signature = 'app:post-all-entries';
+
+    protected $description = 'Fix all unposted entry dates to 2026-03-31 17:00:00 and post them';
+
     public function handle(
         LedgerRegisterService $ledgerService,
         ClaimRegisterService $claimService,

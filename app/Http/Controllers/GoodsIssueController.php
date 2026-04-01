@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreGoodsIssueRequest;
 use App\Http\Requests\UpdateGoodsIssueRequest;
+use App\Models\ChartOfAccount;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
@@ -240,8 +241,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 'supplier_id' => $supplierId,
                 'issued_by' => auth()->id(),
                 // Resolve default GL accounts from COA codes for this row (stored on the record)
-                'stock_in_hand_account_id' => optional(\App\Models\ChartOfAccount::where('account_code', '1151')->first())->id,
-                'van_stock_account_id' => optional(\App\Models\ChartOfAccount::where('account_code', '1155')->first())->id,
+                'stock_in_hand_account_id' => optional(ChartOfAccount::where('account_code', '1151')->first())->id,
+                'van_stock_account_id' => optional(ChartOfAccount::where('account_code', '1155')->first())->id,
                 'status' => 'draft',
                 'total_quantity' => $totalQuantity,
                 'total_value' => $totalValue,
@@ -573,13 +574,15 @@ class GoodsIssueController extends Controller implements HasMiddleware
     /**
      * Get vehicles filtered by employee (AJAX endpoint).
      * Returns vehicles belonging to the given employee + Walk vehicles (no employee assigned).
+     * Some legacy data stores unassigned employee as 0 instead of NULL.
      */
     public function getVehiclesByEmployee(Employee $employee): JsonResponse
     {
         $vehicles = Vehicle::where('is_active', true)
             ->where(function ($query) use ($employee) {
                 $query->where('employee_id', $employee->id)
-                    ->orWhereNull('employee_id');
+                    ->orWhereNull('employee_id')
+                    ->orWhere('employee_id', 0);
             })
             ->orderBy('vehicle_number')
             ->get(['id', 'vehicle_number', 'vehicle_type', 'employee_id']);

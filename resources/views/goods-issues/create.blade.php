@@ -643,7 +643,7 @@
                 }
 
                 try {
-                    const response = await fetch(`/api/employees/${employeeId}/vehicles`);
+                    const response = await fetch(`{{ url('api/employees') }}/${employeeId}/vehicles`);
                     const vehicles = await response.json();
 
                     const $vehicle = $('#vehicle_id');
@@ -653,8 +653,8 @@
 
                     $vehicle.empty().append('<option value="">Select Vehicle</option>');
 
-                    const assignedVehicles = vehicles.filter(v => v.employee_id !== null);
-                    const walkVehicles = vehicles.filter(v => v.employee_id === null);
+                    const walkVehicles = vehicles.filter(v => v.employee_id === null || v.employee_id === 0 || v.employee_id === '0');
+                    const assignedVehicles = vehicles.filter(v => !(v.employee_id === null || v.employee_id === 0 || v.employee_id === '0'));
 
                     if (assignedVehicles.length > 0) {
                         const $group1 = $('<optgroup label="Salesman Vehicles"></optgroup>');

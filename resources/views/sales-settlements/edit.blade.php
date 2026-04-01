@@ -1787,7 +1787,8 @@
                 const actualPhysicalCash = cashSalesAmount;
                 const totalDeposited = actualPhysicalCash + bankSlipsAmount;
 
-                // Shortage/Excess (Physical Cash vs Expected Cash)
+                // Shortage/Excess (Physical Cash + Bank Slips vs Expected Cash)
+                // Bank recoveries excluded from both sides - expected only includes cash sales + cash recoveries
                 const shortExcess = totalDeposited - expectedCashNet;
 
                 document.getElementById('summary_total_sale').value = totalSale.toFixed(2);

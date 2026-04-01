@@ -267,6 +267,7 @@
         $bankSlipsTotal = (float) $settlement->bankSlips->sum('amount');
 
         // Shortage/Excess (Physical Cash + Bank Slips vs Expected Cash)
+        // Bank recoveries are excluded from both sides - expected only includes cash sales + cash recoveries
         $shortExcess = ($actualPhysicalCash + $bankSlipsTotal) - $expectedCashNet;
 
         // Profit Analysis

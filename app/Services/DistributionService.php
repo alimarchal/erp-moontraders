@@ -1346,6 +1346,7 @@ class DistributionService
         $bankSlipsTotal = (float) $settlement->bankSlips->sum('amount');
 
         $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries - $totalExpenses;
+        // Bank recoveries excluded from both sides - expected only includes cash sales + cash recoveries
         $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal;
         $shortExcess = round($totalSubmitted - $expectedClearingBalance, 2);
 

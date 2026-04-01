@@ -33,7 +33,7 @@
                     <option value="">All Vehicles</option>
                     @foreach ($vehicles as $vehicle)
                         <option value="{{ $vehicle->id }}" {{ request('filter.vehicle_id') == $vehicle->id ? 'selected' : ''
-                                                                                                                }}>
+                                                                                                                    }}>
                             {{ $vehicle->vehicle_number }} ({{ $vehicle->vehicle_type }})
                         </option>
                     @endforeach
@@ -102,7 +102,10 @@
                     </div>
                 </td>
                 <td class="py-0 px-2 text-center">
-                    {{ \Carbon\Carbon::parse($gi->issue_date)->format('d M Y') }}
+                    <div>{{ \Carbon\Carbon::parse($gi->issue_date)->format('d M Y') }}</div>
+                    @if ($gi->issuedBy)
+                        <div class="text-xs text-gray-500">{{ $gi->issuedBy->name }}</div>
+                    @endif
                 </td>
                 <td class="py-0 px-2">
                     {{ $gi->warehouse->warehouse_name }}
@@ -128,8 +131,8 @@
                 <td class="py-0 px-2 text-center">
                     <span
                         class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full
-                                                                                                                {{ $gi->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                                                                                                {{ $gi->status === 'issued' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                                                                                                    {{ $gi->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                                                                                                    {{ $gi->status === 'issued' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                         {{ ucfirst($gi->status) }}
                     </span>
                 </td>
@@ -187,11 +190,7 @@
         </x-slot>
     </x-data-table>
 
-    <x-alpine-confirmation-modal
-        event-name="open-delete-gi-modal"
-        title="Delete Goods Issue"
+    <x-alpine-confirmation-modal event-name="open-delete-gi-modal" title="Delete Goods Issue"
         message="Are you sure you want to delete this draft goods issue? This action cannot be undone."
-        confirm-button-text="Delete"
-        csrf-method="DELETE"
-    />
+        confirm-button-text="Delete" csrf-method="DELETE" />
 </x-app-layout>

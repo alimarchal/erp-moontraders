@@ -42,7 +42,8 @@ class OpeningStockImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            $invoicePrice = round((float) ($row['invoice_price'] ?? 0), 2);
+            $rawInvoicePrice = (float) ($row['invoice_price'] ?? 0);
+            $invoicePrice = round($rawInvoicePrice, 2);
             if ($invoicePrice <= 0) {
                 $this->rowErrors[$rowNumber] = "Row {$rowNumber}: Invoice Price must be greater than 0.";
 
@@ -63,7 +64,9 @@ class OpeningStockImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            $extendedValue = round($invoicePrice * $quantity, 2);
+            // Use raw (unrounded) invoice price for extended value to avoid
+            // cumulative rounding drift vs. the source Excel totals.
+            $extendedValue = round($rawInvoicePrice * $quantity, 2);
 
             $this->processedItems[] = [
                 'product_id' => $product->id,

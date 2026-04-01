@@ -80,7 +80,10 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
 
         // Daily Cash & Investment calculations
         $dailyCash = $this->getDailyCash($date, $supplierId);
-        $totalInvestment = $currentTotal + $dailyCash;
+        $dailyBankSlips = $this->getDailyBankSlips($date, $supplierId);
+        $dailyBankTransfers = $this->getDailyBankTransfers($date, $supplierId);
+        $dailyChequePayments = $this->getDailyChequePayments($date, $supplierId);
+        $totalInvestment = $currentTotal + $dailyCash + $dailyBankSlips + $dailyBankTransfers + $dailyChequePayments;
         $bankOnline = $this->getBankOnline($date, $supplierId);
         $increaseInInvestment = $totalInvestment - $previousTotal - $bankOnline;
 
@@ -134,6 +137,9 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             'previousDate',
             'previousTotal',
             'dailyCash',
+            'dailyBankSlips',
+            'dailyBankTransfers',
+            'dailyChequePayments',
             'totalInvestment',
             'bankOnline',
             'increaseInInvestment',
@@ -489,5 +495,47 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         }
 
         return (float) $query->sum('online_amount');
+    }
+
+    private function getDailyBankSlips(string $date, ?int $supplierId): float
+    {
+        $query = DB::table('sales_settlement_bank_slips as bs')
+            ->join('sales_settlements as ss', 'bs.sales_settlement_id', '=', 'ss.id')
+            ->whereDate('ss.settlement_date', $date)
+            ->whereNull('ss.deleted_at');
+
+        if ($supplierId) {
+            $query->where('ss.supplier_id', $supplierId);
+        }
+
+        return (float) $query->sum('bs.amount');
+    }
+
+    private function getDailyBankTransfers(string $date, ?int $supplierId): float
+    {
+        $query = DB::table('sales_settlement_bank_transfers as bt')
+            ->join('sales_settlements as ss', 'bt.sales_settlement_id', '=', 'ss.id')
+            ->whereDate('ss.settlement_date', $date)
+            ->whereNull('ss.deleted_at');
+
+        if ($supplierId) {
+            $query->where('ss.supplier_id', $supplierId);
+        }
+
+        return (float) $query->sum('bt.amount');
+    }
+
+    private function getDailyChequePayments(string $date, ?int $supplierId): float
+    {
+        $query = DB::table('sales_settlement_cheques as sc')
+            ->join('sales_settlements as ss', 'sc.sales_settlement_id', '=', 'ss.id')
+            ->whereDate('ss.settlement_date', $date)
+            ->whereNull('ss.deleted_at');
+
+        if ($supplierId) {
+            $query->where('ss.supplier_id', $supplierId);
+        }
+
+        return (float) $query->sum('sc.amount');
     }
 }

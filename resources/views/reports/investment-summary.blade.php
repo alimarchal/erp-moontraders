@@ -324,8 +324,26 @@
                                         <td class="text-right px-2 py-1 font-mono">{{ number_format($dailyCash, 2) }}
                                         </td>
                                     </tr>
+                                    <tr>
+                                        <td class="text-center px-1 py-1">9</td>
+                                        <td class="px-2 py-1">Bank Slips / Deposits</td>
+                                        <td class="text-right px-2 py-1 font-mono">{{ number_format($dailyBankSlips, 2) }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center px-1 py-1">10</td>
+                                        <td class="px-2 py-1">Bank Transfers / Online</td>
+                                        <td class="text-right px-2 py-1 font-mono">{{ number_format($dailyBankTransfers, 2) }}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-center px-1 py-1">11</td>
+                                        <td class="px-2 py-1">Cheque Payments</td>
+                                        <td class="text-right px-2 py-1 font-mono">{{ number_format($dailyChequePayments, 2) }}
+                                        </td>
+                                    </tr>
                                     <tr class="bg-gray-50 font-bold">
-                                        <td class="text-center px-1 py-1 border-t border-black">9</td>
+                                        <td class="text-center px-1 py-1 border-t border-black">12</td>
                                         <td class="px-2 py-1 border-t border-black">Total Investment as on
                                             {{ $formattedDate }}
                                         </td>
@@ -334,7 +352,7 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center px-1 py-1">10</td>
+                                        <td class="text-center px-1 py-1">13</td>
                                         <td class="px-2 py-1">Total Main Investment as on {{ $formattedPreviousDate }}
                                         </td>
                                         <td class="text-right px-2 py-1 font-mono">
@@ -342,13 +360,13 @@
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td class="text-center px-1 py-1">11</td>
+                                        <td class="text-center px-1 py-1">14</td>
                                         <td class="px-2 py-1">Bank Online as on {{ $formattedDate }}</td>
                                         <td class="text-right px-2 py-1 font-mono">{{ number_format($bankOnline, 2) }}
                                         </td>
                                     </tr>
                                     <tr class="bg-gray-50 font-bold">
-                                        <td class="text-center px-1 py-1 border-t border-black">12</td>
+                                        <td class="text-center px-1 py-1 border-t border-black">15</td>
                                         <td class="px-2 py-1 border-t border-black">Increase in Investment as on
                                             {{ $formattedDate }}
                                         </td>

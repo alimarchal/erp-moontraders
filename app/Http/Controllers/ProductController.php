@@ -196,6 +196,8 @@ class ProductController extends Controller implements HasMiddleware
                 ? (bool) $payload['is_powder']
                 : $product->is_powder;
 
+            $oldSellingPrice = $product->unit_sell_price;
+
             $updated = $product->update($payload);
 
             if (! $updated) {
@@ -204,6 +206,51 @@ class ProductController extends Controller implements HasMiddleware
                 return back()
                     ->withInput()
                     ->with('info', 'No changes were made to the product.');
+            }
+
+            // When unit_sell_price changes, cascade to batches with available stock
+            if ($product->unit_sell_price !== null && (float) $product->unit_sell_price !== (float) $oldSellingPrice) {
+                $newPrice = $product->unit_sell_price;
+
+                // Find batch IDs that still have stock remaining (non-promotional only)
+                $batchIdsWithStock = DB::table('stock_valuation_layers')
+                    ->where('product_id', $product->id)
+                    ->where('is_depleted', false)
+                    ->where('quantity_remaining', '>', 0)
+                    ->where('is_promotional', false)
+                    ->whereNotNull('stock_batch_id')
+                    ->pluck('stock_batch_id')
+                    ->unique();
+
+                if ($batchIdsWithStock->isNotEmpty()) {
+                    // Update stock_batches that have available stock
+                    DB::table('stock_batches')
+                        ->whereIn('id', $batchIdsWithStock)
+                        ->where('is_promotional', false)
+                        ->update(['selling_price' => $newPrice]);
+
+                    // Update current_stock_by_batch for these batches
+                    DB::table('current_stock_by_batch')
+                        ->whereIn('stock_batch_id', $batchIdsWithStock)
+                        ->update(['selling_price' => $newPrice]);
+                }
+
+                // Update goods_receipt_note_items where stock is still available
+                $activeGrnItemIds = DB::table('stock_valuation_layers')
+                    ->where('product_id', $product->id)
+                    ->where('is_depleted', false)
+                    ->where('quantity_remaining', '>', 0)
+                    ->where('is_promotional', false)
+                    ->whereNotNull('grn_item_id')
+                    ->pluck('grn_item_id')
+                    ->unique();
+
+                if ($activeGrnItemIds->isNotEmpty()) {
+                    DB::table('goods_receipt_note_items')
+                        ->whereIn('id', $activeGrnItemIds)
+                        ->where('is_promotional', false)
+                        ->update(['selling_price' => $newPrice]);
+                }
             }
 
             DB::commit();

@@ -353,10 +353,10 @@
                                     </tr>
                                     <tr>
                                         <td class="text-center px-1 py-1">13</td>
-                                        <td class="px-2 py-1">Total Main Investment as on {{ $formattedPreviousDate }}
+                                        <td class="px-2 py-1">Total Investment as on {{ $formattedPreviousDate }}
                                         </td>
                                         <td class="text-right px-2 py-1 font-mono">
-                                            {{ number_format($previousTotal, 2) }}
+                                            {{ number_format($previousTotalInvestment, 2) }}
                                         </td>
                                     </tr>
                                     <tr>

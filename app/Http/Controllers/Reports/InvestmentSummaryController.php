@@ -77,6 +77,11 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         $previousLedgerAmount = $this->getLedgerAmount($supplierId, $previousDate);
 
         $previousTotal = $previousPowderExpiry + $previousLiquidExpiry + $previousClaimAmount + $previousStockAmount + $previousCreditAmount + $previousLedgerAmount;
+        $previousTotalInvestment = $previousTotal
+            + $this->getDailyCash($previousDate, $supplierId)
+            + $this->getDailyBankSlips($previousDate, $supplierId)
+            + $this->getDailyBankTransfers($previousDate, $supplierId)
+            + $this->getDailyChequePayments($previousDate, $supplierId);
 
         // Daily Cash & Investment calculations
         $dailyCash = $this->getDailyCash($date, $supplierId);
@@ -85,7 +90,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         $dailyChequePayments = $this->getDailyChequePayments($date, $supplierId);
         $totalInvestment = $currentTotal + $dailyCash + $dailyBankSlips + $dailyBankTransfers + $dailyChequePayments;
         $bankOnline = $this->getBankOnline($date, $supplierId);
-        $increaseInInvestment = $totalInvestment - $previousTotal - $bankOnline;
+        $increaseInInvestment = $totalInvestment - $previousTotalInvestment - $bankOnline;
 
         // Bank/Cash summary
         $bankOpeningAmount = 0;
@@ -135,7 +140,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             'ledgerAmount',
             'currentTotal',
             'previousDate',
-            'previousTotal',
+            'previousTotalInvestment',
             'dailyCash',
             'dailyBankSlips',
             'dailyBankTransfers',

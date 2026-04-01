@@ -84,6 +84,22 @@ class SalesSettlementPolicy
     }
 
     /**
+     * Determine whether the user can revert the posted settlement.
+     */
+    public function revert(User $user, SalesSettlement $settlement): bool
+    {
+        if ($settlement->status !== 'posted') {
+            return false;
+        }
+
+        if (! $user->can('sales-settlement-revert')) {
+            return false;
+        }
+
+        return $this->hasOwnership($user, $settlement);
+    }
+
+    /**
      * Check if the user owns the settlement or has "view-all" permission.
      */
     private function hasOwnership(User $user, SalesSettlement $settlement): bool

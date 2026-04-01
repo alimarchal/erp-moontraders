@@ -32,10 +32,13 @@ use App\Models\VanStockBalance;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
+use App\Services\SalesSettlementRevertService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -53,6 +56,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             new Middleware('permission:sales-settlement-edit', only: ['edit', 'update']),
             new Middleware('permission:sales-settlement-delete', only: ['destroy']),
             new Middleware('permission:sales-settlement-post', only: ['post']),
+            new Middleware('permission:sales-settlement-revert', only: ['revert']),
         ];
     }
 
@@ -1575,6 +1579,38 @@ class SalesSettlementController extends Controller implements HasMiddleware
             return redirect()
                 ->route('sales-settlements.show', $salesSettlement->id)
                 ->with('success', $result['message']);
+        }
+
+        return redirect()
+            ->back()
+            ->with('error', $result['message']);
+    }
+
+    /**
+     * Revert a posted settlement back to draft, reversing all inventory, ledger, and GL impacts.
+     */
+    public function revert(Request $request, SalesSettlement $salesSettlement)
+    {
+        $this->authorize('revert', $salesSettlement);
+
+        $request->validate(['password' => 'required|string']);
+
+        if (! Hash::check($request->password, auth()->user()->password)) {
+            Log::warning("Failed SS revert attempt for {$salesSettlement->settlement_number} - invalid password by user: ".auth()->user()->name);
+
+            return redirect()
+                ->back()
+                ->with('error', 'Invalid password. Reverting a settlement requires your password confirmation.');
+        }
+
+        Log::info("SS revert password confirmed for {$salesSettlement->settlement_number} by user: ".auth()->user()->name.' (ID: '.auth()->id().')');
+
+        $result = app(SalesSettlementRevertService::class)->revert($salesSettlement);
+
+        if ($result['success']) {
+            return redirect()
+                ->route('sales-settlements.show', $salesSettlement->id)
+                ->with('status', $result['message']);
         }
 
         return redirect()

@@ -49,6 +49,8 @@ class SalesSettlement extends Model
         'journal_entry_id',
         'notes',
         'posted_at',
+        'reverted_at',
+        'reverted_by',
     ];
 
     protected $casts = [
@@ -72,6 +74,7 @@ class SalesSettlement extends Model
         'total_cogs' => 'decimal:2',
         'cash_to_deposit' => 'decimal:2',
         'posted_at' => 'datetime',
+        'reverted_at' => 'datetime',
     ];
 
     public function goodsIssue(): BelongsTo

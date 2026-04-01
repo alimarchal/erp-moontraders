@@ -40,6 +40,25 @@
                         </button>
                     @endcan
                 @endif
+                @if ($settlement->status === 'posted')
+                    @can('sales-settlement-revert')
+                        <form id="revertSettlementForm"
+                            action="{{ route('sales-settlements.revert', $settlement->id) }}" method="POST"
+                            onsubmit="return confirmRevertSettlement();" class="inline-block">
+                            @csrf
+                            <input type="hidden" id="revert_password" name="password" value="">
+                            <button type="submit"
+                                class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150"
+                                title="Revert Settlement">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                                    stroke-width="1.5" stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                                </svg>
+                            </button>
+                        </form>
+                    @endcan
+                @endif
                 <a href="javascript:window.location.reload();"
                     class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
                     title="Refresh">
@@ -1642,6 +1661,35 @@
                         <p class="font-medium text-gray-800">This action cannot be undone.</p>
                     </div>
                 </x-alpine-confirmation-modal>
+            @endcan
+        @endif
+
+        @if ($settlement->status === 'posted')
+            @can('sales-settlement-revert')
+                <x-password-confirm-modal id="revertSettlementModal" title="Confirm Settlement Revert"
+                    message="WARNING: This will reverse ALL stock movements, inventory ledger entries, customer balances, and GL entries for this settlement and reset it to DRAFT."
+                    warningClass="text-red-600" confirmButtonText="Confirm Revert"
+                    confirmButtonClass="bg-red-600 hover:bg-red-700" />
+
+                <script>
+                    function confirmRevertSettlement() {
+                        if (!confirm('Are you sure you want to REVERT this Sales Settlement?\n\nAll inventory, ledger, and GL entries will be reversed. This action cannot be undone.')) {
+                            return false;
+                        }
+
+                        window.showPasswordModal('revertSettlementModal');
+                        return false;
+                    }
+
+                    document.addEventListener('passwordConfirmed', function(event) {
+                        const { modalId, password } = event.detail;
+
+                        if (modalId === 'revertSettlementModal') {
+                            document.getElementById('revert_password').value = password;
+                            document.getElementById('revertSettlementForm').submit();
+                        }
+                    });
+                </script>
             @endcan
         @endif
 </x-app-layout>

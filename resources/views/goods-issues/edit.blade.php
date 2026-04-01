@@ -645,21 +645,23 @@
 
                 if (preselectId) {
                     $employee.val(preselectId).trigger('change.select2');
-                    await loadVehiclesByEmployee(preselectId, existingVehicleId);
                 }
             } catch (error) {
                 console.error('Error loading employees:', error);
             }
         }
 
-        async function loadVehiclesByEmployee(employeeId, preselectId = null) {
-            if (!employeeId) {
+        async function loadVehiclesBySuppliers(supplierIds, preselectId = null) {
+            if (!supplierIds || supplierIds.length === 0) {
                 resetVehicleDropdown();
                 return;
             }
 
+            const params = new URLSearchParams();
+            supplierIds.forEach(id => params.append('supplier_ids[]', id));
+
             try {
-                const response = await fetch(`{{ url('api/employees') }}/${employeeId}/vehicles`);
+                const response = await fetch(`{{ url('api/vehicles/by-suppliers') }}?${params.toString()}`);
                 const vehicles = await response.json();
 
                 const $vehicle = $('#vehicle_id');
@@ -669,26 +671,10 @@
 
                 $vehicle.empty().append('<option value="">Select Vehicle</option>');
 
-                const walkVehicles = vehicles.filter(v => v.employee_id === null || v.employee_id === 0 || v.employee_id === '0');
-                const assignedVehicles = vehicles.filter(v => !(v.employee_id === null || v.employee_id === 0 || v.employee_id === '0'));
-
-                if (assignedVehicles.length > 0) {
-                    const $group1 = $('<optgroup label="Salesman Vehicles"></optgroup>');
-                    assignedVehicles.forEach(v => {
-                        const selected = preselectId && String(v.id) === String(preselectId) ? ' selected' : '';
-                        $group1.append(`<option value="${v.id}"${selected}>${v.vehicle_number} (${v.vehicle_type || 'N/A'})</option>`);
-                    });
-                    $vehicle.append($group1);
-                }
-
-                if (walkVehicles.length > 0) {
-                    const $group2 = $('<optgroup label="Walk Vehicles"></optgroup>');
-                    walkVehicles.forEach(v => {
-                        const selected = preselectId && String(v.id) === String(preselectId) ? ' selected' : '';
-                        $group2.append(`<option value="${v.id}"${selected}>${v.vehicle_number} (${v.vehicle_type || 'N/A'}) - Walk</option>`);
-                    });
-                    $vehicle.append($group2);
-                }
+                vehicles.forEach(v => {
+                    const selected = preselectId && String(v.id) === String(preselectId) ? ' selected' : '';
+                    $vehicle.append(`<option value="${v.id}"${selected}>${v.vehicle_number} (${v.vehicle_type || 'N/A'})</option>`);
+                });
 
                 $vehicle.prop('disabled', false);
                 $vehicle.select2({ placeholder: 'Select Vehicle', allowClear: false, width: '100%' });
@@ -931,24 +917,17 @@
                     width: '100%'
                 });
 
-                // Supplier change → load employees + products (for user-initiated changes)
+                // Supplier change → load employees, vehicles + products (for user-initiated changes)
                 $('#supplier_ids').on('change', function () {
                     const val = $(this).val();
                     const supplierIds = val ? (Array.isArray(val) ? val : [val]) : [];
 
                     if (!$(this).data('initializing')) {
                         loadEmployeesBySuppliers(supplierIds);
+                        loadVehiclesBySuppliers(supplierIds);
                         loadProductsBySuppliers(supplierIds).then(() => {
                             refreshAllProductSelects();
                         });
-                    }
-                });
-
-                // Employee change → load vehicles (for user-initiated changes)
-                $('#employee_id').on('change', function () {
-                    if (!$(this).data('initializing')) {
-                        const employeeId = $(this).val();
-                        loadVehiclesByEmployee(employeeId);
                     }
                 });
 
@@ -961,6 +940,7 @@
 
                     await loadProductsBySuppliers(initialSupplierIds);
                     await loadEmployeesBySuppliers(initialSupplierIds, existingEmployeeId);
+                    await loadVehiclesBySuppliers(initialSupplierIds, existingVehicleId);
 
                     $('#supplier_ids').data('initializing', false);
                     $('#employee_id').data('initializing', false);

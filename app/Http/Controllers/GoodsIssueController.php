@@ -572,20 +572,17 @@ class GoodsIssueController extends Controller implements HasMiddleware
     }
 
     /**
-     * Get vehicles filtered by employee (AJAX endpoint).
-     * Returns vehicles belonging to the given employee + Walk vehicles (no employee assigned).
-     * Some legacy data stores unassigned employee as 0 instead of NULL.
+     * Get vehicles filtered by supplier IDs (AJAX endpoint).
+     * Driver assignment does not affect which vehicles appear — all active supplier vehicles are returned.
      */
-    public function getVehiclesByEmployee(Employee $employee): JsonResponse
+    public function getVehiclesBySuppliers(Request $request): JsonResponse
     {
+        $supplierIds = $request->query('supplier_ids', []);
+
         $vehicles = Vehicle::where('is_active', true)
-            ->where(function ($query) use ($employee) {
-                $query->where('employee_id', $employee->id)
-                    ->orWhereNull('employee_id')
-                    ->orWhere('employee_id', 0);
-            })
+            ->when(! empty($supplierIds), fn ($q) => $q->whereIn('supplier_id', $supplierIds))
             ->orderBy('vehicle_number')
-            ->get(['id', 'vehicle_number', 'vehicle_type', 'employee_id']);
+            ->get(['id', 'vehicle_number', 'vehicle_type', 'supplier_id', 'employee_id']);
 
         return response()->json($vehicles);
     }

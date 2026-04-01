@@ -63,11 +63,11 @@ use App\Http\Controllers\Reports\SchemeDiscountReportController;
 use App\Http\Controllers\Reports\ShopListController;
 use App\Http\Controllers\Reports\SkuFmrAmrController;
 use App\Http\Controllers\Reports\SkuRatesController;
-use App\Http\Controllers\Reports\VehicleReportController;
 use App\Http\Controllers\Reports\StockAvailabilityReportController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\Reports\VanStockBatchReportController;
 use App\Http\Controllers\Reports\VanStockLedgerController;
+use App\Http\Controllers\Reports\VehicleReportController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SalesSettlementController;
@@ -437,8 +437,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('api.warehouses.products.stock');
     Route::get('api/employees/by-suppliers', [GoodsIssueController::class, 'getEmployeesBySuppliers'])
         ->name('api.employees.by-suppliers');
-    Route::get('api/employees/{employee}/vehicles', [GoodsIssueController::class, 'getVehiclesByEmployee'])
-        ->name('api.employees.vehicles');
+    Route::get('api/vehicles/by-suppliers', [GoodsIssueController::class, 'getVehiclesBySuppliers'])
+        ->name('api.vehicles.by-suppliers');
     Route::get('api/products/by-suppliers', [GoodsIssueController::class, 'getProductsBySuppliers'])
         ->name('api.products.by-suppliers');
 

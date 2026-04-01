@@ -43,10 +43,10 @@ class StoreGoodsIssueRequest extends FormRequest
                         return;
                     }
 
-                    $employeeId = $this->input('employee_id');
+                    $supplierIds = (array) $this->input('supplier_ids');
 
-                    if ($vehicle->employee_id !== null && (int) $vehicle->employee_id !== (int) $employeeId) {
-                        $fail('The selected vehicle does not belong to the selected salesman.');
+                    if (! empty($supplierIds) && $vehicle->supplier_id !== null && ! in_array((int) $vehicle->supplier_id, array_map('intval', $supplierIds))) {
+                        $fail('The selected vehicle does not belong to the selected supplier.');
                     }
                 },
                 function ($attribute, $value, $fail) {

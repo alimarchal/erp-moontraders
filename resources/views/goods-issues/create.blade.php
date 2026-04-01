@@ -636,14 +636,17 @@
                 }
             }
 
-            async function loadVehiclesByEmployee(employeeId) {
-                if (!employeeId) {
+            async function loadVehiclesBySuppliers(supplierIds) {
+                if (!supplierIds || supplierIds.length === 0) {
                     resetVehicleDropdown();
                     return;
                 }
 
+                const params = new URLSearchParams();
+                supplierIds.forEach(id => params.append('supplier_ids[]', id));
+
                 try {
-                    const response = await fetch(`{{ url('api/employees') }}/${employeeId}/vehicles`);
+                    const response = await fetch(`{{ url('api/vehicles/by-suppliers') }}?${params.toString()}`);
                     const vehicles = await response.json();
 
                     const $vehicle = $('#vehicle_id');
@@ -653,24 +656,9 @@
 
                     $vehicle.empty().append('<option value="">Select Vehicle</option>');
 
-                    const walkVehicles = vehicles.filter(v => v.employee_id === null || v.employee_id === 0 || v.employee_id === '0');
-                    const assignedVehicles = vehicles.filter(v => !(v.employee_id === null || v.employee_id === 0 || v.employee_id === '0'));
-
-                    if (assignedVehicles.length > 0) {
-                        const $group1 = $('<optgroup label="Salesman Vehicles"></optgroup>');
-                        assignedVehicles.forEach(v => {
-                            $group1.append(`<option value="${v.id}">${v.vehicle_number} (${v.vehicle_type || 'N/A'})</option>`);
-                        });
-                        $vehicle.append($group1);
-                    }
-
-                    if (walkVehicles.length > 0) {
-                        const $group2 = $('<optgroup label="Walk Vehicles"></optgroup>');
-                        walkVehicles.forEach(v => {
-                            $group2.append(`<option value="${v.id}">${v.vehicle_number} (${v.vehicle_type || 'N/A'}) - Walk</option>`);
-                        });
-                        $vehicle.append($group2);
-                    }
+                    vehicles.forEach(v => {
+                        $vehicle.append(`<option value="${v.id}">${v.vehicle_number} (${v.vehicle_type || 'N/A'})</option>`);
+                    });
 
                     $vehicle.prop('disabled', false);
                     $vehicle.select2({ placeholder: 'Select Vehicle', allowClear: false, width: '100%' });
@@ -902,20 +890,15 @@
                         width: '100%'
                     });
 
-                    // Supplier change → load employees + products
+                    // Supplier change → load employees, vehicles + products
                     $('#supplier_ids').on('change', function () {
                         const val = $(this).val();
                         const supplierIds = val ? (Array.isArray(val) ? val : [val]) : [];
                         loadEmployeesBySuppliers(supplierIds);
+                        loadVehiclesBySuppliers(supplierIds);
                         loadProductsBySuppliers(supplierIds).then(() => {
                             refreshAllProductSelects();
                         });
-                    });
-
-                    // Employee change → load vehicles
-                    $('#employee_id').on('change', function () {
-                        const employeeId = $(this).val();
-                        loadVehiclesByEmployee(employeeId);
                     });
 
                     // Initialize product selects for existing items
@@ -934,18 +917,17 @@
                     if (supplierIds.length > 0 && (oldEmployeeId || oldItems.length > 0)) {
                         Promise.all([
                             loadEmployeesBySuppliers(supplierIds),
+                            loadVehiclesBySuppliers(supplierIds),
                             loadProductsBySuppliers(supplierIds),
                         ]).then(() => {
                             // Restore employee selection
                             if (oldEmployeeId) {
                                 $('#employee_id').val(oldEmployeeId).trigger('change.select2');
+                            }
 
-                                // Load vehicles for this employee then restore vehicle
-                                loadVehiclesByEmployee(oldEmployeeId).then(() => {
-                                    if (oldVehicleId) {
-                                        $('#vehicle_id').val(oldVehicleId).trigger('change.select2');
-                                    }
-                                });
+                            // Restore vehicle selection
+                            if (oldVehicleId) {
+                                $('#vehicle_id').val(oldVehicleId).trigger('change.select2');
                             }
 
                             // Restore product selects (allProducts is now populated)

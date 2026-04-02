@@ -234,6 +234,38 @@ it('does not cascade when unit_sell_price is unchanged', function () {
     expect((float) $batch->fresh()->selling_price)->toBe(90.00);
 });
 
+it('cascades to batches when stock exists only in current_stock_by_batch', function () {
+    $batch = StockBatch::factory()->create([
+        'product_id' => $this->product->id,
+        'selling_price' => 100.00,
+        'is_promotional' => false,
+        'status' => 'active',
+    ]);
+
+    CurrentStockByBatch::create([
+        'product_id' => $this->product->id,
+        'warehouse_id' => $this->warehouse->id,
+        'stock_batch_id' => $batch->id,
+        'quantity_on_hand' => 12,
+        'unit_cost' => 80.00,
+        'selling_price' => 100.00,
+        'is_promotional' => false,
+        'status' => 'active',
+        'last_updated' => now(),
+    ]);
+
+    $this->put(route('products.update', $this->product), [
+        'product_code' => $this->product->product_code,
+        'product_name' => $this->product->product_name,
+        'uom_id' => $this->uom->id,
+        'valuation_method' => 'FIFO',
+        'unit_sell_price' => 358.89,
+    ])->assertRedirect(route('products.index'));
+
+    expect((float) $batch->fresh()->selling_price)->toBe(358.89);
+    expect((float) CurrentStockByBatch::where('stock_batch_id', $batch->id)->first()->selling_price)->toBe(358.89);
+});
+
 it('only updates grn items with active stock valuation layers', function () {
     $grn = GoodsReceiptNote::factory()->create(['warehouse_id' => $this->warehouse->id, 'supplier_id' => $this->supplier->id]);
 

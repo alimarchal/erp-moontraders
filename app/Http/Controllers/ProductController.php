@@ -212,15 +212,26 @@ class ProductController extends Controller implements HasMiddleware
             if ($product->unit_sell_price !== null && (float) $product->unit_sell_price !== (float) $oldSellingPrice) {
                 $newPrice = $product->unit_sell_price;
 
-                // Find batch IDs that still have stock remaining (non-promotional only)
-                $batchIdsWithStock = DB::table('stock_valuation_layers')
+                // Find batch IDs with stock from both sources to avoid missing legacy/inconsistent rows.
+                $batchIdsFromValuation = DB::table('stock_valuation_layers')
                     ->where('product_id', $product->id)
                     ->where('is_depleted', false)
                     ->where('quantity_remaining', '>', 0)
                     ->where('is_promotional', false)
                     ->whereNotNull('stock_batch_id')
-                    ->pluck('stock_batch_id')
-                    ->unique();
+                    ->pluck('stock_batch_id');
+
+                $batchIdsFromCurrentStock = DB::table('current_stock_by_batch')
+                    ->where('product_id', $product->id)
+                    ->where('quantity_on_hand', '>', 0)
+                    ->where('is_promotional', false)
+                    ->whereNotNull('stock_batch_id')
+                    ->pluck('stock_batch_id');
+
+                $batchIdsWithStock = $batchIdsFromValuation
+                    ->merge($batchIdsFromCurrentStock)
+                    ->unique()
+                    ->values();
 
                 if ($batchIdsWithStock->isNotEmpty()) {
                     // Update stock_batches that have available stock
@@ -232,6 +243,7 @@ class ProductController extends Controller implements HasMiddleware
                     // Update current_stock_by_batch for these batches
                     DB::table('current_stock_by_batch')
                         ->whereIn('stock_batch_id', $batchIdsWithStock)
+                        ->where('is_promotional', false)
                         ->update(['selling_price' => $newPrice]);
                 }
 

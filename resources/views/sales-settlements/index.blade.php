@@ -226,6 +226,18 @@
                     @endforeach
                 </select>
             </div>
+            <div>
+                <x-label for="filter_supplier_id" value="Supplier" />
+                <select id="filter_supplier_id" name="filter[supplier_id]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full select2">
+                    <option value="">All Suppliers</option>
+                    @foreach($suppliers as $supplier)
+                        <option value="{{ $supplier->id }}" {{ request('filter.supplier_id') == $supplier->id ? 'selected' : '' }}>
+                            {{ $supplier->supplier_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
             @endrole
 
         </div>
@@ -255,6 +267,8 @@
                             $filtersText[] = 'Warehouse: ' . ($warehouses->firstWhere('id', request('filter.warehouse_id'))->warehouse_name ?? '');
                         if (request('filter.status'))
                             $filtersText[] = 'Status: ' . ucfirst(request('filter.status'));
+                        if (request('filter.supplier_id'))
+                            $filtersText[] = 'Supplier: ' . ($suppliers->firstWhere('id', request('filter.supplier_id'))->supplier_name ?? '');
                     @endphp
                     @if(count($filtersText) > 0)
                         <br>
@@ -274,6 +288,7 @@
                             <tr class="bg-gray-100">
                                 <th class="text-center">Sr#</th>
                                 <th class="text-center">Date</th>
+                                <th class="text-center">Supplier</th>
                                 <th class="text-center">Settlement #</th>
                                 <th class="text-center">Goods Issue #</th>
                                 <th class="text-center">
@@ -315,6 +330,10 @@
 
                                     <td class="text-center text-black">
                                         {{ $settlement->settlement_date->format('d-m-y') }}
+                                    </td>
+
+                                    <td class="text-left text-black">
+                                        {{ $settlement->supplier->supplier_name ?? '-' }}
                                     </td>
 
                                     <td class="text-center text-black print:text-black">
@@ -410,7 +429,7 @@
                         </tbody>
                         <tfoot class="bg-gray-100 font-extrabold sticky bottom-0">
                             <tr>
-                                <td colspan="6" class="py-2 px-2 text-right tabular-nums">
+                                <td colspan="7" class="py-2 px-2 text-right tabular-nums">
                                     Total ({{ $settlements->total() }}):
                                 </td>
                                 <td class="py-2 px-2 text-right tabular-nums">
@@ -629,6 +648,11 @@
                 $('#filter_created_by').select2({
                     width: '100%',
                     placeholder: "All Users",
+                    allowClear: true
+                });
+                $('#filter_supplier_id').select2({
+                    width: '100%',
+                    placeholder: "All Suppliers",
                     allowClear: true
                 });
             });

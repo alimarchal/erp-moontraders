@@ -65,7 +65,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function index()
     {
-        $baseQuery = SalesSettlement::query()->with(['employee', 'vehicle', 'warehouse', 'goodsIssue', 'creator']);
+        $baseQuery = SalesSettlement::query()->with(['employee', 'vehicle', 'warehouse', 'goodsIssue', 'creator', 'supplier']);
 
         if (! auth()->user()->can('sales-settlement-view-all')) {
             $baseQuery->where('created_by', auth()->id());
@@ -79,6 +79,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 AllowedFilter::exact('warehouse_id'),
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('created_by'),
+                AllowedFilter::exact('supplier_id'),
                 AllowedFilter::scope('settlement_date_from'),
                 AllowedFilter::scope('settlement_date_to'),
                 AllowedFilter::callback('product_id', function ($query, $value) {
@@ -117,6 +118,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 AllowedFilter::exact('warehouse_id'),
                 AllowedFilter::exact('status'),
                 AllowedFilter::exact('created_by'),
+                AllowedFilter::exact('supplier_id'),
                 AllowedFilter::scope('settlement_date_from'),
                 AllowedFilter::scope('settlement_date_to'),
                 AllowedFilter::callback('product_id', function ($query, $value) {
@@ -199,6 +201,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->orderBy('name')
             ->get(['id', 'name']);
 
+        $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+
         return view('sales-settlements.index', [
             'settlements' => $settlements,
             'totals' => $totals,
@@ -206,6 +210,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'vehicles' => $vehicles,
             'warehouses' => $warehouses,
             'creators' => $creators,
+            'suppliers' => $suppliers,
         ]);
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -23,7 +24,7 @@ class DailyInventorySnapshot extends Model
     protected $casts = [
         'date' => 'date',
         'quantity_on_hand' => 'decimal:3',
-        'average_cost' => 'decimal:2',
+        'average_cost' => 'decimal:6',
         'total_value' => 'decimal:2',
     ];
 
@@ -70,7 +71,7 @@ class DailyInventorySnapshot extends Model
      */
     public static function getOpeningBalance(int $productId, $date, ?int $warehouseId = null, ?int $vehicleId = null): float
     {
-        $previousDate = \Carbon\Carbon::parse($date)->subDay()->format('Y-m-d');
+        $previousDate = Carbon::parse($date)->subDay()->format('Y-m-d');
 
         $query = self::where('product_id', $productId)
             ->where('date', $previousDate);
@@ -92,6 +93,7 @@ class DailyInventorySnapshot extends Model
         $date,
         float $quantityOnHand,
         float $averageCost = 0,
+        float $totalValue = 0,
         ?int $warehouseId = null,
         ?int $vehicleId = null
     ): self {
@@ -106,10 +108,14 @@ class DailyInventorySnapshot extends Model
             $attributes['vehicle_id'] = $vehicleId;
         }
 
+        // Use provided totalValue directly (avoids precision loss from qty * cost multiplication).
+        // Fall back to calculation only if totalValue not provided.
+        $storedTotal = $totalValue > 0 ? $totalValue : $quantityOnHand * $averageCost;
+
         return self::updateOrCreate($attributes, [
             'quantity_on_hand' => $quantityOnHand,
             'average_cost' => $averageCost,
-            'total_value' => $quantityOnHand * $averageCost,
+            'total_value' => $storedTotal,
         ]);
     }
 }

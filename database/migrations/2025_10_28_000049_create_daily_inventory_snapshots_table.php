@@ -24,7 +24,7 @@ return new class extends Migration
 
             // Balance at end of day
             $table->decimal('quantity_on_hand', 15, 3)->default(0);
-            $table->decimal('average_cost', 15, 2)->default(0);
+            $table->decimal('average_cost', 15, 6)->default(0);
             $table->decimal('total_value', 15, 2)->default(0)->comment('quantity_on_hand * average_cost');
 
             $table->timestamps();

@@ -314,50 +314,36 @@ class InventoryLedgerService
         try {
             DB::beginTransaction();
 
-            // Get all unique product-location combinations from ledger
-            $combinations = InventoryLedgerEntry::select('product_id', 'warehouse_id', 'vehicle_id')
-                ->where('date', '<=', $snapshotDate)
-                ->groupBy('product_id', 'warehouse_id', 'vehicle_id')
+            // Read closing warehouse stock directly from current_stock_by_batch.
+            // This table is always up-to-date and stores total_value at exact precision —
+            // no multiplication needed, so no floating-point rounding loss.
+            $rows = DB::table('current_stock_by_batch as csb')
+                ->join('products as p', 'csb.product_id', '=', 'p.id')
+                ->where('csb.status', 'active')
+                ->whereNull('p.deleted_at')
+                ->select(
+                    'csb.product_id',
+                    'csb.warehouse_id',
+                    DB::raw('SUM(csb.quantity_on_hand) as quantity_on_hand'),
+                    DB::raw('SUM(csb.total_value) / NULLIF(SUM(csb.quantity_on_hand), 0) as average_cost'),
+                    DB::raw('SUM(csb.total_value) as total_value')
+                )
+                ->groupBy('csb.product_id', 'csb.warehouse_id')
+                ->having(DB::raw('SUM(csb.quantity_on_hand)'), '>', 0)
                 ->get();
 
-            foreach ($combinations as $combo) {
-                // Calculate closing balance
-                $closingBalance = InventoryLedgerEntry::calculateRunningBalance(
-                    $combo->product_id,
-                    $combo->warehouse_id,
-                    $combo->vehicle_id,
-                    $snapshotDate
-                );
-
-                // Get average cost from last entry
-                $lastEntry = InventoryLedgerEntry::where('product_id', $combo->product_id)
-                    ->where(function ($q) use ($combo) {
-                        if ($combo->warehouse_id) {
-                            $q->where('warehouse_id', $combo->warehouse_id);
-                        }
-                        if ($combo->vehicle_id) {
-                            $q->where('vehicle_id', $combo->vehicle_id);
-                        }
-                    })
-                    ->where('date', '<=', $snapshotDate)
-                    ->orderBy('date', 'desc')
-                    ->orderBy('id', 'desc')
-                    ->first();
-
-                $unitCost = $lastEntry?->unit_cost ?? 0;
-
-                // Create or update snapshot
+            foreach ($rows as $row) {
                 DailyInventorySnapshot::updateOrCreate(
                     [
                         'date' => $snapshotDate,
-                        'product_id' => $combo->product_id,
-                        'warehouse_id' => $combo->warehouse_id,
-                        'vehicle_id' => $combo->vehicle_id,
+                        'product_id' => $row->product_id,
+                        'warehouse_id' => $row->warehouse_id,
+                        'vehicle_id' => null,
                     ],
                     [
-                        'closing_balance' => $closingBalance,
-                        'unit_cost' => $unitCost,
-                        'total_value' => $closingBalance * $unitCost,
+                        'quantity_on_hand' => $row->quantity_on_hand,
+                        'average_cost' => $row->average_cost,
+                        'total_value' => $row->total_value,
                     ]
                 );
 

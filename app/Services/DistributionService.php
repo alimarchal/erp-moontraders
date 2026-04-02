@@ -1060,20 +1060,24 @@ class DistributionService
                     "Cash Shortage Adjustment - {$employeeLabel} - {$settlementReference}"
                 );
             } elseif ($cashDifference > 0) {
-                // Excess: Dr Salesman Clearing, Cr Round Off (5271)
-                $roundOffAccount = $accounts['round_off'] ?? $accounts['misc_expense'];
+                // Excess: Dr Salesman Clearing, Cr Settlement Excess Income (4250)
+                $excessDescription = "Cash Excess (Expected: {$expectedClearingBalance}, Actual: {$totalSubmitted}) - {$employeeLabel} - {$settlementReference}";
                 $addLine(
                     $accounts['salesman_clearing']->id,
                     $cashDifference,
                     0,
-                    "Cash Excess (Expected: {$expectedClearingBalance}, Actual: {$totalSubmitted}) - {$employeeLabel} - {$settlementReference}"
+                    $excessDescription
                 );
                 $addLine(
-                    $roundOffAccount->id,
+                    $accounts['excess_income']->id,
                     0,
                     $cashDifference,
                     "Cash Excess Adjustment - {$employeeLabel} - {$settlementReference}"
                 );
+                $settlement->excessAmounts()->create([
+                    'amount' => $cashDifference,
+                    'description' => $excessDescription,
+                ]);
             }
 
             // 8. Final Cash Deposit (Transfer from Clearing to Main Cash)
@@ -1265,6 +1269,7 @@ class DistributionService
             'percentage' => ChartOfAccount::where('account_code', '5223')->first(),
             'misc_expense' => ChartOfAccount::where('account_code', '5213')->first(),
             'round_off' => ChartOfAccount::where('account_code', '5271')->first(),
+            'excess_income' => ChartOfAccount::where('account_code', '4250')->first(),
         ];
     }
 

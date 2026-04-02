@@ -182,6 +182,11 @@ class SalesSettlement extends Model
         return $this->hasMany(SalesSettlementBankSlip::class);
     }
 
+    public function excessAmounts(): HasMany
+    {
+        return $this->hasMany(SalesSettlementExcessAmount::class);
+    }
+
     /**
      * Get total bank transfer amount (calculated from relationship)
      */

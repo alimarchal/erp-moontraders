@@ -14,6 +14,11 @@ class OpeningCustomerBalanceSeeder extends Seeder
      */
     public function run(): void
     {
+        // Skip if required FK data is not seeded (production-only data seeder).
+        if (! DB::table('users')->where('id', 1)->exists()) {
+            return;
+        }
+
         $fixedDate = '2026-03-31 17:00:00';
 
         $accountsPath = database_path('seeders/data/accounts.json');

@@ -7,6 +7,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
+use App\Models\JournalEntry;
 use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementBankSlip;
@@ -189,6 +190,7 @@ it('posts bank slips to journal entries correctly', function () {
         'misc_expense' => ChartOfAccount::create(['account_code' => '5213', 'account_name' => 'Misc Expense', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'normal_balance' => 'debit', 'is_active' => true]),
         'cheques_in_hand' => ChartOfAccount::create(['account_code' => '1122', 'account_name' => 'Cheques In Hand', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'normal_balance' => 'debit', 'is_active' => true]),
         'advance_tax' => ChartOfAccount::create(['account_code' => '2130', 'account_name' => 'Advance Tax', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'normal_balance' => 'credit', 'is_active' => true]),
+        'excess_income' => ChartOfAccount::create(['account_code' => '4250', 'account_name' => 'Settlement Excess Income', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'normal_balance' => 'credit', 'is_active' => true]),
     ];
 
     // Create required cost centers
@@ -243,7 +245,7 @@ it('posts bank slips to journal entries correctly', function () {
 
     try {
         $result = $service->postSalesSettlement($settlement);
-    } catch (\Exception $e) {
+    } catch (Exception $e) {
         throw $e;
     }
 
@@ -254,7 +256,7 @@ it('posts bank slips to journal entries correctly', function () {
     expect($settlement->journal_entry_id)->not->toBeNull();
 
     // Verify Journal Entry Lines
-    $journalEntry = \App\Models\JournalEntry::with('details')->find($settlement->journal_entry_id);
+    $journalEntry = JournalEntry::with('details')->find($settlement->journal_entry_id);
 
     if (! $journalEntry->details->where('chart_of_account_id', $accounts['bank']->id)->first()) {
         dump('Expected Account ID: '.$accounts['bank']->id);

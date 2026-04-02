@@ -431,7 +431,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
     private function getBankOnline(string $date, ?int $supplierId): float
     {
         $query = LedgerRegister::whereNotNull('posted_at')
-            ->where('transaction_date', $date);
+            ->whereDate('transaction_date', $date);
 
         if ($supplierId) {
             $query->where('supplier_id', $supplierId);

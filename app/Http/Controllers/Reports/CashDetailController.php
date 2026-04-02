@@ -66,7 +66,7 @@ class CashDetailController extends Controller implements HasMiddleware
 
         // Fetch ALL matching settlements once (with relationships) to reuse across all sections.
         // This eliminates the N+1 problem and ensures all settlements per employee are included.
-        $settlementsQuery = SalesSettlement::with(['employee', 'cashDenominations', 'bankSlips'])
+        $settlementsQuery = SalesSettlement::with(['employee', 'cashDenominations', 'bankSlips', 'bankTransfers', 'cheques'])
             ->whereDate('settlement_date', $date);
 
         if ($supplierId) {
@@ -164,6 +164,48 @@ class CashDetailController extends Controller implements HasMiddleware
 
         $bankSlipsData = $bankSlipsData->sortByDesc('amount')->values();
 
+        // 4. Bank Transfers — sum across ALL settlements per employee
+        $bankTransfersData = $employees->map(function ($employee) use ($settlementsByEmployee) {
+            $employeeSettlements = $settlementsByEmployee->get($employee->id, collect());
+
+            $amount = $employeeSettlements->sum(fn ($settlement) => (float) $settlement->bankTransfers->sum('amount'));
+
+            return (object) [
+                'salesman_name' => $employee->name,
+                'amount' => $amount,
+                'has_settlement' => $employeeSettlements->isNotEmpty(),
+            ];
+        });
+
+        if (! $supplierId && ! $designation && empty($employeeIds)) {
+            $bankTransfersData = $bankTransfersData->filter(function ($item) {
+                return $item->amount > 0 || $item->has_settlement;
+            });
+        }
+
+        $bankTransfersData = $bankTransfersData->sortByDesc('amount')->values();
+
+        // 5. Cheques — sum across ALL settlements per employee
+        $chequesData = $employees->map(function ($employee) use ($settlementsByEmployee) {
+            $employeeSettlements = $settlementsByEmployee->get($employee->id, collect());
+
+            $amount = $employeeSettlements->sum(fn ($settlement) => (float) $settlement->cheques->sum('amount'));
+
+            return (object) [
+                'salesman_name' => $employee->name,
+                'amount' => $amount,
+                'has_settlement' => $employeeSettlements->isNotEmpty(),
+            ];
+        });
+
+        if (! $supplierId && ! $designation && empty($employeeIds)) {
+            $chequesData = $chequesData->filter(function ($item) {
+                return $item->amount > 0 || $item->has_settlement;
+            });
+        }
+
+        $chequesData = $chequesData->sortByDesc('amount')->values();
+
         return view('reports.cash-detail', compact(
             'date',
             'supplierId',
@@ -174,7 +216,9 @@ class CashDetailController extends Controller implements HasMiddleware
             'allEmployees',
             'salesmanData',
             'denominations',
-            'bankSlipsData'
+            'bankSlipsData',
+            'bankTransfersData',
+            'chequesData'
         ));
     }
 }

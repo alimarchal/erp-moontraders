@@ -208,6 +208,7 @@
                         // Calculate maximum rows to ensure all tables identify with the same height
                         // Natural rows for Cash Detail is 8 (7 denoms + 1 coin)
                         $maxRows = max($salesmanData->count(), $bankSlipsData->count(), 8);
+                        $maxRows2 = max($bankTransfersData->count(), $chequesData->count(), 1);
                     @endphp
 
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-1 print:flex print:gap-1" style="page-break-inside: avoid; break-inside: avoid;">
@@ -364,6 +365,91 @@
                      <div class="mt-1 border border-black p-1 bg-gray-50 flex justify-between items-center font-bold">
                          <span>Grand Total (Salesman Cash + Bank Slips):</span>
                          <span class="text-md">{{ number_format($totalSalesmanAmount + $totalBankSlips, 2) }}</span>
+                     </div>
+
+                     {{-- Row 2: Bank Transfers + Cheques --}}
+                     <div class="grid grid-cols-1 md:grid-cols-2 gap-1 mt-2 print:flex print:gap-1" style="page-break-inside: avoid; break-inside: avoid;">
+
+                         {{-- 4. Bank Transfers --}}
+                         <div class="flex flex-col h-full print:w-1/2">
+                             <h4 class="font-bold text-sm border-x border-t border-black text-center">Bank Transfers</h4>
+                             <table class="report-table w-full flex-grow tabular-nums">
+                                 <thead>
+                                     <tr class="bg-gray-100">
+                                         <th class="text-center w-8 px-1 py-0.5">Sr.#</th>
+                                         <th class="text-left px-1 py-0.5">Salesman</th>
+                                         <th class="text-right px-1 py-0.5">Amount</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody>
+                                     @php $totalBankTransfers = 0; @endphp
+                                     @forelse($bankTransfersData as $row)
+                                         @php $totalBankTransfers += $row->amount; @endphp
+                                         <tr>
+                                             <td class="text-center px-1 py-0.5">{{ $loop->iteration }}</td>
+                                             <td class="px-1 py-0.5">{{ $row->salesman_name }}</td>
+                                             <td class="text-right font-bold px-1 py-0.5">{{ $row->amount > 0 ? number_format($row->amount, 2) : '-' }}</td>
+                                         </tr>
+                                     @empty
+                                         <tr><td colspan="3" class="text-center italic text-gray-500 px-1 py-0.5">No bank transfers</td></tr>
+                                     @endforelse
+                                     @for($i = $bankTransfersData->count(); $i < $maxRows2; $i++)
+                                         <tr>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                         </tr>
+                                     @endfor
+                                 </tbody>
+                                 <tfoot class="bg-gray-50 font-bold">
+                                     <tr>
+                                         <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
+                                         <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalBankTransfers, 2) }}</td>
+                                     </tr>
+                                 </tfoot>
+                             </table>
+                         </div>
+
+                         {{-- 5. Cheques --}}
+                         <div class="flex flex-col h-full print:w-1/2">
+                             <h4 class="font-bold text-sm border-x border-t border-black text-center">Cheques</h4>
+                             <table class="report-table w-full flex-grow tabular-nums">
+                                 <thead>
+                                     <tr class="bg-gray-100">
+                                         <th class="text-center w-8 px-1 py-0.5">Sr.#</th>
+                                         <th class="text-left px-1 py-0.5">Salesman</th>
+                                         <th class="text-right px-1 py-0.5">Amount</th>
+                                     </tr>
+                                 </thead>
+                                 <tbody>
+                                     @php $totalCheques = 0; @endphp
+                                     @forelse($chequesData as $row)
+                                         @php $totalCheques += $row->amount; @endphp
+                                         <tr>
+                                             <td class="text-center px-1 py-0.5">{{ $loop->iteration }}</td>
+                                             <td class="px-1 py-0.5">{{ $row->salesman_name }}</td>
+                                             <td class="text-right font-bold px-1 py-0.5">{{ $row->amount > 0 ? number_format($row->amount, 2) : '-' }}</td>
+                                         </tr>
+                                     @empty
+                                         <tr><td colspan="3" class="text-center italic text-gray-500 px-1 py-0.5">No cheques</td></tr>
+                                     @endforelse
+                                     @for($i = $chequesData->count(); $i < $maxRows2; $i++)
+                                         <tr>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                             <td class="px-1 py-0.5 border-none">&nbsp;</td>
+                                         </tr>
+                                     @endfor
+                                 </tbody>
+                                 <tfoot class="bg-gray-50 font-bold">
+                                     <tr>
+                                         <td colspan="2" class="text-right px-1 py-0.5 border-t border-black">Total:</td>
+                                         <td class="text-right px-1 py-0.5 border-t border-black">{{ number_format($totalCheques, 2) }}</td>
+                                     </tr>
+                                 </tfoot>
+                             </table>
+                         </div>
+
                      </div>
             </div>
         </div>

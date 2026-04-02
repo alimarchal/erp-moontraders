@@ -406,7 +406,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         }
 
         return (float) $query->selectRaw(
-            'COALESCE(SUM(online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount), 0) as balance'
+            'COALESCE(SUM(opening_balance + online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount), 0) as balance'
         )->value('balance');
     }
 

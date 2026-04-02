@@ -23,6 +23,7 @@ class LedgerRegister extends Model
         'document_number',
         'sap_code',
         'online_amount',
+        'opening_balance',
         'invoice_amount',
         'expenses_amount',
         'za_point_five_percent_amount',
@@ -43,6 +44,7 @@ class LedgerRegister extends Model
             'transaction_date' => 'date',
             'document_type' => DocumentType::class,
             'online_amount' => 'decimal:2',
+            'opening_balance' => 'decimal:2',
             'invoice_amount' => 'decimal:2',
             'expenses_amount' => 'decimal:2',
             'za_point_five_percent_amount' => 'decimal:2',
@@ -105,6 +107,7 @@ class LedgerRegister extends Model
         foreach ($entries as $entry) {
             $runningBalance = $runningBalance
                 + (float) $entry->online_amount
+                + (float) $entry->opening_balance
                 - (float) $entry->invoice_amount
                 - (float) $entry->expenses_amount
                 + (float) $entry->za_point_five_percent_amount

@@ -71,6 +71,8 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
         $sortDirection = $request->input('sort', 'asc');
         $sortDirection = in_array($sortDirection, ['asc', 'desc']) ? $sortDirection : 'asc';
+        $ledgerBalanceExpression = 'opening_balance + online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount';
+        $obBalanceExpression = 'CASE WHEN opening_balance != 0 THEN opening_balance ELSE (online_amount - invoice_amount) END';
 
         $query->orderBy('transaction_date', $sortDirection)->orderBy('id', $sortDirection);
 
@@ -91,6 +93,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
         // Column totals (exclude OB entries — OB is a balance, not an amount)
         $totals = (clone $allFilteredQuery)->where('document_type', '!=', DocumentType::Ob->value)->selectRaw('
+            COALESCE(SUM(opening_balance), 0) as total_opening_balance,
             COALESCE(SUM(online_amount), 0) as total_online,
             COALESCE(SUM(invoice_amount), 0) as total_invoice,
             COALESCE(SUM(expenses_amount), 0) as total_expenses,
@@ -99,9 +102,9 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             COUNT(*) as total_entries
         ')->first();
 
-        // Sum of OB entries within the date range (stored in online_amount/invoice_amount for formula)
+        // Sum of OB entries within the date range.
         $obTotalInRange = (float) (clone $allFilteredQuery)->where('document_type', DocumentType::Ob->value)
-            ->selectRaw('COALESCE(SUM(online_amount - invoice_amount), 0) as balance')
+            ->selectRaw("COALESCE(SUM({$obBalanceExpression}), 0) as balance")
             ->value('balance');
 
         if ($perPage === 'all') {
@@ -122,7 +125,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
         if ($supplierId && $dateFrom) {
             $openingBalance = (float) LedgerRegister::where('supplier_id', $supplierId)
                 ->where('transaction_date', '<', $dateFrom)
-                ->selectRaw('COALESCE(SUM(online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount), 0) as balance')
+                ->selectRaw("COALESCE(SUM({$ledgerBalanceExpression}), 0) as balance")
                 ->value('balance');
         }
 
@@ -136,12 +139,12 @@ class LedgerRegisterController extends Controller implements HasMiddleware
                 ->orderBy('transaction_date', $sortDirection)
                 ->orderBy('id', $sortDirection)
                 ->limit($entriesBeforePage)
-                ->select(['online_amount', 'invoice_amount', 'expenses_amount', 'za_point_five_percent_amount', 'claim_adjust_amount']);
+                ->select(['opening_balance', 'online_amount', 'invoice_amount', 'expenses_amount', 'za_point_five_percent_amount', 'claim_adjust_amount']);
 
             $beforePageBalance = DB::table(
                 DB::raw('('.$limitedQuery->toSql().') as limited_entries')
             )->addBinding($limitedQuery->getBindings(), 'where')
-                ->selectRaw('COALESCE(SUM(online_amount - invoice_amount - expenses_amount + za_point_five_percent_amount + claim_adjust_amount), 0) as balance')
+                ->selectRaw("COALESCE(SUM({$ledgerBalanceExpression}), 0) as balance")
                 ->value('balance');
 
             $balanceBeforePage = $openingBalance + (float) $beforePageBalance;
@@ -149,6 +152,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
         $runningBalance = $balanceBeforePage;
         $entries->getCollection()->transform(function ($entry) use (&$runningBalance) {
+            $runningBalance += (float) $entry->opening_balance;
             $runningBalance += (float) $entry->online_amount
                 - (float) $entry->invoice_amount
                 - (float) $entry->expenses_amount
@@ -161,6 +165,7 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
         $currentBalance = $openingBalance
             + (float) $obTotalInRange
+            + (float) ($totals->total_opening_balance ?? 0)
             + (float) ($totals->total_online ?? 0)
             - (float) ($totals->total_invoice ?? 0)
             - (float) ($totals->total_expenses ?? 0)
@@ -276,8 +281,9 @@ class LedgerRegisterController extends Controller implements HasMiddleware
                     'transaction_date' => $date,
                     'document_type' => DocumentType::Ob,
                     'document_number' => "OB-{$supplier->short_name}",
-                    'online_amount' => $amount > 0 ? $amount : 0,
-                    'invoice_amount' => $amount < 0 ? abs($amount) : 0,
+                    'online_amount' => 0,
+                    'opening_balance' => $amount,
+                    'invoice_amount' => 0,
                     'expenses_amount' => 0,
                     'za_point_five_percent_amount' => 0,
                     'claim_adjust_amount' => 0,

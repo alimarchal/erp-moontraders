@@ -392,6 +392,7 @@
                             <th style="width: 55px;">Type</th>
                             <th style="width: 100px;">Document #</th>
                             <th style="width: 100px;">Online Amount</th>
+                            <th style="width: 110px;">Opening Balance</th>
                             <th style="width: 110px;">Invoice Amount</th>
                             <th style="width: 90px;">Expenses</th>
                             <th style="width: 90px;">ZA(0.5%)</th>
@@ -407,6 +408,7 @@
                                 <td class="text-center" colspan="4">
                                     <strong>Opening Balance (Before {{ \Carbon\Carbon::parse($dateFrom)->format('d-M-Y') }})</strong>
                                 </td>
+                                <td class="amount-cell">-</td>
                                 <td class="amount-cell">-</td>
                                 <td class="amount-cell">-</td>
                                 <td class="amount-cell">-</td>
@@ -436,29 +438,34 @@
                                 </td>
                                 <td class="font-mono text-xs" style="vertical-align: middle;">
                                     {{ $entry->document_number ?? '-' }}</td>
-                                @if ($entry->document_type === \App\Enums\DocumentType::Ob)
-                                    <td class="amount-cell" style="vertical-align: middle;" colspan="5">
-                                        <span class="text-xs text-gray-500 italic">Opening Balance</span>
-                                    </td>
-                                @else
-                                    <td class="amount-cell {{ $entry->online_amount > 0 ? 'text-green-700' : '' }}"
-                                        style="vertical-align: middle;">
-                                        {{ $entry->online_amount > 0 ? number_format($entry->online_amount, 2) : '-' }}
-                                    </td>
-                                    <td class="amount-cell {{ $entry->invoice_amount > 0 ? 'text-blue-700' : '' }}"
-                                        style="vertical-align: middle;">
-                                        {{ $entry->invoice_amount > 0 ? number_format($entry->invoice_amount, 2) : '-' }}
-                                    </td>
-                                    <td class="amount-cell" style="vertical-align: middle;">
-                                        {{ $entry->expenses_amount > 0 ? number_format($entry->expenses_amount, 2) : '-' }}
-                                    </td>
-                                    <td class="amount-cell" style="vertical-align: middle;">
-                                        {{ $entry->za_point_five_percent_amount > 0 ? number_format($entry->za_point_five_percent_amount, 2) : '-' }}
-                                    </td>
-                                    <td class="amount-cell" style="vertical-align: middle;">
-                                        {{ $entry->claim_adjust_amount > 0 ? number_format($entry->claim_adjust_amount, 2) : '-' }}
-                                    </td>
-                                @endif
+                                @php
+                                    $entryOpeningBalance = (float) $entry->opening_balance;
+
+                                    if ($entry->document_type === \App\Enums\DocumentType::Ob && $entryOpeningBalance === 0.0) {
+                                        $entryOpeningBalance = (float) $entry->online_amount - (float) $entry->invoice_amount;
+                                    }
+                                @endphp
+                                <td class="amount-cell {{ $entry->document_type !== \App\Enums\DocumentType::Ob && $entry->online_amount > 0 ? 'text-green-700' : '' }}"
+                                    style="vertical-align: middle;">
+                                    {{ $entry->document_type !== \App\Enums\DocumentType::Ob && $entry->online_amount > 0 ? number_format($entry->online_amount, 2) : '-' }}
+                                </td>
+                                <td class="amount-cell {{ $entryOpeningBalance > 0 ? 'text-green-700' : ($entryOpeningBalance < 0 ? 'text-red-700' : '') }}"
+                                    style="vertical-align: middle;">
+                                    {{ $entryOpeningBalance != 0 ? number_format($entryOpeningBalance, 2) : '-' }}
+                                </td>
+                                <td class="amount-cell {{ $entry->document_type !== \App\Enums\DocumentType::Ob && $entry->invoice_amount > 0 ? 'text-blue-700' : '' }}"
+                                    style="vertical-align: middle;">
+                                    {{ $entry->document_type !== \App\Enums\DocumentType::Ob && $entry->invoice_amount > 0 ? number_format($entry->invoice_amount, 2) : '-' }}
+                                </td>
+                                <td class="amount-cell" style="vertical-align: middle;">
+                                    {{ $entry->document_type !== \App\Enums\DocumentType::Ob && $entry->expenses_amount > 0 ? number_format($entry->expenses_amount, 2) : '-' }}
+                                </td>
+                                <td class="amount-cell" style="vertical-align: middle;">
+                                    {{ $entry->document_type !== \App\Enums\DocumentType::Ob && $entry->za_point_five_percent_amount > 0 ? number_format($entry->za_point_five_percent_amount, 2) : '-' }}
+                                </td>
+                                <td class="amount-cell" style="vertical-align: middle;">
+                                    {{ $entry->document_type !== \App\Enums\DocumentType::Ob && $entry->claim_adjust_amount > 0 ? number_format($entry->claim_adjust_amount, 2) : '-' }}
+                                </td>
                                 <td class="amount-cell font-bold {{ $entry->running_balance >= 0 ? 'text-green-700' : 'text-red-700' }}"
                                     style="vertical-align: middle;">
                                     {{ number_format($entry->running_balance, 2) }}
@@ -534,7 +541,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="11" class="text-center py-4 text-gray-500">No ledger entries found for the
+                                <td colspan="12" class="text-center py-4 text-gray-500">No ledger entries found for the
                                     selected filters.</td>
                             </tr>
                         @endforelse
@@ -542,7 +549,7 @@
                         {{-- Inline Add Form Row --}}
                         @can('report-audit-ledger-register-manage')
                             <tr x-show="showAddRow" x-cloak class="bg-indigo-50 no-print">
-                                <td colspan="11" class="p-0">
+                                <td colspan="12" class="p-0">
                                     <form action="{{ route('reports.ledger-register.store') }}" method="POST">
                                         @csrf
                                         <input type="hidden" name="supplier_id"
@@ -579,6 +586,9 @@
                                                     <input type="number" name="online_amount" step="0.01"
                                                         min="0" value="{{ old('online_amount') }}"
                                                         class="inline-input" placeholder="0.00">
+                                                </td>
+                                                <td style="width: 110px; padding: 4px;">
+                                                    <span class="text-xs text-gray-500">Use OB button</span>
                                                 </td>
                                                 <td style="width: 110px; padding: 4px;">
                                                     <input type="number" name="invoice_amount" step="0.01"
@@ -619,6 +629,21 @@
                     </tbody>
 
                     {{-- Footer Totals --}}
+                    @php
+                        $pageOpeningBalanceTotal = $entries->sum(function ($entry) {
+                            $openingBalance = (float) $entry->opening_balance;
+
+                            if ($openingBalance !== 0.0) {
+                                return $openingBalance;
+                            }
+
+                            if ($entry->document_type === \App\Enums\DocumentType::Ob) {
+                                return (float) $entry->online_amount - (float) $entry->invoice_amount;
+                            }
+
+                            return 0;
+                        });
+                    @endphp
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
                             <td colspan="4" class="text-center px-2 py-1">
@@ -626,6 +651,9 @@
                             </td>
                             <td class="amount-cell px-2 py-1 text-green-700">
                                 {{ number_format($entries->sum('online_amount'), 2) }}
+                            </td>
+                            <td class="amount-cell px-2 py-1 {{ $pageOpeningBalanceTotal >= 0 ? 'text-green-700' : 'text-red-700' }}">
+                                {{ number_format($pageOpeningBalanceTotal, 2) }}
                             </td>
                             <td class="amount-cell px-2 py-1 text-blue-700">
                                 {{ number_format($entries->sum('invoice_amount'), 2) }}

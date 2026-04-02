@@ -17,13 +17,18 @@ class LedgerRegisterService
     /**
      * Build and create the journal entry for an opening balance ledger entry.
      *
-     * Positive balance (online_amount): DR 2111 Creditors / CR 3300 Opening Balance Equity
-     * Negative balance (invoice_amount): DR 3300 Opening Balance Equity / CR 2111 Creditors
+     * Positive balance: DR 2111 Creditors / CR 3300 Opening Balance Equity
+     * Negative balance: DR 3300 Opening Balance Equity / CR 2111 Creditors
      */
     protected function createOpeningBalanceJournalEntry(LedgerRegister $entry): ?JournalEntry
     {
         $entry->loadMissing('supplier');
         $supplierName = $entry->supplier?->supplier_name ?? 'Unknown';
+        $openingBalanceAmount = (float) $entry->opening_balance;
+
+        if ($openingBalanceAmount === 0.0) {
+            $openingBalanceAmount = (float) $entry->online_amount - (float) $entry->invoice_amount;
+        }
 
         $creditorsAccount = ChartOfAccount::where('account_code', '2111')->first();
         $openingBalanceEquity = ChartOfAccount::where('account_code', '3300')->first();
@@ -33,15 +38,16 @@ class LedgerRegisterService
         }
 
         $lines = [];
+        $absoluteOpeningBalanceAmount = abs($openingBalanceAmount);
 
-        if ((float) $entry->online_amount > 0) {
-            $lines[] = ['account_id' => $creditorsAccount->id, 'debit' => (float) $entry->online_amount, 'credit' => 0, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
-            $lines[] = ['account_id' => $openingBalanceEquity->id, 'debit' => 0, 'credit' => (float) $entry->online_amount, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
+        if ($openingBalanceAmount > 0) {
+            $lines[] = ['account_id' => $creditorsAccount->id, 'debit' => $absoluteOpeningBalanceAmount, 'credit' => 0, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
+            $lines[] = ['account_id' => $openingBalanceEquity->id, 'debit' => 0, 'credit' => $absoluteOpeningBalanceAmount, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
         }
 
-        if ((float) $entry->invoice_amount > 0) {
-            $lines[] = ['account_id' => $openingBalanceEquity->id, 'debit' => (float) $entry->invoice_amount, 'credit' => 0, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
-            $lines[] = ['account_id' => $creditorsAccount->id, 'debit' => 0, 'credit' => (float) $entry->invoice_amount, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
+        if ($openingBalanceAmount < 0) {
+            $lines[] = ['account_id' => $openingBalanceEquity->id, 'debit' => $absoluteOpeningBalanceAmount, 'credit' => 0, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
+            $lines[] = ['account_id' => $creditorsAccount->id, 'debit' => 0, 'credit' => $absoluteOpeningBalanceAmount, 'description' => "Opening balance - {$supplierName}", 'cost_center_id' => 1];
         }
 
         if (empty($lines)) {

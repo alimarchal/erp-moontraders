@@ -25,6 +25,7 @@ class UpdateLedgerRegisterRequest extends FormRequest
             'document_number' => 'nullable|string|max:255',
             'sap_code' => 'nullable|string|max:255',
             'online_amount' => 'nullable|numeric|min:0',
+            'opening_balance' => 'nullable|numeric',
             'invoice_amount' => 'nullable|numeric|min:0',
             'expenses_amount' => 'nullable|numeric|min:0',
             'za_point_five_percent_amount' => 'nullable|numeric|min:0',
@@ -49,6 +50,7 @@ class UpdateLedgerRegisterRequest extends FormRequest
     {
         $this->merge([
             'online_amount' => $this->online_amount ?: 0,
+            'opening_balance' => $this->opening_balance ?: 0,
             'invoice_amount' => $this->invoice_amount ?: 0,
             'expenses_amount' => $this->expenses_amount ?: 0,
             'za_point_five_percent_amount' => $this->za_point_five_percent_amount ?: 0,

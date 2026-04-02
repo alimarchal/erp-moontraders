@@ -9,4 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 // Take a daily end-of-day inventory snapshot at 11:59 PM
-Schedule::command('inventory:snapshot')->dailyAt('23:59');
+Schedule::command('inventory:snapshot')->dailyAt('23:45');

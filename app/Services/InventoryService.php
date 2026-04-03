@@ -696,6 +696,7 @@ class InventoryService
             'quantity_remaining' => $item->quantity_accepted,
             'unit_cost' => $item->unit_cost,
             'total_value' => $item->total_cost,
+            'value_remaining' => $item->total_cost,
             'priority_order' => $item->priority_order,
             'must_sell_before' => $item->must_sell_before,
             'is_promotional' => $item->is_promotional,

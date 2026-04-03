@@ -28,7 +28,6 @@ use App\Models\SalesSettlementRecovery;
 use App\Models\StockBatch;
 use App\Models\Supplier;
 use App\Models\User;
-use App\Models\VanStockBalance;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
@@ -371,6 +370,14 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->with(['warehouse', 'vehicle', 'employee', 'items.product', 'items.uom'])
             ->findOrFail($id);
 
+        // Get IDs of posted settlements from earlier goods issues on this vehicle
+        // These may have been posted AFTER this GI was created, so their ledger entry IDs
+        // are higher than this GI's transfer_in entries, but they still reduce pre-existing stock.
+        $earlierPostedSettlementIds = SalesSettlement::where('vehicle_id', $goodsIssue->vehicle_id)
+            ->where('goods_issue_id', '<', $goodsIssue->id)
+            ->where('status', 'posted')
+            ->pluck('id');
+
         // Add batch breakdown to each goods issue item
         foreach ($goodsIssue->items as $item) {
             // Calculate BF Logic: BF = Sum of (Debit - Credit) from InventoryLedgerEntry strictly BEFORE this Goods Issue transaction
@@ -383,10 +390,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             if ($giEntry) {
                 // Sum all previous transactions for this vehicle/product
+                // Include entries created before this GI's transfer_in (id-based)
+                // AND entries from posted settlements of earlier GIs (which may have higher IDs)
                 $bfQty = InventoryLedgerEntry::where('product_id', $item->product_id)
                     ->where('vehicle_id', $goodsIssue->vehicle_id)
-                    ->where('id', '<', $giEntry->id)
-                    ->sum(\DB::raw('debit_qty - credit_qty'));
+                    ->where(function ($query) use ($giEntry, $earlierPostedSettlementIds) {
+                        $query->where('id', '<', $giEntry->id)
+                            ->orWhereIn('sales_settlement_id', $earlierPostedSettlementIds);
+                    })
+                    ->sum(DB::raw('debit_qty - credit_qty'));
 
                 $item->bf_quantity = (float) $bfQty;
             } else {
@@ -591,11 +603,18 @@ class SalesSettlementController extends Controller implements HasMiddleware
         ]);
 
         // Calculate BF (In) for each product
-        // Logic: BF = Sum of (Debit - Credit) from InventoryLedgerEntry strictly BEFORE the Goods Issue transaction (Transfer In to Van)
+        // Logic: BF = Sum of (Debit - Credit) from InventoryLedgerEntry before this Goods Issue
+        // PLUS entries from posted settlements of earlier GIs (which may have higher IDs due to posting after this GI was created)
         $bfMap = [];
         $goodsIssue = $salesSettlement->goodsIssue;
 
         if ($goodsIssue) {
+            // Get IDs of posted settlements from earlier goods issues on this vehicle
+            $earlierPostedSettlementIds = SalesSettlement::where('vehicle_id', $goodsIssue->vehicle_id)
+                ->where('goods_issue_id', '<', $goodsIssue->id)
+                ->where('status', 'posted')
+                ->pluck('id');
+
             foreach ($salesSettlement->items as $item) {
                 $productId = $item->product_id;
                 $vehicleId = $goodsIssue->vehicle_id;
@@ -608,17 +627,17 @@ class SalesSettlementController extends Controller implements HasMiddleware
                     ->first();
 
                 if ($giEntry) {
-                    // Sum all previous transactions for this vehicle/product
+                    // Sum previous transactions + posted settlement entries from earlier GIs
                     $bfQty = InventoryLedgerEntry::where('product_id', $productId)
                         ->where('vehicle_id', $vehicleId)
-                        ->where('id', '<', $giEntry->id)
-                        ->sum(\DB::raw('debit_qty - credit_qty'));
+                        ->where(function ($query) use ($giEntry, $earlierPostedSettlementIds) {
+                            $query->where('id', '<', $giEntry->id)
+                                ->orWhereIn('sales_settlement_id', $earlierPostedSettlementIds);
+                        })
+                        ->sum(DB::raw('debit_qty - credit_qty'));
 
                     $bfMap[$productId] = (float) $bfQty;
                 } else {
-                    // Fallback if no entry found (e.g. legacy data?): Use logic similar to 'fetchGoodsIssueItems' or 0
-                    // For now default to 0 to be safe, or check VanStockBalance?
-                    // Better to default to 0 as fallback.
                     $bfMap[$productId] = 0;
                 }
             }

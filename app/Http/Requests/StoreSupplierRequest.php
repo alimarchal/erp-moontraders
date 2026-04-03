@@ -31,6 +31,7 @@ class StoreSupplierRequest extends FormRequest
             'pan_number' => $this->pan_number ? trim((string) $this->pan_number) : null,
             'is_transporter' => $this->boolean('is_transporter'),
             'is_internal_supplier' => $this->boolean('is_internal_supplier'),
+            'is_fmr_allowed' => $this->boolean('is_fmr_allowed'),
             'disabled' => $this->boolean('disabled'),
         ]);
     }
@@ -55,6 +56,7 @@ class StoreSupplierRequest extends FormRequest
             'supplier_type' => ['nullable', 'string', 'max:120'],
             'is_transporter' => ['boolean'],
             'is_internal_supplier' => ['boolean'],
+            'is_fmr_allowed' => ['boolean'],
             'disabled' => ['boolean'],
             'default_currency_id' => ['nullable', 'exists:currencies,id'],
             'default_bank_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
@@ -80,6 +82,7 @@ class StoreSupplierRequest extends FormRequest
 
         $validated['is_transporter'] = (bool) ($validated['is_transporter'] ?? false);
         $validated['is_internal_supplier'] = (bool) ($validated['is_internal_supplier'] ?? false);
+        $validated['is_fmr_allowed'] = (bool) ($validated['is_fmr_allowed'] ?? false);
         $validated['disabled'] = (bool) ($validated['disabled'] ?? false);
 
         return $validated;

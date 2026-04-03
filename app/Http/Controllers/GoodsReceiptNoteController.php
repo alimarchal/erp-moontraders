@@ -85,7 +85,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     public function create()
     {
         return view('goods-receipt-notes.create', [
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax']),
+            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed']),
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             // Don't load all products - will be loaded via AJAX when supplier is selected
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
@@ -316,7 +316,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
         return view('goods-receipt-notes.edit', [
             'grn' => $goodsReceiptNote,
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax']),
+            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed']),
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
             'withholdingTaxRate' => $this->resolveActiveWithholdingTaxRate(),

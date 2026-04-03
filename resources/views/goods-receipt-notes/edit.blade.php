@@ -577,6 +577,7 @@
                     supplierSalesTaxRate: {{ $grn->supplier->sales_tax ?? 18.00 }}, // Supplier's sales tax rate
                     withholdingTaxRate: parseFloat(withholdingTaxRate) || 0,
                     isUnileverPakistan: {{ $grn->supplier->supplier_name === 'Unilever Pakistan' ? 'true' : 'false' }},
+                    isFmrAllowed: {{ $grn->supplier->is_fmr_allowed ? 'true' : 'false' }},
 
                     items: oldItems.length > 0 ? oldItems.map(item => ({
                         product_id: item.product_id || '',
@@ -815,9 +816,11 @@
                         item.total_value_with_taxes = parseFloat((totalBeforeWht + withholdingTax).toFixed(2));
 
                         // Calculate Unit Cost: (Total Value with Taxes + FMR Allowance) / Qty Received
+                        // If supplier has is_fmr_allowed = true (e.g. Engro), exclude FMR from unit cost
+                        const fmrForUnitCost = this.isFmrAllowed ? 0 : fmrAllowance;
                         const qtyReceived = parseFloat(item.quantity_received) || 0;
                         if (qtyReceived > 0) {
-                            item.unit_cost = parseFloat(((item.total_value_with_taxes + fmrAllowance) / qtyReceived).toFixed(6));
+                            item.unit_cost = parseFloat(((item.total_value_with_taxes + fmrForUnitCost) / qtyReceived).toFixed(6));
                         }
 
                         // total_cost = qty_accepted × unit_cost (4 decimal precision)
@@ -1089,6 +1092,7 @@
                             if (grnFormData) {
                                 grnFormData.supplierSalesTaxRate = parseFloat(supplier.sales_tax) || 18.00;
                                 grnFormData.isUnileverPakistan = supplier.supplier_name === 'Unilever Pakistan';
+                                grnFormData.isFmrAllowed = supplier.is_fmr_allowed === true || supplier.is_fmr_allowed === 1;
 
                                 // Reset manually edited WHT flags when supplier changes
                                 grnFormData.items.forEach((item) => {

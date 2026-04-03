@@ -22,6 +22,7 @@ class Supplier extends Model
         'supplier_type',
         'is_transporter',
         'is_internal_supplier',
+        'is_fmr_allowed',
         'disabled',
         'default_currency_id',
         'default_bank_account_id',
@@ -41,6 +42,7 @@ class Supplier extends Model
     protected $casts = [
         'is_transporter' => 'boolean',
         'is_internal_supplier' => 'boolean',
+        'is_fmr_allowed' => 'boolean',
         'disabled' => 'boolean',
         'ledger_opening_balance' => 'decimal:2',
         'ledger_opening_balance_date' => 'date',

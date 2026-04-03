@@ -30,6 +30,7 @@
                     @endphp
                     @if (!$hasPostedPayments)
                         @can('goods-receipt-note-reverse')
+                            {{-- Currently Do Not Needed Hide it 
                             <form id="reverseGrnForm" action="{{ route('goods-receipt-notes.reverse', $grn->id) }}" method="POST"
                                 onsubmit="return confirmReverseGrn();" class="inline-block">
                                 @csrf
@@ -43,7 +44,7 @@
                                     </svg>
                                     Reverse Entry
                                 </button>
-                            </form>
+                            </form> --}}
                         @endcan
                     @endif
                 @endif

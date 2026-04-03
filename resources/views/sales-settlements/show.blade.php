@@ -42,6 +42,7 @@
                 @endif
                 @if ($settlement->status === 'posted')
                     @can('sales-settlement-revert')
+                        {{-- Currently Do Not Needed Hide It
                         <form id="revertSettlementForm" action="{{ route('sales-settlements.revert', $settlement->id) }}"
                             method="POST" onsubmit="return confirmRevertSettlement();" class="inline-block">
                             @csrf
@@ -55,7 +56,7 @@
                                         d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
                                 </svg>
                             </button>
-                        </form>
+                        </form> --}}
                     @endcan
                 @endif
                 <a href="javascript:window.location.reload();"

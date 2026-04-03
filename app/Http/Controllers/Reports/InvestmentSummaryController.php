@@ -77,11 +77,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         $previousLedgerAmount = $this->getLedgerAmount($supplierId, $previousDate);
 
         $previousTotal = $previousPowderExpiry + $previousLiquidExpiry + $previousClaimAmount + $previousStockAmount + $previousCreditAmount + $previousLedgerAmount;
-        $previousTotalInvestment = $previousTotal
-            + $this->getDailyCash($previousDate, $supplierId)
-            + $this->getDailyBankSlips($previousDate, $supplierId)
-            + $this->getDailyBankTransfers($previousDate, $supplierId)
-            + $this->getDailyChequePayments($previousDate, $supplierId);
+        $previousTotalInvestment = $previousTotal;
 
         // Daily Cash & Investment calculations
         $dailyCash = $this->getDailyCash($date, $supplierId);

@@ -42,16 +42,15 @@
                 @endif
                 @if ($settlement->status === 'posted')
                     @can('sales-settlement-revert')
-                        <form id="revertSettlementForm"
-                            action="{{ route('sales-settlements.revert', $settlement->id) }}" method="POST"
-                            onsubmit="return confirmRevertSettlement();" class="inline-block">
+                        <form id="revertSettlementForm" action="{{ route('sales-settlements.revert', $settlement->id) }}"
+                            method="POST" onsubmit="return confirmRevertSettlement();" class="inline-block">
                             @csrf
                             <input type="hidden" id="revert_password" name="password" value="">
                             <button type="submit"
                                 class="inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition ease-in-out duration-150"
                                 title="Revert Settlement">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                                    stroke-width="1.5" stroke="currentColor" class="size-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                                    stroke="currentColor" class="size-6">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
                                 </svg>
@@ -376,7 +375,8 @@
                             <td class="text-left font-semibold">Date/Time:</td>
                             <td class="text-left">
                                 {{ \Carbon\Carbon::parse($settlement->settlement_date)->format('d-M-Y') }}
-                                {{ $settlement->created_at ? $settlement->created_at->format('h:i A') : '' }}</td>
+                                {{ $settlement->created_at ? $settlement->created_at->format('h:i A') : '' }}
+                            </td>
                             <td class="text-left font-semibold">Created By:</td>
                             <td class="text-left" colspan="3">{{ $settlement->creator->name ?? '-' }}</td>
                         </tr>
@@ -460,7 +460,8 @@
                                 <td class="text-right font-bold">{{ number_format($item->quantity_sold, 2) }}</td>
                                 <td class="text-right">{{ number_format($item->quantity_returned, 2) }}</td>
                                 <td class="text-right {{ $item->quantity_shortage > 0 ? 'text-red-600 font-bold' : '' }}">
-                                    {{ number_format($item->quantity_shortage, 2) }}</td>
+                                    {{ number_format($item->quantity_shortage, 2) }}
+                                </td>
                                 <td class="text-right">
                                     @php
                                         $bfOut = $bfIn + $item->quantity_issued - $item->quantity_sold - $item->quantity_returned - $item->quantity_shortage;
@@ -640,7 +641,8 @@
                                                         {{ $recovery ? number_format($recovery->previous_balance, 2) : '-' }}
                                                     </td>
                                                     <td class="text-right font-bold">
-                                                        {{ $recovery ? number_format($recovery->amount, 2) : '-' }}</td>
+                                                        {{ $recovery ? number_format($recovery->amount, 2) : '-' }}
+                                                    </td>
                                                     <td class="text-center text-xs uppercase">
                                                         @if($recovery)
                                                             {{ $recovery->payment_method === 'cash' ? 'Cash' : 'Bank' }}
@@ -649,7 +651,8 @@
                                                         @endif
                                                     </td>
                                                     <td class="text-right">
-                                                        {{ $recovery ? number_format($recovery->new_balance, 2) : '-' }}</td>
+                                                        {{ $recovery ? number_format($recovery->new_balance, 2) : '-' }}
+                                                    </td>
                                                     <td class="text-xs italic print:hidden">{!! $recovery?->notes ?? '-' !!}
                                                     </td>
                                                 </tr>
@@ -665,7 +668,8 @@
                                         <tr>
                                             <td colspan="4" class="text-right">Total:</td>
                                             <td class="text-right">
-                                                {{ number_format($settlement->recoveries->sum('amount'), 2) }}</td>
+                                                {{ number_format($settlement->recoveries->sum('amount'), 2) }}
+                                            </td>
                                             <td colspan="3"></td>
                                         </tr>
                                     </tfoot>
@@ -729,7 +733,8 @@
                                                     <td>{{ $cheque->bank_name ?? '-' }}</td>
                                                     <td>{{ $cheque->bankAccount->account_name ?? '-' }}</td>
                                                     <td class="text-right font-bold">
-                                                        {{ $cheque ? number_format($cheque->amount, 2) : '-' }}</td>
+                                                        {{ $cheque ? number_format($cheque->amount, 2) : '-' }}
+                                                    </td>
                                                 </tr>
                                             @endfor
                                         @else
@@ -743,7 +748,8 @@
                                         <tr>
                                             <td colspan="6" class="text-right">Total:</td>
                                             <td class="text-right">
-                                                {{ number_format($settlement->cheques->sum('amount'), 2) }}</td>
+                                                {{ number_format($settlement->cheques->sum('amount'), 2) }}
+                                            </td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -792,7 +798,8 @@
                                                     <td>{{ $transfer->bankAccount->account_name ?? '-' }}</td>
                                                     <td>{{ $transfer->reference_number ?? '-' }}</td>
                                                     <td class="text-right font-bold">
-                                                        {{ $transfer ? number_format($transfer->amount, 2) : '-' }}</td>
+                                                        {{ $transfer ? number_format($transfer->amount, 2) : '-' }}
+                                                    </td>
                                                 </tr>
                                             @endfor
                                         @else
@@ -806,7 +813,8 @@
                                         <tr>
                                             <td colspan="5" class="text-right">Total:</td>
                                             <td class="text-right">
-                                                {{ number_format($settlement->bankTransfers->sum('amount'), 2) }}</td>
+                                                {{ number_format($settlement->bankTransfers->sum('amount'), 2) }}
+                                            </td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -852,9 +860,11 @@
                                                 <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
                                                 <td class="px-1 py-0.5">{{ $powder?->product->product_name ?? '-' }}</td>
                                                 <td class="text-right px-1 py-0.5">
-                                                    {{ $powder ? number_format($powder->quantity, 2) : '-' }}</td>
+                                                    {{ $powder ? number_format($powder->quantity, 2) : '-' }}
+                                                </td>
                                                 <td class="text-right font-bold px-1 py-0.5">
-                                                    {{ $powder ? number_format($powder->amount, 2) : '-' }}</td>
+                                                    {{ $powder ? number_format($powder->amount, 2) : '-' }}
+                                                </td>
                                             </tr>
                                         @endfor
                                     </tbody>
@@ -862,7 +872,8 @@
                                         <tr>
                                             <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
                                             <td class="text-right px-1 py-0.5">
-                                                {{ number_format($settlement->amrPowders->sum('amount'), 2) }}</td>
+                                                {{ number_format($settlement->amrPowders->sum('amount'), 2) }}
+                                            </td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -892,9 +903,11 @@
                                                 <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
                                                 <td class="px-1 py-0.5">{{ $liquid?->product->product_name ?? '-' }}</td>
                                                 <td class="text-right px-1 py-0.5">
-                                                    {{ $liquid ? number_format($liquid->quantity, 2) : '-' }}</td>
+                                                    {{ $liquid ? number_format($liquid->quantity, 2) : '-' }}
+                                                </td>
                                                 <td class="text-right font-bold px-1 py-0.5">
-                                                    {{ $liquid ? number_format($liquid->amount, 2) : '-' }}</td>
+                                                    {{ $liquid ? number_format($liquid->amount, 2) : '-' }}
+                                                </td>
                                             </tr>
                                         @endfor
                                     </tbody>
@@ -902,7 +915,8 @@
                                         <tr>
                                             <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
                                             <td class="text-right px-1 py-0.5">
-                                                {{ number_format($settlement->amrLiquids->sum('amount'), 2) }}</td>
+                                                {{ number_format($settlement->amrLiquids->sum('amount'), 2) }}
+                                            </td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -920,6 +934,7 @@
                             {{-- Advance Tax --}}
                             <div>
                                 <h4 class="font-bold text-sm border-x border-t border-black text-center">Advance Tax
+                                    Benifits To NTN Customer
                                     (1161)</h4>
                                 <table class="report-table w-full">
                                     <thead>
@@ -944,7 +959,8 @@
                                                 </td>
                                                 <td class="text-right px-1 py-0.5">{{ $tax?->invoice_number ?? '-' }}</td>
                                                 <td class="text-right font-bold px-1 py-0.5">
-                                                    {{ $tax ? number_format($tax->tax_amount, 2) : '-' }}</td>
+                                                    {{ $tax ? number_format($tax->tax_amount, 2) : '-' }}
+                                                </td>
                                             </tr>
                                         @endfor
                                     </tbody>
@@ -986,7 +1002,8 @@
                                                 </td>
                                                 <td class="px-1 py-0.5">{{ $pctExp?->invoice_number ?? '-' }}</td>
                                                 <td class="text-right font-bold px-1 py-0.5">
-                                                    {{ $pctExp ? number_format($pctExp->amount, 2) : '-' }}</td>
+                                                    {{ $pctExp ? number_format($pctExp->amount, 2) : '-' }}
+                                                </td>
                                             </tr>
                                         @endfor
                                     </tbody>
@@ -1133,7 +1150,8 @@
                                                         @endif
                                                     </td>
                                                     <td class="text-right font-bold px-1 py-0.5">
-                                                        {{ number_format($expRow['amount'], 2) }}</td>
+                                                        {{ number_format($expRow['amount'], 2) }}
+                                                    </td>
                                                 @else
                                                     <td class="px-1 py-0.5 border-none">&nbsp;</td>
                                                     <td class="text-center px-1 py-0.5 border-none">&nbsp;</td>
@@ -1147,7 +1165,8 @@
                                             <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total:
                                             </td>
                                             <td class="text-right px-1 py-0.5 border-t border-black">
-                                                {{ number_format($settlement->expenses->sum('amount'), 2) }}</td>
+                                                {{ number_format($settlement->expenses->sum('amount'), 2) }}
+                                            </td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -1190,7 +1209,8 @@
                                             <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total
                                                 Physical Cash:</td>
                                             <td class="text-right px-1 py-0.5 border-t border-black">
-                                                {{ number_format($calculatedCash, 2) }}</td>
+                                                {{ number_format($calculatedCash, 2) }}
+                                            </td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -1216,12 +1236,14 @@
                                             <tr>
                                                 <td class="text-center px-1 py-0.5">{{ $index + 1 }}</td>
                                                 <td class="px-1 py-0.5 text-xs">
-                                                    {{ $slip->bankAccount->account_name ?? '-' }}</td>
+                                                    {{ $slip->bankAccount->account_name ?? '-' }}
+                                                </td>
                                                 <td class="text-center px-1 py-0.5 text-xs">
                                                     {{ $slip->deposit_date ? \Carbon\Carbon::parse($slip->deposit_date)->format('d-M-y') : '-' }}
                                                 </td>
                                                 <td class="text-right px-1 py-0.5 font-bold">
-                                                    {{ number_format($slip->amount, 2) }}</td>
+                                                    {{ number_format($slip->amount, 2) }}
+                                                </td>
                                             </tr>
                                         @endforeach
 
@@ -1240,7 +1262,8 @@
                                             <td colspan="3" class="text-right px-1 py-0.5 border-t border-black">Total
                                                 Bank Slips:</td>
                                             <td class="text-right px-1 py-0.5 border-t border-black">
-                                                {{ number_format($settlement->bankSlips->sum('amount'), 2) }}</td>
+                                                {{ number_format($settlement->bankSlips->sum('amount'), 2) }}
+                                            </td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -1277,49 +1300,57 @@
                                             <td class="text-center px-1 py-0.5">1</td>
                                             <td class="px-1 py-0.5">Credit Sale Amount</td>
                                             <td class="text-right px-1 py-0.5 font-bold">
-                                                {{ number_format($settlement->credit_sales_amount, 2) }}</td>
+                                                {{ number_format($settlement->credit_sales_amount, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">2</td>
                                             <td class="px-1 py-0.5">Cheque Sale Amount</td>
                                             <td class="text-right px-1 py-0.5 font-bold">
-                                                {{ number_format($settlement->cheque_sales_amount, 2) }}</td>
+                                                {{ number_format($settlement->cheque_sales_amount, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">3</td>
                                             <td class="px-1 py-0.5">Bank Transfer Amount</td>
                                             <td class="text-right px-1 py-0.5 font-bold">
-                                                {{ number_format($settlement->bank_transfer_amount, 2) }}</td>
+                                                {{ number_format($settlement->bank_transfer_amount, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">4</td>
                                             <td class="px-1 py-0.5">Cash Sale Amount</td>
                                             <td class="text-right px-1 py-0.5 font-bold">
-                                                {{ number_format($settlement->cash_sales_amount, 2) }}</td>
+                                                {{ number_format($settlement->cash_sales_amount, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">5</td>
                                             <td class="px-1 py-0.5">Bank Slips / Deposits</td>
                                             <td class="text-right px-1 py-0.5 font-bold">
-                                                {{ number_format($settlement->bankSlips->sum('amount'), 2) }}</td>
+                                                {{ number_format($settlement->bankSlips->sum('amount'), 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">6</td>
                                             <td class="px-1 py-0.5 font-bold">Net Sale (Sold Items Value)</td>
                                             <td class="text-right px-1 py-0.5 font-black border-t border-black">
-                                                {{ number_format($netSale, 2) }}</td>
+                                                {{ number_format($netSale, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">7</td>
                                             <td class="px-1 py-0.5">Return Value</td>
                                             <td class="text-right px-1 py-0.5">
-                                                {{ number_format($settlement->sales_return_amount, 2) }}</td>
+                                                {{ number_format($settlement->sales_return_amount, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">8</td>
                                             <td class="px-1 py-0.5">Shortage Value</td>
                                             <td class="text-right px-1 py-0.5">
-                                                {{ number_format($settlement->shortage_amount, 2) }}</td>
+                                                {{ number_format($settlement->shortage_amount, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">9</td>
@@ -1337,20 +1368,23 @@
                                             <td class="text-center px-1 py-0.5">11</td>
                                             <td class="px-1 py-0.5 font-bold">Total Sale Amount</td>
                                             <td class="text-right px-1 py-0.5 font-black border-t border-black">
-                                                {{ number_format($netSale, 2) }}</td>
+                                                {{ number_format($netSale, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">12</td>
                                             <td class="px-1 py-0.5 font-semibold text-blue-700">Expected Cash (Sales +
                                                 Cash Recoveries)</td>
                                             <td class="text-right px-1 py-0.5 font-bold text-blue-700">
-                                                {{ number_format($expectedCashGross, 2) }}</td>
+                                                {{ number_format($expectedCashGross, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">13</td>
                                             <td class="px-1 py-0.5 text-red-700">Less: Expenses</td>
                                             <td class="text-right px-1 py-0.5 text-red-700 font-semibold">
-                                                {{ number_format($totalExpenses, 2) }}</td>
+                                                {{ number_format($totalExpenses, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">14</td>
@@ -1358,21 +1392,24 @@
                                                 (After Expenses)</td>
                                             <td
                                                 class="text-right px-1 py-0.5 font-black text-blue-900 bg-blue-50 border-t border-blue-900">
-                                                {{ number_format($expectedCashNet, 2) }}</td>
+                                                {{ number_format($expectedCashNet, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">15</td>
                                             <td class="px-1 py-0.5 font-bold">Physical Cash Submitted (Denominations)
                                             </td>
                                             <td class="text-right px-1 py-0.5 font-black border-2 border-black">
-                                                {{ number_format($calculatedCash, 2) }}</td>
+                                                {{ number_format($calculatedCash, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">16</td>
                                             <td class="px-1 py-0.5 font-semibold">Short/Excess</td>
                                             <td
                                                 class="text-right px-1 py-0.5 font-bold {{ $shortExcess < 0 ? 'text-red-700' : 'text-green-700' }}">
-                                                {{ number_format($shortExcess, 2) }}</td>
+                                                {{ number_format($shortExcess, 2) }}
+                                            </td>
                                         </tr>
                                     </tbody>
                                     <tfoot class="bg-gray-50 border-t border-black">
@@ -1400,32 +1437,37 @@
                                             <td class="text-center px-1 py-0.5">1</td>
                                             <td class="px-1 py-0.5">Net Sales Revenue (Sold Items)</td>
                                             <td class="text-right px-1 py-0.5 font-semibold">
-                                                {{ number_format($netSale, 2) }}</td>
+                                                {{ number_format($netSale, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">2</td>
                                             <td class="px-1 py-0.5 text-red-700">Less: Cost of Goods Sold (COGS)</td>
                                             <td class="text-right px-1 py-0.5 text-red-700 font-semibold">
-                                                {{ number_format($totalCOGS, 2) }}</td>
+                                                {{ number_format($totalCOGS, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">3</td>
                                             <td class="px-1 py-0.5 font-semibold text-green-700">Gross Profit (Sales -
                                                 COGS)</td>
                                             <td class="text-right px-1 py-0.5 font-bold text-green-700">
-                                                {{ number_format($grossProfit, 2) }}</td>
+                                                {{ number_format($grossProfit, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">4</td>
                                             <td class="px-1 py-0.5 text-gray-600 pl-4">Gross Margin %</td>
                                             <td class="text-right px-1 py-0.5 font-semibold">
-                                                {{ number_format($grossMargin, 2) }}%</td>
+                                                {{ number_format($grossMargin, 2) }}%
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">5</td>
                                             <td class="px-1 py-0.5 text-red-700">Less: Operating Expenses</td>
                                             <td class="text-right px-1 py-0.5 text-red-700 font-semibold">
-                                                {{ number_format($totalExpenses, 2) }}</td>
+                                                {{ number_format($totalExpenses, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">6</td>
@@ -1434,14 +1476,16 @@
                                                 Net Profit (After Expenses)</td>
                                             <td
                                                 class="text-right px-1 py-0.5 font-bold {{ $netProfit >= 0 ? 'text-green-700' : 'text-red-700' }}">
-                                                {{ number_format($netProfit, 2) }}</td>
+                                                {{ number_format($netProfit, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5">7</td>
                                             <td class="px-1 py-0.5 text-gray-600 pl-4">Net Margin %</td>
                                             <td
                                                 class="text-right px-1 py-0.5 font-semibold {{ $netMargin >= 0 ? 'text-green-700' : 'text-red-700' }}">
-                                                {{ number_format($netMargin, 2) }}%</td>
+                                                {{ number_format($netMargin, 2) }}%
+                                            </td>
                                         </tr>
                                         {{-- Filler rows to match Sales Summary Height --}}
                                         @for($i = 8; $i <= 16; $i++)
@@ -1556,9 +1600,11 @@
                                         <td class="py-1 font-bold">{{ $row->customer_name }}</td>
                                         <td class="py-1 text-center">{{ $row->customer_code }}</td>
                                         <td class="text-right py-1 text-gray-600">
-                                            {{ number_format($row->opening_balance, 2) }}</td>
+                                            {{ number_format($row->opening_balance, 2) }}
+                                        </td>
                                         <td class="text-right py-1 font-bold">
-                                            {{ $row->credit_amount > 0 ? number_format($row->credit_amount, 2) : '-' }}</td>
+                                            {{ $row->credit_amount > 0 ? number_format($row->credit_amount, 2) : '-' }}
+                                        </td>
                                         <td class="text-right py-1 font-bold">
                                             {{ $row->recovery_amount > 0 ? number_format($row->recovery_amount, 2) : '-' }}
                                         </td>
@@ -1681,7 +1727,7 @@
                         return false;
                     }
 
-                    document.addEventListener('passwordConfirmed', function(event) {
+                    document.addEventListener('passwordConfirmed', function (event) {
                         const { modalId, password } = event.detail;
 
                         if (modalId === 'revertSettlementModal') {

@@ -7,6 +7,7 @@ use App\Http\Requests\StoreProductRequest;
 use App\Http\Requests\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductPriceChangeLog;
 use App\Models\Supplier;
 use App\Models\Uom;
 use Illuminate\Database\QueryException;
@@ -197,6 +198,8 @@ class ProductController extends Controller implements HasMiddleware
                 : $product->is_powder;
 
             $oldSellingPrice = $product->unit_sell_price;
+            $oldExpiryPrice = $product->expiry_price;
+            $oldCostPrice = $product->cost_price;
 
             $updated = $product->update($payload);
 
@@ -207,6 +210,8 @@ class ProductController extends Controller implements HasMiddleware
                     ->withInput()
                     ->with('info', 'No changes were made to the product.');
             }
+
+            $impactedBatchIds = collect();
 
             // When unit_sell_price changes, cascade to batches with available stock
             if ($product->unit_sell_price !== null && (float) $product->unit_sell_price !== (float) $oldSellingPrice) {
@@ -228,21 +233,21 @@ class ProductController extends Controller implements HasMiddleware
                     ->whereNotNull('stock_batch_id')
                     ->pluck('stock_batch_id');
 
-                $batchIdsWithStock = $batchIdsFromValuation
+                $impactedBatchIds = $batchIdsFromValuation
                     ->merge($batchIdsFromCurrentStock)
                     ->unique()
                     ->values();
 
-                if ($batchIdsWithStock->isNotEmpty()) {
+                if ($impactedBatchIds->isNotEmpty()) {
                     // Update stock_batches that have available stock
                     DB::table('stock_batches')
-                        ->whereIn('id', $batchIdsWithStock)
+                        ->whereIn('id', $impactedBatchIds)
                         ->where('is_promotional', false)
                         ->update(['selling_price' => $newPrice]);
 
                     // Update current_stock_by_batch for these batches
                     DB::table('current_stock_by_batch')
-                        ->whereIn('stock_batch_id', $batchIdsWithStock)
+                        ->whereIn('stock_batch_id', $impactedBatchIds)
                         ->where('is_promotional', false)
                         ->update(['selling_price' => $newPrice]);
                 }
@@ -263,6 +268,40 @@ class ProductController extends Controller implements HasMiddleware
                         ->where('is_promotional', false)
                         ->update(['selling_price' => $newPrice]);
                 }
+
+                ProductPriceChangeLog::create([
+                    'product_id' => $product->id,
+                    'changed_by' => auth()->id(),
+                    'price_type' => 'selling_price',
+                    'old_price' => $oldSellingPrice,
+                    'new_price' => $newPrice,
+                    'impacted_batch_ids' => $impactedBatchIds->all(),
+                    'impacted_batch_count' => $impactedBatchIds->count(),
+                ]);
+            }
+
+            if ((float) $product->expiry_price !== (float) $oldExpiryPrice) {
+                ProductPriceChangeLog::create([
+                    'product_id' => $product->id,
+                    'changed_by' => auth()->id(),
+                    'price_type' => 'expiry_price',
+                    'old_price' => $oldExpiryPrice,
+                    'new_price' => $product->expiry_price,
+                    'impacted_batch_ids' => null,
+                    'impacted_batch_count' => 0,
+                ]);
+            }
+
+            if ((float) $product->cost_price !== (float) $oldCostPrice) {
+                ProductPriceChangeLog::create([
+                    'product_id' => $product->id,
+                    'changed_by' => auth()->id(),
+                    'price_type' => 'cost_price',
+                    'old_price' => $oldCostPrice,
+                    'new_price' => $product->cost_price,
+                    'impacted_batch_ids' => null,
+                    'impacted_batch_count' => 0,
+                ]);
             }
 
             DB::commit();

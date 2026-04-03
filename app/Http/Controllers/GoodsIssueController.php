@@ -50,22 +50,25 @@ class GoodsIssueController extends Controller implements HasMiddleware
             $query->where('issued_by', auth()->id());
         }
 
+        $allowedFilters = [
+            AllowedFilter::partial('issue_number'),
+            AllowedFilter::exact('warehouse_id'),
+            AllowedFilter::exact('vehicle_id'),
+            AllowedFilter::exact('employee_id'),
+            AllowedFilter::exact('supplier_id'),
+            AllowedFilter::exact('status'),
+            AllowedFilter::scope('issue_date_from'),
+            AllowedFilter::scope('issue_date_to'),
+            AllowedFilter::exact('issue_date'),
+            AllowedFilter::callback('product_id', function ($query, $value) {
+                $query->whereHas('items', function ($q) use ($value) {
+                    $q->where('product_id', $value);
+                });
+            }),
+        ];
+
         $goodsIssues = QueryBuilder::for($query)
-            ->allowedFilters([
-                AllowedFilter::partial('issue_number'),
-                AllowedFilter::exact('warehouse_id'),
-                AllowedFilter::exact('vehicle_id'),
-                AllowedFilter::exact('employee_id'),
-                AllowedFilter::exact('status'),
-                AllowedFilter::scope('issue_date_from'),
-                AllowedFilter::scope('issue_date_to'),
-                AllowedFilter::exact('issue_date'), // Added for direct day filtering
-                AllowedFilter::callback('product_id', function ($query, $value) {
-                    $query->whereHas('items', function ($q) use ($value) {
-                        $q->where('product_id', $value);
-                    });
-                }),
-            ])
+            ->allowedFilters($allowedFilters)
             ->defaultSort('-issue_date')
             ->paginate(20)
             ->withQueryString();
@@ -78,21 +81,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
         }
 
         $totalValue = QueryBuilder::for($totalQuery)
-            ->allowedFilters([
-                AllowedFilter::partial('issue_number'),
-                AllowedFilter::exact('warehouse_id'),
-                AllowedFilter::exact('vehicle_id'),
-                AllowedFilter::exact('employee_id'),
-                AllowedFilter::exact('status'),
-                AllowedFilter::scope('issue_date_from'),
-                AllowedFilter::scope('issue_date_to'),
-                AllowedFilter::exact('issue_date'),
-                AllowedFilter::callback('product_id', function ($query, $value) {
-                    $query->whereHas('items', function ($q) use ($value) {
-                        $q->where('product_id', $value);
-                    });
-                }),
-            ])
+            ->allowedFilters($allowedFilters)
             ->sum('total_value');
 
         return view('goods-issues.index', [
@@ -101,6 +90,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
             'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
         ]);
     }
 

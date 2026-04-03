@@ -56,6 +56,7 @@ use App\Http\Controllers\Reports\InvoiceSummaryReportController;
 use App\Http\Controllers\Reports\LedgerRegisterController;
 use App\Http\Controllers\Reports\OpeningCustomerBalanceReportController;
 use App\Http\Controllers\Reports\PercentageExpenseReportController;
+use App\Http\Controllers\Reports\ProductPriceChangeLogController;
 use App\Http\Controllers\Reports\RoiReportController;
 use App\Http\Controllers\Reports\SalesmanStockRegisterController;
 use App\Http\Controllers\Reports\SalesSettlementReportController;
@@ -685,6 +686,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('sku-rates', [SkuRatesController::class, 'index'])->name('sku-rates.index');
         Route::get('vehicle', [VehicleReportController::class, 'index'])->name('vehicle.index');
         Route::get('stock-availability', [StockAvailabilityReportController::class, 'index'])->name('stock-availability.index');
+        Route::get('product-price-change-log', [ProductPriceChangeLogController::class, 'index'])->name('product-price-change-log.index');
 
         /* Claim Register */
         Route::prefix('claim-register')->name('claim-register.')->group(function () {

@@ -13,15 +13,27 @@
             </div>
 
             <div>
+                <x-label for="filter_supplier_id" value="Supplier" />
+                <select id="filter_supplier_id" name="filter[supplier_id]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Suppliers</option>
+                    @foreach ($suppliers as $supplier)
+                        <option value="{{ $supplier->id }}" {{ request('filter.supplier_id') == $supplier->id ? 'selected' : '' }}>
+                            {{ $supplier->supplier_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
                 <x-label for="filter_warehouse_id" value="Warehouse" />
                 <select id="filter_warehouse_id" name="filter[warehouse_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Warehouses</option>
                     @foreach ($warehouses as $warehouse)
-                                    <option value="{{ $warehouse->id }}" {{ request('filter.warehouse_id') == $warehouse->id ? 'selected'
-                        : '' }}>
-                                        {{ $warehouse->warehouse_name }}
-                                    </option>
+                        <option value="{{ $warehouse->id }}" {{ request('filter.warehouse_id') == $warehouse->id ? 'selected' : '' }}>
+                            {{ $warehouse->warehouse_name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -29,11 +41,10 @@
             <div>
                 <x-label for="filter_vehicle_id" value="Vehicle" />
                 <select id="filter_vehicle_id" name="filter[vehicle_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Vehicles</option>
                     @foreach ($vehicles as $vehicle)
-                        <option value="{{ $vehicle->id }}" {{ request('filter.vehicle_id') == $vehicle->id ? 'selected' : ''
-                                                                                                                    }}>
+                        <option value="{{ $vehicle->id }}" {{ request('filter.vehicle_id') == $vehicle->id ? 'selected' : '' }}>
                             {{ $vehicle->vehicle_number }} ({{ $vehicle->vehicle_type }})
                         </option>
                     @endforeach
@@ -43,13 +54,12 @@
             <div>
                 <x-label for="filter_employee_id" value="Salesman" />
                 <select id="filter_employee_id" name="filter[employee_id]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Salesmen</option>
                     @foreach ($employees as $employee)
-                                    <option value="{{ $employee->id }}" {{ request('filter.employee_id') == $employee->id ? 'selected' :
-                        '' }}>
-                                        {{ $employee->full_name }}
-                                    </option>
+                        <option value="{{ $employee->id }}" {{ request('filter.employee_id') == $employee->id ? 'selected' : '' }}>
+                            {{ $employee->full_name }}
+                        </option>
                     @endforeach
                 </select>
             </div>
@@ -57,7 +67,7 @@
             <div>
                 <x-label for="filter_status" value="Status" />
                 <select id="filter_status" name="filter[status]"
-                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Statuses</option>
                     <option value="draft" {{ request('filter.status') === 'draft' ? 'selected' : '' }}>Draft</option>
                     <option value="issued" {{ request('filter.status') === 'issued' ? 'selected' : '' }}>Issued</option>
@@ -193,4 +203,16 @@
     <x-alpine-confirmation-modal event-name="open-delete-gi-modal" title="Delete Goods Issue"
         message="Are you sure you want to delete this draft goods issue? This action cannot be undone."
         confirm-button-text="Delete" csrf-method="DELETE" />
+
+    @push('scripts')
+        <script>
+            $(document).ready(function () {
+                $('.select2').select2({
+                    width: '100%',
+                    placeholder: 'Select an option',
+                    allowClear: true,
+                });
+            });
+        </script>
+    @endpush
 </x-app-layout>

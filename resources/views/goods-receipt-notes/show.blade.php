@@ -266,7 +266,37 @@
                                 </tr>
                             </thead>
                             <tbody>
+                                @php
+                                    $totals = [
+                                        'qty_in_purchase_uom' => 0,
+                                        'extended_value' => 0,
+                                        'discount_value' => 0,
+                                        'fmr_allowance' => 0,
+                                        'discounted_value_before_tax' => 0,
+                                        'excise_duty' => 0,
+                                        'sales_tax_value' => 0,
+                                        'advance_income_tax' => 0,
+                                        'other_charges' => 0,
+                                        'withholding_tax' => 0,
+                                        'quantity_received' => 0,
+                                        'total_value_with_taxes' => 0,
+                                    ];
+                                @endphp
                                 @foreach ($grn->items as $item)
+                                    @php
+                                        $totals['qty_in_purchase_uom'] += round((float)($item->qty_in_purchase_uom ?? 0), 2);
+                                        $totals['extended_value'] += round((float)($item->extended_value ?? 0), 2);
+                                        $totals['discount_value'] += round((float)($item->discount_value ?? 0), 2);
+                                        $totals['fmr_allowance'] += round((float)($item->fmr_allowance ?? 0), 2);
+                                        $totals['discounted_value_before_tax'] += round((float)($item->discounted_value_before_tax ?? 0), 2);
+                                        $totals['excise_duty'] += round((float)($item->excise_duty ?? 0), 2);
+                                        $totals['sales_tax_value'] += round((float)($item->sales_tax_value ?? 0), 2);
+                                        $totals['advance_income_tax'] += round((float)($item->advance_income_tax ?? 0), 2);
+                                        $totals['other_charges'] += round((float)($item->other_charges ?? 0), 2);
+                                        $totals['withholding_tax'] += round((float)($item->withholding_tax ?? 0), 2);
+                                        $totals['quantity_received'] += round((float)($item->quantity_received ?? 0), 2);
+                                        $totals['total_value_with_taxes'] += round((float)($item->total_value_with_taxes ?? $item->total_cost ?? 0), 2);
+                                    @endphp
                                     <tr>
                                         <td class="text-center" style="vertical-align: middle;">{{ $item->line_no }}</td>
                                         <td style="vertical-align: middle;">
@@ -346,24 +376,24 @@
                             <tfoot class="bg-gray-100 font-extrabold">
                                 <tr>
                                     <td colspan="2" class="text-right px-2 py-1">Totals</td>
-                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('qty_in_purchase_uom'), 2) }}</td>
+                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['qty_in_purchase_uom'], 2) }}</td>
                                     <td class="px-2 py-1"></td>
-                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('extended_value'), 2) }}</td>
-                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('discount_value'), 2) }}</td>
-                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('fmr_allowance'), 2) }}</td>
-                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('discounted_value_before_tax'), 2) }}</td>
-                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('excise_duty'), 2) }}</td>
-                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('sales_tax_value'), 2) }}</td>
-                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('advance_income_tax'), 2) }}</td>
-                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('other_charges'), 2) }}</td>
+                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['extended_value'], 2) }}</td>
+                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['discount_value'], 2) }}</td>
+                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['fmr_allowance'], 2) }}</td>
+                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['discounted_value_before_tax'], 2) }}</td>
+                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['excise_duty'], 2) }}</td>
+                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['sales_tax_value'], 2) }}</td>
+                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['advance_income_tax'], 2) }}</td>
+                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['other_charges'], 2) }}</td>
                                     @if($grn->supplier->supplier_name === 'Unilever Pakistan')
-                                        <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('withholding_tax'), 2) }}</td>
+                                        <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['withholding_tax'], 2) }}</td>
                                     @endif
-                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($grn->items->sum('quantity_received'), 2) }}</td>
+                                    <td class="text-right font-mono tabular-nums px-2 py-1">{{ number_format($totals['quantity_received'], 2) }}</td>
                                     <td class="px-2 py-1"></td>
                                     <td class="px-2 py-1"></td>
                                     <td class="text-right font-mono tabular-nums px-2 py-1 text-emerald-600">
-                                        ₨ {{ number_format($grn->items->sum('total_value_with_taxes') ?: $grn->grand_total, 2) }}
+                                        ₨ {{ number_format($totals['total_value_with_taxes'], 2) }}
                                     </td>
                                 </tr>
                             </tfoot>

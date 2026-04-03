@@ -28,6 +28,7 @@ use App\Http\Controllers\EmployeeSalaryTransactionController;
 use App\Http\Controllers\ExpenseDetailController;
 use App\Http\Controllers\GoodsIssueController;
 use App\Http\Controllers\GoodsReceiptNoteController;
+use App\Http\Controllers\InvestmentOpeningBalanceController;
 use App\Http\Controllers\JournalEntryController;
 use App\Http\Controllers\OpeningCustomerBalanceController;
 use App\Http\Controllers\OpeningStockController;
@@ -609,6 +610,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         /* Accounting Configuration */
         Route::resource('account-types', AccountTypeController::class);
         Route::resource('accounting-periods', AccountingPeriodController::class);
+        Route::resource('investment-opening-balances', InvestmentOpeningBalanceController::class);
         Route::get('chart-of-accounts/manage-tree-structure', [ChartOfAccountController::class, 'tree'])->name('chart-of-accounts.tree');
         Route::resource('chart-of-accounts', ChartOfAccountController::class);
         Route::resource('currencies', CurrencyController::class);

@@ -673,7 +673,7 @@ class InventoryService
             'quantity_out' => 0,
             'quantity_balance' => $quantityBalance,
             'valuation_rate' => $item->unit_cost,
-            'stock_value' => $quantityBalance * $item->unit_cost,
+            'stock_value' => round($quantityBalance * (float) $item->unit_cost, 4),
             'reference_type' => $movement->reference_type,
             'reference_id' => $movement->reference_id,
             'created_at' => now(),
@@ -753,7 +753,7 @@ class InventoryService
 
         $totalQty = (float) ($layerData->total_qty ?? 0);
         $totalValue = (float) ($layerData->total_value ?? 0);
-        $avgCost = $totalQty > 0 ? $totalValue / $totalQty : 0;
+        $avgCost = $totalQty > 0 ? round($totalValue / $totalQty, 6) : 0;
 
         // Count batches from current_stock_by_batch
         $totalBatches = CurrentStockByBatch::where('product_id', $productId)
@@ -832,7 +832,7 @@ class InventoryService
                     'quantity' => -$movement->quantity,
                     'uom_id' => $movement->uom_id,
                     'unit_cost' => $movement->unit_cost,
-                    'total_value' => abs((float) $movement->quantity) * (float) $movement->unit_cost,
+                    'total_value' => round(abs((float) $movement->quantity) * (float) $movement->unit_cost, 4),
                     'created_by' => auth()->id(),
                 ]);
 
@@ -888,12 +888,16 @@ class InventoryService
                     ->first();
 
                 if ($stockByBatch) {
+                    $qtyBefore = (float) $stockByBatch->quantity_on_hand;
                     $stockByBatch->quantity_on_hand -= $movement->quantity;
                     if ($stockByBatch->quantity_on_hand <= 0) {
                         $stockByBatch->quantity_on_hand = 0;
+                        $stockByBatch->total_value = 0.0;
                         $stockByBatch->status = 'depleted';
+                    } else {
+                        $ratio = $qtyBefore > 0 ? $stockByBatch->quantity_on_hand / $qtyBefore : 0;
+                        $stockByBatch->total_value = round((float) $stockByBatch->total_value * $ratio, 4);
                     }
-                    $stockByBatch->total_value = $stockByBatch->quantity_on_hand * $stockByBatch->unit_cost;
                     $stockByBatch->last_updated = now();
                     $stockByBatch->save();
                 }
@@ -922,7 +926,7 @@ class InventoryService
                     $totalQty = $allBatches->sum('quantity_on_hand');
 
                     $currentStock->total_value = $totalValue;
-                    $currentStock->average_cost = $totalQty > 0 ? $totalValue / $totalQty : 0;
+                    $currentStock->average_cost = $totalQty > 0 ? round($totalValue / $totalQty, 6) : 0;
                     $currentStock->last_updated = now();
                     $currentStock->save();
                 }
@@ -973,11 +977,15 @@ class InventoryService
             ->first();
 
         if ($layer) {
+            $qtyBefore = (float) $layer->quantity_remaining;
             $layer->quantity_remaining -= $quantity;
-            if ($layer->quantity_remaining < 0) {
+            if ($layer->quantity_remaining <= 0) {
                 $layer->quantity_remaining = 0;
+                $layer->total_value = 0.0;
+            } else {
+                $ratio = $qtyBefore > 0 ? $layer->quantity_remaining / $qtyBefore : 0;
+                $layer->total_value = round((float) $layer->total_value * $ratio, 4);
             }
-            $layer->total_value = $layer->quantity_remaining * $layer->unit_cost;
             $layer->save();
         }
     }

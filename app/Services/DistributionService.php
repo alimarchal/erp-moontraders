@@ -98,7 +98,7 @@ class DistributionService
                         'quantity' => -$qtyFromBatch,
                         'uom_id' => $item->uom_id,
                         'unit_cost' => $batch->unit_cost,
-                        'total_value' => $qtyFromBatch * $batch->unit_cost,
+                        'total_value' => round($qtyFromBatch * (float) $batch->unit_cost, 4),
                         'created_by' => auth()->id() ?? 1,
                     ]);
 
@@ -109,12 +109,15 @@ class DistributionService
                         ->first();
 
                     if ($stockByBatch) {
+                        $qtyBefore = (float) $stockByBatch->quantity_on_hand;
                         $stockByBatch->quantity_on_hand -= $qtyFromBatch;
-                        $stockByBatch->total_value = max(0.0, round(($stockByBatch->total_value ?? 0) - round($qtyFromBatch * (float) $stockByBatch->unit_cost, 2), 2));
                         if ($stockByBatch->quantity_on_hand <= 0) {
                             $stockByBatch->quantity_on_hand = 0;
-                            $stockByBatch->total_value = 0;
+                            $stockByBatch->total_value = 0.0;
                             $stockByBatch->status = 'depleted';
+                        } else {
+                            $ratio = $qtyBefore > 0 ? $stockByBatch->quantity_on_hand / $qtyBefore : 0;
+                            $stockByBatch->total_value = round((float) ($stockByBatch->total_value ?? 0) * $ratio, 4);
                         }
                         $stockByBatch->last_updated = now();
                         $stockByBatch->save();
@@ -128,13 +131,14 @@ class DistributionService
                         ->first();
 
                     if ($valuationLayer) {
-                        $deductedValue = round($qtyFromBatch * (float) $valuationLayer->unit_cost, 2);
+                        $qtyBeforeLayer = (float) $valuationLayer->quantity_remaining;
                         $valuationLayer->quantity_remaining -= $qtyFromBatch;
                         if ($valuationLayer->quantity_remaining <= 0) {
                             $valuationLayer->quantity_remaining = 0;
                             $valuationLayer->total_value = 0.0;
                         } else {
-                            $valuationLayer->total_value = max(0.0, round((float) ($valuationLayer->total_value ?? 0) - $deductedValue, 2));
+                            $ratio = $qtyBeforeLayer > 0 ? $valuationLayer->quantity_remaining / $qtyBeforeLayer : 0;
+                            $valuationLayer->total_value = round((float) ($valuationLayer->total_value ?? 0) * $ratio, 4);
                         }
                         $valuationLayer->save();
                     }
@@ -552,7 +556,7 @@ class DistributionService
                             'quantity' => -$soldQty,
                             'uom_id' => $uomId,
                             'unit_cost' => $itemBatch->unit_cost,
-                            'total_value' => $soldQty * $itemBatch->unit_cost,
+                            'total_value' => round($soldQty * (float) $itemBatch->unit_cost, 4),
                             'created_by' => auth()->id() ?? 1,
                         ]);
                     }
@@ -571,7 +575,7 @@ class DistributionService
                             'quantity' => $returnedQty, // Positive for return
                             'uom_id' => $uomId,
                             'unit_cost' => $itemBatch->unit_cost,
-                            'total_value' => $returnedQty * $itemBatch->unit_cost,
+                            'total_value' => round($returnedQty * (float) $itemBatch->unit_cost, 4),
                             'created_by' => auth()->id() ?? 1,
                         ]);
 
@@ -580,9 +584,11 @@ class DistributionService
                             ->where('warehouse_id', $settlement->warehouse_id)
                             ->first();
 
+                        $restoredValue = round($returnedQty * (float) $itemBatch->unit_cost, 4);
+
                         if ($stockByBatch) {
                             $stockByBatch->quantity_on_hand += $returnedQty;
-                            $stockByBatch->total_value = round(($stockByBatch->total_value ?? 0) + round($returnedQty * (float) $itemBatch->unit_cost, 2), 2);
+                            $stockByBatch->total_value = round((float) ($stockByBatch->total_value ?? 0) + $restoredValue, 4);
                             $stockByBatch->status = 'active';
                             $stockByBatch->last_updated = now();
                             $stockByBatch->save();
@@ -594,7 +600,7 @@ class DistributionService
                                 'warehouse_id' => $settlement->warehouse_id,
                                 'quantity_on_hand' => $returnedQty,
                                 'unit_cost' => $itemBatch->unit_cost,
-                                'total_value' => round($returnedQty * (float) $itemBatch->unit_cost, 2),
+                                'total_value' => $restoredValue,
                                 'status' => 'active',
                                 'last_updated' => now(),
                             ]);
@@ -606,9 +612,8 @@ class DistributionService
                             ->first();
 
                         if ($valuationLayer) {
-                            $restoredValue = round($returnedQty * (float) $itemBatch->unit_cost, 2);
                             $valuationLayer->quantity_remaining += $returnedQty;
-                            $valuationLayer->total_value = round((float) ($valuationLayer->total_value ?? 0) + $restoredValue, 2);
+                            $valuationLayer->total_value = round((float) ($valuationLayer->total_value ?? 0) + $restoredValue, 4);
                             $valuationLayer->save();
                         }
                     }
@@ -627,7 +632,7 @@ class DistributionService
                             'quantity' => -$shortageQty, // Negative for loss
                             'uom_id' => $uomId,
                             'unit_cost' => $itemBatch->unit_cost,
-                            'total_value' => $shortageQty * $itemBatch->unit_cost,
+                            'total_value' => round($shortageQty * (float) $itemBatch->unit_cost, 4),
                             'created_by' => auth()->id() ?? 1,
                         ]);
                     }

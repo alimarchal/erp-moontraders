@@ -127,7 +127,7 @@
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][qty_in_purchase_uom]`"
                                                 x-model="item.qty_in_purchase_uom"
-                                                @input="calculateFromPurchaseQty(index)" step="0.01" min="0"
+                                                @input="calculateFromPurchaseQty(index)" step="0.0001" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="Qty">
                                         </td>
@@ -149,7 +149,7 @@
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][unit_price_per_case]`"
                                                 x-model="item.unit_price_per_case"
-                                                @input="calculateFromPurchaseQty(index)" step="0.01" min="0"
+                                                @input="calculateFromPurchaseQty(index)" step="0.0001" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="Price">
                                         </td>
@@ -160,14 +160,14 @@
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][discount_value]`"
-                                                x-model="item.discount_value" @input="calculateTaxes(index)" step="0.01"
+                                                x-model="item.discount_value" @input="calculateTaxes(index)" step="0.0001"
                                                 min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="0.00">
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][fmr_allowance]`"
-                                                x-model="item.fmr_allowance" @input="calculateTaxes(index)" step="0.01"
+                                                x-model="item.fmr_allowance" @input="calculateTaxes(index)" step="0.0001"
                                                 min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="0.00">
@@ -180,7 +180,7 @@
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][excise_duty]`"
-                                                x-model="item.excise_duty" @input="calculateTaxes(index)" step="0.01"
+                                                x-model="item.excise_duty" @input="calculateTaxes(index)" step="0.0001"
                                                 min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="0.00">
@@ -188,20 +188,20 @@
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][sales_tax_value]`"
                                                 x-model="item.sales_tax_value" @input="onSalesTaxManualEdit(index)"
-                                                step="0.01" min="0"
+                                                step="0.0001" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm w-full"
                                                 placeholder="Auto-calculated">
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][advance_income_tax]`"
                                                 x-model="item.advance_income_tax" @input="calculateTaxes(index)"
-                                                step="0.01" min="0"
+                                                step="0.0001" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="0.00">
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][other_charges]`"
-                                                x-model="item.other_charges" @input="calculateTaxes(index)" step="0.01"
+                                                x-model="item.other_charges" @input="calculateTaxes(index)" step="0.0001"
                                                 min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="0.00">
@@ -209,7 +209,7 @@
                                         <td class="px-2 py-2" x-show="isUnileverPakistan">
                                             <input type="number" :name="`items[${index}][withholding_tax]`"
                                                 x-model="item.withholding_tax"
-                                                @input="onWithholdingTaxManualEdit(index)" step="0.01" min="0"
+                                                @input="onWithholdingTaxManualEdit(index)" step="0.0001" min="0"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 placeholder="0.00">
                                         </td>
@@ -218,14 +218,14 @@
                                             x-model="item.stock_uom_id">
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][quantity_received]`"
-                                                x-model="item.quantity_received" step="0.01" min="0" required readonly
+                                                x-model="item.quantity_received" step="0.0001" min="0" required readonly
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full bg-gray-50">
                                             <!-- Hidden quantity_accepted field that mirrors quantity_received -->
                                             <input type="hidden" :name="`items[${index}][quantity_accepted]`"
                                                 x-model="item.quantity_received">
                                         </td>
                                         <td class="px-2 py-2">
-                                            <input type="text" :value="formatNumber(item.unit_cost)" readonly
+                                            <input type="text" :value="formatUnitCost(item.unit_cost)" readonly
                                                 class="border-gray-300 bg-gray-50 rounded-md shadow-sm text-sm w-full text-right">
                                             <!-- Hidden input to submit unit_cost value -->
                                             <input type="hidden" :name="`items[${index}][unit_cost]`"
@@ -233,7 +233,7 @@
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="number" :name="`items[${index}][selling_price]`"
-                                                x-model="item.selling_price" step="0.01" min="0"
+                                                x-model="item.selling_price" step="0.0001" min="0"
                                                 @input="validateSellingPrice(index)"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                         </td>
@@ -341,7 +341,7 @@
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_received) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
-                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.unit_cost) || 0), 0))">
+                                        x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.total_cost) || 0), 0))">
                                     </td>
                                     <td class="px-2 py-2 text-right"
                                         x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.selling_price) || 0), 0))">
@@ -426,7 +426,7 @@
                                                     Promotional Price
                                                 </label>
                                                 <input type="number" x-model="items[currentEditIndex].promotional_price"
-                                                    step="0.01" min="0"
+                                                    step="0.0001" min="0"
                                                     class="block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
                                             </div>
 
@@ -603,6 +603,7 @@
                         quantity_received: parseFloat(item.quantity_received) || 0,
                         quantity_accepted: parseFloat(item.quantity_accepted) || 0,
                         unit_cost: parseFloat(item.unit_cost) || 0,
+                        total_cost: parseFloat(item.total_cost) || parseFloat((parseFloat(item.quantity_accepted || 0) * parseFloat(item.unit_cost || 0)).toFixed(4)),
                         selling_price: parseFloat(item.selling_price) || 0,
                         max_selling_price: parseFloat(item.max_selling_price) || parseFloat(item.selling_price) || 0,
                         promotional_price: parseFloat(item.promotional_price) || 0,
@@ -639,6 +640,7 @@
                         quantity_received: parseFloat(item.quantity_received) || 0,
                         quantity_accepted: parseFloat(item.quantity_accepted) || 0,
                         unit_cost: parseFloat(item.unit_cost) || 0,
+                        total_cost: parseFloat(item.total_cost) || parseFloat((parseFloat(item.quantity_accepted || 0) * parseFloat(item.unit_cost || 0)).toFixed(4)),
                         selling_price: parseFloat(item.selling_price) || 0,
                         max_selling_price: parseFloat(item.selling_price) || 0,
                         promotional_price: parseFloat(item.promotional_price) || 0,
@@ -688,6 +690,7 @@
                             quantity_received: 0,
                             quantity_accepted: 0,
                             unit_cost: 0,
+                            total_cost: 0,
                             selling_price: 0,
                             max_selling_price: 0,
                             promotional_price: 0,
@@ -814,8 +817,11 @@
                         // Calculate Unit Cost: (Total Value with Taxes + FMR Allowance) / Qty Received
                         const qtyReceived = parseFloat(item.quantity_received) || 0;
                         if (qtyReceived > 0) {
-                            item.unit_cost = parseFloat(((item.total_value_with_taxes + fmrAllowance) / qtyReceived).toFixed(2));
+                            item.unit_cost = parseFloat(((item.total_value_with_taxes + fmrAllowance) / qtyReceived).toFixed(6));
                         }
+
+                        // total_cost = qty_accepted × unit_cost (4 decimal precision)
+                        item.total_cost = parseFloat((item.quantity_accepted * item.unit_cost).toFixed(4));
 
                         // Qty Accepted always equals Qty Received
                         item.quantity_accepted = item.quantity_received;
@@ -900,9 +906,20 @@
                     },
 
                     formatNumber(value) {
-                        return parseFloat(value || 0).toLocaleString('en-PK', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
+                        const num = parseFloat(value || 0);
+                        const decimals = num !== 0 && num % 1 !== 0 ? 4 : 2;
+                        return num.toLocaleString('en-PK', {
+                            minimumFractionDigits: decimals,
+                            maximumFractionDigits: 4
+                        });
+                    },
+
+                    formatUnitCost(value) {
+                        const num = parseFloat(value || 0);
+                        const decimals = num !== 0 && num % 1 !== 0 ? 4 : 2;
+                        return num.toLocaleString('en-PK', {
+                            minimumFractionDigits: decimals,
+                            maximumFractionDigits: 4
                         });
                     }
                 }

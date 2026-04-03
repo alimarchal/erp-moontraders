@@ -99,7 +99,7 @@ class ResyncStockValues extends Command
 
             $drift = abs($correctValue - $currentTotalValue);
 
-            if ($drift < 0.001) {
+            if ($drift < 0.0001) {
                 $skipped++;
                 $this->output->progressAdvance();
 
@@ -193,7 +193,7 @@ class ResyncStockValues extends Command
 
             $drift = abs($correctValue - $currentTotalValue);
 
-            if ($drift < 0.001) {
+            if ($drift < 0.0001) {
                 $svlSkipped++;
                 $this->output->progressAdvance();
 
@@ -285,7 +285,7 @@ class ResyncStockValues extends Command
 
             $drift = abs($totalValue - (float) $currentStock->total_value);
 
-            if ($drift < 0.001) {
+            if ($drift < 0.0001) {
                 $this->output->progressAdvance();
 
                 continue;

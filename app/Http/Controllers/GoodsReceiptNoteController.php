@@ -5,10 +5,12 @@ namespace App\Http\Controllers;
 use App\Exports\GoodsReceiptNoteTemplateExport;
 use App\Http\Requests\ImportGoodsReceiptNoteRequest;
 use App\Imports\GoodsReceiptNoteItemsImport;
+use App\Models\BankAccount;
 use App\Models\GoodsReceiptNote;
 use App\Models\Product;
 use App\Models\PromotionalCampaign;
 use App\Models\Supplier;
+use App\Models\SupplierPayment;
 use App\Models\TaxCode;
 use App\Models\TaxRate;
 use App\Models\Uom;
@@ -22,6 +24,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use Maatwebsite\Excel\Validators\ValidationException;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -170,7 +173,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 $qty = $item['quantity_accepted'] ?? $item['quantity_received'];
                 $total_quantity += $qty;
                 // total_amount = inventory cost (includes FMR in unit_cost)
-                $total_amount += $qty * $item['unit_cost'];
+                $total_amount += round($qty * (float) $item['unit_cost'], 4);
                 // amount_payable = what we owe supplier (excludes FMR)
                 $amount_payable += $item['total_value_with_taxes'] ?? 0;
             }
@@ -249,7 +252,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                     'quantity_accepted' => $qty_accepted,
                     'quantity_rejected' => $qty_rejected,
                     'unit_cost' => $item['unit_cost'],
-                    'total_cost' => $qty_accepted * $item['unit_cost'],
+                    'total_cost' => round($qty_accepted * (float) $item['unit_cost'], 4),
                     'selling_price' => $item['selling_price'] ?? null,
                     'promotional_campaign_id' => $promotionalCampaignId,
                     'is_promotional' => $isPromotional,
@@ -393,7 +396,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 $qty = $item['quantity_accepted'] ?? $item['quantity_received'];
                 $total_quantity += $qty;
                 // total_amount = inventory cost (includes FMR in unit_cost)
-                $total_amount += $qty * $item['unit_cost'];
+                $total_amount += round($qty * (float) $item['unit_cost'], 4);
                 // amount_payable = what we owe supplier (excludes FMR)
                 $amount_payable += $item['total_value_with_taxes'] ?? 0;
             }
@@ -471,7 +474,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                     'quantity_accepted' => $qty_accepted,
                     'quantity_rejected' => $qty_rejected,
                     'unit_cost' => $item['unit_cost'],
-                    'total_cost' => $qty_accepted * $item['unit_cost'],
+                    'total_cost' => round($qty_accepted * (float) $item['unit_cost'], 4),
                     'selling_price' => $item['selling_price'] ?? null,
                     'promotional_campaign_id' => $promotionalCampaignId,
                     'is_promotional' => $isPromotional,
@@ -588,7 +591,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             return \DB::transaction(function () use ($grn) {
                 // Generate payment number with lock to prevent duplicates
                 $year = now()->year;
-                $lastPayment = \App\Models\SupplierPayment::withTrashed()
+                $lastPayment = SupplierPayment::withTrashed()
                     ->whereYear('created_at', $year)
                     ->where('payment_number', 'LIKE', "PAY-{$year}-%")
                     ->lockForUpdate()
@@ -599,12 +602,12 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 $paymentNumber = sprintf('PAY-%d-%06d', $year, $sequence);
 
                 // Get default bank account for auto-generated payment
-                $defaultBankAccount = \App\Models\BankAccount::where('is_active', true)
+                $defaultBankAccount = BankAccount::where('is_active', true)
                     ->orderBy('id')
                     ->first();
 
                 // Create draft payment
-                $payment = \App\Models\SupplierPayment::create([
+                $payment = SupplierPayment::create([
                     'payment_number' => $paymentNumber,
                     'supplier_id' => $grn->supplier_id,
                     'bank_account_id' => $defaultBankAccount?->id,
@@ -681,7 +684,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             foreach ($processedItems as $item) {
                 $qty = $item['quantity_accepted'];
                 $totalQuantity += $qty;
-                $totalAmount += $qty * $item['unit_cost'];
+                $totalAmount += round($qty * (float) $item['unit_cost'], 4);
                 $amountPayable += $item['total_value_with_taxes'];
             }
 
@@ -753,7 +756,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                     'quantity_accepted' => $item['quantity_accepted'],
                     'quantity_rejected' => 0,
                     'unit_cost' => $item['unit_cost'],
-                    'total_cost' => $item['quantity_accepted'] * $item['unit_cost'],
+                    'total_cost' => round((float) $item['quantity_accepted'] * (float) $item['unit_cost'], 4),
                     'selling_price' => $item['selling_price'],
                     'promotional_campaign_id' => $promotionalCampaignId,
                     'is_promotional' => $isPromotional,
@@ -777,7 +780,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 ->route('goods-receipt-notes.edit', $grn)
                 ->with('success', "GRN '{$grn->grn_number}' created with {$itemCount} items from Excel import. Please review and submit.");
 
-        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+        } catch (ValidationException $e) {
             DB::rollBack();
 
             $failures = $e->failures();

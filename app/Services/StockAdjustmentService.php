@@ -126,12 +126,20 @@ class StockAdjustmentService
             ->first();
 
         if ($stockByBatch) {
+            $qtyBefore = (float) $stockByBatch->quantity_on_hand;
             $stockByBatch->quantity_on_hand += $item->adjustment_quantity;
             if ($stockByBatch->quantity_on_hand <= 0) {
                 $stockByBatch->quantity_on_hand = 0;
+                $stockByBatch->total_value = 0.0;
                 $stockByBatch->status = 'depleted';
+            } elseif ($item->adjustment_quantity > 0) {
+                // Increase: add the exact adjustment value
+                $stockByBatch->total_value = round((float) ($stockByBatch->total_value ?? 0) + (float) $item->adjustment_value, 4);
+            } else {
+                // Decrease: proportional deduction
+                $ratio = $qtyBefore > 0 ? $stockByBatch->quantity_on_hand / $qtyBefore : 0;
+                $stockByBatch->total_value = round((float) ($stockByBatch->total_value ?? 0) * $ratio, 4);
             }
-            $stockByBatch->total_value = $stockByBatch->quantity_on_hand * $stockByBatch->unit_cost;
             $stockByBatch->save();
         }
 
@@ -210,8 +218,15 @@ class StockAdjustmentService
                 }
 
                 $qtyFromThisLayer = min($layer->quantity_remaining, $qtyToReduce);
+                $qtyBeforeLayer = (float) $layer->quantity_remaining;
                 $layer->quantity_remaining -= $qtyFromThisLayer;
-                $layer->value_remaining = $layer->quantity_remaining * $layer->unit_cost;
+                if ($layer->quantity_remaining <= 0) {
+                    $layer->quantity_remaining = 0;
+                    $layer->value_remaining = 0.0;
+                } else {
+                    $ratio = $qtyBeforeLayer > 0 ? $layer->quantity_remaining / $qtyBeforeLayer : 0;
+                    $layer->value_remaining = round((float) ($layer->value_remaining ?? $layer->total_value ?? 0) * $ratio, 4);
+                }
                 $layer->save();
 
                 $qtyToReduce -= $qtyFromThisLayer;

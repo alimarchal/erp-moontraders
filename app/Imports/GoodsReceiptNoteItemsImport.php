@@ -4,10 +4,12 @@ namespace App\Imports;
 
 use App\Models\Product;
 use App\Models\Supplier;
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 use Maatwebsite\Excel\Concerns\WithValidation;
+use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithValidation
 {
@@ -86,36 +88,36 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
             $otherCharges = (float) ($row['other_charges'] ?? 0);
 
             // Calculations - exact same logic as the JS in create.blade.php
-            $qtyInStockUom = round($qtyInPurchaseUom * $uomConversionFactor, 2);
-            $extendedValue = round($qtyInPurchaseUom * $unitPricePerCase, 2);
-            $discountedValueBeforeTax = round($extendedValue - $discountValue - $fmrAllowance, 2);
+            $qtyInStockUom = round($qtyInPurchaseUom * $uomConversionFactor, 4);
+            $extendedValue = round($qtyInPurchaseUom * $unitPricePerCase, 4);
+            $discountedValueBeforeTax = round($extendedValue - $discountValue - $fmrAllowance, 4);
 
             // Sales tax: use provided value or auto-calculate from supplier rate
             $salesTaxRaw = $row['sales_tax_value'] ?? null;
             $salesTaxManuallyProvided = $salesTaxRaw !== null && $salesTaxRaw !== '' && is_numeric($salesTaxRaw);
             $salesTaxValue = $salesTaxManuallyProvided
-                ? round((float) $salesTaxRaw, 2)
-                : round(($discountedValueBeforeTax * $this->salesTaxRate) / 100, 2);
+                ? round((float) $salesTaxRaw, 4)
+                : round(($discountedValueBeforeTax * $this->salesTaxRate) / 100, 4);
 
-            $totalBeforeWht = round($discountedValueBeforeTax + $exciseDuty + $salesTaxValue + $advanceIncomeTax + $otherCharges, 2);
+            $totalBeforeWht = round($discountedValueBeforeTax + $exciseDuty + $salesTaxValue + $advanceIncomeTax + $otherCharges, 4);
 
             // Withholding tax: only for Unilever Pakistan
             $withholdingTaxRaw = $row['withholding_tax'] ?? null;
             $withholdingTax = 0;
             if ($this->isUnileverPakistan) {
                 $withholdingTax = is_numeric($withholdingTaxRaw)
-                    ? round((float) $withholdingTaxRaw, 2)
-                    : round(($totalBeforeWht * $this->withholdingTaxRate) / 100, 2);
+                    ? round((float) $withholdingTaxRaw, 4)
+                    : round(($totalBeforeWht * $this->withholdingTaxRate) / 100, 4);
             }
 
-            $totalValueWithTaxes = round($totalBeforeWht + $withholdingTax, 2);
+            $totalValueWithTaxes = round($totalBeforeWht + $withholdingTax, 4);
 
             $quantityReceived = $qtyInStockUom;
             $quantityAccepted = $quantityReceived;
 
             // Unit cost = (total_value_with_taxes + fmr_allowance) / quantity_received
             $unitCost = $quantityReceived > 0
-                ? round(($totalValueWithTaxes + $fmrAllowance) / $quantityReceived, 2)
+                ? round(($totalValueWithTaxes + $fmrAllowance) / $quantityReceived, 6)
                 : 0;
 
             $sellingPrice = ($row['selling_price'] ?? null) !== null && $row['selling_price'] !== '' && is_numeric($row['selling_price'])
@@ -225,7 +227,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
         // Handle Excel numeric date serial numbers
         if (is_numeric($value)) {
             try {
-                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((int) $value)->format('Y-m-d');
+                return Date::excelToDateTimeObject((int) $value)->format('Y-m-d');
             } catch (\Exception) {
                 return null;
             }
@@ -233,7 +235,7 @@ class GoodsReceiptNoteItemsImport implements ToCollection, WithHeadingRow, WithV
 
         // Handle string dates
         try {
-            return \Carbon\Carbon::parse((string) $value)->format('Y-m-d');
+            return Carbon::parse((string) $value)->format('Y-m-d');
         } catch (\Exception) {
             return null;
         }

@@ -16,7 +16,7 @@
     </x-slot>
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 mt-4 shadow-md" />
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
@@ -26,7 +26,25 @@
                         x-data="goodsIssueForm()">
                         @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                            <div>
+                                <x-label for="supplier_ids" value="Supplier *" />
+                                {{-- For multiple suppliers, uncomment this and remove the single select below:
+                                <select id="supplier_ids" name="supplier_ids[]" multiple required
+                                    class="select2-multi border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                                --}}
+                                <select id="supplier_ids" name="supplier_ids[]" required
+                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                                    <option value="">Select Supplier</option>
+                                    @foreach ($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}"
+                                            {{ is_array(old('supplier_ids')) && in_array($supplier->id, old('supplier_ids')) ? 'selected' : '' }}>
+                                            {{ $supplier->supplier_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             <div>
                                 <x-label for="issue_date" value="Issue Date *" />
                                 <x-input id="issue_date" name="issue_date" type="date" class="mt-1 block w-full"
@@ -64,29 +82,9 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 gap-4 mb-6">
-                            <div>
-                                <x-label for="supplier_ids" value="Supplier *" />
-                                {{-- For multiple suppliers, uncomment this and remove the single select below:
-                                <select id="supplier_ids" name="supplier_ids[]" multiple required
-                                    class="select2-multi border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                                --}}
-                                <select id="supplier_ids" name="supplier_ids[]" required
-                                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                                    <option value="">Select Supplier</option>
-                                    @foreach ($suppliers as $supplier)
-                                        <option value="{{ $supplier->id }}"
-                                            {{ is_array(old('supplier_ids')) && in_array($supplier->id, old('supplier_ids')) ? 'selected' : '' }}>
-                                            {{ $supplier->supplier_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
 
 
-
-                        <x-form-table title="Products to Issue" :headers="array_filter([
+                        <x-form-table title="Products to Issue" :sticky-header="true" :headers="array_filter([
         ['label' => 'Product', 'align' => 'text-left', 'width' => '300px'],
         ['label' => 'Non-Promo<br>Only', 'align' => 'text-center', 'width' => '70px'],
         ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '110px'],
@@ -189,8 +187,8 @@
                                         <td class="px-2 py-2 text-center align-middle">
                                             <button type="button" @click="removeItem(index)"
                                                 class="inline-flex items-center justify-center w-8 h-8 text-red-600 hover:text-red-800 hover:bg-red-100 rounded-md transition-colors duration-150"
-                                                :class="items.length === 1 ? 'opacity-40 cursor-not-allowed hover:bg-transparent hover:text-red-600 pointer-events-none' : ''"
-                                                :disabled="items.length === 1" title="Remove Line">
+                                                :class="(index === 0 || items.length === 1) ? 'opacity-40 cursor-not-allowed hover:bg-transparent hover:text-red-600 pointer-events-none' : ''"
+                                                :disabled="index === 0 || items.length === 1" title="Remove Line">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
                                                     viewBox="0 0 24 24" stroke="currentColor">
                                                     <path stroke-linecap="round" stroke-linejoin="round"

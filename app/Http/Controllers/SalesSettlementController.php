@@ -327,7 +327,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
     {
         $query = GoodsIssue::where('status', 'issued')
             ->whereDoesntHave('settlement', function ($query) {
-                $query->where('status', 'posted');
+                $query->whereIn('status', ['draft', 'posted']);
             })
             ->with(['employee', 'vehicle']);
 

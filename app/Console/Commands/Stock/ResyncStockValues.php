@@ -367,6 +367,20 @@ class ResyncStockValues extends Command
         $snapUpdated = 0;
 
         foreach ($openingDates as $snapDate) {
+            // Skip dates that already have scheduler-created snapshots.
+            // Phase D writes CURRENT stock levels to historical dates, which
+            // would overwrite accurate snapshots the nightly scheduler already
+            // created on that date. Only populate if no snapshot exists yet.
+            $existingCount = DB::table('daily_inventory_snapshots')
+                ->where('date', $snapDate)
+                ->count();
+
+            if ($existingCount > 0) {
+                $this->warn("  Skipping {$snapDate} — {$existingCount} snapshots already exist (created by scheduler).");
+
+                continue;
+            }
+
             $this->line("  Snapshotting date: {$snapDate}");
 
             // Aggregate correct values from current_stock_by_batch per product+warehouse

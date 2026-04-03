@@ -32,12 +32,12 @@ class InventoryLedgerReportController extends Controller implements HasMiddlewar
             if (! Schema::hasTable('inventory_ledger_entries')) {
                 return view('reports.inventory-ledger.index', [
                     'entries' => collect(),
-                    'products' => Product::orderBy('product_name')->get(),
-                    'warehouses' => Warehouse::orderBy('warehouse_name')->get(),
-                    'vehicles' => Vehicle::orderBy('registration_number')->get(),
-                    'employees' => Employee::orderBy('name')->get(),
+                    'products' => Product::select('id', 'product_code', 'product_name')->orderBy('product_name')->get(),
+                    'warehouses' => Warehouse::select('id', 'warehouse_name')->orderBy('warehouse_name')->get(),
+                    'vehicles' => Vehicle::select('id', 'registration_number')->orderBy('registration_number')->get(),
+                    'employees' => Employee::select('id', 'name')->orderBy('name')->get(),
                     'batches' => collect(),
-                    'suppliers' => Supplier::orderBy('supplier_name')->get(),
+                    'suppliers' => Supplier::select('id', 'supplier_name')->orderBy('supplier_name')->get(),
                     'transactionTypes' => $this->getTransactionTypes(),
                     'filters' => [],
                     'openingBalance' => 0,
@@ -45,10 +45,12 @@ class InventoryLedgerReportController extends Controller implements HasMiddlewar
                     'totalDebits' => 0,
                     'totalCredits' => 0,
                     'error' => 'Inventory ledger table not yet created. Please run migrations.',
+                    'awaiting_filters' => false,
                 ]);
             }
 
             $filters = $request->get('filter', []);
+            $hasFilters = $request->has('filter');
 
             // Default to current month
             $startDate = $filters['start_date'] ?? now()->startOfMonth()->toDateString();
@@ -62,16 +64,46 @@ class InventoryLedgerReportController extends Controller implements HasMiddlewar
             $supplierId = $filters['supplier_id'] ?? null;
             $transactionType = $filters['transaction_type'] ?? null;
 
+            // Get filter options (select only needed columns)
+            $products = Product::select('id', 'product_code', 'product_name')->orderBy('product_name')->get();
+            $warehouses = Warehouse::select('id', 'warehouse_name')->orderBy('warehouse_name')->get();
+            $vehicles = Vehicle::select('id', 'registration_number')->orderBy('registration_number')->get();
+            $employees = Employee::select('id', 'name')->orderBy('name')->get();
+            $batches = StockBatch::select('id', 'batch_code')->orderBy('batch_code')->get();
+            $suppliers = Supplier::select('id', 'supplier_name')->orderBy('supplier_name')->get();
+
+            // Don't run the heavy query until user applies filters
+            if (! $hasFilters) {
+                return view('reports.inventory-ledger.index', [
+                    'entries' => collect(),
+                    'products' => $products,
+                    'warehouses' => $warehouses,
+                    'vehicles' => $vehicles,
+                    'employees' => $employees,
+                    'batches' => $batches,
+                    'suppliers' => $suppliers,
+                    'transactionTypes' => $this->getTransactionTypes(),
+                    'filters' => ['start_date' => $startDate, 'end_date' => $endDate],
+                    'openingBalance' => 0,
+                    'closingBalance' => 0,
+                    'totalDebits' => 0,
+                    'totalCredits' => 0,
+                    'error' => null,
+                    'awaiting_filters' => true,
+                ]);
+            }
+
             // Build query for ledger entries
             $query = InventoryLedgerEntry::with([
-                'product',
-                'warehouse',
-                'vehicle',
-                'employee',
-                'stockBatch.supplier',
-                'goodsReceiptNote',
-                'goodsIssue',
-                'salesSettlement',
+                'product:id,product_code,product_name',
+                'warehouse:id,warehouse_name',
+                'vehicle:id,registration_number',
+                'employee:id,name',
+                'stockBatch:id,batch_code,supplier_id',
+                'stockBatch.supplier:id,supplier_name',
+                'goodsReceiptNote:id,grn_number',
+                'goodsIssue:id,issue_number',
+                'salesSettlement:id,settlement_number',
             ])
                 ->whereBetween('date', [$startDate, $endDate])
                 ->orderBy('date', 'asc')
@@ -143,14 +175,6 @@ class InventoryLedgerReportController extends Controller implements HasMiddlewar
                 $entry->calculated_running_balance = $runningBalance;
             }
 
-            // Get filter options
-            $products = Product::orderBy('product_name')->get();
-            $warehouses = Warehouse::orderBy('warehouse_name')->get();
-            $vehicles = Vehicle::orderBy('registration_number')->get();
-            $employees = Employee::select('id', 'name')->orderBy('name')->get();
-            $batches = StockBatch::select('id', 'batch_code')->orderBy('batch_code')->get();
-            $suppliers = Supplier::orderBy('supplier_name')->get();
-
             return view('reports.inventory-ledger.index', [
                 'entries' => $entries,
                 'products' => $products,
@@ -166,6 +190,7 @@ class InventoryLedgerReportController extends Controller implements HasMiddlewar
                 'totalDebits' => $totalDebits,
                 'totalCredits' => $totalCredits,
                 'error' => null,
+                'awaiting_filters' => false,
             ]);
 
         } catch (\Exception $e) {
@@ -176,12 +201,12 @@ class InventoryLedgerReportController extends Controller implements HasMiddlewar
 
             return view('reports.inventory-ledger.index', [
                 'entries' => collect(),
-                'products' => Product::orderBy('product_name')->get(),
-                'warehouses' => Warehouse::orderBy('warehouse_name')->get(),
-                'vehicles' => Vehicle::orderBy('registration_number')->get(),
-                'employees' => Employee::orderBy('name')->get(),
+                'products' => Product::select('id', 'product_code', 'product_name')->orderBy('product_name')->get(),
+                'warehouses' => Warehouse::select('id', 'warehouse_name')->orderBy('warehouse_name')->get(),
+                'vehicles' => Vehicle::select('id', 'registration_number')->orderBy('registration_number')->get(),
+                'employees' => Employee::select('id', 'name')->orderBy('name')->get(),
                 'batches' => collect(),
-                'suppliers' => Supplier::orderBy('supplier_name')->get(),
+                'suppliers' => Supplier::select('id', 'supplier_name')->orderBy('supplier_name')->get(),
                 'transactionTypes' => $this->getTransactionTypes(),
                 'filters' => $request->get('filter', []),
                 'openingBalance' => 0,
@@ -189,6 +214,7 @@ class InventoryLedgerReportController extends Controller implements HasMiddlewar
                 'totalDebits' => 0,
                 'totalCredits' => 0,
                 'error' => 'An error occurred while loading the report. Please try again. Error: '.$e->getMessage(),
+                'awaiting_filters' => false,
             ]);
         }
     }

@@ -279,7 +279,11 @@
                         @empty
                             <tr>
                                 <td colspan="9" class="text-center py-8 text-gray-500 border">
-                                    No ledger entries found for the selected filters.
+                                    @if(!empty($awaiting_filters))
+                                        Please select filters and click <strong>Apply</strong> to generate the report.
+                                    @else
+                                        No ledger entries found for the selected filters.
+                                    @endif
                                 </td>
                             </tr>
                         @endforelse

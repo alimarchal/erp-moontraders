@@ -7,7 +7,7 @@
 ])
 
 <a href="{{ $href }}"
-    class="flex items-center gap-3 px-4 py-3.5 active:bg-gray-100 transition-colors duration-100 group">
+    class="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 active:bg-[#D1D0D4] transition-colors duration-150 group">
     <div class="flex-shrink-0 w-[30px] h-[30px] rounded-[7px] {{ $iconBg }} flex items-center justify-center shadow-sm">
         {{ $icon }}
     </div>

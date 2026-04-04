@@ -2,11 +2,18 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Models\AccountingPeriod;
+use App\Models\AccountType;
 use App\Models\ChartOfAccount;
+use App\Models\Currency;
 use App\Models\Employee;
+use App\Models\GoodsIssue;
+use App\Models\JournalEntry;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementExpense;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -40,14 +47,14 @@ class PercentageExpenseReportTest extends TestCase
         $this->actingAs($user);
 
         // Setup Common Dependencies
-        $period = \App\Models\AccountingPeriod::create([
+        $period = AccountingPeriod::create([
             'name' => 'Current Period',
             'start_date' => now()->startOfMonth(),
             'end_date' => now()->endOfMonth(),
             'status' => 'open',
         ]);
-        $accountType = \App\Models\AccountType::factory()->create();
-        $currency = \App\Models\Currency::factory()->create();
+        $accountType = AccountType::factory()->create();
+        $currency = Currency::factory()->create();
 
         // Critical: Percentage Expense Account Code
         $account = ChartOfAccount::create([
@@ -79,8 +86,8 @@ class PercentageExpenseReportTest extends TestCase
             'normal_balance' => 'debit',
         ]);
 
-        $vehicle = \App\Models\Vehicle::factory()->create();
-        $warehouse = \App\Models\Warehouse::factory()->create();
+        $vehicle = Vehicle::factory()->create();
+        $warehouse = Warehouse::factory()->create();
 
         // Create Salesmen with Designations
         $salesmanManager = Employee::factory()->create(['name' => 'Manager John', 'designation' => 'Manager']);
@@ -88,7 +95,7 @@ class PercentageExpenseReportTest extends TestCase
 
         // Helper to create settlement and expense
         $createData = function ($salesman, $amount) use ($user, $vehicle, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
-            $goodsIssue = \App\Models\GoodsIssue::create([
+            $goodsIssue = GoodsIssue::create([
                 'issue_number' => 'GI-'.uniqid(),
                 'issue_date' => now(),
                 'status' => 'issued',
@@ -115,7 +122,7 @@ class PercentageExpenseReportTest extends TestCase
                 'credit_sales_amount' => 0,
                 'cheque_sales_amount' => 0,
                 'verified_by' => $user->id,
-                'journal_entry_id' => \App\Models\JournalEntry::factory()->create([
+                'journal_entry_id' => JournalEntry::factory()->create([
                     'status' => 'posted',
                     'entry_date' => now(),
                     'currency_id' => $currency->id,
@@ -142,21 +149,21 @@ class PercentageExpenseReportTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Manager John');
         $response->assertSee('Driver Bob');
-        $response->assertSee('1,000');
-        $response->assertSee('500');
+        $response->assertSee('1,000.00');
+        $response->assertSee('500.00');
 
         // Test 2: Filter by Designation 'Manager' -> Should only see Manager John
         $response = $this->get(route('reports.percentage-expense.index', ['filter' => ['designation' => 'Manager']]));
         $response->assertStatus(200);
         $response->assertSee('Manager John');
         $response->assertDontSee('Driver Bob');
-        $response->assertSee('1,000');
+        $response->assertSee('1,000.00');
 
         // Test 3: Filter by Designation 'Driver' -> Should only see Driver Bob
         $response = $this->get(route('reports.percentage-expense.index', ['filter' => ['designation' => 'Driver']]));
         $response->assertStatus(200);
         $response->assertSee('Driver Bob');
         $response->assertDontSee('Manager John');
-        $response->assertSee('500');
+        $response->assertSee('500.00');
     }
 }

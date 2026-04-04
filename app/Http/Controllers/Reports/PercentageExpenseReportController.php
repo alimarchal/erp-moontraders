@@ -137,18 +137,13 @@ class PercentageExpenseReportController extends Controller implements HasMiddlew
         $salesmanTotals = [];
         $grandTotal = 0;
 
-        // Initialize totals and matrix
+        // Initialize totals
         foreach ($dates as $date) {
             $dateTotals[$date] = 0;
         }
         foreach ($reportSalesmen as $salesman) {
             $salesmanTotals[$salesman->id] = 0;
-            // Initialize each date for each salesman to ensure 0s are present if needed,
-            // though keeping it sparse or checking isset in view is also fine.
-            // Initializing helps with 0 display.
-            foreach ($dates as $date) {
-                $matrix[$salesman->id][$date] = 0;
-            }
+            $matrix[$salesman->id] = [];
         }
 
         // Populate matrix
@@ -163,7 +158,7 @@ class PercentageExpenseReportController extends Controller implements HasMiddlew
             // Update Matrix (Rows: Salesman, Cols: Date)
             // Ensure the salesman is in our report scope (it should be if logic is correct)
             if (isset($matrix[$empId])) {
-                $matrix[$empId][$date] += $amount;
+                $matrix[$empId][$date] = ($matrix[$empId][$date] ?? 0) + $amount;
             }
 
             // Update totals

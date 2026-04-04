@@ -44,7 +44,8 @@
                     counter-reset: page 1;
                 }
 
-                .max-w-7xl {
+                .max-w-7xl,
+                .max-w-8xl {
                     max-width: 100% !important;
                     width: 100% !important;
                     margin: 0 !important;
@@ -101,11 +102,24 @@
             .page-footer {
                 display: none;
             }
+
+            .select2-container .select2-selection--multiple {
+                min-height: 42px !important;
+                border-color: #d1d5db !important;
+                border-radius: 0.375rem !important;
+                padding-top: 4px !important;
+                padding-bottom: 4px !important;
+            }
+
+            .select2-container--default.select2-container--focus .select2-selection--multiple {
+                border-color: #6366f1 !important;
+                box-shadow: 0 0 0 1px #6366f1 !important;
+            }
         </style>
     @endpush
 
     <x-filter-section :action="route('reports.percentage-expense.index')" class="no-print">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div class="relative">
                 <div class="flex justify-between items-center">
                     <x-label for="filter_supplier_id" value="Supplier" />
@@ -158,6 +172,7 @@
                         </option>
                     @endforeach
                 </select>
+                <p class="text-xs text-gray-500 mt-1">Leave empty to show all salesmen</p>
             </div>
 
             <div>
@@ -186,7 +201,7 @@
         </div>
     </x-filter-section>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
                 <p class="text-center font-extrabold mb-2">
@@ -226,15 +241,16 @@
                                 </td>
                                 @foreach($dates as $date)
                                     @php
-                                        // Matrix is now [employee_id][date]
-                                        $amount = $matrix[$salesman->id][$date] ?? 0;
+                                        $salesmanMatrix = $matrix[$salesman->id] ?? [];
+                                        $hasAmount = array_key_exists($date, $salesmanMatrix);
+                                        $amount = $hasAmount ? $salesmanMatrix[$date] : null;
                                     @endphp
                                     <td class="text-center font-mono border px-1 text-sm" style="vertical-align: middle;">
-                                        {{ number_format($amount, 0) }}
+                                        {{ $hasAmount ? number_format($amount, 2) : '-' }}
                                     </td>
                                 @endforeach
                                 <td class="text-center font-mono font-bold bg-gray-50 border px-2">
-                                    {{ number_format($salesmanTotals[$salesman->id] ?? 0, 0) }}
+                                    {{ number_format($salesmanTotals[$salesman->id] ?? 0, 2) }}
                                 </td>
                             </tr>
                         @endforeach
@@ -245,11 +261,11 @@
                             </td>
                             @foreach($dates as $date)
                                 <td class="text-center font-mono px-2 py-1 border">
-                                    {{ number_format($dateTotals[$date] ?? 0, 0) }}
+                                    {{ number_format($dateTotals[$date] ?? 0, 2) }}
                                 </td>
                             @endforeach
                             <td class="text-center font-mono px-2 py-1 border">
-                                {{ number_format($grandTotal, 0) }}
+                                {{ number_format($grandTotal, 2) }}
                             </td>
                         </tr>
                     </tfoot>
@@ -257,4 +273,12 @@
             </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script>         $(document).ready(function () {             $('#filter_supplier_id').select2({                 width: '100%',                 placeholder: 'All Suppliers',                 allowClear: true             });
+                 $('#filter_designation').select2({                 width: '100%',                 placeholder: 'All Designations',                 allowClear: true             });
+                 $('#filter_salesman_ids').select2({                 width: '100%',                 placeholder: 'All Salesmen',                 allowClear: true             });
+                 $('#filter_sort_order').select2({                 width: '100%',                 minimumResultsForSearch: Infinity             });         });
+        </script>
+    @endpush
 </x-app-layout>

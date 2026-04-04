@@ -179,6 +179,21 @@ test('user with report-financial-general-ledger can access reports index', funct
         ->assertSuccessful();
 });
 
+test('reports index shows updated percentage summary label and supplier section placement', function () {
+    Permission::firstOrCreate(['name' => 'report-audit-sku-fmr-amr', 'guard_name' => 'web']);
+
+    $response = $this->actingAs(userWithPermissions([
+        'report-audit-sku-fmr-amr',
+        'report-audit-percentage-expense',
+        'report-sales-sku-rates',
+    ]))->get(route('reports.index'));
+
+    $response->assertSuccessful();
+    $response->assertSeeInOrder(['SKU-wise FMR vs AMR', 'Percentage Summery']);
+    $response->assertSeeInOrder(['Supplier Reports', 'SKU &amp; Pricing'], false);
+    $response->assertDontSee('Expense Analysis');
+});
+
 test('user without report-financial-general-ledger cannot access general ledger', function () {
     $this->actingAs(userWithPermissions(['report-sales-daily-sales']))
         ->get(route('reports.general-ledger.index'))

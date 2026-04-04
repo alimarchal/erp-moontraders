@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClaimRegister;
 use App\Models\Employee;
 use App\Models\ExpenseDetail;
+use App\Models\InvestmentOpeningBalance;
 use App\Models\LedgerRegister;
 use App\Models\SalesSettlement;
 use App\Models\Supplier;
@@ -88,29 +89,44 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         $bankOnline = $this->getBankOnline($date, $supplierId);
         $increaseInInvestment = $totalInvestment - $previousTotalInvestment - $bankOnline;
 
-        // Bank/Cash summary
-        $bankOpeningAmount = 0;
-        $totalCashReceivedMonth = $this->getMonthlyDailyCash($date, $supplierId);
-        $totalBankAmount = $totalCashReceivedMonth + $bankOpeningAmount;
-        $totalOnlineAmountMonth = $this->getMonthlyOnlineAmount($date, $supplierId);
-        $closingBalanceBeforeExpenses = $totalBankAmount - $totalOnlineAmountMonth;
-        $expenseCategoryTotals = $this->getMonthlyExpenses($date, $supplierId);
-        $totalExpensesMonth = array_sum($expenseCategoryTotals);
-        $closingBalanceAfterExpenses = $closingBalanceBeforeExpenses - $totalExpensesMonth;
-
-        // Last month main investment
+        // Bank/Cash summary & Investment Comparison
         $lastDayPrevMonth = Carbon::parse($date)->subMonthNoOverflow()->endOfMonth()->toDateString();
-        $lastMonthCreditData = $this->getSalesmanCreditData($lastDayPrevMonth, $supplierId, $designation, $employeeIds);
-        $lastMonthMainInvestment = $this->getPowderExpiry($supplierId, $lastDayPrevMonth)
-            + $this->getLiquidExpiry($supplierId, $lastDayPrevMonth)
-            + $this->getClaimAmount($supplierId, $lastDayPrevMonth)
-            + $this->getStockAmount($supplierId, $lastDayPrevMonth)
-            + (float) $lastMonthCreditData->sum('total_credit')
-            + $this->getLedgerAmount($supplierId, $lastDayPrevMonth);
+        $openingBalanceData = $this->getOpeningBalanceValues($date, $supplierId);
+        $expenseCategoryTotals = [];
+
+        if ($openingBalanceData !== null) {
+            $bankOpeningAmount = $openingBalanceData['BANK_OPENING_AMOUNT'] ?? 0.0;
+            $totalCashReceivedMonth = $openingBalanceData['TOTAL_CASH_RECEIVED_CURRENT_MONTH'] ?? 0.0;
+            $totalBankAmount = $totalCashReceivedMonth + $bankOpeningAmount;
+            $totalOnlineAmountMonth = $openingBalanceData['TOTAL_ONLINE_AMOUNT_CURRENT_MONTH'] ?? 0.0;
+            $closingBalanceBeforeExpenses = $openingBalanceData['CLOSING_BALANCE_BEFORE_EXPENSES'] ?? 0.0;
+            $totalExpensesMonth = $openingBalanceData['TOTAL_EXPENSE_CURRENT_MONTH'] ?? 0.0;
+            $closingBalanceAfterExpenses = $openingBalanceData['CLOSING_BALANCE_AFTER_EXPENSE'] ?? 0.0;
+            $lastMonthMainInvestment = $openingBalanceData['LAST_MONTH_MAIN_INVESTMENT'] ?? 0.0;
+        } else {
+            $bankOpeningAmount = 0.0;
+            $totalCashReceivedMonth = $this->getMonthlyCashReceived($date, $supplierId);
+            $totalBankAmount = $totalCashReceivedMonth + $bankOpeningAmount;
+            $totalOnlineAmountMonth = $this->getMonthlyOnlineAmount($date, $supplierId);
+            $closingBalanceBeforeExpenses = $totalBankAmount - $totalOnlineAmountMonth;
+            $expenseCategoryTotals = $this->getMonthlyExpenses($date, $supplierId);
+            $totalExpensesMonth = array_sum($expenseCategoryTotals);
+            $closingBalanceAfterExpenses = $closingBalanceBeforeExpenses - $totalExpensesMonth;
+
+            $prevMonthData = $this->getOpeningBalanceValues($lastDayPrevMonth, $supplierId);
+            $lastMonthMainInvestment = $prevMonthData !== null
+                ? ($prevMonthData['CURRENT_MONTH_MAIN_INVESTMENT'] ?? 0.0)
+                : $this->getPowderExpiry($supplierId, $lastDayPrevMonth)
+                    + $this->getLiquidExpiry($supplierId, $lastDayPrevMonth)
+                    + $this->getClaimAmount($supplierId, $lastDayPrevMonth)
+                    + $this->getStockAmount($supplierId, $lastDayPrevMonth)
+                    + (float) $this->getSalesmanCreditData($lastDayPrevMonth, $supplierId, $designation, $employeeIds)->sum('total_credit')
+                    + $this->getLedgerAmount($supplierId, $lastDayPrevMonth);
+        }
 
         $currentMonthMainInvestment = $currentTotal;
-        $netInvestment = $closingBalanceBeforeExpenses - $currentMonthMainInvestment;
-        $increaseInInvestmentMonth = $lastMonthMainInvestment - $netInvestment;
+        $netInvestment = $closingBalanceAfterExpenses + $currentMonthMainInvestment;
+        $increaseInInvestmentMonth = $netInvestment - $lastMonthMainInvestment;
 
         $selectedSupplier = $supplierId ? $suppliers->find($supplierId) : null;
         $formattedDate = Carbon::parse($date)->format('d.m.Y');
@@ -436,24 +452,56 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         return (float) $query->sum('online_amount');
     }
 
-    private function getMonthlyDailyCash(string $upToDate, ?int $supplierId): float
+    private function getMonthlyCashReceived(string $upToDate, ?int $supplierId): float
     {
         $startOfMonth = Carbon::parse($upToDate)->startOfMonth()->toDateString();
 
-        $query = SalesSettlement::with('cashDenominations')
+        $cashQuery = SalesSettlement::with('cashDenominations')
             ->whereBetween('settlement_date', [$startOfMonth, $upToDate]);
 
         if ($supplierId) {
-            $query->where('supplier_id', $supplierId);
+            $cashQuery->where('supplier_id', $supplierId);
         }
 
-        return (float) $query->get()->sum(function ($settlement) {
+        $cashTotal = (float) $cashQuery->get()->sum(function ($settlement) {
             $cashDenom = $settlement->cashDenominations->first();
 
             return ($cashDenom && $cashDenom->total_amount > 0)
                 ? (float) $cashDenom->total_amount
                 : (float) $settlement->cash_collected;
         });
+
+        $slipsQuery = DB::table('sales_settlement_bank_slips as bs')
+            ->join('sales_settlements as ss', 'bs.sales_settlement_id', '=', 'ss.id')
+            ->whereBetween('ss.settlement_date', [$startOfMonth, $upToDate])
+            ->whereNull('ss.deleted_at');
+
+        if ($supplierId) {
+            $slipsQuery->where('ss.supplier_id', $supplierId);
+        }
+
+        $transfersQuery = DB::table('sales_settlement_bank_transfers as bt')
+            ->join('sales_settlements as ss', 'bt.sales_settlement_id', '=', 'ss.id')
+            ->whereBetween('ss.settlement_date', [$startOfMonth, $upToDate])
+            ->whereNull('ss.deleted_at');
+
+        if ($supplierId) {
+            $transfersQuery->where('ss.supplier_id', $supplierId);
+        }
+
+        $chequesQuery = DB::table('sales_settlement_cheques as sc')
+            ->join('sales_settlements as ss', 'sc.sales_settlement_id', '=', 'ss.id')
+            ->whereBetween('ss.settlement_date', [$startOfMonth, $upToDate])
+            ->whereNull('ss.deleted_at');
+
+        if ($supplierId) {
+            $chequesQuery->where('ss.supplier_id', $supplierId);
+        }
+
+        return $cashTotal
+            + (float) $slipsQuery->sum('bs.amount')
+            + (float) $transfersQuery->sum('bt.amount')
+            + (float) $chequesQuery->sum('sc.amount');
     }
 
     /**
@@ -465,6 +513,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
     private function getMonthlyExpenses(string $upToDate, ?int $supplierId = null): array
     {
         $startOfMonth = Carbon::parse($upToDate)->startOfMonth()->toDateString();
+        $endOfMonth = Carbon::parse($upToDate)->endOfMonth()->toDateString();
 
         $categories = ['stationary', 'tcs', 'tonner_it', 'salaries', 'fuel', 'van_work'];
         $totals = [];
@@ -472,7 +521,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         foreach ($categories as $category) {
             $query = ExpenseDetail::where('category', $category)
                 ->whereNotNull('posted_at')
-                ->whereBetween('transaction_date', [$startOfMonth, $upToDate]);
+                ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth]);
 
             if ($supplierId) {
                 $query->where('supplier_id', $supplierId);
@@ -538,5 +587,21 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         }
 
         return (float) $query->sum('sc.amount');
+    }
+
+    /**
+     * @return array<string, float>|null
+     */
+    private function getOpeningBalanceValues(string $date, ?int $supplierId): ?array
+    {
+        $records = InvestmentOpeningBalance::where('date', $date)
+            ->when($supplierId, fn ($q) => $q->where('supplier_id', $supplierId))
+            ->pluck('amount', 'description');
+
+        if ($records->isEmpty()) {
+            return null;
+        }
+
+        return $records->mapWithKeys(fn ($amount, $desc) => [$desc => (float) $amount])->all();
     }
 }

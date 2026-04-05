@@ -7,8 +7,6 @@ use Tests\TestCase;
 uses(TestCase::class)->in('Feature');
 
 it('seeds 4-digit account codes', function () {
-    $this->refreshDatabase();
-
     Artisan::call('db:seed');
 
     $codes = DB::table('chart_of_accounts')->pluck('account_code');

@@ -425,8 +425,7 @@
                 {{-- ─── Supplier Reports ─── --}}
                 @canany(['report-audit-invoice-summary', 'report-audit-custom-settlement', 'report-sales-sku-rates', 'report-audit-advance-tax'])
                     <div>
-                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Supplier
-                            Reports</p>
+                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Supplier Reports</p>
                         <div
                             class="bg-white rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
                             @can('report-audit-invoice-summary')
@@ -456,7 +455,7 @@
                             @endcan
                             @can('report-sales-sku-rates')
                                 <div class="ml-[58px] h-px bg-gray-100"></div>
-                                <x-settings-row href="{{ route('reports.sku-rates.index') }}" label="SKU &amp; Pricing"
+                                <x-settings-row href="{{ route('reports.sku-rates.index') }}" label="SKU & Pricing"
                                     description="Product codes and pricing schedule" icon-bg="bg-amber-500">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"

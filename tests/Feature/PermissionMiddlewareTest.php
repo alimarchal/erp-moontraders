@@ -190,7 +190,7 @@ test('reports index shows updated percentage summary label and supplier section 
 
     $response->assertSuccessful();
     $response->assertSeeInOrder(['SKU-wise FMR vs AMR', 'Percentage Summery']);
-    $response->assertSeeInOrder(['Supplier Reports', 'SKU &amp; Pricing'], false);
+    $response->assertSeeInOrder(['Supplier Reports', 'SKU & Pricing']);
     $response->assertDontSee('Expense Analysis');
 });
 

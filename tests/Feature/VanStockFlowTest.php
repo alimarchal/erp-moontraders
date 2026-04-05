@@ -1,9 +1,20 @@
 <?php
 
+use App\Models\AccountingPeriod;
+use App\Models\AccountType;
+use App\Models\ChartOfAccount;
+use App\Models\Currency;
+use App\Models\CurrentStock;
+use App\Models\CurrentStockByBatch;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
 use App\Models\Product;
+use App\Models\StockBatch;
+use App\Models\StockMovement;
+use App\Models\StockValuationLayer;
+use App\Models\Supplier;
+use App\Models\Uom;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
@@ -17,7 +28,7 @@ it('creates van stock batches when goods issue is posted', function () {
     actingAs($user);
 
     // Create Accounting Period
-    \App\Models\AccountingPeriod::create([
+    AccountingPeriod::create([
         'name' => 'Test Period',
         'start_date' => now()->subMonth(),
         'end_date' => now()->addMonth(),
@@ -28,16 +39,16 @@ it('creates van stock batches when goods issue is posted', function () {
     $vehicle = Vehicle::first() ?? Vehicle::factory()->create();
     $product = Product::first() ?? Product::factory()->create(['product_name' => 'Test Product']);
     $employee = Employee::first() ?? Employee::factory()->create();
-    $uom = \App\Models\Uom::first() ?? \App\Models\Uom::factory()->create();
+    $uom = Uom::first() ?? Uom::factory()->create();
 
     // Create GL Accounts
-    $currency = \App\Models\Currency::where('is_base_currency', true)->first()
-        ?? \App\Models\Currency::factory()->create(['is_base_currency' => true]);
-    $accountType = \App\Models\AccountType::first() ?? \App\Models\AccountType::factory()->create([
+    $currency = Currency::where('is_base_currency', true)->first()
+        ?? Currency::factory()->create(['is_base_currency' => true]);
+    $accountType = AccountType::first() ?? AccountType::factory()->create([
         'type_name' => 'Assets',
         'report_group' => 'BalanceSheet',
     ]);
-    \App\Models\ChartOfAccount::firstOrCreate(
+    ChartOfAccount::firstOrCreate(
         ['account_code' => '1151'],
         [
             'account_name' => 'Stock In Hand',
@@ -47,7 +58,7 @@ it('creates van stock batches when goods issue is posted', function () {
             'normal_balance' => 'debit',
         ]
     );
-    \App\Models\ChartOfAccount::firstOrCreate(
+    ChartOfAccount::firstOrCreate(
         ['account_code' => '1155'],
         [
             'account_name' => 'Van Stock',
@@ -58,10 +69,10 @@ it('creates van stock batches when goods issue is posted', function () {
         ]
     );
 
-    $stockBatch = \App\Models\StockBatch::create([
+    $stockBatch = StockBatch::create([
         'product_id' => $product->id,
         'batch_code' => 'BATCH-'.time(),
-        'supplier_id' => \App\Models\Supplier::first()->id ?? \App\Models\Supplier::factory()->create()->id,
+        'supplier_id' => Supplier::first()->id ?? Supplier::factory()->create()->id,
         'receipt_date' => now(),
         'manufacturing_date' => now()->subMonth(),
         'unit_cost' => 150.00,
@@ -71,7 +82,7 @@ it('creates van stock batches when goods issue is posted', function () {
     ]);
 
     // Create stock movement for the initial stock
-    $movement = \App\Models\StockMovement::create([
+    $movement = StockMovement::create([
         'movement_type' => 'grn',
         'reference_type' => 'App\Models\StockBatch',
         'reference_id' => $stockBatch->id,
@@ -86,38 +97,39 @@ it('creates van stock batches when goods issue is posted', function () {
         'created_by' => $user->id,
     ]);
 
-    \App\Models\StockValuationLayer::create([
+    StockValuationLayer::create([
         'stock_batch_id' => $stockBatch->id,
         'product_id' => $product->id,
         'warehouse_id' => $warehouse->id,
         'stock_movement_id' => $movement->id,
         'quantity_received' => 100,
         'quantity_remaining' => 100,
-        'rate' => 150.00,
         'unit_cost' => 150.00,
-        'value' => 15000.00,
-        'valuation_method' => 'FIFO',
+        'total_value' => 15000.00,
         'receipt_date' => now(),
     ]);
 
-    \App\Models\CurrentStockByBatch::create([
+    CurrentStockByBatch::create([
         'stock_batch_id' => $stockBatch->id,
         'product_id' => $product->id,
         'warehouse_id' => $warehouse->id,
         'quantity_on_hand' => 100,
         'unit_cost' => 150.00,
-        'selling_price' => 200.00, // Likely needed
+        'total_value' => 15000.00,
+        'selling_price' => 200.00,
         'status' => 'active',
     ]);
 
     // Ensure product assumes current stock exists (if simple current_stock table exists)
     // Some systems use CurrentStock aggregate
-    \App\Models\CurrentStock::create([
+    CurrentStock::create([
         'product_id' => $product->id,
         'warehouse_id' => $warehouse->id,
         'quantity_on_hand' => 100,
+        'average_cost' => 150.00,
+        'total_value' => 15000.00,
     ]);
-    $uom = \App\Models\Uom::first() ?? \App\Models\Uom::factory()->create();
+    $uom = Uom::first() ?? Uom::factory()->create();
 
     // 2. Create Goods Issue
     $issueNumber = 'GI-TEST-'.time();

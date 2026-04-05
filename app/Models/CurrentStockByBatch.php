@@ -20,6 +20,7 @@ class CurrentStockByBatch extends Model
         'stock_batch_id',
         'quantity_on_hand',
         'unit_cost',
+        'total_value',
         'selling_price',
         'is_promotional',
         'promotional_price',

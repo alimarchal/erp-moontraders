@@ -10,6 +10,3 @@ Artisan::command('inspire', function () {
 
 // Take a daily end-of-day inventory snapshot at 11:59 PM
 Schedule::command('inventory:snapshot')->dailyAt('23:45');
-
-// Log every time the scheduler runs — useful to verify cron is firing on the server
-Schedule::command('scheduler:heartbeat')->everyMinute();

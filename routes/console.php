@@ -18,4 +18,4 @@ Schedule::call(function () {
         'timestamp' => now()->toDateTimeString(),
         'server' => gethostname(),
     ]);
-})->everyMinute()->name('scheduler:heartbeat')->withoutOverlapping();
+})->everyMinute();

@@ -15,6 +15,7 @@
             'id' => $product->id,
             'name' => $product->product_name . ' (' . $product->product_code . ')',
             'expiry_price' => (float) $product->expiry_price,
+            'supplier_id' => $product->supplier_id,
         ])->values()),
         inputId: '{{ $inputId }}',
         entriesInputId: '{{ $entriesInputId }}',
@@ -23,7 +24,7 @@
         selectId: 'select_{{ $entriesInputId }}',
         batchSelectId: 'batch_select_{{ $entriesInputId }}',
         useBatchExpiry: @js((bool) $useBatchExpiry),
-    })" x-on:{{ $triggerEvent }}.window="openModal()" x-cloak>
+    })" x-on:{{ $triggerEvent }}.window="openModal($event)" x-cloak>
     <input type="hidden" name="{{ $entriesInputId }}" id="{{ $entriesInputId }}" :value="JSON.stringify(entries)">
 
     <div x-show="show" x-on:keydown.escape.window="if (show) { closeModal() }" class="fixed inset-0 z-50" style="display: none;">
@@ -63,7 +64,7 @@
                         <select :id="selectId"
                             class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
                             <option value="">Select Product</option>
-                            <template x-for="product in products" :key="product.id">
+                            <template x-for="product in filteredProducts" :key="product.id">
                                 <option :value="product.id" x-text="product.name"></option>
                             </template>
                         </select>
@@ -190,6 +191,7 @@
                 return {
                     show: false,
                     products,
+                    filteredProducts: products,
                     useBatchExpiry,
                     form: {
                         product_id: '',
@@ -208,13 +210,26 @@
                     selectId,
                     batchSelectId,
 
-                    openModal() {
+                    openModal($event) {
+                        const supplierId = $event?.detail?.supplierId || null;
+                        this.filteredProducts = supplierId
+                            ? this.products.filter(p => String(p.supplier_id) === String(supplierId))
+                            : this.products;
+
                         this.show = true;
 
                         this.$nextTick(() => {
                             if (!this.select2Initialized) {
                                 this.initializeSelect2();
                                 this.select2Initialized = true;
+                            } else {
+                                // Re-render Select2 options when supplier changes
+                                const $select = $('#' + this.selectId);
+                                $select.empty().append('<option value="">Select Product</option>');
+                                this.filteredProducts.forEach(p => {
+                                    $select.append(new Option(p.name, p.id, false, false));
+                                });
+                                $select.val(null).trigger('change');
                             }
                             if (this.useBatchExpiry && !this.batchSelect2Initialized) {
                                 this.initializeBatchSelect2();
@@ -278,7 +293,7 @@
                         if (this.useBatchExpiry) {
                             this.fetchBatches(productId);
                         } else {
-                            const product = this.products.find(p => Number(p.id) === Number(productId));
+                            const product = this.filteredProducts.find(p => Number(p.id) === Number(productId));
                             if (product) {
                                 this.unitPrice = product.expiry_price || 0;
                                 this.calculateAmount();

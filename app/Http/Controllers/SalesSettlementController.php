@@ -309,11 +309,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'powderProducts' => Product::where('is_powder', true)
                 ->where('is_active', true)
                 ->orderBy('product_name')
-                ->get(['id', 'product_code', 'product_name', 'expiry_price']),
+                ->get(['id', 'product_code', 'product_name', 'expiry_price', 'supplier_id']),
             'liquidProducts' => Product::where('is_powder', false)
                 ->where('is_active', true)
                 ->orderBy('product_name')
-                ->get(['id', 'product_code', 'product_name', 'expiry_price']),
+                ->get(['id', 'product_code', 'product_name', 'expiry_price', 'supplier_id']),
             'useBatchExpiry' => (bool) config('app.use_batch_expiry'),
             'predefinedExpenses' => $predefinedExpenses,
         ]);
@@ -842,11 +842,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'powderProducts' => Product::where('is_powder', true)
                 ->where('is_active', true)
                 ->orderBy('product_name')
-                ->get(['id', 'product_code', 'product_name', 'expiry_price']),
+                ->get(['id', 'product_code', 'product_name', 'expiry_price', 'supplier_id']),
             'liquidProducts' => Product::where('is_powder', false)
                 ->where('is_active', true)
                 ->orderBy('product_name')
-                ->get(['id', 'product_code', 'product_name', 'expiry_price']),
+                ->get(['id', 'product_code', 'product_name', 'expiry_price', 'supplier_id']),
             'useBatchExpiry' => (bool) config('app.use_batch_expiry'),
             'savedBatchesData' => $savedBatchesData,
             'creditSalesDecoded' => $creditSalesDecoded,

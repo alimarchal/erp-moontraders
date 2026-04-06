@@ -699,7 +699,7 @@
                                                                 x-if="expense.is_predefined && expense.account_code === '5252'">
                                                                 <button type="button"
                                                                     class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
-                                                                    @click="window.dispatchEvent(new CustomEvent('open-amr-powder-modal'))">
+                                                                    @click="window.dispatchEvent(new CustomEvent('open-amr-powder-modal', { detail: { supplierId: document.getElementById('supplier_id').value } }))">
                                                                     <span
                                                                         x-text="expense.label + ' (' + expense.account_code + ')'"></span>
                                                                 </button>
@@ -708,7 +708,7 @@
                                                                 x-if="expense.is_predefined && expense.account_code === '5262'">
                                                                 <button type="button"
                                                                     class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
-                                                                    @click="window.dispatchEvent(new CustomEvent('open-amr-liquid-modal'))">
+                                                                    @click="window.dispatchEvent(new CustomEvent('open-amr-liquid-modal', { detail: { supplierId: document.getElementById('supplier_id').value } }))">
                                                                     <span
                                                                         x-text="expense.label + ' (' + expense.account_code + ')'"></span>
                                                                 </button>

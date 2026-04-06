@@ -1558,6 +1558,7 @@
                             return (object) [
                                 'customer_name' => $account->customer->customer_name,
                                 'customer_code' => $account->customer->customer_code,
+                                'address' => $account->customer->address,
                                 'date' => $settlementDate,
                                 'opening_balance' => $openingBalance,
                                 'credit_amount' => $creditAmount,
@@ -1600,7 +1601,7 @@
                                 @forelse($creditReportData as $index => $row)
                                     <tr>
                                         <td class="text-center py-1">{{ $loop->iteration }}</td>
-                                        <td class="py-1 font-bold">{{ $row->customer_name }}</td>
+                                        <td class="py-1 font-bold">{{ $row->customer_name }}{{ $row->address ? ' (' . $row->address . ')' : '' }}</td>
                                         <td class="py-1 text-center">{{ $row->customer_code }}</td>
                                         <td class="text-right py-1 text-gray-600">
                                             {{ number_format($row->opening_balance, 2) }}

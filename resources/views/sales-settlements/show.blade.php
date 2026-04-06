@@ -131,7 +131,7 @@
                     background-color: white !important;
                 }
 
-                .max-w-7xl,
+                .max-w-8xl,
                 .max-w-8xl {
                     max-width: 100% !important;
                     width: 100% !important;
@@ -353,7 +353,7 @@
     @endphp
 
     <div class="py-6">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md no-print" />
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0 p-4">
@@ -527,9 +527,9 @@
                                                 <span class="hidden print:inline">Name</span>
                                             </th>
                                             <th class="text-center">
-                                                <span class="print:hidden"><x-tooltip text="Invoice Number">Inv
-                                                        #</x-tooltip></span>
-                                                <span class="hidden print:inline">Inv #</span>
+                                                <span class="print:hidden"><x-tooltip
+                                                        text="Address">Address</x-tooltip></span>
+                                                <span class="hidden print:inline">Address</span>
                                             </th>
                                             <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip
@@ -546,7 +546,7 @@
                                                         text="New Balance">NB</x-tooltip></span>
                                                 <span class="hidden print:inline">Bal</span>
                                             </th>
-                                            <th class="text-center print:hidden">Notes</th>
+                                            {{-- <th class="text-center print:hidden">Notes</th> --}}
                                         </tr>
                                     </thead>
                                     <tbody class="tabular-nums">
@@ -556,7 +556,7 @@
                                                 <tr>
                                                     <td class="text-center">{{ $i + 1 }}</td>
                                                     <td>{{ $creditSale?->customer->customer_name ?? '-' }}</td>
-                                                    <td>{{ $creditSale?->invoice_number ?? '-' }}</td>
+                                                    <td>{{ $creditSale?->customer->address ?? '-' }}</td>
                                                     <td class="text-right">
                                                         {{ $creditSale ? number_format($creditSale->previous_balance, 2) : '-' }}
                                                     </td>
@@ -566,7 +566,8 @@
                                                     <td class="text-right">
                                                         {{ $creditSale ? number_format($creditSale->new_balance, 2) : '-' }}
                                                     </td>
-                                                    <td class="text-xs italic print:hidden">{!! $creditSale?->notes ?? '-' !!}
+                                                    {{-- <td class="text-xs italic print:hidden">{!! $creditSale?->notes ?? '-'
+                                                        !!} --}}
                                                     </td>
                                                 </tr>
                                             @endfor
@@ -583,7 +584,7 @@
                                             <td class="text-right">
                                                 {{ number_format($settlement->creditSales->sum('sale_amount'), 2) }}
                                             </td>
-                                            <td colspan="2"></td>
+                                            <td></td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -603,9 +604,9 @@
                                                 <span class="hidden print:inline">Name</span>
                                             </th>
                                             <th class="text-center">
-                                                <span class="print:hidden"><x-tooltip text="Recovery Number">Rec
-                                                        #</x-tooltip></span>
-                                                <span class="hidden print:inline">Rec #</span>
+                                                <span class="print:hidden"><x-tooltip
+                                                        text="Address">Address</x-tooltip></span>
+                                                <span class="hidden print:inline">Address</span>
                                             </th>
                                             <th class="text-center">
                                                 <span class="print:hidden"><x-tooltip
@@ -627,7 +628,7 @@
                                                         text="New Balance">NB</x-tooltip></span>
                                                 <span class="hidden print:inline">Bal</span>
                                             </th>
-                                            <th class="text-center print:hidden">Notes</th>
+                                            {{-- <th class="text-center print:hidden">Notes</th> --}}
                                         </tr>
                                     </thead>
                                     <tbody class="tabular-nums">
@@ -637,7 +638,7 @@
                                                 <tr>
                                                     <td class="text-center">{{ $i + 1 }}</td>
                                                     <td>{{ $recovery?->customer->customer_name ?? '-' }}</td>
-                                                    <td>{{ $recovery?->recovery_number ?? '-' }}</td>
+                                                    <td>{{ $recovery?->customer->address ?? '-' }}</td>
                                                     <td class="text-right">
                                                         {{ $recovery ? number_format($recovery->previous_balance, 2) : '-' }}
                                                     </td>
@@ -654,8 +655,9 @@
                                                     <td class="text-right">
                                                         {{ $recovery ? number_format($recovery->new_balance, 2) : '-' }}
                                                     </td>
-                                                    <td class="text-xs italic print:hidden">{!! $recovery?->notes ?? '-' !!}
-                                                    </td>
+                                                    {{-- <td class="text-xs italic print:hidden">{!! $recovery?->notes ?? '-'
+                                                        !!}
+                                                    </td> --}}
                                                 </tr>
                                             @endfor
                                         @else
@@ -671,7 +673,7 @@
                                             <td class="text-right">
                                                 {{ number_format($settlement->recoveries->sum('amount'), 2) }}
                                             </td>
-                                            <td colspan="3"></td>
+                                            <td colspan="2"></td>
                                         </tr>
                                     </tfoot>
                                 </table>

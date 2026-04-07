@@ -44,7 +44,8 @@
       "Bash(find /Users/alirazamarhcal/Herd/moontraders -type f \\\\\\(-name *[Gg]oods*[Rr]eceipt* -o -path *livewire* -o -path *models* \\\\\\))",
       "Bash(2)",
       "Bash(sed -n '21,35p' /Users/alirazamarhcal/Herd/moontraders/app/Http/Controllers/ExpenseDetailController.php)",
-      "Bash(sed -n '24,40p' /Users/alirazamarhcal/Herd/moontraders/app/Http/Controllers/ClaimRegisterController.php)"
+      "Bash(sed -n '24,40p' /Users/alirazamarhcal/Herd/moontraders/app/Http/Controllers/ClaimRegisterController.php)",
+      "Bash(git revert:*)"
     ],
     "deny": [],
     "ask": []

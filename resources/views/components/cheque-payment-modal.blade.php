@@ -72,7 +72,7 @@
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Customer Name</label>
                         <select id="cheque_payment_customer_select"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
+                            class="w-full select2 border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
                             <option value="">Select Customer</option>
                             <template x-for="customer in customers" :key="customer.id">
                                 <option :value="customer.id" x-text="customer.name"></option>
@@ -84,8 +84,8 @@
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Bank Name (Cheque's Bank)</label>
-                        <select x-model="form.bank_name"
-                            class="w-full border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
+                        <select id="cheque_payment_bank_name_select" x-model="form.bank_name"
+                            class="w-full select2 border-gray-300 rounded-md text-sm px-3 py-2 focus:border-green-500 focus:ring-green-500">
                             <option value="">Select Bank</option>
                             <option value="Allied Bank Limited (ABL)">Allied Bank Limited (ABL)</option>
                             <option value="Askari Bank Limited">Askari Bank Limited</option>
@@ -108,10 +108,12 @@
                                 Bank Limited</option>
                             <option value="Samba Bank Limited">Samba Bank Limited</option>
                             <option value="Silk Bank Limited">Silk Bank Limited</option>
+                               <option value="Sonori Bank">Sonori Bank</option>
                             <option value="Standard Chartered Bank (Pakistan) Limited">Standard Chartered Bank
                                 (Pakistan) Limited</option>
                             <option value="Summit Bank Limited">Summit Bank Limited</option>
                             <option value="Sindh Bank Limited">Sindh Bank Limited</option>
+                               <option value="The Bank of Azad Jammu and Kashmir">The Bank of Azad Jammu and Kashmir</option>
                             <option value="The Bank of Khyber">The Bank of Khyber</option>
                             <option value="The Bank of Punjab">The Bank of Punjab</option>
                             <option value="United Bank Limited (UBL)">United Bank Limited (UBL)</option>
@@ -251,13 +253,24 @@
                         $('#cheque_payment_customer_select').select2({
                             width: '100%',
                             placeholder: 'Select Customer',
-                             allowClear: true,
+                            allowClear: true,
                             dropdownParent: $('#cheque_payment_customer_select').parent()
                         });
 
                         // Handle select2 change event
                         $('#cheque_payment_customer_select').on('change', function() {
                             self.form.customer_id = $(this).val();
+                        });
+
+                        $('#cheque_payment_bank_name_select').select2({
+                            width: '100%',
+                            placeholder: 'Select Bank',
+                            allowClear: true,
+                            dropdownParent: $('#cheque_payment_bank_name_select').parent()
+                        });
+
+                        $('#cheque_payment_bank_name_select').on('change', function() {
+                            self.form.bank_name = $(this).val() || '';
                         });
                     },
 
@@ -323,6 +336,7 @@
 
                         // Reset select2 dropdown
                         $('#cheque_payment_customer_select').val(null).trigger('change');
+                        $('#cheque_payment_bank_name_select').val(null).trigger('change');
                     },
 
                     removeEntry(index) {

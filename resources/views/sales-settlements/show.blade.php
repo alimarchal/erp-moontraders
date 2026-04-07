@@ -1286,10 +1286,9 @@
                         <h3 class="font-bold text-md text-center text-black pb-1 border-b border-black mb-2">Sales &
                             Collection Summary</h3>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-1 print:flex print:gap-1"
-                            style="page-break-inside: avoid; break-inside: avoid;">
+                        <div class="flex flex-row gap-1" style="page-break-inside: avoid; break-inside: avoid;">
                             {{-- 1. Sales Summary --}}
-                            <div class="flex flex-col h-full print:w-1/2">
+                            <div class="flex flex-col h-full w-3/5">
                                 <h4 class="font-bold text-sm border-x border-t border-black text-center mt-2">Sales
                                     Summary</h4>
                                 <table class="report-table w-full flex-grow tabular-nums">
@@ -1398,7 +1397,8 @@
                                                     balances recovered in cash</div>
                                             </td>
                                             <td class="text-right px-1 py-0.5 align-top">
-                                                {{ number_format($recoveryCash, 2) }}</td>
+                                                {{ number_format($recoveryCash, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5 align-top">10</td>
@@ -1408,7 +1408,8 @@
                                                     balances recovered via bank</div>
                                             </td>
                                             <td class="text-right px-1 py-0.5 align-top">
-                                                {{ number_format($recoveryBank, 2) }}</td>
+                                                {{ number_format($recoveryBank, 2) }}
+                                            </td>
                                         </tr>
                                         <tr>
                                             <td class="text-center px-1 py-0.5 align-top">11</td>
@@ -1490,7 +1491,7 @@
                             </div>
 
                             {{-- 2. Profit Analysis --}}
-                            <div class="flex flex-col h-full print:w-1/2">
+                            <div class="flex flex-col h-full w-2/5">
                                 <h4 class="font-bold text-sm border-x border-t border-black text-center mt-2">Profit
                                     Analysis</h4>
                                 <table class="report-table w-full flex-grow tabular-nums">

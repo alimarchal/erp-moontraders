@@ -572,7 +572,21 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             $query->where('ss.supplier_id', $supplierId);
         }
 
-        return (float) $query->sum('bt.amount');
+        $bankTransfersAmount = (float) $query->sum('bt.amount');
+
+        $recoveryQuery = DB::table('sales_settlement_recoveries as sr')
+            ->join('sales_settlements as ss', 'sr.sales_settlement_id', '=', 'ss.id')
+            ->whereDate('ss.settlement_date', $date)
+            ->whereNull('ss.deleted_at')
+            ->where('sr.payment_method', 'bank_transfer');
+
+        if ($supplierId) {
+            $recoveryQuery->where('ss.supplier_id', $supplierId);
+        }
+
+        $recoveryBankTransferAmount = (float) $recoveryQuery->sum('sr.amount');
+
+        return $bankTransfersAmount + $recoveryBankTransferAmount;
     }
 
     private function getDailyChequePayments(string $date, ?int $supplierId): float

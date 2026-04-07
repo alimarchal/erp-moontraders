@@ -509,15 +509,6 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $totals = $payload['totals'];
             $itemFinancials = $payload['items_financials'];
 
-            if ($totals['cash_sales_amount'] < 0) {
-                DB::rollBack();
-                $excess = number_format(abs($totals['cash_sales_amount']), 2);
-
-                return back()
-                    ->withInput()
-                    ->with('error', "Payment breakdown is invalid: credit sales, cheques, and bank transfers exceed total sales by {$excess}. Please correct the payment entries.");
-            }
-
             $settlementNumber = $this->generateSettlementNumber();
 
             $settlement = SalesSettlement::create([
@@ -898,15 +889,6 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $payload = $this->buildSettlementPayload($request);
             $totals = $payload['totals'];
             $itemFinancials = $payload['items_financials'];
-
-            if ($totals['cash_sales_amount'] < 0) {
-                DB::rollBack();
-                $excess = number_format(abs($totals['cash_sales_amount']), 2);
-
-                return back()
-                    ->withInput()
-                    ->with('error', "Payment breakdown is invalid: credit sales, cheques, and bank transfers exceed total sales by {$excess}. Please correct the payment entries.");
-            }
 
             $salesSettlement->update([
                 'settlement_date' => $request->settlement_date,

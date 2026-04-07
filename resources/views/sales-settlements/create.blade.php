@@ -1522,16 +1522,10 @@
                     }
                 }
 
-                // Show/hide payment breakdown warning
+                // Hide payment breakdown warning (cheque can exceed cash sales when customer pays extra/advance)
                 const paymentWarning = document.getElementById('payment_breakdown_warning');
                 if (paymentWarning) {
-                    if (theoreticalCashSales < 0) {
-                        const excess = Math.abs(theoreticalCashSales).toFixed(2);
-                        paymentWarning.textContent = 'Credit sales, cheques, and bank transfers exceed total sales by Rs ' + excess + '. Please correct the payment entries.';
-                        paymentWarning.style.display = 'block';
-                    } else {
-                        paymentWarning.style.display = 'none';
-                    }
+                    paymentWarning.style.display = 'none';
                 }
 
                 if (netSaleDisplay) netSaleDisplay.textContent = formatPKR(netSale);

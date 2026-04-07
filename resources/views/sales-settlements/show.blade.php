@@ -277,17 +277,19 @@
         $totalDeductions = $totalExpenses;
 
         // Expected Cash Calculation (Professional Accounting)
-        // Only Cash Sales and Cash Recoveries should be in the salesman's physical wallet
-        $expectedCashGross = $cashSalesAmount + $recoveryCash;
+        // Cheques are cash-equivalent submissions; recalculate cash sales without deducting cheques
+        $netSaleItems = (float) $settlement->items->sum('total_sales_value');
+        $chequesTotal = (float) $settlement->cheques->sum('amount');
+        $theoreticalCashSales = $netSaleItems - $creditSalesAmount - $bankSalesAmount;
+        $expectedCashGross = $theoreticalCashSales + $recoveryCash;
         $expectedCashNet = $expectedCashGross - $totalDeductions;
 
         // Actual Physical Cash Collected
         $actualPhysicalCash = $cashDenominationTotal > 0 ? $cashDenominationTotal : (float) $settlement->cash_collected;
         $bankSlipsTotal = (float) $settlement->bankSlips->sum('amount');
 
-        // Shortage/Excess (Physical Cash + Bank Slips vs Expected Cash)
-        // Bank recoveries are excluded from both sides - expected only includes cash sales + cash recoveries
-        $shortExcess = ($actualPhysicalCash + $bankSlipsTotal) - $expectedCashNet;
+        // Total submitted = Physical Cash + Cheques (cash-equivalent) + Bank Slips
+        $shortExcess = ($actualPhysicalCash + $chequesTotal + $bankSlipsTotal) - $expectedCashNet;
 
         // Profit Analysis
         $totalCOGS = (float) ($settlement->items->sum('total_cogs') ?? 0);
@@ -1300,117 +1302,181 @@
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">1</td>
-                                            <td class="px-1 py-0.5">Credit Sale Amount</td>
-                                            <td class="text-right px-1 py-0.5 font-bold">
+                                            <td class="text-center px-1 py-0.5 align-top">1</td>
+                                            <td class="px-1 py-0.5">
+                                                Credit Sale Amount
+                                                <div class="text-xs text-gray-400 font-normal">Σ Credit sales entered
+                                                    (on-credit invoices)</div>
+                                            </td>
+                                            <td class="text-right px-1 py-0.5 font-bold align-top">
                                                 {{ number_format($settlement->credit_sales_amount, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">2</td>
-                                            <td class="px-1 py-0.5">Cheque Sale Amount</td>
-                                            <td class="text-right px-1 py-0.5 font-bold">
+                                            <td class="text-center px-1 py-0.5 align-top">2</td>
+                                            <td class="px-1 py-0.5">
+                                                Cheque Sale Amount
+                                                <div class="text-xs text-gray-400 font-normal">Σ Cheque payments
+                                                    collected from customers</div>
+                                            </td>
+                                            <td class="text-right px-1 py-0.5 font-bold align-top">
                                                 {{ number_format($settlement->cheque_sales_amount, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">3</td>
-                                            <td class="px-1 py-0.5">Bank Transfer Amount</td>
-                                            <td class="text-right px-1 py-0.5 font-bold">
+                                            <td class="text-center px-1 py-0.5 align-top">3</td>
+                                            <td class="px-1 py-0.5">
+                                                Bank Transfer Amount
+                                                <div class="text-xs text-gray-400 font-normal">Σ Direct bank / online
+                                                    transfers received</div>
+                                            </td>
+                                            <td class="text-right px-1 py-0.5 font-bold align-top">
                                                 {{ number_format($settlement->bank_transfer_amount, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">4</td>
-                                            <td class="px-1 py-0.5">Cash Sale Amount</td>
-                                            <td class="text-right px-1 py-0.5 font-bold">
+                                            <td class="text-center px-1 py-0.5 align-top">4</td>
+                                            <td class="px-1 py-0.5">
+                                                Cash Sale Amount
+                                                <div class="text-xs text-gray-400 font-normal">Net Sale − Credit − Bank
+                                                    Transfers</div>
+                                            </td>
+                                            <td class="text-right px-1 py-0.5 font-bold align-top">
                                                 {{ number_format($settlement->cash_sales_amount, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">5</td>
-                                            <td class="px-1 py-0.5">Bank Slips / Deposits</td>
-                                            <td class="text-right px-1 py-0.5 font-bold">
+                                            <td class="text-center px-1 py-0.5 align-top">5</td>
+                                            <td class="px-1 py-0.5">
+                                                Bank Slips / Deposits
+                                                <div class="text-xs text-gray-400 font-normal">Σ Cash deposited directly
+                                                    to bank by salesman</div>
+                                            </td>
+                                            <td class="text-right px-1 py-0.5 font-bold align-top">
                                                 {{ number_format($settlement->bankSlips->sum('amount'), 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">6</td>
-                                            <td class="px-1 py-0.5 font-bold">Net Sale (Sold Items Value)</td>
-                                            <td class="text-right px-1 py-0.5 font-black border-t border-black">
+                                            <td class="text-center px-1 py-0.5 align-top">6</td>
+                                            <td class="px-1 py-0.5 font-bold">
+                                                Net Sale (Sold Items Value)
+                                                <div class="text-xs text-gray-400 font-normal">Credit + Cheque + Bank +
+                                                    Cash (total invoiced value of sold items)</div>
+                                            </td>
+                                            <td
+                                                class="text-right px-1 py-0.5 font-black border-t border-black align-top">
                                                 {{ number_format($netSale, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">7</td>
-                                            <td class="px-1 py-0.5">Return Value</td>
-                                            <td class="text-right px-1 py-0.5">
+                                            <td class="text-center px-1 py-0.5 align-top">7</td>
+                                            <td class="px-1 py-0.5">
+                                                Return Value
+                                                <div class="text-xs text-gray-400 font-normal">Σ Returned items × unit
+                                                    price</div>
+                                            </td>
+                                            <td class="text-right px-1 py-0.5 align-top">
                                                 {{ number_format($settlement->sales_return_amount, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">8</td>
-                                            <td class="px-1 py-0.5">Shortage Value</td>
-                                            <td class="text-right px-1 py-0.5">
+                                            <td class="text-center px-1 py-0.5 align-top">8</td>
+                                            <td class="px-1 py-0.5">
+                                                Shortage Value
+                                                <div class="text-xs text-gray-400 font-normal">Σ Shortage items × unit
+                                                    price</div>
+                                            </td>
+                                            <td class="text-right px-1 py-0.5 align-top">
                                                 {{ number_format($settlement->shortage_amount, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">9</td>
-                                            <td class="px-1 py-0.5">Recovery (Cash)</td>
-                                            <td class="text-right px-1 py-0.5">{{ number_format($recoveryCash, 2) }}
+                                            <td class="text-center px-1 py-0.5 align-top">9</td>
+                                            <td class="px-1 py-0.5">
+                                                Recovery (Cash)
+                                                <div class="text-xs text-gray-400 font-normal">Σ Previous credit
+                                                    balances recovered in cash</div>
                                             </td>
+                                            <td class="text-right px-1 py-0.5 align-top">
+                                                {{ number_format($recoveryCash, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">10</td>
-                                            <td class="px-1 py-0.5">Recovery (Bank/Online)</td>
-                                            <td class="text-right px-1 py-0.5">{{ number_format($recoveryBank, 2) }}
+                                            <td class="text-center px-1 py-0.5 align-top">10</td>
+                                            <td class="px-1 py-0.5">
+                                                Recovery (Bank/Online)
+                                                <div class="text-xs text-gray-400 font-normal">Σ Previous credit
+                                                    balances recovered via bank</div>
                                             </td>
+                                            <td class="text-right px-1 py-0.5 align-top">
+                                                {{ number_format($recoveryBank, 2) }}</td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">11</td>
-                                            <td class="px-1 py-0.5 font-bold">Total Sale Amount</td>
-                                            <td class="text-right px-1 py-0.5 font-black border-t border-black">
+                                            <td class="text-center px-1 py-0.5 align-top">11</td>
+                                            <td class="px-1 py-0.5 font-bold">
+                                                Total Sale Amount
+                                                <div class="text-xs text-gray-400 font-normal">Net Sale (Row 6) — total
+                                                    value of all invoiced items</div>
+                                            </td>
+                                            <td
+                                                class="text-right px-1 py-0.5 font-black border-t border-black align-top">
                                                 {{ number_format($netSale, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">12</td>
-                                            <td class="px-1 py-0.5 font-semibold text-blue-700">Expected Cash (Sales +
-                                                Cash Recoveries)</td>
-                                            <td class="text-right px-1 py-0.5 font-bold text-blue-700">
+                                            <td class="text-center px-1 py-0.5 align-top">12</td>
+                                            <td class="px-1 py-0.5 font-semibold text-blue-700">
+                                                Expected Cash (Sales + Cash Recoveries)
+                                                <div class="text-xs text-blue-400 font-normal">Cash Sale (Row 4) +
+                                                    Recovery Cash (Row 9)</div>
+                                            </td>
+                                            <td class="text-right px-1 py-0.5 font-bold text-blue-700 align-top">
                                                 {{ number_format($expectedCashGross, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">13</td>
-                                            <td class="px-1 py-0.5 text-red-700">Less: Expenses</td>
-                                            <td class="text-right px-1 py-0.5 text-red-700 font-semibold">
+                                            <td class="text-center px-1 py-0.5 align-top">13</td>
+                                            <td class="px-1 py-0.5 text-red-700">
+                                                Less: Expenses
+                                                <div class="text-xs text-red-300 font-normal">Σ Expenses paid by
+                                                    salesman from cash</div>
+                                            </td>
+                                            <td class="text-right px-1 py-0.5 text-red-700 font-semibold align-top">
                                                 {{ number_format($totalExpenses, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">14</td>
-                                            <td class="px-1 py-0.5 font-bold text-blue-900 bg-blue-50">Expected Cash
-                                                (After Expenses)</td>
+                                            <td class="text-center px-1 py-0.5 align-top">14</td>
+                                            <td class="px-1 py-0.5 font-bold text-blue-900 bg-blue-50">
+                                                Expected Cash (After Expenses)
+                                                <div class="text-xs text-blue-400 font-normal bg-blue-50">Row 12 − Row
+                                                    13</div>
+                                            </td>
                                             <td
-                                                class="text-right px-1 py-0.5 font-black text-blue-900 bg-blue-50 border-t border-blue-900">
+                                                class="text-right px-1 py-0.5 font-black text-blue-900 bg-blue-50 border-t border-blue-900 align-top">
                                                 {{ number_format($expectedCashNet, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">15</td>
-                                            <td class="px-1 py-0.5 font-bold">Physical Cash Submitted (Denominations)
+                                            <td class="text-center px-1 py-0.5 align-top">15</td>
+                                            <td class="px-1 py-0.5 font-bold">
+                                                Physical Cash Submitted (Denominations)
+                                                <div class="text-xs text-gray-400 font-normal">Σ Cash notes + coins from
+                                                    denomination breakdown</div>
                                             </td>
-                                            <td class="text-right px-1 py-0.5 font-black border-2 border-black">
+                                            <td
+                                                class="text-right px-1 py-0.5 font-black border-2 border-black align-top">
                                                 {{ number_format($calculatedCash, 2) }}
                                             </td>
                                         </tr>
                                         <tr>
-                                            <td class="text-center px-1 py-0.5">16</td>
-                                            <td class="px-1 py-0.5 font-semibold">Short/Excess</td>
+                                            <td class="text-center px-1 py-0.5 align-top">16</td>
+                                            <td class="px-1 py-0.5 font-semibold">
+                                                Short/Excess
+                                                <div class="text-xs text-gray-400 font-normal">(Physical Cash + Cheques
+                                                    + Bank Slips) − Row 14</div>
+                                            </td>
                                             <td
-                                                class="text-right px-1 py-0.5 font-bold {{ $shortExcess < 0 ? 'text-red-700' : 'text-green-700' }}">
+                                                class="text-right px-1 py-0.5 font-bold align-top {{ $shortExcess < 0 ? 'text-red-700' : 'text-green-700' }}">
                                                 {{ number_format($shortExcess, 2) }}
                                             </td>
                                         </tr>
@@ -1601,7 +1667,9 @@
                                 @forelse($creditReportData as $index => $row)
                                     <tr>
                                         <td class="text-center py-1">{{ $loop->iteration }}</td>
-                                        <td class="py-1 font-bold">{{ $row->customer_name }}{{ $row->address ? ' (' . $row->address . ')' : '' }}</td>
+                                        <td class="py-1 font-bold">
+                                            {{ $row->customer_name }}{{ $row->address ? ' (' . $row->address . ')' : '' }}
+                                        </td>
                                         <td class="py-1 text-center">{{ $row->customer_code }}</td>
                                         <td class="text-right py-1 text-gray-600">
                                             {{ number_format($row->opening_balance, 2) }}

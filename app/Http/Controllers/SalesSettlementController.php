@@ -1135,7 +1135,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
         $expensesClaimed = round((float) $settlement->expenses->sum('amount'), 2);
         $creditRecoveries = round((float) $settlement->recoveries->sum('amount'), 2);
 
-        $cashSalesAmount = round($totalSalesAmount - $creditSalesAmount - $chequeAmount - $bankTransferAmount, 2);
+        $cashSalesAmount = round($totalSalesAmount - $creditSalesAmount - $bankTransferAmount, 2);
         $grossProfit = round($totalSalesAmount - $totalCogs, 2);
 
         $denomRecord = $settlement->cashDenominations->first();
@@ -1551,7 +1551,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
         }
 
         $grossProfit = $totalSalesValue - $totalCogs;
-        $cashSalesAmount = round($totalSalesValue - $creditSalesAmount - $totalCheques - $totalBankTransfers, 2);
+        $cashSalesAmount = round($totalSalesValue - $creditSalesAmount - $totalBankTransfers, 2);
         $cashCollected = $denomTotal;
         $cashToDeposit = $cashCollected;
 

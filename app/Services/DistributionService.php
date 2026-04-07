@@ -736,12 +736,11 @@ class DistributionService
             $ledgerService = app(LedgerService::class);
             $ledgerService->processSalesSettlement($settlement);
 
-            // Recalculate cash_sales_amount from child records so the stored value is always
-            // consistent with the GL entry (guards against stale values from formula changes).
+            // Recalculate cash_sales_amount: total_sales - credit - bank_transfers
+            // Cheques are excluded from this deduction (they are on the submission side).
             $freshCashSalesAmount = round(
                 (float) $settlement->items->sum('total_sales_value')
                 - (float) $settlement->creditSales->sum('sale_amount')
-                - (float) $settlement->cheques->sum('amount')
                 - (float) $settlement->bankTransfers->sum('amount'),
                 2
             );
@@ -931,21 +930,22 @@ class DistributionService
                     );
                 });
 
-            // 3. Cheque Sales (Dr Cheques in Hand / Cr Sales)
-            // These are sales where the customer paid by cheque (NOT debt recoveries).
+            // 3. Cheques Received (Dr Cheques in Hand / Cr Salesman Clearing)
+            // Cheques are cash-equivalent instruments collected by the salesman and submitted to the company.
+            // They clear the salesman's outstanding balance, not the Sales revenue account.
             $chequeSalesAmount = (float) $settlement->cheques->sum('amount');
             if ($chequeSalesAmount > 0) {
                 $addLine(
                     $accounts['cheques_in_hand']->id,
                     $chequeSalesAmount,
                     0,
-                    "Cheque Sales (Direct) - {$employeeLabel} - {$settlementReference}"
+                    "Cheques Received from Salesman - {$employeeLabel} - {$settlementReference}"
                 );
                 $addLine(
-                    $accounts['sales']->id,
+                    $accounts['salesman_clearing']->id,
                     0,
                     $chequeSalesAmount,
-                    "Cheque Sales (Direct) - {$employeeLabel} - {$settlementReference}"
+                    "Cheques Received from Salesman - {$employeeLabel} - {$settlementReference}"
                 );
             }
 
@@ -974,11 +974,11 @@ class DistributionService
 
             // 5. Cash Sales (Gross)
             // Always recalculate from child records to avoid using a stale stored value.
-            // Formula: total_sales - credit - cheques - bank_transfers (consistent with validateSettlementForPosting)
+            // Formula: total_sales - credit - bank_transfers
+            // Cheques are on the submission side (like bank slips), not deducted here.
             $cashSalesAmount = round(
                 (float) $settlement->items->sum('total_sales_value')
                 - (float) $settlement->creditSales->sum('sale_amount')
-                - (float) $settlement->cheques->sum('amount')
                 - (float) $settlement->bankTransfers->sum('amount'),
                 2
             );
@@ -1045,8 +1045,10 @@ class DistributionService
             $actualPhysicalCash = (float) $settlement->cash_collected;
             $bankSlipsTotal = $settlement->bankSlips->sum('amount');
 
-            // Total handed over by salesman = Physical Cash + Bank Slips (deposited directly)
-            $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal;
+            // Total handed over by salesman = Physical Cash + Cheques + Bank Slips
+            // Cheques are cash equivalents collected by the salesman.
+            $chequeAmountPosted = (float) $settlement->cheques->sum('amount');
+            $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal + $chequeAmountPosted;
 
             $cashDifference = round($totalSubmitted - $expectedClearingBalance, 2);
 
@@ -1335,12 +1337,12 @@ class DistributionService
         $creditSalesAmount = (float) $settlement->creditSales->sum('sale_amount');
         $chequeAmount = (float) $settlement->cheques->sum('amount');
         $bankTransferAmount = (float) $settlement->bankTransfers->sum('amount');
-        $cashSalesAmount = round($totalSalesAmount - $creditSalesAmount - $chequeAmount - $bankTransferAmount, 2);
+        $cashSalesAmount = round($totalSalesAmount - $creditSalesAmount - $bankTransferAmount, 2);
 
         if ($cashSalesAmount < 0) {
             $excess = number_format(abs($cashSalesAmount), 2);
             throw new \RuntimeException(
-                "Cannot post: credit sales, cheques, and bank transfers exceed total sales by {$excess}. Cash sales amount cannot be negative."
+                "Cannot post: credit sales and bank transfers exceed total sales by {$excess}. Cash sales amount cannot be negative."
             );
         }
 
@@ -1356,8 +1358,8 @@ class DistributionService
         $bankSlipsTotal = (float) $settlement->bankSlips->sum('amount');
 
         $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries - $totalExpenses;
-        // Bank recoveries excluded from both sides - expected only includes cash sales + cash recoveries
-        $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal;
+        // Cheques are cash-equivalents submitted by the salesman, included on the submission side
+        $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal + $chequeAmount;
         $shortExcess = round($totalSubmitted - $expectedClearingBalance, 2);
 
         if ($shortExcess < 0) {

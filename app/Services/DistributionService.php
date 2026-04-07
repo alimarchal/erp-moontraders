@@ -1331,18 +1331,12 @@ class DistributionService
         ]);
 
         // 1. Recalculate cash_sales_amount from child records (never trust the stored value)
+        // Cheque is treated as cash equivalent — both cash and cheque together form the non-credit, non-bank-transfer portion
         $totalSalesAmount = (float) $settlement->items->sum('total_sales_value');
         $creditSalesAmount = (float) $settlement->creditSales->sum('sale_amount');
         $chequeAmount = (float) $settlement->cheques->sum('amount');
         $bankTransferAmount = (float) $settlement->bankTransfers->sum('amount');
-        $cashSalesAmount = round($totalSalesAmount - $creditSalesAmount - $chequeAmount - $bankTransferAmount, 2);
-
-        if ($cashSalesAmount < 0) {
-            $excess = number_format(abs($cashSalesAmount), 2);
-            throw new \RuntimeException(
-                "Cannot post: credit sales, cheques, and bank transfers exceed total sales by {$excess}. Cash sales amount cannot be negative."
-            );
-        }
+        $cashSalesAmount = max(0, round($totalSalesAmount - $creditSalesAmount - $chequeAmount - $bankTransferAmount, 2));
 
         // 2. Short/Excess must be >= 0 (salesman must not have a cash shortage)
         $totalCashRecoveries = (float) $settlement->recoveries
@@ -1356,8 +1350,8 @@ class DistributionService
         $bankSlipsTotal = (float) $settlement->bankSlips->sum('amount');
 
         $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries - $totalExpenses;
-        // Bank recoveries excluded from both sides - expected only includes cash sales + cash recoveries
-        $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal;
+        // Cheque included as submitted — it covers the cash sale portion (or exceeds it as advance)
+        $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal + $chequeAmount;
         $shortExcess = round($totalSubmitted - $expectedClearingBalance, 2);
 
         if ($shortExcess < 0) {

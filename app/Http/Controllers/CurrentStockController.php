@@ -29,11 +29,14 @@ class CurrentStockController extends Controller implements HasMiddleware
      */
     public function index(Request $request)
     {
-        $stocks = QueryBuilder::for(
-            CurrentStock::query()
-                ->with(['product.category', 'product.supplier', 'warehouse'])
-                ->where('quantity_on_hand', '>', 0)
-        )
+        $hasFilter = $request->has('filter');
+
+        $baseQuery = CurrentStock::query()
+            ->with(['product.category', 'product.supplier', 'warehouse'])
+            ->where('quantity_on_hand', '>', 0)
+            ->when(! $hasFilter, fn ($q) => $q->whereRaw('0 = 1'));
+
+        $stocks = QueryBuilder::for($baseQuery)
             ->allowedFilters([
                 AllowedFilter::exact('product_id'),
                 AllowedFilter::exact('warehouse_id'),
@@ -68,10 +71,11 @@ class CurrentStockController extends Controller implements HasMiddleware
                     };
                 }),
                 AllowedFilter::callback('search', function ($query, $value) {
+                    $value = trim($value);
                     $query->whereHas('product', function ($q) use ($value) {
-                        $q->where('product_name', 'like', "%{$value}%")
-                            ->orWhere('product_code', 'like', "%{$value}%")
-                            ->orWhere('barcode', 'like', "%{$value}%");
+                        $q->whereRaw('TRIM(product_name) like ?', ["%{$value}%"])
+                            ->orWhereRaw('TRIM(product_code) like ?', ["%{$value}%"])
+                            ->orWhereRaw('TRIM(barcode) like ?', ["%{$value}%"]);
                     });
                 }),
             ])
@@ -92,9 +96,27 @@ class CurrentStockController extends Controller implements HasMiddleware
             ->paginate($this->resolvePerPage($request))
             ->withQueryString();
 
+        // Attach batch data for Avg Cost breakdown display
+        if ($stocks->isNotEmpty()) {
+            $batchGroups = CurrentStockByBatch::query()
+                ->with('stockBatch')
+                ->where('quantity_on_hand', '>', 0)
+                ->whereIn('product_id', $stocks->pluck('product_id'))
+                ->whereIn('warehouse_id', $stocks->pluck('warehouse_id'))
+                ->orderBy('priority_order')
+                ->orderBy('expiry_date')
+                ->get()
+                ->groupBy(fn ($b) => $b->product_id.'_'.$b->warehouse_id);
+
+            foreach ($stocks as $stock) {
+                $stock->setRelation('batches', $batchGroups->get($stock->product_id.'_'.$stock->warehouse_id, collect()));
+            }
+        }
+
         return view('inventory.current-stock.index', [
             'stocks' => $stocks,
-            'products' => Product::orderBy('product_name')->get(['id', 'product_code', 'product_name']),
+            'hasFilter' => $hasFilter,
+            'products' => Product::orderBy('product_name')->get(['id', 'product_code', 'product_name', 'supplier_id']),
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'categories' => Category::orderBy('name')->get(['id', 'name']),
             'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),

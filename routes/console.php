@@ -10,3 +10,7 @@ Artisan::command('inspire', function () {
 
 // Take a daily end-of-day inventory snapshot at 11:59 PM
 Schedule::command('inventory:snapshot')->dailyAt('23:45');
+
+// Database backups — twice daily
+Schedule::command('backup:run --only-db')->dailyAt('06:00')->name('backup-morning')->withoutOverlapping();
+Schedule::command('backup:run --only-db')->dailyAt('23:50')->name('backup-night')->withoutOverlapping();

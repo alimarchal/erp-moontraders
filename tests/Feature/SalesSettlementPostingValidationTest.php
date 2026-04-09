@@ -140,10 +140,10 @@ it('store blocks when credit sales exceed total sales (negative cash_sales_amoun
     expect(SalesSettlement::count())->toBe(0);
 });
 
-it('store blocks when cheques exceed total sales (negative cash_sales_amount)', function () {
+it('store blocks when bank transfers exceed total sales (negative cash_sales_amount)', function () {
     $setup = makePostingSetup();
 
-    // Total sales = 1500, bank_transfer = 2000 → cash_sales = -500 (cheques not subtracted, bank transfers are)
+    // Total sales = 1500, bank_transfer = 2000 → cash_sales = 1500 - 2000 = -500 → blocked
     $response = $this->actingAs($setup['user'])->post(route('sales-settlements.store'), [
         'settlement_date' => now()->toDateString(),
         'goods_issue_id' => $setup['goodsIssue']->id,

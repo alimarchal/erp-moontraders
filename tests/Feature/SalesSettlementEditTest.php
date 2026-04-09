@@ -430,7 +430,7 @@ test('update calculates cash_sales_amount as gross cash sales not denomination t
     $settlement->refresh();
 
     // Total sales value from items = 10 * 150 = 1500
-    // cash_sales_amount = totalSalesValue - credit(200) - bankTransfers(100) = 1200 (cheques not subtracted)
+    // cash_sales_amount = totalSalesValue - credit(200) - bankTransfers(100) = 1200 (cheques are part of cash)
     expect((float) $settlement->cash_sales_amount)->toBe(1200.0)
         ->and((float) $settlement->cheque_sales_amount)->toBe(300.0)
         ->and((float) $settlement->bank_transfer_amount)->toBe(100.0)

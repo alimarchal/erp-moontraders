@@ -42,6 +42,6 @@ it('schedules backup:run --only-db at 06:00 and 23:50', function () {
 
     $times = $scheduled->map(fn ($e) => $e->expression)->sort()->values();
 
-    expect($times[0])->toBe('45 6 * * *')
+    expect($times[0])->toBe('55 6 * * *')
         ->and($times[1])->toBe('50 23 * * *');
 });

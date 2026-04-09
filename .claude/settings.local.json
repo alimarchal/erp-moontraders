@@ -45,7 +45,9 @@
       "Bash(2)",
       "Bash(sed -n '21,35p' /Users/alirazamarhcal/Herd/moontraders/app/Http/Controllers/ExpenseDetailController.php)",
       "Bash(sed -n '24,40p' /Users/alirazamarhcal/Herd/moontraders/app/Http/Controllers/ClaimRegisterController.php)",
-      "Bash(git revert:*)"
+      "Bash(git revert:*)",
+      "Bash(gh run:*)",
+      "Bash(git commit -m ':*)"
     ],
     "deny": [],
     "ask": []

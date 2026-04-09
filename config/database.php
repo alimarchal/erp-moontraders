@@ -52,6 +52,10 @@ return [
             'username' => env('DB_USERNAME', 'root'),
             'password' => env('DB_PASSWORD', ''),
             'unix_socket' => env('DB_SOCKET', ''),
+            'dump' => [
+                'username' => env('DB_BACKUP_USERNAME', env('DB_USERNAME')),
+                'password' => env('DB_BACKUP_PASSWORD', env('DB_PASSWORD')),
+            ],
             'charset' => env('DB_CHARSET', 'utf8mb4'),
             'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
             'prefix' => '',

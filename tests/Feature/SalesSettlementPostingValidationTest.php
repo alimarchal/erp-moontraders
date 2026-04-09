@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
 use App\Models\Employee;
@@ -50,7 +51,9 @@ function makePostingSetup(): array
         'total_value' => 1500,
     ]);
 
-    return compact('user', 'employee', 'vehicle', 'warehouse', 'product', 'goodsIssue');
+    $bankAccount = BankAccount::factory()->create();
+
+    return compact('user', 'employee', 'vehicle', 'warehouse', 'product', 'goodsIssue', 'bankAccount');
 }
 
 /**
@@ -140,7 +143,7 @@ it('store blocks when credit sales exceed total sales (negative cash_sales_amoun
 it('store blocks when cheques exceed total sales (negative cash_sales_amount)', function () {
     $setup = makePostingSetup();
 
-    // Total sales = 1500, cheques = 2000 → cash_sales = -500
+    // Total sales = 1500, bank_transfer = 2000 → cash_sales = -500 (cheques not subtracted, bank transfers are)
     $response = $this->actingAs($setup['user'])->post(route('sales-settlements.store'), [
         'settlement_date' => now()->toDateString(),
         'goods_issue_id' => $setup['goodsIssue']->id,
@@ -154,8 +157,8 @@ it('store blocks when cheques exceed total sales (negative cash_sales_amount)', 
             'selling_price' => 150,
             'batches' => [],
         ]],
-        'cheques' => json_encode([
-            ['cheque_number' => 'CHQ-001', 'amount' => 2000, 'bank_name' => 'HBL', 'cheque_date' => now()->toDateString()],
+        'bank_transfers' => json_encode([
+            ['bank_account_id' => $setup['bankAccount']->id, 'amount' => 2000, 'reference_number' => 'TXN-001'],
         ]),
         'denom_5000' => 0, 'denom_1000' => 0, 'denom_500' => 0, 'denom_100' => 0,
         'denom_50' => 0, 'denom_20' => 0, 'denom_10' => 0, 'denom_coins' => 0,

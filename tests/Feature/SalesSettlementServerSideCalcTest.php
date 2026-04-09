@@ -236,8 +236,8 @@ it('store computes cash_sales_amount as residual of total sales minus other paym
     $response->assertRedirect();
 
     $settlement = SalesSettlement::latest()->first();
-    // Items: 10 * 150 = 1500 total sales. cash = 1500 - 200(credit) - 300(cheques) - 100(bank_t) = 900
-    expect((float) $settlement->cash_sales_amount)->toBe(900.0)
+    // Items: 10 * 150 = 1500 total sales. cash = 1500 - 200(credit) - 100(bank_t) = 1200 (cheques not subtracted)
+    expect((float) $settlement->cash_sales_amount)->toBe(1200.0)
         ->and((float) $settlement->total_sales_amount)->toBe(1500.0)
         ->and((float) $settlement->gross_profit)->toBe(500.0);
 });

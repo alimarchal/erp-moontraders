@@ -71,15 +71,9 @@ it('displays current stock index page', function () {
     $response->assertSuccessful();
 
     $stocks = $response->viewData('stocks');
-    expect($stocks->isEmpty())->toBeTrue();
-});
-
-it('displays current stock when filter is applied', function () {
-    $response = $this->get(route('inventory.current-stock.index', ['filter[product_id]' => $this->productA->id]));
-    $response->assertSuccessful();
-
-    $stocks = $response->viewData('stocks');
-    expect($stocks->pluck('product_id')->toArray())->toContain($this->productA->id);
+    expect($stocks->pluck('product_id')->toArray())
+        ->toContain($this->productA->id)
+        ->toContain($this->productB->id);
 });
 
 it('filters by product', function () {
@@ -191,35 +185,39 @@ it('searches by barcode', function () {
 });
 
 it('sorts by quantity on hand descending', function () {
-    $response = $this->get(route('inventory.current-stock.index', ['filter[warehouse_id]' => $this->warehouse->id, 'sort' => '-quantity_on_hand']));
+    $response = $this->get(route('inventory.current-stock.index', ['sort' => '-quantity_on_hand']));
     $response->assertSuccessful();
 
     $stocks = $response->viewData('stocks');
     expect($stocks->first()->product_id)->toBe($this->productA->id);
+    expect($stocks->last()->product_id)->toBe($this->productB->id);
 });
 
 it('sorts by quantity on hand ascending', function () {
-    $response = $this->get(route('inventory.current-stock.index', ['filter[warehouse_id]' => $this->warehouseB->id, 'sort' => 'quantity_on_hand']));
+    $response = $this->get(route('inventory.current-stock.index', ['sort' => 'quantity_on_hand']));
     $response->assertSuccessful();
 
     $stocks = $response->viewData('stocks');
     expect($stocks->first()->product_id)->toBe($this->productB->id);
+    expect($stocks->last()->product_id)->toBe($this->productA->id);
 });
 
 it('sorts by total value descending', function () {
-    $response = $this->get(route('inventory.current-stock.index', ['filter[warehouse_id]' => $this->warehouse->id, 'sort' => '-total_value']));
+    $response = $this->get(route('inventory.current-stock.index', ['sort' => '-total_value']));
     $response->assertSuccessful();
 
     $stocks = $response->viewData('stocks');
     expect($stocks->first()->product_id)->toBe($this->productA->id);
+    expect($stocks->last()->product_id)->toBe($this->productB->id);
 });
 
 it('sorts by total value ascending', function () {
-    $response = $this->get(route('inventory.current-stock.index', ['filter[warehouse_id]' => $this->warehouseB->id, 'sort' => 'total_value']));
+    $response = $this->get(route('inventory.current-stock.index', ['sort' => 'total_value']));
     $response->assertSuccessful();
 
     $stocks = $response->viewData('stocks');
     expect($stocks->first()->product_id)->toBe($this->productB->id);
+    expect($stocks->last()->product_id)->toBe($this->productA->id);
 });
 
 it('combines filters and sorting', function () {

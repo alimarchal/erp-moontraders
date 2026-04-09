@@ -17,20 +17,20 @@ return new class extends Migration
         // current_stock_by_batch
         Schema::table('current_stock_by_batch', function (Blueprint $table) {
             $table->decimal('unit_cost', 15, 6)->change();
-            $table->decimal('total_value', 15, 4)->default(0)->change();
+            $table->decimal('total_value', 15, 4)->change();
         });
 
         // stock_valuation_layers
         Schema::table('stock_valuation_layers', function (Blueprint $table) {
             $table->decimal('unit_cost', 15, 6)->change();
-            $table->decimal('total_value', 15, 4)->default(0)->change();
+            $table->decimal('total_value', 15, 4)->change();
             $table->decimal('value_remaining', 15, 4)->default(0)->change();
         });
 
         // current_stock
         Schema::table('current_stock', function (Blueprint $table) {
-            $table->decimal('average_cost', 15, 6)->default(0)->change();
-            $table->decimal('total_value', 15, 4)->default(0)->change();
+            $table->decimal('average_cost', 15, 6)->change();
+            $table->decimal('total_value', 15, 4)->change();
         });
 
         // stock_movements
@@ -62,18 +62,18 @@ return new class extends Migration
     {
         Schema::table('current_stock_by_batch', function (Blueprint $table) {
             $table->decimal('unit_cost', 15, 2)->change();
-            $table->decimal('total_value', 15, 2)->default(0)->change();
+            $table->decimal('total_value', 15, 2)->change();
         });
 
         Schema::table('stock_valuation_layers', function (Blueprint $table) {
             $table->decimal('unit_cost', 15, 2)->change();
-            $table->decimal('total_value', 15, 2)->default(0)->change();
+            $table->decimal('total_value', 15, 2)->change();
             $table->decimal('value_remaining', 15, 2)->default(0)->change();
         });
 
         Schema::table('current_stock', function (Blueprint $table) {
-            $table->decimal('average_cost', 15, 2)->default(0)->change();
-            $table->decimal('total_value', 15, 2)->default(0)->change();
+            $table->decimal('average_cost', 15, 2)->change();
+            $table->decimal('total_value', 15, 2)->change();
         });
 
         Schema::table('stock_movements', function (Blueprint $table) {

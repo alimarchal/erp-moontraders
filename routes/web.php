@@ -432,9 +432,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     | API endpoints supply form dropdowns (stock levels, employees, vehicles).
     | Permissions: goods-issue-list, -create, -edit, -delete, -post
     */
+    Route::get('goods-issues/{goodsIssue}/append-items', [GoodsIssueController::class, 'appendItemsForm'])
+        ->name('goods-issues.append-items');
+    Route::post('goods-issues/{goodsIssue}/append-items', [GoodsIssueController::class, 'appendItems'])
+        ->name('goods-issues.store-appended-items');
     Route::resource('goods-issues', GoodsIssueController::class);
     Route::post('goods-issues/{goodsIssue}/post', [GoodsIssueController::class, 'post'])
         ->name('goods-issues.post');
+    Route::get('api/goods-issues/check-vehicle', [GoodsIssueController::class, 'checkVehicleGoodsIssue'])
+        ->name('api.goods-issues.check-vehicle');
     Route::get('api/warehouses/{warehouse}/products/{product}/stock', [GoodsIssueController::class, 'getProductStock'])
         ->name('api.warehouses.products.stock');
     Route::get('api/employees/by-suppliers', [GoodsIssueController::class, 'getEmployeesBySuppliers'])

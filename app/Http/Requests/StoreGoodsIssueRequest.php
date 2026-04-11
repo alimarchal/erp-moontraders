@@ -50,10 +50,16 @@ class StoreGoodsIssueRequest extends FormRequest
                     }
                 },
                 function ($attribute, $value, $fail) {
+                    // Block when the vehicle already has an in-flight GI:
+                    //   - any draft GI (not yet posted), OR
+                    //   - an issued GI whose settlement is missing/draft/verified.
+                    // Posted settlements mean the workflow is complete and the
+                    // vehicle is free for a new issue.
                     $unsettled = DB::table('goods_issues')
                         ->select(
                             'goods_issues.id',
                             'goods_issues.issue_number',
+                            'goods_issues.status as gi_status',
                             'sales_settlements.settlement_number',
                             'sales_settlements.status as settlement_status',
                             'vehicles.registration_number'
@@ -64,16 +70,20 @@ class StoreGoodsIssueRequest extends FormRequest
                         })
                         ->leftJoin('vehicles', 'vehicles.id', '=', 'goods_issues.vehicle_id')
                         ->where('goods_issues.vehicle_id', $value)
-                        ->where('goods_issues.status', 'issued')
+                        ->whereNull('goods_issues.deleted_at')
+                        ->whereIn('goods_issues.status', ['draft', 'issued'])
                         ->where(function ($q) {
-                            $q->whereNull('sales_settlements.id')
+                            $q->where('goods_issues.status', 'draft')
+                                ->orWhereNull('sales_settlements.id')
                                 ->orWhereIn('sales_settlements.status', ['draft', 'verified']);
                         })
                         ->first();
 
                     if ($unsettled) {
                         $vehicle = $unsettled->registration_number ?? "Vehicle #{$value}";
-                        if ($unsettled->settlement_number) {
+                        if ($unsettled->gi_status === 'draft') {
+                            $fail("Cannot create a Goods Issue for vehicle {$vehicle}: {$unsettled->issue_number} is still in draft. Post or delete it before issuing new stock.");
+                        } elseif ($unsettled->settlement_number) {
                             $status = ucfirst($unsettled->settlement_status);
                             $fail("Cannot create a Goods Issue for vehicle {$vehicle}: settlement {$unsettled->settlement_number} ({$status}) for {$unsettled->issue_number} is not yet posted. Post all pending settlements before issuing new stock.");
                         } else {

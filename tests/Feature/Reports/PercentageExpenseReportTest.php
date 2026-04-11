@@ -93,8 +93,11 @@ class PercentageExpenseReportTest extends TestCase
         $salesmanManager = Employee::factory()->create(['name' => 'Manager John', 'designation' => 'Manager']);
         $salesmanDriver = Employee::factory()->create(['name' => 'Driver Bob', 'designation' => 'Driver']);
 
-        // Helper to create settlement and expense
-        $createData = function ($salesman, $amount) use ($user, $vehicle, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
+        // Helper to create settlement and expense.
+        // Each call gets its own vehicle so the active_vehicle_lock unique
+        // index doesn't reject the second GI on the same vehicle.
+        $createData = function ($salesman, $amount) use ($user, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
+            $perCallVehicle = Vehicle::factory()->create();
             $goodsIssue = GoodsIssue::create([
                 'issue_number' => 'GI-'.uniqid(),
                 'issue_date' => now(),
@@ -102,7 +105,7 @@ class PercentageExpenseReportTest extends TestCase
                 'total_quantity' => 0,
                 'total_value' => 0,
                 'employee_id' => $salesman->id,
-                'vehicle_id' => $vehicle->id,
+                'vehicle_id' => $perCallVehicle->id,
                 'warehouse_id' => $warehouse->id,
                 'issued_by' => $user->id,
                 'stock_in_hand_account_id' => $stockInHand->id,
@@ -114,7 +117,7 @@ class PercentageExpenseReportTest extends TestCase
                 'settlement_date' => now()->format('Y-m-d'),
                 'status' => 'posted',
                 'employee_id' => $salesman->id,
-                'vehicle_id' => $vehicle->id,
+                'vehicle_id' => $perCallVehicle->id,
                 'warehouse_id' => $warehouse->id,
                 'goods_issue_id' => $goodsIssue->id,
                 'total_sales_amount' => 0,

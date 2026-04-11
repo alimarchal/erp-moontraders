@@ -2,14 +2,21 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Models\AccountingPeriod;
+use App\Models\AccountType;
 use App\Models\ChartOfAccount;
+use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
+use App\Models\GoodsIssue;
+use App\Models\JournalEntry;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementExpense;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -43,11 +50,14 @@ class CustomSettlementReportTest extends TestCase
         $this->actingAs($user);
 
         // Setup Dependencies
-        $period = \App\Models\AccountingPeriod::create(['name' => 'Current', 'start_date' => now()->startOfMonth(), 'end_date' => now()->endOfMonth(), 'status' => 'open']);
-        $accountType = \App\Models\AccountType::factory()->create();
-        $currency = \App\Models\Currency::factory()->create();
-        $vehicle = \App\Models\Vehicle::factory()->create();
-        $warehouse = \App\Models\Warehouse::factory()->create();
+        $period = AccountingPeriod::create(['name' => 'Current', 'start_date' => now()->startOfMonth(), 'end_date' => now()->endOfMonth(), 'status' => 'open']);
+        $accountType = AccountType::factory()->create();
+        $currency = Currency::factory()->create();
+        // Each settlement gets its own vehicle so the active_vehicle_lock
+        // unique index doesn't reject the second GI on the same vehicle.
+        $vehicle1 = Vehicle::factory()->create();
+        $vehicle2 = Vehicle::factory()->create();
+        $warehouse = Warehouse::factory()->create();
 
         $createAccount = function ($code, $name) use ($accountType, $currency) {
             return ChartOfAccount::create([
@@ -69,12 +79,12 @@ class CustomSettlementReportTest extends TestCase
         $salesman = Employee::factory()->create(['name' => 'John Doe', 'designation' => 'Manager']);
 
         // Settlement 1
-        $goodsIssue1 = \App\Models\GoodsIssue::create([
+        $goodsIssue1 = GoodsIssue::create([
             'issue_number' => 'GI-1',
             'issue_date' => now(),
             'status' => 'issued',
             'employee_id' => $salesman->id,
-            'vehicle_id' => $vehicle->id,
+            'vehicle_id' => $vehicle1->id,
             'warehouse_id' => $warehouse->id,
             'issued_by' => $user->id,
             'stock_in_hand_account_id' => $stockInHand->id,
@@ -86,24 +96,24 @@ class CustomSettlementReportTest extends TestCase
             'settlement_date' => now()->format('Y-m-d'),
             'status' => 'posted',
             'employee_id' => $salesman->id,
-            'vehicle_id' => $vehicle->id,
+            'vehicle_id' => $vehicle1->id,
             'warehouse_id' => $warehouse->id,
             'goods_issue_id' => $goodsIssue1->id,
             'total_sales_amount' => 50000,
             'cash_collected' => 20000,
             'credit_sales_amount' => 5000,
             'verified_by' => $user->id,
-            'journal_entry_id' => \App\Models\JournalEntry::factory()->create(['status' => 'posted', 'entry_date' => now(), 'currency_id' => $currency->id, 'accounting_period_id' => $period->id])->id,
+            'journal_entry_id' => JournalEntry::factory()->create(['status' => 'posted', 'entry_date' => now(), 'currency_id' => $currency->id, 'accounting_period_id' => $period->id])->id,
         ]);
         SalesSettlementExpense::create(['sales_settlement_id' => $settlement1->id, 'expense_account_id' => $accPerc->id, 'amount' => 1000]);
 
         // Settlement 2 (Same Day)
-        $goodsIssue2 = \App\Models\GoodsIssue::create([
+        $goodsIssue2 = GoodsIssue::create([
             'issue_number' => 'GI-2',
             'issue_date' => now(),
             'status' => 'issued',
             'employee_id' => $salesman->id,
-            'vehicle_id' => $vehicle->id,
+            'vehicle_id' => $vehicle2->id,
             'warehouse_id' => $warehouse->id,
             'issued_by' => $user->id,
             'stock_in_hand_account_id' => $stockInHand->id,
@@ -115,14 +125,14 @@ class CustomSettlementReportTest extends TestCase
             'settlement_date' => now()->format('Y-m-d'),
             'status' => 'posted',
             'employee_id' => $salesman->id,
-            'vehicle_id' => $vehicle->id,
+            'vehicle_id' => $vehicle2->id,
             'warehouse_id' => $warehouse->id,
             'goods_issue_id' => $goodsIssue2->id,
             'total_sales_amount' => 30000,
             'cash_collected' => 10000,
             'credit_sales_amount' => 2000,
             'verified_by' => $user->id,
-            'journal_entry_id' => \App\Models\JournalEntry::factory()->create(['status' => 'posted', 'entry_date' => now(), 'currency_id' => $currency->id, 'accounting_period_id' => $period->id])->id,
+            'journal_entry_id' => JournalEntry::factory()->create(['status' => 'posted', 'entry_date' => now(), 'currency_id' => $currency->id, 'accounting_period_id' => $period->id])->id,
         ]);
         SalesSettlementExpense::create(['sales_settlement_id' => $settlement2->id, 'expense_account_id' => $accScheme->id, 'amount' => 500]);
 

@@ -2,12 +2,19 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Models\AccountingPeriod;
+use App\Models\AccountType;
 use App\Models\ChartOfAccount;
+use App\Models\Currency;
 use App\Models\Employee;
+use App\Models\GoodsIssue;
+use App\Models\JournalEntry;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementExpense;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -43,15 +50,15 @@ class SchemeDiscountReportTest extends TestCase
         // Create Scheme Discount Account
         // Create Scheme Discount Account
         // Create dependencies
-        $period = \App\Models\AccountingPeriod::create([
+        $period = AccountingPeriod::create([
             'name' => 'Current Period',
             'start_date' => now()->startOfMonth(),
             'end_date' => now()->endOfMonth(),
             'status' => 'open',
         ]);
 
-        $accountType = \App\Models\AccountType::factory()->create();
-        $currency = \App\Models\Currency::factory()->create();
+        $accountType = AccountType::factory()->create();
+        $currency = Currency::factory()->create();
 
         // Create Scheme Discount Account
         $account = ChartOfAccount::create([
@@ -68,8 +75,8 @@ class SchemeDiscountReportTest extends TestCase
         $salesman = Employee::factory()->create(['name' => 'Test Salesman']);
 
         // Create Posted Settlement
-        $vehicle = \App\Models\Vehicle::factory()->create();
-        $warehouse = \App\Models\Warehouse::factory()->create();
+        $vehicle = Vehicle::factory()->create();
+        $warehouse = Warehouse::factory()->create();
 
         // Goods Issue Dependencies
         $stockInHand = ChartOfAccount::create([
@@ -91,7 +98,7 @@ class SchemeDiscountReportTest extends TestCase
             'normal_balance' => 'debit',
         ]);
 
-        $goodsIssue = \App\Models\GoodsIssue::create([
+        $goodsIssue = GoodsIssue::create([
             'issue_number' => 'GI-TEST-'.uniqid(),
             'issue_date' => now(),
             'status' => 'issued',
@@ -118,7 +125,7 @@ class SchemeDiscountReportTest extends TestCase
             'credit_sales_amount' => 0,
             'cheque_sales_amount' => 0,
             'verified_by' => $user->id,
-            'journal_entry_id' => \App\Models\JournalEntry::factory()->create([
+            'journal_entry_id' => JournalEntry::factory()->create([
                 'status' => 'posted',
                 'entry_date' => now(),
                 'currency_id' => $currency->id,
@@ -149,15 +156,15 @@ class SchemeDiscountReportTest extends TestCase
         $this->actingAs($user);
 
         // Create dependencies
-        $period = \App\Models\AccountingPeriod::create([
+        $period = AccountingPeriod::create([
             'name' => 'Current Period',
             'start_date' => now()->startOfMonth(),
             'end_date' => now()->endOfMonth(),
             'status' => 'open',
         ]);
 
-        $accountType = \App\Models\AccountType::factory()->create();
-        $currency = \App\Models\Currency::factory()->create();
+        $accountType = AccountType::factory()->create();
+        $currency = Currency::factory()->create();
 
         // Create Scheme Discount Account
         $account = ChartOfAccount::create([
@@ -174,8 +181,8 @@ class SchemeDiscountReportTest extends TestCase
         // Create Salesman
         // $salesman created above
 
-        $vehicle = \App\Models\Vehicle::factory()->create();
-        $warehouse = \App\Models\Warehouse::factory()->create();
+        $vehicle = Vehicle::factory()->create();
+        $warehouse = Warehouse::factory()->create();
 
         // Re-use or create new accounts for this test case? RefreshDatabase cleans up, so need to recreate.
         // Or finding existing.
@@ -205,7 +212,7 @@ class SchemeDiscountReportTest extends TestCase
             ]);
         }
 
-        $goodsIssue = \App\Models\GoodsIssue::create([
+        $goodsIssue = GoodsIssue::create([
             'issue_number' => 'GI-TEST-'.uniqid(),
             'issue_date' => now(),
             'status' => 'issued',
@@ -232,7 +239,7 @@ class SchemeDiscountReportTest extends TestCase
             'credit_sales_amount' => 0,
             'cheque_sales_amount' => 0,
             'verified_by' => $user->id,
-            'journal_entry_id' => \App\Models\JournalEntry::factory()->create([
+            'journal_entry_id' => JournalEntry::factory()->create([
                 'status' => 'posted',
                 'entry_date' => now(),
                 'currency_id' => $currency->id,
@@ -263,14 +270,14 @@ class SchemeDiscountReportTest extends TestCase
         $this->actingAs($user);
 
         // Setup Common Dependencies
-        $period = \App\Models\AccountingPeriod::create([
+        $period = AccountingPeriod::create([
             'name' => 'Current Period',
             'start_date' => now()->startOfMonth(),
             'end_date' => now()->endOfMonth(),
             'status' => 'open',
         ]);
-        $accountType = \App\Models\AccountType::factory()->create();
-        $currency = \App\Models\Currency::factory()->create();
+        $accountType = AccountType::factory()->create();
+        $currency = Currency::factory()->create();
         $account = ChartOfAccount::create([
             'account_code' => '5292',
             'account_name' => 'Scheme Discount Expense',
@@ -300,8 +307,8 @@ class SchemeDiscountReportTest extends TestCase
             'normal_balance' => 'debit',
         ]);
 
-        $vehicle = \App\Models\Vehicle::factory()->create();
-        $warehouse = \App\Models\Warehouse::factory()->create();
+        $vehicle = Vehicle::factory()->create();
+        $warehouse = Warehouse::factory()->create();
 
         // Create Suppliers
         $supplierA = Supplier::factory()->create(['supplier_name' => 'Supplier A']);
@@ -311,16 +318,19 @@ class SchemeDiscountReportTest extends TestCase
         $salesmanA = Employee::factory()->create(['name' => 'Salesman A', 'supplier_id' => $supplierA->id]);
         $salesmanB = Employee::factory()->create(['name' => 'Salesman B', 'supplier_id' => $supplierB->id]);
 
-        // Helper to create settlement and expense
-        $createData = function ($salesman, $amount) use ($user, $vehicle, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
-            $goodsIssue = \App\Models\GoodsIssue::create([
+        // Helper to create settlement and expense.
+        // Each call gets its own vehicle so the active_vehicle_lock unique
+        // index doesn't reject the second GI on the same vehicle.
+        $createData = function ($salesman, $amount) use ($user, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
+            $perCallVehicle = Vehicle::factory()->create();
+            $goodsIssue = GoodsIssue::create([
                 'issue_number' => 'GI-'.uniqid(),
                 'issue_date' => now(),
                 'status' => 'issued',
                 'total_quantity' => 0,
                 'total_value' => 0,
                 'employee_id' => $salesman->id,
-                'vehicle_id' => $vehicle->id,
+                'vehicle_id' => $perCallVehicle->id,
                 'warehouse_id' => $warehouse->id,
                 'issued_by' => $user->id,
                 'stock_in_hand_account_id' => $stockInHand->id,
@@ -332,7 +342,7 @@ class SchemeDiscountReportTest extends TestCase
                 'settlement_date' => now()->format('Y-m-d'),
                 'status' => 'posted',
                 'employee_id' => $salesman->id,
-                'vehicle_id' => $vehicle->id,
+                'vehicle_id' => $perCallVehicle->id,
                 'warehouse_id' => $warehouse->id,
                 'goods_issue_id' => $goodsIssue->id,
                 'total_sales_amount' => 0,
@@ -340,7 +350,7 @@ class SchemeDiscountReportTest extends TestCase
                 'credit_sales_amount' => 0,
                 'cheque_sales_amount' => 0,
                 'verified_by' => $user->id,
-                'journal_entry_id' => \App\Models\JournalEntry::factory()->create([
+                'journal_entry_id' => JournalEntry::factory()->create([
                     'status' => 'posted',
                     'entry_date' => now(),
                     'currency_id' => $currency->id,
@@ -397,31 +407,34 @@ class SchemeDiscountReportTest extends TestCase
         $this->actingAs($user);
 
         // Setup Common Dependencies - Simplified
-        $period = \App\Models\AccountingPeriod::create(['name' => 'Current Period', 'start_date' => now()->startOfMonth(), 'end_date' => now()->endOfMonth(), 'status' => 'open']);
-        $accountType = \App\Models\AccountType::factory()->create();
-        $currency = \App\Models\Currency::factory()->create();
+        $period = AccountingPeriod::create(['name' => 'Current Period', 'start_date' => now()->startOfMonth(), 'end_date' => now()->endOfMonth(), 'status' => 'open']);
+        $accountType = AccountType::factory()->create();
+        $currency = Currency::factory()->create();
         $account = ChartOfAccount::create(['account_code' => '5292', 'account_name' => 'Scheme Discount', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'debit']);
 
         $stockInHand = ChartOfAccount::create(['account_code' => '1151', 'account_name' => 'Stock', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'debit']);
         $vanStock = ChartOfAccount::create(['account_code' => '1155', 'account_name' => 'Van Stock', 'account_type_id' => $accountType->id, 'currency_id' => $currency->id, 'is_group' => false, 'is_active' => true, 'normal_balance' => 'debit']);
 
-        $vehicle = \App\Models\Vehicle::factory()->create();
-        $warehouse = \App\Models\Warehouse::factory()->create();
+        $vehicle = Vehicle::factory()->create();
+        $warehouse = Warehouse::factory()->create();
 
         // Create Salesmen with Designations
         $salesmanManager = Employee::factory()->create(['name' => 'Manager Dave', 'designation' => 'Manager']);
         $salesmanDriver = Employee::factory()->create(['name' => 'Driver Steve', 'designation' => 'Driver']);
 
-        // Helper to create settlement and expense
-        $createData = function ($salesman, $amount) use ($user, $vehicle, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
-            $goodsIssue = \App\Models\GoodsIssue::create([
+        // Helper to create settlement and expense.
+        // Each call gets its own vehicle so the active_vehicle_lock unique
+        // index doesn't reject the second GI on the same vehicle.
+        $createData = function ($salesman, $amount) use ($user, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
+            $perCallVehicle = Vehicle::factory()->create();
+            $goodsIssue = GoodsIssue::create([
                 'issue_number' => 'GI-'.uniqid(),
                 'issue_date' => now(),
                 'status' => 'issued',
                 'total_quantity' => 0,
                 'total_value' => 0,
                 'employee_id' => $salesman->id,
-                'vehicle_id' => $vehicle->id,
+                'vehicle_id' => $perCallVehicle->id,
                 'warehouse_id' => $warehouse->id,
                 'issued_by' => $user->id,
                 'stock_in_hand_account_id' => $stockInHand->id,
@@ -433,7 +446,7 @@ class SchemeDiscountReportTest extends TestCase
                 'settlement_date' => now()->format('Y-m-d'),
                 'status' => 'posted',
                 'employee_id' => $salesman->id,
-                'vehicle_id' => $vehicle->id,
+                'vehicle_id' => $perCallVehicle->id,
                 'warehouse_id' => $warehouse->id,
                 'goods_issue_id' => $goodsIssue->id,
                 'total_sales_amount' => 0,
@@ -441,7 +454,7 @@ class SchemeDiscountReportTest extends TestCase
                 'credit_sales_amount' => 0,
                 'cheque_sales_amount' => 0,
                 'verified_by' => $user->id,
-                'journal_entry_id' => \App\Models\JournalEntry::factory()->create(['status' => 'posted', 'entry_date' => now(), 'currency_id' => $currency->id, 'accounting_period_id' => $period->id])->id,
+                'journal_entry_id' => JournalEntry::factory()->create(['status' => 'posted', 'entry_date' => now(), 'currency_id' => $currency->id, 'accounting_period_id' => $period->id])->id,
                 'total_quantity_issued' => 0,
                 'total_value_issued' => 0,
                 'credit_recoveries' => 0,

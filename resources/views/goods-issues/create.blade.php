@@ -660,8 +660,45 @@
 
                     $vehicle.prop('disabled', false);
                     $vehicle.select2({ placeholder: 'Select Vehicle', allowClear: false, width: '100%' });
+
+                    // Bind vehicle change handler ONCE per re-init
+                    $vehicle.off('change.checkExisting').on('change.checkExisting', async function () {
+                        const vehicleId = $(this).val();
+                        if (!vehicleId) return;
+                        await checkVehicleHasExistingGI(vehicleId);
+                    });
                 } catch (error) {
                     console.error('Error loading vehicles:', error);
+                }
+            }
+
+            async function checkVehicleHasExistingGI(vehicleId) {
+                try {
+                    const response = await fetch(`{{ route('api.goods-issues.check-vehicle') }}?vehicle_id=${vehicleId}`);
+                    const data = await response.json();
+
+                    if (!data.has_existing) {
+                        return;
+                    }
+
+                    if (data.can_append || data.is_draft) {
+                        // Open the existing-GI confirmation modal. When `is_draft`
+                        // is true, the modal redirects the user to the edit page
+                        // for the draft instead of the append flow (drafts are
+                        // edited inline, not appended).
+                        window.dispatchEvent(new CustomEvent('open-gi-append-modal', { detail: data }));
+                    } else {
+                        // Block: show alert and clear vehicle
+                        window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                            detail: {
+                                title: 'Cannot Create Goods Issue',
+                                message: '<p>' + (data.message || 'A finalized settlement exists for this vehicle.') + '</p>'
+                            }
+                        }));
+                        $('#vehicle_id').val('').trigger('change.select2');
+                    }
+                } catch (e) {
+                    console.error('Error checking vehicle existing GI:', e);
                 }
             }
 
@@ -949,4 +986,114 @@
         icon-bg-class="bg-red-100"
         icon-color-class="text-red-600"
     />
+
+    {{-- Inline confirmation modal for "append items to existing GI" flow --}}
+    <div x-data="{
+            show: false,
+            data: {},
+            selectedEmployeeId: null,
+            selectedEmployeeName: '',
+            employeeMismatch() {
+                if (!this.data || !this.data.existing_employee_id || !this.selectedEmployeeId) {
+                    return false;
+                }
+                return String(this.data.existing_employee_id) !== String(this.selectedEmployeeId);
+            },
+            cancel() {
+                this.show = false;
+                $('#vehicle_id').val('').trigger('change.select2');
+            },
+            confirm() {
+                if (this.data && this.data.redirect_url) {
+                    window.location.href = this.data.redirect_url;
+                }
+            }
+         }"
+         x-on:open-gi-append-modal.window="
+            show = true;
+            data = $event.detail || {};
+            selectedEmployeeId = $('#employee_id').val() || null;
+            selectedEmployeeName = $('#employee_id option:selected').text() || '';
+         "
+         x-on:keydown.escape.window="if (show) { cancel() }"
+         x-show="show"
+         x-cloak
+         class="fixed inset-0 z-50"
+         style="display: none;">
+        <div x-show="show"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" @click="cancel()"></div>
+        <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4">
+            <div x-show="show"
+                 x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+                 class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl sm:my-8 sm:w-full sm:max-w-lg"
+                 @click.outside="cancel()">
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex size-12 shrink-0 items-center justify-center rounded-full bg-amber-100 sm:mx-0 sm:size-10">
+                            <svg class="size-6 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900">Existing Goods Issue Found</h3>
+                            <div class="mt-2 text-sm text-gray-600">
+                                <p>
+                                    Vehicle <strong x-text="data.vehicle_label"></strong> already has
+                                    <strong x-text="data.issue_number"></strong>
+                                    (<span x-text="data.status"></span>) which has not been finalized yet.
+                                </p>
+                                <p class="mt-2">
+                                    Assigned salesman:
+                                    <strong x-text="data.existing_employee_name || 'Unknown'"></strong>
+                                </p>
+                                <template x-if="employeeMismatch()">
+                                    <p class="mt-2 rounded border border-red-200 bg-red-50 p-2 text-red-800">
+                                        ⚠ <strong>Salesman mismatch.</strong>
+                                        You currently have <strong x-text="selectedEmployeeName"></strong> selected,
+                                        but the existing Goods Issue belongs to <strong x-text="data.existing_employee_name"></strong>.
+                                        <template x-if="data.is_draft">
+                                            <span>Editing the draft will keep the original salesman unless you change it on the edit form.</span>
+                                        </template>
+                                        <template x-if="!data.is_draft">
+                                            <span>Adding items will keep the original salesman — your selection will be ignored.</span>
+                                        </template>
+                                    </p>
+                                </template>
+                                <template x-if="data.is_draft">
+                                    <p class="mt-2 rounded bg-blue-50 p-2 text-blue-800">
+                                        This Goods Issue is still in <strong>draft</strong> and has not been posted yet.
+                                        You should edit it directly instead of creating a new one — the append flow is only for already-posted (issued) GIs.
+                                    </p>
+                                </template>
+                                <template x-if="data.has_draft_settlement">
+                                    <p class="mt-2 rounded bg-amber-50 p-2 text-amber-800">
+                                        ⚠ A draft settlement <strong x-text="data.settlement_number"></strong> already exists for this Goods Issue.
+                                        You can still append items, but you will need to manually update the draft settlement afterwards to include the new items.
+                                    </p>
+                                </template>
+                                <template x-if="!data.is_draft">
+                                    <p class="mt-2">Would you like to add new items to the existing Goods Issue instead of creating a new one?</p>
+                                </template>
+                                <template x-if="data.is_draft">
+                                    <p class="mt-2">Would you like to open the draft Goods Issue for editing?</p>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex flex-row justify-end gap-3 bg-gray-100 px-6 py-4">
+                    <button type="button" @click="cancel()"
+                        class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="button" @click="confirm()"
+                        class="inline-flex items-center rounded-md border border-transparent bg-emerald-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-emerald-700">
+                        <span x-show="!data.is_draft">Add Items to Existing GI</span>
+                        <span x-show="data.is_draft">Open Draft for Editing</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </x-app-layout>

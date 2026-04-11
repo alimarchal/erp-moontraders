@@ -2,11 +2,18 @@
 
 namespace Tests\Feature\Reports;
 
+use App\Models\AccountingPeriod;
+use App\Models\AccountType;
 use App\Models\ChartOfAccount;
+use App\Models\Currency;
 use App\Models\Employee;
+use App\Models\GoodsIssue;
+use App\Models\JournalEntry;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementExpense;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 use Tests\TestCase;
@@ -40,14 +47,14 @@ class AdvanceTaxReportTest extends TestCase
         $this->actingAs($user);
 
         // Setup Common Dependencies
-        $period = \App\Models\AccountingPeriod::create([
+        $period = AccountingPeriod::create([
             'name' => 'Current Period',
             'start_date' => now()->startOfMonth(),
             'end_date' => now()->endOfMonth(),
             'status' => 'open',
         ]);
-        $accountType = \App\Models\AccountType::factory()->create();
-        $currency = \App\Models\Currency::factory()->create();
+        $accountType = AccountType::factory()->create();
+        $currency = Currency::factory()->create();
 
         // Critical: Advance Tax Account Code
         $account = ChartOfAccount::create([
@@ -79,23 +86,25 @@ class AdvanceTaxReportTest extends TestCase
             'normal_balance' => 'debit',
         ]);
 
-        $vehicle = \App\Models\Vehicle::factory()->create();
-        $warehouse = \App\Models\Warehouse::factory()->create();
+        $warehouse = Warehouse::factory()->create();
 
         // Create Salesmen with Designations
         $salesmanManager = Employee::factory()->create(['name' => 'Manager John', 'designation' => 'Manager']);
         $salesmanDriver = Employee::factory()->create(['name' => 'Driver Bob', 'designation' => 'Driver']);
 
-        // Helper to create settlement and expense
-        $createData = function ($salesman, $amount) use ($user, $vehicle, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
-            $goodsIssue = \App\Models\GoodsIssue::create([
+        // Helper to create settlement and expense.
+        // Each call gets its own vehicle so the active_vehicle_lock unique
+        // index doesn't reject the second GI on the same vehicle.
+        $createData = function ($salesman, $amount) use ($user, $warehouse, $period, $currency, $stockInHand, $vanStock, $account) {
+            $perCallVehicle = Vehicle::factory()->create();
+            $goodsIssue = GoodsIssue::create([
                 'issue_number' => 'GI-'.uniqid(),
                 'issue_date' => now(),
                 'status' => 'issued',
                 'total_quantity' => 0,
                 'total_value' => 0,
                 'employee_id' => $salesman->id,
-                'vehicle_id' => $vehicle->id,
+                'vehicle_id' => $perCallVehicle->id,
                 'warehouse_id' => $warehouse->id,
                 'issued_by' => $user->id,
                 'stock_in_hand_account_id' => $stockInHand->id,
@@ -107,7 +116,7 @@ class AdvanceTaxReportTest extends TestCase
                 'settlement_date' => now()->format('Y-m-d'),
                 'status' => 'posted',
                 'employee_id' => $salesman->id,
-                'vehicle_id' => $vehicle->id,
+                'vehicle_id' => $perCallVehicle->id,
                 'warehouse_id' => $warehouse->id,
                 'goods_issue_id' => $goodsIssue->id,
                 'total_sales_amount' => 0,
@@ -115,7 +124,7 @@ class AdvanceTaxReportTest extends TestCase
                 'credit_sales_amount' => 0,
                 'cheque_sales_amount' => 0,
                 'verified_by' => $user->id,
-                'journal_entry_id' => \App\Models\JournalEntry::factory()->create([
+                'journal_entry_id' => JournalEntry::factory()->create([
                     'status' => 'posted',
                     'entry_date' => now(),
                     'currency_id' => $currency->id,

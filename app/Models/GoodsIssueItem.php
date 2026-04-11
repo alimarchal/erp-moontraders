@@ -20,6 +20,8 @@ class GoodsIssueItem extends Model
         'total_value',
         'uom_id',
         'exclude_promotional',
+        'is_supplementary',
+        'supplementary_posted_at',
     ];
 
     protected function casts(): array
@@ -30,6 +32,8 @@ class GoodsIssueItem extends Model
             'selling_price' => 'decimal:2',
             'total_value' => 'decimal:2',
             'exclude_promotional' => 'boolean',
+            'is_supplementary' => 'boolean',
+            'supplementary_posted_at' => 'datetime',
         ];
     }
 

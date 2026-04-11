@@ -14,6 +14,7 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use Illuminate\Database\QueryException;
 
 function createSettlementPrerequisites(): array
 {
@@ -204,10 +205,13 @@ test('numbers increment correctly across multiple settlements', function () {
         ->post(route('sales-settlements.store'), $payload1)
         ->assertRedirect();
 
+    // Use a fresh vehicle — the first vehicle is locked by the in-flight
+    // settlement created by the previous post above, so the active_vehicle_lock
+    // unique index would reject re-using it for $goodsIssue2.
     $goodsIssue2 = GoodsIssue::factory()->create([
         'status' => 'issued',
         'warehouse_id' => $prereqs['warehouse']->id,
-        'vehicle_id' => $prereqs['vehicle']->id,
+        'vehicle_id' => Vehicle::factory()->create()->id,
         'employee_id' => $prereqs['employee']->id,
         'issued_by' => $prereqs['user']->id,
     ]);
@@ -328,5 +332,5 @@ test('database unique constraint prevents duplicate invoice numbers', function (
         'employee_id' => $prereqs['employee']->id,
         'invoice_number' => 'CSI-260211-00001',
         'sale_amount' => 200,
-    ]))->toThrow(\Illuminate\Database\QueryException::class);
+    ]))->toThrow(QueryException::class);
 });

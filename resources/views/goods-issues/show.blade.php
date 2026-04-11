@@ -26,6 +26,19 @@
                     @endcan
                 @endif
 
+                @if ($goodsIssue->canAcceptSupplementaryItems())
+                    @can('goods-issue-edit')
+                        <button type="button" x-data
+                            @click="$dispatch('open-append-items-confirm', { url: '{{ route('goods-issues.append-items', $goodsIssue->id) }}', issueNumber: '{{ $goodsIssue->issue_number }}', existingLineCount: {{ $goodsIssue->items->count() }} })"
+                            class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition">
+                            <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Add More Items
+                        </button>
+                    @endcan
+                @endif
+
                 <button onclick="window.print();"
                     class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 transition">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
@@ -240,6 +253,10 @@
                                             <span
                                                 class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-100 text-indigo-700 print:border print:border-indigo-300">Non-Promo</span>
                                         @endif
+                                        @if($item->is_supplementary)
+                                            <span
+                                                class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 print:border print:border-purple-300">Supplementary</span>
+                                        @endif
                                     </td>
                                     <td class="text-right tabular-nums" style="vertical-align: middle;">
                                         {{ number_format($item->quantity_issued, 2) }}
@@ -299,7 +316,59 @@
     </div>
 
     <x-alpine-confirmation-modal event-name="open-post-gi-modal" title="Post Goods Issue"
-        message="Are you sure you want to post this Goods Issue? This will transfer inventory from warehouse to vehicle."
-        confirm-button-text="Post Issue" confirm-button-class="bg-emerald-600 hover:bg-emerald-700"
+        message="Are you sure you want to post this Goods Issue? This will transfer inventory from warehouse to vehicle, lock the vehicle until settlement, and create the journal entries. Do you agree?"
+        confirm-button-text="Yes, Post Issue" confirm-button-class="bg-emerald-600 hover:bg-emerald-700"
         icon-bg-class="bg-emerald-100" icon-color-class="text-emerald-600" icon-path="M5 13l4 4L19 7" />
+
+    {{-- Append-items navigation confirmation: clicking "Add More Items" opens this modal first
+         so the user explicitly agrees they intend to add items to *this* GI (rather than create a new one). --}}
+    <div x-data="{ show: false, navigateUrl: '', issueNumber: '', existingLineCount: 0 }"
+         x-on:open-append-items-confirm.window="show = true; navigateUrl = $event.detail.url; issueNumber = $event.detail.issueNumber; existingLineCount = $event.detail.existingLineCount"
+         x-on:keydown.escape.window="if (show) { show = false }"
+         x-show="show"
+         x-cloak
+         class="fixed inset-0 z-50"
+         style="display: none;">
+        <div x-show="show"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 backdrop-blur-none" x-transition:enter-end="opacity-100 backdrop-blur-sm"
+             x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 backdrop-blur-sm" x-transition:leave-end="opacity-0 backdrop-blur-none"
+             class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm transition-all" @click="show = false"></div>
+
+        <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4">
+            <div x-show="show"
+                 x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+                 x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100" x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                 class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg"
+                 @click.outside="show = false">
+
+                <div class="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mx-auto flex size-12 shrink-0 items-center justify-center rounded-full bg-purple-100 sm:mx-0 sm:size-10">
+                            <svg class="size-6 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                        </div>
+                        <div class="mt-3 text-center sm:ml-4 sm:mt-0 sm:text-left">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900">Add Items to Existing Goods Issue</h3>
+                            <div class="mt-2 text-sm text-gray-600">
+                                <p>You are about to add supplementary items to <strong x-text="issueNumber"></strong>, which already has <strong x-text="existingLineCount"></strong> line(s).</p>
+                                <p class="mt-2">New items will be appended to <em>this same</em> Goods Issue and posted as a separate stock movement. Do you agree?</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex flex-row justify-end gap-3 bg-gray-100 px-6 py-4">
+                    <button type="button" @click="show = false"
+                        class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50">
+                        Cancel
+                    </button>
+                    <button type="button" @click="window.location.href = navigateUrl"
+                        class="inline-flex items-center rounded-md border border-transparent bg-purple-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-purple-700">
+                        Yes, Add More Items
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </x-app-layout>

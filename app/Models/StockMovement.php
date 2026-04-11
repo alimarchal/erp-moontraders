@@ -15,6 +15,7 @@ class StockMovement extends Model
         'movement_type',
         'reference_type',
         'reference_id',
+        'goods_issue_item_id',
         'movement_date',
         'product_id',
         'stock_batch_id',

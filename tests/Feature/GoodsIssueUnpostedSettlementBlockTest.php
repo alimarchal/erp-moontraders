@@ -155,6 +155,33 @@ it('blocks goods issue creation when vehicle has an issued GI with no settlement
     $response->assertSessionHasErrors('vehicle_id');
 });
 
+it('blocks goods issue creation when vehicle already has a draft GI', function () {
+    // Loophole 1: a previous attempt could leave a draft GI on the vehicle. The
+    // store request must block creating a new GI on the same vehicle until the
+    // existing draft is posted or deleted.
+    $draft = GoodsIssue::factory()->create([
+        'vehicle_id' => $this->vehicle->id,
+        'status' => 'draft',
+    ]);
+
+    $response = $this->post(route('goods-issues.store'), [
+        'issue_date' => now()->toDateString(),
+        'warehouse_id' => $this->warehouse->id,
+        'vehicle_id' => $this->vehicle->id,
+        'employee_id' => $this->employee->id,
+        'items' => [[
+            'product_id' => $this->product->id,
+            'quantity_issued' => 10,
+            'unit_cost' => 100,
+            'selling_price' => 150,
+            'uom_id' => $this->uom->id,
+        ]],
+    ]);
+
+    $response->assertSessionHasErrors('vehicle_id');
+    expect(session('errors')->get('vehicle_id')[0])->toContain($draft->issue_number);
+});
+
 it('only blocks for the specific vehicle and not other vehicles', function () {
     $otherVehicle = Vehicle::factory()->create();
 

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\AppendGoodsIssueItemsRequest;
 use App\Http\Requests\StoreGoodsIssueRequest;
 use App\Http\Requests\UpdateGoodsIssueRequest;
 use App\Models\ChartOfAccount;
@@ -33,7 +34,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
         return [
             new Middleware('permission:goods-issue-list', only: ['index', 'show']),
             new Middleware('permission:goods-issue-create', only: ['create', 'store']),
-            new Middleware('permission:goods-issue-edit', only: ['edit', 'update']),
+            new Middleware('permission:goods-issue-edit', only: ['edit', 'update', 'appendItemsForm', 'appendItems']),
             new Middleware('permission:goods-issue-delete', only: ['destroy']),
             new Middleware('permission:goods-issue-post', only: ['post']),
         ];
@@ -292,12 +293,14 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
         foreach ($goodsIssue->items as $item) {
             if ($goodsIssue->status === 'issued') {
-                // For posted goods issues, get ACTUAL batch breakdown from stock movements
+                // For posted goods issues, get ACTUAL batch breakdown from stock movements.
+                // Filter by goods_issue_item_id so multi-line GIs (same product on
+                // multiple lines) only return the movements that belong to *this* line.
                 $stockMovements = DB::table('stock_movements as sm')
                     ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
                     ->where('sm.reference_type', 'App\Models\GoodsIssue')
                     ->where('sm.reference_id', $goodsIssue->id)
-                    ->where('sm.product_id', $item->product_id)
+                    ->where('sm.goods_issue_item_id', $item->id)
                     ->where('sm.movement_type', 'transfer')
                     ->select(
                         'sb.batch_code',
@@ -538,6 +541,217 @@ class GoodsIssueController extends Controller implements HasMiddleware
         return redirect()
             ->back()
             ->with('error', $result['message']);
+    }
+
+    /**
+     * Check if a vehicle has an existing unsettled Goods Issue.
+     * Returns whether the user can append items to that GI or must create a new one.
+     *
+     * Mirrors the canonical block logic in StoreGoodsIssueRequest: a GI only
+     * obstructs new issues when its workflow is incomplete — i.e. it is `issued`
+     * AND has no settlement, or its settlement is `draft`/`verified`. Once the
+     * settlement is `posted`, the workflow is complete and the GI is ignored.
+     */
+    public function checkVehicleGoodsIssue(Request $request): JsonResponse
+    {
+        $vehicleId = $request->query('vehicle_id');
+
+        if (! $vehicleId) {
+            return response()->json(['has_existing' => false]);
+        }
+
+        $existing = DB::table('goods_issues')
+            ->select(
+                'goods_issues.id',
+                'goods_issues.issue_number',
+                'goods_issues.status',
+                'goods_issues.employee_id',
+                'employees.name as employee_name',
+                'sales_settlements.id as settlement_id',
+                'sales_settlements.settlement_number',
+                'sales_settlements.status as settlement_status',
+                'vehicles.vehicle_number'
+            )
+            ->leftJoin('sales_settlements', function ($join) {
+                $join->on('sales_settlements.goods_issue_id', '=', 'goods_issues.id')
+                    ->whereNull('sales_settlements.deleted_at');
+            })
+            ->leftJoin('vehicles', 'vehicles.id', '=', 'goods_issues.vehicle_id')
+            ->leftJoin('employees', 'employees.id', '=', 'goods_issues.employee_id')
+            ->where('goods_issues.vehicle_id', $vehicleId)
+            ->whereNull('goods_issues.deleted_at')
+            ->whereIn('goods_issues.status', ['draft', 'issued'])
+            ->where(function ($q) {
+                // Draft GIs are always considered (no settlement possible yet).
+                // Issued GIs are only considered when their settlement workflow
+                // is incomplete — posted settlements mean the GI is finished
+                // and should not interfere with new issues for this vehicle.
+                $q->where('goods_issues.status', 'draft')
+                    ->orWhereNull('sales_settlements.id')
+                    ->orWhereIn('sales_settlements.status', ['draft', 'verified']);
+            })
+            ->orderByDesc('goods_issues.id')
+            ->first();
+
+        if (! $existing) {
+            return response()->json(['has_existing' => false]);
+        }
+
+        $vehicleLabel = $existing->vehicle_number ?? "Vehicle #{$vehicleId}";
+        $settlementStatus = $existing->settlement_status;
+
+        // Block only when the settlement has been verified — at that point the
+        // settlement is locked in and the GI cannot accept further items.
+        if ($settlementStatus === 'verified') {
+            return response()->json([
+                'has_existing' => true,
+                'can_append' => false,
+                'message' => "Cannot create a Goods Issue for vehicle {$vehicleLabel}: settlement {$existing->settlement_number} (Verified) for {$existing->issue_number} is awaiting posting. Post the settlement before issuing new stock.",
+            ]);
+        }
+
+        // Draft GI: append flow is NOT allowed (the duplicate-product guard in
+        // the edit form would conflict). Direct the user to edit the draft.
+        if ($existing->status === 'draft') {
+            return response()->json([
+                'has_existing' => true,
+                'can_append' => false,
+                'is_draft' => true,
+                'goods_issue_id' => $existing->id,
+                'issue_number' => $existing->issue_number,
+                'status' => $existing->status,
+                'vehicle_label' => $vehicleLabel,
+                'existing_employee_id' => $existing->employee_id,
+                'existing_employee_name' => $existing->employee_name,
+                'redirect_url' => route('goods-issues.edit', $existing->id),
+            ]);
+        }
+
+        // Issued GI: allow append (either no settlement, or only a draft settlement exists).
+        return response()->json([
+            'has_existing' => true,
+            'can_append' => true,
+            'has_draft_settlement' => $settlementStatus === 'draft',
+            'goods_issue_id' => $existing->id,
+            'issue_number' => $existing->issue_number,
+            'status' => $existing->status,
+            'settlement_number' => $existing->settlement_number,
+            'vehicle_label' => $vehicleLabel,
+            'existing_employee_id' => $existing->employee_id,
+            'existing_employee_name' => $existing->employee_name,
+            'redirect_url' => route('goods-issues.append-items', $existing->id),
+        ]);
+    }
+
+    /**
+     * Show the form to append additional items to an existing Goods Issue.
+     */
+    public function appendItemsForm(GoodsIssue $goodsIssue)
+    {
+        if (! $goodsIssue->canAcceptSupplementaryItems()) {
+            return redirect()
+                ->route('goods-issues.show', $goodsIssue)
+                ->with('error', 'This Goods Issue cannot accept supplementary items.');
+        }
+
+        $goodsIssue->load([
+            'warehouse',
+            'vehicle',
+            'employee',
+            'supplier',
+            'items.product',
+            'items.uom',
+        ]);
+
+        $draftSettlement = $goodsIssue->settlement()->where('status', 'draft')->first();
+        $uoms = Uom::orderBy('uom_name')->get();
+        $canEnterCartons = auth()->user()->can('goods-issue-enter-cartons');
+
+        return view('goods-issues.append-items', [
+            'goodsIssue' => $goodsIssue,
+            'draftSettlement' => $draftSettlement,
+            'uoms' => $uoms,
+            'canEnterCartons' => $canEnterCartons,
+        ]);
+    }
+
+    /**
+     * Persist supplementary items for an existing Goods Issue.
+     * If the GI is already 'issued', new items are posted immediately via the supplementary
+     * posting flow (stock movements, van stock, journal entry). If the GI is still 'draft',
+     * items are saved and will be posted when the user posts the GI normally.
+     */
+    public function appendItems(AppendGoodsIssueItemsRequest $request, GoodsIssue $goodsIssue)
+    {
+        if (! $goodsIssue->canAcceptSupplementaryItems()) {
+            return redirect()
+                ->route('goods-issues.show', $goodsIssue)
+                ->with('error', 'This Goods Issue cannot accept supplementary items.');
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $maxLineNo = (int) $goodsIssue->items()->max('line_no');
+            $newItems = collect();
+
+            foreach ($request->input('items', []) as $index => $item) {
+                $maxLineNo++;
+                $newItems->push(GoodsIssueItem::create([
+                    'goods_issue_id' => $goodsIssue->id,
+                    'line_no' => $maxLineNo,
+                    'product_id' => $item['product_id'],
+                    'quantity_issued' => $item['quantity_issued'],
+                    'unit_cost' => $item['unit_cost'],
+                    'selling_price' => $item['selling_price'],
+                    'uom_id' => $item['uom_id'],
+                    'total_value' => $item['quantity_issued'] * $item['selling_price'],
+                    'exclude_promotional' => (bool) ($item['exclude_promotional'] ?? false),
+                    'is_supplementary' => true,
+                ]));
+            }
+
+            // Recalculate GI totals from all items
+            $goodsIssue->refresh();
+            $goodsIssue->update([
+                'total_quantity' => $goodsIssue->items()->sum('quantity_issued'),
+                'total_value' => $goodsIssue->items()->sum('total_value'),
+            ]);
+
+            DB::commit();
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error appending items to Goods Issue', [
+                'goods_issue_id' => $goodsIssue->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()
+                ->withInput()
+                ->with('error', 'Unable to append items: '.$e->getMessage());
+        }
+
+        // If the GI is already issued, immediately post the supplementary items
+        // through the stock pipeline (separate transaction inside the service).
+        if ($goodsIssue->status === 'issued') {
+            $distributionService = app(DistributionService::class);
+            $result = $distributionService->postSupplementaryItems($goodsIssue->fresh(), $newItems);
+
+            if (! $result['success']) {
+                return redirect()
+                    ->route('goods-issues.show', $goodsIssue)
+                    ->with('error', $result['message']);
+            }
+        }
+
+        $message = "Items appended to Goods Issue '{$goodsIssue->issue_number}' successfully.";
+        if ($goodsIssue->hasDraftSettlement()) {
+            $message .= ' Note: a draft settlement exists for this GI — please update it manually to include the new items.';
+        }
+
+        return redirect()
+            ->route('goods-issues.show', $goodsIssue)
+            ->with('success', $message);
     }
 
     /**

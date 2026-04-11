@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\CustomerEmployeeAccountTransaction;
+use App\Models\GoodsIssue;
 use App\Models\InventoryLedgerEntry;
 use App\Models\SalesSettlement;
 use App\Models\StockMovement;
@@ -94,6 +95,22 @@ class SalesSettlementRevertService
             return [
                 'ok' => false,
                 'message' => "Cannot revert: {$clearedCheques} cheque(s) linked to this settlement have already been cleared.",
+            ];
+        }
+
+        // Reverting this settlement puts its Goods Issue back into an "active"
+        // workflow state, which requires re-acquiring the vehicle lock. If a
+        // newer GI already holds that lock on the same vehicle, the revert
+        // would violate the unique index — surface a friendly message instead
+        // of letting a raw DB error bubble up to the user.
+        $blockingGi = GoodsIssue::where('active_vehicle_lock', $settlement->vehicle_id)
+            ->where('id', '!=', $settlement->goods_issue_id)
+            ->first();
+
+        if ($blockingGi) {
+            return [
+                'ok' => false,
+                'message' => "Cannot revert: vehicle is already locked by an active Goods Issue {$blockingGi->issue_number}. Delete or settle that GI first.",
             ];
         }
 
@@ -319,7 +336,11 @@ class SalesSettlementRevertService
     }
 
     /**
-     * Reset the settlement back to draft and record audit fields.
+     * Reset the settlement back to draft and record audit fields. Also
+     * re-acquires the vehicle lock on the linked Goods Issue: when the
+     * settlement was originally posted, the lock was released — reverting
+     * puts the GI back into an "active" workflow state, so the vehicle must
+     * be locked again to prevent a parallel issue from being created.
      */
     private function resetSettlementToDraft(SalesSettlement $settlement): void
     {
@@ -333,6 +354,9 @@ class SalesSettlementRevertService
             'reverted_at' => now(),
             'reverted_by' => auth()->id(),
         ]);
+
+        GoodsIssue::whereKey($settlement->goods_issue_id)
+            ->update(['active_vehicle_lock' => DB::raw('vehicle_id')]);
     }
 
     /**

@@ -6,13 +6,16 @@ use App\Models\ChartOfAccount;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\GoodsIssue;
+use App\Models\GoodsIssueItem;
 use App\Models\InventoryLedgerEntry;
+use App\Models\JournalEntry;
 use App\Models\SalesSettlement;
 use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
 use App\Models\VanStockBalance;
 use App\Models\VanStockBatch;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -90,6 +93,7 @@ class DistributionService
                         'movement_type' => 'transfer',
                         'reference_type' => 'App\Models\GoodsIssue',
                         'reference_id' => $goodsIssue->id,
+                        'goods_issue_item_id' => $item->id,
                         'movement_date' => $goodsIssue->issue_date,
                         'product_id' => $item->product_id,
                         'stock_batch_id' => $batch->id,
@@ -239,6 +243,287 @@ class DistributionService
                 'data' => null,
             ];
         }
+    }
+
+    /**
+     * Post supplementary items added to an already-issued Goods Issue.
+     * Runs the same stock pipeline as postGoodsIssue() but ONLY for the new items.
+     * Existing stock movements / journal entry are untouched.
+     *
+     * Creates a separate journal entry with reference 'GI-XXXX-S{n}' so the audit
+     * trail clearly distinguishes supplementary postings from the original.
+     *
+     * @param  Collection<int, GoodsIssueItem>  $newItems
+     */
+    public function postSupplementaryItems(GoodsIssue $goodsIssue, Collection $newItems): array
+    {
+        try {
+            DB::beginTransaction();
+
+            if ($goodsIssue->status !== 'issued') {
+                throw new \Exception('Supplementary posting requires the Goods Issue to be in issued status');
+            }
+
+            if ($newItems->isEmpty()) {
+                throw new \Exception('No supplementary items to post');
+            }
+
+            $totalIssueCost = 0.0;
+
+            foreach ($newItems as $item) {
+                // Lock CurrentStock row to prevent race conditions
+                $warehouseStock = CurrentStock::where('product_id', $item->product_id)
+                    ->where('warehouse_id', $goodsIssue->warehouse_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($item->exclude_promotional) {
+                    $availableNonPromoStock = StockValuationLayer::where('product_id', $item->product_id)
+                        ->where('warehouse_id', $goodsIssue->warehouse_id)
+                        ->where('is_depleted', false)
+                        ->where('quantity_remaining', '>', 0)
+                        ->where('is_promotional', false)
+                        ->sum('quantity_remaining');
+
+                    if ($availableNonPromoStock < $item->quantity_issued) {
+                        throw new \Exception("Insufficient non-promotional stock for product ID {$item->product_id}. Available (non-promo): {$availableNonPromoStock}, Required: {$item->quantity_issued}");
+                    }
+                } elseif (! $warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
+                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: ".($warehouseStock->quantity_on_hand ?? 0).", Required: {$item->quantity_issued}");
+                }
+
+                $batchAllocations = $this->allocateStockFromBatches(
+                    $item->product_id,
+                    $goodsIssue->warehouse_id,
+                    $item->quantity_issued,
+                    (bool) $item->exclude_promotional
+                );
+
+                if ($batchAllocations['total_allocated'] < $item->quantity_issued) {
+                    throw new \Exception("Could not allocate sufficient stock from batches for product ID {$item->product_id}");
+                }
+
+                foreach ($batchAllocations['batches'] as $batchAllocation) {
+                    $batch = $batchAllocation['batch'];
+                    $qtyFromBatch = $batchAllocation['quantity'];
+                    $lineCost = (float) $qtyFromBatch * (float) $batch->unit_cost;
+
+                    $totalIssueCost += $lineCost;
+
+                    StockMovement::create([
+                        'movement_type' => 'transfer',
+                        'reference_type' => 'App\Models\GoodsIssue',
+                        'reference_id' => $goodsIssue->id,
+                        'goods_issue_item_id' => $item->id,
+                        'movement_date' => $goodsIssue->issue_date,
+                        'product_id' => $item->product_id,
+                        'stock_batch_id' => $batch->id,
+                        'warehouse_id' => $goodsIssue->warehouse_id,
+                        'vehicle_id' => $goodsIssue->vehicle_id,
+                        'quantity' => -$qtyFromBatch,
+                        'uom_id' => $item->uom_id,
+                        'unit_cost' => $batch->unit_cost,
+                        'total_value' => round($qtyFromBatch * (float) $batch->unit_cost, 4),
+                        'created_by' => auth()->id() ?? 1,
+                    ]);
+
+                    $stockByBatch = CurrentStockByBatch::where('stock_batch_id', $batch->id)
+                        ->where('warehouse_id', $goodsIssue->warehouse_id)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($stockByBatch) {
+                        $qtyBefore = (float) $stockByBatch->quantity_on_hand;
+                        $stockByBatch->quantity_on_hand -= $qtyFromBatch;
+                        if ($stockByBatch->quantity_on_hand <= 0) {
+                            $stockByBatch->quantity_on_hand = 0;
+                            $stockByBatch->total_value = 0.0;
+                            $stockByBatch->status = 'depleted';
+                        } else {
+                            $ratio = $qtyBefore > 0 ? $stockByBatch->quantity_on_hand / $qtyBefore : 0;
+                            $stockByBatch->total_value = round((float) ($stockByBatch->total_value ?? 0) * $ratio, 4);
+                        }
+                        $stockByBatch->last_updated = now();
+                        $stockByBatch->save();
+                    }
+
+                    $valuationLayer = StockValuationLayer::where('stock_batch_id', $batch->id)
+                        ->where('warehouse_id', $goodsIssue->warehouse_id)
+                        ->where('quantity_remaining', '>', 0)
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($valuationLayer) {
+                        $qtyBeforeLayer = (float) $valuationLayer->quantity_remaining;
+                        $valuationLayer->quantity_remaining -= $qtyFromBatch;
+                        if ($valuationLayer->quantity_remaining <= 0) {
+                            $valuationLayer->quantity_remaining = 0;
+                            $valuationLayer->total_value = 0.0;
+                        } else {
+                            $ratio = $qtyBeforeLayer > 0 ? $valuationLayer->quantity_remaining / $qtyBeforeLayer : 0;
+                            $valuationLayer->total_value = round((float) ($valuationLayer->total_value ?? 0) * $ratio, 4);
+                        }
+                        $valuationLayer->save();
+                    }
+
+                    $ledgerService = app(InventoryLedgerService::class);
+                    $ledgerService->recordIssue(
+                        $item->product_id,
+                        $goodsIssue->warehouse_id,
+                        $goodsIssue->vehicle_id,
+                        $goodsIssue->employee_id,
+                        $qtyFromBatch,
+                        $batch->unit_cost,
+                        $goodsIssue->id,
+                        $goodsIssue->issue_date,
+                        "GI {$goodsIssue->issue_number} (supp) - Batch {$batch->batch_code}",
+                        $batch->id
+                    );
+                }
+
+                $this->syncCurrentStockFromValuationLayers($item->product_id, $goodsIssue->warehouse_id);
+
+                // Update or create van stock balance (aggregate, not batch-specific)
+                $vanStock = VanStockBalance::firstOrNew([
+                    'vehicle_id' => $goodsIssue->vehicle_id,
+                    'product_id' => $item->product_id,
+                ]);
+
+                if ($vanStock->quantity_on_hand == 0 && ! $vanStock->exists) {
+                    $vanStock->opening_balance = 0;
+                }
+
+                $vanStock->quantity_on_hand += $item->quantity_issued;
+
+                $totalValue = 0;
+                foreach ($batchAllocations['batches'] as $batchAllocation) {
+                    $totalValue += $batchAllocation['quantity'] * $batchAllocation['batch']->unit_cost;
+                }
+                $vanStock->average_cost = $item->quantity_issued > 0 ? $totalValue / $item->quantity_issued : 0;
+
+                $vanStock->last_issue_number = $goodsIssue->issue_number;
+                $vanStock->last_unit_cost = $item->unit_cost;
+                $vanStock->last_selling_price = $item->selling_price;
+                $vanStock->last_updated = now();
+                $vanStock->save();
+
+                VanStockBatch::create([
+                    'vehicle_id' => $goodsIssue->vehicle_id,
+                    'product_id' => $item->product_id,
+                    'goods_issue_item_id' => $item->id,
+                    'goods_issue_number' => $goodsIssue->issue_number,
+                    'quantity_on_hand' => $item->quantity_issued,
+                    'unit_cost' => $item->unit_cost,
+                    'selling_price' => $item->selling_price,
+                ]);
+
+                $item->update(['supplementary_posted_at' => now()]);
+            }
+
+            $totalIssueCost = round($totalIssueCost, 2);
+
+            // Create a SEPARATE journal entry for the supplementary posting.
+            $this->createSupplementaryGoodsIssueJournalEntry($goodsIssue, $totalIssueCost);
+
+            DB::commit();
+
+            return [
+                'success' => true,
+                'message' => "Supplementary items posted for Goods Issue {$goodsIssue->issue_number}",
+                'data' => $goodsIssue->fresh(),
+            ];
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to post supplementary goods issue items: '.$e->getMessage(), [
+                'goods_issue_id' => $goodsIssue->id ?? null,
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Failed to post supplementary items: '.$e->getMessage(),
+                'data' => null,
+            ];
+        }
+    }
+
+    /**
+     * Create a separate journal entry for supplementary items posted on an existing GI.
+     * Reference is 'GI-XXXX-S{n}' where n increments for each supplementary posting.
+     */
+    public function createSupplementaryGoodsIssueJournalEntry(GoodsIssue $goodsIssue, float $totalIssueCost)
+    {
+        if ($totalIssueCost <= 0) {
+            Log::warning('Skipping supplementary GI JE with zero or negative cost', [
+                'goods_issue_id' => $goodsIssue->id,
+                'total_cost' => $totalIssueCost,
+            ]);
+
+            return null;
+        }
+
+        $goodsIssue->loadMissing(['stockInHandAccount', 'vanStockAccount', 'employee', 'vehicle', 'issuedBy']);
+
+        $stockInHand = $goodsIssue->stockInHandAccount
+            ?: ChartOfAccount::where('account_code', '1151')->first();
+        $vanStock = $goodsIssue->vanStockAccount
+            ?: ChartOfAccount::where('account_code', '1155')->first();
+
+        if (! $stockInHand || ! $vanStock) {
+            throw new \Exception('Goods Issue is missing GL accounts. Please set Stock In Hand and Van Stock accounts.');
+        }
+
+        // Determine next supplementary sequence number for this GI
+        $existingSuppCount = JournalEntry::where('reference', 'like', $goodsIssue->issue_number.'-S%')->count();
+        $sequence = $existingSuppCount + 1;
+        $reference = "{$goodsIssue->issue_number}-S{$sequence}";
+
+        $costCenterId = optional($goodsIssue->employee)->cost_center_id;
+        $employeeName = $goodsIssue->employee->name ?? 'N/A';
+        $createdBy = auth()->user()->name ?? 'System';
+        $vehicleNumber = $goodsIssue->vehicle->vehicle_number ?? 'N/A';
+
+        $lines = [
+            [
+                'line_no' => 1,
+                'account_id' => $vanStock->id,
+                'debit' => $totalIssueCost,
+                'credit' => 0,
+                'description' => 'Supplementary transfer to van stock (vehicle '.$vehicleNumber.'; salesman '.$employeeName.')',
+                'cost_center_id' => $costCenterId,
+            ],
+            [
+                'line_no' => 2,
+                'account_id' => $stockInHand->id,
+                'debit' => 0,
+                'credit' => $totalIssueCost,
+                'description' => 'Supplementary transfer from warehouse stock (issued by '.$createdBy.')',
+                'cost_center_id' => $costCenterId,
+            ],
+        ];
+
+        $journalEntryData = [
+            'entry_date' => now()->toDateString(),
+            'reference' => $reference,
+            'description' => 'Supplementary Goods Issue #'.$reference.' - Additional items to vehicle '.$vehicleNumber.' (Salesman: '.$employeeName.')',
+            'lines' => $lines,
+            'auto_post' => true,
+        ];
+
+        $accountingService = app(AccountingService::class);
+        $result = $accountingService->createJournalEntry($journalEntryData);
+
+        if (! $result['success']) {
+            throw new \Exception($result['message'] ?? 'Failed to create supplementary journal entry for goods issue');
+        }
+
+        Log::info('Supplementary Goods Issue JE created', [
+            'goods_issue_id' => $goodsIssue->id,
+            'reference' => $reference,
+            'amount' => $totalIssueCost,
+        ]);
+
+        return $result['data'];
     }
 
     /**
@@ -755,6 +1040,12 @@ class DistributionService
                 'cash_sales_amount' => $freshCashSalesAmount,
             ]);
 
+            // Release the vehicle lock on the linked Goods Issue. The settlement
+            // workflow is now complete, so the vehicle is free for the next GI.
+            // Use a direct update to avoid re-running GI model events.
+            GoodsIssue::whereKey($settlement->goods_issue_id)
+                ->update(['active_vehicle_lock' => null]);
+
             DB::commit();
 
             return [
@@ -1218,6 +1509,30 @@ class DistributionService
                     $totalShortageValue,
                     "Van Stock Reduction - Shortage ({$settlementReference})",
                     6
+                );
+            }
+
+            // Invariant: Salesman Clearing (1123) MUST net to zero on every settlement.
+            // It is a *clearing* account — every cash that flows in must be matched by a flow
+            // out (cheques, expenses, deposits, slips, etc.). A non-zero balance on this account
+            // for a single settlement always indicates a code path mistake, and was the root
+            // cause of the SETTLE-2026-0086 incident where a negative cash-sales formula caused
+            // the cash-sales DR line to be silently skipped.
+            $clearingAccountId = $accounts['salesman_clearing']->id;
+            $clearingDr = 0.0;
+            $clearingCr = 0.0;
+            foreach ($lines as $line) {
+                if (($line['chart_of_account_id'] ?? null) === $clearingAccountId) {
+                    $clearingDr += (float) ($line['debit'] ?? 0);
+                    $clearingCr += (float) ($line['credit'] ?? 0);
+                }
+            }
+            $clearingNet = round($clearingDr - $clearingCr, 2);
+            if (abs($clearingNet) > 0.01) {
+                throw new \RuntimeException(
+                    "Settlement {$settlementReference} would post with an unbalanced Salesman Clearing Account: ".
+                    "Dr {$clearingDr} / Cr {$clearingCr} (net {$clearingNet}). ".
+                    'This is a code-path bug — refusing to post to keep the GL trial balance honest.'
                 );
             }
 

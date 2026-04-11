@@ -335,10 +335,13 @@ it('store and update produce identical totals for same input', function () {
     $storeResponse->assertRedirect();
     $stored = SalesSettlement::latest()->first();
 
+    // Use a fresh vehicle for the second GI — the first vehicle is still
+    // locked because its settlement is in 'draft' status (active_vehicle_lock
+    // unique index would otherwise fail).
     $gi2 = GoodsIssue::factory()->create([
         'status' => 'issued',
         'warehouse_id' => $gi->warehouse_id,
-        'vehicle_id' => $gi->vehicle_id,
+        'vehicle_id' => Vehicle::factory()->create()->id,
         'employee_id' => $gi->employee_id,
         'issued_by' => $user->id,
     ]);

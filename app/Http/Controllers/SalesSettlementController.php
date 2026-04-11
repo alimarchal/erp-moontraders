@@ -230,11 +230,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
         // Add batch breakdown to each goods issue item
         foreach ($goodsIssues as $gi) {
             foreach ($gi->items as $item) {
+                // Filter by goods_issue_item_id so multi-line GIs (same product on
+                // multiple lines) only return the movements that belong to *this* line.
                 $stockMovements = DB::table('stock_movements as sm')
                     ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
                     ->where('sm.reference_type', 'App\Models\GoodsIssue')
                     ->where('sm.reference_id', $gi->id)
-                    ->where('sm.product_id', $item->product_id)
+                    ->where('sm.goods_issue_item_id', $item->id)
                     ->where('sm.movement_type', 'transfer')
                     ->select(
                         'sb.id as stock_batch_id',
@@ -406,11 +408,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 $item->bf_quantity = 0;
             }
 
+            // Filter by goods_issue_item_id so multi-line GIs (same product on
+            // multiple lines) only return the movements that belong to *this* line.
             $stockMovements = DB::table('stock_movements as sm')
                 ->join('stock_batches as sb', 'sm.stock_batch_id', '=', 'sb.id')
                 ->where('sm.reference_type', 'App\Models\GoodsIssue')
                 ->where('sm.reference_id', $goodsIssue->id)
-                ->where('sm.product_id', $item->product_id)
+                ->where('sm.goods_issue_item_id', $item->id)
                 ->where('sm.movement_type', 'transfer')
                 ->select(
                     'sb.id as stock_batch_id',

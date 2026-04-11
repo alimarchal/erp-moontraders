@@ -45,7 +45,6 @@
                     background-color: white !important;
                 }
 
-                .max-w-7xl,
                 .max-w-8xl {
                     max-width: 100% !important;
                     width: 100% !important;
@@ -150,7 +149,7 @@
         </style>
     @endpush
 
-    <x-filter-section :action="route('sales-settlements.index')" class="no-print" maxWidth="max-w-7xl">
+    <x-filter-section :action="route('sales-settlements.index')" class="no-print" maxWidth="max-w-8xl">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <x-label for="filter_settlement_number" value="Settlement #" />
@@ -169,12 +168,12 @@
             <div>
                 <x-label for="filter_settlement_date_from" value="Date From" />
                 <x-input id="filter_settlement_date_from" name="filter[settlement_date_from]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.settlement_date_from')" />
+                    class="mt-1 block w-full" :value="request('filter.settlement_date_from', now()->toDateString())" />
             </div>
             <div>
                 <x-label for="filter_settlement_date_to" value="Date To" />
                 <x-input id="filter_settlement_date_to" name="filter[settlement_date_to]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.settlement_date_to')" />
+                    class="mt-1 block w-full" :value="request('filter.settlement_date_to', now()->toDateString())" />
             </div>
             <div>
                 <x-label for="filter_employee_id" value="Salesman" />
@@ -213,6 +212,18 @@
                 </select>
             </div>
 
+            <div>
+                <x-label for="per_page" value="Per Page" />
+                <select id="per_page" name="per_page"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    @foreach([50, 100, 200, 500, 1000, 'all'] as $option)
+                        <option value="{{ $option }}" {{ request('per_page', 50) == $option ? 'selected' : '' }}>
+                            {{ $option === 'all' ? 'All' : $option }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
             @role('super-admin|admin')
             <div>
                 <x-label for="filter_created_by" value="Created By" />
@@ -243,7 +254,7 @@
         </div>
     </x-filter-section>
 
-    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
+    <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
                 {{-- Report Header --}}

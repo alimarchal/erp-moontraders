@@ -64,6 +64,17 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function index()
     {
+        $today = now()->toDateString();
+
+        if (! request()->has('filter.settlement_date_from') && ! request()->has('filter.settlement_date_to')) {
+            request()->merge([
+                'filter' => array_merge(request('filter', []), [
+                    'settlement_date_from' => $today,
+                    'settlement_date_to' => $today,
+                ]),
+            ]);
+        }
+
         $baseQuery = SalesSettlement::query()->with(['employee', 'vehicle', 'warehouse', 'goodsIssue', 'creator', 'supplier']);
 
         if (! auth()->user()->can('sales-settlement-view-all')) {
@@ -99,7 +110,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->withSum('items as total_quantity_returned_sum', 'quantity_returned')
             ->withSum('items as total_quantity_shortage_sum', 'quantity_shortage');
 
-        $settlements = $settlementsQuery->paginate(20)->withQueryString();
+        $perPage = request('per_page', 50);
+        $settlements = $settlementsQuery->paginate($perPage === 'all' ? PHP_INT_MAX : (int) $perPage)->withQueryString();
 
         // Calculate Totals Helper
         // We reuse the allowed filters logic to get the constrained query for aggregation

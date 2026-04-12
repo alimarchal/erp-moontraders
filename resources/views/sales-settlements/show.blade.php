@@ -595,7 +595,7 @@
                             {{-- Recoveries --}}
                             <div>
                                 <h4 class="font-bold text-sm border-x border-t border-black  text-center">Recoveries
-                                    Breakdown</h4>
+                                    Breakdown (Cash + Online Bank Trafer From Customer)</h4>
                                 <table class="report-table w-full">
                                     <thead>
                                         <tr class="bg-gray-100">
@@ -763,7 +763,7 @@
                             {{-- Bank Transfers --}}
                             <div>
                                 <h4 class="font-bold text-sm border-x border-t border-black  text-center">Bank Transfers
-                                    / Online</h4>
+                                    / Online From Customer</h4>
                                 <table class="report-table w-full">
                                     <thead>
                                         <tr class="bg-gray-100">
@@ -1224,7 +1224,7 @@
                             {{-- 3. Bank Slips / Deposits --}}
                             <div class="flex flex-col h-full print:w-1/3">
                                 <h4 class="font-bold text-sm border-x border-t border-black text-center">Bank Slips /
-                                    Deposits</h4>
+                                    Deposits to Bank From Salesman</h4>
                                 <table class="report-table w-full flex-grow tabular-nums">
                                     <thead>
                                         <tr class="bg-gray-100">

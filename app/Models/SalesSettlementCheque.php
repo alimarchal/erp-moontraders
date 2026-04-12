@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Traits\UserTracking;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class SalesSettlementCheque extends Model
 {
-    use HasFactory;
+    use HasFactory, UserTracking;
 
     protected $fillable = [
         'sales_settlement_id',
@@ -22,6 +23,9 @@ class SalesSettlementCheque extends Model
         'status',
         'cleared_date',
         'notes',
+        'created_by',
+        'updated_by',
+        'status_updated_at',
     ];
 
     protected function casts(): array
@@ -30,6 +34,7 @@ class SalesSettlementCheque extends Model
             'amount' => 'decimal:2',
             'cheque_date' => 'date',
             'cleared_date' => 'date',
+            'status_updated_at' => 'datetime',
         ];
     }
 
@@ -48,25 +53,16 @@ class SalesSettlementCheque extends Model
         return $this->belongsTo(BankAccount::class);
     }
 
-    /**
-     * Check if cheque is pending
-     */
     public function isPending(): bool
     {
         return $this->status === 'pending';
     }
 
-    /**
-     * Check if cheque is cleared
-     */
     public function isCleared(): bool
     {
         return $this->status === 'cleared';
     }
 
-    /**
-     * Check if cheque is bounced
-     */
     public function isBounced(): bool
     {
         return $this->status === 'bounced';

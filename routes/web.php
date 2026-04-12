@@ -42,6 +42,7 @@ use App\Http\Controllers\Reports\AdvanceTaxReportController;
 use App\Http\Controllers\Reports\AdvanceTaxSalesRegisterController;
 use App\Http\Controllers\Reports\BalanceSheetController;
 use App\Http\Controllers\Reports\CashDetailController;
+use App\Http\Controllers\Reports\ChequeRegisterController;
 use App\Http\Controllers\Reports\ClaimRegisterReportController;
 use App\Http\Controllers\Reports\CreditorsLedgerController;
 use App\Http\Controllers\Reports\CustomSettlementReportController;
@@ -731,6 +732,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('percentage-expense', [PercentageExpenseReportController::class, 'index'])->name('percentage-expense.index');
         Route::get('advance-tax', [AdvanceTaxReportController::class, 'index'])->name('advance-tax.index');
         Route::get('advance-tax-sales-register', [AdvanceTaxSalesRegisterController::class, 'index'])->name('advance-tax-sales-register.index');
+
+        /* Cheque Register */
+        Route::prefix('cheque-register')->name('cheque-register.')->group(function () {
+            Route::get('/', [ChequeRegisterController::class, 'index'])->name('index');
+            Route::post('/{cheque}/update-status', [ChequeRegisterController::class, 'updateStatus'])->name('update-status');
+        });
 
         /* Supplier Ledger Register */
         Route::prefix('ledger-register')->name('ledger-register.')->group(function () {

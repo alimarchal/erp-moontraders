@@ -489,6 +489,17 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             $transfersQuery->where('ss.supplier_id', $supplierId);
         }
 
+        $recoveryTransfersQuery = DB::table('sales_settlement_recoveries as sr')
+            ->join('sales_settlements as ss', 'sr.sales_settlement_id', '=', 'ss.id')
+            ->whereBetween('ss.settlement_date', [$startOfMonth, $upToDate])
+            ->whereNull('ss.deleted_at')
+            ->whereNull('sr.deleted_at')
+            ->where('sr.payment_method', 'bank_transfer');
+
+        if ($supplierId) {
+            $recoveryTransfersQuery->where('ss.supplier_id', $supplierId);
+        }
+
         $chequesQuery = DB::table('sales_settlement_cheques as sc')
             ->join('sales_settlements as ss', 'sc.sales_settlement_id', '=', 'ss.id')
             ->whereBetween('ss.settlement_date', [$startOfMonth, $upToDate])
@@ -501,6 +512,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         return $cashTotal
             + (float) $slipsQuery->sum('bs.amount')
             + (float) $transfersQuery->sum('bt.amount')
+            + (float) $recoveryTransfersQuery->sum('sr.amount')
             + (float) $chequesQuery->sum('sc.amount');
     }
 
@@ -578,6 +590,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             ->join('sales_settlements as ss', 'sr.sales_settlement_id', '=', 'ss.id')
             ->whereDate('ss.settlement_date', $date)
             ->whereNull('ss.deleted_at')
+            ->whereNull('sr.deleted_at')
             ->where('sr.payment_method', 'bank_transfer');
 
         if ($supplierId) {

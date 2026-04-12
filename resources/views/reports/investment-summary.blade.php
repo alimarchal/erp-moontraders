@@ -469,49 +469,69 @@
                                 <tbody>
                                     <tr>
                                         <td class="text-center px-1 py-1">1</td>
-                                        <td class="px-2 py-1">Bank Opening Amount</td>
+                                        <td class="px-2 py-1">
+                                            Bank Opening Amount
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(Opening balance from previous month)</span>
+                                        </td>
                                         <td class="text-right px-2 py-1 font-mono">
                                             {{ number_format($bankOpeningAmount, 2) }}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td class="text-center px-1 py-1">2</td>
-                                        <td class="px-2 py-1">Total Cash Received in Current Month</td>
+                                        <td class="px-2 py-1">
+                                            Total Cash Received in Current Month
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(Cash + Bank Slips + Bank Transfers + Recovery Bank Transfers + Cheques)</span>
+                                        </td>
                                         <td class="text-right px-2 py-1 font-mono">
                                             {{ number_format($totalCashReceivedMonth, 2) }}
                                         </td>
                                     </tr>
                                     <tr class="font-bold">
                                         <td class="text-center px-1 py-1 border-t border-black">3</td>
-                                        <td class="px-2 py-1 border-t border-black">Total Bank Amount</td>
+                                        <td class="px-2 py-1 border-t border-black">
+                                            Total Bank Amount
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(Row 1 + Row 2)</span>
+                                        </td>
                                         <td class="text-right px-2 py-1 border-t border-black font-mono">
                                             {{ number_format($totalBankAmount, 2) }}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td class="text-center px-1 py-1">4</td>
-                                        <td class="px-2 py-1">Total Online Amount in Current Month</td>
+                                        <td class="px-2 py-1">
+                                            Total Online Amount in Current Month
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(Bank transfers sent out via Ledger Register)</span>
+                                        </td>
                                         <td class="text-right px-2 py-1 font-mono">
                                             {{ number_format($totalOnlineAmountMonth, 2) }}
                                         </td>
                                     </tr>
                                     <tr class="font-bold">
                                         <td class="text-center px-1 py-1 border-t border-black">5</td>
-                                        <td class="px-2 py-1 border-t border-black">Closing Balance before Expenses</td>
+                                        <td class="px-2 py-1 border-t border-black">
+                                            Closing Balance before Expenses
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(Row 3 − Row 4)</span>
+                                        </td>
                                         <td class="text-right px-2 py-1 border-t border-black font-mono">
                                             {{ number_format($closingBalanceBeforeExpenses, 2) }}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td class="text-center px-1 py-1">6</td>
-                                        <td class="px-2 py-1">Total Expenses in Current Month</td>
+                                        <td class="px-2 py-1">
+                                            Total Expenses in Current Month
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(All settlement expenses)</span>
+                                        </td>
                                         <td class="text-right px-2 py-1 font-mono">
                                             {{ number_format($totalExpensesMonth, 2) }}
                                         </td>
                                     </tr>
                                     <tr class="bg-gray-50 font-extrabold">
                                         <td class="text-center px-1 py-1 border-t-2 border-black">7</td>
-                                        <td class="px-2 py-1 border-t-2 border-black">Closing Balance After Expenses
+                                        <td class="px-2 py-1 border-t-2 border-black">
+                                            Closing Balance After Expenses
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(Row 5 − Row 6)</span>
                                         </td>
                                         <td class="text-right px-2 py-1 border-t-2 border-black font-mono">
                                             {{ number_format($closingBalanceAfterExpenses, 2) }}

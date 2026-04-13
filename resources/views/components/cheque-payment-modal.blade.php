@@ -101,6 +101,7 @@
                             <option value="Industrial Development Bank of Pakistan">Industrial Development Bank of
                                 Pakistan</option>
                             <option value="JS Bank Limited">JS Bank Limited</option>
+                            <option value="Khushali Microfinance Bank Limited">Khushali Microfinance Bank Limited</option>
                             <option value="MCB Bank Limited">MCB Bank Limited</option>
                             <option value="Meezan Bank Limited">Meezan Bank Limited</option>
                             <option value="National Bank of Pakistan (NBP)">National Bank of Pakistan (NBP)</option>
@@ -113,7 +114,8 @@
                                 (Pakistan) Limited</option>
                             <option value="Summit Bank Limited">Summit Bank Limited</option>
                             <option value="Sindh Bank Limited">Sindh Bank Limited</option>
-                               <option value="The Bank of Azad Jammu and Kashmir">The Bank of Azad Jammu and Kashmir</option>
+                               <option value="Telenor Microfinance Bank (EasyPaisa)">Telenor Microfinance Bank (EasyPaisa)</option>
+                            <option value="The Bank of Azad Jammu and Kashmir">The Bank of Azad Jammu and Kashmir</option>
                             <option value="The Bank of Khyber">The Bank of Khyber</option>
                             <option value="The Bank of Punjab">The Bank of Punjab</option>
                             <option value="United Bank Limited (UBL)">United Bank Limited (UBL)</option>

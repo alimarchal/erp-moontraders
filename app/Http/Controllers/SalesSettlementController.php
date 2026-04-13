@@ -1187,7 +1187,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $item->forceDelete();
         }
         $settlement->creditSales()->delete();
-        $settlement->recoveries()->delete();
+        $settlement->recoveries()->forceDelete();
         $settlement->cashDenominations()->delete();
         $settlement->expenses()->delete();
         $settlement->bankTransfers()->delete();
@@ -1332,14 +1332,16 @@ class SalesSettlementController extends Controller implements HasMiddleware
         }
 
         if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
-            foreach ($request->advance_taxes as $advanceTax) {
+            $advanceTaxNumbers = $this->generateAdvanceTaxInvoiceNumbers($request->settlement_date, count($request->advance_taxes));
+
+            foreach ($request->advance_taxes as $index => $advanceTax) {
                 SalesSettlementAdvanceTax::create([
                     'sales_settlement_id' => $settlement->id,
                     'customer_id' => $advanceTax['customer_id'],
                     'sale_amount' => $advanceTax['sale_amount'] ?? 0,
                     'tax_rate' => $advanceTax['tax_rate'] ?? 0.25,
                     'tax_amount' => $advanceTax['tax_amount'],
-                    'invoice_number' => $this->generateAdvanceTaxInvoiceNumber($request->settlement_date),
+                    'invoice_number' => $advanceTaxNumbers[$index],
                     'notes' => $advanceTax['notes'] ?? null,
                 ]);
             }
@@ -1378,11 +1380,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
             : [];
 
         if (! empty($percentageExpenses)) {
-            foreach ($percentageExpenses as $percentageExpense) {
+            $percentageExpenseNumbers = $this->generatePercentageExpenseInvoiceNumbers($request->settlement_date, count($percentageExpenses));
+
+            foreach ($percentageExpenses as $index => $percentageExpense) {
                 SalesSettlementPercentageExpense::create([
                     'sales_settlement_id' => $settlement->id,
                     'customer_id' => $percentageExpense['customer_id'],
-                    'invoice_number' => $this->generatePercentageExpenseInvoiceNumber($request->settlement_date),
+                    'invoice_number' => $percentageExpenseNumbers[$index],
                     'amount' => $percentageExpense['amount'],
                     'notes' => $percentageExpense['notes'] ?? null,
                 ]);
@@ -1404,12 +1408,14 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
         }
 
-        foreach ($payload['recoveries'] as $recovery) {
+        $recoveryNumbers = $this->generateRecoveryNumbers($request->settlement_date, count($payload['recoveries']));
+
+        foreach ($payload['recoveries'] as $index => $recovery) {
             SalesSettlementRecovery::create([
                 'sales_settlement_id' => $settlement->id,
                 'customer_id' => $recovery['customer_id'],
                 'employee_id' => $goodsIssue->employee_id,
-                'recovery_number' => $this->generateRecoveryNumber($request->settlement_date),
+                'recovery_number' => $recoveryNumbers[$index],
                 'payment_method' => $recovery['payment_method'] ?? 'cash',
                 'bank_account_id' => $recovery['bank_account_id'] ?? null,
                 'amount' => floatval($recovery['amount'] ?? 0),
@@ -1419,12 +1425,14 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ]);
         }
 
-        foreach ($payload['credit_sales'] as $creditSale) {
+        $creditSaleNumbers = $this->generateCreditSaleInvoiceNumbers($request->settlement_date, count($payload['credit_sales']));
+
+        foreach ($payload['credit_sales'] as $index => $creditSale) {
             SalesSettlementCreditSale::create([
                 'sales_settlement_id' => $settlement->id,
                 'customer_id' => $creditSale['customer_id'],
                 'employee_id' => $goodsIssue->employee_id,
-                'invoice_number' => $this->generateCreditSaleInvoiceNumber($request->settlement_date),
+                'invoice_number' => $creditSaleNumbers[$index],
                 'sale_amount' => floatval($creditSale['sale_amount'] ?? 0),
                 'payment_received' => floatval($creditSale['payment_received'] ?? 0),
                 'previous_balance' => floatval($creditSale['previous_balance'] ?? 0),
@@ -1684,8 +1692,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
      *
      * Format: CSI-{YYMMDD}-{NNNNN}
      */
-    private function generateCreditSaleInvoiceNumber(string $settlementDate): string
+    /**
+     * @return string[]
+     */
+    private function generateCreditSaleInvoiceNumbers(string $settlementDate, int $count): array
     {
+        if ($count <= 0) {
+            return [];
+        }
+
         $dateCode = date('ymd', strtotime($settlementDate));
         $prefix = "CSI-{$dateCode}-";
 
@@ -1695,7 +1710,10 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->map(fn (string $num) => (int) str_replace($prefix, '', $num))
             ->max() ?? 0;
 
-        return sprintf('%s%05d', $prefix, $maxSequence + 1);
+        return array_map(
+            fn (int $i) => sprintf('%s%05d', $prefix, $maxSequence + $i),
+            range(1, $count),
+        );
     }
 
     /**
@@ -1703,8 +1721,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
      *
      * Format: REC-{YYMMDD}-{NNNNN}
      */
-    private function generateRecoveryNumber(string $settlementDate): string
+    /**
+     * @return string[]
+     */
+    private function generateRecoveryNumbers(string $settlementDate, int $count): array
     {
+        if ($count <= 0) {
+            return [];
+        }
+
         $dateCode = date('ymd', strtotime($settlementDate));
         $prefix = "REC-{$dateCode}-";
 
@@ -1714,7 +1739,10 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->map(fn (string $num) => (int) str_replace($prefix, '', $num))
             ->max() ?? 0;
 
-        return sprintf('%s%05d', $prefix, $maxSequence + 1);
+        return array_map(
+            fn (int $i) => sprintf('%s%05d', $prefix, $maxSequence + $i),
+            range(1, $count),
+        );
     }
 
     /**
@@ -1722,8 +1750,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
      *
      * Format: ATI-{YYMMDD}-{NNNNN}
      */
-    private function generateAdvanceTaxInvoiceNumber(string $settlementDate): string
+    /**
+     * @return string[]
+     */
+    private function generateAdvanceTaxInvoiceNumbers(string $settlementDate, int $count): array
     {
+        if ($count <= 0) {
+            return [];
+        }
+
         $dateCode = date('ymd', strtotime($settlementDate));
         $prefix = "ATI-{$dateCode}-";
 
@@ -1733,16 +1768,21 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->map(fn (string $num) => (int) str_replace($prefix, '', $num))
             ->max() ?? 0;
 
-        return sprintf('%s%05d', $prefix, $maxSequence + 1);
+        return array_map(
+            fn (int $i) => sprintf('%s%05d', $prefix, $maxSequence + $i),
+            range(1, $count),
+        );
     }
 
     /**
-     * Generate a globally unique percentage expense invoice number.
-     *
-     * Format: PEI-{YYMMDD}-{NNNNN}
+     * @return string[]
      */
-    private function generatePercentageExpenseInvoiceNumber(string $settlementDate): string
+    private function generatePercentageExpenseInvoiceNumbers(string $settlementDate, int $count): array
     {
+        if ($count <= 0) {
+            return [];
+        }
+
         $dateCode = date('ymd', strtotime($settlementDate));
         $prefix = "PEI-{$dateCode}-";
 
@@ -1752,6 +1792,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->map(fn (string $num) => (int) str_replace($prefix, '', $num))
             ->max() ?? 0;
 
-        return sprintf('%s%05d', $prefix, $maxSequence + 1);
+        return array_map(
+            fn (int $i) => sprintf('%s%05d', $prefix, $maxSequence + $i),
+            range(1, $count),
+        );
     }
 }

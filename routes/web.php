@@ -40,6 +40,7 @@ use App\Http\Controllers\PromotionalCampaignController;
 use App\Http\Controllers\Reports\AccountBalancesController;
 use App\Http\Controllers\Reports\AdvanceTaxReportController;
 use App\Http\Controllers\Reports\AdvanceTaxSalesRegisterController;
+use App\Http\Controllers\Reports\AmrDisposeRegisterController;
 use App\Http\Controllers\Reports\BalanceSheetController;
 use App\Http\Controllers\Reports\CashDetailController;
 use App\Http\Controllers\Reports\ChequeRegisterController;
@@ -737,6 +738,13 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::prefix('cheque-register')->name('cheque-register.')->group(function () {
             Route::get('/', [ChequeRegisterController::class, 'index'])->name('index');
             Route::post('/{cheque}/update-status', [ChequeRegisterController::class, 'updateStatus'])->name('update-status');
+        });
+
+        /* AMR Dispose Register */
+        Route::prefix('amr-dispose-register')->name('amr-dispose-register.')->group(function () {
+            Route::get('/', [AmrDisposeRegisterController::class, 'index'])->name('index');
+            Route::post('/{type}/{id}/update-disposed', [AmrDisposeRegisterController::class, 'updateDisposed'])->name('update-disposed');
+            Route::post('/bulk-update-disposed', [AmrDisposeRegisterController::class, 'bulkUpdateDisposed'])->name('bulk-update-disposed');
         });
 
         /* Supplier Ledger Register */

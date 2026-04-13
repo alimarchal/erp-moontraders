@@ -451,6 +451,19 @@
                          </div>
 
                      </div>
+
+                     {{-- Grand Total Row 2: Bank Transfers + Cheques --}}
+                     <div class="mt-1 border border-black p-1 bg-gray-50 flex justify-between items-center font-bold">
+                         <span>Grand Total (Bank Transfers + Cheques):</span>
+                         <span class="text-md">{{ number_format($totalBankTransfers + $totalCheques, 2) }}</span>
+                     </div>
+
+                     {{-- Overall Grand Total --}}
+                     <div class="mt-1 border-2 border-black p-1 bg-gray-200 flex justify-between items-center font-bold text-lg">
+                         <span>Overall Grand Total (Cash + Bank Slips + Bank Transfers + Cheques):</span>
+                         <span>{{ number_format($totalSalesmanAmount + $totalBankSlips + $totalBankTransfers + $totalCheques, 2) }}</span>
+                     </div>
+
             </div>
         </div>
     </div>

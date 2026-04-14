@@ -69,6 +69,7 @@ use App\Http\Controllers\Reports\ShopListController;
 use App\Http\Controllers\Reports\SkuFmrAmrController;
 use App\Http\Controllers\Reports\SkuRatesController;
 use App\Http\Controllers\Reports\StockAvailabilityReportController;
+use App\Http\Controllers\Reports\SupplierLedgerReportController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\Reports\VanStockBatchReportController;
 use App\Http\Controllers\Reports\VanStockLedgerController;
@@ -698,6 +699,9 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('vehicle', [VehicleReportController::class, 'index'])->name('vehicle.index');
         Route::get('stock-availability', [StockAvailabilityReportController::class, 'index'])->name('stock-availability.index');
         Route::get('product-price-change-log', [ProductPriceChangeLogController::class, 'index'])->name('product-price-change-log.index');
+        Route::get('supplier-ledger', [SupplierLedgerReportController::class, 'index'])->name('supplier-ledger.index');
+        Route::get('supplier-ledger/{supplier}/salesmen', [SupplierLedgerReportController::class, 'salesmen'])->name('supplier-ledger.salesmen');
+        Route::get('supplier-ledger/{supplier}/salesmen/{employee}/customers', [SupplierLedgerReportController::class, 'customers'])->name('supplier-ledger.customers');
 
         /* Claim Register */
         Route::prefix('claim-register')->name('claim-register.')->group(function () {

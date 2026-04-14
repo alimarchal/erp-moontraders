@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
+use App\Models\Supplier;
 use App\Services\LedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -47,37 +48,63 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
 
         // Cross-DB subquery for balance calculation (works on MySQL, MariaDB, PostgreSQL)
         $dateCondition = '';
-        $dateBindings = [];
+        $balanceBindings = [];
         if ($dateFrom) {
             $dateCondition .= ' AND ceat_b.transaction_date >= ?';
-            $dateBindings[] = $dateFrom;
+            $balanceBindings[] = $dateFrom;
         }
         if ($dateTo) {
             $dateCondition .= ' AND ceat_b.transaction_date <= ?';
-            $dateBindings[] = $dateTo;
+            $balanceBindings[] = $dateTo;
+        }
+
+        // When supplier_id filter is set, scope balance to only that supplier's employee accounts
+        $supplierIdFilter = $request->input('filter.supplier_id');
+        $supplierJoin = '';
+        $supplierCondition = '';
+        $supplierBindings = [];
+        if ($supplierIdFilter) {
+            $supplierJoin = 'JOIN employees e_b ON cea_b.employee_id = e_b.id';
+            $supplierCondition = ' AND e_b.supplier_id = ?';
+            $supplierBindings[] = $supplierIdFilter;
         }
 
         $balanceSubquery = "(
             SELECT COALESCE(SUM(ceat_b.debit), 0) - COALESCE(SUM(ceat_b.credit), 0)
             FROM customer_employee_account_transactions ceat_b
             JOIN customer_employee_accounts cea_b ON ceat_b.customer_employee_account_id = cea_b.id
-            WHERE cea_b.customer_id = customers.id AND ceat_b.deleted_at IS NULL{$dateCondition}
+            {$supplierJoin}
+            WHERE cea_b.customer_id = customers.id AND ceat_b.deleted_at IS NULL{$dateCondition}{$supplierCondition}
         )";
 
-        // Add bindings for the balance subquery used in whereRaw/orderByRaw
+        // Scope ledger entries by supplier when filter is active
+        $applySupplierFilter = function ($q) use ($supplierIdFilter) {
+            if ($supplierIdFilter) {
+                $q->whereHas('account.employee', fn ($eq) => $eq->where('supplier_id', $supplierIdFilter));
+            }
+        };
+
+        $applyAllFilters = function ($q) use ($applyDateFilter, $applySupplierFilter) {
+            $applyDateFilter($q);
+            $applySupplierFilter($q);
+        };
+
+        // Bindings for balance subquery (date + supplier)
+        $balanceBindings = array_merge($balanceBindings, $supplierBindings);
+
         $customersQuery = Customer::query()
-            ->whereHas('ledgerEntries', $applyDateFilter)
-            ->withCount(['ledgerEntries' => $applyDateFilter])
-            ->withSum(['ledgerEntries as opening_balance' => function ($q) use ($applyDateFilter) {
+            ->whereHas('ledgerEntries', $applyAllFilters)
+            ->withCount(['ledgerEntries' => $applyAllFilters])
+            ->withSum(['ledgerEntries as opening_balance' => function ($q) use ($applyAllFilters) {
                 $q->where('transaction_type', 'opening_balance');
-                $applyDateFilter($q);
+                $applyAllFilters($q);
             }], 'debit')
-            ->withSum(['ledgerEntries as credit_sales' => function ($q) use ($applyDateFilter) {
+            ->withSum(['ledgerEntries as credit_sales' => function ($q) use ($applyAllFilters) {
                 $q->where('transaction_type', '!=', 'opening_balance');
-                $applyDateFilter($q);
+                $applyAllFilters($q);
             }], 'debit')
-            ->withSum(['ledgerEntries as total_debits' => $applyDateFilter], 'debit')
-            ->withSum(['ledgerEntries as total_credits' => $applyDateFilter], 'credit');
+            ->withSum(['ledgerEntries as total_debits' => $applyAllFilters], 'debit')
+            ->withSum(['ledgerEntries as total_credits' => $applyAllFilters], 'credit');
 
         if ($request->filled('filter.customer_name')) {
             $customersQuery->where('customer_name', 'like', '%'.$request->input('filter.customer_name').'%');
@@ -125,6 +152,16 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
             });
         }
 
+        if ($request->filled('filter.supplier_id')) {
+            $customersQuery->whereHas('employeeAccounts.employee', function ($q) use ($request) {
+                $q->where('supplier_id', $request->input('filter.supplier_id'));
+            });
+        }
+
+        if ($request->filled('filter.customer_id')) {
+            $customersQuery->where('id', $request->input('filter.customer_id'));
+        }
+
         if ($request->filled('filter.credit_limit_min')) {
             $customersQuery->where('credit_limit', '>=', $request->input('filter.credit_limit_min'));
         }
@@ -135,19 +172,19 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
 
         if ($request->filled('filter.has_balance')) {
             if ($request->input('filter.has_balance') === 'yes') {
-                $customersQuery->whereRaw("$balanceSubquery > 0", $dateBindings);
+                $customersQuery->whereRaw("$balanceSubquery > 0", $balanceBindings);
             } elseif ($request->input('filter.has_balance') === 'no') {
-                $customersQuery->whereRaw("$balanceSubquery <= 0", $dateBindings);
+                $customersQuery->whereRaw("$balanceSubquery <= 0", $balanceBindings);
             }
         }
 
         // Cross-DB: use subquery in WHERE instead of havingRaw with aliases
         if ($request->filled('filter.balance_min')) {
-            $customersQuery->whereRaw("$balanceSubquery >= ?", [...$dateBindings, $request->input('filter.balance_min')]);
+            $customersQuery->whereRaw("$balanceSubquery >= ?", [...$balanceBindings, $request->input('filter.balance_min')]);
         }
 
         if ($request->filled('filter.balance_max')) {
-            $customersQuery->whereRaw("$balanceSubquery <= ?", [...$dateBindings, $request->input('filter.balance_max')]);
+            $customersQuery->whereRaw("$balanceSubquery <= ?", [...$balanceBindings, $request->input('filter.balance_max')]);
         }
 
         $sort = $request->input('sort', '-balance');
@@ -158,9 +195,9 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
             $customersQuery->orderBy($column, $direction);
         } elseif ($column === 'balance') {
             // Cross-DB: use subquery in ORDER BY instead of alias
-            $customersQuery->orderByRaw("$balanceSubquery $direction", $dateBindings);
+            $customersQuery->orderByRaw("$balanceSubquery $direction", $balanceBindings);
         } else {
-            $customersQuery->orderByRaw("$balanceSubquery DESC", $dateBindings);
+            $customersQuery->orderByRaw("$balanceSubquery DESC", $balanceBindings);
         }
 
         if ($perPage === 'all') {
@@ -176,27 +213,34 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
             $customers = $customersQuery->paginate((int) $perPage)->withQueryString();
         }
 
-        // Calculate totals from customer_employee_account_transactions
-        $totalsQuery = DB::table('customer_employee_account_transactions')
-            ->whereNull('deleted_at');
+        // Calculate totals from customer_employee_account_transactions (scoped same as main query)
+        $totalsQuery = DB::table('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->whereNull('ceat.deleted_at');
 
         if ($dateFrom) {
-            $totalsQuery->where('transaction_date', '>=', $dateFrom);
+            $totalsQuery->where('ceat.transaction_date', '>=', $dateFrom);
         }
         if ($dateTo) {
-            $totalsQuery->where('transaction_date', '<=', $dateTo);
+            $totalsQuery->where('ceat.transaction_date', '<=', $dateTo);
+        }
+        if ($supplierIdFilter) {
+            $totalsQuery->join('employees as e_t', 'cea.employee_id', '=', 'e_t.id')
+                ->where('e_t.supplier_id', $supplierIdFilter);
         }
 
         $totals = $totalsQuery
-            ->selectRaw('SUM(CASE WHEN transaction_type = ? THEN debit ELSE 0 END) as total_opening_balance', ['opening_balance'])
-            ->selectRaw('SUM(CASE WHEN transaction_type != ? THEN debit ELSE 0 END) as total_credit_sales', ['opening_balance'])
-            ->selectRaw('SUM(debit) as total_debits, SUM(credit) as total_credits')
+            ->selectRaw('SUM(CASE WHEN ceat.transaction_type = ? THEN ceat.debit ELSE 0 END) as total_opening_balance', ['opening_balance'])
+            ->selectRaw('SUM(CASE WHEN ceat.transaction_type != ? THEN ceat.debit ELSE 0 END) as total_credit_sales', ['opening_balance'])
+            ->selectRaw('SUM(ceat.debit) as total_debits, SUM(ceat.credit) as total_credits')
             ->first();
 
         $cities = Customer::whereNotNull('city')->distinct()->pluck('city')->sort();
         $subLocalities = Customer::whereNotNull('sub_locality')->distinct()->pluck('sub_locality')->sort();
         $channelTypes = Customer::whereNotNull('channel_type')->distinct()->pluck('channel_type')->sort();
         $employees = Employee::whereHas('customerAccounts')->orderBy('name')->get();
+        $suppliers = Supplier::whereHas('employees.customerAccounts')->orderBy('supplier_name')->get(['id', 'supplier_name']);
+        $customersList = Customer::orderBy('customer_name')->get(['id', 'customer_name', 'customer_code']);
 
         return view('reports.creditors-ledger.index', [
             'customers' => $customers,
@@ -205,6 +249,8 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
             'subLocalities' => $subLocalities,
             'channelTypes' => $channelTypes,
             'employees' => $employees,
+            'suppliers' => $suppliers,
+            'customersList' => $customersList,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
         ]);
@@ -352,17 +398,26 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
             return $entry;
         });
 
-        // Closing balance: respects salesman filter
-        if ($employeeId) {
-            $closingBalance = $this->ledgerService->getCustomerBalanceByEmployee($customer->id, (int) $employeeId);
-        } else {
-            $closingBalance = $this->ledgerService->getCustomerBalance($customer->id);
-        }
+        // Closing balance: opening balance + all filtered transactions (not just current page)
+        $closingBalanceQuery = DB::table('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->where('cea.customer_id', $customer->id)
+            ->whereNull('ceat.deleted_at');
+
+        $applyFilters($closingBalanceQuery);
+
+        $filteredTotals = $closingBalanceQuery
+            ->selectRaw('COALESCE(SUM(ceat.debit), 0) as total_debit, COALESCE(SUM(ceat.credit), 0) as total_credit')
+            ->first();
+
+        $closingBalance = $openingBalance
+            + (float) ($filteredTotals->total_debit ?? 0)
+            - (float) ($filteredTotals->total_credit ?? 0);
 
         $summary = [
             'opening_balance' => $openingBalance,
-            'total_debits' => $entries->sum('debit'),
-            'total_credits' => $entries->sum('credit'),
+            'total_debits' => (float) ($filteredTotals->total_debit ?? 0),
+            'total_credits' => (float) ($filteredTotals->total_credit ?? 0),
             'closing_balance' => $closingBalance,
         ];
 

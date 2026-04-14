@@ -116,9 +116,16 @@
             </div>
 
             <div>
-                <x-label for="filter_customer_name" value="Customer Name" />
-                <x-input id="filter_customer_name" name="filter[customer_name]" type="text" class="mt-1 block w-full"
-                    :value="request('filter.customer_name')" placeholder="Customer name..." />
+                <x-label for="filter_customer_id" value="Customer" />
+                <select id="filter_customer_id" name="filter[customer_id]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Customers</option>
+                    @foreach($customersList as $c)
+                        <option value="{{ $c->id }}" {{ request('filter.customer_id')==(string)$c->id ? 'selected' : '' }}>
+                            {{ $c->customer_name }} ({{ $c->customer_code }})
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
             <div>
@@ -153,6 +160,19 @@
             </div>
 
             <div>
+                <x-label for="filter_supplier_id" value="Supplier" />
+                <select id="filter_supplier_id" name="filter[supplier_id]"
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Suppliers</option>
+                    @foreach($suppliers as $supplier)
+                        <option value="{{ $supplier->id }}" {{ request('filter.supplier_id')==(string)$supplier->id ? 'selected' : '' }}>
+                            {{ $supplier->supplier_name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
                 <x-label for="filter_city" value="City" />
                 <select id="filter_city" name="filter[city]"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
@@ -168,7 +188,8 @@
             <div>
                 <x-label for="filter_sub_locality" value="Sub Locality" />
                 <select id="filter_sub_locality" name="filter[sub_locality]"
-                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full"
+                    data-placeholder="Search locality...">
                     <option value="">All Localities</option>
                     @foreach($subLocalities as $locality)
                         <option value="{{ $locality }}" {{ request('filter.sub_locality')===$locality ? 'selected' : '' }}>
@@ -363,16 +384,16 @@
                                     @endif
                                 </td>
                                 <td style="vertical-align: middle;">{{ $customer->city ?? '-' }}</td>
-                                <td class="text-right font-mono text-gray-700" style="vertical-align: middle;">
+                                <td class="text-right font-mono" style="vertical-align: middle;">
                                     {{ number_format($customer->opening_balance ?? 0, 2) }}
                                 </td>
-                                <td class="text-right font-mono text-blue-700" style="vertical-align: middle;">
+                                <td class="text-right font-mono" style="vertical-align: middle;">
                                     {{ number_format($customer->credit_sales ?? 0, 2) }}
                                 </td>
-                                <td class="text-right font-mono text-green-700" style="vertical-align: middle;">
+                                <td class="text-right font-mono" style="vertical-align: middle;">
                                     {{ number_format($customer->total_credits ?? 0, 2) }}
                                 </td>
-                                <td class="text-right font-mono font-bold {{ $closingBalance > 0 ? 'text-orange-700' : 'text-green-700' }}" style="vertical-align: middle;">
+                                <td class="text-right font-mono font-bold" style="vertical-align: middle;">
                                     {{ number_format($closingBalance, 2) }}
                                 </td>
                                 <td class="text-center" style="vertical-align: middle;">
@@ -400,16 +421,16 @@
                     <tfoot class="bg-gray-100 font-extrabold">
                         <tr>
                             <td colspan="4" class="text-center px-2 py-1">Page Total ({{ $customers->count() }} customers)</td>
-                            <td class="text-right font-mono px-2 py-1 text-gray-700">
+                            <td class="text-right font-mono px-2 py-1">
                                 {{ number_format($customers->sum('opening_balance'), 2) }}
                             </td>
-                            <td class="text-right font-mono px-2 py-1 text-blue-700">
+                            <td class="text-right font-mono px-2 py-1">
                                 {{ number_format($customers->sum('credit_sales'), 2) }}
                             </td>
-                            <td class="text-right font-mono px-2 py-1 text-green-700">
+                            <td class="text-right font-mono px-2 py-1">
                                 {{ number_format($customers->sum('total_credits'), 2) }}
                             </td>
-                            <td class="text-right font-mono px-2 py-1 text-orange-700">
+                            <td class="text-right font-mono px-2 py-1">
                                 {{ number_format($customers->sum('total_debits') - $customers->sum('total_credits'), 2) }}
                             </td>
                             <td colspan="2"></td>

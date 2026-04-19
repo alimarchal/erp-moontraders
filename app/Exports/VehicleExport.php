@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\Vehicle;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -10,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class VehicleExport implements FromQuery, WithHeadings, WithMapping
 {
     /**
-     * @param  Builder<\App\Models\Vehicle>  $query
+     * @param  Builder<Vehicle>  $query
      */
     public function __construct(private Builder $query) {}
 
@@ -39,7 +40,7 @@ class VehicleExport implements FromQuery, WithHeadings, WithMapping
     }
 
     /**
-     * @param  \App\Models\Vehicle  $vehicle
+     * @param  Vehicle  $vehicle
      * @return array<int, mixed>
      */
     public function map($vehicle): array

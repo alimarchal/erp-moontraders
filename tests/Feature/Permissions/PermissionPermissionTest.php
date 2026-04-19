@@ -22,7 +22,7 @@ it('allows index with permission-list permission', function () {
 });
 
 it('denies show without permission-list permission', function () {
-    $perm = \App\Models\Permission::create(['name' => 'test-perm', 'guard_name' => 'web']);
+    $perm = App\Models\Permission::create(['name' => 'test-perm', 'guard_name' => 'web']);
     $this->get(route('permissions.show', $perm))->assertForbidden();
 });
 
@@ -40,22 +40,22 @@ it('denies store without permission-create permission', function () {
 });
 
 it('denies edit without permission-edit permission', function () {
-    $perm = \App\Models\Permission::create(['name' => 'test-perm', 'guard_name' => 'web']);
+    $perm = App\Models\Permission::create(['name' => 'test-perm', 'guard_name' => 'web']);
     $this->get(route('permissions.edit', $perm))->assertForbidden();
 });
 
 it('allows edit with permission-edit permission', function () {
     $this->user->givePermissionTo('permission-edit');
-    $perm = \App\Models\Permission::create(['name' => 'test-perm', 'guard_name' => 'web']);
+    $perm = App\Models\Permission::create(['name' => 'test-perm', 'guard_name' => 'web']);
     $this->get(route('permissions.edit', $perm))->assertSuccessful();
 });
 
 it('denies update without permission-edit permission', function () {
-    $perm = \App\Models\Permission::create(['name' => 'test-perm', 'guard_name' => 'web']);
+    $perm = App\Models\Permission::create(['name' => 'test-perm', 'guard_name' => 'web']);
     $this->put(route('permissions.update', $perm), [])->assertForbidden();
 });
 
 it('denies destroy without permission-delete permission', function () {
-    $perm = \App\Models\Permission::create(['name' => 'test-perm', 'guard_name' => 'web']);
+    $perm = App\Models\Permission::create(['name' => 'test-perm', 'guard_name' => 'web']);
     $this->delete(route('permissions.destroy', $perm))->assertForbidden();
 });

@@ -2,10 +2,12 @@
 
 use App\Models\Employee;
 use App\Models\GoodsIssue;
+use App\Models\GoodsReceiptNote;
 use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\StockBatch;
+use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
@@ -78,8 +80,8 @@ describe('InventoryLedgerService Double-Entry', function () {
     it('can record a purchase entry with debit', function () {
         $product = Product::factory()->create();
         $warehouse = Warehouse::factory()->create();
-        $supplier = \App\Models\Supplier::factory()->create();
-        $grn = \App\Models\GoodsReceiptNote::factory()->create([
+        $supplier = Supplier::factory()->create();
+        $grn = GoodsReceiptNote::factory()->create([
             'warehouse_id' => $warehouse->id,
             'supplier_id' => $supplier->id,
         ]);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\UserTracking;
+use Database\Factories\InvoiceSummaryFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class InvoiceSummary extends Model
 {
-    /** @use HasFactory<\Database\Factories\InvoiceSummaryFactory> */
+    /** @use HasFactory<InvoiceSummaryFactory> */
     use HasFactory, SoftDeletes, UserTracking;
 
     protected $fillable = [

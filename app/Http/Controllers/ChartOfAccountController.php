@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateChartOfAccountRequest;
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -94,7 +95,7 @@ class ChartOfAccountController extends Controller implements HasMiddleware
             return redirect()
                 ->route('chart-of-accounts.index')
                 ->with('success', "Account '{$chartOfAccount->account_code}' created successfully.");
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             DB::rollBack();
 
             Log::error('Database error creating chart of account', [
@@ -180,7 +181,7 @@ class ChartOfAccountController extends Controller implements HasMiddleware
             return redirect()
                 ->route('chart-of-accounts.index')
                 ->with('success', "Account '{$chartOfAccount->account_code}' updated successfully.");
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             DB::rollBack();
 
             Log::error('Database error updating chart of account', [

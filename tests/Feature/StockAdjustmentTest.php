@@ -3,6 +3,7 @@
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\CostCenter;
+use App\Models\Currency;
 use App\Models\CurrentStockByBatch;
 use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
@@ -32,7 +33,7 @@ beforeEach(function () {
     $this->uom = Uom::factory()->create();
 
     // Create required GL accounts for testing
-    $currency = \App\Models\Currency::factory()->create();
+    $currency = Currency::factory()->create();
     $accountType = AccountType::create(['type_name' => 'Expense', 'report_group' => 'IncomeStatement']);
     $assetType = AccountType::create(['type_name' => 'Asset', 'report_group' => 'BalanceSheet']);
 

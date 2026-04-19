@@ -2,10 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\AccountType;
+use App\Models\ChartOfAccount;
+use App\Models\Currency;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ChartOfAccount>
+ * @extends Factory<ChartOfAccount>
  */
 class ChartOfAccountFactory extends Factory
 {
@@ -23,8 +26,8 @@ class ChartOfAccountFactory extends Factory
             'is_group' => false,
             'is_active' => true,
             'normal_balance' => fake()->randomElement(['debit', 'credit']),
-            'account_type_id' => \App\Models\AccountType::factory(),
-            'currency_id' => \App\Models\Currency::factory(),
+            'account_type_id' => AccountType::factory(),
+            'currency_id' => Currency::factory(),
         ];
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Uom;
@@ -56,7 +57,7 @@ class SkuRatesController extends Controller implements HasMiddleware
 
         return view('reports.sku-rates.index', [
             'products' => $products,
-            'categories' => \App\Models\Category::where('is_active', true)->orderBy('name')->get(),
+            'categories' => Category::where('is_active', true)->orderBy('name')->get(),
             'supplierOptions' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
             'uomOptions' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name']),
             'valuationMethods' => Product::VALUATION_METHODS,

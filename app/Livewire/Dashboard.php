@@ -12,6 +12,7 @@ use App\Models\SalesSettlement;
 use App\Models\SalesSettlementItem;
 use App\Models\StockMovement;
 use App\Models\SupplierPayment;
+use App\Models\User;
 use Carbon\Carbon;
 use Livewire\Component;
 
@@ -114,7 +115,7 @@ class Dashboard extends Component
     }
 
     /**
-     * @param  \App\Models\User  $user
+     * @param  User  $user
      */
     private function loadKpiCards($user): void
     {
@@ -501,7 +502,7 @@ class Dashboard extends Component
     }
 
     /**
-     * @param  \App\Models\User  $user
+     * @param  User  $user
      */
     private function loadPendingItems($user): void
     {

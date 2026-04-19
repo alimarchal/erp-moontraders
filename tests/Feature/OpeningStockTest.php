@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\AccountingPeriod;
+use App\Models\AccountType;
 use App\Models\ChartOfAccount;
+use App\Models\CostCenter;
+use App\Models\Currency;
 use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntry;
 use App\Models\Product;
@@ -10,6 +14,8 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -20,33 +26,33 @@ beforeEach(function () {
     $this->user->givePermissionTo('opening-stock-create', 'goods-receipt-note-create');
     $this->actingAs($this->user);
 
-    $currency = \App\Models\Currency::create([
+    $currency = Currency::create([
         'currency_code' => 'PKR',
         'currency_name' => 'Pakistani Rupee',
         'currency_symbol' => 'Rs',
         'is_base_currency' => true,
     ]);
 
-    \App\Models\AccountingPeriod::create([
+    AccountingPeriod::create([
         'name' => now()->format('F Y'),
         'start_date' => now()->startOfMonth(),
         'end_date' => now()->endOfMonth(),
         'status' => 'open',
     ]);
 
-    \App\Models\CostCenter::create([
+    CostCenter::create([
         'code' => 'CC006',
         'name' => 'Warehouse & Inventory',
         'is_active' => true,
     ]);
 
-    $assetType = \App\Models\AccountType::create([
+    $assetType = AccountType::create([
         'type_name' => 'Assets',
         'report_group' => 'BalanceSheet',
         'category' => 'Asset',
     ]);
 
-    $equityType = \App\Models\AccountType::create([
+    $equityType = AccountType::create([
         'type_name' => 'Equity',
         'report_group' => 'BalanceSheet',
         'category' => 'Equity',
@@ -110,7 +116,7 @@ beforeEach(function () {
 
 function createOpeningStockExcel(array $rows): UploadedFile
 {
-    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet;
+    $spreadsheet = new Spreadsheet;
     $sheet = $spreadsheet->getActiveSheet();
 
     $headers = ['SKU', 'Invoice Price', 'Retail Price', 'Total Inventory in Pieces'];
@@ -127,7 +133,7 @@ function createOpeningStockExcel(array $rows): UploadedFile
     }
 
     $tempPath = tempnam(sys_get_temp_dir(), 'opening_stock_test_').'.xlsx';
-    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $writer = new Xlsx($spreadsheet);
     $writer->save($tempPath);
 
     return new UploadedFile($tempPath, 'opening_stock.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);

@@ -11,6 +11,8 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -74,7 +76,7 @@ beforeEach(function () {
 
 function createTestExcelFile(array $rows): UploadedFile
 {
-    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet;
+    $spreadsheet = new Spreadsheet;
     $sheet = $spreadsheet->getActiveSheet();
 
     $headers = [
@@ -107,7 +109,7 @@ function createTestExcelFile(array $rows): UploadedFile
     }
 
     $tempPath = tempnam(sys_get_temp_dir(), 'grn_test_').'.xlsx';
-    $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+    $writer = new Xlsx($spreadsheet);
     $writer->save($tempPath);
 
     return new UploadedFile($tempPath, 'test_import.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);

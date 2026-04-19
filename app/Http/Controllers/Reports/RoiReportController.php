@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\Product;
+use App\Models\SalesSettlementItem;
+use App\Models\Supplier;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -24,17 +29,17 @@ class RoiReportController extends Controller implements HasMiddleware
     {
         // 1. Initial Setup & Validation
         if (! $request->has('filter.start_date')) {
-            $startDate = \Carbon\Carbon::now()->startOfMonth();
-            $endDate = \Carbon\Carbon::now();
+            $startDate = Carbon::now()->startOfMonth();
+            $endDate = Carbon::now();
         } else {
-            $startDate = \Carbon\Carbon::parse($request->input('filter.start_date'));
-            $endDate = \Carbon\Carbon::parse($request->input('filter.end_date'));
+            $startDate = Carbon::parse($request->input('filter.start_date'));
+            $endDate = Carbon::parse($request->input('filter.end_date'));
         }
         $employeeIds = $request->input('filter.employee_id');
         $supplierId = $request->input('filter.supplier_id');
 
         // 2. Fetch All Products
-        $products = \App\Models\Product::with('category')
+        $products = Product::with('category')
             ->where('is_active', true)
             ->when($supplierId, function ($q) use ($supplierId) {
                 $q->where('supplier_id', $supplierId);
@@ -50,7 +55,7 @@ class RoiReportController extends Controller implements HasMiddleware
         // Margin = TP - IP
         // Profit = Margin * Sold Qty (or Total Sales - Total COGS from Settlement)
 
-        $salesItems = \App\Models\SalesSettlementItem::query()
+        $salesItems = SalesSettlementItem::query()
             ->selectRaw('
                 product_id,
                 sales_settlements.settlement_date as date,
@@ -112,7 +117,7 @@ class RoiReportController extends Controller implements HasMiddleware
         ];
 
         // Generate Date Columns
-        $period = \Carbon\CarbonPeriod::create($startDate, $endDate);
+        $period = CarbonPeriod::create($startDate, $endDate);
         foreach ($period as $date) {
             $matrixData['dates'][] = $date->format('Y-m-d');
         }
@@ -332,12 +337,12 @@ class RoiReportController extends Controller implements HasMiddleware
         $warehouses = Warehouse::orderBy('warehouse_name', 'asc')->get(['id', 'warehouse_name as name']);
 
         // Fetch Suppliers for Filter
-        $suppliers = \App\Models\Supplier::where('disabled', false)
+        $suppliers = Supplier::where('disabled', false)
             ->orderBy('supplier_name')
             ->get(['id', 'supplier_name']);
 
         // Fetch Product List for Filter
-        $productList = \App\Models\Product::where('is_active', true)
+        $productList = Product::where('is_active', true)
             ->orderBy('product_name')
             ->get(['id', 'product_name', 'product_code']);
 

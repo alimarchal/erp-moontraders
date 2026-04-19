@@ -6,9 +6,11 @@ use App\Models\GoodsIssueItem;
 use App\Models\GoodsReceiptNote;
 use App\Models\GoodsReceiptNoteItem;
 use App\Models\Product;
+use App\Models\SalesSettlement;
 use App\Models\StockBatch;
 use App\Models\Supplier;
 use App\Models\Uom;
+use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
@@ -18,7 +20,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 it('uses promotional batch selling price when calculating sales value', function () {
-    $user = \App\Models\User::factory()->create(['is_super_admin' => 'Yes']);
+    $user = User::factory()->create(['is_super_admin' => 'Yes']);
     $this->actingAs($user);
 
     $product = Product::factory()->create([
@@ -123,7 +125,7 @@ it('uses promotional batch selling price when calculating sales value', function
 
     $response->assertRedirect();
 
-    $settlement = \App\Models\SalesSettlement::latest('id')->with('items')->first();
+    $settlement = SalesSettlement::latest('id')->with('items')->first();
 
     expect($settlement)->not->toBeNull();
 

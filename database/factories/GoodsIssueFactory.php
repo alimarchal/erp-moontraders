@@ -2,10 +2,18 @@
 
 namespace Database\Factories;
 
+use App\Models\AccountType;
+use App\Models\ChartOfAccount;
+use App\Models\Currency;
+use App\Models\Employee;
+use App\Models\GoodsIssue;
+use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\GoodsIssue>
+ * @extends Factory<GoodsIssue>
  */
 class GoodsIssueFactory extends Factory
 {
@@ -16,13 +24,13 @@ class GoodsIssueFactory extends Factory
      */
     public function definition(): array
     {
-        $currency = \App\Models\Currency::first() ?? \App\Models\Currency::factory()->base()->create();
-        $assetType = \App\Models\AccountType::firstOrCreate(
+        $currency = Currency::first() ?? Currency::factory()->base()->create();
+        $assetType = AccountType::firstOrCreate(
             ['type_name' => 'Asset', 'report_group' => 'BalanceSheet'],
             ['description' => 'Auto-created for GoodsIssue factory']
         );
 
-        $stockInHand = \App\Models\ChartOfAccount::firstOrCreate(
+        $stockInHand = ChartOfAccount::firstOrCreate(
             ['account_code' => '1151'],
             [
                 'account_name' => 'Stock In Hand',
@@ -34,7 +42,7 @@ class GoodsIssueFactory extends Factory
             ]
         );
 
-        $vanStock = \App\Models\ChartOfAccount::firstOrCreate(
+        $vanStock = ChartOfAccount::firstOrCreate(
             ['account_code' => '1155'],
             [
                 'account_name' => 'Van Stock',
@@ -52,10 +60,10 @@ class GoodsIssueFactory extends Factory
             'status' => 'draft',
             'total_quantity' => 0,
             'total_value' => 0,
-            'employee_id' => \App\Models\Employee::factory(),
-            'vehicle_id' => \App\Models\Vehicle::factory(),
-            'warehouse_id' => \App\Models\Warehouse::factory(),
-            'issued_by' => \App\Models\User::factory(),
+            'employee_id' => Employee::factory(),
+            'vehicle_id' => Vehicle::factory(),
+            'warehouse_id' => Warehouse::factory(),
+            'issued_by' => User::factory(),
             'stock_in_hand_account_id' => $stockInHand->id,
             'van_stock_account_id' => $vanStock->id,
         ];

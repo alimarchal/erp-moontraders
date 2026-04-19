@@ -7,6 +7,7 @@ use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\Currency;
 use App\Models\Employee;
+use App\Models\GoodsIssue;
 use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementItem;
@@ -17,6 +18,7 @@ use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class VanStockBatchConsumptionTest extends TestCase
@@ -50,7 +52,7 @@ class VanStockBatchConsumptionTest extends TestCase
     {
         // Use DB::table to insert specific IDs, bypassing Eloquent's auto-increment behavior
         for ($i = 1; $i <= 10; $i++) {
-            \Illuminate\Support\Facades\DB::table('cost_centers')->insertOrIgnore([
+            DB::table('cost_centers')->insertOrIgnore([
                 'id' => $i,
                 'name' => "Cost Center $i",
                 'code' => "CC-$i",
@@ -156,7 +158,7 @@ class VanStockBatchConsumptionTest extends TestCase
         ]);
 
         // Create Goods Issue (Required for Settlement)
-        $goodsIssue = \App\Models\GoodsIssue::factory()->create([
+        $goodsIssue = GoodsIssue::factory()->create([
             'vehicle_id' => $vehicle->id,
             'warehouse_id' => $warehouse->id,
             'status' => 'draft',

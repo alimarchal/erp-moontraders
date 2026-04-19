@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AccountingPeriod;
 use App\Models\CurrentStockByBatch;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
@@ -11,12 +12,14 @@ use App\Models\StockBatch;
 use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\Uom;
+use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 uses(RefreshDatabase::class);
 
@@ -27,14 +30,14 @@ uses(RefreshDatabase::class);
  *  - GRN 1: 100 regular units (priority 99, cost 10, selling 15)
  *  - GRN 2:  50 promo units   (priority 1,  cost 8,  selling 12)
  *
- * @return array{user: \App\Models\User, product: Product, warehouse: Warehouse, supplier: Supplier, vehicle: Vehicle, employee: Employee, uom: Uom, regularBatch: StockBatch, promoBatch: StockBatch}
+ * @return array{user: User, product: Product, warehouse: Warehouse, supplier: Supplier, vehicle: Vehicle, employee: Employee, uom: Uom, regularBatch: StockBatch, promoBatch: StockBatch}
  */
 function setupStockWithPromotionalBatches(): array
 {
     // Reset Spatie permission cache to avoid stale IDs across RefreshDatabase transactions
-    app(\Spatie\Permission\PermissionRegistrar::class)->forgetCachedPermissions();
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
 
     // Assign required permissions
     $permissions = [
@@ -49,7 +52,7 @@ function setupStockWithPromotionalBatches(): array
     }
     $user->givePermissionTo($permissions);
 
-    \App\Models\AccountingPeriod::factory()->create([
+    AccountingPeriod::factory()->create([
         'start_date' => now()->startOfMonth(),
         'end_date' => now()->endOfMonth(),
         'status' => 'open',

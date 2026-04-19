@@ -1,7 +1,12 @@
 <?php
 
+use App\Models\AccountType;
 use App\Models\ChartOfAccount;
+use App\Models\Currency;
+use App\Models\Employee;
 use App\Models\GoodsIssue;
+use App\Models\User;
+use App\Models\Vehicle;
 use App\Services\AccountingService;
 use App\Services\DistributionService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,12 +17,12 @@ use function Pest\Laravel\actingAs;
 uses(RefreshDatabase::class);
 
 it('creates a GL transfer for goods issue (1155 Dr / 1151 Cr)', function () {
-    $user = \App\Models\User::factory()->create(['name' => 'Creator Bravo']);
+    $user = User::factory()->create(['name' => 'Creator Bravo']);
     actingAs($user);
 
     // Ensure required base entities and COA accounts exist for the test environment
-    $baseCurrency = \App\Models\Currency::factory()->base()->create();
-    $assetType = \App\Models\AccountType::create(['type_name' => 'Asset', 'report_group' => 'BalanceSheet']);
+    $baseCurrency = Currency::factory()->base()->create();
+    $assetType = AccountType::create(['type_name' => 'Asset', 'report_group' => 'BalanceSheet']);
 
     $stockInHand = ChartOfAccount::firstOrCreate(
         ['account_code' => '1151'],
@@ -43,8 +48,8 @@ it('creates a GL transfer for goods issue (1155 Dr / 1151 Cr)', function () {
         ]
     );
 
-    $vehicle = \App\Models\Vehicle::factory()->create(['vehicle_number' => 'VH-9999']);
-    $employee = \App\Models\Employee::factory()->create(['name' => 'Salesman Alpha']);
+    $vehicle = Vehicle::factory()->create(['vehicle_number' => 'VH-9999']);
+    $employee = Employee::factory()->create(['name' => 'Salesman Alpha']);
 
     // Minimal goods issue context with explicit relations/names
     $goodsIssue = GoodsIssue::factory()->create([

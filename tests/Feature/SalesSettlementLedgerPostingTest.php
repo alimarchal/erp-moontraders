@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AccountingPeriod;
 use App\Models\AccountType;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
@@ -23,6 +24,7 @@ use App\Services\DistributionService;
 use App\Services\LedgerService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -108,7 +110,7 @@ it('posts returns to stock in hand and shortages to van stock in settlement jour
     ]);
 
     // Create accounting period for journal entries
-    \App\Models\AccountingPeriod::create([
+    AccountingPeriod::create([
         'name' => now()->format('F Y'),
         'start_date' => now()->startOfMonth(),
         'end_date' => now()->endOfMonth(),
@@ -117,7 +119,7 @@ it('posts returns to stock in hand and shortages to van stock in settlement jour
 
     // Create required cost centers (used by DistributionService for journal entries)
     // DistributionService uses cost_center_id 4 and 6 for sales and warehouse operations
-    \Illuminate\Support\Facades\DB::table('cost_centers')->insert([
+    DB::table('cost_centers')->insert([
         ['id' => 4, 'code' => 'CC004', 'name' => 'Sales & Marketing', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
         ['id' => 6, 'code' => 'CC006', 'name' => 'Warehouse & Inventory', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
     ]);

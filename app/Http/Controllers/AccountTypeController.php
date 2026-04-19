@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAccountTypeRequest;
 use App\Http\Requests\UpdateAccountTypeRequest;
 use App\Models\AccountType;
+use Illuminate\Database\QueryException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
@@ -35,7 +38,7 @@ class AccountTypeController extends Controller implements HasMiddleware
     /**
      * Display paginated list of account types with filtering capabilities
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function index(Request $request)
     {
@@ -75,7 +78,7 @@ class AccountTypeController extends Controller implements HasMiddleware
      * Store new account type
      * Uses transaction for data consistency
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function store(StoreAccountTypeRequest $request)
     {
@@ -96,7 +99,7 @@ class AccountTypeController extends Controller implements HasMiddleware
                 ->route('account-types.index')
                 ->with('success', "Account Type '{$accountType->type_name}' created successfully.");
 
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             // Rollback transaction on database error
             DB::rollBack();
 
@@ -145,7 +148,7 @@ class AccountTypeController extends Controller implements HasMiddleware
      * Update existing account type
      * Uses transaction for data consistency
      *
-     * @return \Illuminate\Http\RedirectResponse
+     * @return RedirectResponse
      */
     public function update(UpdateAccountTypeRequest $request, AccountType $accountType)
     {
@@ -174,7 +177,7 @@ class AccountTypeController extends Controller implements HasMiddleware
                 ->route('account-types.index')
                 ->with('success', "Account Type '{$accountType->type_name}' updated successfully.");
 
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             // Rollback transaction on database error
             DB::rollBack();
 

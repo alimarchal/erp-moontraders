@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Database\Factories\JournalEntryDetailFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class JournalEntryDetail extends Model
 {
-    /** @use HasFactory<\Database\Factories\JournalEntryDetailFactory> */
+    /** @use HasFactory<JournalEntryDetailFactory> */
     use HasFactory;
 
     /**

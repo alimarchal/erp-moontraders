@@ -4,8 +4,13 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\GoodsIssueItem;
+use App\Models\Product;
+use App\Models\SalesSettlementItem;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -32,18 +37,18 @@ class GoodsIssueReportController extends Controller implements HasMiddleware
             ]);
         }
 
-        $startDate = \Carbon\Carbon::parse($request->input('filter.start_date'));
-        $endDate = \Carbon\Carbon::parse($request->input('filter.end_date'));
+        $startDate = Carbon::parse($request->input('filter.start_date'));
+        $endDate = Carbon::parse($request->input('filter.end_date'));
         $employeeIds = $request->input('filter.employee_id');
 
         // 2. Fetch All Products
-        $products = \App\Models\Product::with('category')
+        $products = Product::with('category')
             ->where('is_active', true)
             ->get()
             ->sortBy(['category.name', 'product_name']);
 
         // 3. Fetch Goods Issue Items (Grouped by Product & Date)
-        $goodsIssueItems = \App\Models\GoodsIssueItem::query()
+        $goodsIssueItems = GoodsIssueItem::query()
             ->selectRaw('
                 product_id, 
                 goods_issues.issue_date as date, 
@@ -84,7 +89,7 @@ class GoodsIssueReportController extends Controller implements HasMiddleware
         // 4. Fetch Sales Settlement Items (Grouped by Product) for Totals
         // Note: We need to link settlements to the filtered scope (Date Range & Salesman)
         // Adjusting logic: Find settlements within the date range for the same salesman
-        $settlementItems = \App\Models\SalesSettlementItem::query()
+        $settlementItems = SalesSettlementItem::query()
             ->selectRaw('
                 product_id,
                 SUM(quantity_sold) as total_sold,
@@ -122,7 +127,7 @@ class GoodsIssueReportController extends Controller implements HasMiddleware
         ];
 
         // Generate Date Columns
-        $period = \Carbon\CarbonPeriod::create($startDate, $endDate);
+        $period = CarbonPeriod::create($startDate, $endDate);
         foreach ($period as $date) {
             $matrixData['dates'][] = $date->format('Y-m-d');
         }

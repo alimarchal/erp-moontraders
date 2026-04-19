@@ -1,9 +1,12 @@
 <?php
 
 use App\Livewire\Dashboard;
+use App\Models\AccountingPeriod;
+use App\Models\Currency;
 use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntry;
 use App\Models\SalesSettlement;
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -83,13 +86,13 @@ it('loads pending items count', function () {
     $user = createSuperAdminUser();
 
     SalesSettlement::factory()->count(3)->create(['status' => 'draft']);
-    $supplier = \App\Models\Supplier::factory()->create();
+    $supplier = Supplier::factory()->create();
     GoodsReceiptNote::factory()->count(2)->create(['status' => 'draft', 'supplier_id' => $supplier->id]);
-    $currency = \App\Models\Currency::firstOrCreate(
+    $currency = Currency::firstOrCreate(
         ['currency_code' => 'TST'],
         ['currency_name' => 'Test Currency', 'currency_symbol' => 'T', 'exchange_rate' => 1, 'is_base_currency' => false, 'is_active' => true]
     );
-    $accountingPeriod = \App\Models\AccountingPeriod::factory()->create();
+    $accountingPeriod = AccountingPeriod::factory()->create();
     JournalEntry::factory()->count(1)->create([
         'status' => 'draft',
         'entry_date' => now(),
@@ -160,11 +163,11 @@ it('shows accounting data for users with financial permissions', function () {
     $user = User::factory()->create();
     $user->givePermissionTo(['report-financial-general-ledger', 'journal-entry-list']);
 
-    $accountingPeriod = \App\Models\AccountingPeriod::factory()->create();
+    $accountingPeriod = AccountingPeriod::factory()->create();
     JournalEntry::factory()->count(2)->create([
         'status' => 'draft',
         'entry_date' => now(),
-        'currency_id' => \App\Models\Currency::factory()->create()->id,
+        'currency_id' => Currency::factory()->create()->id,
         'accounting_period_id' => $accountingPeriod->id,
     ]);
 

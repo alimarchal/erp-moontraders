@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Request;
@@ -82,7 +83,7 @@ trait AuditsAccountingChanges
     /**
      * Get audit history for a specific record
      *
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     protected function getAuditHistory(string $tableName, int $recordId, int $limit = 50)
     {
@@ -97,7 +98,7 @@ trait AuditsAccountingChanges
     /**
      * Get recent changes by a specific user
      *
-     * @return \Illuminate\Support\Collection
+     * @return Collection
      */
     protected function getUserAuditHistory(?int $userId = null, int $limit = 100)
     {

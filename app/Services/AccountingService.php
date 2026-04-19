@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AccountingPeriod;
+use App\Models\Currency;
 use App\Models\JournalEntry;
 use App\Models\JournalEntryDetail;
 use Illuminate\Support\Collection;
@@ -498,6 +499,6 @@ class AccountingService
      */
     protected function getBaseCurrencyId(): int
     {
-        return \App\Models\Currency::where('is_base_currency', true)->value('id') ?? 1;
+        return Currency::where('is_base_currency', true)->value('id') ?? 1;
     }
 }

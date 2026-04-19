@@ -2,10 +2,15 @@
 
 namespace Database\Factories;
 
+use App\Models\Employee;
+use App\Models\GoodsIssue;
+use App\Models\SalesSettlement;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SalesSettlement>
+ * @extends Factory<SalesSettlement>
  */
 class SalesSettlementFactory extends Factory
 {
@@ -19,15 +24,15 @@ class SalesSettlementFactory extends Factory
         return [
             'settlement_number' => 'SETTLE-TEST-'.fake()->unique()->numberBetween(1000, 9999),
             'settlement_date' => now(),
-            'goods_issue_id' => \App\Models\GoodsIssue::factory(),
+            'goods_issue_id' => GoodsIssue::factory(),
             'status' => 'draft',
             'cash_sales_amount' => 0,
             'credit_sales_amount' => 0,
             'cheque_sales_amount' => 0,
             'total_sales_amount' => 0,
-            'employee_id' => \App\Models\Employee::factory(),
-            'vehicle_id' => \App\Models\Vehicle::factory(),
-            'warehouse_id' => \App\Models\Warehouse::factory(),
+            'employee_id' => Employee::factory(),
+            'vehicle_id' => Vehicle::factory(),
+            'warehouse_id' => Warehouse::factory(),
         ];
     }
 }

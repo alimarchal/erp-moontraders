@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\View\View;
 
 class ReportsController extends Controller implements HasMiddleware
 {
@@ -17,7 +18,7 @@ class ReportsController extends Controller implements HasMiddleware
     /**
      * Display the reports index page.
      *
-     * @return \Illuminate\View\View
+     * @return View
      */
     public function index()
     {

@@ -1,6 +1,10 @@
 <?php
 
+use App\Models\AccountingPeriod;
+use App\Models\AccountType;
 use App\Models\ChartOfAccount;
+use App\Models\CostCenter;
+use App\Models\Currency;
 use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntry;
 use App\Models\Product;
@@ -17,7 +21,7 @@ beforeEach(function () {
     $this->actingAs(User::factory()->create());
 
     // Create default currency
-    $currency = \App\Models\Currency::create([
+    $currency = Currency::create([
         'currency_code' => 'PKR',
         'currency_name' => 'Pakistani Rupee',
         'currency_symbol' => 'Rs',
@@ -25,7 +29,7 @@ beforeEach(function () {
     ]);
 
     // Create accounting period
-    \App\Models\AccountingPeriod::create([
+    AccountingPeriod::create([
         'name' => now()->format('F Y'),
         'start_date' => now()->startOfMonth(),
         'end_date' => now()->endOfMonth(),
@@ -33,32 +37,32 @@ beforeEach(function () {
     ]);
 
     // Create cost centers
-    $this->warehouseCostCenter = \App\Models\CostCenter::create([
+    $this->warehouseCostCenter = CostCenter::create([
         'code' => 'CC006',
         'name' => 'Warehouse & Inventory',
         'is_active' => true,
     ]);
 
-    $this->procurementCostCenter = \App\Models\CostCenter::create([
+    $this->procurementCostCenter = CostCenter::create([
         'code' => 'CC010',
         'name' => 'Procurement & Purchasing',
         'is_active' => true,
     ]);
 
     // Create account types required for COA
-    $assetType = \App\Models\AccountType::create([
+    $assetType = AccountType::create([
         'type_name' => 'Assets',
         'report_group' => 'BalanceSheet',
         'category' => 'Asset',
     ]);
 
-    $liabilityType = \App\Models\AccountType::create([
+    $liabilityType = AccountType::create([
         'type_name' => 'Liabilities',
         'report_group' => 'BalanceSheet',
         'category' => 'Liability',
     ]);
 
-    $incomeType = \App\Models\AccountType::create([
+    $incomeType = AccountType::create([
         'type_name' => 'Income',
         'report_group' => 'IncomeStatement',
         'category' => 'Revenue',
@@ -119,7 +123,7 @@ beforeEach(function () {
         'is_active' => true,
     ]);
 
-    $expenseType = \App\Models\AccountType::create([
+    $expenseType = AccountType::create([
         'type_name' => 'Expenses',
         'report_group' => 'IncomeStatement',
         'category' => 'Expense',

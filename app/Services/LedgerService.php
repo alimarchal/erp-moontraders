@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\CustomerEmployeeAccount;
+use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\SalesmanLedger;
 use App\Models\SalesSettlement;
@@ -256,7 +259,7 @@ class LedgerService
             return $cache[$accountCode];
         }
 
-        $id = \App\Models\ChartOfAccount::where('account_code', $accountCode)->value('id');
+        $id = ChartOfAccount::where('account_code', $accountCode)->value('id');
 
         if (! $id) {
             throw new \Exception("Chart of Account with code {$accountCode} not found");
@@ -277,7 +280,7 @@ class LedgerService
      */
     public function getCustomerBalanceByEmployee(int $customerId, int $employeeId): float
     {
-        return \App\Models\CustomerEmployeeAccount::getBalance($customerId, $employeeId);
+        return CustomerEmployeeAccount::getBalance($customerId, $employeeId);
     }
 
     /**
@@ -386,13 +389,13 @@ class LedgerService
             DB::beginTransaction();
 
             // Find or create account
-            $account = \App\Models\CustomerEmployeeAccount::firstOrCreate(
+            $account = CustomerEmployeeAccount::firstOrCreate(
                 [
                     'customer_id' => $data['customer_id'],
                     'employee_id' => $data['employee_id'],
                 ],
                 [
-                    'account_number' => \App\Models\CustomerEmployeeAccount::generateAccountNumber(),
+                    'account_number' => CustomerEmployeeAccount::generateAccountNumber(),
                     'opened_date' => $data['transaction_date'],
                     'status' => 'active',
                     'created_by' => auth()->id(),
@@ -400,7 +403,7 @@ class LedgerService
             );
 
             // Create transaction
-            $transaction = \App\Models\CustomerEmployeeAccountTransaction::create([
+            $transaction = CustomerEmployeeAccountTransaction::create([
                 'customer_employee_account_id' => $account->id,
                 'transaction_date' => $data['transaction_date'],
                 'transaction_type' => $data['transaction_type'],
@@ -445,7 +448,7 @@ class LedgerService
      */
     public function getCustomerEmployeeBalance(int $customerId, int $employeeId): float
     {
-        return \App\Models\CustomerEmployeeAccount::getBalance($customerId, $employeeId);
+        return CustomerEmployeeAccount::getBalance($customerId, $employeeId);
     }
 
     /**
@@ -453,7 +456,7 @@ class LedgerService
      */
     public function getCustomersWithBalancesByEmployee(int $employeeId): array
     {
-        $results = \Illuminate\Support\Facades\DB::table('customer_employee_account_transactions as ceat')
+        $results = DB::table('customer_employee_account_transactions as ceat')
             ->select('cea.customer_id')
             ->selectRaw('COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0) as outstanding_balance')
             ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')

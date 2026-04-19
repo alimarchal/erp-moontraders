@@ -7,7 +7,7 @@ use App\Models\StockBatch;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\StockBatch>
+ * @extends Factory<StockBatch>
  */
 class StockBatchFactory extends Factory
 {

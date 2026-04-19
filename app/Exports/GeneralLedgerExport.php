@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\GeneralLedgerEntry;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -10,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class GeneralLedgerExport implements FromQuery, WithHeadings, WithMapping
 {
     /**
-     * @param  Builder<\App\Models\GeneralLedgerEntry>  $query
+     * @param  Builder<GeneralLedgerEntry>  $query
      */
     public function __construct(private Builder $query) {}
 
@@ -43,7 +44,7 @@ class GeneralLedgerExport implements FromQuery, WithHeadings, WithMapping
     }
 
     /**
-     * @param  \App\Models\GeneralLedgerEntry  $entry
+     * @param  GeneralLedgerEntry  $entry
      * @return array<int, mixed>
      */
     public function map($entry): array

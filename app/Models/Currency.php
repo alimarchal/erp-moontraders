@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\CurrencyFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Currency extends Model
 {
-    /** @use HasFactory<\Database\Factories\CurrencyFactory> */
+    /** @use HasFactory<CurrencyFactory> */
     use HasFactory;
 
     protected $fillable = [

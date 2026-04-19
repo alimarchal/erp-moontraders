@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\TaxTransaction;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\TaxTransaction>
+ * @extends Factory<TaxTransaction>
  */
 class TaxTransactionFactory extends Factory
 {

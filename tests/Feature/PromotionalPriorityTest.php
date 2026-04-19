@@ -1,5 +1,9 @@
 <?php
 
+use App\Models\AccountingPeriod;
+use App\Models\AccountType;
+use App\Models\ChartOfAccount;
+use App\Models\Currency;
 use App\Models\CurrentStockByBatch;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
@@ -14,21 +18,23 @@ use App\Models\StockBatch;
 use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\Uom;
+use App\Models\User;
 use App\Models\VanStockBalance;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
 test('promotional items (priority 1) are issued before regular items (priority 99)', function () {
     // Setup: Create master data
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     $this->actingAs($user);
 
-    \App\Models\AccountingPeriod::factory()->create([
+    AccountingPeriod::factory()->create([
         'start_date' => now()->startOfMonth(),
         'end_date' => now()->endOfMonth(),
         'status' => 'open',
@@ -196,13 +202,13 @@ test('promotional items (priority 1) are issued before regular items (priority 9
 
 test('sales settlement calculates COGS from promotional batches first', function () {
     // Setup accounting prerequisites for journal entries
-    $currency = \App\Models\Currency::factory()->base()->create([
+    $currency = Currency::factory()->base()->create([
         'currency_code' => 'PKR',
         'currency_name' => 'Pakistani Rupee',
         'currency_symbol' => 'Rs',
     ]);
 
-    \App\Models\AccountingPeriod::create([
+    AccountingPeriod::create([
         'name' => now()->format('F Y'),
         'start_date' => now()->startOfMonth(),
         'end_date' => now()->endOfMonth(),
@@ -210,12 +216,12 @@ test('sales settlement calculates COGS from promotional batches first', function
     ]);
 
     // Create required cost centers
-    \Illuminate\Support\Facades\DB::table('cost_centers')->insert([
+    DB::table('cost_centers')->insert([
         ['id' => 4, 'code' => 'CC004', 'name' => 'Sales', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
         ['id' => 6, 'code' => 'CC006', 'name' => 'Warehouse', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
     ]);
 
-    $accountType = \App\Models\AccountType::create([
+    $accountType = AccountType::create([
         'type_name' => 'Asset',
         'report_group' => 'BalanceSheet',
         'description' => 'Test',
@@ -242,7 +248,7 @@ test('sales settlement calculates COGS from promotional batches first', function
     ];
 
     foreach ($accounts as $acc) {
-        \App\Models\ChartOfAccount::create([
+        ChartOfAccount::create([
             'account_code' => $acc['code'],
             'account_name' => $acc['name'],
             'account_type_id' => $accountType->id,
@@ -254,7 +260,7 @@ test('sales settlement calculates COGS from promotional batches first', function
     }
 
     // Setup: Create master data
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     $this->actingAs($user);
 
     $product = Product::factory()->create([
@@ -404,10 +410,10 @@ test('sales settlement calculates COGS from promotional batches first', function
 
 test('multiple promotional batches are sorted by priority order correctly', function () {
     // Setup
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
     $this->actingAs($user);
 
-    \App\Models\AccountingPeriod::factory()->create([
+    AccountingPeriod::factory()->create([
         'start_date' => now()->startOfMonth(),
         'end_date' => now()->endOfMonth(),
         'status' => 'open',

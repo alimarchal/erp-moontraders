@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\CostCenterFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class CostCenter extends Model
 {
-    /** @use HasFactory<\Database\Factories\CostCenterFactory> */
+    /** @use HasFactory<CostCenterFactory> */
     use HasFactory;
 
     public const TYPE_COST_CENTER = 'cost_center';

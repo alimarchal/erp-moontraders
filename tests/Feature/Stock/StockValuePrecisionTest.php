@@ -17,6 +17,8 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\InventoryService;
 use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Permission\Models\Permission;
 
 /*
@@ -85,7 +87,7 @@ beforeEach(function () {
 
 function makeOpeningStockFile(array $rows): UploadedFile
 {
-    $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet;
+    $spreadsheet = new Spreadsheet;
     $sheet = $spreadsheet->getActiveSheet();
     $headers = ['SKU', 'Invoice Price', 'Retail Price', 'Total Inventory in Pieces'];
 
@@ -100,7 +102,7 @@ function makeOpeningStockFile(array $rows): UploadedFile
     }
 
     $tmp = tempnam(sys_get_temp_dir(), 'prec_stock_').'.xlsx';
-    (new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet))->save($tmp);
+    (new Xlsx($spreadsheet))->save($tmp);
 
     return new UploadedFile($tmp, 'stock.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
 }

@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\CustomerEmployeeAccountTransaction;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -10,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class OpeningCustomerBalanceExport implements FromQuery, WithHeadings, WithMapping
 {
     /**
-     * @param  Builder<\App\Models\CustomerEmployeeAccountTransaction>  $query
+     * @param  Builder<CustomerEmployeeAccountTransaction>  $query
      */
     public function __construct(private Builder $query) {}
 
@@ -42,7 +43,7 @@ class OpeningCustomerBalanceExport implements FromQuery, WithHeadings, WithMappi
     }
 
     /**
-     * @param  \App\Models\CustomerEmployeeAccountTransaction  $transaction
+     * @param  CustomerEmployeeAccountTransaction  $transaction
      * @return array<int, mixed>
      */
     public function map($transaction): array

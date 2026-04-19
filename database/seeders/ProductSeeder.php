@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\Product;
+use App\Models\Supplier;
+use App\Models\Uom;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
@@ -43,17 +45,17 @@ class ProductSeeder extends Seeder
 
                 // Validate foreign keys exist before using them
                 $supplierId = $productData['supplier_id'] ?? null;
-                if ($supplierId && ! \App\Models\Supplier::find($supplierId)) {
+                if ($supplierId && ! Supplier::find($supplierId)) {
                     $supplierId = null;
                 }
 
                 $uomId = $productData['uom_id'] ?? 1;
-                if ($uomId && ! \App\Models\Uom::find($uomId)) {
+                if ($uomId && ! Uom::find($uomId)) {
                     $uomId = null;
                 }
 
                 $salesUomId = $productData['sales_uom_id'] ?? null;
-                if ($salesUomId && ! \App\Models\Uom::find($salesUomId)) {
+                if ($salesUomId && ! Uom::find($salesUomId)) {
                     $salesUomId = null;
                 }
 

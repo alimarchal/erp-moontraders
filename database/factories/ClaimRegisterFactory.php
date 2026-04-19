@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\ClaimRegister;
 use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ClaimRegister>
+ * @extends Factory<ClaimRegister>
  */
 class ClaimRegisterFactory extends Factory
 {

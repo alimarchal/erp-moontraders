@@ -7,10 +7,11 @@ use App\Models\Currency;
 use App\Models\JournalEntry;
 use App\Models\User;
 use App\Services\AccountingService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
 
-uses(\Illuminate\Foundation\Testing\RefreshDatabase::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function () {
     $permissions = [

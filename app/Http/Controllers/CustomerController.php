@@ -12,6 +12,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
@@ -303,7 +304,7 @@ class CustomerController extends Controller implements HasMiddleware
     /**
      * Fetch chart of account options for forms.
      *
-     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     * @return Collection<int, array<string, mixed>>
      */
     protected function accountOptions()
     {
@@ -314,7 +315,7 @@ class CustomerController extends Controller implements HasMiddleware
     /**
      * Fetch available sales reps (users) in a deterministic order.
      *
-     * @return \Illuminate\Support\Collection<int, array<string, mixed>>
+     * @return Collection<int, array<string, mixed>>
      */
     protected function salesRepOptions()
     {

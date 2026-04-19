@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\Product;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -10,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class ProductExport implements FromQuery, WithHeadings, WithMapping
 {
     /**
-     * @param  Builder<\App\Models\Product>  $query
+     * @param  Builder<Product>  $query
      */
     public function __construct(private Builder $query) {}
 
@@ -46,7 +47,7 @@ class ProductExport implements FromQuery, WithHeadings, WithMapping
     }
 
     /**
-     * @param  \App\Models\Product  $product
+     * @param  Product  $product
      * @return array<int, mixed>
      */
     public function map($product): array

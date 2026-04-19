@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\GoodsIssue;
 use App\Models\SalesSettlement;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
@@ -400,7 +401,7 @@ class DailySalesReportController extends Controller implements HasMiddleware
         }
 
         if ($goodsIssueNumber) {
-            $giVehicleIds = \App\Models\GoodsIssue::where('issue_number', 'like', "%{$goodsIssueNumber}%")
+            $giVehicleIds = GoodsIssue::where('issue_number', 'like', "%{$goodsIssueNumber}%")
                 ->pluck('vehicle_id')
                 ->toArray();
 

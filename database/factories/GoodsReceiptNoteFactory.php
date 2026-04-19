@@ -2,10 +2,13 @@
 
 namespace Database\Factories;
 
+use App\Models\GoodsReceiptNote;
+use App\Models\User;
+use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\GoodsReceiptNote>
+ * @extends Factory<GoodsReceiptNote>
  */
 class GoodsReceiptNoteFactory extends Factory
 {
@@ -26,8 +29,8 @@ class GoodsReceiptNoteFactory extends Factory
             'freight_charges' => 0,
             'other_charges' => 0,
             'grand_total' => 0,
-            'received_by' => \App\Models\User::factory(),
-            'warehouse_id' => \App\Models\Warehouse::factory(),
+            'received_by' => User::factory(),
+            'warehouse_id' => Warehouse::factory(),
         ];
     }
 }

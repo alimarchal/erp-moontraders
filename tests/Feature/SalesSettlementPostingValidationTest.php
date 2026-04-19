@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementCashDenomination;
 use App\Models\SalesSettlementCreditSale;
+use App\Models\SalesSettlementExpense;
 use App\Models\SalesSettlementItem;
 use App\Models\Uom;
 use App\Models\User;
@@ -505,7 +506,7 @@ it('post blocks when a COGS account (511x) already exists in expenses (defence-i
 
     // Bypass Layer 1 by directly inserting a COGS expense into the DB
     $settlement = makeDraftSettlement($setup);
-    \App\Models\SalesSettlementExpense::create([
+    SalesSettlementExpense::create([
         'sales_settlement_id' => $settlement->id,
         'expense_account_id' => $cogsAccount->id,
         'amount' => 31.00,

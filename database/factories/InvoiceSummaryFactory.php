@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\InvoiceSummary;
 use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\InvoiceSummary>
+ * @extends Factory<InvoiceSummary>
  */
 class InvoiceSummaryFactory extends Factory
 {

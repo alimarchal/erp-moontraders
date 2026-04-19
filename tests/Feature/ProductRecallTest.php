@@ -3,6 +3,7 @@
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\CostCenter;
+use App\Models\Currency;
 use App\Models\CurrentStockByBatch;
 use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
@@ -11,7 +12,9 @@ use App\Models\ProductRecallItem;
 use App\Models\StockAdjustment;
 use App\Models\StockBatch;
 use App\Models\Supplier;
+use App\Models\Uom;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\ProductRecallService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -30,11 +33,11 @@ beforeEach(function () {
 
     $this->supplier = Supplier::factory()->create();
     $this->warehouse = Warehouse::factory()->create();
-    $this->uom = \App\Models\Uom::factory()->create();
+    $this->uom = Uom::factory()->create();
     $this->product = Product::factory()->create(['uom_id' => $this->uom->id]);
 
     // Create required GL accounts for testing
-    $currency = \App\Models\Currency::factory()->create();
+    $currency = Currency::factory()->create();
     $accountType = AccountType::create(['type_name' => 'Expense', 'report_group' => 'IncomeStatement']);
     $assetType = AccountType::create(['type_name' => 'Asset', 'report_group' => 'BalanceSheet']);
 
@@ -250,7 +253,7 @@ test('product recall prevents recall if batch issued to vans', function () {
         'total_value' => 5000.00,
     ]);
 
-    $vehicle = \App\Models\Vehicle::factory()->create();
+    $vehicle = Vehicle::factory()->create();
 
     InventoryLedgerEntry::create([
         'product_id' => $this->product->id,

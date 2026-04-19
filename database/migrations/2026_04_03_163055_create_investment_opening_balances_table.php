@@ -26,15 +26,15 @@ return new class extends Migration
 
         // Nestle Pakistan seed values — others default to 0
         $nestleData = [
-            'BANK_OPENING_AMOUNT'               => 0,
+            'BANK_OPENING_AMOUNT' => 0,
             'TOTAL_CASH_RECEIVED_CURRENT_MONTH' => 99209152.00,
             'TOTAL_ONLINE_AMOUNT_CURRENT_MONTH' => 99209152.00,
-            'CLOSING_BALANCE_BEFORE_EXPENSES'   => 22209152.00,
-            'TOTAL_EXPENSE_CURRENT_MONTH'       => 2259052.00,
-            'CLOSING_BALANCE_AFTER_EXPENSE'     => 19950100.00,
-            'LAST_MONTH_MAIN_INVESTMENT'        => 60393049.00,
-            'CURRENT_MONTH_MAIN_INVESTMENT'     => 41636763.90,
-            'NET_INVESTMENT'                    => 61586863.90,
+            'CLOSING_BALANCE_BEFORE_EXPENSES' => 22209152.00,
+            'TOTAL_EXPENSE_CURRENT_MONTH' => 2259052.00,
+            'CLOSING_BALANCE_AFTER_EXPENSE' => 19950100.00,
+            'LAST_MONTH_MAIN_INVESTMENT' => 60393049.00,
+            'CURRENT_MONTH_MAIN_INVESTMENT' => 41636763.90,
+            'NET_INVESTMENT' => 61586863.90,
             'INCREASE_INVESTMENT_CURRENT_MONTH' => 1193814.90,
         ];
 
@@ -48,13 +48,13 @@ return new class extends Migration
             foreach ($descriptions as $description) {
                 $rows[] = [
                     'supplier_id' => $supplierId,
-                    'date'        => '2026-03-31',
+                    'date' => '2026-03-31',
                     'description' => $description,
-                    'amount'      => ($supplierId === $nestleId) ? $nestleData[$description] : 0,
-                    'created_by'  => null,
-                    'updated_by'  => null,
-                    'created_at'  => $now,
-                    'updated_at'  => $now,
+                    'amount' => ($supplierId === $nestleId) ? $nestleData[$description] : 0,
+                    'created_by' => null,
+                    'updated_by' => null,
+                    'created_at' => $now,
+                    'updated_at' => $now,
                 ];
             }
         }

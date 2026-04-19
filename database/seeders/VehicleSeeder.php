@@ -2,7 +2,9 @@
 
 namespace Database\Seeders;
 
+use App\Models\Company;
 use App\Models\Employee;
+use App\Models\Supplier;
 use App\Models\Vehicle;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -71,12 +73,12 @@ class VehicleSeeder extends Seeder
 
             // Validate foreign keys exist before using them
             $companyId = $this->normalizeNullableInt($row['company_id'] ?? null);
-            if ($companyId && ! \App\Models\Company::find($companyId)) {
+            if ($companyId && ! Company::find($companyId)) {
                 $companyId = null;
             }
 
             $supplierId = $this->normalizeNullableInt($row['supplier_id'] ?? null);
-            if ($supplierId && ! \App\Models\Supplier::find($supplierId)) {
+            if ($supplierId && ! Supplier::find($supplierId)) {
                 $supplierId = null;
             }
 

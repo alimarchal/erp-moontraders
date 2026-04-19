@@ -2,7 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\Company;
+use App\Models\CostCenter;
 use App\Models\Employee;
+use App\Models\Supplier;
+use App\Models\Warehouse;
 use Illuminate\Database\Seeder;
 
 class EmployeeSeeder extends Seeder
@@ -153,21 +157,21 @@ class EmployeeSeeder extends Seeder
 
             // Validate foreign keys exist before using them
             $companyId = $row['company_id'] ?? null;
-            if ($companyId && ! \App\Models\Company::find($companyId)) {
+            if ($companyId && ! Company::find($companyId)) {
                 $companyId = null;
             }
 
             $supplierId = $row['supplier_id'] ?? null;
-            if ($supplierId && ! \App\Models\Supplier::find($supplierId)) {
+            if ($supplierId && ! Supplier::find($supplierId)) {
                 $supplierId = null;
             }
 
             $warehouseId = $row['warehouse_id'] ?? null;
-            if ($warehouseId && ! \App\Models\Warehouse::find($warehouseId)) {
+            if ($warehouseId && ! Warehouse::find($warehouseId)) {
                 $warehouseId = null;
             }
 
-            if ($costCenterId && ! \App\Models\CostCenter::find($costCenterId)) {
+            if ($costCenterId && ! CostCenter::find($costCenterId)) {
                 $costCenterId = null;
             }
 

@@ -1,5 +1,9 @@
 <?php
 
+use App\Models\AccountingPeriod;
+use App\Models\AccountType;
+use App\Models\ChartOfAccount;
+use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
@@ -524,24 +528,24 @@ it('hides edit and delete buttons for posted transactions on index', function ()
 });
 
 it('posts an opening balance to GL successfully', function () {
-    $currency = \App\Models\Currency::factory()->base()->create();
-    \App\Models\AccountingPeriod::create([
+    $currency = Currency::factory()->base()->create();
+    AccountingPeriod::create([
         'name' => 'Test Period',
         'start_date' => now()->startOfYear()->toDateString(),
         'end_date' => now()->endOfYear()->toDateString(),
-        'status' => \App\Models\AccountingPeriod::STATUS_OPEN,
+        'status' => AccountingPeriod::STATUS_OPEN,
     ]);
-    $assetType = \App\Models\AccountType::create([
+    $assetType = AccountType::create([
         'type_name' => 'Asset',
         'report_group' => 'BalanceSheet',
         'description' => 'Asset accounts',
     ]);
-    $equityType = \App\Models\AccountType::create([
+    $equityType = AccountType::create([
         'type_name' => 'Equity',
         'report_group' => 'BalanceSheet',
         'description' => 'Equity accounts',
     ]);
-    \App\Models\ChartOfAccount::create([
+    ChartOfAccount::create([
         'account_code' => '1100',
         'account_name' => 'Debtors',
         'account_type_id' => $assetType->id,
@@ -550,7 +554,7 @@ it('posts an opening balance to GL successfully', function () {
         'is_group' => false,
         'is_active' => true,
     ]);
-    \App\Models\ChartOfAccount::create([
+    ChartOfAccount::create([
         'account_code' => '3100',
         'account_name' => 'Opening Balance Equity',
         'account_type_id' => $equityType->id,

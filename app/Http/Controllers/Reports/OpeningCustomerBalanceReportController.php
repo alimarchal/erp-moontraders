@@ -13,12 +13,15 @@ use App\Models\Employee;
 use App\Models\Supplier;
 use App\Services\AccountingService;
 use App\Services\LedgerService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class OpeningCustomerBalanceReportController extends Controller implements HasMiddleware
 {
@@ -52,7 +55,7 @@ class OpeningCustomerBalanceReportController extends Controller implements HasMi
         $customers = Customer::where('is_active', true)->orderBy('customer_name')->get(['id', 'customer_code', 'customer_name', 'address', 'city', 'phone']);
 
         if (! $hasFilters) {
-            $transactions = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage === 'all' ? 1 : (int) $perPage, 1, ['path' => $request->url(), 'query' => $request->query()]);
+            $transactions = new LengthAwarePaginator([], 0, $perPage === 'all' ? 1 : (int) $perPage, 1, ['path' => $request->url(), 'query' => $request->query()]);
 
             return view('reports.opening-customer-balance.index', compact(
                 'transactions',
@@ -98,7 +101,7 @@ class OpeningCustomerBalanceReportController extends Controller implements HasMi
 
         if ($perPage === 'all') {
             $transactions = $query->get();
-            $transactions = new \Illuminate\Pagination\LengthAwarePaginator(
+            $transactions = new LengthAwarePaginator(
                 $transactions,
                 $transactions->count(),
                 $transactions->count() ?: 1,
@@ -242,7 +245,7 @@ class OpeningCustomerBalanceReportController extends Controller implements HasMi
         }
     }
 
-    public function post(CustomerEmployeeAccountTransaction $openingCustomerBalance): \Illuminate\Http\RedirectResponse
+    public function post(CustomerEmployeeAccountTransaction $openingCustomerBalance): RedirectResponse
     {
         if ($openingCustomerBalance->isPosted()) {
             return back()->with('error', 'This opening balance has already been posted to GL.');
@@ -335,7 +338,7 @@ class OpeningCustomerBalanceReportController extends Controller implements HasMi
         }
     }
 
-    public function exportExcel(Request $request): \Symfony\Component\HttpFoundation\BinaryFileResponse
+    public function exportExcel(Request $request): BinaryFileResponse
     {
         $query = CustomerEmployeeAccountTransaction::with(['account.customer', 'account.employee.supplier'])
             ->where('transaction_type', 'opening_balance')

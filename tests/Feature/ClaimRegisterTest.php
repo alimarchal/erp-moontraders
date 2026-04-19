@@ -7,6 +7,7 @@ use App\Models\Currency;
 use App\Models\JournalEntry;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Services\AccountingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Permission;
 
@@ -274,7 +275,7 @@ test('claim can be posted with valid password', function () {
     ]);
 
     // Mock AccountingService so we don't need full GL infrastructure in tests
-    $this->mock(\App\Services\AccountingService::class, function ($mock) use ($mockJournalEntry) {
+    $this->mock(AccountingService::class, function ($mock) use ($mockJournalEntry) {
         $mock->shouldReceive('createJournalEntry')
             ->once()
             ->andReturn(['success' => true, 'data' => $mockJournalEntry]);

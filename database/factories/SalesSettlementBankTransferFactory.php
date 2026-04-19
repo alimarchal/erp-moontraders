@@ -4,10 +4,11 @@ namespace Database\Factories;
 
 use App\Models\BankAccount;
 use App\Models\SalesSettlement;
+use App\Models\SalesSettlementBankTransfer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\SalesSettlementBankTransfer>
+ * @extends Factory<SalesSettlementBankTransfer>
  */
 class SalesSettlementBankTransferFactory extends Factory
 {

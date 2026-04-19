@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
+use App\Models\Category;
+use App\Models\Employee;
 use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
 use App\Models\SalesSettlement;
@@ -34,12 +36,12 @@ class SalesmanStockRegisterController extends Controller implements HasMiddlewar
         // Get Vehicles for dropdown
         $vehicles = Vehicle::orderBy('vehicle_number')->get();
         // Get Salesmen for dropdown - fetch all active employees
-        $salesmen = \App\Models\Employee::where('is_active', true)->orderBy('name')->get();
+        $salesmen = Employee::where('is_active', true)->orderBy('name')->get();
 
         $suppliers = Supplier::orderBy('supplier_name')->get();
 
         // Fetch categories for dropdown
-        $categories = \App\Models\Category::where('is_active', true)->orderBy('name')->get();
+        $categories = Category::where('is_active', true)->orderBy('name')->get();
 
         $allProducts = Product::orderBy('product_name')->select('id', 'product_name', 'product_code')->get();
 

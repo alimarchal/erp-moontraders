@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Employee;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
 
@@ -140,11 +141,11 @@ it('accepts empty employee filter', function () {
 });
 
 it('shows all active employees in the filter dropdown', function () {
-    $activeEmployee = \App\Models\Employee::factory()->create([
+    $activeEmployee = Employee::factory()->create([
         'name' => 'Active Salesman',
         'is_active' => true,
     ]);
-    $inactiveEmployee = \App\Models\Employee::factory()->create([
+    $inactiveEmployee = Employee::factory()->create([
         'name' => 'Inactive Salesman',
         'is_active' => false,
     ]);

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use Database\Factories\AccountingPeriodFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AccountingPeriod extends Model
 {
-    /** @use HasFactory<\Database\Factories\AccountingPeriodFactory> */
+    /** @use HasFactory<AccountingPeriodFactory> */
     use HasFactory;
 
     public const STATUS_OPEN = 'open';

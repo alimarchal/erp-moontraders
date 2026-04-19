@@ -79,8 +79,8 @@ return new class extends Migration
                     (credit > 0 AND debit = 0)
                 )
             ');
-        } catch (\Exception $e) {
-            \Log::warning('Could not add chk_debit_xor_credit: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Could not add chk_debit_xor_credit: '.$e->getMessage());
         }
 
         // Positive exchange rate
@@ -90,8 +90,8 @@ return new class extends Migration
                 ADD CONSTRAINT chk_fx_rate_positive
                 CHECK (fx_rate_to_base > 0)
             ');
-        } catch (\Exception $e) {
-            \Log::warning('Could not add chk_fx_rate_positive: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Could not add chk_fx_rate_positive: '.$e->getMessage());
         }
 
         // Report group constraint
@@ -101,8 +101,8 @@ return new class extends Migration
                 ADD CONSTRAINT chk_report_group
                 CHECK (report_group IN ('BalanceSheet', 'IncomeStatement'))
             ");
-        } catch (\Exception $e) {
-            \Log::warning('Could not add chk_report_group: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Could not add chk_report_group: '.$e->getMessage());
         }
     }
 
@@ -116,8 +116,8 @@ return new class extends Migration
             DB::statement('ALTER TABLE journal_entry_details DROP CONSTRAINT IF EXISTS chk_debit_xor_credit');
             DB::statement('ALTER TABLE journal_entries DROP CONSTRAINT IF EXISTS chk_fx_rate_positive');
             DB::statement('ALTER TABLE account_types DROP CONSTRAINT IF EXISTS chk_report_group');
-        } catch (\Exception $e) {
-            \Log::warning('Could not drop CHECK constraints: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Could not drop CHECK constraints: '.$e->getMessage());
         }
     }
 
@@ -802,7 +802,7 @@ return new class extends Migration
     {
         try {
             DB::unprepared('DROP PROCEDURE IF EXISTS sp_check_journal_balance');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Ignore
         }
 
@@ -829,8 +829,8 @@ return new class extends Migration
                     END IF;
                 END
             ");
-        } catch (\Exception $e) {
-            \Log::warning('Skipped sp_check_journal_balance: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Skipped sp_check_journal_balance: '.$e->getMessage());
 
             return;
         }
@@ -838,7 +838,7 @@ return new class extends Migration
         // Balance check on posting
         try {
             DB::unprepared('DROP TRIGGER IF EXISTS trg_journal_balance_before_post');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Ignore
         }
         DB::unprepared("
@@ -855,7 +855,7 @@ return new class extends Migration
         // Leaf account check - INSERT
         try {
             DB::unprepared('DROP TRIGGER IF EXISTS trg_leaf_account_only_insert');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Ignore
         }
         DB::unprepared("
@@ -876,7 +876,7 @@ return new class extends Migration
         // Leaf account check - UPDATE
         try {
             DB::unprepared('DROP TRIGGER IF EXISTS trg_leaf_account_only_update');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Ignore
         }
         DB::unprepared("
@@ -897,7 +897,7 @@ return new class extends Migration
         // Accounting period check - INSERT
         try {
             DB::unprepared('DROP TRIGGER IF EXISTS trg_check_accounting_period_insert');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Ignore
         }
         DB::unprepared("
@@ -925,7 +925,7 @@ return new class extends Migration
         // Single base currency - INSERT
         try {
             DB::unprepared('DROP TRIGGER IF EXISTS trg_single_base_currency');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Ignore
         }
         DB::unprepared("
@@ -946,7 +946,7 @@ return new class extends Migration
         // Single base currency - UPDATE
         try {
             DB::unprepared('DROP TRIGGER IF EXISTS trg_single_base_currency_update');
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // Ignore
         }
         DB::unprepared("
@@ -978,8 +978,8 @@ return new class extends Migration
                     END IF;
                 END
             ");
-        } catch (\Exception $e) {
-            \Log::warning('Skipped trg_block_posted_journal_updates: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Skipped trg_block_posted_journal_updates: '.$e->getMessage());
         }
 
         // Immutability: Block deletes on posted entries
@@ -996,8 +996,8 @@ return new class extends Migration
                     END IF;
                 END
             ");
-        } catch (\Exception $e) {
-            \Log::warning('Skipped trg_block_posted_journal_deletes: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Skipped trg_block_posted_journal_deletes: '.$e->getMessage());
         }
 
         // Immutability: Block detail updates on posted entries
@@ -1016,8 +1016,8 @@ return new class extends Migration
                     END IF;
                 END
             ");
-        } catch (\Exception $e) {
-            \Log::warning('Skipped trg_block_posted_detail_updates: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Skipped trg_block_posted_detail_updates: '.$e->getMessage());
         }
 
         // Immutability: Block detail deletes on posted entries
@@ -1036,8 +1036,8 @@ return new class extends Migration
                     END IF;
                 END
             ");
-        } catch (\Exception $e) {
-            \Log::warning('Skipped trg_block_posted_detail_deletes: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Skipped trg_block_posted_detail_deletes: '.$e->getMessage());
         }
 
         // Period check on UPDATE
@@ -1064,8 +1064,8 @@ return new class extends Migration
                     END IF;
                 END
             ");
-        } catch (\Exception $e) {
-            \Log::warning('Skipped trg_check_accounting_period_update: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Skipped trg_check_accounting_period_update: '.$e->getMessage());
         }
 
         // Auto-set accounting_period_id on INSERT
@@ -1092,8 +1092,8 @@ return new class extends Migration
                     END IF;
                 END
             ");
-        } catch (\Exception $e) {
-            \Log::warning('Skipped trg_auto_set_accounting_period: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Skipped trg_auto_set_accounting_period: '.$e->getMessage());
         }
 
         // Auto-set accounting_period_id on UPDATE
@@ -1120,8 +1120,8 @@ return new class extends Migration
                     END IF;
                 END
             ");
-        } catch (\Exception $e) {
-            \Log::warning('Skipped trg_auto_set_accounting_period_update: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Skipped trg_auto_set_accounting_period_update: '.$e->getMessage());
         }
     }
 
@@ -1185,8 +1185,8 @@ return new class extends Migration
                         );
                     END
                 ");
-            } catch (\Exception $e) {
-                \Log::warning("Skipped audit triggers for {$table}: ".$e->getMessage());
+            } catch (Exception $e) {
+                Log::warning("Skipped audit triggers for {$table}: ".$e->getMessage());
             }
         }
     }
@@ -1206,8 +1206,8 @@ return new class extends Migration
                     END IF;
                 END
             ");
-        } catch (\Exception $e) {
-            \Log::warning('MySQL soft delete protection not created: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('MySQL soft delete protection not created: '.$e->getMessage());
         }
     }
 
@@ -1277,8 +1277,8 @@ return new class extends Migration
                     RETURN v_balance;
                 END
             ");
-        } catch (\Exception $e) {
-            \Log::warning('MySQL snapshot helpers not created: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('MySQL snapshot helpers not created: '.$e->getMessage());
         }
     }
 
@@ -1339,7 +1339,7 @@ return new class extends Migration
                 DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_insert");
                 DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_update");
                 DB::unprepared("DROP TRIGGER IF EXISTS trg_audit_{$table}_delete");
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 // Ignore
             }
         }
@@ -1362,8 +1362,8 @@ return new class extends Migration
             DB::unprepared('DROP PROCEDURE IF EXISTS sp_check_journal_balance');
             DB::unprepared('DROP PROCEDURE IF EXISTS sp_create_period_snapshots');
             DB::unprepared('DROP FUNCTION IF EXISTS fn_account_balance_fast');
-        } catch (\Exception $e) {
-            \Log::warning('Error dropping MySQL objects: '.$e->getMessage());
+        } catch (Exception $e) {
+            Log::warning('Error dropping MySQL objects: '.$e->getMessage());
         }
     }
 };

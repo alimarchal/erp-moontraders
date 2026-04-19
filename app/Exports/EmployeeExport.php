@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\Employee;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -10,7 +11,7 @@ use Maatwebsite\Excel\Concerns\WithMapping;
 class EmployeeExport implements FromQuery, WithHeadings, WithMapping
 {
     /**
-     * @param  Builder<\App\Models\Employee>  $query
+     * @param  Builder<Employee>  $query
      */
     public function __construct(private Builder $query) {}
 
@@ -42,7 +43,7 @@ class EmployeeExport implements FromQuery, WithHeadings, WithMapping
     }
 
     /**
-     * @param  \App\Models\Employee  $employee
+     * @param  Employee  $employee
      * @return array<int, mixed>
      */
     public function map($employee): array

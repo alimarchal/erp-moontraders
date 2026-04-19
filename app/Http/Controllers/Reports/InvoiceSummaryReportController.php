@@ -7,7 +7,9 @@ use App\Http\Requests\StoreInvoiceSummaryRequest;
 use App\Http\Requests\UpdateInvoiceSummaryRequest;
 use App\Models\InvoiceSummary;
 use App\Models\Supplier;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
@@ -67,7 +69,7 @@ class InvoiceSummaryReportController extends Controller implements HasMiddleware
 
         if ($perPage === 'all') {
             $allEntries = $query->get();
-            $entries = new \Illuminate\Pagination\LengthAwarePaginator(
+            $entries = new LengthAwarePaginator(
                 $allEntries,
                 $allEntries->count(),
                 $allEntries->count() ?: 1,
@@ -99,7 +101,7 @@ class InvoiceSummaryReportController extends Controller implements HasMiddleware
             });
 
             return redirect()->back()->with('success', 'Invoice summary entry added successfully.');
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Log::error('InvoiceSummary store error: '.$e->getMessage());
 
             return redirect()->back()->withInput()->with('error', 'Failed to add invoice summary. Please try again.');
@@ -114,7 +116,7 @@ class InvoiceSummaryReportController extends Controller implements HasMiddleware
             });
 
             return redirect()->back()->with('success', 'Invoice summary entry updated successfully.');
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (QueryException $e) {
             Log::error('InvoiceSummary update error: '.$e->getMessage());
 
             return redirect()->back()->withInput()->with('error', 'Failed to update invoice summary. Please try again.');

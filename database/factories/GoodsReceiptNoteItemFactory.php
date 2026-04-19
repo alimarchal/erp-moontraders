@@ -2,10 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\GoodsReceiptNoteItem;
+use App\Models\Uom;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\GoodsReceiptNoteItem>
+ * @extends Factory<GoodsReceiptNoteItem>
  */
 class GoodsReceiptNoteItemFactory extends Factory
 {
@@ -17,8 +19,8 @@ class GoodsReceiptNoteItemFactory extends Factory
     public function definition(): array
     {
         return [
-            'purchase_uom_id' => \App\Models\Uom::factory(),
-            'stock_uom_id' => \App\Models\Uom::factory(),
+            'purchase_uom_id' => Uom::factory(),
+            'stock_uom_id' => Uom::factory(),
             'qty_in_purchase_uom' => 1,
             'uom_conversion_factor' => 1,
             'qty_in_stock_uom' => 1,

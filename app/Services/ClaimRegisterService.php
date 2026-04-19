@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ChartOfAccount;
 use App\Models\ClaimRegister;
+use App\Models\JournalEntry;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -197,7 +198,7 @@ class ClaimRegisterService
      * Claim: DR 1112 Pending Claims Debtors, CR Income
      * Recovery: DR Bank (HBL Main), CR 1112 Pending Claims Debtors
      *
-     * @return \App\Models\JournalEntry|null
+     * @return JournalEntry|null
      */
     protected function createClaimJournalEntry(ClaimRegister $claim, int $creditAccountId)
     {

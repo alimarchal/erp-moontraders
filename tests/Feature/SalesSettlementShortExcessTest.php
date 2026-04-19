@@ -1,6 +1,8 @@
 <?php
 
+use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
+use App\Models\Currency;
 use App\Models\Customer;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
@@ -88,7 +90,7 @@ it('does not double-count advance tax in short/excess calculation', function () 
         'total_amount' => 20000.00,
     ]);
 
-    $currency = \App\Models\Currency::first() ?? \App\Models\Currency::factory()->create();
+    $currency = Currency::first() ?? Currency::factory()->create();
 
     $expenseAccount = ChartOfAccount::factory()->create([
         'account_code' => '1161',
@@ -141,7 +143,7 @@ it('does not double-count advance tax in short/excess calculation', function () 
     SalesSettlementBankSlip::create([
         'sales_settlement_id' => $settlement->id,
         'employee_id' => $employee->id,
-        'bank_account_id' => \App\Models\BankAccount::factory()->create()->id,
+        'bank_account_id' => BankAccount::factory()->create()->id,
         'amount' => 30000.00,
         'reference_number' => '130913',
         'deposit_date' => now()->toDateString(),

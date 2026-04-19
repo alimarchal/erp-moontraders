@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -24,7 +25,7 @@ it('verifies no duplicate sales revenue in income statement', function () {
     $this->seed();
 
     // Query income statement for account 4110 (Sales)
-    $incomeStatement = \Illuminate\Support\Facades\DB::table('vw_income_statement')
+    $incomeStatement = DB::table('vw_income_statement')
         ->where('account_code', '4110')
         ->first();
 

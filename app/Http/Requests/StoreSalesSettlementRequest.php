@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ChartOfAccount;
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreSalesSettlementRequest extends FormRequest
@@ -43,7 +45,7 @@ class StoreSalesSettlementRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -153,7 +155,7 @@ class StoreSalesSettlementRequest extends FormRequest
                 'required_with:expenses',
                 'exists:chart_of_accounts,id',
                 function (string $attribute, mixed $value, \Closure $fail): void {
-                    $account = \App\Models\ChartOfAccount::find($value);
+                    $account = ChartOfAccount::find($value);
                     if ($account && str_starts_with((string) $account->account_code, '511')) {
                         $fail('COGS accounts (511x) cannot be used as settlement expenses — they are posted automatically via inventory.');
                     }

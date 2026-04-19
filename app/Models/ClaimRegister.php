@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Traits\UserTracking;
+use Database\Factories\ClaimRegisterFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,7 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ClaimRegister extends Model
 {
-    /** @use HasFactory<\Database\Factories\ClaimRegisterFactory> */
+    /** @use HasFactory<ClaimRegisterFactory> */
     use HasFactory, SoftDeletes, UserTracking;
 
     protected $fillable = [

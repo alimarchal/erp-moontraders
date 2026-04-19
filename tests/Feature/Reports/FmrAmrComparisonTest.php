@@ -98,13 +98,13 @@ test('fmr amr comparison shows fmr from grn items directly', function () {
 
     // Create GRN items with FMR allowance
     GoodsReceiptNoteItem::factory()->create([
-        'goods_receipt_note_id' => $grn->id,
+        'grn_id' => $grn->id,
         'product_id' => $liquidProduct->id,
         'fmr_allowance' => 1000,
     ]);
 
     GoodsReceiptNoteItem::factory()->create([
-        'goods_receipt_note_id' => $grn->id,
+        'grn_id' => $grn->id,
         'product_id' => $powderProduct->id,
         'fmr_allowance' => 500,
     ]);

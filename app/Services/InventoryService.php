@@ -740,9 +740,18 @@ class InventoryService
      */
     public function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
     {
-        // Calculate totals from stock_valuation_layers (source of truth).
-        // Use quantity_remaining * unit_cost for total value to stay accurate
-        // even when total_value/value_remaining columns have accumulated drift.
+        // ⚠️  IMPORTANT — always derive value from quantity_remaining * unit_cost.
+        // Do NOT use SUM(total_value) or SUM(value_remaining) here.
+        //
+        // Reason: stock_valuation_layers.total_value stores the original receipt
+        // value and is NEVER decremented when stock is issued, adjusted, or sold.
+        // Only quantity_remaining is kept current. Using total_value would inflate
+        // the reported stock value by the full receipt amount even after all stock
+        // from that layer has been consumed — this is what caused the Rs 6,512
+        // discrepancy after SA-2026-0001 was posted on 2026-04-21.
+        //
+        // Rule: current_stock.total_value = SUM(svl.quantity_remaining * svl.unit_cost)
+        //       for all layers where quantity_remaining > 0.
         $layerData = StockValuationLayer::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
             ->where('quantity_remaining', '>', 0)

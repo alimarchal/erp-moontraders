@@ -247,6 +247,13 @@ class ResyncStockValues extends Command
         // PHASE C — Re-sync current_stock.total_value from SVL
         // After Phase B fixes SVL, re-aggregate into current_stock so
         // the /inventory/current-stock page shows the correct totals.
+        //
+        // ⚠️  MUST use SUM(quantity_remaining * unit_cost) — NOT SUM(total_value).
+        // stock_valuation_layers.total_value is the original receipt total and is
+        // never decremented by sales, issues, or stock adjustments. Using it here
+        // would cause current_stock to show pre-adjustment values even after stock
+        // was reduced — exactly the bug that inflated Engro inventory by Rs 6,512
+        // after SA-2026-0001 on 2026-04-21 (8 × Olper 1500ml + 27 × Olper TBA).
         // ─────────────────────────────────────────────────────────────
         $this->newLine();
         $this->info('Phase C — Re-syncing current_stock from fixed valuation layers ...');
@@ -266,7 +273,7 @@ class ResyncStockValues extends Command
                 ->where('product_id', $pair->product_id)
                 ->where('warehouse_id', $pair->warehouse_id)
                 ->where('quantity_remaining', '>', 0)
-                ->selectRaw('COALESCE(SUM(quantity_remaining), 0) as total_qty, COALESCE(SUM(total_value), 0) as total_value')
+                ->selectRaw('COALESCE(SUM(quantity_remaining), 0) as total_qty, COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value')
                 ->first();
 
             $totalQty = (float) ($layerData->total_qty ?? 0);

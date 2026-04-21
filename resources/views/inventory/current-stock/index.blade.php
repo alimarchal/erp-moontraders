@@ -312,7 +312,7 @@
                                                 data-product="{{ $productLabel }}"
                                                 data-warehouse="{{ $stock->warehouse->warehouse_name }}"
                                                 data-batches="{{ json_encode($batchesJson) }}">
-                                                ₨ {{ number_format($stock->total_value, 2) }}
+                                                {{ number_format($stock->total_value, 2) }}
                                             </a>
                                         @else
                                             ₨ {{ number_format($stock->total_value, 2) }}

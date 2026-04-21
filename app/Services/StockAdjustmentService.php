@@ -199,12 +199,22 @@ class StockAdjustmentService
 
         $this->updateValuationLayer($adjustment, $item);
 
+        // ⚠️  This call MUST remain the final step in processAdjustmentItem.
+        // It re-aggregates current_stock from stock_valuation_layers using
+        // SUM(quantity_remaining * unit_cost) — the only accurate formula.
+        // Removing or reordering this call will leave current_stock stale
+        // and the /inventory/current-stock totals will be wrong.
         $inventoryService = app(InventoryService::class);
         $inventoryService->syncCurrentStockFromValuationLayers($item->product_id, $adjustment->warehouse_id);
     }
 
     protected function updateValuationLayer(StockAdjustment $adjustment, $item): void
     {
+        // ⚠️  Only quantity_remaining and value_remaining are modified here.
+        // stock_valuation_layers.total_value stores the ORIGINAL receipt value
+        // and must never be touched by adjustments, issues, or sales — it is a
+        // permanent historical record. current_stock is always recalculated from
+        // SUM(quantity_remaining * unit_cost) by syncCurrentStockFromValuationLayers.
         if ($item->adjustment_quantity < 0) {
             $qtyToReduce = abs($item->adjustment_quantity);
             $layers = StockValuationLayer::where('product_id', $item->product_id)

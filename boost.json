@@ -8,11 +8,15 @@
     "guidelines": true,
     "mcp": true,
     "nightwatch_mcp": false,
+    "packages": [
+        "spatie/laravel-backup"
+    ],
     "sail": false,
     "skills": [
         "laravel-best-practices",
         "livewire-development",
         "pest-testing",
-        "tailwindcss-development"
+        "tailwindcss-development",
+        "laravel-backup"
     ]
 }

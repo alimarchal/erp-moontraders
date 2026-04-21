@@ -11,6 +11,7 @@ use App\Services\StockAdjustmentService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Hash;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -144,7 +145,7 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             $item['adjustment_value'] = $item['adjustment_quantity'] * $item['unit_cost'];
         }
 
-        $stockAdjustment->update($validated);
+        $stockAdjustment->update(Arr::except($validated, ['items']));
         $stockAdjustment->items()->delete();
 
         foreach ($validated['items'] as $item) {

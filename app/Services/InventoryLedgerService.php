@@ -218,7 +218,8 @@ class InventoryLedgerService
         float $unitCost,
         string $date,
         ?string $notes = null,
-        ?int $batchId = null
+        ?int $batchId = null,
+        ?int $stockAdjustmentId = null
     ): InventoryLedgerEntry {
         return $this->createEntry([
             'date' => $date,
@@ -228,6 +229,7 @@ class InventoryLedgerService
             'warehouse_id' => $warehouseId,
             'vehicle_id' => $vehicleId,
             'employee_id' => null,
+            'stock_adjustment_id' => $stockAdjustmentId,
             'debit_qty' => $debitQty,
             'credit_qty' => $creditQty,
             'unit_cost' => $unitCost,

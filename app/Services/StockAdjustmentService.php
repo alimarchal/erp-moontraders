@@ -117,7 +117,8 @@ class StockAdjustmentService
             unitCost: $item->unit_cost,
             date: $adjustment->adjustment_date,
             notes: "{$adjustment->adjustment_type} - {$adjustment->reason}",
-            batchId: $item->stock_batch_id
+            batchId: $item->stock_batch_id,
+            stockAdjustmentId: $adjustment->id
         );
 
         $stockByBatch = CurrentStockByBatch::where('stock_batch_id', $item->stock_batch_id)
@@ -175,6 +176,7 @@ class StockAdjustmentService
         $previousEntry = StockLedgerEntry::where('product_id', $item->product_id)
             ->where('warehouse_id', $adjustment->warehouse_id)
             ->orderBy('id', 'desc')
+            ->lockForUpdate()
             ->first();
 
         $quantityBalance = ($previousEntry->quantity_balance ?? 0) + $item->adjustment_quantity;

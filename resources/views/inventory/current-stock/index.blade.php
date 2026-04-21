@@ -76,7 +76,9 @@
 
     <x-filter-section :action="route('inventory.current-stock.index')" class="no-print">
         {{-- All products encoded for dynamic supplier→product filtering --}}
-        <div id="all-products-data" class="hidden" data-products="{{ json_encode($products->map(fn($p) => ['id' => $p->id, 'code' => trim($p->product_code), 'name' => $p->product_name, 'supplier_id' => $p->supplier_id])->values()) }}"></div>
+        <div id="all-products-data" class="hidden"
+            data-products="{{ json_encode($products->map(fn($p) => ['id' => $p->id, 'code' => trim($p->product_code), 'name' => $p->product_name, 'supplier_id' => $p->supplier_id])->values()) }}">
+        </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
@@ -256,7 +258,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if(! $hasFilter)
+                        @if(!$hasFilter)
                             <tr>
                                 <td colspan="8" class="text-center py-8 text-gray-500">
                                     Apply filters above to view inventory.
@@ -288,16 +290,16 @@
                                     </td>
                                     @php
                                         $batchesJson = $batches->map(fn($b) => [
-                                            'batch_code'        => $b->stockBatch?->batch_code ?? '—',
-                                            'receipt_date'      => $b->stockBatch?->receipt_date ? \Carbon\Carbon::parse($b->stockBatch->receipt_date)->format('d-M-Y') : '—',
-                                            'quantity'          => rtrim(rtrim(number_format($b->quantity_on_hand, 2), '0'), '.'),
-                                            'unit_cost'         => number_format($b->unit_cost, 2),
-                                            'selling_price'     => $b->stockBatch?->selling_price ? number_format($b->stockBatch->selling_price, 2) : null,
-                                            'total_value'       => number_format($b->total_value, 2),
-                                            'is_promotional'    => $b->is_promotional,
+                                            'batch_code' => $b->stockBatch?->batch_code ?? '—',
+                                            'receipt_date' => $b->stockBatch?->receipt_date ? \Carbon\Carbon::parse($b->stockBatch->receipt_date)->format('d-M-Y') : '—',
+                                            'quantity' => rtrim(rtrim(number_format($b->quantity_on_hand, 2), '0'), '.'),
+                                            'unit_cost' => $b->quantity_on_hand > 0 ? rtrim(rtrim(number_format($b->total_value / $b->quantity_on_hand, 6), '0'), '.') : rtrim(rtrim(number_format($b->unit_cost, 6), '0'), '.'),
+                                            'selling_price' => $b->stockBatch?->selling_price ? number_format($b->stockBatch->selling_price, 2) : null,
+                                            'total_value' => number_format($b->total_value, 2),
+                                            'is_promotional' => $b->is_promotional,
                                             'promotional_price' => $b->promotional_price ? number_format($b->promotional_price, 2) : null,
-                                            'status'            => $b->status,
-                                            'priority_order'    => $b->priority_order,
+                                            'status' => $b->status,
+                                            'priority_order' => $b->priority_order,
                                         ])->values()->toArray();
                                         $productLabel = trim($stock->product->product_code) . ' - ' . $stock->product->product_name;
                                     @endphp
@@ -306,10 +308,10 @@
                                     <td class="text-center font-semibold">
                                         @if($batchCount > 0)
                                             <a href="#"
-                                               class="batch-cost-link text-blue-700 hover:text-blue-900 hover:underline font-semibold"
-                                               data-product="{{ $productLabel }}"
-                                               data-warehouse="{{ $stock->warehouse->warehouse_name }}"
-                                               data-batches="{{ json_encode($batchesJson) }}">
+                                                class="batch-cost-link text-blue-700 hover:text-blue-900 hover:underline font-semibold"
+                                                data-product="{{ $productLabel }}"
+                                                data-warehouse="{{ $stock->warehouse->warehouse_name }}"
+                                                data-batches="{{ json_encode($batchesJson) }}">
                                                 ₨ {{ number_format($stock->total_value, 2) }}
                                             </a>
                                         @else
@@ -384,7 +386,8 @@
                     <button id="closeBatchCostModal"
                         class="text-gray-400 hover:text-gray-700 transition-colors rounded-full p-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
@@ -397,11 +400,11 @@
         <script>
             (function () {
                 // ── Batch cost modal ──────────────────────────────────────────
-                const modal      = document.getElementById('batchCostModal');
-                const modalBody  = document.getElementById('batchCostModalBody');
+                const modal = document.getElementById('batchCostModal');
+                const modalBody = document.getElementById('batchCostModalBody');
                 const modalTitle = document.getElementById('batchCostModalTitle');
-                const closeBtn   = document.getElementById('closeBatchCostModal');
-                const overlay    = document.getElementById('batchCostModalOverlay');
+                const closeBtn = document.getElementById('closeBatchCostModal');
+                const overlay = document.getElementById('batchCostModalOverlay');
 
                 function parseNum(str) {
                     return parseFloat(String(str).replace(/,/g, '')) || 0;
@@ -414,9 +417,9 @@
                 function openModal(product, warehouse, batches) {
                     modalTitle.textContent = product + '  |  ' + warehouse;
 
-                    const td  = 'border:1px solid #d1d5db;padding:4px 8px;';
+                    const td = 'border:1px solid #d1d5db;padding:4px 8px;';
                     const tdC = td + 'text-align:center;';
-                    const th  = 'border:1px solid #d1d5db;padding:5px 8px;background:#f3f4f6;';
+                    const th = 'border:1px solid #d1d5db;padding:5px 8px;background:#f3f4f6;';
                     const thC = th + 'text-align:center;';
 
                     let html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
@@ -434,16 +437,16 @@
                     let totalQty = 0, totalValue = 0;
 
                     batches.forEach(function (b, i) {
-                        totalQty   += parseNum(b.quantity);
+                        totalQty += parseNum(b.quantity);
                         totalValue += parseNum(b.total_value);
 
                         const promo = b.is_promotional
                             ? ' <span style="color:#ea580c;font-size:11px;font-weight:600;">Promo</span>'
-                              + (b.promotional_price ? ' <span style="color:#ea580c;font-size:11px;">(₨' + b.promotional_price + ')</span>' : '')
+                            + (b.promotional_price ? ' <span style="color:#ea580c;font-size:11px;">(₨' + b.promotional_price + ')</span>' : '')
                             : '';
-                        const statusColor  = b.status === 'active' ? '#16a34a' : '#6b7280';
+                        const statusColor = b.status === 'active' ? '#16a34a' : '#6b7280';
                         const sellingPrice = b.selling_price ? '₨' + b.selling_price : '<span style="color:#9ca3af;">—</span>';
-                        const rowBg        = i % 2 === 0 ? '#fff' : '#f9fafb';
+                        const rowBg = i % 2 === 0 ? '#fff' : '#f9fafb';
 
                         html += '<tr style="background:' + rowBg + ';">';
                         html += '<td style="' + tdC + '">' + (i + 1) + '</td>';
@@ -494,8 +497,8 @@
                 // ── Supplier → Product dynamic filter ────────────────────────
                 $(document).ready(function () {
                     const $supplierSelect = $('#filter_supplier_id');
-                    const $productSelect  = $('#filter_product_id');
-                    const allProducts     = JSON.parse(
+                    const $productSelect = $('#filter_product_id');
+                    const allProducts = JSON.parse(
                         document.getElementById('all-products-data').dataset.products
                     );
 

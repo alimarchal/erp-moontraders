@@ -740,15 +740,15 @@ class InventoryService
      */
     public function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
     {
-        // Calculate totals from stock_valuation_layers (source of truth)
-        // Use stored total_value column (= grni.total_cost at receipt, proportionally reduced on issue)
-        // to avoid decimal multiplication drift vs the GL.
+        // Calculate totals from stock_valuation_layers (source of truth).
+        // Use quantity_remaining * unit_cost for total value to stay accurate
+        // even when total_value/value_remaining columns have accumulated drift.
         $layerData = StockValuationLayer::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
             ->where('quantity_remaining', '>', 0)
             ->selectRaw('
                 COALESCE(SUM(quantity_remaining), 0) as total_qty,
-                COALESCE(SUM(total_value), 0) as total_value
+                COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value
             ')
             ->first();
 
@@ -983,9 +983,11 @@ class InventoryService
             if ($layer->quantity_remaining <= 0) {
                 $layer->quantity_remaining = 0;
                 $layer->total_value = 0.0;
+                $layer->value_remaining = 0.0;
             } else {
                 $ratio = $qtyBefore > 0 ? $layer->quantity_remaining / $qtyBefore : 0;
                 $layer->total_value = round((float) $layer->total_value * $ratio, 4);
+                $layer->value_remaining = round($layer->quantity_remaining * (float) $layer->unit_cost, 4);
             }
             $layer->save();
         }

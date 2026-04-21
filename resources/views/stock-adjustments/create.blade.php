@@ -23,7 +23,7 @@
                     <x-validation-errors class="mb-4 mt-4" />
 
                     <form method="POST" action="{{ route('stock-adjustments.store') }}" id="stockAdjustmentForm"
-                        x-data="stockAdjustmentForm()">
+                        x-data="stockAdjustmentForm()" x-init="init()">
                         @csrf
 
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -57,6 +57,8 @@
                                     <option value="count_variance" {{ old('adjustment_type') == 'count_variance' ? 'selected' : '' }}>Count Variance</option>
                                     <option value="expiry" {{ old('adjustment_type') == 'expiry' ? 'selected' : '' }}>
                                         Expiry</option>
+                                    <option value="recall" {{ old('adjustment_type') == 'recall' ? 'selected' : '' }}>
+                                        Recall</option>
                                     <option value="other" {{ old('adjustment_type') == 'other' ? 'selected' : '' }}>Other
                                     </option>
                                 </select>
@@ -89,29 +91,18 @@
                                         <td class="px-2 py-2 text-center text-sm text-gray-500" x-text="index + 1"></td>
 
                                         <td class="px-2 py-2">
-                                            <select :name="`items[${index}][product_id]`" x-model="item.product_id"
-                                                @change="onProductChange(index)" required
-                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                            <select :id="`product_${index}`" :name="`items[${index}][product_id]`"
+                                                required
+                                                class="product-select border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">Select Product</option>
-                                                @foreach ($products as $product)
-                                                    <option value="{{ $product->id }}" data-uom-id="{{ $product->uom_id }}"
-                                                        data-uom-name="{{ $product->uom?->uom_name }}">
-                                                        {{ $product->product_name }}
-                                                    </option>
-                                                @endforeach
                                             </select>
                                         </td>
 
                                         <td class="px-2 py-2">
-                                            <select :name="`items[${index}][stock_batch_id]`"
-                                                x-model="item.stock_batch_id" @change="onBatchChange(index)" required
-                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                            <select :id="`batch_${index}`" :name="`items[${index}][stock_batch_id]`"
+                                                required
+                                                class="batch-select border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">Select Batch</option>
-                                                <template x-for="batch in item.availableBatches" :key="batch.id">
-                                                    <option :value="batch.id"
-                                                        x-text="`${batch.batch_code} (Qty: ${batch.stock_qty}, Cost: ${batch.unit_cost})`">
-                                                    </option>
-                                                </template>
                                             </select>
                                             <p x-show="item.product_id && !warehouseId"
                                                 class="text-xs text-red-500 mt-1">Select warehouse first</p>
@@ -234,6 +225,8 @@
 
     @push('scripts')
         <script>
+            const allAdjustmentProducts = {!! json_encode($products->map(fn($p) => ['id' => $p->id, 'name' => $p->product_name, 'uom_id' => $p->uom_id])) !!};
+
             function stockAdjustmentForm() {
                 return {
                     warehouseId: '{{ old("warehouse_id", "") }}',
@@ -250,7 +243,17 @@
                         loadingBatches: false,
                     }],
 
+                    init() {
+                        this.$nextTick(() => {
+                            this.items.forEach((item, index) => {
+                                initializeProductSelect2(index);
+                                initializeBatchSelect2(index, []);
+                            });
+                        });
+                    },
+
                     addItem() {
+                        const newIndex = this.items.length;
                         this.items.push({
                             product_id: '',
                             stock_batch_id: '',
@@ -263,11 +266,33 @@
                             availableBatches: [],
                             loadingBatches: false,
                         });
+                        this.$nextTick(() => {
+                            initializeProductSelect2(newIndex);
+                            initializeBatchSelect2(newIndex, []);
+                        });
                     },
 
                     removeItem(index) {
                         if (this.items.length > 1) {
+                            const $productSelect = $(`#product_${index}`);
+                            if ($productSelect.data('select2')) {
+                                $productSelect.select2('destroy');
+                            }
+                            const $batchSelect = $(`#batch_${index}`);
+                            if ($batchSelect.data('select2')) {
+                                $batchSelect.select2('destroy');
+                            }
                             this.items.splice(index, 1);
+                            this.$nextTick(() => {
+                                this.items.forEach((item, idx) => {
+                                    const $ps = $(`#product_${idx}`);
+                                    if ($ps.data('select2')) { $ps.select2('destroy'); }
+                                    const $bs = $(`#batch_${idx}`);
+                                    if ($bs.data('select2')) { $bs.select2('destroy'); }
+                                    initializeProductSelect2(idx);
+                                    initializeBatchSelect2(idx, item.availableBatches);
+                                });
+                            });
                         }
                     },
 
@@ -279,8 +304,9 @@
                         });
                     },
 
-                    async onProductChange(index) {
+                    async onProductChange(index, productId) {
                         const item = this.items[index];
+                        item.product_id = productId;
                         item.stock_batch_id = '';
                         item.system_quantity = 0;
                         item.unit_cost = '';
@@ -288,23 +314,21 @@
                         item.adjustment_value = 0;
                         item.availableBatches = [];
 
-                        const selectEl = document.querySelector(`[name="items[${index}][product_id]"]`);
-                        if (selectEl && selectEl.selectedIndex > 0) {
-                            const option = selectEl.options[selectEl.selectedIndex];
-                            const uomId = option.getAttribute('data-uom-id');
-                            if (uomId) {
-                                item.uom_id = uomId;
-                            }
+                        const product = allAdjustmentProducts.find(p => p.id == productId);
+                        if (product && product.uom_id) {
+                            item.uom_id = String(product.uom_id);
                         }
 
-                        if (item.product_id && this.warehouseId) {
+                        initializeBatchSelect2(index, []);
+
+                        if (productId && this.warehouseId) {
                             await this.loadBatches(index);
                         }
                     },
 
                     async loadBatches(index) {
                         const item = this.items[index];
-                        if (!item.product_id || !this.warehouseId) return;
+                        if (!item.product_id || !this.warehouseId) { return; }
 
                         item.loadingBatches = true;
                         item.availableBatches = [];
@@ -321,6 +345,8 @@
                                     ? batch.current_stock_by_batch.reduce((sum, s) => sum + parseFloat(s.quantity_on_hand || 0), 0)
                                     : 0,
                             }));
+
+                            initializeBatchSelect2(index, item.availableBatches);
                         } catch (error) {
                             console.error('Failed to load batches:', error);
                         } finally {
@@ -328,9 +354,10 @@
                         }
                     },
 
-                    onBatchChange(index) {
+                    onBatchChange(index, batchId) {
                         const item = this.items[index];
-                        const batch = item.availableBatches.find(b => b.id == item.stock_batch_id);
+                        item.stock_batch_id = batchId;
+                        const batch = item.availableBatches.find(b => b.id == batchId);
 
                         if (batch) {
                             item.system_quantity = batch.stock_qty;
@@ -360,6 +387,73 @@
                         });
                     },
                 };
+            }
+
+            function initializeProductSelect2(index) {
+                const $select = $(`#product_${index}`);
+                if (!$select.length) { return; }
+
+                if ($select.data('select2')) {
+                    $select.select2('destroy');
+                }
+
+                $select.select2({
+                    placeholder: 'Search product...',
+                    allowClear: false,
+                    width: '100%',
+                    data: [{ id: '', text: 'Select Product' }].concat(
+                        allAdjustmentProducts.map(p => ({ id: p.id, text: p.name }))
+                    ),
+                });
+
+                const alpineComponent = Alpine.$data($select.closest('[x-data]')[0]);
+                if (alpineComponent && alpineComponent.items[index] && alpineComponent.items[index].product_id) {
+                    $select.val(alpineComponent.items[index].product_id).trigger('change.select2');
+                }
+
+                $select.off('change.stockAdj').on('change.stockAdj', function () {
+                    const productId = $(this).val();
+                    const comp = Alpine.$data($('#stockAdjustmentForm')[0]);
+                    if (comp) {
+                        comp.onProductChange(index, productId);
+                    }
+                });
+            }
+
+            function initializeBatchSelect2(index, batches) {
+                const $select = $(`#batch_${index}`);
+                if (!$select.length) { return; }
+
+                if ($select.data('select2')) {
+                    $select.select2('destroy');
+                }
+
+                const data = [{ id: '', text: 'Select Batch' }].concat(
+                    (batches || []).map(b => ({
+                        id: b.id,
+                        text: `${b.batch_code} (Qty: ${b.stock_qty}, Cost: ${b.unit_cost})`,
+                    }))
+                );
+
+                $select.select2({
+                    placeholder: 'Select Batch',
+                    allowClear: false,
+                    width: '100%',
+                    data: data,
+                });
+
+                const alpineComponent = Alpine.$data($('#stockAdjustmentForm')[0]);
+                if (alpineComponent && alpineComponent.items[index] && alpineComponent.items[index].stock_batch_id) {
+                    $select.val(alpineComponent.items[index].stock_batch_id).trigger('change.select2');
+                }
+
+                $select.off('change.stockAdjBatch').on('change.stockAdjBatch', function () {
+                    const batchId = $(this).val();
+                    const comp = Alpine.$data($('#stockAdjustmentForm')[0]);
+                    if (comp) {
+                        comp.onBatchChange(index, batchId);
+                    }
+                });
             }
         </script>
     @endpush

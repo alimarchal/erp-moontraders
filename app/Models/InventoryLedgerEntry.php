@@ -41,6 +41,7 @@ class InventoryLedgerEntry extends Model
         'goods_receipt_note_id',
         'goods_issue_id',
         'sales_settlement_id',
+        'stock_adjustment_id',
         'debit_qty',
         'credit_qty',
         'unit_cost',
@@ -103,6 +104,11 @@ class InventoryLedgerEntry extends Model
     public function salesSettlement(): BelongsTo
     {
         return $this->belongsTo(SalesSettlement::class);
+    }
+
+    public function stockAdjustment(): BelongsTo
+    {
+        return $this->belongsTo(StockAdjustment::class);
     }
 
     public function createdBy(): BelongsTo

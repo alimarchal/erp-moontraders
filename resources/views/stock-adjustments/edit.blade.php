@@ -23,7 +23,7 @@
                     <x-validation-errors class="mb-4 mt-4" />
 
                     <form method="POST" action="{{ route('stock-adjustments.update', $adjustment) }}" id="stockAdjustmentEditForm"
-                        x-data="stockAdjustmentEditForm()">
+                        x-data="stockAdjustmentEditForm()" x-init="$nextTick(() => initEdit())">
                         @csrf
                         @method('PUT')
 
@@ -53,7 +53,7 @@
                                 <select id="adjustment_type" name="adjustment_type" required
                                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                                     <option value="">Select Type</option>
-                                    @foreach (['damage', 'theft', 'count_variance', 'expiry', 'other'] as $type)
+                                    @foreach (['damage', 'theft', 'count_variance', 'expiry', 'recall', 'other'] as $type)
                                         <option value="{{ $type }}" {{ $adjustment->adjustment_type == $type ? 'selected' : '' }}>
                                             {{ ucfirst(str_replace('_', ' ', $type)) }}
                                         </option>
@@ -88,29 +88,18 @@
                                         <td class="px-2 py-2 text-center text-sm text-gray-500" x-text="index + 1"></td>
 
                                         <td class="px-2 py-2">
-                                            <select :name="`items[${index}][product_id]`" x-model="item.product_id"
-                                                @change="onProductChange(index)" required
-                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                            <select :id="`product_edit_${index}`" :name="`items[${index}][product_id]`"
+                                                required
+                                                class="product-select-edit border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">Select Product</option>
-                                                @foreach ($products as $product)
-                                                    <option value="{{ $product->id }}"
-                                                        data-uom-id="{{ $product->uom_id }}">
-                                                        {{ $product->product_name }}
-                                                    </option>
-                                                @endforeach
                                             </select>
                                         </td>
 
                                         <td class="px-2 py-2">
-                                            <select :name="`items[${index}][stock_batch_id]`"
-                                                x-model="item.stock_batch_id" @change="onBatchChange(index)" required
-                                                class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
+                                            <select :id="`batch_edit_${index}`" :name="`items[${index}][stock_batch_id]`"
+                                                required
+                                                class="batch-select-edit border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">Select Batch</option>
-                                                <template x-for="batch in item.availableBatches" :key="batch.id">
-                                                    <option :value="batch.id"
-                                                        x-text="`${batch.batch_code} (Qty: ${batch.stock_qty}, Cost: ${batch.unit_cost})`">
-                                                    </option>
-                                                </template>
                                             </select>
                                             <p x-show="item.loadingBatches" class="text-xs text-blue-500 mt-1">Loading batches...</p>
                                         </td>
@@ -214,31 +203,30 @@
 
     @push('scripts')
     <script>
+        const allEditProducts = {!! json_encode($products->map(fn ($p) => ['id' => $p->id, 'name' => $p->product_name, 'uom_id' => $p->uom_id])) !!};
+
+        @php
+            $editItemsJson = json_encode($adjustment->items->map(fn ($item) => [
+                'product_id' => (string) $item->product_id,
+                'stock_batch_id' => (string) $item->stock_batch_id,
+                'uom_id' => (string) $item->uom_id,
+                'system_quantity' => (float) $item->system_quantity,
+                'actual_quantity' => (float) $item->actual_quantity,
+                'adjustment_quantity' => (float) $item->adjustment_quantity,
+                'unit_cost' => (float) $item->unit_cost,
+                'adjustment_value' => (float) $item->adjustment_value,
+                'availableBatches' => [],
+                'loadingBatches' => false,
+            ])->values());
+        @endphp
+
         function stockAdjustmentEditForm() {
             return {
                 warehouseId: '{{ old("warehouse_id", $adjustment->warehouse_id) }}',
-                items: @json($adjustment->items->map(fn($item) => [
-                    'product_id' => (string) $item->product_id,
-                    'stock_batch_id' => (string) $item->stock_batch_id,
-                    'uom_id' => (string) $item->uom_id,
-                    'system_quantity' => (float) $item->system_quantity,
-                    'actual_quantity' => (float) $item->actual_quantity,
-                    'adjustment_quantity' => (float) $item->adjustment_quantity,
-                    'unit_cost' => (float) $item->unit_cost,
-                    'adjustment_value' => (float) $item->adjustment_value,
-                    'availableBatches' => [],
-                    'loadingBatches' => false,
-                ])->values()),
-
-                init() {
-                    this.items.forEach((item, index) => {
-                        if (item.product_id) {
-                            this.loadBatches(index);
-                        }
-                    });
-                },
+                items: {!! $editItemsJson !!},
 
                 addItem() {
+                    const newIndex = this.items.length;
                     this.items.push({
                         product_id: '',
                         stock_batch_id: '',
@@ -251,10 +239,30 @@
                         availableBatches: [],
                         loadingBatches: false,
                     });
+                    this.$nextTick(() => {
+                        initializeEditProductSelect2(newIndex);
+                        initializeEditBatchSelect2(newIndex, []);
+                    });
                 },
 
                 removeItem(index) {
-                    if (this.items.length > 1) { this.items.splice(index, 1); }
+                    if (this.items.length > 1) {
+                        const $ps = $(`#product_edit_${index}`);
+                        if ($ps.data('select2')) { $ps.select2('destroy'); }
+                        const $bs = $(`#batch_edit_${index}`);
+                        if ($bs.data('select2')) { $bs.select2('destroy'); }
+                        this.items.splice(index, 1);
+                        this.$nextTick(() => {
+                            this.items.forEach((item, idx) => {
+                                const $p = $(`#product_edit_${idx}`);
+                                if ($p.data('select2')) { $p.select2('destroy'); }
+                                const $b = $(`#batch_edit_${idx}`);
+                                if ($b.data('select2')) { $b.select2('destroy'); }
+                                initializeEditProductSelect2(idx);
+                                initializeEditBatchSelect2(idx, item.availableBatches);
+                            });
+                        });
+                    }
                 },
 
                 onWarehouseChange() {
@@ -263,8 +271,9 @@
                     });
                 },
 
-                async onProductChange(index) {
+                async onProductChange(index, productId) {
                     const item = this.items[index];
+                    item.product_id = productId;
                     item.stock_batch_id = '';
                     item.system_quantity = 0;
                     item.unit_cost = '';
@@ -272,20 +281,21 @@
                     item.adjustment_value = 0;
                     item.availableBatches = [];
 
-                    const selectEl = document.querySelector(`[name="items[${index}][product_id]"]`);
-                    if (selectEl && selectEl.selectedIndex > 0) {
-                        const uomId = selectEl.options[selectEl.selectedIndex].getAttribute('data-uom-id');
-                        if (uomId) { item.uom_id = uomId; }
+                    const product = allEditProducts.find(p => p.id == productId);
+                    if (product && product.uom_id) {
+                        item.uom_id = String(product.uom_id);
                     }
 
-                    if (item.product_id && this.warehouseId) {
+                    initializeEditBatchSelect2(index, []);
+
+                    if (productId && this.warehouseId) {
                         await this.loadBatches(index);
                     }
                 },
 
                 async loadBatches(index) {
                     const item = this.items[index];
-                    if (!item.product_id || !this.warehouseId) return;
+                    if (!item.product_id || !this.warehouseId) { return; }
 
                     const savedBatchId = item.stock_batch_id;
                     item.loadingBatches = true;
@@ -302,8 +312,12 @@
                                 ? batch.current_stock_by_batch.reduce((sum, s) => sum + parseFloat(s.quantity_on_hand || 0), 0)
                                 : 0,
                         }));
+
+                        initializeEditBatchSelect2(index, item.availableBatches);
+
                         if (savedBatchId) {
                             item.stock_batch_id = savedBatchId;
+                            $(`#batch_edit_${index}`).val(savedBatchId).trigger('change.select2');
                         }
                     } catch (error) {
                         console.error('Failed to load batches:', error);
@@ -312,9 +326,10 @@
                     }
                 },
 
-                onBatchChange(index) {
+                onBatchChange(index, batchId) {
                     const item = this.items[index];
-                    const batch = item.availableBatches.find(b => b.id == item.stock_batch_id);
+                    item.stock_batch_id = batchId;
+                    const batch = item.availableBatches.find(b => b.id == batchId);
                     if (batch) {
                         item.system_quantity = batch.stock_qty;
                         item.unit_cost = batch.unit_cost;
@@ -332,6 +347,77 @@
                     return (parseFloat(value) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 },
             };
+        }
+
+        function initEdit() {
+            const comp = Alpine.$data(document.getElementById('stockAdjustmentEditForm'));
+            if (!comp) { return; }
+            comp.items.forEach((item, index) => {
+                initializeEditProductSelect2(index);
+                if (item.product_id) {
+                    comp.loadBatches(index);
+                } else {
+                    initializeEditBatchSelect2(index, []);
+                }
+            });
+        }
+
+        function initializeEditProductSelect2(index) {
+            const $select = $(`#product_edit_${index}`);
+            if (!$select.length) { return; }
+
+            if ($select.data('select2')) {
+                $select.select2('destroy');
+            }
+
+            $select.select2({
+                placeholder: 'Search product...',
+                allowClear: false,
+                width: '100%',
+                data: [{ id: '', text: 'Select Product' }].concat(
+                    allEditProducts.map(p => ({ id: String(p.id), text: p.name }))
+                ),
+            });
+
+            const comp = Alpine.$data(document.getElementById('stockAdjustmentEditForm'));
+            if (comp && comp.items[index] && comp.items[index].product_id) {
+                $select.val(String(comp.items[index].product_id)).trigger('change.select2');
+            }
+
+            $select.off('change.editAdj').on('change.editAdj', function () {
+                const productId = $(this).val();
+                const c = Alpine.$data(document.getElementById('stockAdjustmentEditForm'));
+                if (c) { c.onProductChange(index, productId); }
+            });
+        }
+
+        function initializeEditBatchSelect2(index, batches) {
+            const $select = $(`#batch_edit_${index}`);
+            if (!$select.length) { return; }
+
+            if ($select.data('select2')) {
+                $select.select2('destroy');
+            }
+
+            const data = [{ id: '', text: 'Select Batch' }].concat(
+                (batches || []).map(b => ({
+                    id: b.id,
+                    text: `${b.batch_code} (Qty: ${b.stock_qty}, Cost: ${b.unit_cost})`,
+                }))
+            );
+
+            $select.select2({
+                placeholder: 'Select Batch',
+                allowClear: false,
+                width: '100%',
+                data: data,
+            });
+
+            $select.off('change.editAdjBatch').on('change.editAdjBatch', function () {
+                const batchId = $(this).val();
+                const c = Alpine.$data(document.getElementById('stockAdjustmentEditForm'));
+                if (c) { c.onBatchChange(index, batchId); }
+            });
         }
     </script>
     @endpush

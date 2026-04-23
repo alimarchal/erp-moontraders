@@ -43,8 +43,17 @@ class GoodsIssueController extends Controller implements HasMiddleware
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
+        if (! $request->filled('filter.issue_date_from') && ! $request->filled('filter.issue_date_to')) {
+            $request->merge([
+                'filter' => array_merge($request->input('filter', []), [
+                    'issue_date_from' => now()->toDateString(),
+                    'issue_date_to' => now()->toDateString(),
+                ]),
+            ]);
+        }
+
         $query = GoodsIssue::query()->with(['warehouse', 'vehicle', 'employee', 'supplier', 'issuedBy']);
 
         if (! auth()->user()->can('goods-issue-view-all')) {

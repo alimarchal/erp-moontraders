@@ -75,13 +75,13 @@
             <div>
                 <x-label for="filter_receipt_date_from" value="Receipt Date From" />
                 <x-input id="filter_receipt_date_from" name="filter[receipt_date_from]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.receipt_date_from')" />
+                    class="mt-1 block w-full" :value="request('filter.receipt_date_from', now()->toDateString())" />
             </div>
 
             <div>
                 <x-label for="filter_receipt_date_to" value="Receipt Date To" />
                 <x-input id="filter_receipt_date_to" name="filter[receipt_date_to]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.receipt_date_to')" />
+                    class="mt-1 block w-full" :value="request('filter.receipt_date_to', now()->toDateString())" />
             </div>
         </div>
     </x-filter-section>
@@ -133,9 +133,9 @@
                 </td>
                 <td class="py-1 px-2 text-center">
                     <span class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full 
-                                        {{ $grn->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                        {{ $grn->status === 'received' ? 'bg-blue-100 text-blue-700' : '' }}
-                                        {{ $grn->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                            {{ $grn->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
+                                            {{ $grn->status === 'received' ? 'bg-blue-100 text-blue-700' : '' }}
+                                            {{ $grn->status === 'posted' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                         {{ ucfirst($grn->status) }}
                     </span>
                 </td>
@@ -143,9 +143,9 @@
                     @if ($grn->status === 'posted')
                         <span
                             class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full 
-                                                        {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
-                                                        {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
-                                                        {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
+                                                                {{ $grn->payment_status === 'unpaid' ? 'bg-red-100 text-red-700' : '' }}
+                                                                {{ $grn->payment_status === 'partial' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                                                {{ $grn->payment_status === 'paid' ? 'bg-emerald-100 text-emerald-700' : '' }}">
                             {{ ucfirst($grn->payment_status) }}
                         </span>
                         @if ($grn->payment_status !== 'unpaid')

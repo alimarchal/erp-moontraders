@@ -77,13 +77,13 @@
             <div>
                 <x-label for="filter_issue_date_from" value="Issue Date From" />
                 <x-input id="filter_issue_date_from" name="filter[issue_date_from]" type="date"
-                    class="mt-1 block w-full" :value="request('filter.issue_date_from')" />
+                    class="mt-1 block w-full" :value="request('filter.issue_date_from', now()->toDateString())" />
             </div>
 
             <div>
                 <x-label for="filter_issue_date_to" value="Issue Date To" />
                 <x-input id="filter_issue_date_to" name="filter[issue_date_to]" type="date" class="mt-1 block w-full"
-                    :value="request('filter.issue_date_to')" />
+                    :value="request('filter.issue_date_to', now()->toDateString())" />
             </div>
         </div>
     </x-filter-section>

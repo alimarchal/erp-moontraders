@@ -51,16 +51,18 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      */
     public function index(Request $request)
     {
-        if (! $request->filled('filter.receipt_date_from') && ! $request->filled('filter.receipt_date_to')) {
-            $request->merge([
-                'filter' => array_merge($request->input('filter', []), [
-                    'receipt_date_from' => now()->toDateString(),
-                    'receipt_date_to' => now()->toDateString(),
-                ]),
-            ]);
-        }
+        $hasDateFilter = $request->filled('filter.receipt_date_from') || $request->filled('filter.receipt_date_to');
 
         $query = GoodsReceiptNote::query()->with(['supplier', 'warehouse', 'receivedBy']);
+
+        if (! $hasDateFilter) {
+            $today = now()->toDateString();
+
+            $query->where(function ($grnQuery) use ($today) {
+                $grnQuery->whereDate('receipt_date', $today)
+                    ->orWhere('status', 'draft');
+            });
+        }
 
         if (! auth()->user()->can('goods-receipt-note-view-all')) {
             $query->where('received_by', auth()->id());

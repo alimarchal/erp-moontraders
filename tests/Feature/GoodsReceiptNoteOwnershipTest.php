@@ -65,3 +65,38 @@ it('super admin flag user sees all GRNs on index', function () {
         ->assertSee($grn1->grn_number)
         ->assertSee($grn2->grn_number);
 });
+
+it('shows previous-date drafts by default while keeping non-drafts limited to today', function () {
+    $user = User::factory()->create();
+    $user->assignRole($this->regularRole);
+
+    $supplierId = Supplier::factory()->create()->id;
+
+    $oldDraft = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $supplierId,
+        'received_by' => $user->id,
+        'status' => 'draft',
+        'receipt_date' => now()->subDays(5),
+    ]);
+
+    $oldPosted = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $supplierId,
+        'received_by' => $user->id,
+        'status' => 'posted',
+        'receipt_date' => now()->subDays(5),
+    ]);
+
+    $todayPosted = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $supplierId,
+        'received_by' => $user->id,
+        'status' => 'posted',
+        'receipt_date' => now(),
+    ]);
+
+    $this->actingAs($user)
+        ->get(route('goods-receipt-notes.index'))
+        ->assertSuccessful()
+        ->assertSee($oldDraft->grn_number)
+        ->assertSee($todayPosted->grn_number)
+        ->assertDontSee($oldPosted->grn_number);
+});

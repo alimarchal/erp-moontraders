@@ -68,6 +68,11 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             $query->where('received_by', auth()->id());
         }
 
+        $userSupplierId = $this->getUserSupplierScope();
+        if ($userSupplierId) {
+            $query->where('supplier_id', $userSupplierId);
+        }
+
         $grns = QueryBuilder::for($query)
             ->allowedFilters([
                 AllowedFilter::partial('grn_number'),
@@ -83,9 +88,13 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             ->paginate(20)
             ->withQueryString();
 
+        $suppliers = $userSupplierId
+            ? Supplier::where('id', $userSupplierId)->orderBy('supplier_name')->get(['id', 'supplier_name'])
+            : Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+
         return view('goods-receipt-notes.index', [
             'grns' => $grns,
-            'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'suppliers' => $suppliers,
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
         ]);
     }
@@ -95,8 +104,14 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      */
     public function create()
     {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        $suppliers = $userSupplierId
+            ? Supplier::where('id', $userSupplierId)->where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed'])
+            : Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed']);
+
         return view('goods-receipt-notes.create', [
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed']),
+            'suppliers' => $suppliers,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             // Don't load all products - will be loaded via AJAX when supplier is selected
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
@@ -109,6 +124,12 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      */
     public function getProductsBySupplier(Request $request, $supplierId)
     {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId && $supplierId != $userSupplierId) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
         $products = Product::where('is_active', true)
             ->where('supplier_id', $supplierId)
             ->orderBy('product_name')
@@ -305,6 +326,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      */
     public function show(GoodsReceiptNote $goodsReceiptNote)
     {
+        $this->authorizeGrnSupplierAccess($goodsReceiptNote);
+
         $goodsReceiptNote->load(['supplier', 'warehouse', 'receivedBy', 'verifiedBy', 'items.product', 'items.stockUom', 'items.purchaseUom', 'items.promotionalCampaign']);
 
         return view('goods-receipt-notes.show', [
@@ -317,17 +340,24 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      */
     public function edit(GoodsReceiptNote $goodsReceiptNote)
     {
+        $this->authorizeGrnSupplierAccess($goodsReceiptNote);
+
         if ($goodsReceiptNote->status !== 'draft') {
             return redirect()
                 ->route('goods-receipt-notes.show', $goodsReceiptNote)
                 ->with('error', 'Only draft GRNs can be edited.');
         }
 
+        $userSupplierId = $this->getUserSupplierScope();
         $goodsReceiptNote->load('items');
+
+        $suppliers = $userSupplierId
+            ? Supplier::where('id', $userSupplierId)->where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed'])
+            : Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed']);
 
         return view('goods-receipt-notes.edit', [
             'grn' => $goodsReceiptNote,
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name', 'sales_tax', 'is_fmr_allowed']),
+            'suppliers' => $suppliers,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
             'withholdingTaxRate' => $this->resolveActiveWithholdingTaxRate(),
@@ -339,6 +369,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      */
     public function update(Request $request, GoodsReceiptNote $goodsReceiptNote)
     {
+        $this->authorizeGrnSupplierAccess($goodsReceiptNote);
+
         if ($goodsReceiptNote->status !== 'draft') {
             return redirect()
                 ->route('goods-receipt-notes.show', $goodsReceiptNote)
@@ -530,6 +562,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      */
     public function destroy(GoodsReceiptNote $goodsReceiptNote)
     {
+        $this->authorizeGrnSupplierAccess($goodsReceiptNote);
+
         if ($goodsReceiptNote->status !== 'draft') {
             return back()->with('error', 'Only draft GRNs can be deleted.');
         }
@@ -576,6 +610,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      */
     public function post(GoodsReceiptNote $goodsReceiptNote)
     {
+        $this->authorizeGrnSupplierAccess($goodsReceiptNote);
+
         $inventoryService = app(InventoryService::class);
         $result = $inventoryService->postGrnToInventory($goodsReceiptNote);
 
@@ -660,6 +696,13 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     public function importItems(ImportGoodsReceiptNoteRequest $request)
     {
         $validated = $request->validated();
+
+        $userSupplierId = $this->getUserSupplierScope();
+        if ($userSupplierId && $validated['supplier_id'] != $userSupplierId) {
+            return back()
+                ->with('error', 'You do not have permission to import GRNs for this supplier.');
+        }
+
         $withholdingTaxRate = $this->resolveActiveWithholdingTaxRate();
 
         DB::beginTransaction();
@@ -819,6 +862,36 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         }
     }
 
+    /**
+     * Get the supplier ID scope for current user (null if no scope, user has full access).
+     */
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($user->is_super_admin === 'Yes' || $user->hasRole('super-admin')) {
+            return null;
+        }
+
+        if ($user->hasRole('admin')) {
+            return null;
+        }
+
+        return (int) $user->supplier_id ?? null;
+    }
+
+    /**
+     * Authorize GRN access based on user supplier scope.
+     */
+    private function authorizeGrnSupplierAccess(GoodsReceiptNote $grn): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId && $grn->supplier_id != $userSupplierId) {
+            abort(403, 'You do not have permission to access this GRN.');
+        }
+    }
+
     private function resolveActiveWithholdingTaxRate(): float
     {
         $taxCode = TaxCode::query()
@@ -852,6 +925,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
      */
     public function reverse(Request $request, GoodsReceiptNote $goodsReceiptNote)
     {
+        $this->authorizeGrnSupplierAccess($goodsReceiptNote);
+
         // Validate password
         $request->validate([
             'password' => 'required|string',

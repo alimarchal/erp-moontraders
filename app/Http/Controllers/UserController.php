@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -41,20 +42,23 @@ class UserController extends Controller implements HasMiddleware
             ->allowedFilters(User::getAllowedFilters())
             ->allowedSorts(User::getAllowedSorts())
             ->allowedIncludes(User::getAllowedIncludes())
-            ->with(['roles.permissions', 'permissions'])
+            ->with(['roles.permissions', 'permissions', 'supplier'])
             ->defaultSort('-created_at')
             ->paginate(request('per_page', 10))
             ->appends(request()->query());
 
-        return view('settings.users.index', compact('users'));
+        $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']);
+
+        return view('settings.users.index', compact('users', 'suppliers'));
     }
 
     public function create()
     {
         $roles = Role::all();
         $permissions = Permission::all();
+        $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']);
 
-        return view('settings.users.create', compact('roles', 'permissions'));
+        return view('settings.users.create', compact('roles', 'permissions', 'suppliers'));
     }
 
     public function store(Request $request)
@@ -62,6 +66,7 @@ class UserController extends Controller implements HasMiddleware
         $request->validate([
             'name' => 'required|string|max:255',
             'designation' => 'nullable|string|max:255',
+            'supplier_id' => 'nullable|exists:suppliers,id',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:8',
             'is_super_admin' => 'required|in:Yes,No',
@@ -82,6 +87,7 @@ class UserController extends Controller implements HasMiddleware
             $user = User::create([
                 'name' => $request->name,
                 'designation' => $request->designation,
+                'supplier_id' => $request->supplier_id,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
                 'is_super_admin' => $isSuperAdmin,
@@ -106,7 +112,7 @@ class UserController extends Controller implements HasMiddleware
 
     public function show(User $user)
     {
-        $user->load(['roles.permissions', 'permissions']);
+        $user->load(['roles.permissions', 'permissions', 'supplier']);
 
         return view('settings.users.show', compact('user'));
     }
@@ -115,11 +121,12 @@ class UserController extends Controller implements HasMiddleware
     {
         $roles = Role::all();
         $permissions = Permission::all();
+        $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']);
         $userRoles = $user->roles->pluck('id')->toArray();
         $userPermissions = $user->permissions->pluck('id')->toArray();
         $inheritedPermissions = $user->getPermissionsViaRoles()->pluck('id')->toArray();
 
-        return view('settings.users.edit', compact('user', 'roles', 'permissions', 'userRoles', 'userPermissions', 'inheritedPermissions'));
+        return view('settings.users.edit', compact('user', 'roles', 'permissions', 'suppliers', 'userRoles', 'userPermissions', 'inheritedPermissions'));
     }
 
     public function bulkUpdate(Request $request)
@@ -185,6 +192,7 @@ class UserController extends Controller implements HasMiddleware
         $request->validate([
             'name' => 'required|string|max:255',
             'designation' => 'nullable|string|max:255',
+            'supplier_id' => 'nullable|exists:suppliers,id',
             'email' => 'required|email|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8',
             'is_super_admin' => 'required|in:Yes,No',
@@ -204,6 +212,7 @@ class UserController extends Controller implements HasMiddleware
         $updateData = [
             'name' => $request->name,
             'designation' => $request->designation,
+            'supplier_id' => $request->supplier_id,
             'email' => $request->email,
             'is_super_admin' => $isSuperAdmin,
             'is_active' => $request->is_active,

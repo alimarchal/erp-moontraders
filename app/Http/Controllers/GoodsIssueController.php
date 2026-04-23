@@ -45,6 +45,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function index(Request $request)
     {
+        $userSupplierId = $this->getUserSupplierScope();
+
         if (! $request->filled('filter.issue_date_from') && ! $request->filled('filter.issue_date_to')) {
             $request->merge([
                 'filter' => array_merge($request->input('filter', []), [
@@ -54,10 +56,16 @@ class GoodsIssueController extends Controller implements HasMiddleware
             ]);
         }
 
+        $this->authorizeGoodsIssueFilterAccess($request, $userSupplierId);
+
         $query = GoodsIssue::query()->with(['warehouse', 'vehicle', 'employee', 'supplier', 'issuedBy']);
 
         if (! auth()->user()->can('goods-issue-view-all')) {
             $query->where('issued_by', auth()->id());
+        }
+
+        if ($userSupplierId) {
+            $query->where('supplier_id', $userSupplierId);
         }
 
         $allowedFilters = [
@@ -90,6 +98,10 @@ class GoodsIssueController extends Controller implements HasMiddleware
             $totalQuery->where('issued_by', auth()->id());
         }
 
+        if ($userSupplierId) {
+            $totalQuery->where('supplier_id', $userSupplierId);
+        }
+
         $totalValue = QueryBuilder::for($totalQuery)
             ->allowedFilters($allowedFilters)
             ->sum('total_value');
@@ -100,7 +112,11 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
             'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'suppliers' => Supplier::query()
+                ->where('disabled', false)
+                ->when($userSupplierId, fn ($query, $supplierId) => $query->where('id', $supplierId))
+                ->orderBy('supplier_name')
+                ->get(['id', 'supplier_name']),
         ]);
     }
 
@@ -109,9 +125,15 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function create()
     {
+        $userSupplierId = $this->getUserSupplierScope();
+
         return view('goods-issues.create', [
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'suppliers' => Supplier::query()
+                ->where('disabled', false)
+                ->when($userSupplierId, fn ($query, $supplierId) => $query->where('id', $supplierId))
+                ->orderBy('supplier_name')
+                ->get(['id', 'supplier_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
             'canEnterCartons' => auth()->user()->can('goods-issue-carton-entry'),
         ]);
@@ -124,6 +146,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function getProductStock(Request $request, $warehouseId, $productId)
     {
+        $this->authorizeProductSupplierScope((int) $productId);
+
         $excludePromotional = $request->boolean('exclude_promotional');
 
         // Get total available quantity
@@ -214,6 +238,10 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function store(StoreGoodsIssueRequest $request)
     {
+        $userSupplierId = $this->getUserSupplierScope();
+        $selectedSupplierIds = $this->normalizeSupplierIds($request->input('supplier_ids', []));
+        $this->ensureAuthorizedSupplierIds($selectedSupplierIds);
+
         DB::beginTransaction();
 
         try {
@@ -230,6 +258,12 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
             // Get supplier_id from form submission, fallback to employee's supplier
             $supplierId = $request->input('supplier_ids.0') ?? Employee::findOrFail($request->employee_id)->supplier_id;
+
+            if ($userSupplierId && (int) $supplierId !== $userSupplierId) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'You do not have permission to create a goods issue for this supplier.');
+            }
 
             // Create goods issue
             $goodsIssue = GoodsIssue::create([
@@ -290,6 +324,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function show(GoodsIssue $goodsIssue)
     {
+        $this->authorizeGoodsIssueSupplierAccess($goodsIssue);
+
         $goodsIssue->load([
             'warehouse',
             'vehicle',
@@ -408,6 +444,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function edit(GoodsIssue $goodsIssue)
     {
+        $this->authorizeGoodsIssueSupplierAccess($goodsIssue);
+
         if ($goodsIssue->status !== 'draft') {
             return redirect()
                 ->route('goods-issues.show', $goodsIssue)
@@ -416,10 +454,16 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
         $goodsIssue->load('items');
 
+        $userSupplierId = $this->getUserSupplierScope();
+
         return view('goods-issues.edit', [
             'goodsIssue' => $goodsIssue,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'suppliers' => Supplier::query()
+                ->where('disabled', false)
+                ->when($userSupplierId, fn ($query, $supplierId) => $query->where('id', $supplierId))
+                ->orderBy('supplier_name')
+                ->get(['id', 'supplier_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(['id', 'uom_name', 'symbol']),
             'canEnterCartons' => auth()->user()->can('goods-issue-carton-entry'),
         ]);
@@ -430,6 +474,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function update(UpdateGoodsIssueRequest $request, GoodsIssue $goodsIssue)
     {
+        $this->authorizeGoodsIssueSupplierAccess($goodsIssue);
+
         if ($goodsIssue->status !== 'draft') {
             return redirect()
                 ->route('goods-issues.show', $goodsIssue)
@@ -449,6 +495,13 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
             // Get supplier_id from employee
             $employee = Employee::findOrFail($request->employee_id);
+            $userSupplierId = $this->getUserSupplierScope();
+
+            if ($userSupplierId && (int) $employee->supplier_id !== $userSupplierId) {
+                return back()
+                    ->withInput()
+                    ->with('error', 'You do not have permission to update goods issues for this supplier.');
+            }
 
             // Update goods issue
             $goodsIssue->update([
@@ -505,6 +558,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function destroy(GoodsIssue $goodsIssue)
     {
+        $this->authorizeGoodsIssueSupplierAccess($goodsIssue);
+
         if ($goodsIssue->status !== 'draft') {
             return back()->with('error', 'Only draft Goods Issues can be deleted.');
         }
@@ -534,6 +589,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function post(GoodsIssue $goodsIssue)
     {
+        $this->authorizeGoodsIssueSupplierAccess($goodsIssue);
+
         if ($goodsIssue->status !== 'draft') {
             return back()->with('error', 'Only draft Goods Issues can be posted.');
         }
@@ -568,6 +625,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
         if (! $vehicleId) {
             return response()->json(['has_existing' => false]);
         }
+
+        $this->authorizeVehicleSupplierScope((int) $vehicleId);
 
         $existing = DB::table('goods_issues')
             ->select(
@@ -657,6 +716,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function appendItemsForm(GoodsIssue $goodsIssue)
     {
+        $this->authorizeGoodsIssueSupplierAccess($goodsIssue);
+
         if (! $goodsIssue->canAcceptSupplementaryItems()) {
             return redirect()
                 ->route('goods-issues.show', $goodsIssue)
@@ -692,6 +753,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function appendItems(AppendGoodsIssueItemsRequest $request, GoodsIssue $goodsIssue)
     {
+        $this->authorizeGoodsIssueSupplierAccess($goodsIssue);
+
         if (! $goodsIssue->canAcceptSupplementaryItems()) {
             return redirect()
                 ->route('goods-issues.show', $goodsIssue)
@@ -769,7 +832,13 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function getEmployeesBySuppliers(Request $request): JsonResponse
     {
-        $supplierIds = $request->query('supplier_ids', []);
+        $supplierIds = $this->normalizeSupplierIds($request->query('supplier_ids', []));
+        $this->ensureAuthorizedSupplierIds($supplierIds);
+
+        $userSupplierId = $this->getUserSupplierScope();
+        if ($userSupplierId) {
+            $supplierIds = $supplierIds ?: [$userSupplierId];
+        }
 
         $employees = Employee::where('is_active', true)
             ->where(function ($query) use ($supplierIds) {
@@ -790,7 +859,13 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function getVehiclesBySuppliers(Request $request): JsonResponse
     {
-        $supplierIds = $request->query('supplier_ids', []);
+        $supplierIds = $this->normalizeSupplierIds($request->query('supplier_ids', []));
+        $this->ensureAuthorizedSupplierIds($supplierIds);
+
+        $userSupplierId = $this->getUserSupplierScope();
+        if ($userSupplierId) {
+            $supplierIds = $supplierIds ?: [$userSupplierId];
+        }
 
         $vehicles = Vehicle::where('is_active', true)
             ->when(! empty($supplierIds), fn ($q) => $q->whereIn('supplier_id', $supplierIds))
@@ -806,19 +881,136 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     public function getProductsBySuppliers(Request $request): JsonResponse
     {
-        $supplierIds = $request->query('supplier_ids', []);
+        $supplierIds = $this->normalizeSupplierIds($request->query('supplier_ids', []));
+        $this->ensureAuthorizedSupplierIds($supplierIds);
+
+        $userSupplierId = $this->getUserSupplierScope();
+        if ($userSupplierId) {
+            $supplierIds = $supplierIds ?: [$userSupplierId];
+        }
 
         $products = Product::where('is_active', true)
-            ->where(function ($query) use ($supplierIds) {
+            ->where(function ($query) use ($supplierIds, $userSupplierId) {
                 if (! empty($supplierIds)) {
                     $query->whereIn('supplier_id', $supplierIds);
                 }
-                $query->orWhereNull('supplier_id');
+
+                if (! $userSupplierId) {
+                    $query->orWhereNull('supplier_id');
+                }
             })
             ->orderBy('product_name')
             ->get(['id', 'product_code', 'product_name', 'uom_id', 'sales_uom_id', 'uom_conversion_factor', 'supplier_id']);
 
         return response()->json($products);
+    }
+
+    private function authorizeGoodsIssueFilterAccess(Request $request, ?int $userSupplierId): void
+    {
+        if (! $userSupplierId) {
+            return;
+        }
+
+        $requestedSupplierId = $request->input('filter.supplier_id');
+        if ($requestedSupplierId && (int) $requestedSupplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to filter by this supplier.');
+        }
+
+        $requestedProductId = $request->input('filter.product_id');
+        if ($requestedProductId) {
+            $this->authorizeProductSupplierScope((int) $requestedProductId, 'You do not have permission to filter by this product.');
+        }
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($user->is_super_admin === 'Yes' || $user->hasRole('super-admin')) {
+            return null;
+        }
+
+        if ($user->hasRole('admin')) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function authorizeGoodsIssueSupplierAccess(GoodsIssue $goodsIssue): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId && (int) $goodsIssue->supplier_id !== $userSupplierId) {
+            abort(403, 'You do not have permission to access this goods issue.');
+        }
+    }
+
+    private function authorizeProductSupplierScope(int $productId, string $message = 'You do not have permission to access this product.'): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if (! $userSupplierId) {
+            return;
+        }
+
+        $product = Product::query()
+            ->select(['id', 'supplier_id'])
+            ->find($productId);
+
+        if ($product && (int) $product->supplier_id !== $userSupplierId) {
+            abort(403, $message);
+        }
+    }
+
+    private function authorizeVehicleSupplierScope(int $vehicleId): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if (! $userSupplierId) {
+            return;
+        }
+
+        $vehicle = Vehicle::query()
+            ->select(['id', 'supplier_id'])
+            ->find($vehicleId);
+
+        if ($vehicle && (int) $vehicle->supplier_id !== $userSupplierId) {
+            abort(403, 'You do not have permission to access this vehicle.');
+        }
+    }
+
+    /**
+     * @return array<int, int>
+     */
+    private function normalizeSupplierIds(mixed $supplierIds): array
+    {
+        $ids = is_array($supplierIds) ? $supplierIds : [$supplierIds];
+
+        return collect($ids)
+            ->filter(fn ($id) => $id !== null && $id !== '')
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  array<int, int>  $supplierIds
+     */
+    private function ensureAuthorizedSupplierIds(array $supplierIds): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if (! $userSupplierId || empty($supplierIds)) {
+            return;
+        }
+
+        foreach ($supplierIds as $supplierId) {
+            if ($supplierId !== $userSupplierId) {
+                abort(403, 'You do not have permission to access this supplier.');
+            }
+        }
     }
 
     /**

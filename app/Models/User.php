@@ -6,6 +6,7 @@ namespace App\Models;
 use App\Traits\UserTracking;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
@@ -36,6 +37,7 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'designation',
+        'supplier_id',
         'email',
         'password',
         'is_super_admin',
@@ -95,12 +97,18 @@ class User extends Authenticatable
             ->join('');
     }
 
+    public function supplier(): BelongsTo
+    {
+        return $this->belongsTo(Supplier::class);
+    }
+
     public static function getAllowedFilters(): array
     {
         return [
             'name',
             'email',
             'designation',
+            AllowedFilter::exact('supplier_id'),
             'is_super_admin',
             'is_active',
             AllowedFilter::scope('role'),
@@ -122,6 +130,7 @@ class User extends Authenticatable
         return [
             'roles',
             'permissions',
+            'supplier',
         ];
     }
 }

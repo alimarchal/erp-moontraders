@@ -45,6 +45,13 @@
                         </div>
 
                         <div>
+                            <x-label for="supplier" value="Supplier" />
+                            <x-input id="supplier" type="text"
+                                class="mt-1 block w-full cursor-not-allowed bg-gray-100"
+                                :value="$user->supplier?->supplier_name ?? '-'" disabled readonly />
+                        </div>
+
+                        <div>
                             <x-label for="is_active" value="Accounting Status" />
                             <div class="mt-2">
                                 <span class="px-3 py-1 text-sm font-semibold rounded-full {{ $user->is_active === 'Yes' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800' }}">

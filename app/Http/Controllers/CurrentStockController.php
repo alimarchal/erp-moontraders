@@ -30,10 +30,16 @@ class CurrentStockController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         $hasFilter = $request->has('filter');
+        $userSupplierId = $this->getUserSupplierScope();
+
+        $this->authorizeCurrentStockFilterAccess($request, $userSupplierId);
 
         $baseQuery = CurrentStock::query()
             ->with(['product.category', 'product.supplier', 'warehouse'])
             ->where('quantity_on_hand', '>', 0)
+            ->when($userSupplierId, function ($query, $supplierId) {
+                $query->whereHas('product', fn ($productQuery) => $productQuery->where('supplier_id', $supplierId));
+            })
             ->when(! $hasFilter, fn ($q) => $q->whereRaw('0 = 1'));
 
         $stocks = QueryBuilder::for($baseQuery)
@@ -116,10 +122,16 @@ class CurrentStockController extends Controller implements HasMiddleware
         return view('inventory.current-stock.index', [
             'stocks' => $stocks,
             'hasFilter' => $hasFilter,
-            'products' => Product::orderBy('product_name')->get(['id', 'product_code', 'product_name', 'supplier_id']),
+            'products' => Product::query()
+                ->when($userSupplierId, fn ($query, $supplierId) => $query->where('supplier_id', $supplierId))
+                ->orderBy('product_name')
+                ->get(['id', 'product_code', 'product_name', 'supplier_id']),
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'categories' => Category::orderBy('name')->get(['id', 'name']),
-            'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'suppliers' => Supplier::query()
+                ->when($userSupplierId, fn ($query, $supplierId) => $query->where('id', $supplierId))
+                ->orderBy('supplier_name')
+                ->get(['id', 'supplier_name']),
             'perPage' => $request->get('per_page', 50),
         ]);
     }
@@ -144,6 +156,23 @@ class CurrentStockController extends Controller implements HasMiddleware
         $productId = $request->get('product_id');
         $warehouseId = $request->get('warehouse_id');
 
+        if (! $productId || ! $warehouseId) {
+            return view('inventory.current-stock.by-batch', [
+                'batches' => collect(),
+                'currentStock' => null,
+                'product' => null,
+                'warehouse' => null,
+            ]);
+        }
+
+        $currentStock = CurrentStock::query()
+            ->with('product')
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->firstOrFail();
+
+        $this->authorizeCurrentStockSupplierAccess($currentStock);
+
         $batches = CurrentStockByBatch::query()
             ->with(['product', 'warehouse', 'stockBatch'])
             ->where('product_id', $productId)
@@ -153,15 +182,60 @@ class CurrentStockController extends Controller implements HasMiddleware
             ->orderBy('expiry_date')
             ->get();
 
-        $currentStock = CurrentStock::where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->first();
-
         return view('inventory.current-stock.by-batch', [
             'batches' => $batches,
             'currentStock' => $currentStock,
-            'product' => Product::find($productId),
+            'product' => $currentStock->product,
             'warehouse' => Warehouse::find($warehouseId),
         ]);
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($user->is_super_admin === 'Yes' || $user->hasRole('super-admin')) {
+            return null;
+        }
+
+        if ($user->hasRole('admin')) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function authorizeCurrentStockFilterAccess(Request $request, ?int $userSupplierId): void
+    {
+        if (! $userSupplierId) {
+            return;
+        }
+
+        $requestedSupplierId = $request->input('filter.supplier_id');
+        if ($requestedSupplierId && (int) $requestedSupplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to filter by this supplier.');
+        }
+
+        $requestedProductId = $request->input('filter.product_id');
+        if (! $requestedProductId) {
+            return;
+        }
+
+        $product = Product::query()
+            ->select(['id', 'supplier_id'])
+            ->find((int) $requestedProductId);
+
+        if ($product && (int) $product->supplier_id !== $userSupplierId) {
+            abort(403, 'You do not have permission to filter by this product.');
+        }
+    }
+
+    private function authorizeCurrentStockSupplierAccess(CurrentStock $currentStock): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId && (int) $currentStock->product->supplier_id !== $userSupplierId) {
+            abort(403, 'You do not have permission to access this stock record.');
+        }
     }
 }

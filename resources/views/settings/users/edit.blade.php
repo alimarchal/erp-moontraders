@@ -91,6 +91,18 @@
                             </div>
 
                             <div>
+                                <x-label for="supplier_id" value="Supplier" />
+                                <select id="supplier_id" name="supplier_id" class="mt-1 block w-full border-gray-300 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <option value="">No Supplier</option>
+                                    @foreach ($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}" {{ (string) old('supplier_id', $user->supplier_id) === (string) $supplier->id ? 'selected' : '' }}>
+                                            {{ $supplier->supplier_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
                                 <x-label for="password" value="New Password" />
                                 <x-input id="password" name="password" type="password" class="mt-1 block w-full" placeholder="Leave blank to keep current" autocomplete="new-password" />
                                 <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">Minimum 8 characters. Only fill if changing password.</p>

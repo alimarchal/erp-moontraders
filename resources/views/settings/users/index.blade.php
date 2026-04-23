@@ -5,7 +5,7 @@
     </x-slot>
 
     <x-filter-section :action="route('users.index')">
-        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
             <div>
                 <x-label for="filter_name" value="Name" />
                 <x-input id="filter_name" name="filter[name]" type="text" class="mt-1 block w-full"
@@ -32,6 +32,19 @@
                     @foreach (\Spatie\Permission\Models\Role::all() as $role)
                         <option value="{{ $role->name }}" {{ request('filter.role') == $role->name ? 'selected' : '' }}>
                             {{ $role->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <x-label for="filter_supplier_id" value="Supplier" />
+                <select id="filter_supplier_id" name="filter[supplier_id]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="">All Suppliers</option>
+                    @foreach ($suppliers as $supplier)
+                        <option value="{{ $supplier->id }}" {{ (string) request('filter.supplier_id') === (string) $supplier->id ? 'selected' : '' }}>
+                            {{ $supplier->supplier_name }}
                         </option>
                     @endforeach
                 </select>
@@ -82,13 +95,14 @@
         ['label' => '<input type=\'checkbox\' id=\'select-all\' class=\'rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500\'>', 'align' => 'text-center'],
         ['label' => 'User'],
         ['label' => 'Designation'],
+        ['label' => 'Supplier'],
         ['label' => 'Email', 'align' => 'text-center'],
         ['label' => 'Roles', 'align' => 'text-center'],
         ['label' => 'Permissions', 'align' => 'text-center'],
         ['label' => 'Status', 'align' => 'text-center'],
         ['label' => 'Actions', 'align' => 'text-center'],
-    ]" emptyMessage="No users found." :emptyRoute="route('users.create')"
-                emptyLinkText="Add a user">
+    ]" emptyMessage="No users found."
+                :emptyRoute="route('users.create')" emptyLinkText="Add a user">
                 @foreach ($users as $index => $user)
                     <tr class="border-b border-gray-200 text-sm hover:bg-gray-50">
                         <td class="py-1 px-2 text-center">
@@ -106,6 +120,7 @@
                             @endif
                         </td>
                         <td class="py-1 px-2 text-gray-600 font-medium">{{ $user->designation ?? 'N/A' }}</td>
+                        <td class="py-1 px-2 text-gray-600 font-medium">{{ $user->supplier?->supplier_name ?? 'N/A' }}</td>
                         <td class="py-1 px-2 text-center">{{ $user->email }}</td>
                         <td class="py-1 px-2 text-center">
                             <div class="flex flex-wrap justify-center gap-1">

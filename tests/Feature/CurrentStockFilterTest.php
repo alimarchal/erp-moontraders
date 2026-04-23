@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 beforeEach(function () {
     Permission::create(['name' => 'report-inventory-daily-stock-register']);
@@ -241,4 +242,64 @@ it('passes categories and suppliers to view', function () {
     $response->assertViewHas('suppliers');
     $response->assertViewHas('products');
     $response->assertViewHas('warehouses');
+});
+
+it('scopes current stock to assigned supplier for non-admin users', function () {
+    $this->user->update(['supplier_id' => $this->supplier->id]);
+
+    $response = $this->get(route('inventory.current-stock.index', ['filter[has_reserved]' => '1']));
+    $response->assertSuccessful();
+
+    $stocks = $response->viewData('stocks');
+    expect($stocks)->toHaveCount(1);
+    expect((int) $stocks->first()->product->supplier_id)->toBe($this->supplier->id);
+
+    $suppliers = $response->viewData('suppliers');
+    $products = $response->viewData('products');
+
+    expect($suppliers)->toHaveCount(1);
+    expect((int) $suppliers->first()->id)->toBe($this->supplier->id);
+    expect($products->pluck('supplier_id')->unique()->values()->all())->toBe([$this->supplier->id]);
+});
+
+it('does not scope current stock for admin users even when supplier is assigned', function () {
+    Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
+    $this->user->assignRole('admin');
+    $this->user->update(['supplier_id' => $this->supplier->id]);
+
+    $response = $this->get(route('inventory.current-stock.index', ['filter[has_reserved]' => '1']));
+    $response->assertSuccessful();
+
+    $stocks = $response->viewData('stocks');
+    expect($stocks)->toHaveCount(2);
+
+    $suppliers = $response->viewData('suppliers');
+    expect($suppliers->count())->toBeGreaterThan(1);
+});
+
+it('forbids by-batch view for non-admin user when product supplier is different', function () {
+    $this->user->update(['supplier_id' => $this->supplier->id]);
+
+    $this->get(route('inventory.current-stock.by-batch', [
+        'product_id' => $this->productB->id,
+        'warehouse_id' => $this->warehouseB->id,
+    ]))->assertForbidden();
+});
+
+it('forbids index filter when non-admin user requests another supplier via url', function () {
+    $this->user->update(['supplier_id' => $this->supplier->id]);
+
+    $otherSupplierId = $this->productB->supplier_id;
+
+    $this->get(route('inventory.current-stock.index', [
+        'filter[supplier_id]' => $otherSupplierId,
+    ]))->assertForbidden();
+});
+
+it('forbids index filter when non-admin user requests product from another supplier via url', function () {
+    $this->user->update(['supplier_id' => $this->supplier->id]);
+
+    $this->get(route('inventory.current-stock.index', [
+        'filter[product_id]' => $this->productB->id,
+    ]))->assertForbidden();
 });

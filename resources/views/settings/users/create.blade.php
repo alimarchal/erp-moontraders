@@ -42,6 +42,19 @@
                             </div>
 
                             <div>
+                                <x-label for="supplier_id" value="Supplier" />
+                                <select id="supplier_id" name="supplier_id"
+                                    class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
+                                    <option value="">No Supplier</option>
+                                    @foreach ($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}" {{ (string) old('supplier_id') === (string) $supplier->id ? 'selected' : '' }}>
+                                            {{ $supplier->supplier_name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div>
                                 <x-label for="password" value="Password" />
                                 <x-input id="password" name="password" type="password" class="mt-1 block w-full" required />
                             </div>

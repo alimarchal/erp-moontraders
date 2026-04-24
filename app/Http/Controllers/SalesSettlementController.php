@@ -60,6 +60,30 @@ class SalesSettlementController extends Controller implements HasMiddleware
     }
 
     /**
+     * Get user's supplier scope (null if admin or no supplier assigned).
+     */
+    protected function getUserSupplierScope(): ?int
+    {
+        if (auth()->user()->hasRole(['admin', 'super-admin']) || auth()->user()->is_super_admin === 'Yes') {
+            return null;
+        }
+
+        return auth()->user()->supplier_id;
+    }
+
+    /**
+     * Authorize supplier access for sales settlement.
+     */
+    protected function authorizeSalesSettlementSupplierAccess(SalesSettlement $settlement): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId !== null && $settlement->supplier_id !== $userSupplierId) {
+            abort(403, 'Unauthorized: This settlement belongs to a different supplier.');
+        }
+    }
+
+    /**
      * Display a listing of the resource.
      */
     public function index()
@@ -79,6 +103,12 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         if (! auth()->user()->can('sales-settlement-view-all')) {
             $baseQuery->where('created_by', auth()->id());
+        }
+
+        // Apply supplier scoping for non-admin users
+        $userSupplierId = $this->getUserSupplierScope();
+        if ($userSupplierId !== null) {
+            $baseQuery->where('supplier_id', $userSupplierId);
         }
 
         $settlementsQuery = QueryBuilder::for($baseQuery)
@@ -119,6 +149,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         if (! auth()->user()->can('sales-settlement-view-all')) {
             $filterBaseQuery->where('created_by', auth()->id());
+        }
+
+        // Apply supplier scoping for non-admin users
+        if ($userSupplierId !== null) {
+            $filterBaseQuery->where('supplier_id', $userSupplierId);
         }
 
         $filterQuery = QueryBuilder::for($filterBaseQuery)
@@ -212,7 +247,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->orderBy('name')
             ->get(['id', 'name']);
 
-        $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+        $suppliers = Supplier::when($userSupplierId, function ($query, $supplierId) {
+            return $query->where('id', $supplierId);
+        })->orderBy('supplier_name')->get(['id', 'supplier_name']);
 
         return view('sales-settlements.index', [
             'settlements' => $settlements,
@@ -311,6 +348,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         return view('sales-settlements.create', [
             'suppliers' => Supplier::where('disabled', false)
+                ->when($this->getUserSupplierScope(), function ($query, $userSupplierId) {
+                    return $query->where('id', $userSupplierId);
+                })
                 ->orderBy('supplier_name')
                 ->get(['id', 'supplier_name']),
             'customers' => Customer::where('is_active', true)
@@ -338,14 +378,26 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     public function fetchGoodsIssues()
     {
+        $userSupplierId = $this->getUserSupplierScope();
+
         $query = GoodsIssue::where('status', 'issued')
             ->whereDoesntHave('settlement', function ($query) {
                 $query->whereIn('status', ['draft', 'posted']);
             })
             ->with(['employee', 'vehicle']);
 
+        // Enforce supplier scope for non-admin users
+        if ($userSupplierId !== null) {
+            $query->where('supplier_id', $userSupplierId);
+        }
+
         if (request()->filled('supplier_id')) {
-            $query->where('supplier_id', request('supplier_id'));
+            // Authorize the requested supplier_id against user's scope
+            $requestedSupplierId = (int) request('supplier_id');
+            if ($userSupplierId !== null && $requestedSupplierId !== $userSupplierId) {
+                abort(403, 'Unauthorized: You can only access goods issues from your assigned supplier.');
+            }
+            $query->where('supplier_id', $requestedSupplierId);
         }
 
         $goodsIssues = $query->orderBy('issue_date', 'desc')
@@ -505,6 +557,12 @@ class SalesSettlementController extends Controller implements HasMiddleware
         try {
             $goodsIssue = GoodsIssue::with('items')->findOrFail($request->goods_issue_id);
 
+            // Authorize supplier access
+            $userSupplierId = $this->getUserSupplierScope();
+            if ($userSupplierId !== null && $goodsIssue->supplier_id !== $userSupplierId) {
+                abort(403, 'Unauthorized: This goods issue belongs to a different supplier.');
+            }
+
             $existingSettlement = SalesSettlement::where('goods_issue_id', $request->goods_issue_id)
                 ->whereIn('status', ['draft', 'posted'])
                 ->first();
@@ -597,6 +655,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
     public function show(SalesSettlement $salesSettlement)
     {
         $this->authorize('view', $salesSettlement);
+        $this->authorizeSalesSettlementSupplierAccess($salesSettlement);
 
         $salesSettlement->load([
             'goodsIssue',
@@ -671,6 +730,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
     public function edit(SalesSettlement $salesSettlement)
     {
         $this->authorize('update', $salesSettlement);
+        $this->authorizeSalesSettlementSupplierAccess($salesSettlement);
 
         if ($salesSettlement->status !== 'draft') {
             return redirect()
@@ -848,6 +908,9 @@ class SalesSettlementController extends Controller implements HasMiddleware
         return view('sales-settlements.edit', [
             'settlement' => $salesSettlement,
             'suppliers' => Supplier::where('disabled', false)
+                ->when($this->getUserSupplierScope(), function ($query, $userSupplierId) {
+                    return $query->where('id', $userSupplierId);
+                })
                 ->orderBy('supplier_name')
                 ->get(['id', 'supplier_name']),
             'expenseAccounts' => $expenseAccounts,
@@ -886,6 +949,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
     public function update(UpdateSalesSettlementRequest $request, SalesSettlement $salesSettlement)
     {
         $this->authorize('update', $salesSettlement);
+        $this->authorizeSalesSettlementSupplierAccess($salesSettlement);
 
         if ($salesSettlement->status !== 'draft') {
             return redirect()
@@ -985,6 +1049,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
     public function destroy(SalesSettlement $salesSettlement)
     {
         $this->authorize('delete', $salesSettlement);
+        $this->authorizeSalesSettlementSupplierAccess($salesSettlement);
 
         if ($salesSettlement->status !== 'draft') {
             return back()->with('error', 'Only draft Sales Settlements can be deleted.');
@@ -1615,6 +1680,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
     public function post(SalesSettlement $salesSettlement)
     {
         $this->authorize('post', $salesSettlement);
+        $this->authorizeSalesSettlementSupplierAccess($salesSettlement);
 
         if ($salesSettlement->status !== 'draft') {
             return back()->with('error', 'Only draft Sales Settlements can be posted.');

@@ -215,6 +215,42 @@
                 @endif
             </div>
 
+            @php
+                $grossInflow = (float) ($grandTotals['sale'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount']);
+                $totalExpensesShown = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
+                $netAfterAllExpenses = $grossInflow - $totalExpensesShown;
+            @endphp
+
+            <div class="no-print mb-6 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-blue-700">Gross Inflow</p>
+                        <p class="mt-2 text-2xl font-bold text-blue-900">{{ number_format($grossInflow, 2) }}</p>
+                    </div>
+                    <div class="rounded-xl border border-rose-200 bg-rose-50 p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wider text-rose-700">Total Expenses (Shown)</p>
+                        <p class="mt-2 text-2xl font-bold text-rose-900">{{ number_format($totalExpensesShown, 2) }}</p>
+                    </div>
+                    <div class="rounded-xl border {{ $netAfterAllExpenses >= 0 ? 'border-emerald-200 bg-emerald-50' : 'border-orange-200 bg-orange-50' }} p-4">
+                        <p class="text-xs font-semibold uppercase tracking-wider {{ $netAfterAllExpenses >= 0 ? 'text-emerald-700' : 'text-orange-700' }}">Net Position</p>
+                        <p class="mt-2 text-2xl font-bold {{ $netAfterAllExpenses >= 0 ? 'text-emerald-900' : 'text-orange-900' }}">
+                            {{ number_format($netAfterAllExpenses, 2) }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="rounded-xl border border-gray-200 bg-white p-4">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-2">Inflow Composition</h3>
+                        <div id="summary-roi-inflow-chart" class="h-[300px]"></div>
+                    </div>
+                    <div class="rounded-xl border border-gray-200 bg-white p-4">
+                        <h3 class="text-sm font-semibold text-gray-700 mb-2">Expense Comparison</h3>
+                        <div id="summary-roi-expense-chart" class="h-[300px]"></div>
+                    </div>
+                </div>
+            </div>
+
             {{-- 3-column layout --}}
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
@@ -360,4 +396,103 @@
 
         </div>{{-- end white card --}}
     </div>
+
+    @push('scripts')
+        <script>
+            (function () {
+                if (typeof ApexCharts === 'undefined') {
+                    return;
+                }
+
+                const inflowSeries = [
+                    {{ (float) $grandTotals['sale'] }},
+                    {{ (float) $grandTotals['schema_received'] }},
+                    {{ (float) $grandTotals['fmr_received'] }},
+                    {{ (float) $grandTotals['cash_discount'] }},
+                ];
+
+                const inflowChart = document.querySelector('#summary-roi-inflow-chart');
+                if (inflowChart) {
+                    new ApexCharts(inflowChart, {
+                        chart: {
+                            type: 'donut',
+                            height: 300,
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        labels: ['Sale', 'Scheme Received', 'FMR Received', 'Cash Discount'],
+                        series: inflowSeries,
+                        colors: ['#2563eb', '#16a34a', '#9333ea', '#d97706'],
+                        legend: {
+                            position: 'bottom'
+                        },
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function (value) {
+                                return value.toFixed(1) + '%';
+                            }
+                        },
+                        tooltip: {
+                            y: {
+                                formatter: function (value) {
+                                    return Number(value).toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                }
+                            }
+                        }
+                    }).render();
+                }
+
+                const expenseChart = document.querySelector('#summary-roi-expense-chart');
+                if (expenseChart) {
+                    new ApexCharts(expenseChart, {
+                        chart: {
+                            type: 'bar',
+                            height: 300,
+                            toolbar: {
+                                show: false
+                            }
+                        },
+                        series: [{
+                            name: 'Amount',
+                            data: [{{ (float) $distributionExpensesTotal }}, {{ (float) $otherOperatingExpensesTotal }}]
+                        }],
+                        xaxis: {
+                            categories: ['Distribution & Selling', 'Other Operating']
+                        },
+                        colors: ['#dc2626'],
+                        plotOptions: {
+                            bar: {
+                                borderRadius: 4,
+                                columnWidth: '55%'
+                            }
+                        },
+                        dataLabels: {
+                            enabled: false
+                        },
+                        yaxis: {
+                            labels: {
+                                formatter: function (value) {
+                                    return Number(value).toLocaleString();
+                                }
+                            }
+                        },
+                        tooltip: {
+                            y: {
+                                formatter: function (value) {
+                                    return Number(value).toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
+                                }
+                            }
+                        }
+                    }).render();
+                }
+            })();
+        </script>
+    @endpush
 </x-app-layout>

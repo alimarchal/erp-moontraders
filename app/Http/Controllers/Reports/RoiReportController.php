@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Reports;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
+use App\Models\ExpenseDetail;
 use App\Models\Product;
 use App\Models\SalesSettlementItem;
 use App\Models\Supplier;
@@ -30,13 +31,14 @@ class RoiReportController extends Controller implements HasMiddleware
         // 1. Initial Setup & Validation
         if (! $request->has('filter.start_date')) {
             $startDate = Carbon::now()->startOfMonth();
-            $endDate = Carbon::now();
+            $endDate = Carbon::now()->endOfMonth();
         } else {
             $startDate = Carbon::parse($request->input('filter.start_date'));
             $endDate = Carbon::parse($request->input('filter.end_date'));
         }
         $employeeIds = $request->input('filter.employee_id');
-        $supplierId = $request->input('filter.supplier_id');
+        // Default to Nestlé Pakistan (id=3) when no supplier is selected
+        $supplierId = $request->input('filter.supplier_id') ?: 3;
 
         // 2. Fetch All Products
         $products = Product::with('category')
@@ -91,6 +93,9 @@ class RoiReportController extends Controller implements HasMiddleware
             })
             ->when($request->input('filter.product_id'), function ($query) use ($request) {
                 $query->where('product_id', $request->input('filter.product_id'));
+            })
+            ->when($supplierId, function ($query) use ($supplierId) {
+                $query->where('sales_settlements.supplier_id', $supplierId);
             })
             ->groupBy('product_id', 'date')
             ->get()
@@ -149,6 +154,9 @@ class RoiReportController extends Controller implements HasMiddleware
             ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
                 $query->where('sales_settlements.settlement_number', 'like', '%'.$request->input('filter.settlement_number').'%');
             })
+            ->when($supplierId, function ($query) use ($supplierId) {
+                $query->where('sales_settlements.supplier_id', $supplierId);
+            })
             ->selectRaw('
                 SUM(sales_settlement_items.total_sales_value) as total_sales,
                 SUM(sales_settlement_items.total_cogs) as total_cogs
@@ -182,6 +190,9 @@ class RoiReportController extends Controller implements HasMiddleware
             })
             ->when($request->input('filter.settlement_number'), function ($query) use ($request) {
                 $query->where('sales_settlements.settlement_number', 'like', '%'.$request->input('filter.settlement_number').'%');
+            })
+            ->when($supplierId, function ($query) use ($supplierId) {
+                $query->where('sales_settlements.supplier_id', $supplierId);
             })
             ->selectRaw('
                 chart_of_accounts.id as account_id,
@@ -410,6 +421,44 @@ class RoiReportController extends Controller implements HasMiddleware
             ];
         })->sortByDesc('total_sale');
 
+        // Merge default supplier into filters so the dropdown reflects the default selection
+        $filters = $request->input('filter', []);
+        if (empty($filters['supplier_id'])) {
+            $filters['supplier_id'] = 3;
+        }
+
+        // Fetch Distribution & Selling Expenses from expense_details, grouped by category
+        $allCategoryOptions = ExpenseDetail::categoryOptions();
+        $distRaw = ExpenseDetail::query()
+            ->whereBetween('transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->when($supplierId, fn ($q) => $q->where('supplier_id', $supplierId))
+            ->select('category', 'description', 'amount')
+            ->orderBy('category')
+            ->orderBy('transaction_date')
+            ->get()
+            ->groupBy('category');
+
+        $distributionExpenses = collect();
+        foreach ($allCategoryOptions as $key => $label) {
+            $records = $distRaw->get($key, collect());
+            if ($records->isEmpty()) {
+                $distributionExpenses->push([
+                    'category' => $label,
+                    'description' => '—',
+                    'amount' => 0,
+                ]);
+            } else {
+                foreach ($records as $rec) {
+                    $distributionExpenses->push([
+                        'category' => $label,
+                        'description' => $rec->description ?: '—',
+                        'amount' => (float) $rec->amount,
+                    ]);
+                }
+            }
+        }
+        $distributionExpensesTotal = $distributionExpenses->sum('amount');
+
         return view('reports.roi.index', [
             'matrixData' => $matrixData,
             'employees' => $employees,
@@ -419,10 +468,12 @@ class RoiReportController extends Controller implements HasMiddleware
             'productList' => $productList,
             'startDate' => $startDate->format('Y-m-d'),
             'endDate' => $endDate->format('Y-m-d'),
-            'filters' => $request->input('filter', []),
+            'filters' => $filters,
             'filterSummary' => implode(' | ', $filterSummary),
             'expenseBreakdown' => $expenseBreakdown,
             'categorySummary' => $categorySummary,
+            'distributionExpenses' => $distributionExpenses,
+            'distributionExpensesTotal' => $distributionExpensesTotal,
         ]);
     }
 }

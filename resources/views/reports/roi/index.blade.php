@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="ROI Report" :showSearch="true" :showRefresh="true" backRoute="reports.index" />
+        <x-page-header title="Return on Investment Report" :showSearch="true" :showRefresh="true" backRoute="reports.index" />
     </x-slot>
 
     @push('header')
@@ -260,21 +260,22 @@
     <div class="max-w-8xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
-                <p class="text-center font-extrabold mb-2 text-xl">
+                <div class="text-center font-extrabold mb-2 text-xl">
                     Moon Traders<br>
-                    <span class="text-lg">ROI Report</span><br>
-                    <span class="text-xs font-normal">
-                        Period: {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to
-                        {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}
-                        @if($filterSummary)
-                            <br>{{ $filterSummary }}
-                        @endif
-                    </span>
-                    <br>
-                    <span class="print-only print-info text-xs text-center">
+                    <span class="text-lg">Return on Investment Report for the Period of {{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}</span>
+                    @if($filterSummary)
+                        <div class="flex flex-wrap justify-center gap-1 mt-1 mb-1">
+                            @foreach(explode(' | ', $filterSummary) as $filterItem)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium font-normal bg-gray-100 text-gray-800 border border-gray-300">
+                                    {{ trim($filterItem) }}
+                                </span>
+                            @endforeach
+                        </div>
+                    @endif
+                    <div class="print-only print-info text-xs text-center font-normal">
                         Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
-                    </span>
-                </p>
+                    </div>
+                </div>
 
                 <table class="report-table">
                     <thead>
@@ -380,9 +381,9 @@
                 <!-- Summaries Section -->
                 <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 align-top">
                     
-                    <!-- Category Summary Card -->
-                    <div class="border rounded-lg p-4 bg-gray-50 border-gray-300 print:break-inside-avoid shadow-sm print:shadow-none print:bg-transparent h-full">
-                        <h4 class="font-bold text-lg mb-2 text-center border-b pb-2 text-black">Category Summary</h4>
+                    <!-- Category Summary -->
+                    <div class="print:break-inside-avoid">
+                        <h4 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Category Summary<br><span class="text-xs font-normal">{{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}</span></h4>
                         <div class="overflow-x-auto">
                             <table class="report-table">
                                 <thead class="bg-gray-200">
@@ -413,13 +414,25 @@
                                         </tr>
                                     @endforeach
                                 </tbody>
+                                <tfoot class="bg-gray-100 font-bold border-t-2 border-black">
+                                    <tr>
+                                        <td colspan="2" class="p-1 text-right text-black">Grand Total:</td>
+                                        <td class="p-1 text-center font-mono text-black">{{ $matrixData['grand_totals']['sold_qty'] + 0 }}</td>
+                                        <td class="p-1 text-right font-mono text-black">{{ number_format($matrixData['grand_totals']['sale_amount'], 2) }}</td>
+                                        <td class="p-1 text-right font-mono text-black">100%</td>
+                                        <td class="p-1 text-right font-mono text-black font-extrabold">{{ number_format($matrixData['grand_totals']['net_profit'], 2) }}</td>
+                                        <td class="p-1 text-right font-mono text-black text-xs">
+                                            {{ $matrixData['grand_totals']['sale_amount'] > 0 ? number_format(($matrixData['grand_totals']['net_profit'] / $matrixData['grand_totals']['sale_amount']) * 100, 1) : '0.0' }}%
+                                        </td>
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
                     </div>
 
-                    <!-- Expense Analysis Card -->
-                    <div class="border rounded-lg p-4 bg-gray-50 border-gray-300 print:break-inside-avoid shadow-sm print:shadow-none print:bg-transparent h-full">
-                        <h4 class="font-bold text-lg mb-2 text-center border-b pb-2 text-black">Expense Analysis</h4>
+                    <!-- Expense Analysis -->
+                    <div class="print:break-inside-avoid">
+                        <h4 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Expense Analysis<br><span class="text-xs font-normal">{{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}</span></h4>
                          <div class="overflow-x-auto">
                             <table class="report-table">
                                 <thead class="bg-gray-200">
@@ -458,92 +471,36 @@
                         </div>
                     </div>
 
-                    <!-- Overall Financial Summary Card -->
-                    <div class="border rounded-lg p-4 bg-gray-50 border-gray-300 print:break-inside-avoid shadow-sm print:shadow-none print:bg-transparent h-full">
-                         <h4 class="font-bold text-lg mb-2 text-center border-b pb-2 text-black">Financial Summary</h4>
-                          <div class="overflow-x-auto">
-                             <table class="report-table">
+                    <!-- Distribution & Selling Expenses -->
+                    <div class="print:break-inside-avoid">
+                        <h4 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Distribution &amp; Selling Expenses<br><span class="text-xs font-normal">{{ \Carbon\Carbon::parse($startDate)->format('d-M-Y') }} to {{ \Carbon\Carbon::parse($endDate)->format('d-M-Y') }}</span></h4>
+                        <div class="overflow-x-auto">
+                            <table class="report-table">
                                 <thead class="bg-gray-200">
                                     <tr>
-                                        <th class="text-left p-1 w-10 text-black">Sr #</th>
-                                        <th class="text-left p-1 text-black">Metric</th>
+                                        <th class="text-center p-1 w-8 text-black">#</th>
+                                        <th class="text-left p-1 text-black">Category</th>
+                                        <th class="text-left p-1 text-black">Description</th>
                                         <th class="text-right p-1 text-black">Amount</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @php
-                                        $gt = $matrixData['grand_totals'];
-                                        $sales = $gt['sale_amount'];
-                                        $cogs = $gt['cogs'];
-                                        $gp = $gt['gross_profit'];
-                                        $exp = $gt['expenses'];
-                                        $np = $gt['net_profit'];
-                                        $qty = $gt['sold_qty'];
-
-                                        $gpMargin = $sales > 0 ? ($gp / $sales) * 100 : 0;
-                                        $npMargin = $sales > 0 ? ($np / $sales) * 100 : 0;
-                                        $expRatio = $sales > 0 ? ($exp / $sales) * 100 : 0;
-                                        
-                                        $avgTxnValue = $qty > 0 ? ($sales / $qty) : 0;
-                                        $costPerUnit = $qty > 0 ? ($exp / $qty) : 0; 
-                                        // OR maybe Cost Per Unit = COGS / Qty? Usually Cost per Unit implies COGS.
-                                        // Let's call it "Exp / Unit" for clarity if referring to expenses.
-                                        // User asked "Cost Per Unit" in plan -> usually COGS per unit.
-                                        // Let's add "Avg Item Price" (TP) and "Avg Item Cost" (IP)
-                                        $avgPrice = $qty > 0 ? ($sales / $qty) : 0; 
-                                        $avgCost = $qty > 0 ? ($cogs / $qty) : 0;
-                                    @endphp
-
-                                    <tr>
-                                        <td class="p-1 text-center font-mono text-black">1</td>
-                                        <td class="p-1 font-semibold text-black">Total Sales</td>
-                                        <td class="p-1 text-right font-mono font-bold text-black">{{ number_format($sales, 2) }}</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="p-1 text-center font-mono text-black">2</td>
-                                        <td class="p-1 font-semibold text-black">Total COGS</td>
-                                        <td class="p-1 text-right font-mono text-black">({{ number_format($cogs, 2) }})</td>
-                                    </tr>
-                                    <tr class="bg-gray-100">
-                                        <td class="p-1 text-center font-mono text-black border-t">3</td>
-                                        <td class="p-1 font-bold text-black border-t">Gross Profit</td>
-                                        <td class="p-1 text-right font-mono font-bold text-black border-t">
-                                            {{ number_format($gp, 2) }}
-                                            <span class="text-xs font-normal text-gray-600 block">({{ number_format($gpMargin, 1) }}%)</span>
-                                        </td>
-                                    </tr>
-                                    <tr>
-                                        <td class="p-1 text-center font-mono text-black">4</td>
-                                        <td class="p-1 font-semibold text-black">Allocated Expenses</td>
-                                        <td class="p-1 text-right font-mono text-black">
-                                            ({{ number_format($exp, 2) }})
-                                            <span class="text-xs text-gray-600 block">({{ number_format($expRatio, 1) }}%)</span>
-                                        </td>
-                                    </tr>
-                                    <tr class="bg-green-100">
-                                        <td class="p-1 text-center font-mono font-extrabold text-lg border-t-2 border-black text-black">5</td>
-                                        <td class="p-1 font-extrabold text-lg text-black border-t-2 border-black">Net Profit</td>
-                                        <td class="p-1 text-right font-mono font-extrabold text-lg border-t-2 border-black text-black">
-                                            {{ number_format($np, 2) }}
-                                            <span class="text-xs font-normal text-black block">({{ number_format($npMargin, 1) }}%)</span>
-                                        </td>
-                                    </tr>
-                                    
-                                    <!-- Efficiency Metrics Spacer -->
-                                    <tr><td colspan="3" class="p-1"></td></tr>
-                                    
-                                     <tr class="bg-gray-50">
-                                        <td class="p-1 text-center font-mono text-gray-500 text-xs">A</td>
-                                        <td class="p-1 text-xs text-gray-600">Avg Selling Price</td>
-                                        <td class="p-1 text-right font-mono text-xs text-black">{{ number_format($avgPrice, 2) }}</td>
-                                    </tr>
-                                     <tr class="bg-gray-50">
-                                        <td class="p-1 text-center font-mono text-gray-500 text-xs">B</td>
-                                        <td class="p-1 text-xs text-gray-600">Avg Cost Price</td>
-                                        <td class="p-1 text-right font-mono text-xs text-black">{{ number_format($avgCost, 2) }}</td>
-                                    </tr>
+                                    @foreach($distributionExpenses as $distExp)
+                                        <tr>
+                                            <td class="p-1 text-center font-mono text-black">{{ $loop->iteration }}</td>
+                                            <td class="p-1 text-black font-medium">{{ $distExp['category'] }}</td>
+                                            <td class="p-1 text-black text-xs">{{ $distExp['description'] }}</td>
+                                            <td class="p-1 text-right font-mono text-black">{{ number_format($distExp['amount'], 2) }}</td>
+                                        </tr>
+                                    @endforeach
                                 </tbody>
-                             </table>
+                                <tfoot class="bg-gray-100 font-bold border-t-2 border-black">
+                                    <tr>
+                                        <td colspan="3" class="p-1 text-right text-black">Grand Total:</td>
+                                        <td class="p-1 text-right font-mono font-extrabold text-black">{{ number_format($distributionExpensesTotal, 2) }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     </div>
                 </div>

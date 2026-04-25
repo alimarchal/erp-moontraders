@@ -492,8 +492,7 @@
                 {{-- ─── Supplier Reports ─── --}}
                 @canany(['report-audit-invoice-summary', 'report-audit-custom-settlement', 'report-sales-sku-rates', 'report-audit-advance-tax', 'report-audit-advance-tax-sales-register'])
                     <div>
-                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Supplier
-                            Reports</p>
+                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Supplier Reports</p>
                         <div
                             class="bg-white rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
                             @can('report-audit-invoice-summary')

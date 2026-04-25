@@ -107,8 +107,8 @@ it('forbids non-admin user from directly filtering goods issues for another supp
 });
 
 it('shows only assigned supplier in goods issue create form for non-admin user', function () {
-    $supplierA = Supplier::factory()->create(['supplier_name' => 'Supplier A']);
-    $supplierB = Supplier::factory()->create(['supplier_name' => 'Supplier B']);
+    $supplierA = Supplier::factory()->create(['supplier_name' => 'Supplier A', 'disabled' => false]);
+    $supplierB = Supplier::factory()->create(['supplier_name' => 'Supplier B', 'disabled' => false]);
 
     $user = User::factory()->create(['supplier_id' => $supplierA->id]);
     $user->assignRole($this->regularRole);

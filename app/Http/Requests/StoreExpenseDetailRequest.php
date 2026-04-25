@@ -20,7 +20,7 @@ class StoreExpenseDetailRequest extends FormRequest
         $simplified = config('app.expense_simplified_entry');
 
         return [
-            'category' => ['required', 'in:stationary,tcs,tonner_it,salaries,fuel,van_work'],
+            'category' => ['required', 'in:stationary,tcs,tonner_it,salaries,fuel,van_work,printing_stationery_office_supplies,salesflo_fee,administractive_expenses'],
             'supplier_id' => ['nullable', 'exists:suppliers,id'],
             'transaction_date' => ['required', 'date'],
             'description' => ['nullable', 'string'],

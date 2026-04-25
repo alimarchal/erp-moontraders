@@ -187,8 +187,7 @@
                             @endcan
                             @can('report-audit-cheque-register')
                                 <div class="ml-[58px] h-px bg-gray-100"></div>
-                                <x-settings-row href="{{ route('reports.cheque-register.index') }}"
-                                    label="Cheque Register"
+                                <x-settings-row href="{{ route('reports.cheque-register.index') }}" label="Cheque Register"
                                     description="Cheque collection and clearing status tracking" icon-bg="bg-amber-600">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
@@ -218,7 +217,7 @@
                 @endcanany
 
                 {{-- ─── Audit & Product Reports ─── --}}
-                @canany(['report-sales-fmr-amr-comparison', 'report-audit-sku-fmr-amr', 'report-audit-percentage-expense', 'report-audit-stock-availability', 'report-sales-shop-list', 'report-audit-expense-detail', 'report-audit-supplier-ledger'])
+                @canany(['report-sales-fmr-amr-comparison', 'report-audit-sku-fmr-amr', 'report-audit-percentage-expense', 'report-audit-stock-availability', 'report-sales-shop-list', 'report-audit-expense-detail', 'report-audit-supplier-ledger', 'report-sales-scheme-received'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Audit &amp;
                             Product Reports</p>
@@ -308,8 +307,7 @@
                             @endcan
                             @can('report-audit-supplier-ledger')
                                 <div class="ml-[58px] h-px bg-gray-100"></div>
-                                <x-settings-row href="{{ route('reports.supplier-ledger.index') }}"
-                                    label="Supplier Ledger"
+                                <x-settings-row href="{{ route('reports.supplier-ledger.index') }}" label="Supplier Ledger"
                                     description="Supplier-wise accounts receivable: opening, credit sales, recoveries & closing"
                                     icon-bg="bg-teal-500">
                                     <x-slot name="icon">
@@ -317,6 +315,19 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M3.75 3v11.25A2.25 2.25 0 006 16.5h12M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-12m12-13.5v13.5m-12 0v3.75m0 0h12m-12 0H6a2.25 2.25 0 00-2.25 2.25M18 20.25h.375a2.25 2.25 0 002.25-2.25V16.5" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-sales-scheme-received')
+                                <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('reports.scheme-received.index') }}" label="Scheme Received"
+                                    description="TTS & Promo received entries by supplier" icon-bg="bg-green-600">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M9 14.25l6-6m4.5-3.493V21.75l-3.75-1.5-3.75 1.5-3.75-1.5-3.75 1.5V4.757c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0111.186 0c1.1.128 1.907 1.077 1.907 2.185zM9.75 9h.008v.008H9.75V9zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm4.125 4.5h.008v.008h-.008V13.5zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>
@@ -468,7 +479,8 @@
                 {{-- ─── Supplier Reports ─── --}}
                 @canany(['report-audit-invoice-summary', 'report-audit-custom-settlement', 'report-sales-sku-rates', 'report-audit-advance-tax', 'report-audit-advance-tax-sales-register'])
                     <div>
-                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Supplier Reports</p>
+                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Supplier
+                            Reports</p>
                         <div
                             class="bg-white rounded-2xl overflow-hidden shadow-2xl hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
                             @can('report-audit-invoice-summary')
@@ -524,8 +536,9 @@
                             @endcan
                             @can('report-audit-advance-tax-sales-register')
                                 <div class="ml-[58px] h-px bg-gray-100"></div>
-                                <x-settings-row href="{{ route('reports.advance-tax-sales-register.index') }}" label="Advance Tax Sales Register"
-                                    description="Daily advance tax register by supplier" icon-bg="bg-red-700">
+                                <x-settings-row href="{{ route('reports.advance-tax-sales-register.index') }}"
+                                    label="Advance Tax Sales Register" description="Daily advance tax register by supplier"
+                                    icon-bg="bg-red-700">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24" stroke-width="1.8">
@@ -540,7 +553,7 @@
                 @endcanany
 
                 {{-- ─── Sales & Revenue ─── --}}
-                @canany(['report-sales-daily-sales', 'report-sales-credit-sales', 'report-sales-settlement', 'report-sales-roi', 'report-sales-scheme-discount'])
+                @canany(['report-sales-daily-sales', 'report-sales-credit-sales', 'report-sales-settlement', 'report-sales-roi', 'report-sales-summary-roi', 'report-sales-scheme-discount'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Sales &amp;
                             Revenue</p>
@@ -603,6 +616,19 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-sales-summary-roi')
+                                <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('reports.summary-roi.index') }}" label="Summary ROI Report"
+                                    description="Category-wise sale, expenses & financial summary" icon-bg="bg-violet-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

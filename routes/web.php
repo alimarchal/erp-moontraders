@@ -65,10 +65,12 @@ use App\Http\Controllers\Reports\RoiReportController;
 use App\Http\Controllers\Reports\SalesmanStockRegisterController;
 use App\Http\Controllers\Reports\SalesSettlementReportController;
 use App\Http\Controllers\Reports\SchemeDiscountReportController;
+use App\Http\Controllers\Reports\SchemeReceivedReportController;
 use App\Http\Controllers\Reports\ShopListController;
 use App\Http\Controllers\Reports\SkuFmrAmrController;
 use App\Http\Controllers\Reports\SkuRatesController;
 use App\Http\Controllers\Reports\StockAvailabilityReportController;
+use App\Http\Controllers\Reports\SummaryRoiReportController;
 use App\Http\Controllers\Reports\SupplierLedgerReportController;
 use App\Http\Controllers\Reports\TrialBalanceController;
 use App\Http\Controllers\Reports\VanStockBatchReportController;
@@ -721,6 +723,14 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             Route::delete('/{expenseDetail}', [ExpenseDetailReportController::class, 'destroy'])->name('destroy');
         });
 
+        /* Scheme Received */
+        Route::prefix('scheme-received')->name('scheme-received.')->group(function () {
+            Route::get('/', [SchemeReceivedReportController::class, 'index'])->name('index');
+            Route::post('/', [SchemeReceivedReportController::class, 'store'])->name('store');
+            Route::put('/{schemeReceived}', [SchemeReceivedReportController::class, 'update'])->name('update');
+            Route::delete('/{schemeReceived}', [SchemeReceivedReportController::class, 'destroy'])->name('destroy');
+        });
+
         /* Opening Customer Balance */
         Route::prefix('opening-customer-balance')->name('opening-customer-balance.')->group(function () {
             Route::get('/', [OpeningCustomerBalanceReportController::class, 'index'])->name('index');
@@ -733,6 +743,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
 
         /* Analytics & Tax */
         Route::get('roi', [RoiReportController::class, 'index'])->name('roi.index');
+        Route::get('summary-roi', [SummaryRoiReportController::class, 'index'])->name('summary-roi.index');
         Route::get('scheme-discount', [SchemeDiscountReportController::class, 'index'])->name('scheme-discount.index');
         Route::get('percentage-expense', [PercentageExpenseReportController::class, 'index'])->name('percentage-expense.index');
         Route::get('advance-tax', [AdvanceTaxReportController::class, 'index'])->name('advance-tax.index');

@@ -55,6 +55,9 @@ class ExpenseDetail extends Model
             'salaries' => 'Salaries',
             'fuel' => 'Fuel',
             'van_work' => 'Van Work',
+            'printing_stationery_office_supplies' => 'Printing & Stationery / Office Supplies',
+            'salesflo_fee' => 'Salesflo Fee',
+            'administractive_expenses' => 'Administractive Expenses',
         ];
     }
 
@@ -70,6 +73,9 @@ class ExpenseDetail extends Model
             'salaries' => 'Salary',
             'fuel' => 'Fuel Expense',
             'van_work' => 'Van Work Expense',
+            'printing_stationery_office_supplies' => 'Print and Stationery',
+            'salesflo_fee' => 'Administrative Expenses',
+            'administractive_expenses' => 'Administrative Expenses',
         ];
     }
 

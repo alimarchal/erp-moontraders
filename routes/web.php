@@ -73,6 +73,7 @@ use App\Http\Controllers\Reports\StockAvailabilityReportController;
 use App\Http\Controllers\Reports\SummaryRoiReportController;
 use App\Http\Controllers\Reports\SupplierLedgerReportController;
 use App\Http\Controllers\Reports\TrialBalanceController;
+use App\Http\Controllers\Reports\TtsSummaryReportController;
 use App\Http\Controllers\Reports\VanStockBatchReportController;
 use App\Http\Controllers\Reports\VanStockLedgerController;
 use App\Http\Controllers\Reports\VehicleReportController;
@@ -742,6 +743,7 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         });
 
         /* Analytics & Tax */
+        Route::get('tts-summary', [TtsSummaryReportController::class, 'index'])->name('tts-summary.index');
         Route::get('roi', [RoiReportController::class, 'index'])->name('roi.index');
         Route::get('summary-roi', [SummaryRoiReportController::class, 'index'])->name('summary-roi.index');
         Route::get('scheme-discount', [SchemeDiscountReportController::class, 'index'])->name('scheme-discount.index');

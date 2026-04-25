@@ -414,7 +414,7 @@
                 @endcanany
 
                 {{-- ─── Distribution & Logistics ─── --}}
-                @canany(['report-sales-goods-issue', 'report-sales-daily-sales', 'report-sales-vehicle', 'report-audit-product-price-change-log'])
+                @canany(['report-sales-goods-issue', 'report-sales-daily-sales', 'report-sales-vehicle', 'report-audit-product-price-change-log', 'report-sales-tts-summary'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Distribution
                             &amp; Logistics</p>
@@ -468,6 +468,19 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-sales-tts-summary')
+                                <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('reports.tts-summary.index') }}" label="TTS Summary"
+                                    description="Date-wise received vs passed scheme snapshot" icon-bg="bg-fuchsia-600">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M3.75 3v18h16.5M7.5 16.5h2.25V9H7.5v7.5zm6-3h2.25V6h-2.25v7.5z" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

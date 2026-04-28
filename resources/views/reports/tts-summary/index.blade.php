@@ -102,7 +102,7 @@
                             <td class="amount-cell">{{ number_format($ttsPassed, 2) }}</td>
                         </tr>
                         <tr>
-                            <td>Promo Passed (Account 5288)</td>
+                            <td>Promotion Passed (Account 5287)</td>
                             <td class="amount-cell">{{ number_format($promoPassed, 2) }}</td>
                         </tr>
                         <tr class="font-semibold bg-gray-50">
@@ -116,7 +116,8 @@
                     </tbody>
                     <tfoot>
                         <tr class="font-bold">
-                            <td>Total Balance (Total Received - Total Schemed Passed)</td>
+                            <td>Total Balance (Total Received - Total Schemed Passed - Percentage Passed (Account 5223))
+                            </td>
                             <td class="amount-cell">{{ number_format($totalBalance, 2) }}</td>
                         </tr>
                     </tfoot>

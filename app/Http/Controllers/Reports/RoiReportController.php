@@ -258,7 +258,7 @@ class RoiReportController extends Controller implements HasMiddleware
             // Allocated Expenses
             // Use the GLOBAL Expense Ratio for allocation
             $rowExpenses = $rowTotalSalesValue * $expenseRatio;
-            $rowNetProfit = $rowGrossProfit - $rowExpenses;
+            $rowNetProfit = $rowTotalSoldQty * $margin;
 
             if ($rowTotalSoldQty > 0) {
                 $matrixData['products']->push([

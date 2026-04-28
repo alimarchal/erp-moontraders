@@ -303,188 +303,145 @@
                 </div>
             </div>
 
-            {{-- 3-column layout --}}
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 print-grid-2col">
+            {{-- Consolidated statement under graphs --}}
+            @php
+                $distributionByCategory = collect($distributionExpenses)
+                    ->groupBy('category')
+                    ->map(fn($items) => (float) collect($items)->sum('amount'));
 
-                <div class="space-y-6">
-                    {{-- ── Table 1: Category Wise Sale ── --}}
-                    <div class="print:break-inside-avoid">
-                        <h2 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Category Wise Sale
-                        </h2>
-                        <table class="report-table w-full">
-                            <thead>
-                                <tr>
-                                    <th>Category</th>
-                                    <th class="text-right">Sale (Rs.)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($categoryRows as $row)
-                                    <tr>
-                                        <td>{{ $row['category_name'] }}</td>
-                                        <td class="text-right">{{ number_format($row['sale'], 2) }}</td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="2" class="text-center text-gray-500">No data for this period</td>
-                                    </tr>
-                                @endforelse
+                $expenseByCode = $expenseBreakdown->keyBy('account_code');
+                $profitFromSale = (float) $grandTotals['gross_profit'];
+                $grandRevenue = (float) $grossInflow;
+                $totalOperatingExpenses = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
+                $profitBeforeTaxation = $grandRevenue - $totalOperatingExpenses;
+            @endphp
 
-                                {{-- Summary rows below categories --}}
-                                <tr class="font-semibold border-t-2 border-gray-400">
-                                    <td>Total Sale</td>
-                                    <td class="text-right">{{ number_format($grandTotals['sale'], 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Schema Received</td>
-                                    <td class="text-right">{{ number_format($grandTotals['schema_received'], 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        FMR Received
-                                        {{-- <div class="text-xs text-gray-400 font-normal leading-tight mt-0.5">
-                                            Σ grni.fmr_allowance (Posted GRNs, supplier-filtered, date range)
-                                        </div> --}}
-                                    </td>
-                                    <td class="text-right">{{ number_format($grandTotals['fmr_received'], 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Cash Discount from Invoices (0.5%)</td>
-                                    <td class="text-right">{{ number_format($grandTotals['cash_discount'], 2) }}</td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr class="font-bold">
-                                    <td>Grand Total</td>
-                                    <td class="text-right">
-                                        {{ number_format($grandTotals['sale'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'], 2) }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+            <div class="print:break-inside-avoid">
+                <h2 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Summary ROI Statement</h2>
+                <table class="report-table w-full">
+                    <thead>
+                        <tr class="bg-slate-200">
+                            <th>Particulars</th>
+                            <th class="text-right">Amount (Rs.)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bg-slate-200 font-semibold">
+                            <td colspan="2">Category Wise Sale</td>
+                        </tr>
+                        @forelse($categoryRows as $row)
+                            <tr>
+                                <td>{{ $row['category_name'] }}</td>
+                                <td class="text-right">{{ number_format($row['sale'], 2) }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td>No data for this period</td>
+                                <td class="text-right">—</td>
+                            </tr>
+                        @endforelse
 
-                    <div class="print:break-inside-avoid">
-                        <h2 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Other Operating
-                            Expenses</h2>
-                        <table class="report-table w-full">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Account</th>
-                                    <th>Code</th>
-                                    <th class="text-right">Amount (Rs.)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($expenseBreakdown as $expense)
-                                    <tr>
-                                        <td>{{ $loop->iteration }}</td>
-                                        <td>{{ $expense->account_name }}</td>
-                                        <td class="text-center">{{ $expense->account_code }}</td>
-                                        <td class="text-right">
-                                            {{ $expense->total_amount > 0 ? number_format($expense->total_amount, 2) : '—' }}
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="text-center text-gray-500">No expense records</td>
-                                    </tr>
-                                @endforelse
-                                <tr>
-                                    <td>{{ $expenseBreakdown->count() + 1 }}</td>
-                                    <td>Distribution &amp; Selling Expenses</td>
-                                    <td class="text-center">—</td>
-                                    <td class="text-right">
-                                        {{ $distributionExpensesTotal > 0 ? number_format($distributionExpensesTotal, 2) : '—' }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr class="font-bold">
-                                    <td colspan="3">Total</td>
-                                    <td class="text-right">
-                                        {{ number_format($otherOperatingExpensesTotal + $distributionExpensesTotal, 2) }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                        <tr class="font-semibold bg-slate-100">
+                            <td>Total Sale</td>
+                            <td class="text-right">{{ number_format($grandTotals['sale'], 2) }}</td>
+                        </tr>
+                        <tr class="bg-yellow-200 font-semibold">
+                            <td>Profit From Sale</td>
+                            <td class="text-right">{{ number_format($profitFromSale, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Scheme Received</td>
+                            <td class="text-right">{{ number_format($grandTotals['schema_received'], 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>FMR Received</td>
+                            <td class="text-right">{{ number_format($grandTotals['fmr_received'], 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Cash Discount from Invoices (0.5%)</td>
+                            <td class="text-right">{{ number_format($grandTotals['cash_discount'], 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Other Allowance from Company</td>
+                            <td class="text-right">—</td>
+                        </tr>
+                        <tr>
+                            <td>Rate Increase Profit</td>
+                            <td class="text-right">—</td>
+                        </tr>
+                        <tr class="bg-slate-200 font-bold">
+                            <td>Grand Revenue</td>
+                            <td class="text-right">{{ number_format($grandRevenue, 2) }}</td>
+                        </tr>
 
-                </div>
+                        <tr class="bg-slate-200 font-semibold">
+                            <td colspan="2">Distribution &amp; Selling Expenses</td>
+                        </tr>
+                        @forelse($distributionByCategory as $category => $amount)
+                            <tr>
+                                <td>{{ $category }}</td>
+                                <td class="text-right">{{ $amount > 0 ? number_format($amount, 2) : '—' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td>No distribution expense records</td>
+                                <td class="text-right">—</td>
+                            </tr>
+                        @endforelse
+                        <tr class="bg-slate-100 font-semibold">
+                            <td>Distribution &amp; Selling Expenses Total</td>
+                            <td class="text-right">{{ number_format($distributionExpensesTotal, 2) }}</td>
+                        </tr>
 
-                {{-- ── Right Column Tables ── --}}
-                <div class="space-y-6">
-                    <div class="print:break-inside-avoid">
-                        <h2 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Distribution &amp;
-                            Selling
-                            Expenses</h2>
-                        <table class="report-table w-full">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Category</th>
-                                    <th>Description</th>
-                                    <th class="text-right">Amount (Rs.)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($distributionExpenses as $i => $expense)
-                                    <tr>
-                                        <td>{{ $i + 1 }}</td>
-                                        <td>{{ $expense['category'] }}</td>
-                                        <td>{{ $expense['description'] }}</td>
-                                        <td class="text-right">
-                                            {{ $expense['amount'] > 0 ? number_format($expense['amount'], 2) : '—' }}
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="4" class="text-center text-gray-500">No expense records</td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                            <tfoot>
-                                <tr class="font-bold">
-                                    <td colspan="3">Total</td>
-                                    <td class="text-right">{{ number_format($distributionExpensesTotal, 2) }}</td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                        <tr class="bg-slate-200 font-semibold">
+                            <td colspan="2">Other Operating Expenses</td>
+                        </tr>
+                        <tr>
+                            <td>AMR Powder (A/C 5252)</td>
+                            <td class="text-right">
+                                {{ number_format((float) ($expenseByCode->get('5252')->total_amount ?? 0), 2) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>AMR Liquid (A/C 5262)</td>
+                            <td class="text-right">
+                                {{ number_format((float) ($expenseByCode->get('5262')->total_amount ?? 0), 2) }}
+                            </td>
+                        </tr>
+                        <tr class="bg-yellow-200 font-semibold">
+                            <td>Scheme Discount Expense (A/C 5292)</td>
+                            <td class="text-right">
+                                {{ number_format((float) ($expenseByCode->get('5292')->total_amount ?? 0), 2) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Advance Tax (A/C 1161)</td>
+                            <td class="text-right">
+                                {{ number_format((float) ($expenseByCode->get('1161')->total_amount ?? 0), 2) }}
+                            </td>
+                        </tr>
+                        <tr class="bg-slate-100 font-semibold">
+                            <td>Total Operating Expenses</td>
+                            <td class="text-right">{{ number_format($totalOperatingExpenses, 2) }}</td>
+                        </tr>
 
-                    {{-- ── Summary Table ── --}}
-                    <div class="print:break-inside-avoid">
-                        <h2 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Summary</h2>
-                        <table class="report-table w-full">
-                            <tbody>
-                                <tr>
-                                    <td class="font-semibold">Total Gross Inflow</td>
-                                    <td class="text-right font-semibold">{{ number_format($grossInflow, 2) }}</td>
-                                </tr>
-                                <tr>
-                                    <td class="font-semibold">Total Expenses (Shown)</td>
-                                    <td class="text-right font-semibold">
-                                        {{ number_format($otherOperatingExpensesTotal + $distributionExpensesTotal, 2) }}
-                                    </td>
-                                </tr>
-                            </tbody>
-                            <tfoot>
-                                <tr
-                                    class="font-bold {{ ($grossInflow - ($otherOperatingExpensesTotal + $distributionExpensesTotal)) >= 0 ? 'bg-emerald-50 text-emerald-900' : 'bg-rose-50 text-rose-900' }}">
-                                    <td>Net Position</td>
-                                    <td class="text-right">
-                                        {{ number_format($grossInflow - ($otherOperatingExpensesTotal + $distributionExpensesTotal), 2) }}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                </div>
-
-
-            </div>{{-- end 3-col grid --}}
+                        <tr>
+                            <td>Profit before Taxation</td>
+                            <td class="text-right">{{ number_format($profitBeforeTaxation, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td>Taxation</td>
+                            <td class="text-right">—</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-slate-200 font-bold text-xl">
+                            <td>Profit after Taxation</td>
+                            <td class="text-right">{{ number_format($profitBeforeTaxation, 2) }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
 
         </div>{{-- end white card --}}
     </div>
@@ -497,10 +454,10 @@
                 }
 
                 const inflowSeries = [
-                                            {{ (float) $grandTotals['sale'] }},
-                                            {{ (float) $grandTotals['schema_received'] }},
-                                            {{ (float) $grandTotals['fmr_received'] }},
-                                            {{ (float) $grandTotals['cash_discount'] }},
+                                                    {{ (float) $grandTotals['sale'] }},
+                                                    {{ (float) $grandTotals['schema_received'] }},
+                                                    {{ (float) $grandTotals['fmr_received'] }},
+                                                    {{ (float) $grandTotals['cash_discount'] }},
                 ];
 
                 let inflowChartInstance = null;
@@ -559,7 +516,10 @@
                         tooltip: {
                             y: {
                                 formatter: function (value) {
-                                    return Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                    return Number(value).toLocaleString(undefined, {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    });
                                 }
                             }
                         }
@@ -567,7 +527,6 @@
                     expenseChartInstance.render();
                 }
 
-                // Portrait A4: 210mm - 16mm margins - 12px gap / 2 cols ≈ 91mm ≈ 310px at 96dpi
                 const PRINT_HEIGHT = 150;
                 const PRINT_WIDTH = 310;
 
@@ -605,7 +564,6 @@
                     }
                 }
 
-                // matchMedia fires earlier than beforeprint giving charts time to re-render
                 if (window.matchMedia) {
                     const printMQ = window.matchMedia('print');
                     printMQ.addEventListener('change', function (mq) {
@@ -619,7 +577,6 @@
 
                 window.addEventListener('beforeprint', resizeForPrint);
                 window.addEventListener('afterprint', restoreAfterPrint);
-
             })();
         </script>
     @endpush

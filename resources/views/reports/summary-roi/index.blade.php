@@ -26,7 +26,8 @@
 
             @media print {
                 @page {
-                    margin: 15mm 10mm 20mm 10mm;
+                    
+                    margin: 10mm 8mm 12mm 8mm;
 
                     @bottom-center {
                         content: "Page " counter(page) " of " counter(pages);
@@ -51,12 +52,12 @@
 
                 .bg-white {
                     margin: 0 !important;
-                    padding: 10px !important;
+                    padding: 6px !important;
                     box-shadow: none !important;
                 }
 
                 .report-table {
-                    font-size: 10px !important;
+                    font-size: 9px !important;
                     width: 100% !important;
                 }
 
@@ -68,6 +69,39 @@
 
                 .print-only {
                     display: block !important;
+                }
+
+                /* Force 2-column grid in print */
+                .print-grid-2col {
+                    display: grid !important;
+                    grid-template-columns: 1fr 1fr !important;
+                    gap: 12px !important;
+                }
+
+                .print-grid-2col>* {
+                    min-width: 0 !important;
+                }
+
+                /* Reduce spacing in print */
+                .space-y-6>*+* {
+                    margin-top: 8px !important;
+                }
+
+                h2.font-bold {
+                    font-size: 10px !important;
+                    margin-bottom: 3px !important;
+                    padding-bottom: 2px !important;
+                }
+
+                /* Charts in print */
+                .print-chart {
+                    height: 200px !important;
+                    overflow: visible !important;
+                }
+
+                .print-chart svg {
+                    width: 100% !important;
+                    height: 100% !important;
                 }
             }
 
@@ -221,43 +255,51 @@
                 $netAfterAllExpenses = $grossInflow - $totalExpensesShown;
             @endphp
 
-            <div class="no-print mb-6 space-y-4">
+            <div class="no-print mb-6">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
                         <p class="text-xs font-semibold uppercase tracking-wider text-blue-700">Gross Inflow</p>
                         <p class="mt-2 text-2xl font-bold text-blue-900">{{ number_format($grossInflow, 2) }}</p>
                     </div>
                     <div class="rounded-xl border border-rose-200 bg-rose-50 p-4">
-                        <p class="text-xs font-semibold uppercase tracking-wider text-rose-700">Total Expenses (Shown)</p>
+                        <p class="text-xs font-semibold uppercase tracking-wider text-rose-700">Total Expenses (Shown)
+                        </p>
                         <p class="mt-2 text-2xl font-bold text-rose-900">{{ number_format($totalExpensesShown, 2) }}</p>
                     </div>
-                    <div class="rounded-xl border {{ $netAfterAllExpenses >= 0 ? 'border-emerald-200 bg-emerald-50' : 'border-orange-200 bg-orange-50' }} p-4">
-                        <p class="text-xs font-semibold uppercase tracking-wider {{ $netAfterAllExpenses >= 0 ? 'text-emerald-700' : 'text-orange-700' }}">Net Position</p>
-                        <p class="mt-2 text-2xl font-bold {{ $netAfterAllExpenses >= 0 ? 'text-emerald-900' : 'text-orange-900' }}">
+                    <div
+                        class="rounded-xl border {{ $netAfterAllExpenses >= 0 ? 'border-emerald-200 bg-emerald-50' : 'border-orange-200 bg-orange-50' }} p-4">
+                        <p
+                            class="text-xs font-semibold uppercase tracking-wider {{ $netAfterAllExpenses >= 0 ? 'text-emerald-700' : 'text-orange-700' }}">
+                            Net Position</p>
+                        <p
+                            class="mt-2 text-2xl font-bold {{ $netAfterAllExpenses >= 0 ? 'text-emerald-900' : 'text-orange-900' }}">
                             {{ number_format($netAfterAllExpenses, 2) }}
                         </p>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="rounded-xl border border-gray-200 bg-white p-4">
-                        <h3 class="text-sm font-semibold text-gray-700 mb-2">Inflow Composition</h3>
-                        <div id="summary-roi-inflow-chart" class="h-[300px]"></div>
-                    </div>
-                    <div class="rounded-xl border border-gray-200 bg-white p-4">
-                        <h3 class="text-sm font-semibold text-gray-700 mb-2">Expense Comparison</h3>
-                        <div id="summary-roi-expense-chart" class="h-[300px]"></div>
-                    </div>
+            </div>
+
+            {{-- Charts: visible on screen and in print --}}
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6 print-grid-2col">
+                <div class="rounded-xl border border-gray-200 bg-white p-4">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Inflow Composition</h3>
+                    <div id="summary-roi-inflow-chart" class="h-[300px] print-chart"></div>
+                </div>
+                <div class="rounded-xl border border-gray-200 bg-white p-4">
+                    <h3 class="text-sm font-semibold text-gray-700 mb-2">Expense Comparison</h3>
+                    <div id="summary-roi-expense-chart" class="h-[300px] print-chart"></div>
                 </div>
             </div>
 
             {{-- 3-column layout --}}
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 print-grid-2col">
 
                 <div class="space-y-6">
                     {{-- ── Table 1: Category Wise Sale ── --}}
                     <div class="print:break-inside-avoid">
-                        <h2 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Category Wise Sale</h2>
+                        <h2 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Category Wise Sale
+                        </h2>
                         <table class="report-table w-full">
                             <thead>
                                 <tr>
@@ -338,15 +380,26 @@
                                         <td colspan="4" class="text-center text-gray-500">No expense records</td>
                                     </tr>
                                 @endforelse
+                                <tr>
+                                    <td>{{ $expenseBreakdown->count() + 1 }}</td>
+                                    <td>Distribution &amp; Selling Expenses</td>
+                                    <td class="text-center">—</td>
+                                    <td class="text-right">
+                                        {{ $distributionExpensesTotal > 0 ? number_format($distributionExpensesTotal, 2) : '—' }}
+                                    </td>
+                                </tr>
                             </tbody>
                             <tfoot>
                                 <tr class="font-bold">
                                     <td colspan="3">Total</td>
-                                    <td class="text-right">{{ number_format($otherOperatingExpensesTotal, 2) }}</td>
+                                    <td class="text-right">
+                                        {{ number_format($otherOperatingExpensesTotal + $distributionExpensesTotal, 2) }}
+                                    </td>
                                 </tr>
                             </tfoot>
                         </table>
                     </div>
+
                 </div>
 
                 {{-- ── Right Column Tables ── --}}
@@ -389,6 +442,34 @@
                         </table>
                     </div>
 
+                    {{-- ── Summary Table ── --}}
+                    <div class="print:break-inside-avoid">
+                        <h2 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Summary</h2>
+                        <table class="report-table w-full">
+                            <tbody>
+                                <tr>
+                                    <td class="font-semibold">Total Gross Inflow</td>
+                                    <td class="text-right font-semibold">{{ number_format($grossInflow, 2) }}</td>
+                                </tr>
+                                <tr>
+                                    <td class="font-semibold">Total Expenses (Shown)</td>
+                                    <td class="text-right font-semibold">
+                                        {{ number_format($otherOperatingExpensesTotal + $distributionExpensesTotal, 2) }}
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr
+                                    class="font-bold {{ ($grossInflow - ($otherOperatingExpensesTotal + $distributionExpensesTotal)) >= 0 ? 'bg-emerald-50 text-emerald-900' : 'bg-rose-50 text-rose-900' }}">
+                                    <td>Net Position</td>
+                                    <td class="text-right">
+                                        {{ number_format($grossInflow - ($otherOperatingExpensesTotal + $distributionExpensesTotal), 2) }}
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
                 </div>
 
 
@@ -405,10 +486,10 @@
                 }
 
                 const inflowSeries = [
-                    {{ (float) $grandTotals['sale'] }},
-                    {{ (float) $grandTotals['schema_received'] }},
-                    {{ (float) $grandTotals['fmr_received'] }},
-                    {{ (float) $grandTotals['cash_discount'] }},
+                                {{ (float) $grandTotals['sale'] }},
+                                {{ (float) $grandTotals['schema_received'] }},
+                                {{ (float) $grandTotals['fmr_received'] }},
+                                {{ (float) $grandTotals['cash_discount'] }},
                 ];
 
                 const inflowChart = document.querySelector('#summary-roi-inflow-chart');

@@ -26,7 +26,7 @@
 
             @media print {
                 @page {
-                    
+
                     margin: 10mm 8mm 12mm 8mm;
 
                     @bottom-center {
@@ -95,13 +95,24 @@
 
                 /* Charts in print */
                 .print-chart {
-                    height: 200px !important;
+                    height: 150px !important;
                     overflow: visible !important;
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                }
+
+                .print-chart .apexcharts-canvas {
+                    margin: 0 auto !important;
                 }
 
                 .print-chart svg {
                     width: 100% !important;
                     height: 100% !important;
+                }
+
+                .print-chart .apexcharts-legend {
+                    justify-content: center !important;
                 }
             }
 
@@ -486,93 +497,129 @@
                 }
 
                 const inflowSeries = [
-                                {{ (float) $grandTotals['sale'] }},
-                                {{ (float) $grandTotals['schema_received'] }},
-                                {{ (float) $grandTotals['fmr_received'] }},
-                                {{ (float) $grandTotals['cash_discount'] }},
+                                            {{ (float) $grandTotals['sale'] }},
+                                            {{ (float) $grandTotals['schema_received'] }},
+                                            {{ (float) $grandTotals['fmr_received'] }},
+                                            {{ (float) $grandTotals['cash_discount'] }},
                 ];
 
-                const inflowChart = document.querySelector('#summary-roi-inflow-chart');
-                if (inflowChart) {
-                    new ApexCharts(inflowChart, {
+                let inflowChartInstance = null;
+                let expenseChartInstance = null;
+
+                const inflowEl = document.querySelector('#summary-roi-inflow-chart');
+                if (inflowEl) {
+                    inflowChartInstance = new ApexCharts(inflowEl, {
                         chart: {
                             type: 'donut',
                             height: 300,
-                            toolbar: {
-                                show: false
-                            }
+                            toolbar: { show: false },
+                            animations: { enabled: true },
                         },
                         labels: ['Sale', 'Scheme Received', 'FMR Received', 'Cash Discount'],
                         series: inflowSeries,
                         colors: ['#2563eb', '#16a34a', '#9333ea', '#d97706'],
-                        legend: {
-                            position: 'bottom'
-                        },
+                        legend: { position: 'bottom' },
                         dataLabels: {
                             enabled: true,
-                            formatter: function (value) {
-                                return value.toFixed(1) + '%';
-                            }
+                            formatter: function (value) { return value.toFixed(1) + '%'; }
                         },
                         tooltip: {
                             y: {
                                 formatter: function (value) {
-                                    return Number(value).toLocaleString(undefined, {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2
-                                    });
+                                    return Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                 }
                             }
                         }
-                    }).render();
+                    });
+                    inflowChartInstance.render();
                 }
 
-                const expenseChart = document.querySelector('#summary-roi-expense-chart');
-                if (expenseChart) {
-                    new ApexCharts(expenseChart, {
+                const expenseEl = document.querySelector('#summary-roi-expense-chart');
+                if (expenseEl) {
+                    expenseChartInstance = new ApexCharts(expenseEl, {
                         chart: {
                             type: 'bar',
                             height: 300,
-                            toolbar: {
-                                show: false
-                            }
+                            toolbar: { show: false },
+                            animations: { enabled: true },
                         },
                         series: [{
                             name: 'Amount',
                             data: [{{ (float) $distributionExpensesTotal }}, {{ (float) $otherOperatingExpensesTotal }}]
                         }],
-                        xaxis: {
-                            categories: ['Distribution & Selling', 'Other Operating']
-                        },
+                        xaxis: { categories: ['Distribution & Selling', 'Other Operating'] },
                         colors: ['#dc2626'],
-                        plotOptions: {
-                            bar: {
-                                borderRadius: 4,
-                                columnWidth: '55%'
-                            }
-                        },
-                        dataLabels: {
-                            enabled: false
-                        },
+                        plotOptions: { bar: { borderRadius: 4, columnWidth: '55%' } },
+                        dataLabels: { enabled: false },
                         yaxis: {
                             labels: {
-                                formatter: function (value) {
-                                    return Number(value).toLocaleString();
-                                }
+                                formatter: function (value) { return Number(value).toLocaleString(); }
                             }
                         },
                         tooltip: {
                             y: {
                                 formatter: function (value) {
-                                    return Number(value).toLocaleString(undefined, {
-                                        minimumFractionDigits: 2,
-                                        maximumFractionDigits: 2
-                                    });
+                                    return Number(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                 }
                             }
                         }
-                    }).render();
+                    });
+                    expenseChartInstance.render();
                 }
+
+                // Portrait A4: 210mm - 16mm margins - 12px gap / 2 cols ≈ 91mm ≈ 310px at 96dpi
+                const PRINT_HEIGHT = 150;
+                const PRINT_WIDTH = 310;
+
+                function resizeForPrint() {
+                    if (inflowChartInstance) {
+                        inflowChartInstance.updateOptions({
+                            chart: { height: PRINT_HEIGHT, width: PRINT_WIDTH, animations: { enabled: false } },
+                            legend: { position: 'bottom', fontSize: '7px', itemMargin: { horizontal: 4, vertical: 0 } },
+                            dataLabels: { style: { fontSize: '7px' } },
+                        }, false, false);
+                    }
+                    if (expenseChartInstance) {
+                        expenseChartInstance.updateOptions({
+                            chart: { height: PRINT_HEIGHT, width: PRINT_WIDTH, animations: { enabled: false } },
+                            xaxis: { labels: { style: { fontSize: '7px' } } },
+                            yaxis: { labels: { style: { fontSize: '7px' } } },
+                        }, false, false);
+                    }
+                }
+
+                function restoreAfterPrint() {
+                    if (inflowChartInstance) {
+                        inflowChartInstance.updateOptions({
+                            chart: { height: 300, width: '100%', animations: { enabled: true } },
+                            legend: { position: 'bottom', fontSize: '12px', itemMargin: { horizontal: 8, vertical: 4 } },
+                            dataLabels: { style: { fontSize: '12px' } },
+                        }, false, false);
+                    }
+                    if (expenseChartInstance) {
+                        expenseChartInstance.updateOptions({
+                            chart: { height: 300, width: '100%', animations: { enabled: true } },
+                            xaxis: { labels: { style: { fontSize: '12px' } } },
+                            yaxis: { labels: { style: { fontSize: '12px' } } },
+                        }, false, false);
+                    }
+                }
+
+                // matchMedia fires earlier than beforeprint giving charts time to re-render
+                if (window.matchMedia) {
+                    const printMQ = window.matchMedia('print');
+                    printMQ.addEventListener('change', function (mq) {
+                        if (mq.matches) {
+                            resizeForPrint();
+                        } else {
+                            restoreAfterPrint();
+                        }
+                    });
+                }
+
+                window.addEventListener('beforeprint', resizeForPrint);
+                window.addEventListener('afterprint', restoreAfterPrint);
+
             })();
         </script>
     @endpush

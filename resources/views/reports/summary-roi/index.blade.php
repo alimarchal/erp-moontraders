@@ -345,6 +345,7 @@
                             <td>Total Sale</td>
                             <td class="text-right">{{ number_format($grandTotals['sale'], 2) }}</td>
                         </tr>
+                        <tr><td colspan="2" class="py-1"></td></tr>
                         <tr class="font-semibold">
                             <td>Profit From Sale</td>
                             <td class="text-right">{{ number_format($profitFromSale, 2) }}</td>
@@ -373,6 +374,7 @@
                             <td>Grand Revenue</td>
                             <td class="text-right">{{ number_format($grandRevenue, 2) }}</td>
                         </tr>
+                        <tr><td colspan="2" class="py-1"></td></tr>
 
                         <tr class="bg-slate-200 font-semibold">
                             <td colspan="2">Distribution &amp; Selling Expenses</td>
@@ -392,6 +394,7 @@
                             <td>Distribution &amp; Selling Expenses Total</td>
                             <td class="text-right">{{ number_format($distributionExpensesTotal, 2) }}</td>
                         </tr>
+                        <tr><td colspan="2" class="py-1"></td></tr>
 
                         <tr class="bg-slate-200 font-semibold">
                             <td colspan="2">Other Operating Expenses</td>
@@ -436,6 +439,7 @@
                             <td>Total Operating Expenses</td>
                             <td class="text-right">{{ number_format($totalOperatingExpenses, 2) }}</td>
                         </tr>
+                        <tr><td colspan="2" class="py-1"></td></tr>
 
                         <tr>
                             <td>Profit before Taxation</td>

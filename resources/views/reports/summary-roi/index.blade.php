@@ -316,7 +316,7 @@
                 $profitBeforeTaxation = $grandRevenue - $totalOperatingExpenses;
             @endphp
 
-            <div class="print:break-inside-avoid w-3/4 mx-auto">
+            <div class="print:break-inside-avoid w-1/2">
                 <h2 class="font-bold text-base mb-2 text-center border-b pb-2 text-black">Summary ROI Statement</h2>
                 <table class="report-table w-full">
                     <thead>

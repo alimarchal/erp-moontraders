@@ -311,7 +311,7 @@
 
                 $expenseByCode = $expenseBreakdown->keyBy('account_code');
                 $profitFromSale = (float) $grandTotals['gross_profit'];
-                $grandRevenue = (float) $grossInflow;
+                $grandRevenue = (float) ($profitFromSale + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount']);
                 $totalOperatingExpenses = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
                 $profitBeforeTaxation = $grandRevenue - $totalOperatingExpenses;
             @endphp
@@ -345,7 +345,7 @@
                             <td>Total Sale</td>
                             <td class="text-right">{{ number_format($grandTotals['sale'], 2) }}</td>
                         </tr>
-                        <tr class="bg-yellow-200 font-semibold">
+                        <tr class="font-semibold">
                             <td>Profit From Sale</td>
                             <td class="text-right">{{ number_format($profitFromSale, 2) }}</td>
                         </tr>
@@ -408,7 +408,7 @@
                                 {{ number_format((float) ($expenseByCode->get('5262')->total_amount ?? 0), 2) }}
                             </td>
                         </tr>
-                        <tr class="bg-yellow-200 font-semibold">
+                        <tr>
                             <td>Scheme Discount Expense (A/C 5292)</td>
                             <td class="text-right">
                                 {{ number_format((float) ($expenseByCode->get('5292')->total_amount ?? 0), 2) }}
@@ -418,6 +418,18 @@
                             <td>Advance Tax (A/C 1161)</td>
                             <td class="text-right">
                                 {{ number_format((float) ($expenseByCode->get('1161')->total_amount ?? 0), 2) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Discount to Trade (A/C 5223)</td>
+                            <td class="text-right">
+                                {{ number_format((float) ($expenseByCode->get('5223')->total_amount ?? 0), 2) }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Promotion Off (A/C 5288)</td>
+                            <td class="text-right">
+                                {{ number_format((float) ($expenseByCode->get('5288')->total_amount ?? 0), 2) }}
                             </td>
                         </tr>
                         <tr class="bg-slate-100 font-semibold">
@@ -454,10 +466,10 @@
                 }
 
                 const inflowSeries = [
-                                                    {{ (float) $grandTotals['sale'] }},
-                                                    {{ (float) $grandTotals['schema_received'] }},
-                                                    {{ (float) $grandTotals['fmr_received'] }},
-                                                    {{ (float) $grandTotals['cash_discount'] }},
+                                                        {{ (float) $grandTotals['sale'] }},
+                                                        {{ (float) $grandTotals['schema_received'] }},
+                                                        {{ (float) $grandTotals['fmr_received'] }},
+                                                        {{ (float) $grandTotals['cash_discount'] }},
                 ];
 
                 let inflowChartInstance = null;

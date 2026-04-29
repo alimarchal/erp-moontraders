@@ -115,6 +115,8 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             ['code' => '5262', 'label' => 'AMR Liquid'],
             ['code' => '5292', 'label' => 'Scheme Discount Expense'],
             ['code' => '1161', 'label' => 'Advance Tax'],
+            ['code' => '5223', 'label' => 'Discount to Trade'],
+            ['code' => '5288', 'label' => 'Promotion Off'],
         ];
 
         $fetchedExpenses = $fetchedExpensesCollection->keyBy('account_code');

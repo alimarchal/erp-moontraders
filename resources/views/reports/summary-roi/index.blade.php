@@ -305,10 +305,6 @@
 
             {{-- Consolidated statement under graphs --}}
             @php
-                $distributionByCategory = collect($distributionExpenses)
-                    ->groupBy('category')
-                    ->map(fn($items) => (float) collect($items)->sum('amount'));
-
                 $profitFromSale = (float) $grandTotals['gross_profit'];
                 $grandRevenue = (float) ($profitFromSale + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount']);
                 $totalOperatingExpenses = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
@@ -320,110 +316,137 @@
                 <table class="report-table w-full">
                     <thead>
                         <tr class="bg-slate-200">
-                            <th>Particulars</th>
+                            <th class="text-center w-8">#</th>
+                            <th colspan="2">Particulars</th>
                             <th class="text-right">Amount (Rs.)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr class="bg-slate-200 font-semibold">
+                            <td class="text-center">#</td>
                             <td colspan="2">Category Wise Sale</td>
+                            <td class="text-right">Amount</td>
                         </tr>
-                        @forelse($categoryRows as $row)
+                        @forelse($categoryRows as $i => $row)
                             <tr>
-                                <td>{{ $row['category_name'] }}</td>
+                                <td class="text-center">{{ $i + 1 }}</td>
+                                <td colspan="2">{{ $row['category_name'] }}</td>
                                 <td class="text-right">{{ number_format($row['sale'], 2) }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td>No data for this period</td>
+                                <td colspan="3">No data for this period</td>
                                 <td class="text-right">—</td>
                             </tr>
                         @endforelse
 
                         <tr class="font-semibold bg-slate-100">
-                            <td>Total Sale</td>
+                            <td></td>
+                            <td colspan="2">Total Sale</td>
                             <td class="text-right">{{ number_format($grandTotals['sale'], 2) }}</td>
                         </tr>
-                        <tr><td colspan="2" class="py-1"></td></tr>
-                        <tr class="font-semibold">
-                            <td>Profit From Sale</td>
+                        <tr><td colspan="4" class="py-1"></td></tr>
+                        <tr class="bg-slate-200 font-semibold">
+                            <td class="text-center">#</td>
+                            <td colspan="2">Profit From Sale &amp; Other Revenue</td>
+                            <td class="text-right">Amount</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">1</td>
+                            <td colspan="2">Profit From Sale</td>
                             <td class="text-right">{{ number_format($profitFromSale, 2) }}</td>
                         </tr>
                         <tr>
-                            <td>Scheme Received</td>
+                            <td class="text-center">2</td>
+                            <td colspan="2">Scheme Received</td>
                             <td class="text-right">{{ number_format($grandTotals['schema_received'], 2) }}</td>
                         </tr>
                         <tr>
-                            <td>FMR Received</td>
+                            <td class="text-center">3</td>
+                            <td colspan="2">FMR Received</td>
                             <td class="text-right">{{ number_format($grandTotals['fmr_received'], 2) }}</td>
                         </tr>
                         <tr>
-                            <td>Cash Discount from Invoices (0.5%)</td>
+                            <td class="text-center">4</td>
+                            <td colspan="2">Cash Discount from Invoices (0.5%)</td>
                             <td class="text-right">{{ number_format($grandTotals['cash_discount'], 2) }}</td>
                         </tr>
                         <tr>
-                            <td>Other Allowance from Company</td>
+                            <td class="text-center">5</td>
+                            <td colspan="2">Other Allowance from Company</td>
                             <td class="text-right">—</td>
                         </tr>
                         <tr>
-                            <td>Rate Increase Profit</td>
+                            <td class="text-center">6</td>
+                            <td colspan="2">Rate Increase Profit</td>
                             <td class="text-right">—</td>
                         </tr>
                         <tr class="bg-slate-200 font-bold">
-                            <td>Grand Revenue</td>
+                            <td></td>
+                            <td colspan="2">Grand Revenue</td>
                             <td class="text-right">{{ number_format($grandRevenue, 2) }}</td>
                         </tr>
-                        <tr><td colspan="2" class="py-1"></td></tr>
+                        <tr><td colspan="4" class="py-1"></td></tr>
 
                         <tr class="bg-slate-200 font-semibold">
-                            <td colspan="2">Distribution &amp; Selling Expenses</td>
+                            <td class="text-center">#</td>
+                            <td>Distribution &amp; Selling Expenses</td>
+                            <td>Description</td>
+                            <td class="text-right">Amount</td>
                         </tr>
-                        @forelse($distributionByCategory as $category => $amount)
+                        @forelse($distributionExpenses as $i => $dist)
                             <tr>
-                                <td>{{ $category }}</td>
-                                <td class="text-right">{{ $amount > 0 ? number_format($amount, 2) : '—' }}</td>
+                                <td class="text-center">{{ $i + 1 }}</td>
+                                <td>{{ $dist['category'] }}</td>
+                                <td>{{ $dist['description'] !== '—' ? $dist['description'] : '—' }}</td>
+                                <td class="text-right">{{ $dist['amount'] > 0 ? number_format($dist['amount'], 2) : '—' }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td>No distribution expense records</td>
-                                <td class="text-right">—</td>
+                                <td colspan="4">No distribution expense records</td>
                             </tr>
                         @endforelse
                         <tr class="bg-slate-100 font-semibold">
-                            <td>Distribution &amp; Selling Expenses Total</td>
+                            <td></td>
+                            <td colspan="2">Distribution &amp; Selling Expenses Total</td>
                             <td class="text-right">{{ number_format($distributionExpensesTotal, 2) }}</td>
                         </tr>
-                        <tr><td colspan="2" class="py-1"></td></tr>
+                        <tr><td colspan="4" class="py-1"></td></tr>
 
                         <tr class="bg-slate-200 font-semibold">
-                            <td colspan="2">Other Operating Expenses</td>
+                            <td class="text-center">#</td>
+                            <td>Other Operating Expenses</td>
+                            <td class="text-center">Code</td>
+                            <td class="text-right">Amount</td>
                         </tr>
-                        @foreach($expenseBreakdown as $expense)
+                        @foreach($expenseBreakdown as $i => $expense)
                             <tr>
-                                <td>{{ $expense->account_name }} (A/C {{ $expense->account_code }})</td>
+                                <td class="text-center">{{ $i + 1 }}</td>
+                                <td>{{ $expense->account_name }}</td>
+                                <td class="text-center">{{ $expense->account_code }}</td>
                                 <td class="text-right">
                                     {{ $expense->total_amount > 0 ? number_format($expense->total_amount, 2) : '—' }}
                                 </td>
                             </tr>
                         @endforeach
                         <tr class="bg-slate-100 font-semibold">
-                            <td>Total Operating Expenses</td>
+                            <td colspan="3">Total Operating Expenses</td>
                             <td class="text-right">{{ number_format($totalOperatingExpenses, 2) }}</td>
                         </tr>
-                        <tr><td colspan="2" class="py-1"></td></tr>
+                        <tr><td colspan="4" class="py-1"></td></tr>
 
                         <tr>
-                            <td>Profit before Taxation</td>
+                            <td colspan="3">Profit before Taxation</td>
                             <td class="text-right">{{ number_format($profitBeforeTaxation, 2) }}</td>
                         </tr>
                         <tr>
-                            <td>Taxation</td>
+                            <td colspan="3">Taxation</td>
                             <td class="text-right">—</td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr class="bg-slate-200 font-bold text-xl">
-                            <td>Profit after Taxation</td>
+                            <td colspan="3">Profit after Taxation</td>
                             <td class="text-right">{{ number_format($profitBeforeTaxation, 2) }}</td>
                         </tr>
                     </tfoot>

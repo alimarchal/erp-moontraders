@@ -10,6 +10,7 @@ use App\Models\ExpenseDetail;
 use App\Models\Supplier;
 use App\Models\Vehicle;
 use App\Services\ExpenseDetailService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -49,9 +50,13 @@ class ExpenseDetailReportController extends Controller implements HasMiddleware
         $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get();
         $categoryOptions = ExpenseDetail::categoryOptions();
 
-        // Opening balance (expenses before date range)
+        // Opening balance (expenses before date range).
+        // When viewing the current calendar month, start fresh from 0 (no carry-forward).
+        // For any past period, include all expenses prior to dateFrom.
         $openingBalance = 0;
-        if ($dateFrom) {
+        $isCurrentMonth = $dateFrom && Carbon::parse($dateFrom)->isSameMonth(now());
+
+        if ($dateFrom && ! $isCurrentMonth) {
             $openingQuery = ExpenseDetail::query();
 
             if ($supplierId) {

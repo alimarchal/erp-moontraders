@@ -215,14 +215,13 @@ test('already posted expense cannot be posted again', function () {
     $response->assertSessionHas('error');
 });
 
-test('opening balance calculation is correct', function () {
-    // Use explicit dates to avoid month-overflow edge cases
+test('opening balance is zero when viewing current calendar month', function () {
     $lastMonthDate = now()->subMonthNoOverflow()->startOfMonth()->addDays(10)->toDateString();
     $thisMonthDate = now()->startOfMonth()->addDays(5)->toDateString();
     $dateFrom = now()->startOfMonth()->toDateString();
     $dateTo = now()->endOfMonth()->toDateString();
 
-    // Expense before current month
+    // Expense before current month — should NOT appear in opening balance
     ExpenseDetail::factory()->create([
         'transaction_date' => $lastMonthDate,
         'amount' => 3000,
@@ -242,9 +241,40 @@ test('opening balance calculation is correct', function () {
     ]));
 
     $response->assertSuccessful();
-    $response->assertViewHas('openingBalance', 3000.00);
-    $response->assertViewHas('totalAmount', 1000.00);
-    $response->assertViewHas('closingBalance', 4000.00);
+    $response->assertViewHas('openingBalance', 0.0);
+    $response->assertViewHas('totalAmount', 1000.0);
+    $response->assertViewHas('closingBalance', 1000.0);
+});
+
+test('opening balance includes prior expenses when viewing a past month', function () {
+    $twoMonthsAgoDate = now()->subMonthsNoOverflow(2)->startOfMonth()->addDays(5)->toDateString();
+    $lastMonthStart = now()->subMonthNoOverflow()->startOfMonth()->toDateString();
+    $lastMonthEnd = now()->subMonthNoOverflow()->endOfMonth()->toDateString();
+    $lastMonthMid = now()->subMonthNoOverflow()->startOfMonth()->addDays(10)->toDateString();
+
+    // Expense two months ago — should appear in opening balance for last-month view
+    ExpenseDetail::factory()->create([
+        'transaction_date' => $twoMonthsAgoDate,
+        'amount' => 3000,
+        'category' => 'fuel',
+    ]);
+
+    // Expense in last month — should appear in period total
+    ExpenseDetail::factory()->create([
+        'transaction_date' => $lastMonthMid,
+        'amount' => 1000,
+        'category' => 'fuel',
+    ]);
+
+    $response = $this->get(route('reports.expense-detail.index', [
+        'date_from' => $lastMonthStart,
+        'date_to' => $lastMonthEnd,
+    ]));
+
+    $response->assertSuccessful();
+    $response->assertViewHas('openingBalance', 3000.0);
+    $response->assertViewHas('totalAmount', 1000.0);
+    $response->assertViewHas('closingBalance', 4000.0);
 });
 
 test('unauthorized user cannot access expense detail report', function () {

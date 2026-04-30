@@ -117,6 +117,10 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             ['code' => '1161', 'label' => 'Advance Tax'],
             ['code' => '5223', 'label' => 'Discount to Trade'],
             ['code' => '5288', 'label' => 'Promotion Off'],
+            ['code' => '5282', 'label' => 'Food/Salesman/Loader Charges'],
+            ['code' => '5272', 'label' => 'Toll Tax / Labor'],
+            ['code' => '5221', 'label' => 'Miscellaneous Expenses'],
+            ['code' => '5210', 'label' => 'Administrative Expenses'],
         ];
 
         $fetchedExpenses = $fetchedExpensesCollection->keyBy('account_code');
@@ -134,6 +138,15 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             if ($existing) {
                 $fetchedExpenses->forget($expense['code']);
             }
+        }
+
+        // Add any remaining expenses not in the predefined list
+        foreach ($fetchedExpenses as $extra) {
+            $expenseBreakdown->push((object) [
+                'account_code' => $extra->account_code,
+                'account_name' => $extra->account_name,
+                'total_amount' => (float) $extra->total_amount,
+            ]);
         }
 
         $otherOperatingExpensesTotal = (float) $expenseBreakdown->sum('total_amount');

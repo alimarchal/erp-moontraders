@@ -309,7 +309,6 @@
                     ->groupBy('category')
                     ->map(fn($items) => (float) collect($items)->sum('amount'));
 
-                $expenseByCode = $expenseBreakdown->keyBy('account_code');
                 $profitFromSale = (float) $grandTotals['gross_profit'];
                 $grandRevenue = (float) ($profitFromSale + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount']);
                 $totalOperatingExpenses = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
@@ -399,42 +398,14 @@
                         <tr class="bg-slate-200 font-semibold">
                             <td colspan="2">Other Operating Expenses</td>
                         </tr>
-                        <tr>
-                            <td>AMR Powder (A/C 5252)</td>
-                            <td class="text-right">
-                                {{ number_format((float) ($expenseByCode->get('5252')->total_amount ?? 0), 2) }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>AMR Liquid (A/C 5262)</td>
-                            <td class="text-right">
-                                {{ number_format((float) ($expenseByCode->get('5262')->total_amount ?? 0), 2) }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Scheme Discount Expense (A/C 5292)</td>
-                            <td class="text-right">
-                                {{ number_format((float) ($expenseByCode->get('5292')->total_amount ?? 0), 2) }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Advance Tax (A/C 1161)</td>
-                            <td class="text-right">
-                                {{ number_format((float) ($expenseByCode->get('1161')->total_amount ?? 0), 2) }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Discount to Trade (A/C 5223)</td>
-                            <td class="text-right">
-                                {{ number_format((float) ($expenseByCode->get('5223')->total_amount ?? 0), 2) }}
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Promotion Off (A/C 5288)</td>
-                            <td class="text-right">
-                                {{ number_format((float) ($expenseByCode->get('5288')->total_amount ?? 0), 2) }}
-                            </td>
-                        </tr>
+                        @foreach($expenseBreakdown as $expense)
+                            <tr>
+                                <td>{{ $expense->account_name }} (A/C {{ $expense->account_code }})</td>
+                                <td class="text-right">
+                                    {{ $expense->total_amount > 0 ? number_format($expense->total_amount, 2) : '—' }}
+                                </td>
+                            </tr>
+                        @endforeach
                         <tr class="bg-slate-100 font-semibold">
                             <td>Total Operating Expenses</td>
                             <td class="text-right">{{ number_format($totalOperatingExpenses, 2) }}</td>

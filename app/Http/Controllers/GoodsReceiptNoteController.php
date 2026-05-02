@@ -863,6 +863,198 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     }
 
     /**
+     * Show special edit form for posted GRNs — Super Admin only.
+     * Allows correcting uom_conversion_factor per line item.
+     * total_cost stays unchanged; quantities and unit_cost recalculate.
+     */
+    public function editSpecial(GoodsReceiptNote $goodsReceiptNote)
+    {
+        abort_unless(
+            auth()->user()->is_super_admin === 'Yes' || auth()->user()->hasRole('super-admin'),
+            403
+        );
+
+        $goodsReceiptNote->load(['items.product', 'supplier', 'warehouse']);
+
+        return view('goods-receipt-notes.edit-special', ['grn' => $goodsReceiptNote]);
+    }
+
+    /**
+     * Apply special quantity correction to a posted GRN — Super Admin only.
+     *
+     * For each line item where uom_conversion_factor changed:
+     *   new_qty       = qty_in_purchase_uom × new_factor
+     *   unit_cost     = total_cost / new_qty   (invoice amount stays fixed)
+     *   All inventory tables updated in one transaction.
+     */
+    public function updateSpecial(Request $request, GoodsReceiptNote $goodsReceiptNote)
+    {
+        abort_unless(
+            auth()->user()->is_super_admin === 'Yes' || auth()->user()->hasRole('super-admin'),
+            403
+        );
+
+        $request->validate([
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required|integer|exists:goods_receipt_note_items,id',
+            'items.*.uom_conversion_factor' => 'required|numeric|min:0.0001',
+        ]);
+
+        DB::beginTransaction();
+
+        try {
+            foreach ($request->input('items') as $formItem) {
+                $item = DB::table('goods_receipt_note_items')->where('id', $formItem['id'])->first();
+
+                $newFactor = (float) $formItem['uom_conversion_factor'];
+
+                // Skip lines where nothing changed
+                if (abs($newFactor - (float) $item->uom_conversion_factor) < 0.0001) {
+                    continue;
+                }
+
+                $newQty = round((float) $item->qty_in_purchase_uom * $newFactor, 2);
+                $totalCost = (float) $item->total_cost; // invoice amount — unchanged
+                $newUnitCost = $newQty > 0 ? round($totalCost / $newQty, 6) : (float) $item->unit_cost;
+                $delta = $newQty - (float) $item->quantity_accepted;
+
+                // 1. goods_receipt_note_items
+                DB::table('goods_receipt_note_items')->where('id', $item->id)->update([
+                    'qty_in_stock_uom' => $newQty,
+                    'uom_conversion_factor' => $newFactor,
+                    'quantity_received' => $newQty,
+                    'quantity_accepted' => $newQty,
+                    'unit_cost' => $newUnitCost,
+                    // total_cost intentionally unchanged
+                ]);
+
+                // Resolve linked inventory rows
+                $svl = DB::table('stock_valuation_layers')->where('grn_item_id', $item->id)->first();
+                if (! $svl) {
+                    continue;
+                }
+
+                $sle = DB::table('stock_ledger_entries')->where('stock_movement_id', $svl->stock_movement_id)->first();
+
+                // 2. stock_movements — quantity only (total_value = invoice, unchanged)
+                DB::table('stock_movements')->where('id', $svl->stock_movement_id)->update([
+                    'quantity' => $newQty,
+                ]);
+
+                // 3a. stock_ledger_entries — GRN receipt row
+                $newSleBalance = (float) $sle->quantity_balance + $delta;
+                DB::table('stock_ledger_entries')->where('id', $sle->id)->update([
+                    'quantity_in' => $newQty,
+                    'quantity_balance' => $newSleBalance,
+                    'valuation_rate' => $newUnitCost,
+                    'stock_value' => round($newSleBalance * $newUnitCost, 4),
+                ]);
+
+                // 3b. Cascade running balance to all later SLE rows for same product+warehouse
+                $laterRows = DB::table('stock_ledger_entries')
+                    ->where('product_id', $item->product_id)
+                    ->where('warehouse_id', $goodsReceiptNote->warehouse_id)
+                    ->where('id', '>', $sle->id)
+                    ->orderBy('id')
+                    ->get(['id', 'quantity_balance', 'valuation_rate']);
+
+                foreach ($laterRows as $laterRow) {
+                    DB::table('stock_ledger_entries')->where('id', $laterRow->id)->update([
+                        'quantity_balance' => (float) $laterRow->quantity_balance + $delta,
+                        'stock_value' => round(((float) $laterRow->quantity_balance + $delta) * (float) $laterRow->valuation_rate, 4),
+                    ]);
+                }
+
+                // 4. stock_valuation_layers
+                $newRemaining = (float) $svl->quantity_remaining + $delta;
+                DB::table('stock_valuation_layers')->where('id', $svl->id)->update([
+                    'quantity_received' => $newQty,
+                    'quantity_remaining' => $newRemaining,
+                    'unit_cost' => $newUnitCost,
+                    'total_value' => round($newQty * $newUnitCost, 4),
+                    'value_remaining' => round($newRemaining * $newUnitCost, 4),
+                ]);
+
+                // 5. current_stock_by_batch
+                $csbb = DB::table('current_stock_by_batch')->where('stock_batch_id', $svl->stock_batch_id)->first();
+                if ($csbb) {
+                    $newCsbbQty = (float) $csbb->quantity_on_hand + $delta;
+                    DB::table('current_stock_by_batch')->where('id', $csbb->id)->update([
+                        'quantity_on_hand' => $newCsbbQty,
+                        'unit_cost' => $newUnitCost,
+                        'total_value' => round($newCsbbQty * $newUnitCost, 4),
+                        'last_updated' => now(),
+                    ]);
+                }
+
+                // 6. current_stock — full recalc from valuation layers
+                $svlAgg = DB::table('stock_valuation_layers')
+                    ->where('product_id', $item->product_id)
+                    ->where('warehouse_id', $goodsReceiptNote->warehouse_id)
+                    ->where('quantity_remaining', '>', 0)
+                    ->selectRaw('COALESCE(SUM(quantity_remaining), 0) as total_qty, COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_val')
+                    ->first();
+
+                $totalQty = (float) $svlAgg->total_qty;
+                $totalVal = (float) $svlAgg->total_val;
+                $avgCost = $totalQty > 0 ? round($totalVal / $totalQty, 6) : 0;
+
+                $cs = DB::table('current_stock')
+                    ->where('product_id', $item->product_id)
+                    ->where('warehouse_id', $goodsReceiptNote->warehouse_id)
+                    ->first();
+
+                if ($cs) {
+                    DB::table('current_stock')
+                        ->where('product_id', $item->product_id)
+                        ->where('warehouse_id', $goodsReceiptNote->warehouse_id)
+                        ->update([
+                            'quantity_on_hand' => $totalQty,
+                            'quantity_available' => $totalQty - ($cs->quantity_reserved ?? 0),
+                            'average_cost' => $avgCost,
+                            'total_value' => $totalVal,
+                            'last_updated' => now(),
+                        ]);
+                }
+
+                // 7. inventory_ledger_entries
+                DB::table('inventory_ledger_entries')
+                    ->where('goods_receipt_note_id', $goodsReceiptNote->id)
+                    ->where('product_id', $item->product_id)
+                    ->update([
+                        'debit_qty' => $newQty,
+                        'unit_cost' => $newUnitCost,
+                    ]);
+            }
+
+            // 8. goods_receipt_notes header — recalculate total_quantity
+            $newTotalQty = DB::table('goods_receipt_note_items')
+                ->where('grn_id', $goodsReceiptNote->id)
+                ->sum('qty_in_stock_uom');
+
+            DB::table('goods_receipt_notes')->where('id', $goodsReceiptNote->id)->update([
+                'total_quantity' => $newTotalQty,
+            ]);
+
+            DB::commit();
+
+            return redirect()
+                ->route('goods-receipt-notes.show', $goodsReceiptNote)
+                ->with('success', 'GRN quantities corrected successfully.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error in GRN special update', [
+                'grn_id' => $goodsReceiptNote->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Update failed: '.$e->getMessage());
+        }
+    }
+
+    /**
      * Get the supplier ID scope for current user (null if no scope, user has full access).
      */
     private function getUserSupplierScope(): ?int

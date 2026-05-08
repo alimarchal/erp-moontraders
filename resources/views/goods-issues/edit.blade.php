@@ -218,15 +218,20 @@
                                 </tr>
                                 <tr>
                                     <td colspan="{{ $canEnterCartons ? 10 : 8 }}" class="px-2 py-2">
-                                        <button type="button" @click="addItem()"
-                                            class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
+                                        <div class="flex items-center gap-2">
+                                            <input type="number" x-model.number="addProductCount" min="1"
+                                                class="w-20 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm text-sm">
+                                            <span class="text-xs text-gray-500">lines</span>
+                                            <button type="button" @click="addItems()"
+                                                class="inline-flex items-center px-3 py-1 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
                                             <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none"
                                                 viewBox="0 0 24 24" stroke="currentColor">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                     d="M12 4v16m8-8H4" />
                                             </svg>
                                             Add Product
-                                        </button>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             </tfoot>
@@ -334,6 +339,15 @@
                     pieces_qty: 0,
                     conversion_factor: 1,
                 })),
+
+                addProductCount: 1,
+
+                addItems() {
+                    const count = parseInt(this.addProductCount) || 1;
+                    for (let i = 0; i < count; i++) {
+                        this.addItem();
+                    }
+                },
 
                 validateAndSubmit() {
                     const validItems = this.items.filter(item => {

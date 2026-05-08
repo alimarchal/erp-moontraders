@@ -7,6 +7,7 @@ use App\Http\Requests\StoreSchemeReceivedRequest;
 use App\Http\Requests\UpdateSchemeReceivedRequest;
 use App\Models\SchemeReceived;
 use App\Models\Supplier;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -44,7 +45,9 @@ class SchemeReceivedReportController extends Controller implements HasMiddleware
         $categoryOptions = SchemeReceived::categoryOptions();
 
         $openingBalance = 0;
-        if ($dateFrom) {
+        $isCurrentMonth = $dateFrom && Carbon::parse($dateFrom)->isSameMonth(now());
+
+        if ($dateFrom && ! $isCurrentMonth) {
             $openingQuery = SchemeReceived::query();
             if ($supplierId) {
                 $openingQuery->where('supplier_id', $supplierId);

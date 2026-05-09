@@ -261,7 +261,7 @@
             </div>
 
             @php
-                $grossInflow = (float) ($grandTotals['sale'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount']);
+                $grossInflow = (float) ($grandTotals['sale'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'] + $incentiveClaimed + $expiryClaimed);
                 $totalExpensesShown = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
                 $netAfterAllExpenses = $grossInflow - $totalExpensesShown;
             @endphp
@@ -306,7 +306,7 @@
             {{-- Consolidated statement under graphs --}}
             @php
                 $profitFromSale = (float) $grandTotals['gross_profit'];
-                $grandRevenue = (float) ($profitFromSale + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount']);
+                $grandRevenue = (float) ($profitFromSale + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'] + $incentiveClaimed + $expiryClaimed);
                 $totalOperatingExpenses = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
                 $profitBeforeTaxation = $grandRevenue - $totalOperatingExpenses;
             @endphp
@@ -373,11 +373,21 @@
                         </tr>
                         <tr>
                             <td class="text-center">5</td>
+                            <td colspan="2">Incentive Claimed</td>
+                            <td class="text-right">{{ number_format($incentiveClaimed, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">6</td>
+                            <td colspan="2">Expiry Claimed</td>
+                            <td class="text-right">{{ number_format($expiryClaimed, 2) }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-center">7</td>
                             <td colspan="2">Other Allowance from Company</td>
                             <td class="text-right">—</td>
                         </tr>
                         <tr>
-                            <td class="text-center">6</td>
+                            <td class="text-center">8</td>
                             <td colspan="2">Rate Increase Profit</td>
                             <td class="text-right">—</td>
                         </tr>

@@ -17,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class SummaryRoiReportController extends Controller implements HasMiddleware
@@ -42,6 +43,15 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
         // Default to Nestlé Pakistan (id=3)
         $supplierId = $request->input('filter.supplier_id') ?: 3;
         $employeeIds = $request->input('filter.employee_id');
+
+        $selectedSupplier = Supplier::query()
+            ->select(['id', 'supplier_name', 'short_name'])
+            ->find($supplierId);
+        $supplierName = strtolower((string) ($selectedSupplier?->supplier_name ?? ''));
+        $supplierShortName = strtolower((string) ($selectedSupplier?->short_name ?? ''));
+        $isEngroSupplier = Str::contains($supplierName, 'engro') || Str::contains($supplierShortName, 'engro');
+        $incentiveClaimed = $isEngroSupplier ? 208652.0 : 0.0;
+        $expiryClaimed = $isEngroSupplier ? 260000.0 : 0.0;
 
         // ── Fetch all categories that have active products for this supplier ──
         $supplierCategoryIds = Product::where('is_active', true)
@@ -281,6 +291,8 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             'distributionExpenses' => $distributionExpenses,
             'distributionExpensesTotal' => $distributionExpensesTotal,
             'otherOperatingExpensesTotal' => $otherOperatingExpensesTotal,
+            'incentiveClaimed' => $incentiveClaimed,
+            'expiryClaimed' => $expiryClaimed,
         ]);
     }
 }

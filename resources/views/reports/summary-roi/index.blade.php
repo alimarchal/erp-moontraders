@@ -440,7 +440,19 @@
                             </tr>
                         @endforeach
                         <tr class="bg-slate-100 font-semibold">
-                            <td colspan="3">Total Operating Expenses</td>
+                            <td colspan="3">Total Other Operating Expenses</td>
+                            <td class="text-right">{{ number_format($otherOperatingExpensesTotal, 2) }}</td>
+                        </tr>
+                        <tr><td colspan="4" class="py-1"></td></tr>
+
+                        <tr class="bg-slate-100 font-semibold">
+                            <td colspan="3">Total Distribution &amp; Selling Expenses</td>
+                            <td class="text-right">{{ number_format($distributionExpensesTotal, 2) }}</td>
+                        </tr>
+                        <tr><td colspan="4" class="py-1"></td></tr>
+
+                        <tr class="bg-slate-200 font-bold">
+                            <td colspan="3">Grand Total Expenses</td>
                             <td class="text-right">{{ number_format($totalOperatingExpenses, 2) }}</td>
                         </tr>
                         <tr><td colspan="4" class="py-1"></td></tr>

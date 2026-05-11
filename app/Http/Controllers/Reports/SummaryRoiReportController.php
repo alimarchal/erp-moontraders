@@ -120,6 +120,21 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
         $allSettlementExpensesTotal = (float) $fetchedExpensesCollection->sum('total_amount');
         $expenseRatio = $globalSales > 0 ? ($allSettlementExpensesTotal / $globalSales) : 0;
 
+        // Fetch excess amount (only for Engro)
+        $excessAmount = 0.0;
+        if ($isEngroSupplier) {
+            $excessAmount = (float) DB::table('sales_settlement_excess_amounts')
+                ->join('sales_settlements', 'sales_settlement_excess_amounts.sales_settlement_id', '=', 'sales_settlements.id')
+                ->whereBetween('sales_settlements.settlement_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+                ->where('sales_settlements.supplier_id', $supplierId)
+                ->where('sales_settlements.status', 'posted')
+                ->whereNull('sales_settlements.deleted_at')
+                ->when($employeeIds, fn ($q) => $q->whereIn('sales_settlements.employee_id', (array) $employeeIds))
+                ->when($request->input('filter.vehicle_id'), fn ($q, $v) => $q->where('sales_settlements.vehicle_id', $v))
+                ->when($request->input('filter.warehouse_id'), fn ($q, $w) => $q->where('sales_settlements.warehouse_id', $w))
+                ->sum('sales_settlement_excess_amounts.amount');
+        }
+
         $predefinedExpenses = [
             ['code' => '5252', 'label' => 'AMR Powder'],
             ['code' => '5262', 'label' => 'AMR Liquid'],
@@ -133,10 +148,26 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             ['code' => '5210', 'label' => 'Administrative Expenses'],
         ];
 
+        // Add excess amount for Engro only
+        if ($isEngroSupplier) {
+            $predefinedExpenses[] = ['code' => '4250', 'label' => 'Excess Amount'];
+        }
+
         $fetchedExpenses = $fetchedExpensesCollection->keyBy('account_code');
         $expenseBreakdown = collect();
 
         foreach ($predefinedExpenses as $expense) {
+            // Special handling for excess amount (4250)
+            if ($expense['code'] === '4250' && $isEngroSupplier) {
+                $expenseBreakdown->push((object) [
+                    'account_code' => $expense['code'],
+                    'account_name' => $expense['label'],
+                    'total_amount' => $excessAmount,
+                ]);
+
+                continue;
+            }
+
             $existing = $fetchedExpenses->get($expense['code']);
 
             $expenseBreakdown->push((object) [

@@ -188,7 +188,7 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             if ($shortAmountExpense) {
                 $originalShortAmount = (float) $shortAmountExpense->total_amount;
                 $shortAmountExpense->total_amount = $excessAmount - $originalShortAmount;
-                $shortAmountExpense->account_name = 'Short Amount (5293) - Excess Amount (4250) (Short: '.number_format($originalShortAmount, 2).', Excess: '.number_format($excessAmount, 2).')';
+                $shortAmountExpense->account_name = 'Excess Amount (4250) - Short Amount (5293) - (Excess: '.number_format($excessAmount, 2).', Short: '.number_format($originalShortAmount, 2).')';
             }
         }
 

@@ -109,9 +109,9 @@ test('summary roi report adjusts short amount by excess amount and hides 4250 fo
 
     expect($shortAmount)->not->toBeNull('Short Amount should be in breakdown');
     expect((float) $shortAmount->total_amount)->toBe(-800.00);
-    expect($shortAmount->account_name)->toContain('Short Amount (5293)');
     expect($shortAmount->account_name)->toContain('Excess Amount (4250)');
-    expect($shortAmount->account_name)->toContain('1,000.00');
+    expect($shortAmount->account_name)->toContain('Short Amount (5293)');
     expect($shortAmount->account_name)->toContain('200.00');
+    expect($shortAmount->account_name)->toContain('1,000.00');
     expect($breakdown->contains(fn ($row) => $row->account_code === '4250'))->toBeFalse();
 });

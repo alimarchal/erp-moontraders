@@ -146,28 +146,19 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             ['code' => '5272', 'label' => 'Toll Tax / Labor'],
             ['code' => '5221', 'label' => 'Miscellaneous Expenses'],
             ['code' => '5210', 'label' => 'Administrative Expenses'],
+            ['code' => '5293', 'label' => 'Short Amount'],
         ];
 
-        // Add excess amount for Engro only
+        $fetchedExpenses = $fetchedExpensesCollection->keyBy('account_code');
+
         if ($isEngroSupplier) {
-            $predefinedExpenses[] = ['code' => '4250', 'label' => 'Excess Amount'];
+            // Excess amount is adjusted into short amount for Engro and not shown separately.
+            $fetchedExpenses->forget('4250');
         }
 
-        $fetchedExpenses = $fetchedExpensesCollection->keyBy('account_code');
         $expenseBreakdown = collect();
 
         foreach ($predefinedExpenses as $expense) {
-            // Special handling for excess amount (4250)
-            if ($expense['code'] === '4250' && $isEngroSupplier) {
-                $expenseBreakdown->push((object) [
-                    'account_code' => $expense['code'],
-                    'account_name' => $expense['label'],
-                    'total_amount' => $excessAmount,
-                ]);
-
-                continue;
-            }
-
             $existing = $fetchedExpenses->get($expense['code']);
 
             $expenseBreakdown->push((object) [
@@ -188,6 +179,17 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
                 'account_name' => $extra->account_name,
                 'total_amount' => (float) $extra->total_amount,
             ]);
+        }
+
+        if ($isEngroSupplier) {
+            $expenseBreakdown = $expenseBreakdown->reject(fn ($expense) => $expense->account_code === '4250')->values();
+
+            $shortAmountExpense = $expenseBreakdown->firstWhere('account_code', '5293');
+            if ($shortAmountExpense) {
+                $originalShortAmount = (float) $shortAmountExpense->total_amount;
+                $shortAmountExpense->total_amount = $excessAmount - $originalShortAmount;
+                $shortAmountExpense->account_name = 'Short Amount (5293) - Excess Amount (4250) (Short: '.number_format($originalShortAmount, 2).', Excess: '.number_format($excessAmount, 2).')';
+            }
         }
 
         $otherOperatingExpensesTotal = (float) $expenseBreakdown->sum('total_amount');

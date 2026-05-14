@@ -435,7 +435,7 @@
                                 <td>{{ $expense->account_name }}</td>
                                 <td class="text-center">{{ $expense->account_code }}</td>
                                 <td class="text-right">
-                                    {{ $expense->total_amount > 0 ? number_format($expense->total_amount, 2) : '—' }}
+                                    {{ $expense->total_amount != 0 ? number_format($expense->total_amount, 2) : '—' }}
                                 </td>
                             </tr>
                         @endforeach

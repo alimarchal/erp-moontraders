@@ -281,6 +281,8 @@
         $netSaleItems = (float) $settlement->items->sum('total_sales_value');
         $chequesTotal = (float) $settlement->cheques->sum('amount');
         $theoreticalCashSales = $netSaleItems - $creditSalesAmount - $bankSalesAmount;
+        $isPaymentBreakdownExceeded = $theoreticalCashSales < 0;
+        $paymentBreakdownExcess = $isPaymentBreakdownExceeded ? abs($theoreticalCashSales) : 0.0;
         $expectedCashGross = $theoreticalCashSales + $recoveryCash;
         $expectedCashNet = $expectedCashGross - $totalDeductions;
 
@@ -357,6 +359,17 @@
     <div class="py-6">
         <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md no-print" />
+
+            @if ($isPaymentBreakdownExceeded)
+                <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
+                    <p class="text-sm font-semibold">Warning</p>
+                    <p class="text-sm">
+                        Payment breakdown exceeds Net Sale (Sold Items Value) by
+                        <strong>Rs {{ number_format($paymentBreakdownExcess, 2) }}</strong>.
+                        This settlement is visible for review, but keep this imbalance in mind before reconciliation.
+                    </p>
+                </div>
+            @endif
 
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg mb-4 mt-4 print:shadow-none print:pb-0 p-4">
 

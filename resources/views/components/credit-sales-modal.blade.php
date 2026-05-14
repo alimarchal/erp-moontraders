@@ -105,6 +105,14 @@
                     </div>
                 </div>
 
+                <div class="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span>Allowed Credit Max: <strong x-text="formatCurrency(maxAllowedCredit)"></strong></span>
+                        <span>Current Credit Total: <strong x-text="formatCurrency(creditTotal)"></strong></span>
+                        <span>Remaining: <strong x-text="formatCurrency(remainingCreditAllowed)"></strong></span>
+                    </div>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
                     <div class="md:col-span-11">
                         <label class="block text-xs font-semibold text-gray-700 mb-1">Notes (Optional)</label>
@@ -422,6 +430,21 @@
                         return (previous + credit).toFixed(2);
                     },
 
+                    getNetSaleAmount() {
+                        const input = document.getElementById('summary_net_sale');
+                        return parseFloat(input?.value) || 0;
+                    },
+
+                    getBankTransferAmount() {
+                        const input = document.getElementById('total_bank_transfers');
+                        return parseFloat(input?.value) || 0;
+                    },
+
+                    canAcceptCredit(projectedCreditTotal) {
+                        const tolerance = 0.01;
+                        return projectedCreditTotal <= this.maxAllowedCredit + tolerance;
+                    },
+
                     addEntry() {
                         const customerId = this.form.customer_id;
                         const saleAmount = parseFloat(this.form.sale_amount) || 0;
@@ -524,6 +547,14 @@
                             const amount = parseFloat(entry.sale_amount);
                             return sum + (isNaN(amount) ? 0 : amount);
                         }, 0);
+                    },
+
+                    get maxAllowedCredit() {
+                        return Math.max(0, this.getNetSaleAmount() - this.getBankTransferAmount());
+                    },
+
+                    get remainingCreditAllowed() {
+                        return Math.max(0, this.maxAllowedCredit - this.creditTotal);
                     },
 
                     get previousBalanceTotal() {

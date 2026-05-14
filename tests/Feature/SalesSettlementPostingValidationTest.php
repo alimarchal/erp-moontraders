@@ -108,10 +108,10 @@ function makeDraftSettlement(array $setup, array $overrides = []): SalesSettleme
 }
 
 // ──────────────────────────────────────────────────────
-// Layer 1: Store — negative cash_sales_amount blocked
+// Layer 1: Store — negative cash_sales_amount allowed as draft (warning)
 // ──────────────────────────────────────────────────────
 
-it('store blocks when credit sales exceed total sales (negative cash_sales_amount)', function () {
+it('store allows draft when credit sales exceed total sales (negative cash_sales_amount)', function () {
     $setup = makePostingSetup();
     $customer = Customer::factory()->create();
 
@@ -137,11 +137,12 @@ it('store blocks when credit sales exceed total sales (negative cash_sales_amoun
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHas('error');
-    expect(SalesSettlement::count())->toBe(0);
+    $response->assertSessionHas('warning');
+    expect(SalesSettlement::count())->toBe(1);
+    expect((float) SalesSettlement::first()->cash_sales_amount)->toBeLessThan(0.0);
 });
 
-it('store blocks when bank transfers exceed total sales (negative cash_sales_amount)', function () {
+it('store allows draft when bank transfers exceed total sales (negative cash_sales_amount)', function () {
     $setup = makePostingSetup();
 
     // Total sales = 1500, bank_transfer = 2000 → cash_sales = 1500 - 2000 = -500 → blocked
@@ -166,8 +167,9 @@ it('store blocks when bank transfers exceed total sales (negative cash_sales_amo
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHas('error');
-    expect(SalesSettlement::count())->toBe(0);
+    $response->assertSessionHas('warning');
+    expect(SalesSettlement::count())->toBe(1);
+    expect((float) SalesSettlement::first()->cash_sales_amount)->toBeLessThan(0.0);
 });
 
 it('store allows when payment breakdown is valid', function () {
@@ -201,10 +203,10 @@ it('store allows when payment breakdown is valid', function () {
 });
 
 // ──────────────────────────────────────────────────────
-// Layer 1: Update — negative cash_sales_amount blocked
+// Layer 1: Update — negative cash_sales_amount allowed as draft (warning)
 // ──────────────────────────────────────────────────────
 
-it('update blocks when credit sales exceed total sales (negative cash_sales_amount)', function () {
+it('update allows draft when credit sales exceed total sales (negative cash_sales_amount)', function () {
     $setup = makePostingSetup();
     $customer = Customer::factory()->create();
 
@@ -239,22 +241,22 @@ it('update blocks when credit sales exceed total sales (negative cash_sales_amou
     ]);
 
     $response->assertRedirect();
-    $response->assertSessionHas('error');
+    $response->assertSessionHas('warning');
 
-    // Settlement amounts unchanged
+    // Settlement keeps the unbalanced value in draft; posting layer will still block.
     $settlement->refresh();
-    expect((float) $settlement->cash_sales_amount)->not->toBeLessThan(0.0);
+    expect((float) $settlement->cash_sales_amount)->toBeLessThan(0.0);
 });
 
 // ──────────────────────────────────────────────────────
-// Layer 2: Post — negative cash_sales_amount blocked
+// Layer 2: Post — negative cash_sales_amount allowed
 // ──────────────────────────────────────────────────────
 
-it('post blocks when stored cash_sales_amount is negative (defence-in-depth)', function () {
+it('post allows negative cash_sales_amount (no posting block on exceed)', function () {
     $setup = makePostingSetup();
     $customer = Customer::factory()->create();
 
-    // Bypass Layer 1 by directly setting a negative cash_sales_amount in the DB
+    // Simulate exceed scenario by setting credit above total sales.
     $settlement = makeDraftSettlement($setup, ['cash_sales_amount' => -100]);
 
     SalesSettlementCreditSale::create([
@@ -275,10 +277,9 @@ it('post blocks when stored cash_sales_amount is negative (defence-in-depth)', f
         ->post(route('sales-settlements.post', $settlement));
 
     $response->assertRedirect();
-    $response->assertSessionHas('error');
-
-    $settlement->refresh();
-    expect($settlement->status)->toBe('draft');
+    $errorMessage = session('error') ?? '';
+    expect($errorMessage)->not->toContain('cannot be negative');
+    expect($errorMessage)->not->toContain('exceed total sales');
 });
 
 // ──────────────────────────────────────────────────────

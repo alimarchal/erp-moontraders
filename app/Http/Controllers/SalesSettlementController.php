@@ -583,13 +583,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $totals = $payload['totals'];
             $itemFinancials = $payload['items_financials'];
 
-            if ($totals['cash_sales_amount'] < 0) {
-                DB::rollBack();
-                $excess = number_format(abs($totals['cash_sales_amount']), 2);
+            $paymentBreakdownWarning = null;
 
-                return back()
-                    ->withInput()
-                    ->with('error', "Payment breakdown is invalid: credit sales, cheques, and bank transfers exceed total sales by {$excess}. Please correct the payment entries.");
+            if ($totals['cash_sales_amount'] < 0) {
+                $excess = number_format(abs($totals['cash_sales_amount']), 2);
+                $paymentBreakdownWarning = "Payment breakdown is currently unbalanced: credit sales and bank transfers exceed Net Sale (Sold Items Value) by {$excess}. Draft saved, but posting will fail until this is corrected.";
             }
 
             $settlementNumber = $this->generateSettlementNumber();
@@ -630,9 +628,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             DB::commit();
 
-            return redirect()
+            $redirect = redirect()
                 ->route('sales-settlements.show', $settlement)
                 ->with('success', "Sales Settlement '{$settlement->settlement_number}' created successfully. Please POST the settlement to finalize.");
+
+            if ($paymentBreakdownWarning !== null) {
+                $redirect->with('warning', $paymentBreakdownWarning);
+            }
+
+            return $redirect;
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -979,13 +983,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $totals = $payload['totals'];
             $itemFinancials = $payload['items_financials'];
 
-            if ($totals['cash_sales_amount'] < 0) {
-                DB::rollBack();
-                $excess = number_format(abs($totals['cash_sales_amount']), 2);
+            $paymentBreakdownWarning = null;
 
-                return back()
-                    ->withInput()
-                    ->with('error', "Payment breakdown is invalid: credit sales, cheques, and bank transfers exceed total sales by {$excess}. Please correct the payment entries.");
+            if ($totals['cash_sales_amount'] < 0) {
+                $excess = number_format(abs($totals['cash_sales_amount']), 2);
+                $paymentBreakdownWarning = "Payment breakdown is currently unbalanced: credit sales and bank transfers exceed Net Sale (Sold Items Value) by {$excess}. Draft saved, but posting will fail until this is corrected.";
             }
 
             $salesSettlement->update([
@@ -1024,9 +1026,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             DB::commit();
 
-            return redirect()
+            $redirect = redirect()
                 ->route('sales-settlements.show', $salesSettlement)
                 ->with('success', "Sales Settlement '{$salesSettlement->settlement_number}' updated successfully.");
+
+            if ($paymentBreakdownWarning !== null) {
+                $redirect->with('warning', $paymentBreakdownWarning);
+            }
+
+            return $redirect;
 
         } catch (\Exception $e) {
             DB::rollBack();

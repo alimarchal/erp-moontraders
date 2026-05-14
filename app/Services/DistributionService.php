@@ -1629,9 +1629,8 @@ class DistributionService
      * Validate a settlement's financial and quantity integrity before posting.
      *
      * Checks:
-     *   1. cash_sales_amount >= 0 (credit + cheques + bank transfers must not exceed total sales)
-     *   2. Short/Excess >= 0 (physical cash + bank slips must cover expected clearing balance)
-     *   3. Per-item: quantity_sold + quantity_returned + quantity_shortage <= quantity_issued
+     *   1. Short/Excess >= 0 (physical cash + bank slips must cover expected clearing balance)
+     *   2. Per-item: quantity_sold + quantity_returned + quantity_shortage <= quantity_issued
      *
      * @throws \RuntimeException with a descriptive message if any check fails.
      */
@@ -1647,21 +1646,14 @@ class DistributionService
             'cashDenominations',
         ]);
 
-        // 1. Recalculate cash_sales_amount from child records (never trust the stored value)
+        // Recalculate cash_sales_amount from child records (never trust the stored value)
         $totalSalesAmount = (float) $settlement->items->sum('total_sales_value');
         $creditSalesAmount = (float) $settlement->creditSales->sum('sale_amount');
         $chequeAmount = (float) $settlement->cheques->sum('amount');
         $bankTransferAmount = (float) $settlement->bankTransfers->sum('amount');
         $cashSalesAmount = round($totalSalesAmount - $creditSalesAmount - $bankTransferAmount, 2);
 
-        if ($cashSalesAmount < 0) {
-            $excess = number_format(abs($cashSalesAmount), 2);
-            throw new \RuntimeException(
-                "Cannot post: credit sales and bank transfers exceed total sales by {$excess}. Cash sales amount cannot be negative."
-            );
-        }
-
-        // 2. Short/Excess must be >= 0 (salesman must not have a cash shortage)
+        // 1. Short/Excess must be >= 0 (salesman must not have a cash shortage)
         $totalCashRecoveries = (float) $settlement->recoveries
             ->where('payment_method', 'cash')
             ->sum('amount');
@@ -1684,7 +1676,7 @@ class DistributionService
             );
         }
 
-        // 3. COGS accounts (511x) must not appear as manual expenses (they are auto-posted via inventory)
+        // 2. COGS accounts (511x) must not appear as manual expenses (they are auto-posted via inventory)
         foreach ($settlement->expenses as $expense) {
             $accountCode = (string) ($expense->expenseAccount?->account_code ?? '');
             if (str_starts_with($accountCode, '511')) {
@@ -1695,7 +1687,7 @@ class DistributionService
             }
         }
 
-        // 4. Per-item quantity integrity: B/F Out must be exactly 0
+        // 3. Per-item quantity integrity: B/F Out must be exactly 0
         // B/F In  = van stock already on hand before this goods issue (from prior unsettled GIs)
         // Total Available = B/F In + Quantity Issued
         // B/F Out = Total Available - Sold - Returned - Shortage (must equal 0)

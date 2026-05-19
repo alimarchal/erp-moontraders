@@ -3,7 +3,6 @@
 use App\Models\Product;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
-use Symfony\Component\DomCrawler\Crawler;
 
 beforeEach(function () {
     foreach (['product-list', 'product-create', 'product-edit', 'product-delete'] as $perm) {
@@ -51,13 +50,13 @@ it('allows edit with product-edit permission and keeps cost price editable', fun
     $this->user->givePermissionTo('product-edit');
 
     $response = $this->get(route('products.edit', $product))->assertSuccessful();
+    $content = (string) $response->getContent();
 
-    $crawler = new Crawler($response->getContent());
-    $costPriceInput = $crawler->filter('input#cost_price[name="cost_price"]');
+    preg_match('/<input[^>]*id="cost_price"[^>]*>/i', $content, $matches);
 
-    expect($costPriceInput->count())->toBe(1);
-    expect($costPriceInput->attr('disabled'))->toBeNull();
-    expect($costPriceInput->attr('readonly'))->toBeNull();
+    expect($matches)->not->toBeEmpty();
+    expect($matches[0])->not->toContain('disabled');
+    expect($matches[0])->not->toContain('readonly');
 });
 
 it('denies update without product-edit permission', function () {

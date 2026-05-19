@@ -165,8 +165,8 @@
 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
     <div>
         <x-label for="cost_price" value="Cost Price" />
-        <x-input id="cost_price" type="number" name="cost_price" step="0.01" min="0"
-            class="mt-1 block w-full" :value="old('cost_price', optional($product)->cost_price)" placeholder="950" />
+        <x-input id="cost_price" type="number" name="cost_price" step="0.01" min="0" class="mt-1 block w-full"
+            :value="old('cost_price', optional($product)->cost_price)" placeholder="950" />
     </div>
 
     <div>

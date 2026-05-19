@@ -3,13 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreBatchTransferRequest;
-use App\Models\GoodsReceiptNote;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Services\BatchTransferService;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Facades\DB;
 
 class BatchTransferController extends Controller implements HasMiddleware
 {
@@ -22,75 +23,32 @@ class BatchTransferController extends Controller implements HasMiddleware
 
     public function __construct(private readonly BatchTransferService $batchTransferService) {}
 
-    /**
-     * Show the batch transfer form for batches belonging to a specific GRN.
-     * Accessible via the "Batch Transfer" button on the GRN show page.
-     */
-    public function create(GoodsReceiptNote $goodsReceiptNote)
-    {
-        // Load batches from this GRN that still have stock remaining
-        $batches = $this->batchTransferService->getBatchesForGrn($goodsReceiptNote->id);
-
-        // All active products for target selection (excluding the current batch's product)
-        $products = Product::where('is_active', true)
-            ->orderBy('product_name')
-            ->get(['id', 'product_code', 'product_name']);
-
-        return view('batch-transfers.create', [
-            'grn' => $goodsReceiptNote,
-            'batches' => $batches,
-            'products' => $products,
-        ]);
-    }
-
-    /**
-     * Execute the batch transfer inside a DB transaction (handled in service).
-     */
-    public function store(StoreBatchTransferRequest $request, GoodsReceiptNote $goodsReceiptNote)
-    {
-        $result = $this->batchTransferService->transfer(
-            stockBatchId: (int) $request->input('stock_batch_id'),
-            targetProductId: (int) $request->input('target_product_id'),
-            quantity: (float) $request->input('quantity'),
-            reason: $request->input('reason'),
-        );
-
-        if (! $result['success']) {
-            return back()
-                ->withInput()
-                ->with('error', 'Transfer failed: '.$result['message']);
-        }
-
-        $data = $result['data'];
-        $type = $data['type'] === 'full' ? 'Full batch transfer' : 'Partial transfer';
-        $qty = number_format($data['quantity_transferred'], 2);
-        $giNote = $data['draft_gi_items_updated'] > 0
-            ? " ({$data['draft_gi_items_updated']} draft GI item(s) updated)"
-            : '';
-
-        return redirect()
-            ->route('goods-receipt-notes.show', $goodsReceiptNote)
-            ->with('success', "{$type} of {$qty} units completed successfully.{$giNote}");
-    }
-
-    /**
-     * Show the batch transfer form for batches of a specific product+warehouse.
-     * Accessible via the "Batch Transfer" button on the Current Stock by-batch page.
-     */
     public function createFromStock(Request $request)
     {
         $productId = (int) $request->get('product_id');
         $warehouseId = (int) $request->get('warehouse_id');
 
-        // Step 1: no context yet — show product+warehouse picker
+        // Step 1: no context yet — show supplier + product + warehouse picker
         if (! $productId || ! $warehouseId) {
+            $supplierWarehouseMap = DB::table('stock_batches as sb')
+                ->join('current_stock_by_batch as csb', 'csb.stock_batch_id', '=', 'sb.id')
+                ->where('csb.quantity_on_hand', '>', 0)
+                ->whereNotNull('sb.supplier_id')
+                ->select('sb.supplier_id', 'csb.warehouse_id')
+                ->distinct()
+                ->get()
+                ->groupBy('supplier_id')
+                ->map(fn ($g) => $g->pluck('warehouse_id')->unique()->values());
+
             return view('batch-transfers.create-from-stock', [
                 'product' => null,
                 'warehouse' => null,
                 'batches' => collect(),
                 'products' => collect(),
+                'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
                 'allProducts' => Product::where('is_active', true)->orderBy('product_name')->get(['id', 'product_code', 'product_name']),
                 'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
+                'supplierWarehouseMap' => $supplierWarehouseMap,
             ]);
         }
 
@@ -109,14 +67,13 @@ class BatchTransferController extends Controller implements HasMiddleware
             'warehouse' => $warehouse,
             'batches' => $batches,
             'products' => $products,
+            'suppliers' => collect(),
             'allProducts' => collect(),
             'warehouses' => collect(),
+            'supplierWarehouseMap' => collect(),
         ]);
     }
 
-    /**
-     * Execute a batch transfer initiated from the Current Stock page.
-     */
     public function storeFromStock(StoreBatchTransferRequest $request)
     {
         $result = $this->batchTransferService->transfer(

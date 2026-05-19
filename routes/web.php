@@ -426,10 +426,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('goods-receipt-notes.edit-special');
     Route::post('goods-receipt-notes/{goodsReceiptNote}/update-special', [GoodsReceiptNoteController::class, 'updateSpecial'])
         ->name('goods-receipt-notes.update-special');
-    Route::get('goods-receipt-notes/{goodsReceiptNote}/batch-transfer', [BatchTransferController::class, 'create'])
-        ->name('goods-receipt-notes.batch-transfer');
-    Route::post('goods-receipt-notes/{goodsReceiptNote}/batch-transfer', [BatchTransferController::class, 'store'])
-        ->name('goods-receipt-notes.batch-transfer.store');
     Route::get('api/suppliers/{supplier}/products', [GoodsReceiptNoteController::class, 'getProductsBySupplier'])
         ->name('api.suppliers.products');
 

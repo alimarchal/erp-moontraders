@@ -144,6 +144,7 @@
                     barcode:                '{{ addslashes($product->barcode ?? '') }}',
                     pack_size:              '{{ addslashes($product->pack_size ?? '') }}',
                     weight:                 '{{ $product->weight ?? '' }}',
+                    cost_price:             '{{ $product->cost_price ?? '' }}',
                     unit_sell_price:        '{{ $product->unit_sell_price ?? '' }}',
                     expiry_price:           '{{ $product->expiry_price ?? '' }}',
                     reorder_level:          '{{ $product->reorder_level ?? '' }}',
@@ -165,6 +166,7 @@
                     barcode:                'Barcode',
                     pack_size:              'Pack Size',
                     weight:                 'Weight (kg)',
+                    cost_price:             'Cost Price',
                     unit_sell_price:        'Selling Price',
                     expiry_price:           'Expiry Price',
                     reorder_level:          'Reorder Level',
@@ -198,7 +200,7 @@
                             const old = normalise(oldVal);
 
                             // Normalise numeric fields to avoid 950.00 vs 950 mismatch
-                            const numericFields = ['uom_conversion_factor', 'weight', 'unit_sell_price', 'expiry_price', 'reorder_level'];
+                            const numericFields = ['uom_conversion_factor', 'weight', 'cost_price', 'unit_sell_price', 'expiry_price', 'reorder_level'];
                             let normOld = old, normNew = newVal;
                             if (numericFields.includes(field)) {
                                 normOld = old !== '' ? parseFloat(old).toString() : '';

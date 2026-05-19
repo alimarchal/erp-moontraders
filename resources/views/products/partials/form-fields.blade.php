@@ -166,12 +166,7 @@
     <div>
         <x-label for="cost_price" value="Cost Price" />
         <x-input id="cost_price" type="number" name="cost_price" step="0.01" min="0"
-            class="mt-1 block w-full bg-gray-100 cursor-not-allowed"
-            :value="old('cost_price', optional($product)->cost_price)" placeholder="950"
-            :disabled="isset($product)" :readonly="isset($product)" />
-        @if (isset($product))
-            <p class="text-xs text-gray-500 mt-1">Updated automatically via GRN.</p>
-        @endif
+            class="mt-1 block w-full" :value="old('cost_price', optional($product)->cost_price)" placeholder="950" />
     </div>
 
     <div>

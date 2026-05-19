@@ -13,6 +13,7 @@
 use App\Http\Controllers\AccountingPeriodController;
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\BankAccountController;
+use App\Http\Controllers\BatchTransferController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\ClaimRegisterController;
@@ -425,6 +426,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('goods-receipt-notes.edit-special');
     Route::post('goods-receipt-notes/{goodsReceiptNote}/update-special', [GoodsReceiptNoteController::class, 'updateSpecial'])
         ->name('goods-receipt-notes.update-special');
+    Route::get('goods-receipt-notes/{goodsReceiptNote}/batch-transfer', [BatchTransferController::class, 'create'])
+        ->name('goods-receipt-notes.batch-transfer');
+    Route::post('goods-receipt-notes/{goodsReceiptNote}/batch-transfer', [BatchTransferController::class, 'store'])
+        ->name('goods-receipt-notes.batch-transfer.store');
     Route::get('api/suppliers/{supplier}/products', [GoodsReceiptNoteController::class, 'getProductsBySupplier'])
         ->name('api.suppliers.products');
 
@@ -577,6 +582,10 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::prefix('inventory')->name('inventory.')->group(function () {
         Route::get('current-stock', [CurrentStockController::class, 'index'])->name('current-stock.index');
         Route::get('current-stock/by-batch', [CurrentStockController::class, 'showByBatch'])->name('current-stock.by-batch');
+        Route::get('current-stock/batch-transfer', [BatchTransferController::class, 'createFromStock'])
+            ->name('current-stock.batch-transfer');
+        Route::post('current-stock/batch-transfer', [BatchTransferController::class, 'storeFromStock'])
+            ->name('current-stock.batch-transfer.store');
     });
 
     /*

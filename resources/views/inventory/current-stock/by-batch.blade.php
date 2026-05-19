@@ -15,6 +15,15 @@
                     </svg>
                 </button>
 
+                @role('super-admin')
+                @if($product && $warehouse)
+                    <a href="{{ route('inventory.current-stock.batch-transfer', ['product_id' => $product->id, 'warehouse_id' => $warehouse->id]) }}"
+                        class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition no-print">
+                        Batch Transfer
+                    </a>
+                @endif
+                @endrole
+
                 <a href="{{ route('inventory.current-stock.index') }}"
                     class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
                     <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"

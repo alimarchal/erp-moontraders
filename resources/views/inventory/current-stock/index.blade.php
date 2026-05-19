@@ -279,7 +279,8 @@
                                         {{ $loop->iteration + ($stocks->currentPage() - 1) * $stocks->perPage() }}
                                     </td>
                                     <td class="text-left font-semibold px-2 whitespace-nowrap">
-                                        {{ trim($stock->product->product_code) }} - {{ $stock->product->product_name }}
+                                        {{-- {{ trim($stock->product->product_code) }} - --}}
+                                        {{ $stock->product->product_name }}
                                     </td>
                                     <td class="text-left px-2 whitespace-nowrap">{{ $stock->warehouse->warehouse_name }}</td>
                                     <td class="text-center font-semibold">

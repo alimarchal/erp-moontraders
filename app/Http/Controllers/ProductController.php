@@ -373,14 +373,33 @@ class ProductController extends Controller implements HasMiddleware
         }
     }
 
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($user->is_super_admin === 'Yes' || $user->hasRole('super-admin')) {
+            return null;
+        }
+
+        if ($user->hasRole('admin')) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
     /**
      * Build the filtered query shared by index and export.
      */
     private function buildFilteredQuery(): QueryBuilder
     {
-        return QueryBuilder::for(
-            Product::query()->with(['supplier', 'uom', 'salesUom', 'category'])
-        )
+        $userSupplierId = $this->getUserSupplierScope();
+
+        $baseQuery = Product::query()
+            ->with(['supplier', 'uom', 'salesUom', 'category'])
+            ->when($userSupplierId, fn ($q, $supplierId) => $q->where('supplier_id', $supplierId));
+
+        return QueryBuilder::for($baseQuery)
             ->allowedFilters([
                 AllowedFilter::exact('product_name'),
                 AllowedFilter::exact('product_code'),
@@ -409,7 +428,12 @@ class ProductController extends Controller implements HasMiddleware
 
     protected function supplierOptions()
     {
-        return Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+        $userSupplierId = $this->getUserSupplierScope();
+
+        return Supplier::query()
+            ->when($userSupplierId, fn ($q, $supplierId) => $q->where('id', $supplierId))
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
     }
 
     protected function categoryOptions()

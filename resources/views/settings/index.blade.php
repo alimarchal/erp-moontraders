@@ -354,8 +354,7 @@
                             class="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
                             @can('product-list')
                                 <x-settings-row href="{{ route('products.index') }}" label="Products"
-                                    description="Item master & specifications" :count="\App\Models\Product::count()"
-                                    icon-bg="bg-indigo-500">
+                                    description="Item master & specifications" :count="$productCount" icon-bg="bg-indigo-500">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24" stroke-width="1.8">

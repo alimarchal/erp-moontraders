@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AmrDisposeRegisterController extends Controller implements HasMiddleware
@@ -27,8 +28,15 @@ class AmrDisposeRegisterController extends Controller implements HasMiddleware
     {
         $perPage = $request->input('per_page', 50);
         $perPage = in_array($perPage, [10, 25, 50, 100, 250, 'all']) ? $perPage : 50;
+        $canViewAllSuppliers = $this->canViewAllSuppliers();
+        $userSupplierId = $this->getUserSupplierScope();
 
-        $supplierId = $request->input('filter.supplier_id');
+        $requestedSupplierId = $request->input('filter.supplier_id');
+        if ($requestedSupplierId && ! $canViewAllSuppliers && (int) $requestedSupplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to filter by this supplier.');
+        }
+
+        $supplierId = $userSupplierId ?? $requestedSupplierId;
         $employeeId = $request->input('filter.employee_id');
         $type = $request->input('filter.type', 'both');
         $type = in_array($type, ['liquids', 'powders', 'both']) ? $type : 'both';
@@ -51,11 +59,31 @@ class AmrDisposeRegisterController extends Controller implements HasMiddleware
         $sortDir = $request->input('direction', 'desc');
         $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'desc';
 
-        $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
-        $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        if ($employeeId && ! $canViewAllSuppliers) {
+            $isAllowedEmployee = Employee::query()
+                ->where('id', $employeeId)
+                ->where('supplier_id', $supplierId)
+                ->exists();
+
+            if (! $isAllowedEmployee) {
+                abort(403, 'You do not have permission to filter by this salesman.');
+            }
+        }
+
+        $suppliers = Supplier::query()
+            ->when($supplierId, fn ($query) => $query->where('id', $supplierId))
+            ->when(! $canViewAllSuppliers && ! $supplierId, fn ($query) => $query->whereRaw('1 = 0'))
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
+        $employees = Employee::query()
+            ->where('is_active', true)
+            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->when(! $canViewAllSuppliers && ! $supplierId, fn ($query) => $query->whereRaw('1 = 0'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
 
         $buildQuery = function (string $table, string $typeLabel) use (
-            $supplierId, $employeeId, $isDisposed, $settlementDateFrom, $settlementDateTo,
+            $supplierId, $canViewAllSuppliers, $employeeId, $isDisposed, $settlementDateFrom, $settlementDateTo,
             $disposedAtFrom, $disposedAtTo, $productName
         ) {
             return DB::table($table)
@@ -81,6 +109,7 @@ class AmrDisposeRegisterController extends Controller implements HasMiddleware
                     DB::raw("'{$table}' as record_table"),
                 ])
                 ->when($supplierId, fn ($q) => $q->where('sales_settlements.supplier_id', $supplierId))
+                ->when(! $canViewAllSuppliers && ! $supplierId, fn ($q) => $q->whereRaw('1 = 0'))
                 ->when($employeeId, fn ($q) => $q->where('sales_settlements.employee_id', $employeeId))
                 ->when($isDisposed !== 'all', fn ($q) => $q->where($table.'.is_disposed', (bool) $isDisposed))
                 ->when($settlementDateFrom, fn ($q) => $q->where('sales_settlements.settlement_date', '>=', $settlementDateFrom))
@@ -136,6 +165,7 @@ class AmrDisposeRegisterController extends Controller implements HasMiddleware
             'productName' => $productName,
             'sortBy' => $sortBy,
             'sortDir' => $sortDir,
+            'canViewAllSuppliers' => $canViewAllSuppliers,
         ]);
     }
 
@@ -148,7 +178,8 @@ class AmrDisposeRegisterController extends Controller implements HasMiddleware
         ]);
 
         $model = $type === 'liquid' ? SalesSettlementAmrLiquid::class : SalesSettlementAmrPowder::class;
-        $record = $model::findOrFail($id);
+        $record = $model::with('salesSettlement')->findOrFail($id);
+        $this->authorizeAmrRecordAccess($record);
 
         $record->update(['is_disposed' => $validated['is_disposed']]);
 
@@ -166,6 +197,9 @@ class AmrDisposeRegisterController extends Controller implements HasMiddleware
 
         $liquids = collect($validated['items'])->where('type', 'liquid')->pluck('id');
         $powders = collect($validated['items'])->where('type', 'powder')->pluck('id');
+        $this->authorizeBulkAmrAccess(SalesSettlementAmrLiquid::class, $liquids);
+        $this->authorizeBulkAmrAccess(SalesSettlementAmrPowder::class, $powders);
+
         $isDisposed = (bool) $validated['is_disposed'];
         $disposedAt = $isDisposed ? now() : null;
 
@@ -186,5 +220,60 @@ class AmrDisposeRegisterController extends Controller implements HasMiddleware
         $count = $liquids->count() + $powders->count();
 
         return redirect()->back()->with('success', "{$count} record(s) updated successfully.");
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($this->canViewAllSuppliers()) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function canViewAllSuppliers(): bool
+    {
+        $user = auth()->user();
+
+        return $user->is_super_admin === 'Yes'
+            || $user->hasRole('super-admin')
+            || $user->hasRole('admin');
+    }
+
+    private function authorizeAmrRecordAccess(SalesSettlementAmrLiquid|SalesSettlementAmrPowder $record): void
+    {
+        if ($this->canViewAllSuppliers()) {
+            return;
+        }
+
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if (! $userSupplierId || (int) $record->salesSettlement?->supplier_id !== $userSupplierId) {
+            abort(403, 'You do not have permission to access this AMR record.');
+        }
+    }
+
+    private function authorizeBulkAmrAccess(string $model, Collection $ids): void
+    {
+        if ($this->canViewAllSuppliers() || $ids->isEmpty()) {
+            return;
+        }
+
+        $userSupplierId = $this->getUserSupplierScope();
+        if (! $userSupplierId) {
+            abort(403, 'You do not have permission to access these AMR records.');
+        }
+
+        $uniqueIds = $ids->unique()->values();
+        $allowedCount = $model::query()
+            ->whereIn('id', $uniqueIds)
+            ->whereHas('salesSettlement', fn ($query) => $query->where('supplier_id', $userSupplierId))
+            ->count();
+
+        if ($allowedCount !== $uniqueIds->count()) {
+            abort(403, 'You do not have permission to access these AMR records.');
+        }
     }
 }

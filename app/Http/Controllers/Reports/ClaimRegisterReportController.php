@@ -36,9 +36,12 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $perPage = $request->input('per_page', 50);
         $perPage = \in_array($perPage, [10, 25, 50, 100, 250, 'all']) ? $perPage : 50;
 
-        // Default supplier: Nestlé
+        $canViewAllSuppliers = $this->canViewAllSuppliers();
+        $userSupplierId = $this->getUserSupplierScope();
+        $this->authorizeRequestedSupplier((int) $request->input('supplier_id'));
+
         $defaultSupplier = Supplier::where('short_name', 'Nestle')->first();
-        $supplierId = $request->input('supplier_id', $defaultSupplier?->id);
+        $supplierId = $userSupplierId ?? ($canViewAllSuppliers ? $request->input('supplier_id', $defaultSupplier?->id) : null);
 
         // Date range defaults: current month
         $dateFrom = $request->input('date_from', now()->startOfMonth()->toDateString());
@@ -49,7 +52,13 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $description = $request->input('description');
         $postedStatus = $request->input('posted_status');
 
-        $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get();
+        $suppliers = Supplier::query()
+            ->where('disabled', false)
+            ->when(! $canViewAllSuppliers, fn ($query) => $userSupplierId
+                ? $query->where('id', $userSupplierId)
+                : $query->whereRaw('1 = 0'))
+            ->orderBy('supplier_name')
+            ->get();
         $transactionTypeOptions = ClaimRegister::transactionTypeOptions();
 
         $openingBalances = [];
@@ -59,6 +68,8 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
             if ($supplierId) {
                 $openingQuery->where('supplier_id', $supplierId);
+            } elseif (! $canViewAllSuppliers) {
+                $openingQuery->whereRaw('1 = 0');
             }
 
             $openingQuery->whereDate('transaction_date', '<', $dateFrom);
@@ -79,6 +90,8 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
         if ($supplierId) {
             $query->where('supplier_id', $supplierId);
+        } elseif (! $canViewAllSuppliers) {
+            $query->whereRaw('1 = 0');
         }
 
         if ($claimMonth) {
@@ -152,13 +165,15 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
             'closingBalance',
             'totals',
             'perPage',
-            'claimRegisterDateEditable'
+            'claimRegisterDateEditable',
+            'canViewAllSuppliers'
         ));
     }
 
     public function store(StoreClaimRegisterRequest $request)
     {
         $data = $request->validated();
+        $this->authorizeClaimSupplier((int) $data['supplier_id']);
         $data = $this->setDefaultAccounts($data);
 
         $result = $this->claimService->createClaim($data);
@@ -172,11 +187,14 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
     public function update(UpdateClaimRegisterRequest $request, ClaimRegister $claimRegister)
     {
+        $this->authorizeClaimRegisterAccess($claimRegister);
+
         if ($claimRegister->isPosted()) {
             return redirect()->back()->with('error', 'Posted claims cannot be edited.');
         }
 
         $data = $request->validated();
+        $this->authorizeClaimSupplier((int) $data['supplier_id']);
         $data = $this->setDefaultAccounts($data);
 
         $result = $this->claimService->updateClaim($claimRegister, $data);
@@ -190,6 +208,8 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
     public function destroy(ClaimRegister $claimRegister)
     {
+        $this->authorizeClaimRegisterAccess($claimRegister);
+
         if ($claimRegister->isPosted()) {
             return redirect()->back()->with('error', 'Posted claims cannot be deleted.');
         }
@@ -211,6 +231,8 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
 
     public function post(ClaimRegister $claimRegister)
     {
+        $this->authorizeClaimRegisterAccess($claimRegister);
+
         if ($claimRegister->isPosted()) {
             return redirect()->back()->with('error', 'Claim is already posted.');
         }
@@ -265,5 +287,52 @@ class ClaimRegisterReportController extends Controller implements HasMiddleware
         $data['payment_method'] = 'bank_transfer';
 
         return $data;
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($this->canViewAllSuppliers()) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function canViewAllSuppliers(): bool
+    {
+        $user = auth()->user();
+
+        return $user->is_super_admin === 'Yes'
+            || $user->hasRole('super-admin')
+            || $user->hasRole('admin');
+    }
+
+    private function authorizeRequestedSupplier(int $requestedSupplierId): void
+    {
+        if ($requestedSupplierId === 0) {
+            return;
+        }
+
+        $this->authorizeClaimSupplier($requestedSupplierId, 'You do not have permission to filter by this supplier.');
+    }
+
+    private function authorizeClaimSupplier(int $supplierId, string $message = 'You do not have permission to access this supplier.'): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($this->canViewAllSuppliers()) {
+            return;
+        }
+
+        if (! $userSupplierId || $supplierId !== $userSupplierId) {
+            abort(403, $message);
+        }
+    }
+
+    private function authorizeClaimRegisterAccess(ClaimRegister $claimRegister): void
+    {
+        $this->authorizeClaimSupplier((int) $claimRegister->supplier_id, 'You do not have permission to access this claim.');
     }
 }

@@ -19,6 +19,7 @@ beforeEach(function () {
     }
 
     $this->user = User::factory()->create();
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
     $this->user->givePermissionTo(['claim-register-list', 'claim-register-create', 'claim-register-edit', 'claim-register-delete', 'claim-register-post']);
     $this->actingAs($this->user);
 });
@@ -55,6 +56,54 @@ test('index can filter by supplier', function () {
 
     $response->assertSuccessful();
     expect($response->viewData('claims'))->toHaveCount(1);
+});
+
+test('index is scoped to the authenticated users supplier', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $otherSupplier = Supplier::factory()->create();
+    $this->user->forceFill([
+        'supplier_id' => $ownSupplier->id,
+        'is_super_admin' => 'No',
+    ])->save();
+
+    ClaimRegister::factory()->create([
+        'supplier_id' => $ownSupplier->id,
+        'reference_number' => 'OWN-CLAIM',
+    ]);
+    ClaimRegister::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'reference_number' => 'OTHER-CLAIM',
+    ]);
+
+    $response = $this->get(route('claim-registers.index'));
+
+    $response->assertSuccessful();
+    $response->assertSee('OWN-CLAIM');
+    $response->assertDontSee('OTHER-CLAIM');
+    expect($response->viewData('suppliers'))->toHaveCount(1);
+    expect($response->viewData('suppliers')->first()->id)->toBe($ownSupplier->id);
+});
+
+test('scoped users cannot create claim for another supplier', function () {
+    $ownSupplier = Supplier::factory()->create();
+    $otherSupplier = Supplier::factory()->create();
+    $this->user->forceFill([
+        'supplier_id' => $ownSupplier->id,
+        'is_super_admin' => 'No',
+    ])->save();
+
+    $this->post(route('claim-registers.store'), [
+        'supplier_id' => $otherSupplier->id,
+        'transaction_date' => now()->format('Y-m-d'),
+        'reference_number' => 'FORBIDDEN-CLAIM',
+        'transaction_type' => 'claim',
+        'amount' => 1000,
+    ])->assertForbidden();
+
+    $this->assertDatabaseMissing('claim_registers', [
+        'supplier_id' => $otherSupplier->id,
+        'reference_number' => 'FORBIDDEN-CLAIM',
+    ]);
 });
 
 // ── Create ─────────────────────────────────────────────────────────

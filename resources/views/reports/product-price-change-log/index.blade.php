@@ -24,9 +24,11 @@
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1">Supplier</label>
                 <select name="supplier_id" class="select2 w-full">
-                    <option value="">All Suppliers</option>
+                    @if ($canViewAllSuppliers)
+                        <option value="">All Suppliers</option>
+                    @endif
                     @foreach ($supplierOptions as $supplier)
-                        <option value="{{ $supplier->id }}" @selected(request('supplier_id') == $supplier->id)>
+                        <option value="{{ $supplier->id }}" @selected((string) $supplierId === (string) $supplier->id)>
                             {{ $supplier->supplier_name }}
                         </option>
                     @endforeach

@@ -26,8 +26,15 @@ class ChequeRegisterController extends Controller implements HasMiddleware
     {
         $perPage = $request->input('per_page', 50);
         $perPage = in_array($perPage, [10, 25, 50, 100, 250, 'all']) ? $perPage : 50;
+        $canViewAllSuppliers = $this->canViewAllSuppliers();
+        $userSupplierId = $this->getUserSupplierScope();
 
-        $supplierId = $request->input('filter.supplier_id');
+        $requestedSupplierId = $request->input('filter.supplier_id');
+        if ($requestedSupplierId && ! $canViewAllSuppliers && (int) $requestedSupplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to filter by this supplier.');
+        }
+
+        $supplierId = $userSupplierId ?? $requestedSupplierId;
         $employeeId = $request->input('filter.employee_id');
         $customerId = $request->input('filter.customer_id');
         $statuses = array_filter((array) $request->input('filter.status', []));
@@ -48,9 +55,39 @@ class ChequeRegisterController extends Controller implements HasMiddleware
         $sortDir = $request->input('direction', 'desc');
         $sortDir = in_array($sortDir, ['asc', 'desc']) ? $sortDir : 'desc';
 
-        $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
-        $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']);
-        $customers = Customer::orderBy('customer_name')->get(['id', 'customer_name']);
+        if ($employeeId && ! $canViewAllSuppliers) {
+            $isAllowedEmployee = Employee::query()
+                ->where('id', $employeeId)
+                ->where('supplier_id', $supplierId)
+                ->exists();
+
+            if (! $isAllowedEmployee) {
+                abort(403, 'You do not have permission to filter by this salesman.');
+            }
+        }
+
+        $suppliers = Supplier::query()
+            ->when($supplierId, fn ($query) => $query->where('id', $supplierId))
+            ->when(! $canViewAllSuppliers && ! $supplierId, fn ($query) => $query->whereRaw('1 = 0'))
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
+        $employees = Employee::query()
+            ->where('is_active', true)
+            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->when(! $canViewAllSuppliers && ! $supplierId, fn ($query) => $query->whereRaw('1 = 0'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+        $customerIds = SalesSettlementCheque::query()
+            ->join('sales_settlements', 'sales_settlements.id', '=', 'sales_settlement_cheques.sales_settlement_id')
+            ->when($supplierId, fn ($query) => $query->where('sales_settlements.supplier_id', $supplierId))
+            ->when(! $canViewAllSuppliers && ! $supplierId, fn ($query) => $query->whereRaw('1 = 0'))
+            ->whereNotNull('sales_settlement_cheques.customer_id')
+            ->distinct()
+            ->pluck('sales_settlement_cheques.customer_id');
+        $customers = Customer::query()
+            ->whereIn('id', $customerIds)
+            ->orderBy('customer_name')
+            ->get(['id', 'customer_name']);
 
         $query = SalesSettlementCheque::query()
             ->join('sales_settlements', 'sales_settlements.id', '=', 'sales_settlement_cheques.sales_settlement_id')
@@ -63,6 +100,7 @@ class ChequeRegisterController extends Controller implements HasMiddleware
                 'customers.address as customer_address',
             ])
             ->when($supplierId, fn ($q) => $q->where('sales_settlements.supplier_id', $supplierId))
+            ->when(! $canViewAllSuppliers && ! $supplierId, fn ($q) => $q->whereRaw('1 = 0'))
             ->when($employeeId, fn ($q) => $q->where('sales_settlements.employee_id', $employeeId))
             ->when($customerId, fn ($q) => $q->where('sales_settlement_cheques.customer_id', $customerId))
             ->when($statuses, fn ($q) => $q->whereIn('sales_settlement_cheques.status', $statuses))
@@ -110,11 +148,15 @@ class ChequeRegisterController extends Controller implements HasMiddleware
             'availableStatuses' => ['pending', 'cleared', 'bounced', 'cancelled'],
             'sortBy' => $sortBy,
             'sortDir' => $sortDir,
+            'canViewAllSuppliers' => $canViewAllSuppliers,
         ]);
     }
 
     public function updateStatus(Request $request, SalesSettlementCheque $cheque)
     {
+        $cheque->loadMissing('salesSettlement');
+        $this->authorizeChequeAccess($cheque);
+
         $validated = $request->validate([
             'status' => ['required', 'in:pending,cleared,bounced,cancelled'],
             'cleared_date' => ['nullable', 'date'],
@@ -127,5 +169,38 @@ class ChequeRegisterController extends Controller implements HasMiddleware
         ]);
 
         return redirect()->back()->with('success', 'Cheque status updated successfully.');
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($this->canViewAllSuppliers()) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function canViewAllSuppliers(): bool
+    {
+        $user = auth()->user();
+
+        return $user->is_super_admin === 'Yes'
+            || $user->hasRole('super-admin')
+            || $user->hasRole('admin');
+    }
+
+    private function authorizeChequeAccess(SalesSettlementCheque $cheque): void
+    {
+        if ($this->canViewAllSuppliers()) {
+            return;
+        }
+
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if (! $userSupplierId || (int) $cheque->salesSettlement?->supplier_id !== $userSupplierId) {
+            abort(403, 'You do not have permission to access this cheque.');
+        }
     }
 }

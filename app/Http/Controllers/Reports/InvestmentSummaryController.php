@@ -29,99 +29,148 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
     public function index(Request $request)
     {
         $date = $request->input('date', now()->format('Y-m-d'));
-        $supplierId = $request->input('supplier_id', Supplier::where('supplier_name', 'Nestlé Pakistan')->value('id'));
+        $canViewAllSuppliers = $this->canViewAllSuppliers();
+        $userSupplierId = $this->getUserSupplierScope();
+        $requestedSupplierId = $request->input('supplier_id');
+
+        if ($requestedSupplierId && ! $canViewAllSuppliers && (int) $requestedSupplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to filter by this supplier.');
+        }
+
+        $supplierId = $userSupplierId ?? ($requestedSupplierId ? (int) $requestedSupplierId : null);
+        $hasSupplierSelection = $supplierId !== null;
         $designation = $request->input('designation', 'Salesman');
         $employeeIds = $request->input('employee_ids', []);
         $showBankSummary = $request->boolean('show_bank_summary', false);
 
-        $suppliers = Supplier::orderBy('supplier_name')->get();
-        $designations = Employee::distinct()->whereNotNull('designation')->orderBy('designation')->pluck('designation');
+        $suppliers = Supplier::query()
+            ->where('disabled', false)
+            ->when(! $canViewAllSuppliers, fn ($query) => $userSupplierId
+                ? $query->where('id', $userSupplierId)
+                : $query->whereRaw('1 = 0'))
+            ->orderBy('supplier_name')
+            ->get();
+        $designations = Employee::query()
+            ->distinct()
+            ->whereNotNull('designation')
+            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->when(! $hasSupplierSelection, fn ($query) => $query->whereRaw('1 = 0'))
+            ->orderBy('designation')
+            ->pluck('designation');
 
         $allEmployeesQuery = Employee::query();
         if ($supplierId) {
             $allEmployeesQuery->where('supplier_id', $supplierId);
+        } else {
+            $allEmployeesQuery->whereRaw('1 = 0');
         }
         if ($designation) {
             $allEmployeesQuery->where('designation', $designation);
         }
         $allEmployees = $allEmployeesQuery->orderBy('name')->get();
 
-        // Part 1: Salesman Credit Data
-        $salesmanCreditData = $this->getSalesmanCreditData($date, $supplierId, $designation, $employeeIds);
-
-        // Grand totals
-        $creditGrandTotals = (object) [
-            'opening_credit' => $salesmanCreditData->sum('opening_credit'),
-            'credit_amount' => $salesmanCreditData->sum('credit_amount'),
-            'recovery_amount' => $salesmanCreditData->sum('recovery_amount'),
-            'total_credit' => $salesmanCreditData->sum('total_credit'),
-        ];
-
-        // Part 2: Investment Summary
-        $powderExpiry = $this->getPowderExpiry($supplierId, $date);
-        $liquidExpiry = $this->getLiquidExpiry($supplierId, $date);
-        $claimAmount = $this->getClaimAmount($supplierId, $date);
-        $stockAmount = $this->getStockAmount($supplierId, $date);
-        $creditAmount = (float) $creditGrandTotals->total_credit;
-        $ledgerAmount = $this->getLedgerAmount($supplierId, $date);
-
-        $currentTotal = $powderExpiry + $liquidExpiry + $claimAmount + $stockAmount + $creditAmount + $ledgerAmount;
-
-        // Previous date comparison
         $previousDate = Carbon::parse($date)->subDay()->format('Y-m-d');
-        $previousCreditData = $this->getSalesmanCreditData($previousDate, $supplierId, $designation, $employeeIds);
-        $previousCreditAmount = (float) $previousCreditData->sum('total_credit');
-        $previousPowderExpiry = $this->getPowderExpiry($supplierId, $previousDate);
-        $previousLiquidExpiry = $this->getLiquidExpiry($supplierId, $previousDate);
-        $previousStockAmount = $this->getStockAmount($supplierId, $previousDate);
-        $previousClaimAmount = $this->getClaimAmount($supplierId, $previousDate);
-        $previousLedgerAmount = $this->getLedgerAmount($supplierId, $previousDate);
-
-        $previousTotal = $previousPowderExpiry + $previousLiquidExpiry + $previousClaimAmount + $previousStockAmount + $previousCreditAmount + $previousLedgerAmount;
-        $previousTotalInvestment = $previousTotal;
-
-        // Daily Cash & Investment calculations
-        $dailyCash = $this->getDailyCash($date, $supplierId);
-        $dailyBankSlips = $this->getDailyBankSlips($date, $supplierId);
-        $dailyBankTransfers = $this->getDailyBankTransfers($date, $supplierId);
-        $dailyChequePayments = $this->getDailyChequePayments($date, $supplierId);
-        $totalInvestment = $currentTotal + $dailyCash + $dailyBankSlips + $dailyBankTransfers + $dailyChequePayments;
-        $bankOnline = $this->getBankOnline($date, $supplierId);
-        $increaseInInvestment = $totalInvestment - $previousTotalInvestment - $bankOnline;
-
-        // Bank/Cash summary & Investment Comparison
         $lastDayPrevMonth = Carbon::parse($date)->subMonthNoOverflow()->endOfMonth()->toDateString();
-        $openingBalanceData = $this->getOpeningBalanceValues($date, $supplierId);
-        $expenseCategoryTotals = [];
 
-        if ($openingBalanceData !== null) {
-            $bankOpeningAmount = $openingBalanceData['BANK_OPENING_AMOUNT'] ?? 0.0;
-            $totalCashReceivedMonth = $openingBalanceData['TOTAL_CASH_RECEIVED_CURRENT_MONTH'] ?? 0.0;
-            $totalBankAmount = $totalCashReceivedMonth + $bankOpeningAmount;
-            $totalOnlineAmountMonth = $openingBalanceData['TOTAL_ONLINE_AMOUNT_CURRENT_MONTH'] ?? 0.0;
-            $closingBalanceBeforeExpenses = $openingBalanceData['CLOSING_BALANCE_BEFORE_EXPENSES'] ?? 0.0;
-            $totalExpensesMonth = $openingBalanceData['TOTAL_EXPENSE_CURRENT_MONTH'] ?? 0.0;
-            $closingBalanceAfterExpenses = $openingBalanceData['CLOSING_BALANCE_AFTER_EXPENSE'] ?? 0.0;
-            $lastMonthMainInvestment = $openingBalanceData['LAST_MONTH_MAIN_INVESTMENT'] ?? 0.0;
+        if ($hasSupplierSelection) {
+            $salesmanCreditData = $this->getSalesmanCreditData($date, $supplierId, $designation, $employeeIds);
+
+            $creditGrandTotals = (object) [
+                'opening_credit' => $salesmanCreditData->sum('opening_credit'),
+                'credit_amount' => $salesmanCreditData->sum('credit_amount'),
+                'recovery_amount' => $salesmanCreditData->sum('recovery_amount'),
+                'total_credit' => $salesmanCreditData->sum('total_credit'),
+            ];
+
+            $powderExpiry = $this->getPowderExpiry($supplierId, $date);
+            $liquidExpiry = $this->getLiquidExpiry($supplierId, $date);
+            $claimAmount = $this->getClaimAmount($supplierId, $date);
+            $stockAmount = $this->getStockAmount($supplierId, $date);
+            $creditAmount = (float) $creditGrandTotals->total_credit;
+            $ledgerAmount = $this->getLedgerAmount($supplierId, $date);
+            $currentTotal = $powderExpiry + $liquidExpiry + $claimAmount + $stockAmount + $creditAmount + $ledgerAmount;
+
+            $previousCreditData = $this->getSalesmanCreditData($previousDate, $supplierId, $designation, $employeeIds);
+            $previousCreditAmount = (float) $previousCreditData->sum('total_credit');
+            $previousPowderExpiry = $this->getPowderExpiry($supplierId, $previousDate);
+            $previousLiquidExpiry = $this->getLiquidExpiry($supplierId, $previousDate);
+            $previousStockAmount = $this->getStockAmount($supplierId, $previousDate);
+            $previousClaimAmount = $this->getClaimAmount($supplierId, $previousDate);
+            $previousLedgerAmount = $this->getLedgerAmount($supplierId, $previousDate);
+            $previousTotalInvestment = $previousPowderExpiry + $previousLiquidExpiry + $previousClaimAmount + $previousStockAmount + $previousCreditAmount + $previousLedgerAmount;
+
+            $dailyCash = $this->getDailyCash($date, $supplierId);
+            $dailyBankSlips = $this->getDailyBankSlips($date, $supplierId);
+            $dailyBankTransfers = $this->getDailyBankTransfers($date, $supplierId);
+            $dailyChequePayments = $this->getDailyChequePayments($date, $supplierId);
+            $totalInvestment = $currentTotal + $dailyCash + $dailyBankSlips + $dailyBankTransfers + $dailyChequePayments;
+            $bankOnline = $this->getBankOnline($date, $supplierId);
+            $increaseInInvestment = $totalInvestment - $previousTotalInvestment - $bankOnline;
+
+            $openingBalanceData = $this->getOpeningBalanceValues($date, $supplierId);
+            $expenseCategoryTotals = [];
+
+            if ($openingBalanceData !== null) {
+                $bankOpeningAmount = $openingBalanceData['BANK_OPENING_AMOUNT'] ?? 0.0;
+                $totalCashReceivedMonth = $openingBalanceData['TOTAL_CASH_RECEIVED_CURRENT_MONTH'] ?? 0.0;
+                $totalBankAmount = $totalCashReceivedMonth + $bankOpeningAmount;
+                $totalOnlineAmountMonth = $openingBalanceData['TOTAL_ONLINE_AMOUNT_CURRENT_MONTH'] ?? 0.0;
+                $closingBalanceBeforeExpenses = $openingBalanceData['CLOSING_BALANCE_BEFORE_EXPENSES'] ?? 0.0;
+                $totalExpensesMonth = $openingBalanceData['TOTAL_EXPENSE_CURRENT_MONTH'] ?? 0.0;
+                $closingBalanceAfterExpenses = $openingBalanceData['CLOSING_BALANCE_AFTER_EXPENSE'] ?? 0.0;
+                $lastMonthMainInvestment = $openingBalanceData['LAST_MONTH_MAIN_INVESTMENT'] ?? 0.0;
+            } else {
+                $bankOpeningAmount = 0.0;
+                $totalCashReceivedMonth = $this->getMonthlyCashReceived($date, $supplierId);
+                $totalBankAmount = $totalCashReceivedMonth + $bankOpeningAmount;
+                $totalOnlineAmountMonth = $this->getMonthlyOnlineAmount($date, $supplierId);
+                $closingBalanceBeforeExpenses = $totalBankAmount - $totalOnlineAmountMonth;
+                $expenseCategoryTotals = $this->getMonthlyExpenses($date, $supplierId);
+                $totalExpensesMonth = array_sum($expenseCategoryTotals);
+                $closingBalanceAfterExpenses = $closingBalanceBeforeExpenses - $totalExpensesMonth;
+
+                $prevMonthData = $this->getOpeningBalanceValues($lastDayPrevMonth, $supplierId);
+                $lastMonthMainInvestment = $prevMonthData !== null
+                    ? ($prevMonthData['CURRENT_MONTH_MAIN_INVESTMENT'] ?? 0.0)
+                    : $this->getPowderExpiry($supplierId, $lastDayPrevMonth)
+                        + $this->getLiquidExpiry($supplierId, $lastDayPrevMonth)
+                        + $this->getClaimAmount($supplierId, $lastDayPrevMonth)
+                        + $this->getStockAmount($supplierId, $lastDayPrevMonth)
+                        + (float) $this->getSalesmanCreditData($lastDayPrevMonth, $supplierId, $designation, $employeeIds)->sum('total_credit')
+                        + $this->getLedgerAmount($supplierId, $lastDayPrevMonth);
+            }
         } else {
+            $salesmanCreditData = collect();
+            $creditGrandTotals = (object) [
+                'opening_credit' => 0.0,
+                'credit_amount' => 0.0,
+                'recovery_amount' => 0.0,
+                'total_credit' => 0.0,
+            ];
+            $powderExpiry = 0.0;
+            $liquidExpiry = 0.0;
+            $claimAmount = 0.0;
+            $stockAmount = 0.0;
+            $creditAmount = 0.0;
+            $ledgerAmount = 0.0;
+            $currentTotal = 0.0;
+            $previousTotalInvestment = 0.0;
+            $dailyCash = 0.0;
+            $dailyBankSlips = 0.0;
+            $dailyBankTransfers = 0.0;
+            $dailyChequePayments = 0.0;
+            $totalInvestment = 0.0;
+            $bankOnline = 0.0;
+            $increaseInInvestment = 0.0;
             $bankOpeningAmount = 0.0;
-            $totalCashReceivedMonth = $this->getMonthlyCashReceived($date, $supplierId);
-            $totalBankAmount = $totalCashReceivedMonth + $bankOpeningAmount;
-            $totalOnlineAmountMonth = $this->getMonthlyOnlineAmount($date, $supplierId);
-            $closingBalanceBeforeExpenses = $totalBankAmount - $totalOnlineAmountMonth;
-            $expenseCategoryTotals = $this->getMonthlyExpenses($date, $supplierId);
-            $totalExpensesMonth = array_sum($expenseCategoryTotals);
-            $closingBalanceAfterExpenses = $closingBalanceBeforeExpenses - $totalExpensesMonth;
-
-            $prevMonthData = $this->getOpeningBalanceValues($lastDayPrevMonth, $supplierId);
-            $lastMonthMainInvestment = $prevMonthData !== null
-                ? ($prevMonthData['CURRENT_MONTH_MAIN_INVESTMENT'] ?? 0.0)
-                : $this->getPowderExpiry($supplierId, $lastDayPrevMonth)
-                    + $this->getLiquidExpiry($supplierId, $lastDayPrevMonth)
-                    + $this->getClaimAmount($supplierId, $lastDayPrevMonth)
-                    + $this->getStockAmount($supplierId, $lastDayPrevMonth)
-                    + (float) $this->getSalesmanCreditData($lastDayPrevMonth, $supplierId, $designation, $employeeIds)->sum('total_credit')
-                    + $this->getLedgerAmount($supplierId, $lastDayPrevMonth);
+            $totalCashReceivedMonth = 0.0;
+            $totalBankAmount = 0.0;
+            $totalOnlineAmountMonth = 0.0;
+            $closingBalanceBeforeExpenses = 0.0;
+            $expenseCategoryTotals = [];
+            $totalExpensesMonth = 0.0;
+            $closingBalanceAfterExpenses = 0.0;
+            $lastMonthMainInvestment = 0.0;
         }
 
         $currentMonthMainInvestment = $currentTotal;
@@ -178,7 +227,29 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             'formattedLastDayPrevMonth',
             'currentMonthName',
             'showBankSummary',
+            'canViewAllSuppliers',
+            'hasSupplierSelection',
         ));
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($this->canViewAllSuppliers()) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function canViewAllSuppliers(): bool
+    {
+        $user = auth()->user();
+
+        return $user->is_super_admin === 'Yes'
+            || $user->hasRole('super-admin')
+            || $user->hasRole('admin');
     }
 
     private function getSalesmanCreditData(string $date, ?int $supplierId, ?string $designation, array $employeeIds)

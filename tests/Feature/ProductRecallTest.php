@@ -392,6 +392,81 @@ test('product recall controller create page renders', function () {
         ->assertViewHas(['suppliers', 'warehouses']);
 });
 
+test('product recalls are scoped to the authenticated users supplier', function () {
+    $ownSupplier = Supplier::factory()->create(['disabled' => false]);
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+    $this->user->forceFill(['supplier_id' => $ownSupplier->id])->save();
+
+    ProductRecall::factory()->create([
+        'supplier_id' => $ownSupplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'recall_number' => 'OWN-RECALL',
+    ]);
+    ProductRecall::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'recall_number' => 'OTHER-RECALL',
+    ]);
+
+    $response = $this->get(route('product-recalls.index'));
+
+    $response->assertSuccessful();
+    $response->assertSee('OWN-RECALL');
+    $response->assertDontSee('OTHER-RECALL');
+    expect($response->viewData('suppliers'))->toHaveCount(1);
+    expect($response->viewData('suppliers')->first()->id)->toBe($ownSupplier->id);
+});
+
+test('product recall create page supplier options are scoped', function () {
+    $ownSupplier = Supplier::factory()->create(['supplier_name' => 'Own Supplier', 'disabled' => false]);
+    Supplier::factory()->create(['supplier_name' => 'Other Supplier', 'disabled' => false]);
+    $this->user->forceFill(['supplier_id' => $ownSupplier->id])->save();
+
+    $response = $this->get(route('product-recalls.create'));
+
+    $response->assertSuccessful();
+    $response->assertSee('Own Supplier');
+    $response->assertDontSee('Other Supplier');
+});
+
+test('scoped users cannot store recall for another supplier', function () {
+    $ownSupplier = Supplier::factory()->create(['disabled' => false]);
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+    $product = Product::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'uom_id' => $this->uom->id,
+    ]);
+    $batch = StockBatch::factory()->create([
+        'product_id' => $product->id,
+        'supplier_id' => $otherSupplier->id,
+        'status' => 'active',
+    ]);
+    $this->user->forceFill(['supplier_id' => $ownSupplier->id])->save();
+
+    $this->post(route('product-recalls.store'), [
+        'recall_date' => now()->format('Y-m-d'),
+        'supplier_id' => $otherSupplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'recall_type' => 'supplier_initiated',
+        'reason' => 'Forbidden supplier',
+        'items' => [[
+            'product_id' => $product->id,
+            'stock_batch_id' => $batch->id,
+            'quantity_recalled' => 1,
+            'unit_cost' => 10,
+        ]],
+    ])->assertForbidden();
+});
+
+test('scoped users cannot fetch batches for another supplier', function () {
+    $ownSupplier = Supplier::factory()->create(['disabled' => false]);
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+    $this->user->forceFill(['supplier_id' => $ownSupplier->id])->save();
+
+    $this->get(route('api.suppliers.batches', $otherSupplier))
+        ->assertForbidden();
+});
+
 test('get available batches filters by supplier and warehouse', function () {
     $batch1 = StockBatch::factory()->create([
         'product_id' => $this->product->id,

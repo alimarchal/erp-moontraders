@@ -32,6 +32,13 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
     {
         $perPage = $request->input('per_page', 50);
         $perPage = in_array($perPage, [10, 25, 50, 100, 250, 'all']) ? $perPage : 50;
+        $canViewAllSuppliers = $this->canViewAllSuppliers();
+        $userSupplierId = $this->getUserSupplierScope();
+        $requestedSupplierId = $request->input('filter.supplier_id');
+
+        if ($requestedSupplierId && ! $canViewAllSuppliers && (int) $requestedSupplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to filter by this supplier.');
+        }
 
         $dateFrom = $request->input('filter.date_from');
         $dateTo = $request->input('filter.date_to');
@@ -59,7 +66,7 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
         }
 
         // When supplier_id filter is set, scope balance to only that supplier's employee accounts
-        $supplierIdFilter = $request->input('filter.supplier_id');
+        $supplierIdFilter = $userSupplierId ?? $requestedSupplierId;
         $supplierJoin = '';
         $supplierCondition = '';
         $supplierBindings = [];
@@ -67,6 +74,8 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
             $supplierJoin = 'JOIN employees e_b ON cea_b.employee_id = e_b.id';
             $supplierCondition = ' AND e_b.supplier_id = ?';
             $supplierBindings[] = $supplierIdFilter;
+        } elseif (! $canViewAllSuppliers) {
+            $supplierCondition = ' AND 1 = 0';
         }
 
         $balanceSubquery = "(
@@ -78,9 +87,11 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
         )";
 
         // Scope ledger entries by supplier when filter is active
-        $applySupplierFilter = function ($q) use ($supplierIdFilter) {
+        $applySupplierFilter = function ($q) use ($canViewAllSuppliers, $supplierIdFilter) {
             if ($supplierIdFilter) {
                 $q->whereHas('account.employee', fn ($eq) => $eq->where('supplier_id', $supplierIdFilter));
+            } elseif (! $canViewAllSuppliers) {
+                $q->whereRaw('1 = 0');
             }
         };
 
@@ -152,10 +163,12 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
             });
         }
 
-        if ($request->filled('filter.supplier_id')) {
-            $customersQuery->whereHas('employeeAccounts.employee', function ($q) use ($request) {
-                $q->where('supplier_id', $request->input('filter.supplier_id'));
+        if ($supplierIdFilter) {
+            $customersQuery->whereHas('employeeAccounts.employee', function ($q) use ($supplierIdFilter) {
+                $q->where('supplier_id', $supplierIdFilter);
             });
+        } elseif (! $canViewAllSuppliers) {
+            $customersQuery->whereRaw('1 = 0');
         }
 
         if ($request->filled('filter.customer_id')) {
@@ -227,6 +240,8 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
         if ($supplierIdFilter) {
             $totalsQuery->join('employees as e_t', 'cea.employee_id', '=', 'e_t.id')
                 ->where('e_t.supplier_id', $supplierIdFilter);
+        } elseif (! $canViewAllSuppliers) {
+            $totalsQuery->whereRaw('1 = 0');
         }
 
         $totals = $totalsQuery
@@ -235,12 +250,29 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
             ->selectRaw('SUM(ceat.debit) as total_debits, SUM(ceat.credit) as total_credits')
             ->first();
 
-        $cities = Customer::whereNotNull('city')->distinct()->pluck('city')->sort();
-        $subLocalities = Customer::whereNotNull('sub_locality')->distinct()->pluck('sub_locality')->sort();
-        $channelTypes = Customer::whereNotNull('channel_type')->distinct()->pluck('channel_type')->sort();
-        $employees = Employee::whereHas('customerAccounts')->orderBy('name')->get();
-        $suppliers = Supplier::whereHas('employees.customerAccounts')->orderBy('supplier_name')->get(['id', 'supplier_name']);
-        $customersList = Customer::orderBy('customer_name')->get(['id', 'customer_name', 'customer_code']);
+        $filterCustomersQuery = Customer::query()
+            ->when($supplierIdFilter, fn ($query) => $query->whereHas(
+                'employeeAccounts.employee',
+                fn ($employeeQuery) => $employeeQuery->where('supplier_id', $supplierIdFilter)
+            ))
+            ->when(! $canViewAllSuppliers && ! $supplierIdFilter, fn ($query) => $query->whereRaw('1 = 0'));
+
+        $cities = (clone $filterCustomersQuery)->whereNotNull('city')->distinct()->pluck('city')->sort();
+        $subLocalities = (clone $filterCustomersQuery)->whereNotNull('sub_locality')->distinct()->pluck('sub_locality')->sort();
+        $channelTypes = (clone $filterCustomersQuery)->whereNotNull('channel_type')->distinct()->pluck('channel_type')->sort();
+        $employees = Employee::query()
+            ->whereHas('customerAccounts')
+            ->when($supplierIdFilter, fn ($query) => $query->where('supplier_id', $supplierIdFilter))
+            ->when(! $canViewAllSuppliers && ! $supplierIdFilter, fn ($query) => $query->whereRaw('1 = 0'))
+            ->orderBy('name')
+            ->get();
+        $suppliers = Supplier::query()
+            ->whereHas('employees.customerAccounts')
+            ->when($supplierIdFilter, fn ($query) => $query->where('id', $supplierIdFilter))
+            ->when(! $canViewAllSuppliers && ! $supplierIdFilter, fn ($query) => $query->whereRaw('1 = 0'))
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
+        $customersList = (clone $filterCustomersQuery)->orderBy('customer_name')->get(['id', 'customer_name', 'customer_code']);
 
         return view('reports.creditors-ledger.index', [
             'customers' => $customers,
@@ -253,7 +285,29 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
             'customersList' => $customersList,
             'dateFrom' => $dateFrom,
             'dateTo' => $dateTo,
+            'supplierIdFilter' => $supplierIdFilter,
+            'canViewAllSuppliers' => $canViewAllSuppliers,
         ]);
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($this->canViewAllSuppliers()) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function canViewAllSuppliers(): bool
+    {
+        $user = auth()->user();
+
+        return $user->is_super_admin === 'Yes'
+            || $user->hasRole('super-admin')
+            || $user->hasRole('admin');
     }
 
     /**

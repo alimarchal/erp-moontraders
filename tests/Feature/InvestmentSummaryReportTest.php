@@ -19,6 +19,7 @@ beforeEach(function () {
         'supplier_name' => 'Nestlé Pakistan',
         'disabled' => false,
     ]);
+    $this->user->forceFill(['supplier_id' => $this->supplier->id])->save();
 });
 
 it('loads the investment summary report page', function () {
@@ -27,6 +28,30 @@ it('loads the investment summary report page', function () {
     ]));
 
     $response->assertOk();
+});
+
+it('does not default to nestle for users who can view all suppliers', function () {
+    $this->user->forceFill([
+        'supplier_id' => null,
+        'is_super_admin' => 'Yes',
+    ])->save();
+
+    $response = $this->get(route('reports.investment-summary.index'));
+
+    $response->assertOk();
+    expect($response->viewData('supplierId'))->toBeNull();
+    expect($response->viewData('hasSupplierSelection'))->toBeFalse();
+    expect($response->viewData('selectedSupplier'))->toBeNull();
+    expect($response->viewData('salesmanCreditData'))->toHaveCount(0);
+    expect($response->viewData('stockAmount'))->toBe(0.0);
+});
+
+it('blocks filtering investment summary by another supplier for scoped users', function () {
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+
+    $this->get(route('reports.investment-summary.index', [
+        'supplier_id' => $otherSupplier->id,
+    ]))->assertForbidden();
 });
 
 it('includes opening balance transactions on the same day in salesman credit', function () {

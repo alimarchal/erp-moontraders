@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\ClaimRegister;
+use App\Models\Product;
 use App\Models\ProductRecall;
+use App\Models\StockBatch;
 use App\Models\Supplier;
 use App\Models\Warehouse;
 use App\Services\ProductRecallService;
@@ -32,8 +34,22 @@ class ProductRecallController extends Controller implements HasMiddleware
 
     public function index(Request $request)
     {
+        $canViewAllSuppliers = $this->canViewAllSuppliers();
+        $userSupplierId = $this->getUserSupplierScope();
+        $requestedSupplierId = $request->input('filter.supplier_id');
+
+        if ($requestedSupplierId && ! $canViewAllSuppliers && (int) $requestedSupplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to filter by this supplier.');
+        }
+
+        $supplierId = $userSupplierId ?? $requestedSupplierId;
+        $baseQuery = ProductRecall::query()
+            ->with(['supplier', 'warehouse', 'createdBy', 'postedBy'])
+            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->when(! $canViewAllSuppliers && ! $supplierId, fn ($query) => $query->whereRaw('1 = 0'));
+
         $recalls = QueryBuilder::for(
-            ProductRecall::query()->with(['supplier', 'warehouse', 'createdBy', 'postedBy'])
+            $baseQuery
         )
             ->allowedFilters([
                 AllowedFilter::partial('recall_number'),
@@ -50,15 +66,17 @@ class ProductRecallController extends Controller implements HasMiddleware
 
         return view('product-recalls.index', [
             'recalls' => $recalls,
-            'suppliers' => Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'suppliers' => $this->supplierOptions(),
             'warehouses' => Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']),
+            'supplierId' => $supplierId,
+            'canViewAllSuppliers' => $canViewAllSuppliers,
         ]);
     }
 
     public function create()
     {
         return view('product-recalls.create', [
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(),
+            'suppliers' => $this->supplierOptions(),
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(),
         ]);
     }
@@ -81,6 +99,9 @@ class ProductRecallController extends Controller implements HasMiddleware
             'items.*.unit_cost' => 'required|numeric|min:0',
         ]);
 
+        $this->authorizeRecallSupplier((int) $validated['supplier_id']);
+        $this->authorizeRecallItems($validated);
+
         foreach ($validated['items'] as &$item) {
             $item['total_value'] = $item['quantity_recalled'] * $item['unit_cost'];
         }
@@ -98,6 +119,8 @@ class ProductRecallController extends Controller implements HasMiddleware
 
     public function show(ProductRecall $productRecall)
     {
+        $this->authorizeProductRecallAccess($productRecall);
+
         $productRecall->load([
             'supplier',
             'warehouse',
@@ -116,6 +139,8 @@ class ProductRecallController extends Controller implements HasMiddleware
 
     public function edit(ProductRecall $productRecall)
     {
+        $this->authorizeProductRecallAccess($productRecall);
+
         if ($productRecall->status !== 'draft') {
             return redirect()->route('product-recalls.show', $productRecall)
                 ->with('error', 'Only draft recalls can be edited');
@@ -125,13 +150,15 @@ class ProductRecallController extends Controller implements HasMiddleware
 
         return view('product-recalls.edit', [
             'recall' => $productRecall,
-            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(),
+            'suppliers' => $this->supplierOptions(),
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(),
         ]);
     }
 
     public function update(Request $request, ProductRecall $productRecall)
     {
+        $this->authorizeProductRecallAccess($productRecall);
+
         if ($productRecall->status !== 'draft') {
             return redirect()->route('product-recalls.show', $productRecall)
                 ->with('error', 'Only draft recalls can be updated');
@@ -152,6 +179,9 @@ class ProductRecallController extends Controller implements HasMiddleware
             'items.*.quantity_recalled' => 'required|numeric|min:0.001',
             'items.*.unit_cost' => 'required|numeric|min:0',
         ]);
+
+        $this->authorizeRecallSupplier((int) $validated['supplier_id']);
+        $this->authorizeRecallItems($validated);
 
         $totalQty = 0;
         $totalValue = 0;
@@ -177,6 +207,8 @@ class ProductRecallController extends Controller implements HasMiddleware
 
     public function destroy(ProductRecall $productRecall)
     {
+        $this->authorizeProductRecallAccess($productRecall);
+
         if ($productRecall->status !== 'draft') {
             return redirect()->route('product-recalls.index')
                 ->with('error', 'Only draft recalls can be deleted');
@@ -190,6 +222,8 @@ class ProductRecallController extends Controller implements HasMiddleware
 
     public function post(Request $request, ProductRecall $productRecall)
     {
+        $this->authorizeProductRecallAccess($productRecall);
+
         $request->validate([
             'password' => 'required',
         ]);
@@ -211,6 +245,8 @@ class ProductRecallController extends Controller implements HasMiddleware
 
     public function cancel(ProductRecall $productRecall)
     {
+        $this->authorizeProductRecallAccess($productRecall);
+
         if ($productRecall->status !== 'draft') {
             return redirect()->route('product-recalls.show', $productRecall)
                 ->with('error', 'Only draft recalls can be cancelled');
@@ -224,6 +260,8 @@ class ProductRecallController extends Controller implements HasMiddleware
 
     public function createClaim(Request $request, ProductRecall $productRecall)
     {
+        $this->authorizeProductRecallAccess($productRecall);
+
         if ($productRecall->status !== 'posted') {
             return redirect()->back()->with('error', 'Only posted recalls can generate claims');
         }
@@ -271,6 +309,8 @@ class ProductRecallController extends Controller implements HasMiddleware
 
     public function getBatchesForSupplier(Request $request, $supplierId)
     {
+        $this->authorizeRecallSupplier((int) $supplierId);
+
         $warehouseId = $request->input('warehouse_id');
         $filters = $request->only(['batch_code', 'expiry_from', 'expiry_to', 'mfg_date', 'product_id']);
 
@@ -278,5 +318,78 @@ class ProductRecallController extends Controller implements HasMiddleware
         $batches = $service->getAvailableBatches($supplierId, $warehouseId, $filters);
 
         return response()->json($batches);
+    }
+
+    private function supplierOptions()
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        return Supplier::query()
+            ->where('disabled', false)
+            ->when($userSupplierId, fn ($query) => $query->where('id', $userSupplierId))
+            ->when(! $this->canViewAllSuppliers() && ! $userSupplierId, fn ($query) => $query->whereRaw('1 = 0'))
+            ->orderBy('supplier_name')
+            ->get();
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($this->canViewAllSuppliers()) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function canViewAllSuppliers(): bool
+    {
+        $user = auth()->user();
+
+        return $user->is_super_admin === 'Yes'
+            || $user->hasRole('super-admin')
+            || $user->hasRole('admin');
+    }
+
+    private function authorizeRecallSupplier(int $supplierId, string $message = 'You do not have permission to access this supplier.'): void
+    {
+        if ($this->canViewAllSuppliers()) {
+            return;
+        }
+
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if (! $userSupplierId || $supplierId !== $userSupplierId) {
+            abort(403, $message);
+        }
+    }
+
+    private function authorizeProductRecallAccess(ProductRecall $productRecall): void
+    {
+        $this->authorizeRecallSupplier((int) $productRecall->supplier_id, 'You do not have permission to access this product recall.');
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     */
+    private function authorizeRecallItems(array $validated): void
+    {
+        $supplierId = (int) $validated['supplier_id'];
+        $items = collect($validated['items']);
+
+        $productCount = Product::query()
+            ->whereIn('id', $items->pluck('product_id')->map(fn ($id) => (int) $id)->unique())
+            ->where('supplier_id', $supplierId)
+            ->count();
+
+        $batchCount = StockBatch::query()
+            ->whereIn('id', $items->pluck('stock_batch_id')->map(fn ($id) => (int) $id)->unique())
+            ->where('supplier_id', $supplierId)
+            ->count();
+
+        if ($productCount !== $items->pluck('product_id')->unique()->count() || $batchCount !== $items->pluck('stock_batch_id')->unique()->count()) {
+            abort(403, 'You do not have permission to recall products for this supplier.');
+        }
     }
 }

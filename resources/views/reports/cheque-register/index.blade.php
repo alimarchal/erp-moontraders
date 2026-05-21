@@ -104,7 +104,9 @@
                 </div>
                 <select id="filter_supplier_id" name="filter[supplier_id]"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Suppliers</option>
+                    @if ($canViewAllSuppliers)
+                        <option value="">All Suppliers</option>
+                    @endif
                     @foreach($suppliers as $supplier)
                         <option value="{{ $supplier->id }}" {{ $selectedSupplierId == $supplier->id ? 'selected' : '' }}>
                             {{ $supplier->supplier_name }}

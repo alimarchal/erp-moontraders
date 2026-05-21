@@ -136,7 +136,9 @@
                     <x-label for="supplier_id" value="{{ __('Supplier') }}" />
                     <select id="supplier_id" name="supplier_id"
                         class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                        <option value="">All Suppliers</option>
+                        @if ($canViewAllSuppliers)
+                            <option value="">Select Supplier</option>
+                        @endif
                         @foreach($suppliers as $supplier)
                             <option value="{{ $supplier->id }}" {{ $supplierId == $supplier->id ? 'selected' : '' }}>
                                 {{ $supplier->supplier_name }}
@@ -187,6 +189,12 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4">
             <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
                 <div class="overflow-x-auto">
+                    @if (! $hasSupplierSelection)
+                        <div class="no-print mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            Select a supplier from the filters to view the investment summary.
+                        </div>
+                    @endif
+
                     {{-- Report Header --}}
                     <p class="text-center font-extrabold mb-2">
                         SHAHZAIN TRADERS - MUZAFFRABAD<br>
@@ -606,7 +614,7 @@
                 $(document).ready(function () {
                     $('#supplier_id').select2({
                         width: '100%',
-                        placeholder: 'All Suppliers',
+                        placeholder: 'Select Supplier',
                         allowClear: true
                     });
 

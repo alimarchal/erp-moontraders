@@ -126,6 +126,10 @@
                             class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full {{ $supplier->is_internal_supplier ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600' }}">
                             Internal: {{ $supplier->is_internal_supplier ? 'Yes' : 'No' }}
                         </span>
+                        <span
+                            class="inline-flex items-center px-2 py-0.5 text-xs font-semibold rounded-full {{ $supplier->is_advance_tax_income ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-600' }}">
+                            Adv Tax Income: {{ $supplier->is_advance_tax_income ? 'Yes' : 'No' }}
+                        </span>
                     </div>
                 </td>
                 <td class="py-1 px-2 text-center">

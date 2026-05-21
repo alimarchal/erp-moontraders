@@ -270,10 +270,11 @@
         $totalSale = $netSale + $recoveryTotal;
 
         // Expenses & Taxes
-        // Note: Advance tax is already stored as an expense row (account_code 1161),
-        // so $totalExpenses already includes it. Do NOT add advanceTaxTotal separately.
+        $usesAdvanceTaxIncome = (bool) ($settlement->supplier?->is_advance_tax_income ?? false);
         $totalExpenses = (float) ($settlement->expenses->sum('amount') ?? 0);
-        $advanceTaxTotal = (float) ($settlement->advanceTaxes->sum('tax_amount') ?? 0);
+        $advanceTaxEntries = $usesAdvanceTaxIncome ? $settlement->advanceTaxIncomes : $settlement->advanceTaxes;
+        $advanceTaxTotal = (float) ($advanceTaxEntries->sum('tax_amount') ?? 0);
+        $advanceTaxIncomeTotal = $usesAdvanceTaxIncome ? $advanceTaxTotal : 0.0;
         $totalDeductions = $totalExpenses;
 
         // Expected Cash Calculation (Professional Accounting)
@@ -283,7 +284,7 @@
         $theoreticalCashSales = $netSaleItems - $creditSalesAmount - $bankSalesAmount;
         $isPaymentBreakdownExceeded = $theoreticalCashSales < 0;
         $paymentBreakdownExcess = $isPaymentBreakdownExceeded ? abs($theoreticalCashSales) : 0.0;
-        $expectedCashGross = $theoreticalCashSales + $recoveryCash;
+        $expectedCashGross = $theoreticalCashSales + $recoveryCash + $advanceTaxIncomeTotal;
         $expectedCashNet = $expectedCashGross - $totalDeductions;
 
         // Actual Physical Cash Collected
@@ -408,9 +409,13 @@
                             <td class="text-left font-semibold">Goods Issue:</td>
                             <td class="text-left">{{ $settlement->goodsIssue->issue_number }}</td>
                             <td class="text-left font-semibold">GI Date/Time:</td>
-                            <td class="text-left" colspan="5">
+                            <td class="text-left">
                                 {{ $settlement->goodsIssue->issue_date ? \Carbon\Carbon::parse($settlement->goodsIssue->issue_date)->format('d-M-Y') : '' }}
                                 {{ $settlement->goodsIssue->created_at ? $settlement->goodsIssue->created_at->format('h:i A') : '' }}
+                            </td>
+                            <td class="text-left font-semibold">Supplier:</td>
+                            <td class="text-left" colspan="3">
+                                {{ $settlement->supplier?->supplier_name ?? $settlement->goodsIssue->supplier?->supplier_name ?? '-' }}
                             </td>
                         </tr>
                         <tr>
@@ -943,7 +948,7 @@
 
                         {{-- Row 2: Advance Tax | Percentage Expense --}}
                         @php
-                            $advTaxCount = $settlement->advanceTaxes->count();
+                            $advTaxCount = $advanceTaxEntries->count();
                             $pctExpCount = $settlement->percentageExpenses->count();
                             $maxRowsTax = max($advTaxCount, $pctExpCount, 1);
                         @endphp
@@ -951,7 +956,7 @@
                         <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2 mt-1">
                             {{-- Advance Tax --}}
                             <div>
-                                <h4 class="font-bold text-sm border-x border-t border-black text-center">Advance Tax
+                                <h4 class="font-bold text-sm border-x border-t border-black text-center">Advance Tax{{ $usesAdvanceTaxIncome ? ' - Income' : '' }}
                                     Benifits To NTN Customer
                                     (1161)</h4>
                                 <table class="report-table w-full">
@@ -969,7 +974,7 @@
                                     </thead>
                                     <tbody class="tabular-nums">
                                         @for($i = 0; $i < $maxRowsTax; $i++)
-                                            @php $tax = $settlement->advanceTaxes->get($i); @endphp
+                                            @php $tax = $advanceTaxEntries->get($i); @endphp
                                             <tr>
                                                 <td class="text-center px-1 py-0.5">{{ $i + 1 }}</td>
                                                 <td class="px-1 py-0.5">
@@ -986,7 +991,7 @@
                                         <tr>
                                             <td colspan="3" class="text-right px-1 py-0.5">Total:</td>
                                             <td class="text-right px-1 py-0.5">
-                                                {{ number_format($settlement->advanceTaxes->sum('tax_amount'), 2) }}
+                                                {{ number_format($advanceTaxEntries->sum('tax_amount'), 2) }}
                                             </td>
                                         </tr>
                                     </tfoot>
@@ -1074,8 +1079,17 @@
                             foreach ($predefinedExpenses as $predef) {
                                 $savedExpense = $savedExpenseAmounts->get($predef['id']);
                                 $amount = $savedExpense ? $savedExpense->amount : 0;
+
+                                // Income-mode settlements still show the 1161
+                                // row in Group Expenses, but the footer total
+                                // remains the persisted expense sum.
+                                if ($usesAdvanceTaxIncome && $predef['code'] === '1161') {
+                                    $amount = $advanceTaxIncomeTotal;
+                                }
                                 $groupExpenseRows[] = [
-                                    'label' => $predef['label'],
+                                    'label' => $usesAdvanceTaxIncome && $predef['code'] === '1161'
+                                        ? $predef['label'].' - Income'
+                                        : $predef['label'],
                                     'code' => $predef['code'],
                                     'amount' => $amount,
                                     'is_predefined' => true,

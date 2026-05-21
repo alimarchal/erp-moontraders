@@ -13,6 +13,7 @@ use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementAdvanceTax;
+use App\Models\SalesSettlementAdvanceTaxIncome;
 use App\Models\SalesSettlementAmrLiquid;
 use App\Models\SalesSettlementAmrPowder;
 use App\Models\SalesSettlementBankSlip;
@@ -352,7 +353,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                     return $query->where('id', $userSupplierId);
                 })
                 ->orderBy('supplier_name')
-                ->get(['id', 'supplier_name']),
+                ->get(['id', 'supplier_name', 'is_advance_tax_income']),
             'customers' => Customer::where('is_active', true)
                 ->orderBy('customer_name')
                 ->get(['id', 'customer_code', 'customer_name']),
@@ -668,11 +669,13 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'warehouse',
             'verifiedBy',
             'journalEntry',
+            'supplier',
             'items.product',
             'items.batches.stockBatch',
             'customerEmployeeTransactions.account.customer',
             'customerEmployeeTransactions.account.employee',
             'advanceTaxes.customer',
+            'advanceTaxIncomes.customer',
             'expenses.expenseAccount',
             'cheques.bankAccount',
             'creditSales.customer',
@@ -749,6 +752,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'goodsIssue.vehicle',
             'goodsIssue.warehouse',
             'goodsIssue.supplier',
+            'supplier',
             'items.product',
             'items.batches',
             'creditSales.customer',
@@ -759,6 +763,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'bankTransfers.customer',
             'bankTransfers.bankAccount',
             'advanceTaxes.customer',
+            'advanceTaxIncomes.customer',
             'amrPowders.product',
             'amrLiquids.product',
             'percentageExpenses.customer',
@@ -847,7 +852,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'notes' => $c->notes,
         ])->toArray();
 
-        $advanceTaxesDecoded = $salesSettlement->advanceTaxes->map(fn ($tax) => [
+        $advanceTaxEntries = $salesSettlement->supplier?->is_advance_tax_income
+            ? $salesSettlement->advanceTaxIncomes
+            : $salesSettlement->advanceTaxes;
+
+        $advanceTaxesDecoded = $advanceTaxEntries->map(fn ($tax) => [
             'customer_id' => $tax->customer_id,
             'customer_name' => $tax->customer?->customer_name ?? 'Unknown',
             'sale_amount' => (float) $tax->sale_amount,
@@ -916,7 +925,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                     return $query->where('id', $userSupplierId);
                 })
                 ->orderBy('supplier_name')
-                ->get(['id', 'supplier_name']),
+                ->get(['id', 'supplier_name', 'is_advance_tax_income']),
             'expenseAccounts' => $expenseAccounts,
             'customers' => $customers,
             'bankAccounts' => BankAccount::where('is_active', true)
@@ -1075,6 +1084,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
             $salesSettlement->creditSales()->forceDelete();
             $salesSettlement->advanceTaxes()->forceDelete();
+            $salesSettlement->advanceTaxIncomes()->forceDelete();
             $salesSettlement->percentageExpenses()->forceDelete();
             $salesSettlement->expenses()->forceDelete();
             $salesSettlement->bankTransfers()->forceDelete();
@@ -1175,6 +1185,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'bankTransfers',
             'bankSlips',
             'expenses',
+            'advanceTaxIncomes',
             'recoveries',
             'cashDenominations',
         ]);
@@ -1210,6 +1221,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'bankTransfers',
             'bankSlips',
             'expenses',
+            'advanceTaxIncomes',
             'recoveries',
             'cashDenominations',
         ]);
@@ -1267,6 +1279,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
         $settlement->bankSlips()->delete();
         $settlement->cheques()->delete();
         $settlement->advanceTaxes()->delete();
+        $settlement->advanceTaxIncomes()->delete();
         $settlement->amrPowders()->delete();
         $settlement->amrLiquids()->delete();
         $settlement->percentageExpenses()->delete();
@@ -1407,8 +1420,15 @@ class SalesSettlementController extends Controller implements HasMiddleware
         if (! empty($request->advance_taxes) && is_array($request->advance_taxes)) {
             $advanceTaxNumbers = $this->generateAdvanceTaxInvoiceNumbers($request->settlement_date, count($request->advance_taxes));
 
+            // Normal suppliers keep using sales_settlement_advance_taxes.
+            // Flagged suppliers store the same modal entries as income rows so
+            // reports and posting can treat this exception separately.
+            $advanceTaxModel = $this->supplierUsesAdvanceTaxIncome((int) $settlement->supplier_id)
+                ? SalesSettlementAdvanceTaxIncome::class
+                : SalesSettlementAdvanceTax::class;
+
             foreach ($request->advance_taxes as $index => $advanceTax) {
-                SalesSettlementAdvanceTax::create([
+                $advanceTaxModel::create([
                     'sales_settlement_id' => $settlement->id,
                     'customer_id' => $advanceTax['customer_id'],
                     'sale_amount' => $advanceTax['sale_amount'] ?? 0,
@@ -1466,9 +1486,20 @@ class SalesSettlementController extends Controller implements HasMiddleware
             }
         }
 
+        $usesAdvanceTaxIncome = $this->supplierUsesAdvanceTaxIncome((int) $settlement->supplier_id);
+        $advanceTaxAccountId = $usesAdvanceTaxIncome
+            ? ChartOfAccount::where('account_code', '1161')->value('id')
+            : null;
+
         if (! empty($request->expenses) && is_array($request->expenses)) {
             foreach ($request->expenses as $expense) {
                 if (! empty($expense['expense_account_id'])) {
+                    // For flagged suppliers, the 1161 row remains visible in
+                    // the form but is not persisted as an expense deduction.
+                    if ($usesAdvanceTaxIncome && (int) $expense['expense_account_id'] === (int) $advanceTaxAccountId) {
+                        continue;
+                    }
+
                     SalesSettlementExpense::create([
                         'sales_settlement_id' => $settlement->id,
                         'expense_date' => $request->settlement_date,
@@ -1685,6 +1716,17 @@ class SalesSettlementController extends Controller implements HasMiddleware
         ];
     }
 
+    private function supplierUsesAdvanceTaxIncome(?int $supplierId): bool
+    {
+        if (! $supplierId) {
+            return false;
+        }
+
+        // Supplier flag keeps this behavior configurable and avoids hardcoding
+        // Kausar-specific logic into settlement calculations.
+        return (bool) Supplier::whereKey($supplierId)->value('is_advance_tax_income');
+    }
+
     public function post(SalesSettlement $salesSettlement)
     {
         $this->authorize('post', $salesSettlement);
@@ -1836,11 +1878,21 @@ class SalesSettlementController extends Controller implements HasMiddleware
         $dateCode = date('ymd', strtotime($settlementDate));
         $prefix = "ATI-{$dateCode}-";
 
-        $maxSequence = SalesSettlementAdvanceTax::where('invoice_number', 'like', "{$prefix}%")
+        // ATI numbers are shared by the normal and income tables so invoice
+        // references remain unique regardless of supplier mode.
+        $advanceTaxMaxSequence = SalesSettlementAdvanceTax::where('invoice_number', 'like', "{$prefix}%")
             ->lockForUpdate()
             ->pluck('invoice_number')
             ->map(fn (string $num) => (int) str_replace($prefix, '', $num))
             ->max() ?? 0;
+
+        $incomeMaxSequence = SalesSettlementAdvanceTaxIncome::where('invoice_number', 'like', "{$prefix}%")
+            ->lockForUpdate()
+            ->pluck('invoice_number')
+            ->map(fn (string $num) => (int) str_replace($prefix, '', $num))
+            ->max() ?? 0;
+
+        $maxSequence = max($advanceTaxMaxSequence, $incomeMaxSequence);
 
         return array_map(
             fn (int $i) => sprintf('%s%05d', $prefix, $maxSequence + $i),

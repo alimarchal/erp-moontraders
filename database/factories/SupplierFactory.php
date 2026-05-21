@@ -25,6 +25,8 @@ class SupplierFactory extends Factory
             'supplier_type' => fake()->randomElement(['Local', 'International']),
             'is_transporter' => fake()->boolean(20),
             'is_internal_supplier' => fake()->boolean(10),
+            'is_fmr_allowed' => false,
+            'is_advance_tax_income' => false,
             'disabled' => fake()->boolean(10),
             'supplier_details' => fake()->optional()->sentence(),
             'website' => fake()->optional()->url(),

@@ -137,7 +137,11 @@
             ];
         });
 
-        $advanceTaxesData = $settlement->advanceTaxes->map(function ($tax) {
+        $advanceTaxEntriesForForm = $settlement->supplier?->is_advance_tax_income
+            ? $settlement->advanceTaxIncomes
+            : $settlement->advanceTaxes;
+
+        $advanceTaxesData = $advanceTaxEntriesForForm->map(function ($tax) {
             return [
                 'customer_id' => $tax->customer_id,
                 'customer_name' => $tax->customer->customer_name ?? 'Unknown',
@@ -185,7 +189,7 @@
                                     class="select2-supplier border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">
                                     <option value="">Select Supplier</option>
                                     @foreach ($suppliers as $supplier)
-                                        <option value="{{ $supplier->id }}" {{ $settlement->goodsIssue->supplier_id == $supplier->id ? 'selected' : '' }}>
+                                        <option value="{{ $supplier->id }}" data-advance-tax-income="{{ $supplier->is_advance_tax_income ? 1 : 0 }}" {{ $settlement->goodsIssue->supplier_id == $supplier->id ? 'selected' : '' }}>
                                             {{ $supplier->supplier_name }}
                                         </option>
                                     @endforeach
@@ -675,7 +679,7 @@
                                                             <template
                                                                 x-if="expense.is_predefined && !['1161', '5252', '5262', '5223'].includes(expense.account_code)">
                                                                 <span
-                                                                    x-text="expense.label + ' (' + expense.account_code + ')'"></span>
+                                                                    x-text="expenseLabel(expense)"></span>
                                                             </template>
                                                             <template
                                                                 x-if="expense.is_predefined && expense.account_code === '1161'">
@@ -683,7 +687,7 @@
                                                                     class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
                                                                     @click="window.dispatchEvent(new CustomEvent('open-advance-tax-modal'))">
                                                                     <span
-                                                                        x-text="expense.label + ' (' + expense.account_code + ')'"></span>
+                                                                        x-text="expenseLabel(expense)"></span>
                                                                 </button>
                                                             </template>
                                                             <template
@@ -692,7 +696,7 @@
                                                                     class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
                                                                     @click="window.dispatchEvent(new CustomEvent('open-percentage-expense-modal'))">
                                                                     <span
-                                                                        x-text="expense.label + ' (' + expense.account_code + ')'"></span>
+                                                                        x-text="expenseLabel(expense)"></span>
                                                                 </button>
                                                             </template>
                                                             <template
@@ -701,7 +705,7 @@
                                                                     class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
                                                                     @click="window.dispatchEvent(new CustomEvent('open-amr-powder-modal', { detail: { supplierId: document.getElementById('supplier_id').value } }))">
                                                                     <span
-                                                                        x-text="expense.label + ' (' + expense.account_code + ')'"></span>
+                                                                        x-text="expenseLabel(expense)"></span>
                                                                 </button>
                                                             </template>
                                                             <template
@@ -710,7 +714,7 @@
                                                                     class="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
                                                                     @click="window.dispatchEvent(new CustomEvent('open-amr-liquid-modal', { detail: { supplierId: document.getElementById('supplier_id').value } }))">
                                                                     <span
-                                                                        x-text="expense.label + ' (' + expense.account_code + ')'"></span>
+                                                                        x-text="expenseLabel(expense)"></span>
                                                                 </button>
                                                             </template>
                                                             <template x-if="!expense.is_predefined">
@@ -759,7 +763,7 @@
                                                         Total:</td>
                                                     <td class="py-1.5 px-1 text-right font-bold text-orange-700 text-xs"
                                                         id="totalExpensesDisplay"
-                                                        x-text="totalExpenses.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})">
+                                                        x-text="deductibleExpenses.toLocaleString('en-PK', {minimumFractionDigits: 2, maximumFractionDigits: 2})">
                                                         0.00</td>
                                                 </tr>
                                             </tfoot>
@@ -950,12 +954,7 @@
 
                                         <x-advance-tax-modal
                                             :customers="\App\Models\Customer::orderBy('customer_name')->get(['id', 'customer_name', 'customer_code'])" entriesInputId="advance_taxes"
-                                            :initialEntries="$settlement->advanceTaxes->map(fn($tax) => [
-        'customer_id' => $tax->customer_id,
-        'customer_name' => $tax->customer ? $tax->customer->customer_name . ' (' . $tax->customer->customer_code . ')' : 'Unknown',
-        'invoice_number' => $tax->invoice_number,
-        'tax_amount' => (float) $tax->tax_amount,
-    ])" />
+                                            :initialEntries="$advanceTaxesDecoded" />
                                         <x-amr-expense-modal :products="$powderProducts" title="AMR Powder"
                                             accountCode="5252" triggerEvent="open-amr-powder-modal"
                                             entriesInputId="amr_powders" updatedEvent="amr-powder-updated"
@@ -1049,6 +1048,13 @@
             const savedCashDenomination = @json($cashDenom);
             const savedExpenses = @json($savedExpensesData);
 
+            function selectedSupplierUsesAdvanceTaxIncome() {
+                const supplierSelect = document.getElementById('supplier_id');
+                const selectedOption = supplierSelect?.selectedOptions?.[0];
+
+                return selectedOption?.dataset?.advanceTaxIncome === '1';
+            }
+
             // Alpine.js component for Goods Issue selector
             function goodsIssueSelector() {
                 return {
@@ -1066,6 +1072,8 @@
                     predefinedExpenses: @json($predefinedExpenses),
                     expenses: [],
                     totalExpenses: 0,
+                    deductibleExpenses: 0,
+                    advanceTaxIncomeMode: selectedSupplierUsesAdvanceTaxIncome(),
                     nextId: 100, // For dynamically added expenses
                     expenseDescription: '',
 
@@ -1095,6 +1103,16 @@
                             });
                         }
 
+                        const savedAdvanceTaxTotal = (savedAdvanceTaxes || [])
+                            .reduce((sum, entry) => sum + (parseFloat(entry.tax_amount) || 0), 0);
+                        const advanceTaxExpense = this.expenses.find(exp => exp.account_code === '1161');
+
+                        // When editing income-mode settlements, the 1161 amount
+                        // comes from the income table instead of expenses.
+                        if (advanceTaxExpense && savedAdvanceTaxTotal > 0) {
+                            advanceTaxExpense.amount = savedAdvanceTaxTotal;
+                        }
+
                         this.calculateTotal();
 
                         // Listen for advance tax updates from modal
@@ -1104,6 +1122,11 @@
                                 advanceTaxExpense.amount = e.detail.total || 0;
                                 this.calculateTotal();
                             }
+                        });
+
+                        window.addEventListener('supplier-advance-tax-mode-updated', () => {
+                            this.advanceTaxIncomeMode = selectedSupplierUsesAdvanceTaxIncome();
+                            this.calculateTotal();
                         });
 
                         // Listen for AMR Powder updates
@@ -1147,6 +1170,16 @@
                         });
                     },
 
+                    expenseLabel(expense) {
+                        const baseLabel = expense.label + ' (' + expense.account_code + ')';
+
+                        if (expense.account_code === '1161' && this.advanceTaxIncomeMode) {
+                            return baseLabel + ' - Income';
+                        }
+
+                        return baseLabel;
+                    },
+
                     onAccountSelect(event, index) {
                         const selectedId = parseInt(event.target.value);
                         if (selectedId) {
@@ -1183,10 +1216,19 @@
                     calculateTotal() {
                         this.totalExpenses = this.expenses.reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0);
 
+                        // Keep the row amount visible, but exclude income-mode
+                        // advance tax from the Expense Detail total.
+                        const advanceTaxIncome = selectedSupplierUsesAdvanceTaxIncome()
+                            ? this.expenses
+                                .filter((exp) => exp.account_code === '1161')
+                                .reduce((sum, exp) => sum + (parseFloat(exp.amount) || 0), 0)
+                            : 0;
+                        this.deductibleExpenses = this.totalExpenses - advanceTaxIncome;
+
                         // Update the hidden summary_expenses field for sales summary calculation
                         const summaryExpensesEl = document.getElementById('summary_expenses');
                         if (summaryExpensesEl) {
-                            summaryExpensesEl.value = this.totalExpenses.toFixed(2);
+                            summaryExpensesEl.value = this.deductibleExpenses.toFixed(2);
                         }
 
                         // Trigger sales summary update
@@ -1301,6 +1343,7 @@
                     $('#settlementItemsBody').empty();
                     $('#noItemsMessage').show().text('Select a Goods Issue to load product details');
                     $('#expenseAndSalesSummarySection').hide();
+                    window.dispatchEvent(new CustomEvent('supplier-advance-tax-mode-updated'));
 
                     if (supplierId) {
                         $giSelect.prop('disabled', false);
@@ -1716,6 +1759,21 @@
                 const shortageValue = parseFloat(document.getElementById('summary_shortage_value').value) || 0;
                 const credit = parseFloat(document.getElementById('summary_credit').value) || 0;
                 const expenses = parseFloat(document.getElementById('summary_expenses').value) || 0;
+                let advanceTaxIncome = 0;
+
+                // Same rule as create/show/posting: flagged suppliers add this
+                // amount to expected cash rather than treating it as expense.
+                const advanceTaxesInput = document.getElementById('advance_taxes');
+                if (selectedSupplierUsesAdvanceTaxIncome() && advanceTaxesInput && advanceTaxesInput.value) {
+                    try {
+                        const entries = JSON.parse(advanceTaxesInput.value);
+                        if (Array.isArray(entries)) {
+                            advanceTaxIncome = entries.reduce((sum, entry) => sum + (parseFloat(entry.tax_amount) || 0), 0);
+                        }
+                    } catch (e) {
+                        advanceTaxIncome = 0;
+                    }
+                }
 
                 // Get breakdown amounts
                 const creditSalesAmount = parseFloat(document.getElementById('credit_sales_amount').value) || 0;
@@ -1768,7 +1826,7 @@
                 // They do NOT reduce cash sales — only credit sales and direct bank transfers do.
                 const theoreticalCashSales = Math.round((netSale - creditSalesAmount - bankSalesAmount) * 100) / 100;
 
-                const expectedCashGross = theoreticalCashSales + recoveryCash;
+                const expectedCashGross = theoreticalCashSales + recoveryCash + advanceTaxIncome;
                 const totalDeductions = expenses;
                 const expectedCashNet = expectedCashGross - totalDeductions;
 

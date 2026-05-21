@@ -32,6 +32,7 @@ class StoreSupplierRequest extends FormRequest
             'is_transporter' => $this->boolean('is_transporter'),
             'is_internal_supplier' => $this->boolean('is_internal_supplier'),
             'is_fmr_allowed' => $this->boolean('is_fmr_allowed'),
+            'is_advance_tax_income' => $this->boolean('is_advance_tax_income'),
             'disabled' => $this->boolean('disabled'),
         ]);
     }
@@ -57,6 +58,7 @@ class StoreSupplierRequest extends FormRequest
             'is_transporter' => ['boolean'],
             'is_internal_supplier' => ['boolean'],
             'is_fmr_allowed' => ['boolean'],
+            'is_advance_tax_income' => ['boolean'],
             'disabled' => ['boolean'],
             'default_currency_id' => ['nullable', 'exists:currencies,id'],
             'default_bank_account_id' => ['nullable', 'exists:chart_of_accounts,id'],
@@ -83,6 +85,7 @@ class StoreSupplierRequest extends FormRequest
         $validated['is_transporter'] = (bool) ($validated['is_transporter'] ?? false);
         $validated['is_internal_supplier'] = (bool) ($validated['is_internal_supplier'] ?? false);
         $validated['is_fmr_allowed'] = (bool) ($validated['is_fmr_allowed'] ?? false);
+        $validated['is_advance_tax_income'] = (bool) ($validated['is_advance_tax_income'] ?? false);
         $validated['disabled'] = (bool) ($validated['disabled'] ?? false);
 
         return $validated;

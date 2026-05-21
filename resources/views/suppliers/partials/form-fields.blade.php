@@ -118,7 +118,7 @@
         rows="4" placeholder="Notes about terms, payment, contacts">{{ old('supplier_details', optional($supplier)->supplier_details) }}</textarea>
 </div>
 
-<div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="mt-4 grid grid-cols-1 md:grid-cols-5 gap-4">
     <div class="flex items-center">
         <input type="hidden" name="is_transporter" value="0">
         <input id="is_transporter" type="checkbox" name="is_transporter" value="1"
@@ -146,6 +146,16 @@
             {{ old('is_fmr_allowed', optional($supplier)->is_fmr_allowed ?? false) ? 'checked' : '' }}>
         <label for="is_fmr_allowed" class="ml-2 text-sm text-gray-700">
             FMR allowed (exclude FMR from unit cost)
+        </label>
+    </div>
+
+    <div class="flex items-center">
+        <input type="hidden" name="is_advance_tax_income" value="0">
+        <input id="is_advance_tax_income" type="checkbox" name="is_advance_tax_income" value="1"
+            class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            {{ old('is_advance_tax_income', optional($supplier)->is_advance_tax_income ?? false) ? 'checked' : '' }}>
+        <label for="is_advance_tax_income" class="ml-2 text-sm text-gray-700">
+            Advance Tax Income
         </label>
     </div>
 

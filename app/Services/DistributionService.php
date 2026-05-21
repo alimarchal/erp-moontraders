@@ -1083,6 +1083,7 @@ class DistributionService
         try {
             $settlement->load([
                 'employee',
+                'supplier',
                 'items',
                 'items.batches',
                 'recoveries.customer',
@@ -1092,6 +1093,7 @@ class DistributionService
                 'bankTransfers.bankAccount.chartOfAccount',
                 'expenses.expenseAccount',
                 'advanceTaxes',
+                'advanceTaxIncomes.customer',
                 'bankSlips.bankAccount.chartOfAccount',
             ]);
 
@@ -1310,9 +1312,35 @@ class DistributionService
                 }
             }
 
-            // Advance tax collected (using salesman_clearing)
-            foreach ($settlement->advanceTaxes as $advanceTax) {
-                if ($advanceTax->tax_amount > 0) {
+            if ($settlement->supplier?->is_advance_tax_income) {
+                // Kausar-style advance tax clears the salesman balance as
+                // income. Normal suppliers continue through account 1161 below.
+                foreach ($settlement->advanceTaxIncomes as $advanceTaxIncome) {
+                    if ($advanceTaxIncome->tax_amount <= 0) {
+                        continue;
+                    }
+
+                    $customerName = $advanceTaxIncome->customer->customer_name ?? 'Customer';
+                    $addLine(
+                        $accounts['salesman_clearing']->id,
+                        $advanceTaxIncome->tax_amount,
+                        0,
+                        "Advance Tax Income from {$customerName} - {$employeeLabel} - {$settlementReference}"
+                    );
+                    $addLine(
+                        $accounts['excess_income']->id,
+                        0,
+                        $advanceTaxIncome->tax_amount,
+                        "Advance Tax Income from {$customerName} - {$employeeLabel} - {$settlementReference}"
+                    );
+                }
+            } else {
+                // Advance tax collected (using salesman_clearing)
+                foreach ($settlement->advanceTaxes as $advanceTax) {
+                    if ($advanceTax->tax_amount <= 0) {
+                        continue;
+                    }
+
                     $customerName = $advanceTax->customer->customer_name ?? 'Customer';
                     $addLine(
                         $accounts['advance_tax']->id,
@@ -1331,8 +1359,12 @@ class DistributionService
 
             // 7. Cash Shortage / Excess Adjustment
             // This ensures the Salesman Clearing Account (1123) matches the actual physical cash submitted
-            // Note: settlement->expenses->sum('amount') already includes Advance Tax and AMR from the UI
-            $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries - $settlement->expenses->sum('amount');
+            // For flagged suppliers, advance tax income increases expected
+            // cash while the 1161 UI row is excluded from persisted expenses.
+            $advanceTaxIncomeTotal = $settlement->supplier?->is_advance_tax_income
+                ? (float) $settlement->advanceTaxIncomes->sum('tax_amount')
+                : 0.0;
+            $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries + $advanceTaxIncomeTotal - $settlement->expenses->sum('amount');
             $actualPhysicalCash = (float) $settlement->cash_collected;
             $bankSlipsTotal = $settlement->bankSlips->sum('amount');
 
@@ -1644,6 +1676,8 @@ class DistributionService
             'expenses.expenseAccount',
             'recoveries',
             'cashDenominations',
+            'supplier',
+            'advanceTaxIncomes',
         ]);
 
         // Recalculate cash_sales_amount from child records (never trust the stored value)
@@ -1658,13 +1692,19 @@ class DistributionService
             ->where('payment_method', 'cash')
             ->sum('amount');
         $totalExpenses = (float) $settlement->expenses->sum('amount');
+
+        // Posting validation must mirror the page calculation exactly, or a
+        // draft that balances on screen could fail at posting time.
+        $advanceTaxIncomeTotal = $settlement->supplier?->is_advance_tax_income
+            ? (float) $settlement->advanceTaxIncomes->sum('tax_amount')
+            : 0.0;
         $denomRecord = $settlement->cashDenominations->first();
         $actualPhysicalCash = $denomRecord
             ? (float) $denomRecord->total_amount
             : (float) $settlement->cash_collected;
         $bankSlipsTotal = (float) $settlement->bankSlips->sum('amount');
 
-        $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries - $totalExpenses;
+        $expectedClearingBalance = $cashSalesAmount + $totalCashRecoveries + $advanceTaxIncomeTotal - $totalExpenses;
         // Cheques are cash-equivalents submitted by the salesman, included on the submission side
         $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal + $chequeAmount;
         $shortExcess = round($totalSubmitted - $expectedClearingBalance, 2);

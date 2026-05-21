@@ -118,7 +118,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
                             <div class="flex items-center">
                                 <input type="checkbox"
                                     class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
@@ -141,6 +141,14 @@
                                     {{ $supplier->is_internal_supplier ? 'checked' : '' }} disabled>
                                 <label class="ml-2 text-sm text-gray-700">
                                     Internal supplier
+                                </label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox"
+                                    class="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 cursor-not-allowed"
+                                    {{ $supplier->is_advance_tax_income ? 'checked' : '' }} disabled>
+                                <label class="ml-2 text-sm text-gray-700">
+                                    Advance Tax Income
                                 </label>
                             </div>
                         </div>

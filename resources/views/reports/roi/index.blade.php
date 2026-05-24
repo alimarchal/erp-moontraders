@@ -144,7 +144,7 @@
                     This might mean text, but often means backgrounds too to save ink or style.
                     Let's remove bg-gray-* classes in print or override. 
                  */
-                .bg-gray-100, .bg-gray-200, .bg-gray-50, .bg-blue-50, .bg-green-50, .bg-yellow-50, .bg-indigo-50 {
+                .bg-gray-100, .bg-gray-200, .bg-gray-50, .bg-blue-50, .bg-purple-50, .bg-green-50, .bg-yellow-50, .bg-indigo-50 {
                    background-color: transparent !important;
                    /* Add border if background is removed to maintain structure? Table has borders already. */
                 }
@@ -284,6 +284,7 @@
                             <th class="w-40">SKU</th>
                             <th class="w-24">Category</th>
                             <th class="bg-blue-50">IP</th>
+                            <th class="bg-purple-50">CP</th>
                             <th class="bg-green-50">TP</th>
                             <th class="bg-yellow-50">Margin</th>
                             
@@ -309,6 +310,9 @@
                                 
                                 <td class="text-right font-mono bg-blue-50 text-black">
                                     {{ number_format($product['ip'], 2) }}
+                                </td>
+                                <td class="text-right font-mono bg-purple-50 text-black">
+                                    {{ number_format($product['cp'], 2) }}
                                 </td>
                                 <td class="text-right font-mono bg-green-50 text-black">
                                     {{ number_format($product['tp'], 2) }}
@@ -350,15 +354,15 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ count($matrixData['dates']) + 9 }}" class="text-center py-4 text-gray-500">
-                                    No data found for the selected criteria.
+                                <td colspan="{{ count($matrixData['dates']) + 10 }}" class="text-center py-4 text-gray-500">
+                                    {{ $hasReportData ? 'No data found for the selected criteria.' : 'Select a supplier and apply filters to load report.' }}
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold sticky bottom-0">
                         <tr>
-                            <td colspan="6" class="text-right px-2">Grand Totals:</td>
+                            <td colspan="7" class="text-right px-2">Grand Totals:</td>
                             
                             {{-- Daily Totals (Optional? Leaving blank for layout clarity) --}}
                             @foreach($matrixData['dates'] as $date)

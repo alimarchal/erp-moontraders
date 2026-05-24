@@ -37,8 +37,63 @@ class RoiReportController extends Controller implements HasMiddleware
             $endDate = Carbon::parse($request->input('filter.end_date'));
         }
         $employeeIds = $request->input('filter.employee_id');
-        // Default to Nestlé Pakistan (id=3) when no supplier is selected
-        $supplierId = $request->input('filter.supplier_id') ?: 3;
+        $supplierId = $request->input('filter.supplier_id');
+        $hasReportData = $request->filled('filter.supplier_id');
+        $filters = $request->input('filter', []);
+
+        $matrixData = [
+            'dates' => [],
+            'products' => collect(),
+            'grand_totals' => [
+                'sold_qty' => 0,
+                'sale_amount' => 0,
+                'cogs' => 0,
+                'gross_profit' => 0,
+                'expenses' => 0,
+                'net_profit' => 0,
+            ],
+        ];
+
+        $period = CarbonPeriod::create($startDate, $endDate);
+        foreach ($period as $date) {
+            $matrixData['dates'][] = $date->format('Y-m-d');
+        }
+
+        // Fetch Filter Options
+        $employees = Employee::where('is_active', true)
+            ->orderBy('name', 'asc')
+            ->get(['id', 'name', 'employee_code as code']);
+
+        $vehicles = Vehicle::where('is_active', true)->orderBy('registration_number', 'asc')->get(['id', 'registration_number']);
+        $warehouses = Warehouse::orderBy('warehouse_name', 'asc')->get(['id', 'warehouse_name as name']);
+
+        $suppliers = Supplier::where('disabled', false)
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
+
+        $productList = Product::where('is_active', true)
+            ->orderBy('product_name')
+            ->get(['id', 'product_name', 'product_code']);
+
+        if (! $hasReportData) {
+            return view('reports.roi.index', [
+                'matrixData' => $matrixData,
+                'employees' => $employees,
+                'vehicles' => $vehicles,
+                'warehouses' => $warehouses,
+                'suppliers' => $suppliers,
+                'productList' => $productList,
+                'startDate' => $startDate->format('Y-m-d'),
+                'endDate' => $endDate->format('Y-m-d'),
+                'filters' => $filters,
+                'filterSummary' => '',
+                'expenseBreakdown' => collect(),
+                'categorySummary' => collect(),
+                'distributionExpenses' => collect(),
+                'distributionExpensesTotal' => 0,
+                'hasReportData' => false,
+            ]);
+        }
 
         // 2. Fetch All Products
         $products = Product::with('category')
@@ -105,26 +160,6 @@ class RoiReportController extends Controller implements HasMiddleware
         // This ensures we only iterate/show the selected product in the report rows
         if ($request->input('filter.product_id')) {
             $products = $products->where('id', $request->input('filter.product_id'));
-        }
-
-        // 4. Construct Matrix Data
-        $matrixData = [
-            'dates' => [],
-            'products' => collect(),
-            'grand_totals' => [
-                'sold_qty' => 0,
-                'sale_amount' => 0,
-                'cogs' => 0,
-                'gross_profit' => 0, // Margin Total
-                'expenses' => 0,
-                'net_profit' => 0,
-            ],
-        ];
-
-        // Generate Date Columns
-        $period = CarbonPeriod::create($startDate, $endDate);
-        foreach ($period as $date) {
-            $matrixData['dates'][] = $date->format('Y-m-d');
         }
 
         // Calculate Global Expenses Allocation (ROBUST METHOD)
@@ -267,6 +302,7 @@ class RoiReportController extends Controller implements HasMiddleware
                     'product_name' => $product->product_name,
                     'category_name' => $product->category->name ?? '-', // Use Category relationship
                     'ip' => $avgIp,
+                    'cp' => $product->cost_price,
                     'tp' => $avgTp,
                     'margin' => $margin,
                     'daily_data' => $dailyData,
@@ -339,24 +375,6 @@ class RoiReportController extends Controller implements HasMiddleware
 
         $expenseBreakdown = $finalBreakdown;
 
-        // Fetch Filter Options
-        $employees = Employee::where('is_active', true)
-            ->orderBy('name', 'asc')
-            ->get(['id', 'name', 'employee_code as code']);
-
-        $vehicles = Vehicle::where('is_active', true)->orderBy('registration_number', 'asc')->get(['id', 'registration_number']);
-        $warehouses = Warehouse::orderBy('warehouse_name', 'asc')->get(['id', 'warehouse_name as name']);
-
-        // Fetch Suppliers for Filter
-        $suppliers = Supplier::where('disabled', false)
-            ->orderBy('supplier_name')
-            ->get(['id', 'supplier_name']);
-
-        // Fetch Product List for Filter
-        $productList = Product::where('is_active', true)
-            ->orderBy('product_name')
-            ->get(['id', 'product_name', 'product_code']);
-
         // Prepare Filter Summary
         $filterSummary = [];
 
@@ -421,12 +439,6 @@ class RoiReportController extends Controller implements HasMiddleware
             ];
         })->sortByDesc('total_sale');
 
-        // Merge default supplier into filters so the dropdown reflects the default selection
-        $filters = $request->input('filter', []);
-        if (empty($filters['supplier_id'])) {
-            $filters['supplier_id'] = 3;
-        }
-
         // Fetch Distribution & Selling Expenses from expense_details, grouped by category
         $allCategoryOptions = ExpenseDetail::categoryOptions();
         $distRaw = ExpenseDetail::query()
@@ -474,6 +486,7 @@ class RoiReportController extends Controller implements HasMiddleware
             'categorySummary' => $categorySummary,
             'distributionExpenses' => $distributionExpenses,
             'distributionExpensesTotal' => $distributionExpensesTotal,
+            'hasReportData' => true,
         ]);
     }
 }

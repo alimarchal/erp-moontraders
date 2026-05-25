@@ -40,6 +40,7 @@ class RoiReportController extends Controller implements HasMiddleware
         $supplierId = $request->input('filter.supplier_id');
         $hasReportData = $request->filled('filter.supplier_id');
         $filters = $request->input('filter', []);
+        $useAveragePrices = $request->boolean('filter.average');
 
         $matrixData = [
             'dates' => [],
@@ -271,23 +272,19 @@ class RoiReportController extends Controller implements HasMiddleware
                 $rowTotalCogs += $item->total_cogs;
             }
 
-            // Calculate Averages (IP, TP)
-            // IP = Average Cost = Total COGS / Total Qty Sold
-            // TP = Average Price = Total Sales / Total Qty Sold
-
-            if ($rowTotalSoldQty > 0) {
+            if ($rowTotalSoldQty > 0 && $useAveragePrices) {
+                // IP/TP from settlement averages when the Average filter is enabled.
                 $avgIp = $rowTotalCogs / $rowTotalSoldQty;
                 $avgTp = $rowTotalSalesValue / $rowTotalSoldQty;
-                $margin = $avgTp - $avgIp;
+            } elseif ($rowTotalSoldQty > 0) {
+                $avgIp = (float) $product->cost_price;
+                $avgTp = (float) $product->unit_sell_price;
             } else {
-                // If no sales, get current product cost/price as fallback or 0
-                // For accurate report, if 0 sales, we can show 0 or master data.
-                // Let's use 0 to avoid confusion if it wasn't sold.
                 $avgIp = 0;
                 $avgTp = 0;
-                $margin = 0;
             }
 
+            $margin = $avgTp - $avgIp;
             $rowGrossProfit = $rowTotalSalesValue - $rowTotalCogs;
 
             // Allocated Expenses
@@ -302,7 +299,6 @@ class RoiReportController extends Controller implements HasMiddleware
                     'product_name' => $product->product_name,
                     'category_name' => $product->category->name ?? '-', // Use Category relationship
                     'ip' => $avgIp,
-                    'cp' => $product->cost_price,
                     'tp' => $avgTp,
                     'margin' => $margin,
                     'daily_data' => $dailyData,
@@ -408,6 +404,8 @@ class RoiReportController extends Controller implements HasMiddleware
         if ($request->input('filter.status')) {
             $filterSummary[] = 'Status: '.ucfirst($request->input('filter.status'));
         }
+
+        $filterSummary[] = 'Average: '.($useAveragePrices ? 'Yes' : 'No');
 
         if ($request->input('filter.product_id')) {
             $p = $productList->firstWhere('id', $request->input('filter.product_id'));

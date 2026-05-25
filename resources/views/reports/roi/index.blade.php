@@ -226,6 +226,16 @@
                 </select>
             </div>
 
+            <!-- Average Price Mode -->
+            <div>
+                <x-label for="filter_average" value="Average" />
+                <select id="filter_average" name="filter[average]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="0" {{ ($filters['average'] ?? '0') == '0' ? 'selected' : '' }}>No</option>
+                    <option value="1" {{ ($filters['average'] ?? '0') == '1' ? 'selected' : '' }}>Yes</option>
+                </select>
+            </div>
+
             <!-- Supplier Filter -->
             <div class="md:col-span-2 lg:col-span-1">
                 <x-label for="filter_supplier_id" value="Supplier" />
@@ -284,7 +294,6 @@
                             <th class="w-40">SKU</th>
                             <th class="w-24">Category</th>
                             <th class="bg-blue-50">IP</th>
-                            <th class="bg-purple-50">CP</th>
                             <th class="bg-green-50">TP</th>
                             <th class="bg-yellow-50">Margin</th>
                             
@@ -310,9 +319,6 @@
                                 
                                 <td class="text-right font-mono bg-blue-50 text-black">
                                     {{ number_format($product['ip'], 2) }}
-                                </td>
-                                <td class="text-right font-mono bg-purple-50 text-black">
-                                    {{ number_format($product['cp'], 2) }}
                                 </td>
                                 <td class="text-right font-mono bg-green-50 text-black">
                                     {{ number_format($product['tp'], 2) }}
@@ -354,7 +360,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="{{ count($matrixData['dates']) + 10 }}" class="text-center py-4 text-gray-500">
+                                <td colspan="{{ count($matrixData['dates']) + 9 }}" class="text-center py-4 text-gray-500">
                                     {{ $hasReportData ? 'No data found for the selected criteria.' : 'Select a supplier and apply filters to load report.' }}
                                 </td>
                             </tr>
@@ -362,7 +368,7 @@
                     </tbody>
                     <tfoot class="bg-gray-100 font-extrabold sticky bottom-0">
                         <tr>
-                            <td colspan="7" class="text-right px-2">Grand Totals:</td>
+                            <td colspan="6" class="text-right px-2">Grand Totals:</td>
                             
                             {{-- Daily Totals (Optional? Leaving blank for layout clarity) --}}
                             @foreach($matrixData['dates'] as $date)

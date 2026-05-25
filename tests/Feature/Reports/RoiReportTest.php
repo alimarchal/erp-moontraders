@@ -108,12 +108,13 @@ it('only loads roi rows for the selected supplier', function () {
         ->and($productNames)->not->toContain('Nestle Hidden Row');
 });
 
-it('shows product cost price as cp while keeping ip and tp settlement averages', function () {
+it('uses product prices for ip and tp by default', function () {
     $supplier = Supplier::factory()->create(['disabled' => false]);
     $product = Product::factory()->create([
         'supplier_id' => $supplier->id,
         'product_name' => 'Price Formula Product',
         'cost_price' => 123.45,
+        'unit_sell_price' => 678.90,
         'is_active' => true,
     ]);
 
@@ -136,11 +137,47 @@ it('shows product cost price as cp while keeping ip and tp settlement averages',
     $row = $response->viewData('matrixData')['products']->first();
 
     $response->assertSuccessful()
-        ->assertSee('CP')
-        ->assertSee('123.45');
+        ->assertSee('Average')
+        ->assertDontSee('CP');
+
+    expect((float) $row['ip'])->toBe(123.45)
+        ->and($row)->not->toHaveKey('cp')
+        ->and((float) $row['tp'])->toBe(678.90);
+});
+
+it('uses settlement averages for ip and tp when average filter is enabled', function () {
+    $supplier = Supplier::factory()->create(['disabled' => false]);
+    $product = Product::factory()->create([
+        'supplier_id' => $supplier->id,
+        'product_name' => 'Average Price Formula Product',
+        'cost_price' => 123.45,
+        'unit_sell_price' => 678.90,
+        'is_active' => true,
+    ]);
+
+    createRoiSettlement(
+        supplier: $supplier,
+        product: $product,
+        quantitySold: 5,
+        totalSalesValue: 500,
+        totalCogs: 200,
+    );
+
+    $response = $this->get(route('reports.roi.index', [
+        'filter' => [
+            'supplier_id' => $supplier->id,
+            'start_date' => '2026-05-01',
+            'end_date' => '2026-05-31',
+            'average' => '1',
+        ],
+    ]));
+
+    $row = $response->viewData('matrixData')['products']->first();
+
+    $response->assertSuccessful();
 
     expect((float) $row['ip'])->toBe(40.0)
-        ->and((float) $row['cp'])->toBe(123.45)
+        ->and($row)->not->toHaveKey('cp')
         ->and((float) $row['tp'])->toBe(100.0);
 });
 

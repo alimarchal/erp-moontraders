@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\ChartOfAccount;
+use App\Models\RevenueCategory;
+use App\Models\RevenueDetail;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementExcessAmount;
 use App\Models\SalesSettlementExpense;
@@ -114,4 +116,88 @@ test('summary roi report adjusts short amount by excess amount and hides 4250 fo
     expect($shortAmount->account_name)->toContain('200.00');
     expect($shortAmount->account_name)->toContain('1,000.00');
     expect($breakdown->contains(fn ($row) => $row->account_code === '4250'))->toBeFalse();
+});
+
+test('summary roi report includes posted revenue categories after rate increase profit', function () {
+    $supplier = Supplier::factory()->create([
+        'supplier_name' => 'Nestle Pakistan',
+        'short_name' => 'Nestle',
+        'disabled' => false,
+    ]);
+    $otherSupplier = Supplier::factory()->create([
+        'supplier_name' => 'Other Supplier',
+        'short_name' => 'Other',
+        'disabled' => false,
+    ]);
+
+    $postedCategory = RevenueCategory::factory()->create([
+        'supplier_id' => $supplier->id,
+        'name' => 'Display Income',
+        'slug' => 'display-income',
+    ]);
+    $unpostedCategory = RevenueCategory::factory()->create([
+        'supplier_id' => $supplier->id,
+        'name' => 'Unposted Income',
+        'slug' => 'unposted-income',
+    ]);
+    $otherSupplierCategory = RevenueCategory::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'name' => 'Other Supplier Revenue',
+        'slug' => 'other-supplier-revenue',
+    ]);
+
+    RevenueDetail::factory()->create([
+        'supplier_id' => null,
+        'revenue_category_id' => $postedCategory->id,
+        'transaction_date' => '2026-05-10',
+        'amount' => 1500,
+        'posted_at' => '2026-05-10 10:00:00',
+        'posted_by' => $this->user->id,
+    ]);
+    RevenueDetail::factory()->create([
+        'supplier_id' => $supplier->id,
+        'revenue_category_id' => $unpostedCategory->id,
+        'transaction_date' => '2026-05-11',
+        'amount' => 700,
+        'posted_at' => null,
+    ]);
+    RevenueDetail::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'revenue_category_id' => $otherSupplierCategory->id,
+        'transaction_date' => '2026-05-12',
+        'amount' => 900,
+        'posted_at' => '2026-05-12 10:00:00',
+    ]);
+    RevenueDetail::factory()->create([
+        'supplier_id' => $supplier->id,
+        'revenue_category_id' => $postedCategory->id,
+        'transaction_date' => '2026-06-01',
+        'amount' => 300,
+        'posted_at' => '2026-06-01 10:00:00',
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->get(route('reports.summary-roi.index', [
+            'filter' => [
+                'supplier_id' => $supplier->id,
+                'start_date' => '2026-05-01',
+                'end_date' => '2026-05-31',
+                'status' => 'posted',
+            ],
+        ]));
+
+    $response->assertSuccessful()
+        ->assertSee('Rate Increase Profit')
+        ->assertSee('Display Income')
+        ->assertSee('1,500.00')
+        ->assertSee('Other Revenue')
+        ->assertDontSee('Unposted Income')
+        ->assertDontSee('Other Supplier Revenue');
+
+    expect($response['postedRevenueTotal'])->toBe(1500.0);
+    expect($response['grossInflow'])->toBe(1500.0);
+    expect($response['grandRevenue'])->toBe(1500.0);
+    expect($response['postedRevenueRows'])->toHaveCount(1);
+    expect($response['postedRevenueRows']->first()['category_name'])->toBe('Display Income');
+    expect(substr_count($response->getContent(), '1,500.00'))->toBeGreaterThanOrEqual(2);
 });

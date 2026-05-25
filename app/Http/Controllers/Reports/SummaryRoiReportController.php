@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Models\ExpenseDetail;
 use App\Models\LedgerRegister;
 use App\Models\Product;
+use App\Models\RevenueDetail;
 use App\Models\SchemeReceived;
 use App\Models\Supplier;
 use App\Models\Vehicle;
@@ -237,6 +238,37 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
                 ->sum('za_point_five_percent_amount'),
         ];
 
+        $postedRevenueRows = RevenueDetail::query()
+            ->join('revenue_categories', 'revenue_details.revenue_category_id', '=', 'revenue_categories.id')
+            ->where(function ($query) use ($supplierId) {
+                $query->where('revenue_details.supplier_id', $supplierId)
+                    ->orWhere(function ($query) use ($supplierId) {
+                        $query->whereNull('revenue_details.supplier_id')
+                            ->where('revenue_categories.supplier_id', $supplierId);
+                    });
+            })
+            ->whereNotNull('revenue_details.posted_at')
+            ->whereNull('revenue_details.deleted_at')
+            ->whereNull('revenue_categories.deleted_at')
+            ->whereBetween('revenue_details.transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->selectRaw('
+                revenue_categories.id as category_id,
+                revenue_categories.name as category_name,
+                SUM(revenue_details.amount) as total_amount
+            ')
+            ->groupBy('revenue_categories.id', 'revenue_categories.name')
+            ->havingRaw('SUM(revenue_details.amount) > 0')
+            ->orderBy('revenue_categories.name')
+            ->get()
+            ->map(fn ($row) => [
+                'category_id' => (int) $row->category_id,
+                'category_name' => $row->category_name,
+                'amount' => (float) $row->total_amount,
+            ]);
+        $postedRevenueTotal = (float) $postedRevenueRows->sum('amount');
+        $grossInflow = (float) ($grandTotals['sale'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'] + $incentiveClaimed + $expiryClaimed + $postedRevenueTotal);
+        $grandRevenue = (float) ($grandTotals['gross_profit'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'] + $incentiveClaimed + $expiryClaimed + $postedRevenueTotal);
+
         // ── Distribution & Selling Expenses ──
         $allCategoryOptions = ExpenseDetail::categoryOptions();
         $distRaw = ExpenseDetail::query()
@@ -326,6 +358,10 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             'otherOperatingExpensesTotal' => $otherOperatingExpensesTotal,
             'incentiveClaimed' => $incentiveClaimed,
             'expiryClaimed' => $expiryClaimed,
+            'postedRevenueRows' => $postedRevenueRows,
+            'postedRevenueTotal' => $postedRevenueTotal,
+            'grossInflow' => $grossInflow,
+            'grandRevenue' => $grandRevenue,
         ]);
     }
 }

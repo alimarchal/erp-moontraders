@@ -261,7 +261,7 @@
             </div>
 
             @php
-                $grossInflow = (float) ($grandTotals['sale'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'] + $incentiveClaimed + $expiryClaimed);
+                $grossInflow = (float) ($grossInflow ?? 0);
                 $totalExpensesShown = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
                 $netAfterAllExpenses = $grossInflow - $totalExpensesShown;
             @endphp
@@ -306,7 +306,9 @@
             {{-- Consolidated statement under graphs --}}
             @php
                 $profitFromSale = (float) $grandTotals['gross_profit'];
-                $grandRevenue = (float) ($profitFromSale + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'] + $incentiveClaimed + $expiryClaimed);
+                $postedRevenueTotal = (float) ($postedRevenueTotal ?? 0);
+                $postedRevenueRows = $postedRevenueRows ?? collect();
+                $grandRevenue = (float) ($grandRevenue ?? 0);
                 $totalOperatingExpenses = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
                 $profitBeforeTaxation = $grandRevenue - $totalOperatingExpenses;
             @endphp
@@ -391,6 +393,13 @@
                             <td colspan="2">Rate Increase Profit</td>
                             <td class="text-right">—</td>
                         </tr>
+                        @foreach($postedRevenueRows as $revenueRow)
+                            <tr>
+                                <td class="text-center">{{ 8 + $loop->iteration }}</td>
+                                <td colspan="2">{{ $revenueRow['category_name'] }}</td>
+                                <td class="text-right">{{ number_format($revenueRow['amount'], 2) }}</td>
+                            </tr>
+                        @endforeach
                         <tr class="bg-slate-200 font-bold">
                             <td></td>
                             <td colspan="2">Grand Revenue</td>
@@ -490,6 +499,7 @@
                                                         {{ (float) $grandTotals['schema_received'] }},
                                                         {{ (float) $grandTotals['fmr_received'] }},
                                                         {{ (float) $grandTotals['cash_discount'] }},
+                                                        {{ (float) ($postedRevenueTotal ?? 0) }},
                 ];
 
                 let inflowChartInstance = null;
@@ -504,9 +514,9 @@
                             toolbar: { show: false },
                             animations: { enabled: true },
                         },
-                        labels: ['Sale', 'Scheme Received', 'FMR Received', 'Cash Discount'],
+                        labels: ['Sale', 'Scheme Received', 'FMR Received', 'Cash Discount', 'Other Revenue'],
                         series: inflowSeries,
-                        colors: ['#2563eb', '#16a34a', '#9333ea', '#d97706'],
+                        colors: ['#2563eb', '#16a34a', '#9333ea', '#d97706', '#0891b2'],
                         legend: { position: 'bottom' },
                         dataLabels: {
                             enabled: true,

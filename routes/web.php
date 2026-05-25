@@ -15,6 +15,7 @@ use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\BankAccountController;
 use App\Http\Controllers\BatchTransferController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CategoryRevenueController;
 use App\Http\Controllers\ChartOfAccountController;
 use App\Http\Controllers\ClaimRegisterController;
 use App\Http\Controllers\CompanyController;
@@ -62,6 +63,7 @@ use App\Http\Controllers\Reports\LedgerRegisterController;
 use App\Http\Controllers\Reports\OpeningCustomerBalanceReportController;
 use App\Http\Controllers\Reports\PercentageExpenseReportController;
 use App\Http\Controllers\Reports\ProductPriceChangeLogController;
+use App\Http\Controllers\Reports\RevenueDetailReportController;
 use App\Http\Controllers\Reports\RoiReportController;
 use App\Http\Controllers\Reports\SalesmanStockRegisterController;
 use App\Http\Controllers\Reports\SalesSettlementReportController;
@@ -644,6 +646,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::resource('tax-rates', TaxRateController::class);
         Route::resource('product-tax-mappings', ProductTaxMappingController::class);
         Route::resource('tax-transactions', TaxTransactionController::class)->only(['index', 'show']);
+        Route::resource('category-revenue', CategoryRevenueController::class)
+            ->parameters(['category-revenue' => 'categoryRevenue']);
 
         /* Organization & Logistics */
         Route::resource('companies', CompanyController::class);
@@ -731,6 +735,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             Route::put('/{expenseDetail}', [ExpenseDetailReportController::class, 'update'])->name('update');
             Route::post('/{expenseDetail}/post', [ExpenseDetailReportController::class, 'post'])->name('post');
             Route::delete('/{expenseDetail}', [ExpenseDetailReportController::class, 'destroy'])->name('destroy');
+        });
+
+        /* Revenue Detail */
+        Route::prefix('revenue-detail')->name('revenue-detail.')->group(function () {
+            Route::get('/', [RevenueDetailReportController::class, 'index'])->name('index');
+            Route::post('/', [RevenueDetailReportController::class, 'store'])->name('store');
+            Route::put('/{revenueDetail}', [RevenueDetailReportController::class, 'update'])->name('update');
+            Route::post('/{revenueDetail}/post', [RevenueDetailReportController::class, 'post'])->name('post');
+            Route::delete('/{revenueDetail}', [RevenueDetailReportController::class, 'destroy'])->name('destroy');
         });
 
         /* Scheme Received */

@@ -59,6 +59,8 @@ class RoleAndPermissionSeeder extends Seeder
             'promotional-campaign' => ['list', 'create', 'edit', 'delete'],
             'claim-register' => ['list', 'create', 'edit', 'delete', 'post'],
             'expense-detail' => ['list', 'create', 'edit', 'delete', 'post'],
+            'category-revenue' => ['list', 'create', 'edit', 'delete'],
+            'revenue-detail' => ['create', 'edit', 'delete', 'post'],
 
             // Employee Salary Management
             'employee-salary' => ['list', 'create', 'edit', 'delete'],
@@ -74,7 +76,7 @@ class RoleAndPermissionSeeder extends Seeder
             'report-inventory' => ['daily-stock-register', 'salesman-stock-register', 'inventory-ledger', 'van-stock-batch', 'van-stock-ledger'],
 
             // Reports - Audit & Operational (granular per report)
-            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'claim-register', 'expense-detail', 'advance-tax', 'percentage-expense', 'ledger-register', 'ledger-register-manage', 'ledger-register-post', 'invoice-summary', 'invoice-summary-manage', 'opening-customer-balance', 'investment-summary', 'sku-fmr-amr', 'stock-availability', 'product-price-change-log'],
+            'report-audit' => ['cash-detail', 'custom-settlement', 'creditors-ledger', 'claim-register', 'expense-detail', 'revenue-detail', 'advance-tax', 'percentage-expense', 'ledger-register', 'ledger-register-manage', 'ledger-register-post', 'invoice-summary', 'invoice-summary-manage', 'opening-customer-balance', 'investment-summary', 'sku-fmr-amr', 'stock-availability', 'product-price-change-log'],
 
             // Settings & Navigation
             'setting' => ['view', 'update'],
@@ -99,7 +101,10 @@ class RoleAndPermissionSeeder extends Seeder
         // Admin: Most things
         $adminRole = Role::firstOrCreate(['name' => 'admin', 'guard_name' => 'web']);
         $adminRole->syncPermissions(array_filter($allPermissionNames, function ($name) {
-            return ! str_contains($name, 'delete') || str_contains($name, 'journal-entry');
+            return ! str_contains($name, 'delete')
+                || str_contains($name, 'journal-entry')
+                || str_starts_with($name, 'category-revenue-')
+                || str_starts_with($name, 'revenue-detail-');
         }));
 
         // Accountant

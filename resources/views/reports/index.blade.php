@@ -217,7 +217,7 @@
                 @endcanany
 
                 {{-- ─── Audit & Product Reports ─── --}}
-                @canany(['report-sales-fmr-amr-comparison', 'report-audit-sku-fmr-amr', 'report-audit-percentage-expense', 'report-audit-stock-availability', 'report-sales-shop-list', 'report-audit-expense-detail', 'report-audit-supplier-ledger', 'report-sales-scheme-received'])
+                @canany(['report-sales-fmr-amr-comparison', 'report-audit-sku-fmr-amr', 'report-audit-percentage-expense', 'report-audit-stock-availability', 'report-sales-shop-list', 'report-audit-expense-detail', 'report-audit-revenue-detail', 'report-audit-supplier-ledger', 'report-sales-scheme-received'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Audit &amp;
                             Product Reports</p>
@@ -301,6 +301,19 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-audit-revenue-detail')
+                                <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('reports.revenue-detail.index') }}" label="Revenue Detail"
+                                    description="Track & manage supplier-wise revenue by category" icon-bg="bg-emerald-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

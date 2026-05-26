@@ -193,6 +193,7 @@
                                 <th style="width: 250px;">Supplier</th>
                                 <th style="width: 120px;">Stock In Quantity</th>
                                 <th style="width: 120px;">Stock Amount (Rs.)</th>
+                                <th style="width: 140px;">Credit Balance Salesman</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -202,6 +203,7 @@
                                     <td style="vertical-align: middle;">{{ $row->supplier_name }}</td>
                                     <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->total_quantity, 2) }}</td>
                                     <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->total_amount, 2) }}</td>
+                                    <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->credit_balance_salesman, 2) }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -210,6 +212,7 @@
                                 <td colspan="2" class="text-center px-2 py-1">Grand Total</td>
                                 <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotalQuantity, 2) }}</td>
                                 <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotalAmount, 2) }}</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotalSalesmanCreditBalance, 2) }}</td>
                             </tr>
                         </tfoot>
                     </table>

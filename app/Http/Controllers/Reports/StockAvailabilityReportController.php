@@ -48,6 +48,14 @@ class StockAvailabilityReportController extends Controller implements HasMiddlew
             $stockData = $this->getHistoricalStock($asOfDate, $allSuppliers, $warehouseId, $categoryId, $stockSource);
         }
 
+        $salesmanCreditBalances = $this->getSalesmanCreditBalances($allSuppliers, $asOfDate);
+
+        $stockData = $stockData->map(function ($row) use ($salesmanCreditBalances) {
+            $row->credit_balance_salesman = (float) ($salesmanCreditBalances->get($row->supplier_id)?->credit_balance_salesman ?? 0);
+
+            return $row;
+        });
+
         if (! $showZeroStock) {
             $stockData = $stockData->filter(fn ($row) => $row->total_quantity > 0);
         }
@@ -56,6 +64,7 @@ class StockAvailabilityReportController extends Controller implements HasMiddlew
 
         $grandTotalQuantity = $stockData->sum('total_quantity');
         $grandTotalAmount = $stockData->sum('total_amount');
+        $grandTotalSalesmanCreditBalance = $stockData->sum('credit_balance_salesman');
 
         return view('reports.stock-availability.index', compact(
             'asOfDate',
@@ -71,6 +80,7 @@ class StockAvailabilityReportController extends Controller implements HasMiddlew
             'stockData',
             'grandTotalQuantity',
             'grandTotalAmount',
+            'grandTotalSalesmanCreditBalance',
             'isCurrentStock',
         ));
     }
@@ -239,6 +249,26 @@ class StockAvailabilityReportController extends Controller implements HasMiddlew
                 ->groupBy('p.supplier_id')
                 ->get()
         );
+    }
+
+    private function getSalesmanCreditBalances($allSuppliers, string $asOfDate)
+    {
+        $supplierIds = $allSuppliers->pluck('id')->toArray();
+
+        if (empty($supplierIds)) {
+            return collect();
+        }
+
+        return DB::table('employees as e')
+            ->join('customer_employee_accounts as cea', 'cea.employee_id', '=', 'e.id')
+            ->join('customer_employee_account_transactions as ceat', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->whereNull('ceat.deleted_at')
+            ->whereIn('e.supplier_id', $supplierIds)
+            ->where('ceat.transaction_date', '<=', $asOfDate)
+            ->selectRaw('e.supplier_id, COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0) as credit_balance_salesman')
+            ->groupBy('e.supplier_id')
+            ->get()
+            ->keyBy('supplier_id');
     }
 
     private function applySorting($data, string $sortBy)

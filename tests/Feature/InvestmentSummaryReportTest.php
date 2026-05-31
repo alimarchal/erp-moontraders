@@ -5,6 +5,7 @@ use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\ExpenseDetail;
+use App\Models\InvestmentOpeningBalance;
 use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementAmrLiquid;
@@ -184,7 +185,7 @@ it('only includes expenses up to selected investment summary date', function () 
     expect($response->viewData('totalExpensesMonth'))->toBe(1000.0);
 });
 
-it('calculates powder and liquid expiry as month to date and excludes entries disposed by selected date', function () {
+it('calculates cumulative powder and liquid expiry up to selected date and excludes entries disposed by selected date', function () {
     $employee = Employee::factory()->create([
         'supplier_id' => $this->supplier->id,
         'designation' => 'Salesman',
@@ -321,6 +322,26 @@ it('calculates powder and liquid expiry as month to date and excludes entries di
 
     $response->assertOk();
 
-    expect($response->viewData('powderExpiry'))->toBe(600.0);
-    expect($response->viewData('liquidExpiry'))->toBe(900.0);
+    expect($response->viewData('powderExpiry'))->toBe(1100.0);
+    expect($response->viewData('liquidExpiry'))->toBe(1600.0);
+});
+
+it('uses recalculated last month main investment instead of stale opening balance snapshot value', function () {
+    InvestmentOpeningBalance::create([
+        'supplier_id' => $this->supplier->id,
+        'date' => '2026-05-26',
+        'description' => 'LAST_MONTH_MAIN_INVESTMENT',
+        'amount' => 49633.84,
+    ]);
+
+    $response = $this->get(route('reports.investment-summary.index', [
+        'date' => '2026-05-26',
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+    ]));
+
+    $response->assertOk();
+
+    expect($response->viewData('lastMonthMainInvestment'))->toBe(49633.84);
+    expect($response->viewData('increaseInInvestmentMonth'))->toBe(-49633.84);
 });

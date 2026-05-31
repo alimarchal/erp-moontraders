@@ -117,7 +117,8 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
                 $closingBalanceBeforeExpenses = $openingBalanceData['CLOSING_BALANCE_BEFORE_EXPENSES'] ?? 0.0;
                 $totalExpensesMonth = $openingBalanceData['TOTAL_EXPENSE_CURRENT_MONTH'] ?? 0.0;
                 $closingBalanceAfterExpenses = $openingBalanceData['CLOSING_BALANCE_AFTER_EXPENSE'] ?? 0.0;
-                $lastMonthMainInvestment = $openingBalanceData['LAST_MONTH_MAIN_INVESTMENT'] ?? 0.0;
+                $lastMonthMainInvestment = (float) ($openingBalanceData['LAST_MONTH_MAIN_INVESTMENT']
+                    ?? $this->getMainInvestmentTotal($lastDayPrevMonth, $supplierId, $designation, $employeeIds));
             } else {
                 $bankOpeningAmount = 0.0;
                 $totalCashReceivedMonth = $this->getMonthlyCashReceived($date, $supplierId);
@@ -127,16 +128,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
                 $expenseCategoryTotals = $this->getMonthlyExpenses($date, $supplierId);
                 $totalExpensesMonth = array_sum($expenseCategoryTotals);
                 $closingBalanceAfterExpenses = $closingBalanceBeforeExpenses - $totalExpensesMonth;
-
-                $prevMonthData = $this->getOpeningBalanceValues($lastDayPrevMonth, $supplierId);
-                $lastMonthMainInvestment = $prevMonthData !== null
-                    ? ($prevMonthData['CURRENT_MONTH_MAIN_INVESTMENT'] ?? 0.0)
-                    : $this->getPowderExpiry($supplierId, $lastDayPrevMonth)
-                        + $this->getLiquidExpiry($supplierId, $lastDayPrevMonth)
-                        + $this->getClaimAmount($supplierId, $lastDayPrevMonth)
-                        + $this->getStockAmount($supplierId, $lastDayPrevMonth)
-                        + (float) $this->getSalesmanCreditData($lastDayPrevMonth, $supplierId, $designation, $employeeIds)->sum('total_credit')
-                        + $this->getLedgerAmount($supplierId, $lastDayPrevMonth);
+                $lastMonthMainInvestment = $this->getMainInvestmentTotal($lastDayPrevMonth, $supplierId, $designation, $employeeIds);
             }
         } else {
             $salesmanCreditData = collect();
@@ -315,13 +307,12 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
     private function getPowderExpiry(?int $supplierId, ?string $date = null): float
     {
         $asOfDate = $date ?? now()->toDateString();
-        $startOfMonth = Carbon::parse($asOfDate)->startOfMonth()->toDateString();
         $asOfDateTime = Carbon::parse($asOfDate)->endOfDay();
 
         $query = DB::table('sales_settlement_amr_powders as p')
             ->join('sales_settlements as ss', 'p.sales_settlement_id', '=', 'ss.id')
             ->where('ss.status', 'posted')
-            ->whereBetween('ss.settlement_date', [$startOfMonth, $asOfDate])
+            ->whereDate('ss.settlement_date', '<=', $asOfDate)
             ->whereNull('ss.deleted_at')
             ->where(function ($q) use ($asOfDateTime) {
                 $q->where('p.is_disposed', false)
@@ -347,13 +338,12 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
     private function getLiquidExpiry(?int $supplierId, ?string $date = null): float
     {
         $asOfDate = $date ?? now()->toDateString();
-        $startOfMonth = Carbon::parse($asOfDate)->startOfMonth()->toDateString();
         $asOfDateTime = Carbon::parse($asOfDate)->endOfDay();
 
         $query = DB::table('sales_settlement_amr_liquids as l')
             ->join('sales_settlements as ss', 'l.sales_settlement_id', '=', 'ss.id')
             ->where('ss.status', 'posted')
-            ->whereBetween('ss.settlement_date', [$startOfMonth, $asOfDate])
+            ->whereDate('ss.settlement_date', '<=', $asOfDate)
             ->whereNull('ss.deleted_at')
             ->where(function ($q) use ($asOfDateTime) {
                 $q->where('l.is_disposed', false)
@@ -606,6 +596,16 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         }
 
         return (float) $query->sum('online_amount');
+    }
+
+    private function getMainInvestmentTotal(string $date, ?int $supplierId, ?string $designation, array $employeeIds): float
+    {
+        return $this->getPowderExpiry($supplierId, $date)
+            + $this->getLiquidExpiry($supplierId, $date)
+            + $this->getClaimAmount($supplierId, $date)
+            + $this->getStockAmount($supplierId, $date)
+            + (float) $this->getSalesmanCreditData($date, $supplierId, $designation, $employeeIds)->sum('total_credit')
+            + $this->getLedgerAmount($supplierId, $date);
     }
 
     private function getDailyBankSlips(string $date, ?int $supplierId): float

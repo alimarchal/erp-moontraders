@@ -23,7 +23,7 @@ beforeEach(function () {
     $this->user->givePermissionTo('report-sales-summary-roi');
 });
 
-test('summary roi report sets fixed incentive and expiry claimed values for engro supplier', function () {
+test('summary roi report does not inject fixed incentive and expiry rows for engro supplier', function () {
     $engroSupplier = Supplier::factory()->create([
         'supplier_name' => 'Engro Foods',
         'short_name' => 'Engro',
@@ -38,34 +38,67 @@ test('summary roi report sets fixed incentive and expiry claimed values for engr
         ]));
 
     $response->assertSuccessful()
-        ->assertViewHas('incentiveClaimed', 208652.0)
-        ->assertViewHas('expiryClaimed', 260000.0)
-        ->assertSee('Incentive Claimed')
-        ->assertSee('Expiry Claimed')
-        ->assertSee('208,652.00')
-        ->assertSee('260,000.00');
+        ->assertDontSee('Incentive Claimed')
+        ->assertDontSee('Expiry Claimed')
+        ->assertDontSee('208,652.00')
+        ->assertDontSee('260,000.00');
+
+    expect($response->viewData())->not->toHaveKey('incentiveClaimed');
+    expect($response->viewData())->not->toHaveKey('expiryClaimed');
 });
 
-test('summary roi report sets incentive and expiry claimed as zero for non engro supplier', function () {
+test('summary roi report shows incentive and expiry when present in posted revenue categories', function () {
     $otherSupplier = Supplier::factory()->create([
         'supplier_name' => 'Nestle Pakistan',
         'short_name' => 'Nestle',
         'disabled' => false,
     ]);
 
+    $incentiveCategory = RevenueCategory::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'name' => 'Incentive Claimed',
+        'slug' => 'incentive-claimed',
+    ]);
+    $expiryCategory = RevenueCategory::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'name' => 'Expiry Claimed',
+        'slug' => 'expiry-claimed',
+    ]);
+
+    RevenueDetail::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'revenue_category_id' => $incentiveCategory->id,
+        'transaction_date' => '2026-05-10',
+        'amount' => 1200,
+        'posted_at' => '2026-05-10 10:00:00',
+        'posted_by' => $this->user->id,
+    ]);
+    RevenueDetail::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'revenue_category_id' => $expiryCategory->id,
+        'transaction_date' => '2026-05-11',
+        'amount' => 800,
+        'posted_at' => '2026-05-11 10:00:00',
+        'posted_by' => $this->user->id,
+    ]);
+
     $response = $this->actingAs($this->user)
         ->get(route('reports.summary-roi.index', [
             'filter' => [
                 'supplier_id' => $otherSupplier->id,
+                'start_date' => '2026-05-01',
+                'end_date' => '2026-05-31',
+                'status' => 'posted',
             ],
         ]));
 
     $response->assertSuccessful()
-        ->assertViewHas('incentiveClaimed', 0.0)
-        ->assertViewHas('expiryClaimed', 0.0)
         ->assertSee('Incentive Claimed')
         ->assertSee('Expiry Claimed')
-        ->assertSee('0.00');
+        ->assertSee('1,200.00')
+        ->assertSee('800.00');
+
+    expect($response->viewData('postedRevenueTotal'))->toBe(2000.0);
 });
 
 test('summary roi report adjusts short amount by excess amount and hides 4250 for engro', function () {

@@ -53,8 +53,6 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
         $supplierName = strtolower((string) ($selectedSupplier?->supplier_name ?? ''));
         $supplierShortName = strtolower((string) ($selectedSupplier?->short_name ?? ''));
         $isEngroSupplier = Str::contains($supplierName, 'engro') || Str::contains($supplierShortName, 'engro');
-        $incentiveClaimed = $isEngroSupplier ? 208652.0 : 0.0;
-        $expiryClaimed = $isEngroSupplier ? 260000.0 : 0.0;
 
         // ── Fetch all categories that have active products for this supplier ──
         $supplierCategoryIds = Product::where('is_active', true)
@@ -279,8 +277,8 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
                 'amount' => (float) $row->total_amount,
             ]);
         $postedRevenueTotal = (float) $postedRevenueRows->sum('amount');
-        $grossInflow = (float) ($grandTotals['sale'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'] + $incentiveClaimed + $expiryClaimed + $postedRevenueTotal);
-        $grandRevenue = (float) ($grandTotals['gross_profit'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'] + $incentiveClaimed + $expiryClaimed + $postedRevenueTotal);
+        $grossInflow = (float) ($grandTotals['sale'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'] + $postedRevenueTotal);
+        $grandRevenue = (float) ($grandTotals['gross_profit'] + $grandTotals['schema_received'] + $grandTotals['fmr_received'] + $grandTotals['cash_discount'] + $postedRevenueTotal);
 
         // ── Distribution & Selling Expenses ──
         $allCategoryOptions = ExpenseDetail::categoryOptions();
@@ -393,8 +391,6 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             'distributionExpenses' => $distributionExpenses,
             'distributionExpensesTotal' => $distributionExpensesTotal,
             'otherOperatingExpensesTotal' => $otherOperatingExpensesTotal,
-            'incentiveClaimed' => $incentiveClaimed,
-            'expiryClaimed' => $expiryClaimed,
             'postedRevenueRows' => $postedRevenueRows,
             'postedRevenueTotal' => $postedRevenueTotal,
             'profitCategoryRows' => $profitCategoryRows,

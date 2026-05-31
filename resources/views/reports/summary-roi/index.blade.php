@@ -388,27 +388,17 @@
                         </tr>
                         <tr>
                             <td class="text-center">5</td>
-                            <td colspan="2">Incentive Claimed</td>
-                            <td class="text-right">{{ number_format($incentiveClaimed, 2) }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-center">6</td>
-                            <td colspan="2">Expiry Claimed</td>
-                            <td class="text-right">{{ number_format($expiryClaimed, 2) }}</td>
-                        </tr>
-                        <tr>
-                            <td class="text-center">7</td>
                             <td colspan="2">Other Allowance from Company</td>
                             <td class="text-right">—</td>
                         </tr>
                         <tr>
-                            <td class="text-center">8</td>
+                            <td class="text-center">6</td>
                             <td colspan="2">Rate Increase Profit</td>
                             <td class="text-right">—</td>
                         </tr>
                         @foreach($postedRevenueRows as $revenueRow)
                             <tr>
-                                <td class="text-center">{{ 8 + $loop->iteration }}</td>
+                                <td class="text-center">{{ 6 + $loop->iteration }}</td>
                                 <td colspan="2">{{ $revenueRow['category_name'] }}</td>
                                 <td class="text-right">{{ number_format($revenueRow['amount'], 2) }}</td>
                             </tr>

@@ -15,7 +15,6 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 class InvestmentSummaryController extends Controller implements HasMiddleware
 {
@@ -316,16 +315,15 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
     private function getPowderExpiry(?int $supplierId, ?string $date = null): float
     {
         $asOfDate = $date ?? now()->toDateString();
+        $startOfMonth = Carbon::parse($asOfDate)->startOfMonth()->toDateString();
         $asOfDateTime = Carbon::parse($asOfDate)->endOfDay();
-        $hasDisposedAt = Schema::hasColumn('sales_settlement_amr_powders', 'disposed_at');
 
         $query = DB::table('sales_settlement_amr_powders as p')
             ->join('sales_settlements as ss', 'p.sales_settlement_id', '=', 'ss.id')
-            ->whereDate('ss.settlement_date', '<=', $asOfDate)
-            ->whereNull('ss.deleted_at');
-
-        if ($hasDisposedAt) {
-            $query->where(function ($q) use ($asOfDateTime) {
+            ->where('ss.status', 'posted')
+            ->whereBetween('ss.settlement_date', [$startOfMonth, $asOfDate])
+            ->whereNull('ss.deleted_at')
+            ->where(function ($q) use ($asOfDateTime) {
                 $q->where('p.is_disposed', false)
                     ->orWhere(function ($q2) use ($asOfDateTime) {
                         $q2->where('p.is_disposed', true)
@@ -338,15 +336,6 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
                             });
                     });
             });
-        } else {
-            $query->where(function ($q) use ($asOfDateTime) {
-                $q->where('p.is_disposed', false)
-                    ->orWhere(function ($q2) use ($asOfDateTime) {
-                        $q2->where('p.is_disposed', true)
-                            ->where('p.updated_at', '>', $asOfDateTime);
-                    });
-            });
-        }
 
         if ($supplierId) {
             $query->where('ss.supplier_id', $supplierId);
@@ -358,16 +347,15 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
     private function getLiquidExpiry(?int $supplierId, ?string $date = null): float
     {
         $asOfDate = $date ?? now()->toDateString();
+        $startOfMonth = Carbon::parse($asOfDate)->startOfMonth()->toDateString();
         $asOfDateTime = Carbon::parse($asOfDate)->endOfDay();
-        $hasDisposedAt = Schema::hasColumn('sales_settlement_amr_liquids', 'disposed_at');
 
         $query = DB::table('sales_settlement_amr_liquids as l')
             ->join('sales_settlements as ss', 'l.sales_settlement_id', '=', 'ss.id')
-            ->whereDate('ss.settlement_date', '<=', $asOfDate)
-            ->whereNull('ss.deleted_at');
-
-        if ($hasDisposedAt) {
-            $query->where(function ($q) use ($asOfDateTime) {
+            ->where('ss.status', 'posted')
+            ->whereBetween('ss.settlement_date', [$startOfMonth, $asOfDate])
+            ->whereNull('ss.deleted_at')
+            ->where(function ($q) use ($asOfDateTime) {
                 $q->where('l.is_disposed', false)
                     ->orWhere(function ($q2) use ($asOfDateTime) {
                         $q2->where('l.is_disposed', true)
@@ -380,15 +368,6 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
                             });
                     });
             });
-        } else {
-            $query->where(function ($q) use ($asOfDateTime) {
-                $q->where('l.is_disposed', false)
-                    ->orWhere(function ($q2) use ($asOfDateTime) {
-                        $q2->where('l.is_disposed', true)
-                            ->where('l.updated_at', '>', $asOfDateTime);
-                    });
-            });
-        }
 
         if ($supplierId) {
             $query->where('ss.supplier_id', $supplierId);

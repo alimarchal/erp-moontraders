@@ -5,6 +5,10 @@ use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\ExpenseDetail;
+use App\Models\Product;
+use App\Models\SalesSettlement;
+use App\Models\SalesSettlementAmrLiquid;
+use App\Models\SalesSettlementAmrPowder;
 use App\Models\Supplier;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
@@ -178,4 +182,145 @@ it('only includes expenses up to selected investment summary date', function () 
 
     expect($response->viewData('expenseCategoryTotals')['stationary'])->toBe(1000.0);
     expect($response->viewData('totalExpensesMonth'))->toBe(1000.0);
+});
+
+it('calculates powder and liquid expiry as month to date and excludes entries disposed by selected date', function () {
+    $employee = Employee::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+        'is_active' => true,
+    ]);
+
+    $powderProduct = Product::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'is_powder' => true,
+        'is_active' => true,
+    ]);
+
+    $liquidProduct = Product::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'is_powder' => false,
+        'is_active' => true,
+    ]);
+
+    $aprilPosted = SalesSettlement::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'employee_id' => $employee->id,
+        'settlement_date' => '2026-04-28',
+        'status' => 'posted',
+    ]);
+
+    $mayPostedInRange = SalesSettlement::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'employee_id' => $employee->id,
+        'settlement_date' => '2026-05-20',
+        'status' => 'posted',
+    ]);
+
+    $mayDraftInRange = SalesSettlement::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'employee_id' => $employee->id,
+        'settlement_date' => '2026-05-22',
+        'status' => 'draft',
+    ]);
+
+    $mayPostedOutOfRange = SalesSettlement::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'employee_id' => $employee->id,
+        'settlement_date' => '2026-05-30',
+        'status' => 'posted',
+    ]);
+
+    SalesSettlementAmrPowder::create([
+        'sales_settlement_id' => $aprilPosted->id,
+        'product_id' => $powderProduct->id,
+        'quantity' => 1,
+        'amount' => 500,
+        'is_disposed' => false,
+    ]);
+
+    SalesSettlementAmrLiquid::create([
+        'sales_settlement_id' => $aprilPosted->id,
+        'product_id' => $liquidProduct->id,
+        'quantity' => 1,
+        'amount' => 700,
+        'is_disposed' => false,
+    ]);
+
+    SalesSettlementAmrPowder::create([
+        'sales_settlement_id' => $mayPostedInRange->id,
+        'product_id' => $powderProduct->id,
+        'quantity' => 1,
+        'amount' => 1000,
+        'is_disposed' => true,
+        'disposed_at' => '2026-05-21 10:00:00',
+    ]);
+
+    SalesSettlementAmrLiquid::create([
+        'sales_settlement_id' => $mayPostedInRange->id,
+        'product_id' => $liquidProduct->id,
+        'quantity' => 1,
+        'amount' => 2000,
+        'is_disposed' => true,
+        'disposed_at' => '2026-05-21 10:00:00',
+    ]);
+
+    SalesSettlementAmrPowder::create([
+        'sales_settlement_id' => $mayPostedInRange->id,
+        'product_id' => $powderProduct->id,
+        'quantity' => 1,
+        'amount' => 600,
+        'is_disposed' => false,
+    ]);
+
+    SalesSettlementAmrLiquid::create([
+        'sales_settlement_id' => $mayPostedInRange->id,
+        'product_id' => $liquidProduct->id,
+        'quantity' => 1,
+        'amount' => 900,
+        'is_disposed' => false,
+    ]);
+
+    SalesSettlementAmrPowder::create([
+        'sales_settlement_id' => $mayDraftInRange->id,
+        'product_id' => $powderProduct->id,
+        'quantity' => 1,
+        'amount' => 300,
+        'is_disposed' => false,
+    ]);
+
+    SalesSettlementAmrLiquid::create([
+        'sales_settlement_id' => $mayDraftInRange->id,
+        'product_id' => $liquidProduct->id,
+        'quantity' => 1,
+        'amount' => 400,
+        'is_disposed' => false,
+    ]);
+
+    SalesSettlementAmrPowder::create([
+        'sales_settlement_id' => $mayPostedOutOfRange->id,
+        'product_id' => $powderProduct->id,
+        'quantity' => 1,
+        'amount' => 800,
+        'is_disposed' => false,
+    ]);
+
+    SalesSettlementAmrLiquid::create([
+        'sales_settlement_id' => $mayPostedOutOfRange->id,
+        'product_id' => $liquidProduct->id,
+        'quantity' => 1,
+        'amount' => 900,
+        'is_disposed' => false,
+    ]);
+
+    $response = $this->get(route('reports.investment-summary.index', [
+        'date' => '2026-05-26',
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+    ]));
+
+    $response->assertOk();
+
+    expect($response->viewData('powderExpiry'))->toBe(600.0);
+    expect($response->viewData('liquidExpiry'))->toBe(900.0);
 });

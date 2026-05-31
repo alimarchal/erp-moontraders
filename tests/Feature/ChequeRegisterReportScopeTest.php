@@ -20,8 +20,16 @@ beforeEach(function () {
 test('cheque register is scoped to the authenticated users supplier', function () {
     $ownSupplier = Supplier::factory()->create(['supplier_name' => 'Kausar Oil']);
     $otherSupplier = Supplier::factory()->create(['supplier_name' => 'Nestle Pakistan']);
-    $ownEmployee = Employee::factory()->create(['supplier_id' => $ownSupplier->id, 'name' => 'Own Salesman']);
-    $otherEmployee = Employee::factory()->create(['supplier_id' => $otherSupplier->id, 'name' => 'Other Salesman']);
+    $ownEmployee = Employee::factory()->create([
+        'supplier_id' => $ownSupplier->id,
+        'name' => 'Own Salesman',
+        'is_active' => true,
+    ]);
+    $otherEmployee = Employee::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'name' => 'Other Salesman',
+        'is_active' => true,
+    ]);
     $ownCustomer = Customer::factory()->create(['customer_name' => 'Own Customer']);
     $otherCustomer = Customer::factory()->create(['customer_name' => 'Other Customer']);
     $ownSettlement = SalesSettlement::factory()->create([

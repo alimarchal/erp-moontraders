@@ -189,8 +189,9 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16 mt-4">
             <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
                 <div class="overflow-x-auto">
-                    @if (! $hasSupplierSelection)
-                        <div class="no-print mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    @if (!$hasSupplierSelection)
+                        <div
+                            class="no-print mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                             Select a supplier from the filters to view the investment summary.
                         </div>
                     @endif
@@ -335,19 +336,22 @@
                                     <tr>
                                         <td class="text-center px-1 py-1">9</td>
                                         <td class="px-2 py-1">Bank Slips / Deposits</td>
-                                        <td class="text-right px-2 py-1 font-mono">{{ number_format($dailyBankSlips, 2) }}
+                                        <td class="text-right px-2 py-1 font-mono">
+                                            {{ number_format($dailyBankSlips, 2) }}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td class="text-center px-1 py-1">10</td>
                                         <td class="px-2 py-1">Bank Transfers / Online</td>
-                                        <td class="text-right px-2 py-1 font-mono">{{ number_format($dailyBankTransfers, 2) }}
+                                        <td class="text-right px-2 py-1 font-mono">
+                                            {{ number_format($dailyBankTransfers, 2) }}
                                         </td>
                                     </tr>
                                     <tr>
                                         <td class="text-center px-1 py-1">11</td>
                                         <td class="px-2 py-1">Cheque Payments</td>
-                                        <td class="text-right px-2 py-1 font-mono">{{ number_format($dailyChequePayments, 2) }}
+                                        <td class="text-right px-2 py-1 font-mono">
+                                            {{ number_format($dailyChequePayments, 2) }}
                                         </td>
                                     </tr>
                                     <tr class="bg-gray-50 font-bold">
@@ -441,14 +445,21 @@
                                             {{ number_format($expenseCategoryTotals['van_work'] ?? 0, 2) }}
                                         </td>
                                     </tr>
+                                    <tr>
+                                        <td class="text-center px-1 py-1">7</td>
+                                        <td class="px-2 py-1">Salesflo Fee</td>
+                                        <td class="text-right px-2 py-1 font-mono">
+                                            {{ number_format($expenseCategoryTotals['salesflo_fee'] ?? 0, 2) }}
+                                        </td>
+                                    </tr>
                                     <tr class="bg-gray-50 font-extrabold">
-                                        <td class="text-center px-1 py-1 border-t-2 border-black">7</td>
+                                        <td class="text-center px-1 py-1 border-t-2 border-black">8</td>
                                         <td class="px-2 py-1 border-t-2 border-black">Total Expenses</td>
                                         <td class="text-right px-2 py-1 border-t-2 border-black font-mono">
                                             {{ number_format($totalExpensesMonth, 2) }}
                                         </td>
                                     </tr>
-                                    @for ($i = 8; $i <= 12; $i++)
+                                    @for ($i = 9; $i <= 12; $i++)
                                         <tr>
                                             <td class="text-center px-1 py-1">{{ $i }}</td>
                                             <td class="text-center px-2 py-1">-</td>
@@ -479,7 +490,8 @@
                                         <td class="text-center px-1 py-1">1</td>
                                         <td class="px-2 py-1">
                                             Bank Opening Amount
-                                            <span class="text-xs text-gray-400 font-normal ml-1">(Opening balance from previous month)</span>
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(Opening balance from
+                                                previous month)</span>
                                         </td>
                                         <td class="text-right px-2 py-1 font-mono">
                                             {{ number_format($bankOpeningAmount, 2) }}
@@ -489,7 +501,8 @@
                                         <td class="text-center px-1 py-1">2</td>
                                         <td class="px-2 py-1">
                                             Total Cash Received in Current Month
-                                            <span class="text-xs text-gray-400 font-normal ml-1">(Cash + Bank Slips + Bank Transfers + Recovery Bank Transfers + Cheques)</span>
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(Cash + Bank Slips +
+                                                Bank Transfers + Recovery Bank Transfers + Cheques)</span>
                                         </td>
                                         <td class="text-right px-2 py-1 font-mono">
                                             {{ number_format($totalCashReceivedMonth, 2) }}
@@ -509,7 +522,8 @@
                                         <td class="text-center px-1 py-1">4</td>
                                         <td class="px-2 py-1">
                                             Total Online Amount in Current Month
-                                            <span class="text-xs text-gray-400 font-normal ml-1">(Bank transfers sent out via Ledger Register)</span>
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(Bank transfers sent
+                                                out via Ledger Register)</span>
                                         </td>
                                         <td class="text-right px-2 py-1 font-mono">
                                             {{ number_format($totalOnlineAmountMonth, 2) }}
@@ -529,7 +543,8 @@
                                         <td class="text-center px-1 py-1">6</td>
                                         <td class="px-2 py-1">
                                             Total Expenses in Current Month
-                                            <span class="text-xs text-gray-400 font-normal ml-1">(All settlement expenses)</span>
+                                            <span class="text-xs text-gray-400 font-normal ml-1">(All settlement
+                                                expenses)</span>
                                         </td>
                                         <td class="text-right px-2 py-1 font-mono">
                                             {{ number_format($totalExpensesMonth, 2) }}

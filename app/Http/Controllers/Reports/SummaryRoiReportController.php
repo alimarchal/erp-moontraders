@@ -45,6 +45,7 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
         // Default to Nestlé Pakistan (id=3)
         $supplierId = $request->input('filter.supplier_id') ?: 3;
         $employeeIds = $request->input('filter.employee_id');
+        $useAveragePrices = $request->boolean('filter.average');
 
         $selectedSupplier = Supplier::query()
             ->select(['id', 'supplier_name', 'short_name'])
@@ -83,8 +84,11 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             ->selectRaw('
                 categories.id as category_id,
                 categories.name as category_name,
+                SUM(sales_settlement_items.quantity_sold) as total_sold_qty,
                 SUM(sales_settlement_items.total_sales_value) as total_sales,
-                SUM(sales_settlement_items.total_cogs) as total_cogs
+                SUM(sales_settlement_items.total_cogs) as total_cogs,
+                SUM(sales_settlement_items.quantity_sold * products.unit_sell_price) as total_default_sales,
+                SUM(sales_settlement_items.quantity_sold * products.cost_price) as total_default_cogs
             ')
             ->groupBy('categories.id', 'categories.name')
             ->get()
@@ -202,7 +206,15 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             $data = $salesByCategory->get($category->id);
             $sale = $data ? (float) $data->total_sales : 0;
             $cogs = $data ? (float) $data->total_cogs : 0;
-            $grossProfit = $sale - $cogs;
+
+            if ($useAveragePrices) {
+                $grossProfit = $sale - $cogs;
+            } else {
+                $defaultSales = $data ? (float) $data->total_default_sales : 0;
+                $defaultCogs = $data ? (float) $data->total_default_cogs : 0;
+                $grossProfit = $defaultSales - $defaultCogs;
+            }
+
             $allocatedExpenses = $sale * $expenseRatio;
             $netProfit = $grossProfit - $allocatedExpenses;
 
@@ -364,6 +376,7 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
         if ($request->input('filter.status')) {
             $filterBadges[] = 'Status: '.ucfirst($request->input('filter.status'));
         }
+        $filterBadges[] = 'Average: '.($useAveragePrices ? 'Yes' : 'No');
 
         return view('reports.summary-roi.index', [
             'startDate' => $startDate->format('Y-m-d'),

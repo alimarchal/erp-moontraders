@@ -1,6 +1,9 @@
 <?php
 
+use App\Models\Category;
 use App\Models\ChartOfAccount;
+use App\Models\GoodsIssue;
+use App\Models\Product;
 use App\Models\ProfitCategory;
 use App\Models\ProfitCategoryDetail;
 use App\Models\RevenueCategory;
@@ -8,6 +11,7 @@ use App\Models\RevenueDetail;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementExcessAmount;
 use App\Models\SalesSettlementExpense;
+use App\Models\SalesSettlementItem;
 use App\Models\Supplier;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
@@ -293,4 +297,74 @@ test('summary roi report deducts posted profit category rows after profit before
     expect($response['profitCategoryRows'])->toHaveCount(2);
     expect($response['profitCategoryTotal'])->toBe(1500.0);
     expect($response->getContent())->toContain('>-1,500.00<');
+});
+
+test('summary roi report profit from sale follows average filter mode', function () {
+    $supplier = Supplier::factory()->create([
+        'supplier_name' => 'Nestle Pakistan',
+        'short_name' => 'Nestle',
+        'disabled' => false,
+    ]);
+
+    $category = Category::query()->create([
+        'name' => 'Milk Powder',
+    ]);
+
+    $product = Product::factory()->create([
+        'supplier_id' => $supplier->id,
+        'category_id' => $category->id,
+        'product_name' => 'Average Filter Product',
+        'cost_price' => 100,
+        'unit_sell_price' => 200,
+        'is_active' => true,
+    ]);
+
+    $settlement = SalesSettlement::factory()->create([
+        'goods_issue_id' => GoodsIssue::factory()->create(['supplier_id' => $supplier->id])->id,
+        'supplier_id' => $supplier->id,
+        'settlement_date' => '2026-05-10',
+        'status' => 'posted',
+    ]);
+
+    SalesSettlementItem::factory()->create([
+        'sales_settlement_id' => $settlement->id,
+        'product_id' => $product->id,
+        'quantity_sold' => 10,
+        'unit_selling_price' => 150,
+        'total_sales_value' => 1500,
+        'unit_cost' => 90,
+        'total_cogs' => 900,
+    ]);
+
+    $baseFilter = [
+        'supplier_id' => $supplier->id,
+        'start_date' => '2026-05-01',
+        'end_date' => '2026-05-31',
+        'status' => 'posted',
+    ];
+
+    $defaultModeResponse = $this->actingAs($this->user)
+        ->get(route('reports.summary-roi.index', [
+            'filter' => [
+                ...$baseFilter,
+                'average' => '0',
+            ],
+        ]));
+
+    $averageModeResponse = $this->actingAs($this->user)
+        ->get(route('reports.summary-roi.index', [
+            'filter' => [
+                ...$baseFilter,
+                'average' => '1',
+            ],
+        ]));
+
+    $defaultModeResponse->assertSuccessful()
+        ->assertSee('Average: No');
+
+    $averageModeResponse->assertSuccessful()
+        ->assertSee('Average: Yes');
+
+    expect((float) $defaultModeResponse->viewData('grandTotals')['gross_profit'])->toBe(1000.0)
+        ->and((float) $averageModeResponse->viewData('grandTotals')['gross_profit'])->toBe(600.0);
 });

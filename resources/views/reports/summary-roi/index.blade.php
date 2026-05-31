@@ -199,6 +199,16 @@
                 </select>
             </div>
 
+            <!-- Average Price Mode -->
+            <div>
+                <x-label for="filter_average" value="Average" />
+                <select id="filter_average" name="filter[average]"
+                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                    <option value="0" {{ ($filters['average'] ?? '0') == '0' ? 'selected' : '' }}>No</option>
+                    <option value="1" {{ ($filters['average'] ?? '0') == '1' ? 'selected' : '' }}>Yes</option>
+                </select>
+            </div>
+
             <!-- Supplier -->
             <div class="md:col-span-2 lg:col-span-2">
                 <x-label for="filter_supplier_id" value="Supplier" />

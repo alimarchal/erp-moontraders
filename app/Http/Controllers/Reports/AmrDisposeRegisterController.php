@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -175,13 +176,20 @@ class AmrDisposeRegisterController extends Controller implements HasMiddleware
 
         $validated = $request->validate([
             'is_disposed' => ['required', 'boolean'],
+            'disposed_at' => ['nullable', 'required_if:is_disposed,1', 'date'],
         ]);
 
         $model = $type === 'liquid' ? SalesSettlementAmrLiquid::class : SalesSettlementAmrPowder::class;
         $record = $model::with('salesSettlement')->findOrFail($id);
         $this->authorizeAmrRecordAccess($record);
 
-        $record->update(['is_disposed' => $validated['is_disposed']]);
+        $isDisposed = (bool) $validated['is_disposed'];
+        $disposedAt = $isDisposed ? Carbon::parse($validated['disposed_at'])->startOfDay() : null;
+
+        $record->update([
+            'is_disposed' => $isDisposed,
+            'disposed_at' => $disposedAt,
+        ]);
 
         return redirect()->back()->with('success', 'Dispose status updated successfully.');
     }
@@ -190,6 +198,7 @@ class AmrDisposeRegisterController extends Controller implements HasMiddleware
     {
         $validated = $request->validate([
             'is_disposed' => ['required', 'boolean'],
+            'disposed_at' => ['nullable', 'required_if:is_disposed,1', 'date'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.type' => ['required', 'in:liquid,powder'],
             'items.*.id' => ['required', 'integer'],
@@ -201,7 +210,7 @@ class AmrDisposeRegisterController extends Controller implements HasMiddleware
         $this->authorizeBulkAmrAccess(SalesSettlementAmrPowder::class, $powders);
 
         $isDisposed = (bool) $validated['is_disposed'];
-        $disposedAt = $isDisposed ? now() : null;
+    $disposedAt = $isDisposed ? Carbon::parse($validated['disposed_at'])->startOfDay() : null;
 
         if ($liquids->isNotEmpty()) {
             SalesSettlementAmrLiquid::whereIn('id', $liquids)->update([

@@ -108,6 +108,7 @@ test('amr dispose update is scoped to the authenticated users supplier', functio
 
     $this->post(route('reports.amr-dispose-register.update-disposed', ['liquid', $otherRecord->id]), [
         'is_disposed' => true,
+        'disposed_at' => '2026-04-15',
     ])->assertForbidden();
 
     expect($otherRecord->fresh()->is_disposed)->toBeFalse();
@@ -122,11 +123,52 @@ test('amr dispose bulk update is scoped to the authenticated users supplier', fu
 
     $this->post(route('reports.amr-dispose-register.bulk-update-disposed'), [
         'is_disposed' => true,
+        'disposed_at' => '2026-04-15',
         'items' => [
             ['type' => 'liquid', 'id' => $ownRecord->id],
             ['type' => 'powder', 'id' => $otherRecord->id],
         ],
     ])->assertForbidden();
+
+test('amr dispose update stores the provided disposed date', function () {
+    $supplier = Supplier::factory()->create();
+    $this->user->forceFill(['supplier_id' => $supplier->id])->save();
+    $record = createAmrLiquidForSupplier($supplier, 'Own AMR Liquid', 'OWN-LIQ-001');
+
+    $this->post(route('reports.amr-dispose-register.update-disposed', ['liquid', $record->id]), [
+        'is_disposed' => true,
+        'disposed_at' => '2026-04-15',
+    ])->assertRedirect();
+
+    $record->refresh();
+
+    expect($record->is_disposed)->toBeTrue();
+    expect($record->disposed_at?->format('Y-m-d'))->toBe('2026-04-15');
+});
+
+test('amr dispose bulk update stores the provided disposed date', function () {
+    $supplier = Supplier::factory()->create();
+    $this->user->forceFill(['supplier_id' => $supplier->id])->save();
+    $liquidRecord = createAmrLiquidForSupplier($supplier, 'Own AMR Liquid', 'OWN-LIQ-001');
+    $powderRecord = createAmrPowderForSupplier($supplier, 'Own AMR Powder', 'OWN-POW-001');
+
+    $this->post(route('reports.amr-dispose-register.bulk-update-disposed'), [
+        'is_disposed' => true,
+        'disposed_at' => '2026-04-20',
+        'items' => [
+            ['type' => 'liquid', 'id' => $liquidRecord->id],
+            ['type' => 'powder', 'id' => $powderRecord->id],
+        ],
+    ])->assertRedirect();
+
+    $liquidRecord->refresh();
+    $powderRecord->refresh();
+
+    expect($liquidRecord->is_disposed)->toBeTrue();
+    expect($liquidRecord->disposed_at?->format('Y-m-d'))->toBe('2026-04-20');
+    expect($powderRecord->is_disposed)->toBeTrue();
+    expect($powderRecord->disposed_at?->format('Y-m-d'))->toBe('2026-04-20');
+});
 
     expect($ownRecord->fresh()->is_disposed)->toBeFalse();
     expect($otherRecord->fresh()->is_disposed)->toBeFalse();

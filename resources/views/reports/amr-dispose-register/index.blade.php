@@ -188,8 +188,8 @@
             {{-- Disposed At To --}}
             <div>
                 <x-label for="filter_disposed_at_to" value="Disposed At To" />
-                <x-input id="filter_disposed_at_to" name="filter[disposed_at_to]" type="date"
-                    class="mt-1 block w-full" :value="$disposedAtTo" />
+                <x-input id="filter_disposed_at_to" name="filter[disposed_at_to]" type="date" class="mt-1 block w-full"
+                    :value="$disposedAtTo" />
             </div>
 
             {{-- Per Page --}}
@@ -224,7 +224,7 @@
                 class="no-print mb-3 mt-4 flex items-center gap-3 bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2">
                 <span class="text-sm font-semibold text-indigo-700" x-text="selected.length + ' record(s) selected'"></span>
                 <div class="flex gap-2 ml-auto">
-                    <button type="button" @click="bulkUpdate(1)"
+                    <button type="button" @click="openBulkDisposeModal()"
                         class="px-3 py-1.5 text-xs font-semibold text-white bg-green-600 rounded-md hover:bg-green-700 transition">
                         Mark Disposed
                     </button>
@@ -311,11 +311,9 @@
                             @php $recordType = strtolower($record->record_type); @endphp
                             <tr>
                                 @can('report-audit-amr-dispose-register-manage')
-                                    <td class="text-center no-print"
-                                        data-row-type="{{ $recordType }}"
+                                    <td class="text-center no-print" data-row-type="{{ $recordType }}"
                                         data-row-id="{{ $record->id }}">
-                                        <input type="checkbox"
-                                            @change="toggle('{{ $recordType }}', {{ $record->id }}, $event)"
+                                        <input type="checkbox" @change="toggle('{{ $recordType }}', {{ $record->id }}, $event)"
                                             :checked="isSelected('{{ $recordType }}', {{ $record->id }})"
                                             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
                                     </td>
@@ -358,11 +356,11 @@
                                 @can('report-audit-amr-dispose-register-manage')
                                     <td class="text-center px-2 no-print">
                                         <button type="button"
-                                            @click="openModal('{{ route('reports.amr-dispose-register.update-disposed', [$recordType, $record->id]) }}', {{ $record->is_disposed ? 'true' : 'false' }})"
+                                            @click="openModal('{{ route('reports.amr-dispose-register.update-disposed', [$recordType, $record->id]) }}', {{ $record->is_disposed ? 'true' : 'false' }}, '{{ $record->disposed_at ? \Carbon\Carbon::parse($record->disposed_at)->format('Y-m-d') : '' }}')"
                                             @class([
                                                 'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold transition',
                                                 'bg-green-100 text-green-800 hover:bg-green-200' => $record->is_disposed,
-                                                'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' => ! $record->is_disposed,
+                                                'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' => !$record->is_disposed,
                                             ])>
                                             @if($record->is_disposed)
                                                 <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -445,7 +443,9 @@
                         <form :action="modal.url" method="POST" class="p-6 space-y-4">
                             @csrf
 
-                            <div>
+                            <input type="hidden" name="is_disposed" :value="modal.isDisposed">
+
+                            <div x-show="! modal.lockDisposeStatus">
                                 <x-label value="Dispose Status" />
                                 <select name="is_disposed" x-model="modal.isDisposed"
                                     class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm">
@@ -453,6 +453,14 @@
                                     <option value="1">Disposed</option>
                                 </select>
                             </div>
+
+                            <div x-show="modal.isDisposed === '1'">
+                                <x-label for="disposed_at" value="Disposed Date" />
+                                <x-input id="disposed_at" name="disposed_at" type="date" x-model="modal.disposedAt"
+                                    x-bind:required="modal.isDisposed === '1'" class="mt-1 block w-full" />
+                            </div>
+
+                            <div x-html="modal.itemFields"></div>
 
                             <div class="flex justify-end gap-3 pt-2">
                                 <button type="button" @click="closeModal()"
@@ -489,6 +497,9 @@
                             show: false,
                             url: '',
                             isDisposed: '0',
+                            disposedAt: '',
+                            lockDisposeStatus: false,
+                            itemFields: '',
                         },
 
                         get allSelected() {
@@ -499,7 +510,7 @@
                         toggle(type, id, event) {
                             const key = type + ':' + id;
                             if (event.target.checked) {
-                                if (! this.selected.find(s => s.key === key)) {
+                                if (!this.selected.find(s => s.key === key)) {
                                     this.selected.push({ key, type, id });
                                 }
                             } else {
@@ -508,7 +519,7 @@
                         },
 
                         isSelected(type, id) {
-                            return !! this.selected.find(s => s.key === type + ':' + id);
+                            return !!this.selected.find(s => s.key === type + ':' + id);
                         },
 
                         toggleAll(event) {
@@ -528,14 +539,42 @@
                             this.selected = [];
                         },
 
-                        openModal(url, isDisposed) {
+                        openModal(url, isDisposed, disposedAt = '') {
                             this.modal.url = url;
                             this.modal.isDisposed = isDisposed ? '1' : '0';
+                            this.modal.disposedAt = disposedAt || this.today();
+                            this.modal.lockDisposeStatus = false;
+                            this.modal.itemFields = '';
+                            this.modal.show = true;
+                        },
+
+                        openBulkDisposeModal() {
+                            if (this.selected.length === 0) {
+                                return;
+                            }
+
+                            this.modal.url = bulkUrl;
+                            this.modal.isDisposed = '1';
+                            this.modal.disposedAt = this.today();
+                            this.modal.lockDisposeStatus = true;
+                            this.modal.itemFields = this.selected.map((item, index) =>
+                                `<input type="hidden" name="items[${index}][type]" value="${item.type}" />` +
+                                `<input type="hidden" name="items[${index}][id]" value="${item.id}" />`
+                            ).join('');
                             this.modal.show = true;
                         },
 
                         closeModal() {
                             this.modal.show = false;
+                            this.modal.url = '';
+                            this.modal.isDisposed = '0';
+                            this.modal.disposedAt = '';
+                            this.modal.lockDisposeStatus = false;
+                            this.modal.itemFields = '';
+                        },
+
+                        today() {
+                            return new Date().toISOString().split('T')[0];
                         },
 
                         bulkUpdate(isDisposed) {

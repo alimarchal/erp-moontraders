@@ -130,6 +130,10 @@ test('amr dispose bulk update is scoped to the authenticated users supplier', fu
         ],
     ])->assertForbidden();
 
+    expect($ownRecord->fresh()->is_disposed)->toBeFalse();
+    expect($otherRecord->fresh()->is_disposed)->toBeFalse();
+});
+
 test('amr dispose update stores the provided disposed date', function () {
     $supplier = Supplier::factory()->create();
     $this->user->forceFill(['supplier_id' => $supplier->id])->save();
@@ -168,8 +172,4 @@ test('amr dispose bulk update stores the provided disposed date', function () {
     expect($liquidRecord->disposed_at?->format('Y-m-d'))->toBe('2026-04-20');
     expect($powderRecord->is_disposed)->toBeTrue();
     expect($powderRecord->disposed_at?->format('Y-m-d'))->toBe('2026-04-20');
-});
-
-    expect($ownRecord->fresh()->is_disposed)->toBeFalse();
-    expect($otherRecord->fresh()->is_disposed)->toBeFalse();
 });

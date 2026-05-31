@@ -4,6 +4,7 @@ use App\Models\Customer;
 use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
+use App\Models\ExpenseDetail;
 use App\Models\Supplier;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
@@ -146,4 +147,35 @@ it('does not double count opening balance on the next day', function () {
     // Both should show 14,000.00 — not doubled
     $responseSameDay->assertSee('14,000.00');
     $responseNextDay->assertSee('14,000.00');
+});
+
+it('only includes expenses up to selected investment summary date', function () {
+    ExpenseDetail::factory()->posted()->create([
+        'supplier_id' => $this->supplier->id,
+        'category' => 'stationary',
+        'transaction_date' => '2026-05-25',
+        'amount' => 1000,
+        'debit' => 1000,
+        'credit' => 0,
+    ]);
+
+    ExpenseDetail::factory()->posted()->create([
+        'supplier_id' => $this->supplier->id,
+        'category' => 'stationary',
+        'transaction_date' => '2026-05-30',
+        'amount' => 500,
+        'debit' => 500,
+        'credit' => 0,
+    ]);
+
+    $response = $this->get(route('reports.investment-summary.index', [
+        'date' => '2026-05-25',
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+    ]));
+
+    $response->assertOk();
+
+    expect($response->viewData('expenseCategoryTotals')['stationary'])->toBe(1000.0);
+    expect($response->viewData('totalExpensesMonth'))->toBe(1000.0);
 });

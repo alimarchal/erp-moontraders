@@ -596,7 +596,6 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
     private function getMonthlyExpenses(string $upToDate, ?int $supplierId = null): array
     {
         $startOfMonth = Carbon::parse($upToDate)->startOfMonth()->toDateString();
-        $endOfMonth = Carbon::parse($upToDate)->endOfMonth()->toDateString();
 
         $categories = ['stationary', 'tcs', 'tonner_it', 'salaries', 'fuel', 'van_work'];
         $totals = [];
@@ -604,7 +603,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         foreach ($categories as $category) {
             $query = ExpenseDetail::where('category', $category)
                 ->whereNotNull('posted_at')
-                ->whereBetween('transaction_date', [$startOfMonth, $endOfMonth]);
+                ->whereBetween('transaction_date', [$startOfMonth, $upToDate]);
 
             if ($supplierId) {
                 $query->where('supplier_id', $supplierId);

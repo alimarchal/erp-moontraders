@@ -12,6 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
+
+    // Yeh line add karein taake aadhi-adhuri table pehle drop ho jaye
+    Schema::dropIfExists('profit_category_details');
         Schema::create('profit_category_details', function (Blueprint $table) {
             $table->id();
             $table->foreignId('profit_category_id')->constrained('profit_categories')->restrictOnDelete();

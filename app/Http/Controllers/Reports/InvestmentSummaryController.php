@@ -598,7 +598,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         $startOfMonth = Carbon::parse($upToDate)->startOfMonth()->toDateString();
         $endOfMonth = Carbon::parse($upToDate)->endOfMonth()->toDateString();
 
-        $categories = ['stationary', 'tcs', 'tonner_it', 'salaries', 'fuel', 'van_work', 'salesflo_fee'];
+        $categories = ['stationary', 'tcs', 'tonner_it', 'salaries', 'fuel', 'van_work'];
         $totals = [];
 
         foreach ($categories as $category) {

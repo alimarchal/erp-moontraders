@@ -445,21 +445,14 @@
                                             {{ number_format($expenseCategoryTotals['van_work'] ?? 0, 2) }}
                                         </td>
                                     </tr>
-                                    <tr>
-                                        <td class="text-center px-1 py-1">7</td>
-                                        <td class="px-2 py-1">Salesflo Fee</td>
-                                        <td class="text-right px-2 py-1 font-mono">
-                                            {{ number_format($expenseCategoryTotals['salesflo_fee'] ?? 0, 2) }}
-                                        </td>
-                                    </tr>
                                     <tr class="bg-gray-50 font-extrabold">
-                                        <td class="text-center px-1 py-1 border-t-2 border-black">8</td>
+                                        <td class="text-center px-1 py-1 border-t-2 border-black">7</td>
                                         <td class="px-2 py-1 border-t-2 border-black">Total Expenses</td>
                                         <td class="text-right px-2 py-1 border-t-2 border-black font-mono">
                                             {{ number_format($totalExpensesMonth, 2) }}
                                         </td>
                                     </tr>
-                                    @for ($i = 9; $i <= 12; $i++)
+                                    @for ($i = 8; $i <= 12; $i++)
                                         <tr>
                                             <td class="text-center px-1 py-1">{{ $i }}</td>
                                             <td class="text-center px-2 py-1">-</td>

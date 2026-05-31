@@ -307,12 +307,13 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
     private function getPowderExpiry(?int $supplierId, ?string $date = null): float
     {
         $asOfDate = $date ?? now()->toDateString();
+        $startOfMonth = Carbon::parse($asOfDate)->startOfMonth()->toDateString();
         $asOfDateTime = Carbon::parse($asOfDate)->endOfDay();
 
         $query = DB::table('sales_settlement_amr_powders as p')
             ->join('sales_settlements as ss', 'p.sales_settlement_id', '=', 'ss.id')
             ->where('ss.status', 'posted')
-            ->whereDate('ss.settlement_date', '<=', $asOfDate)
+            ->whereBetween('ss.settlement_date', [$startOfMonth, $asOfDate])
             ->whereNull('ss.deleted_at')
             ->where(function ($q) use ($asOfDateTime) {
                 $q->where('p.is_disposed', false)
@@ -338,12 +339,13 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
     private function getLiquidExpiry(?int $supplierId, ?string $date = null): float
     {
         $asOfDate = $date ?? now()->toDateString();
+        $startOfMonth = Carbon::parse($asOfDate)->startOfMonth()->toDateString();
         $asOfDateTime = Carbon::parse($asOfDate)->endOfDay();
 
         $query = DB::table('sales_settlement_amr_liquids as l')
             ->join('sales_settlements as ss', 'l.sales_settlement_id', '=', 'ss.id')
             ->where('ss.status', 'posted')
-            ->whereDate('ss.settlement_date', '<=', $asOfDate)
+            ->whereBetween('ss.settlement_date', [$startOfMonth, $asOfDate])
             ->whereNull('ss.deleted_at')
             ->where(function ($q) use ($asOfDateTime) {
                 $q->where('l.is_disposed', false)

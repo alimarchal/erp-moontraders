@@ -185,7 +185,7 @@ it('only includes expenses up to selected investment summary date', function () 
     expect($response->viewData('totalExpensesMonth'))->toBe(1000.0);
 });
 
-it('calculates cumulative powder and liquid expiry up to selected date and excludes entries disposed by selected date', function () {
+it('calculates month-to-date powder and liquid expiry up to selected date and excludes entries disposed by selected date', function () {
     $employee = Employee::factory()->create([
         'supplier_id' => $this->supplier->id,
         'designation' => 'Salesman',
@@ -322,8 +322,8 @@ it('calculates cumulative powder and liquid expiry up to selected date and exclu
 
     $response->assertOk();
 
-    expect($response->viewData('powderExpiry'))->toBe(1100.0);
-    expect($response->viewData('liquidExpiry'))->toBe(1600.0);
+    expect($response->viewData('powderExpiry'))->toBe(600.0);
+    expect($response->viewData('liquidExpiry'))->toBe(900.0);
 });
 
 it('uses recalculated last month main investment instead of stale opening balance snapshot value', function () {

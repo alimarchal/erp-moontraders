@@ -33,15 +33,14 @@ it('stores the backup zip on the google disk', function () {
         ->and(collect($files)->first())->toEndWith('.zip');
 })->skip('Skipped: mysqldump not available in CI environment');
 
-it('schedules backup:run --only-db at 06:00 and 23:50', function () {
+it('schedules backup:run --only-db only at 23:40', function () {
     $scheduled = collect(app(Schedule::class)->events())
         ->filter(fn ($e) => str_contains($e->command ?? '', 'backup:run'))
         ->values();
 
-    expect($scheduled)->toHaveCount(2);
+    expect($scheduled)->toHaveCount(1);
 
-    $times = $scheduled->map(fn ($e) => $e->expression)->sort()->values();
+    $times = $scheduled->map(fn ($e) => $e->expression)->values();
 
-    expect($times[0])->toBe('0 6 * * *')
-        ->and($times[1])->toBe('40 23 * * *');
+    expect($times[0])->toBe('40 23 * * *');
 });

@@ -187,7 +187,7 @@
                 @endcanany
 
                 {{-- ─── Tax & Expenses ─── --}}
-                @canany(['tax-list', 'expense-detail-list', 'category-revenue-list', 'cost-center-list', 'journal-entry-list'])
+                @canany(['tax-list', 'expense-detail-list', 'category-revenue-list', 'profit-category-list', 'cost-center-list', 'journal-entry-list'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Tax &amp;
                             Expenses</p>
@@ -242,6 +242,20 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('profit-category-list')
+                                <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('profit-categories.index') }}" label="Profit Categories"
+                                    description="Supplier-wise profit after taxation category setup" :count="\App\Models\ProfitCategory::count()"
+                                    icon-bg="bg-cyan-600">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

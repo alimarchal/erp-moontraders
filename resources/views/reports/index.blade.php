@@ -217,7 +217,7 @@
                 @endcanany
 
                 {{-- ─── Audit & Product Reports ─── --}}
-                @canany(['report-sales-fmr-amr-comparison', 'report-audit-sku-fmr-amr', 'report-audit-percentage-expense', 'report-audit-stock-availability', 'report-sales-shop-list', 'report-audit-expense-detail', 'report-audit-revenue-detail', 'report-audit-supplier-ledger', 'report-sales-scheme-received'])
+                @canany(['report-sales-fmr-amr-comparison', 'report-audit-sku-fmr-amr', 'report-audit-percentage-expense', 'report-audit-stock-availability', 'report-sales-shop-list', 'report-audit-expense-detail', 'report-audit-revenue-detail', 'report-audit-profit-after-category', 'report-audit-supplier-ledger', 'report-sales-scheme-received'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Audit &amp;
                             Product Reports</p>
@@ -314,6 +314,19 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M12 6v12m-3-2.818l.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182s2.9-.879 4.006 0l.415.33M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-audit-profit-after-category')
+                                <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('reports.profit-after-category.index') }}" label="Profit After Category"
+                                    description="Track & manage supplier-wise profit deductions by category" icon-bg="bg-cyan-600">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

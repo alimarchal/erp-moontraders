@@ -309,8 +309,11 @@
                 $postedRevenueTotal = (float) ($postedRevenueTotal ?? 0);
                 $postedRevenueRows = $postedRevenueRows ?? collect();
                 $grandRevenue = (float) ($grandRevenue ?? 0);
+                $profitCategoryRows = $profitCategoryRows ?? collect();
+                $profitCategoryTotal = (float) ($profitCategoryTotal ?? 0);
                 $totalOperatingExpenses = (float) ($distributionExpensesTotal + $otherOperatingExpensesTotal);
                 $profitBeforeTaxation = $grandRevenue - $totalOperatingExpenses;
+                $profitAfterTaxation = $profitBeforeTaxation - $profitCategoryTotal;
             @endphp
 
             <div class="print:break-inside-avoid w-1/2">
@@ -470,15 +473,17 @@
                             <td colspan="3">Profit before Taxation</td>
                             <td class="text-right">{{ number_format($profitBeforeTaxation, 2) }}</td>
                         </tr>
-                        <tr>
-                            <td colspan="3">Taxation</td>
-                            <td class="text-right">—</td>
-                        </tr>
+                        @foreach($profitCategoryRows as $profitCategoryRow)
+                            <tr>
+                                <td colspan="3">{{ $profitCategoryRow['category_name'] }}</td>
+                                <td class="text-right">{{ number_format($profitCategoryRow['amount'], 2) }}</td>
+                            </tr>
+                        @endforeach
                     </tbody>
                     <tfoot>
                         <tr class="bg-slate-200 font-bold text-xl">
                             <td colspan="3">Profit after Taxation</td>
-                            <td class="text-right">{{ number_format($profitBeforeTaxation, 2) }}</td>
+                            <td class="text-right">{{ number_format($profitAfterTaxation, 2) }}</td>
                         </tr>
                     </tfoot>
                 </table>

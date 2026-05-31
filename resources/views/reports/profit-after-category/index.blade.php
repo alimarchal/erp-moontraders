@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Revenue Detail Report" :createRoute="null" createLabel="" :showSearch="true"
+        <x-page-header title="Profit After Category Report" :createRoute="null" createLabel="" :showSearch="true"
             :showRefresh="true" backRoute="reports.index" />
     </x-slot>
 
@@ -157,7 +157,7 @@
         </div>
     @endif
 
-    <x-filter-section :action="route('reports.revenue-detail.index')" class="no-print">
+    <x-filter-section :action="route('reports.profit-after-category.index')" class="no-print">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
                 <x-label for="supplier_id" value="Supplier" />
@@ -189,12 +189,12 @@
             </div>
 
             <div>
-                <x-label for="revenue_category_id" value="Category" />
-                <select id="revenue_category_id" name="revenue_category_id"
+                <x-label for="profit_category_id" value="Category" />
+                <select id="profit_category_id" name="profit_category_id"
                     class="select2 border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All Categories</option>
                     @foreach ($categoryOptions as $categoryOption)
-                        <option value="{{ $categoryOption->id }}" {{ (string) $revenueCategoryId === (string) $categoryOption->id ? 'selected' : '' }}>
+                        <option value="{{ $categoryOption->id }}" {{ (string) $profitCategoryId === (string) $categoryOption->id ? 'selected' : '' }}>
                             {{ $categoryOption->name }}
                         </option>
                     @endforeach
@@ -232,7 +232,7 @@
                 <div class="text-2xl font-bold text-blue-700">{{ number_format($openingBalance, 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-emerald-500">
-                <div class="text-sm text-gray-500">Period Revenue</div>
+                <div class="text-sm text-gray-500">Period Amount</div>
                 <div class="text-2xl font-bold text-emerald-700">{{ number_format($totalAmount, 2) }}</div>
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 {{ $closingBalance >= 0 ? 'border-emerald-500' : 'border-red-500' }}">
@@ -242,7 +242,7 @@
             </div>
             <div class="bg-white rounded-lg shadow p-4 border-l-4 border-gray-500">
                 <div class="text-sm text-gray-500">Total Entries</div>
-                <div class="text-2xl font-bold text-gray-700">{{ $revenues->total() }}</div>
+                <div class="text-2xl font-bold text-gray-700">{{ $profitCategoryDetails->total() }}</div>
             </div>
         </div>
     </div>
@@ -253,7 +253,7 @@
                 <div class="mb-4">
                     <p class="text-center font-extrabold mb-2">
                         Moon Traders<br>
-                        Revenue Detail Report<br>
+                        Profit After Category Report<br>
                         @if ($dateFrom && $dateTo)
                             <span class="text-sm font-semibold">
                                 Period: {{ \Carbon\Carbon::parse($dateFrom)->format('d-M-Y') }} to
@@ -267,8 +267,8 @@
                         @if ($selectedSupplier)
                             <br><span class="text-sm font-semibold">{{ $selectedSupplier->supplier_name }}</span>
                         @endif
-                        @if ($revenueCategoryId)
-                            <br><span class="text-sm font-semibold">Category: {{ $categoryOptions->firstWhere('id', (int) $revenueCategoryId)?->name }}</span>
+                        @if ($profitCategoryId)
+                            <br><span class="text-sm font-semibold">Category: {{ $categoryOptions->firstWhere('id', (int) $profitCategoryId)?->name }}</span>
                         @endif
                     </p>
                     <span class="print-only print-info text-xs text-center block mt-1">
@@ -276,7 +276,7 @@
                     </span>
                 </div>
 
-                <div x-data="revenueReport()">
+                <div x-data="profitAfterCategoryReport()">
                     <table class="report-table">
                         <thead>
                             <tr>
@@ -312,26 +312,26 @@
                                 </tr>
                             @endif
 
-                            @forelse ($revenues as $index => $revenue)
+                            @forelse ($profitCategoryDetails as $index => $profitCategoryDetail)
                                 @php
-                                    $amount = (float) $revenue->amount;
+                                    $amount = (float) $profitCategoryDetail->amount;
                                     $runningBalance += $amount;
                                 @endphp
                                 <tr class="{{ $loop->even ? 'bg-gray-50' : '' }}">
-                                    <td class="text-center" style="vertical-align: middle;">{{ $revenues->firstItem() + $index }}</td>
-                                    <td class="text-center" style="vertical-align: middle;">{{ $revenue->transaction_date->format('d.m.Y') }}</td>
+                                    <td class="text-center" style="vertical-align: middle;">{{ $profitCategoryDetails->firstItem() + $index }}</td>
+                                    <td class="text-center" style="vertical-align: middle;">{{ $profitCategoryDetail->transaction_date->format('d.m.Y') }}</td>
                                     <td class="text-center text-xs" style="vertical-align: middle;">
-                                        {{ $revenue->supplier?->short_name ?? $revenue->supplier?->supplier_name ?? '-' }}
+                                        {{ $profitCategoryDetail->supplier?->short_name ?? $profitCategoryDetail->supplier?->supplier_name ?? '-' }}
                                     </td>
                                     <td class="text-center" style="vertical-align: middle;">
                                         <span class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">
-                                            {{ $revenue->revenueCategory?->name ?? '-' }}
+                                            {{ $profitCategoryDetail->profitCategory?->name ?? '-' }}
                                         </span>
                                     </td>
                                     <td class="text-xs text-center" style="vertical-align: middle;">
-                                        {{ $revenue->description ?? '-' }}
-                                        @if ($revenue->notes)
-                                            <br><span class="text-gray-500">{{ $revenue->notes }}</span>
+                                        {{ $profitCategoryDetail->description ?? '-' }}
+                                        @if ($profitCategoryDetail->notes)
+                                            <br><span class="text-gray-500">{{ $profitCategoryDetail->notes }}</span>
                                         @endif
                                     </td>
                                     <td class="amount-cell text-emerald-700" style="vertical-align: middle;">
@@ -340,13 +340,13 @@
                                     <td class="amount-cell font-bold" style="vertical-align: middle;">
                                         {{ number_format($runningBalance, 2) }}
                                     </td>
-                                    @canany(['revenue-detail-edit', 'revenue-detail-post', 'revenue-detail-delete'])
+                                    @canany(['profit-after-category-edit', 'profit-after-category-post', 'profit-after-category-delete'])
                                         <td class="text-center no-print" style="vertical-align: middle;">
-                                            @if (! $revenue->isPosted())
+                                            @if (! $profitCategoryDetail->isPosted())
                                                 <div class="flex justify-center gap-1">
-                                                    @can('revenue-detail-post')
+                                                    @can('profit-after-category-post')
                                                         <button type="button" x-data
-                                                            x-on:click="$dispatch('open-revenue-post-modal', { url: '{{ route('reports.revenue-detail.post', $revenue) }}' })"
+                                                            x-on:click="$dispatch('open-profit-after-category-post-modal', { url: '{{ route('reports.profit-after-category.post', $profitCategoryDetail) }}' })"
                                                             class="inline-flex items-center px-1.5 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
                                                             title="Post">
                                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,16 +354,16 @@
                                                             </svg>
                                                         </button>
                                                     @endcan
-                                                    @can('revenue-detail-edit')
+                                                    @can('profit-after-category-edit')
                                                         <button type="button"
                                                             @click="openEditModal({{ json_encode([
-                                                                'id' => $revenue->id,
-                                                                'supplier_id' => $revenue->supplier_id,
-                                                                'revenue_category_id' => $revenue->revenue_category_id,
-                                                                'transaction_date' => $revenue->transaction_date->format('Y-m-d'),
-                                                                'amount' => (float) $revenue->amount,
-                                                                'description' => $revenue->description,
-                                                                'notes' => $revenue->notes,
+                                                                'id' => $profitCategoryDetail->id,
+                                                                'supplier_id' => $profitCategoryDetail->supplier_id,
+                                                                'profit_category_id' => $profitCategoryDetail->profit_category_id,
+                                                                'transaction_date' => $profitCategoryDetail->transaction_date->format('Y-m-d'),
+                                                                'amount' => (float) $profitCategoryDetail->amount,
+                                                                'description' => $profitCategoryDetail->description,
+                                                                'notes' => $profitCategoryDetail->notes,
                                                             ]) }})"
                                                             class="inline-flex items-center px-1.5 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
                                                             title="Edit">
@@ -373,9 +373,9 @@
                                                             </svg>
                                                         </button>
                                                     @endcan
-                                                    @can('revenue-detail-delete')
-                                                        <form action="{{ route('reports.revenue-detail.destroy', $revenue) }}" method="POST"
-                                                            onsubmit="return confirm('Are you sure you want to delete this revenue?');">
+                                                    @can('profit-after-category-delete')
+                                                        <form action="{{ route('reports.profit-after-category.destroy', $profitCategoryDetail) }}" method="POST"
+                                                            onsubmit="return confirm('Are you sure you want to delete this profit category entry?');">
                                                             @csrf
                                                             @method('DELETE')
                                                             <button type="submit"
@@ -401,14 +401,14 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-4 text-gray-500">No revenue entries found for the selected filters.</td>
+                                    <td colspan="8" class="text-center py-4 text-gray-500">No profit category entries found for the selected filters.</td>
                                 </tr>
                             @endforelse
 
-                            @can('revenue-detail-create')
+                            @can('profit-after-category-create')
                                 <tr x-show="showAddRow" x-cloak class="bg-indigo-50 no-print">
                                     <td colspan="8" class="p-0">
-                                        <form action="{{ route('reports.revenue-detail.store') }}" method="POST" id="addRevenueForm">
+                                        <form action="{{ route('reports.profit-after-category.store') }}" method="POST" id="addProfitAfterCategoryForm">
                                             @csrf
                                             <table class="w-full border-collapse">
                                                 <tr>
@@ -433,10 +433,10 @@
                                                         </select>
                                                     </td>
                                                     <td style="width: 110px; padding: 4px;">
-                                                        <select name="revenue_category_id" id="add_revenue_category_id" class="select2-inline inline-select" required>
+                                                        <select name="profit_category_id" id="add_profit_category_id" class="select2-inline inline-select" required>
                                                             <option value="">Category</option>
                                                             @foreach ($categoryOptions as $categoryOption)
-                                                                <option value="{{ $categoryOption->id }}" {{ old('revenue_category_id') == $categoryOption->id ? 'selected' : '' }}>
+                                                                <option value="{{ $categoryOption->id }}" {{ old('profit_category_id') == $categoryOption->id ? 'selected' : '' }}>
                                                                     {{ $categoryOption->name }}
                                                                 </option>
                                                             @endforeach
@@ -472,7 +472,7 @@
                         <tfoot class="bg-gray-100 font-extrabold">
                             <tr>
                                 <td colspan="5" class="text-center px-2 py-1">
-                                    Period Totals ({{ $revenues->total() }} entries)
+                                    Period Totals ({{ $profitCategoryDetails->total() }} entries)
                                 </td>
                                 <td class="amount-cell px-2 py-1 text-emerald-700">{{ number_format($totalAmount, 2) }}</td>
                                 <td class="amount-cell px-2 py-1">{{ number_format($closingBalance, 2) }}</td>
@@ -481,7 +481,7 @@
                         </tfoot>
                     </table>
 
-                    @can('revenue-detail-create')
+                    @can('profit-after-category-create')
                         <div class="mt-3 no-print">
                             <button type="button" @click="toggleAddRow()"
                                 class="inline-flex items-center px-3 py-1.5 text-white text-sm rounded-md transition-colors"
@@ -500,7 +500,7 @@
                     <div class="mt-4 flex justify-end">
                         <div class="border border-black rounded-lg overflow-hidden" style="min-width: 280px;">
                             <div class="bg-gray-800 text-white text-center py-1.5 font-bold text-sm">
-                                Revenue Summary - {{ $selectedSupplier->short_name ?? $selectedSupplier->supplier_name }}
+                                Profit After Category Summary - {{ $selectedSupplier->short_name ?? $selectedSupplier->supplier_name }}
                             </div>
                             <table class="w-full text-sm">
                                 @foreach ($categoryOptions as $categoryOption)
@@ -525,17 +525,17 @@
                     </div>
                 @endif
 
-                @if ($revenues->hasPages())
+                @if ($profitCategoryDetails->hasPages())
                     <div class="mt-4 no-print">
-                        {{ $revenues->links() }}
+                        {{ $profitCategoryDetails->links() }}
                     </div>
                 @endif
             </div>
         </div>
     </div>
 
-    @can('revenue-detail-edit')
-        <div x-data="revenueEditModal()" x-show="open" x-cloak
+    @can('profit-after-category-edit')
+        <div x-data="profitAfterCategoryEditModal()" x-show="open" x-cloak
             class="fixed inset-0 z-50 overflow-y-auto no-print" style="display: none;"
             aria-labelledby="edit-modal-title" role="dialog" aria-modal="true">
             <div x-show="open"
@@ -560,7 +560,7 @@
                     class="relative transform overflow-hidden rounded-xl bg-white text-left shadow-2xl transition-all sm:w-full sm:max-w-2xl"
                     @click.outside="close()">
                     <div class="bg-gray-800 text-white px-6 py-3 rounded-t-xl flex justify-between items-center">
-                        <h3 class="text-lg font-bold" id="edit-modal-title">Edit Revenue Entry</h3>
+                        <h3 class="text-lg font-bold" id="edit-modal-title">Edit Profit Category Entry</h3>
                         <button @click="close()" class="text-gray-300 hover:text-white">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -586,7 +586,7 @@
                             </div>
                             <div>
                                 <x-label value="Category" />
-                                <select name="revenue_category_id" x-model="entry.revenue_category_id"
+                                <select name="profit_category_id" x-model="entry.profit_category_id"
                                     class="mt-1 block w-full border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm"
                                     required>
                                     @foreach ($categoryOptions as $categoryOption)
@@ -635,20 +635,20 @@
         </div>
     @endcan
 
-    @can('revenue-detail-post')
-        <x-alpine-confirmation-modal eventName="open-revenue-post-modal" title="Post Revenue"
+    @can('profit-after-category-post')
+        <x-alpine-confirmation-modal eventName="open-profit-after-category-post-modal" title="Post Profit Category Entry"
             confirmButtonText="Post" confirmButtonClass="bg-green-600 hover:bg-green-700"
             iconBgClass="bg-green-100" iconColorClass="text-green-600"
             iconPath="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z">
             <p class="text-sm text-gray-600">
-                Are you sure you want to post this revenue? This will mark the entry as posted.
+                Are you sure you want to post this profit category entry? This will mark the entry as posted.
             </p>
         </x-alpine-confirmation-modal>
     @endcan
 
     @push('scripts')
         <script>
-            function revenueReport() {
+            function profitAfterCategoryReport() {
                 return {
                     showAddRow: false,
                     toggleAddRow() {
@@ -657,28 +657,28 @@
                             this.$nextTick(() => {
                                 if (typeof $ !== 'undefined' && $.fn.select2) {
                                     $('#add_supplier_id').select2({ width: '100%', dropdownAutoWidth: true, minimumResultsForSearch: 5 });
-                                    $('#add_revenue_category_id').select2({ width: '100%', dropdownAutoWidth: true, minimumResultsForSearch: 5 });
+                                    $('#add_profit_category_id').select2({ width: '100%', dropdownAutoWidth: true, minimumResultsForSearch: 5 });
                                 }
                             });
                         }
                     },
                     openEditModal(data) {
-                        window.dispatchEvent(new CustomEvent('open-revenue-edit-modal', {
+                        window.dispatchEvent(new CustomEvent('open-profit-after-category-edit-modal', {
                             detail: data
                         }));
                     }
                 }
             }
 
-            function revenueEditModal() {
+            function profitAfterCategoryEditModal() {
                 return {
                     open: false,
                     entry: {},
                     formAction: '',
                     init() {
-                        window.addEventListener('open-revenue-edit-modal', (e) => {
+                        window.addEventListener('open-profit-after-category-edit-modal', (e) => {
                             this.entry = e.detail;
-                            this.formAction = '{{ url("reports/revenue-detail") }}/' + this.entry.id;
+                            this.formAction = '{{ url("reports/profit-after-category") }}/' + this.entry.id;
                             this.open = true;
                         });
                     },

@@ -1,6 +1,6 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Create Revenue Category" backRoute="category-revenue.index" />
+        <x-page-header title="Create Profit Category" backRoute="profit-categories.index" />
     </x-slot>
 
     <div class="py-6">
@@ -9,11 +9,11 @@
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
                 <div class="p-6">
                     <x-validation-errors class="mb-4 mt-4" />
-                    <form action="{{ route('category-revenue.store') }}" method="POST">
+                    <form action="{{ route('profit-categories.store') }}" method="POST">
                         @csrf
-                        @include('settings.category-revenue.form', ['category' => null])
+                        @include('settings.profit-categories.form', ['category' => null])
                         <div class="flex items-center justify-end mt-4">
-                            <x-button>Create Revenue Category</x-button>
+                            <x-button>Create Profit Category</x-button>
                         </div>
                     </form>
                 </div>

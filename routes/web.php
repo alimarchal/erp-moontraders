@@ -38,6 +38,7 @@ use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductRecallController;
 use App\Http\Controllers\ProductTaxMappingController;
+use App\Http\Controllers\ProfitCategoryController;
 use App\Http\Controllers\PromotionalCampaignController;
 use App\Http\Controllers\Reports\AccountBalancesController;
 use App\Http\Controllers\Reports\AdvanceTaxReportController;
@@ -63,6 +64,7 @@ use App\Http\Controllers\Reports\LedgerRegisterController;
 use App\Http\Controllers\Reports\OpeningCustomerBalanceReportController;
 use App\Http\Controllers\Reports\PercentageExpenseReportController;
 use App\Http\Controllers\Reports\ProductPriceChangeLogController;
+use App\Http\Controllers\Reports\ProfitAfterCategoryReportController;
 use App\Http\Controllers\Reports\RevenueDetailReportController;
 use App\Http\Controllers\Reports\RoiReportController;
 use App\Http\Controllers\Reports\SalesmanStockRegisterController;
@@ -648,6 +650,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::resource('tax-transactions', TaxTransactionController::class)->only(['index', 'show']);
         Route::resource('category-revenue', CategoryRevenueController::class)
             ->parameters(['category-revenue' => 'categoryRevenue']);
+        Route::resource('profit-categories', ProfitCategoryController::class)
+            ->parameters(['profit-categories' => 'profitCategory']);
 
         /* Organization & Logistics */
         Route::resource('companies', CompanyController::class);
@@ -744,6 +748,15 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
             Route::put('/{revenueDetail}', [RevenueDetailReportController::class, 'update'])->name('update');
             Route::post('/{revenueDetail}/post', [RevenueDetailReportController::class, 'post'])->name('post');
             Route::delete('/{revenueDetail}', [RevenueDetailReportController::class, 'destroy'])->name('destroy');
+        });
+
+        /* Profit After Category */
+        Route::prefix('profit-after-category')->name('profit-after-category.')->group(function () {
+            Route::get('/', [ProfitAfterCategoryReportController::class, 'index'])->name('index');
+            Route::post('/', [ProfitAfterCategoryReportController::class, 'store'])->name('store');
+            Route::put('/{profitCategoryDetail}', [ProfitAfterCategoryReportController::class, 'update'])->name('update');
+            Route::post('/{profitCategoryDetail}/post', [ProfitAfterCategoryReportController::class, 'post'])->name('post');
+            Route::delete('/{profitCategoryDetail}', [ProfitAfterCategoryReportController::class, 'destroy'])->name('destroy');
         });
 
         /* Scheme Received */

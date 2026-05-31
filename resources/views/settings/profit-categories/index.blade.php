@@ -1,10 +1,10 @@
 <x-app-layout>
     <x-slot name="header">
-        <x-page-header title="Category Revenue" :createRoute="route('category-revenue.create')" createLabel="Add Revenue Category"
-            createPermission="category-revenue-create" :showSearch="true" backRoute="settings.index" />
+        <x-page-header title="Profit Categories" :createRoute="route('profit-categories.create')" createLabel="Add Profit Category"
+            createPermission="profit-category-create" :showSearch="true" backRoute="settings.index" />
     </x-slot>
 
-    <x-filter-section :action="route('category-revenue.index')">
+    <x-filter-section :action="route('profit-categories.index')">
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <x-label for="supplier_id" value="Supplier" />
@@ -40,8 +40,8 @@
         ['label' => 'Supplier', 'align' => 'text-left'],
         ['label' => 'Status', 'align' => 'text-center'],
         ['label' => 'Actions', 'align' => 'text-center'],
-    ]" :items="$categories" emptyMessage="No revenue categories found." :emptyRoute="route('category-revenue.create')"
-        emptyLinkText="Add Revenue Category">
+    ]" :items="$categories" emptyMessage="No profit categories found." :emptyRoute="route('profit-categories.create')"
+        emptyLinkText="Add Profit Category">
         @foreach ($categories as $index => $category)
             <tr class="border-b border-gray-200 text-sm hover:bg-gray-50 transition-colors duration-150">
                 <td class="py-1 px-2 text-center">{{ $categories->firstItem() + $index }}</td>
@@ -58,8 +58,8 @@
                 </td>
                 <td class="py-1 px-2 text-center">
                     <div class="flex justify-center space-x-2">
-                        @can('category-revenue-edit')
-                            <a href="{{ route('category-revenue.edit', $category) }}"
+                        @can('profit-category-edit')
+                            <a href="{{ route('profit-categories.edit', $category) }}"
                                 class="inline-flex items-center justify-center w-8 h-8 text-green-600 hover:text-green-800 hover:bg-green-100 rounded-md transition-colors duration-150"
                                 title="Edit">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24"
@@ -69,9 +69,9 @@
                                 </svg>
                             </a>
                         @endcan
-                        @can('category-revenue-delete')
-                            <form action="{{ route('category-revenue.destroy', $category) }}" method="POST"
-                                onsubmit="return confirm('Are you sure you want to delete this revenue category?');" class="inline">
+                        @can('profit-category-delete')
+                            <form action="{{ route('profit-categories.destroy', $category) }}" method="POST"
+                                onsubmit="return confirm('Are you sure you want to delete this profit category?');" class="inline">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit"

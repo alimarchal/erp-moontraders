@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Models\ExpenseDetail;
 use App\Models\LedgerRegister;
 use App\Models\Product;
+use App\Models\ProfitCategoryDetail;
 use App\Models\RevenueDetail;
 use App\Models\SchemeReceived;
 use App\Models\Supplier;
@@ -301,6 +302,29 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
         }
         $distributionExpensesTotal = $distributionExpenses->sum('amount');
 
+        $profitCategoryRows = ProfitCategoryDetail::query()
+            ->join('profit_categories', 'profit_category_details.profit_category_id', '=', 'profit_categories.id')
+            ->where('profit_category_details.supplier_id', $supplierId)
+            ->whereNotNull('profit_category_details.posted_at')
+            ->whereNull('profit_category_details.deleted_at')
+            ->whereNull('profit_categories.deleted_at')
+            ->whereBetween('profit_category_details.transaction_date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
+            ->selectRaw('
+                profit_categories.id as category_id,
+                profit_categories.name as category_name,
+                SUM(profit_category_details.amount) as total_amount
+            ')
+            ->groupBy('profit_categories.id', 'profit_categories.name')
+            ->havingRaw('SUM(profit_category_details.amount) > 0')
+            ->orderBy('profit_categories.name')
+            ->get()
+            ->map(fn ($row) => [
+                'category_id' => (int) $row->category_id,
+                'category_name' => $row->category_name,
+                'amount' => (float) $row->total_amount,
+            ]);
+        $profitCategoryTotal = (float) $profitCategoryRows->sum('amount');
+
         // ── Filter options ──
         $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']);
         $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name', 'employee_code as code']);
@@ -360,6 +384,8 @@ class SummaryRoiReportController extends Controller implements HasMiddleware
             'expiryClaimed' => $expiryClaimed,
             'postedRevenueRows' => $postedRevenueRows,
             'postedRevenueTotal' => $postedRevenueTotal,
+            'profitCategoryRows' => $profitCategoryRows,
+            'profitCategoryTotal' => $profitCategoryTotal,
             'grossInflow' => $grossInflow,
             'grandRevenue' => $grandRevenue,
         ]);

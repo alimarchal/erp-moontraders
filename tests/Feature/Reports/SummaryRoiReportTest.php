@@ -1,6 +1,8 @@
 <?php
 
 use App\Models\ChartOfAccount;
+use App\Models\ProfitCategory;
+use App\Models\ProfitCategoryDetail;
 use App\Models\RevenueCategory;
 use App\Models\RevenueDetail;
 use App\Models\SalesSettlement;
@@ -200,4 +202,95 @@ test('summary roi report includes posted revenue categories after rate increase 
     expect($response['postedRevenueRows'])->toHaveCount(1);
     expect($response['postedRevenueRows']->first()['category_name'])->toBe('Display Income');
     expect(substr_count($response->getContent(), '1,500.00'))->toBeGreaterThanOrEqual(2);
+});
+
+test('summary roi report deducts posted profit category rows after profit before taxation', function () {
+    $supplier = Supplier::factory()->create([
+        'supplier_name' => 'Nestle Pakistan',
+        'short_name' => 'Nestle',
+        'disabled' => false,
+    ]);
+    $otherSupplier = Supplier::factory()->create([
+        'supplier_name' => 'Other Supplier',
+        'short_name' => 'Other',
+        'disabled' => false,
+    ]);
+
+    $taxation = ProfitCategory::factory()->create([
+        'supplier_id' => $supplier->id,
+        'name' => 'Taxation',
+        'slug' => 'taxation',
+    ]);
+    $withholdingTax = ProfitCategory::factory()->create([
+        'supplier_id' => $supplier->id,
+        'name' => 'With Holding Tax H25',
+        'slug' => 'with-holding-tax-h25',
+    ]);
+    $otherSupplierCategory = ProfitCategory::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'name' => 'Other Supplier Tax',
+        'slug' => 'other-supplier-tax',
+    ]);
+
+    ProfitCategoryDetail::factory()->create([
+        'supplier_id' => $supplier->id,
+        'profit_category_id' => $taxation->id,
+        'transaction_date' => '2026-05-10',
+        'amount' => 1000,
+        'posted_at' => '2026-05-10 10:00:00',
+        'posted_by' => $this->user->id,
+    ]);
+    ProfitCategoryDetail::factory()->create([
+        'supplier_id' => $supplier->id,
+        'profit_category_id' => $withholdingTax->id,
+        'transaction_date' => '2026-05-11',
+        'amount' => 500,
+        'posted_at' => '2026-05-11 10:00:00',
+        'posted_by' => $this->user->id,
+    ]);
+    ProfitCategoryDetail::factory()->create([
+        'supplier_id' => $supplier->id,
+        'profit_category_id' => $taxation->id,
+        'transaction_date' => '2026-05-12',
+        'amount' => 700,
+        'posted_at' => null,
+    ]);
+    ProfitCategoryDetail::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'profit_category_id' => $otherSupplierCategory->id,
+        'transaction_date' => '2026-05-12',
+        'amount' => 900,
+        'posted_at' => '2026-05-12 10:00:00',
+    ]);
+    ProfitCategoryDetail::factory()->create([
+        'supplier_id' => $supplier->id,
+        'profit_category_id' => $taxation->id,
+        'transaction_date' => '2026-06-01',
+        'amount' => 300,
+        'posted_at' => '2026-06-01 10:00:00',
+    ]);
+
+    $response = $this->actingAs($this->user)
+        ->get(route('reports.summary-roi.index', [
+            'filter' => [
+                'supplier_id' => $supplier->id,
+                'start_date' => '2026-05-01',
+                'end_date' => '2026-05-31',
+                'status' => 'posted',
+            ],
+        ]));
+
+    $response->assertSuccessful()
+        ->assertSee('Profit before Taxation')
+        ->assertSee('Taxation')
+        ->assertSee('With Holding Tax H25')
+        ->assertSee('1,000.00')
+        ->assertSee('500.00')
+        ->assertSee('Profit after Taxation')
+        ->assertDontSee('Other Supplier Tax')
+        ->assertDontSee('900.00');
+
+    expect($response['profitCategoryRows'])->toHaveCount(2);
+    expect($response['profitCategoryTotal'])->toBe(1500.0);
+    expect($response->getContent())->toContain('>-1,500.00<');
 });

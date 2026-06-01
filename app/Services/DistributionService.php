@@ -695,21 +695,21 @@ class DistributionService
      */
     private function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
     {
-        // Calculate totals from stock_valuation_layers (source of truth)
-        // Use stored total_value column (= grni.total_cost at receipt, proportionally reduced on issue)
-        // to avoid decimal multiplication drift vs the GL.
+        // Calculate remaining stock value from the remaining quantity and unit cost.
+        // stock_valuation_layers.total_value can represent the original receipt
+        // total after GRN correction, so it must not be used for current stock.
         $layerData = StockValuationLayer::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
             ->where('quantity_remaining', '>', 0)
             ->selectRaw('
                 COALESCE(SUM(quantity_remaining), 0) as total_qty,
-                COALESCE(SUM(total_value), 0) as total_value
+                COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value
             ')
             ->first();
 
         $totalQty = (float) ($layerData->total_qty ?? 0);
         $totalValue = (float) ($layerData->total_value ?? 0);
-        $avgCost = $totalQty > 0 ? $totalValue / $totalQty : 0;
+        $avgCost = $totalQty > 0 ? round($totalValue / $totalQty, 6) : 0;
 
         // Count batches from current_stock_by_batch
         $totalBatches = CurrentStockByBatch::where('product_id', $productId)

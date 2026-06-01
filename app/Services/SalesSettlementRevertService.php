@@ -370,13 +370,13 @@ class SalesSettlementRevertService
             ->where('quantity_remaining', '>', 0)
             ->selectRaw('
                 COALESCE(SUM(quantity_remaining), 0) as total_qty,
-                COALESCE(SUM(total_value), 0) as total_value
+                COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value
             ')
             ->first();
 
         $totalQty = (float) ($layerData->total_qty ?? 0);
         $totalValue = (float) ($layerData->total_value ?? 0);
-        $avgCost = $totalQty > 0 ? $totalValue / $totalQty : 0;
+        $avgCost = $totalQty > 0 ? round($totalValue / $totalQty, 6) : 0;
 
         $totalBatches = CurrentStockByBatch::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)

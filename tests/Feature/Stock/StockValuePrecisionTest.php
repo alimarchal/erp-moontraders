@@ -8,15 +8,21 @@ use App\Models\Currency;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\GoodsReceiptNote;
+use App\Models\GoodsReceiptNoteItem;
 use App\Models\JournalEntryDetail;
 use App\Models\Product;
+use App\Models\StockBatch;
+use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
 use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\DistributionService;
 use App\Services\InventoryService;
+use App\Services\SalesSettlementRevertService;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Spatie\Permission\Models\Permission;
@@ -105,6 +111,115 @@ function makeOpeningStockFile(array $rows): UploadedFile
     (new Xlsx($spreadsheet))->save($tmp);
 
     return new UploadedFile($tmp, 'stock.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
+}
+
+function invokeStockSync(object $service, int $productId, int $warehouseId): void
+{
+    $method = new ReflectionMethod($service, 'syncCurrentStockFromValuationLayers');
+    $method->setAccessible(true);
+    $method->invoke($service, $productId, $warehouseId);
+}
+
+function createEditedGrnDriftStock(object $testCase, float $quantity = 10.0, float $unitCost = 100.0, float $originalReceiptTotal = 1200.0): void
+{
+    $stockBatch = StockBatch::factory()->create([
+        'product_id' => $testCase->product->id,
+        'supplier_id' => $testCase->supplier->id,
+        'unit_cost' => $unitCost,
+        'selling_price' => 125.0,
+    ]);
+
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $testCase->supplier->id,
+        'warehouse_id' => $testCase->warehouse->id,
+        'receipt_date' => now()->toDateString(),
+        'status' => 'posted',
+        'received_by' => $testCase->user->id,
+        'total_quantity' => $quantity,
+        'total_amount' => $originalReceiptTotal,
+        'grand_total' => $originalReceiptTotal,
+    ]);
+
+    $grnItem = GoodsReceiptNoteItem::create([
+        'grn_id' => $grn->id,
+        'line_no' => 1,
+        'product_id' => $testCase->product->id,
+        'stock_uom_id' => 24,
+        'purchase_uom_id' => 24,
+        'qty_in_purchase_uom' => $quantity,
+        'uom_conversion_factor' => 1,
+        'qty_in_stock_uom' => $quantity,
+        'unit_price_per_case' => $unitCost,
+        'quantity_ordered' => $quantity,
+        'quantity_received' => $quantity,
+        'quantity_accepted' => $quantity,
+        'quantity_rejected' => 0,
+        'unit_cost' => $unitCost,
+        'selling_price' => 125.0,
+        'total_cost' => $originalReceiptTotal,
+        'quality_status' => 'approved',
+        'priority_order' => 99,
+    ]);
+
+    $stockMovement = StockMovement::create([
+        'movement_type' => 'grn',
+        'reference_type' => GoodsReceiptNote::class,
+        'reference_id' => $grn->id,
+        'movement_date' => now()->toDateString(),
+        'product_id' => $testCase->product->id,
+        'stock_batch_id' => $stockBatch->id,
+        'warehouse_id' => $testCase->warehouse->id,
+        'quantity' => $quantity,
+        'uom_id' => 24,
+        'unit_cost' => $unitCost,
+        'total_value' => $originalReceiptTotal,
+        'created_by' => $testCase->user->id,
+    ]);
+
+    StockValuationLayer::create([
+        'product_id' => $testCase->product->id,
+        'warehouse_id' => $testCase->warehouse->id,
+        'stock_batch_id' => $stockBatch->id,
+        'stock_movement_id' => $stockMovement->id,
+        'grn_item_id' => $grnItem->id,
+        'receipt_date' => now()->toDateString(),
+        'quantity_received' => $quantity,
+        'quantity_remaining' => $quantity,
+        'unit_cost' => $unitCost,
+        'total_value' => $originalReceiptTotal,
+        'value_remaining' => $originalReceiptTotal,
+        'priority_order' => 99,
+        'is_promotional' => false,
+        'is_depleted' => false,
+    ]);
+
+    CurrentStockByBatch::create([
+        'product_id' => $testCase->product->id,
+        'warehouse_id' => $testCase->warehouse->id,
+        'stock_batch_id' => $stockBatch->id,
+        'quantity_on_hand' => $quantity,
+        'unit_cost' => $unitCost,
+        'selling_price' => 125.0,
+        'total_value' => round($quantity * $unitCost, 4),
+        'is_promotional' => false,
+        'priority_order' => 99,
+        'status' => 'active',
+        'last_updated' => now(),
+    ]);
+
+    DB::table('current_stock')->insert([
+        'product_id' => $testCase->product->id,
+        'warehouse_id' => $testCase->warehouse->id,
+        'quantity_on_hand' => $quantity,
+        'quantity_reserved' => 0,
+        'quantity_available' => $quantity,
+        'average_cost' => $originalReceiptTotal / $quantity,
+        'total_value' => $originalReceiptTotal,
+        'total_batches' => 1,
+        'promotional_batches' => 0,
+        'priority_batches' => 0,
+        'last_updated' => now(),
+    ]);
 }
 
 it('stores invoicePrice rounded to 2dp so total_cost matches unit_cost * qty without float drift', function () {
@@ -231,7 +346,7 @@ it('resync command reports zero drift on freshly posted data', function () {
         ->assertSuccessful();
 });
 
-it('current_stock total_value matches the sum of svl total_value after posting opening stock', function () {
+it('current_stock total_value matches remaining valuation layer value after posting opening stock', function () {
     $price = 186.27;
     $qty = 90247;
     $expectedTotal = round($price * $qty, 2);
@@ -250,10 +365,11 @@ it('current_stock total_value matches the sum of svl total_value after posting o
     $grn = GoodsReceiptNote::where('is_opening_stock', true)->first();
     app(InventoryService::class)->postGrnToInventory($grn);
 
-    $svlTotal = StockValuationLayer::where('product_id', $this->product->id)
+    $svlRemainingValue = StockValuationLayer::where('product_id', $this->product->id)
         ->where('warehouse_id', $this->warehouse->id)
         ->where('quantity_remaining', '>', 0)
-        ->sum('total_value');
+        ->selectRaw('COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value')
+        ->value('total_value');
 
     $currentStock = CurrentStock::where('product_id', $this->product->id)
         ->where('warehouse_id', $this->warehouse->id)
@@ -261,5 +377,33 @@ it('current_stock total_value matches the sum of svl total_value after posting o
 
     expect($currentStock)->not->toBeNull();
     expect((float) $currentStock->total_value)->toBe($expectedTotal);
-    expect((float) $currentStock->total_value)->toBe((float) $svlTotal);
+    expect((float) $currentStock->total_value)->toBe((float) $svlRemainingValue);
+});
+
+it('distribution stock sync uses remaining value instead of original receipt total after GRN correction', function () {
+    createEditedGrnDriftStock($this);
+
+    invokeStockSync(app(DistributionService::class), $this->product->id, $this->warehouse->id);
+
+    $currentStock = CurrentStock::where('product_id', $this->product->id)
+        ->where('warehouse_id', $this->warehouse->id)
+        ->first();
+
+    expect((float) $currentStock->quantity_on_hand)->toBe(10.0);
+    expect((float) $currentStock->average_cost)->toBe(100.0);
+    expect((float) $currentStock->total_value)->toBe(1000.0);
+});
+
+it('sales settlement revert stock sync uses remaining value instead of original receipt total after GRN correction', function () {
+    createEditedGrnDriftStock($this);
+
+    invokeStockSync(app(SalesSettlementRevertService::class), $this->product->id, $this->warehouse->id);
+
+    $currentStock = CurrentStock::where('product_id', $this->product->id)
+        ->where('warehouse_id', $this->warehouse->id)
+        ->first();
+
+    expect((float) $currentStock->quantity_on_hand)->toBe(10.0);
+    expect((float) $currentStock->average_cost)->toBe(100.0);
+    expect((float) $currentStock->total_value)->toBe(1000.0);
 });

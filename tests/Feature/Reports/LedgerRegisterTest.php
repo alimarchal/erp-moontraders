@@ -7,12 +7,21 @@ use App\Models\User;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
-    Permission::create(['name' => 'report-audit-ledger-register']);
-    Permission::create(['name' => 'report-audit-ledger-register-manage']);
+    Permission::findOrCreate('report-audit-ledger-register');
+    Permission::findOrCreate('report-audit-ledger-register-manage');
+    Permission::findOrCreate('report-audit-ledger-register-create');
+    Permission::findOrCreate('report-audit-ledger-register-edit');
+    Permission::findOrCreate('report-audit-ledger-register-delete');
+    Permission::findOrCreate('report-audit-ledger-register-set-opening-balance');
 
     $this->user = User::factory()->create();
     $this->user->givePermissionTo('report-audit-ledger-register');
-    $this->user->givePermissionTo('report-audit-ledger-register-manage');
+    $this->user->givePermissionTo([
+        'report-audit-ledger-register-create',
+        'report-audit-ledger-register-edit',
+        'report-audit-ledger-register-delete',
+        'report-audit-ledger-register-set-opening-balance',
+    ]);
 
     $this->supplier = Supplier::factory()->create([
         'supplier_name' => 'Nestlé Pakistan',
@@ -27,11 +36,54 @@ test('ledger register page loads for authenticated user', function () {
         ->assertSuccessful();
 });
 
-test('ledger register loads with default nestle supplier', function () {
+test('ledger register does not load a default supplier for unrestricted users', function () {
     $this->actingAs($this->user)
         ->get(route('reports.ledger-register.index'))
         ->assertSuccessful()
-        ->assertSee('Nestlé Pakistan');
+        ->assertViewHas('selectedSupplier', null);
+});
+
+test('ledger register is scoped to authenticated users supplier', function () {
+    $otherSupplier = Supplier::factory()->create([
+        'supplier_name' => 'Other Supplier',
+        'disabled' => false,
+    ]);
+
+    LedgerRegister::factory()->online()->create([
+        'supplier_id' => $this->supplier->id,
+        'transaction_date' => now()->format('Y-m-d'),
+        'online_amount' => 1000,
+    ]);
+
+    LedgerRegister::factory()->online()->create([
+        'supplier_id' => $otherSupplier->id,
+        'transaction_date' => now()->format('Y-m-d'),
+        'online_amount' => 2000,
+    ]);
+
+    $this->user->forceFill(['supplier_id' => $this->supplier->id])->save();
+
+    $response = $this->actingAs($this->user)
+        ->get(route('reports.ledger-register.index'));
+
+    $response->assertSuccessful()
+        ->assertSee('1,000.00')
+        ->assertDontSee('2,000.00')
+        ->assertViewHas('selectedSupplier', fn ($supplier) => $supplier?->is($this->supplier));
+
+    expect($response->viewData('suppliers'))->toHaveCount(1);
+});
+
+test('ledger register blocks scoped users from filtering another supplier', function () {
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+
+    $this->user->forceFill(['supplier_id' => $this->supplier->id])->save();
+
+    $this->actingAs($this->user)
+        ->get(route('reports.ledger-register.index', [
+            'filter' => ['supplier_id' => $otherSupplier->id],
+        ]))
+        ->assertForbidden();
 });
 
 test('ledger register requires authentication', function () {
@@ -271,7 +323,7 @@ test('store requires authentication', function () {
     ])->assertRedirect(route('login'));
 });
 
-test('store requires manage permission', function () {
+test('store requires create permission', function () {
     $viewOnlyUser = User::factory()->create();
     $viewOnlyUser->givePermissionTo('report-audit-ledger-register');
 
@@ -364,13 +416,28 @@ test('opening balance shows on ledger register page', function () {
         ->assertSee('1,250,000.00'); // 250000 opening + 1000000 entry before Feb
 });
 
-test('opening balance requires manage permission', function () {
+test('opening balance requires set opening balance permission', function () {
     $viewOnlyUser = User::factory()->create();
     $viewOnlyUser->givePermissionTo('report-audit-ledger-register');
 
     $this->actingAs($viewOnlyUser)
         ->put(route('reports.ledger-register.opening-balance.update', $this->supplier), [
             'ledger_opening_balance' => 500000,
+        ])
+        ->assertForbidden();
+});
+
+test('scoped users cannot store entries for another supplier', function () {
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+
+    $this->user->forceFill(['supplier_id' => $this->supplier->id])->save();
+
+    $this->actingAs($this->user)
+        ->post(route('reports.ledger-register.store'), [
+            'supplier_id' => $otherSupplier->id,
+            'transaction_date' => '2026-02-02',
+            'document_type' => DocumentType::Dz->value,
+            'online_amount' => 5000000,
         ])
         ->assertForbidden();
 });

@@ -25,7 +25,10 @@ class LedgerRegisterController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('can:report-audit-ledger-register', only: ['index']),
-            new Middleware('can:report-audit-ledger-register-manage', only: ['store', 'update', 'destroy', 'updateOpeningBalance']),
+            new Middleware('can:report-audit-ledger-register-create', only: ['store']),
+            new Middleware('can:report-audit-ledger-register-edit', only: ['update']),
+            new Middleware('can:report-audit-ledger-register-delete', only: ['destroy']),
+            new Middleware('can:report-audit-ledger-register-set-opening-balance', only: ['updateOpeningBalance']),
             new Middleware('can:report-audit-ledger-register-post', only: ['post']),
         ];
     }
@@ -35,9 +38,14 @@ class LedgerRegisterController extends Controller implements HasMiddleware
         $perPage = $request->input('per_page', 50);
         $perPage = \in_array($perPage, [10, 25, 50, 100, 250, 'all']) ? $perPage : 50;
 
-        // Default supplier: Nestlé
-        $defaultSupplier = Supplier::where('short_name', 'Nestle')->first();
-        $supplierId = $request->input('filter.supplier_id', $defaultSupplier?->id);
+        $userSupplierId = $this->getUserSupplierScope();
+        $requestedSupplierId = $request->input('filter.supplier_id');
+
+        if ($requestedSupplierId && $userSupplierId !== null && (int) $requestedSupplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to filter by this supplier.');
+        }
+
+        $supplierId = $userSupplierId ?? ($requestedSupplierId ? (int) $requestedSupplierId : null);
 
         // Date range defaults: current month
         $dateFrom = $request->input('filter.date_from', now()->startOfMonth()->toDateString());
@@ -172,8 +180,13 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             + (float) ($totals->total_za ?? 0)
             + (float) ($totals->total_claim_adjust ?? 0);
 
-        $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get();
+        $suppliers = Supplier::query()
+            ->where('disabled', false)
+            ->when($userSupplierId !== null, fn ($query) => $query->where('id', $userSupplierId))
+            ->orderBy('supplier_name')
+            ->get();
         $suppliersWithoutOpeningBalance = Supplier::where('disabled', false)
+            ->when($userSupplierId !== null, fn ($query) => $query->where('id', $userSupplierId))
             ->where(function ($q) {
                 $q->where('ledger_opening_balance', 0)->orWhereNull('ledger_opening_balance');
             })
@@ -199,6 +212,8 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
     public function store(StoreLedgerRegisterRequest $request)
     {
+        $this->authorizeSupplierScope((int) $request->validated()['supplier_id']);
+
         try {
             DB::transaction(function () use ($request) {
                 LedgerRegister::create($request->validated());
@@ -215,10 +230,19 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
     public function update(UpdateLedgerRegisterRequest $request, LedgerRegister $ledgerRegister)
     {
+        $this->authorizeSupplierScope((int) $ledgerRegister->supplier_id);
+        $this->authorizeSupplierScope((int) $request->validated()['supplier_id']);
+
         try {
             DB::transaction(function () use ($request, $ledgerRegister) {
+                $originalSupplierId = (int) $ledgerRegister->supplier_id;
+
                 $ledgerRegister->update($request->validated());
-                LedgerRegister::recalculateBalances($ledgerRegister->supplier_id);
+                LedgerRegister::recalculateBalances((int) $ledgerRegister->supplier_id);
+
+                if ($originalSupplierId !== (int) $ledgerRegister->supplier_id) {
+                    LedgerRegister::recalculateBalances($originalSupplierId);
+                }
             });
 
             return redirect()->back()->with('success', 'Ledger entry updated successfully.');
@@ -231,6 +255,8 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
     public function post(LedgerRegister $ledgerRegister)
     {
+        $this->authorizeSupplierScope((int) $ledgerRegister->supplier_id);
+
         if ($ledgerRegister->isPosted()) {
             return redirect()->back()->with('error', 'Entry is already posted.');
         }
@@ -246,6 +272,8 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
     public function destroy(LedgerRegister $ledgerRegister)
     {
+        $this->authorizeSupplierScope((int) $ledgerRegister->supplier_id);
+
         try {
             $supplierId = $ledgerRegister->supplier_id;
 
@@ -264,6 +292,8 @@ class LedgerRegisterController extends Controller implements HasMiddleware
 
     public function updateOpeningBalance(Request $request, Supplier $supplier)
     {
+        $this->authorizeSupplierScope((int) $supplier->id);
+
         $validated = $request->validate([
             'ledger_opening_balance' => ['required', 'numeric'],
             'ledger_opening_balance_date' => ['nullable', 'date'],
@@ -298,6 +328,26 @@ class LedgerRegisterController extends Controller implements HasMiddleware
             Log::error('Failed to set opening balance: '.$e->getMessage());
 
             return redirect()->back()->with('error', 'Failed to set opening balance. Please try again.');
+        }
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($user->is_super_admin === 'Yes' || $user->hasRole('super-admin') || $user->hasRole('admin')) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function authorizeSupplierScope(int $supplierId): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId !== null && $supplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to access this supplier.');
         }
     }
 }

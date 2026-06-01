@@ -29,9 +29,22 @@ class InvestmentOpeningBalanceController extends Controller implements HasMiddle
 
     public function index(Request $request)
     {
-        $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+        $userSupplierId = $this->getUserSupplierScope();
 
-        $balances = QueryBuilder::for(InvestmentOpeningBalance::query()->with('supplier'))
+        if ($request->filled('filter.supplier_id')) {
+            $this->authorizeSupplierScope((int) $request->input('filter.supplier_id'));
+        }
+
+        $suppliers = Supplier::query()
+            ->when($userSupplierId !== null, fn ($query) => $query->where('id', $userSupplierId))
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
+
+        $balances = QueryBuilder::for(
+            InvestmentOpeningBalance::query()
+                ->with('supplier')
+                ->when($userSupplierId !== null, fn ($query) => $query->where('supplier_id', $userSupplierId))
+        )
             ->allowedFilters([
                 AllowedFilter::exact('supplier_id'),
                 AllowedFilter::partial('description'),
@@ -51,7 +64,12 @@ class InvestmentOpeningBalanceController extends Controller implements HasMiddle
 
     public function create()
     {
-        $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+        $userSupplierId = $this->getUserSupplierScope();
+
+        $suppliers = Supplier::query()
+            ->when($userSupplierId !== null, fn ($query) => $query->where('id', $userSupplierId))
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
 
         return view('investment-opening-balances.create', [
             'suppliers' => $suppliers,
@@ -60,6 +78,8 @@ class InvestmentOpeningBalanceController extends Controller implements HasMiddle
 
     public function store(StoreInvestmentOpeningBalanceRequest $request)
     {
+        $this->authorizeSupplierScope((int) $request->validated()['supplier_id']);
+
         DB::beginTransaction();
 
         try {
@@ -102,6 +122,8 @@ class InvestmentOpeningBalanceController extends Controller implements HasMiddle
 
     public function show(InvestmentOpeningBalance $investmentOpeningBalance)
     {
+        $this->authorizeSupplierScope((int) $investmentOpeningBalance->supplier_id);
+
         $investmentOpeningBalance->load('supplier');
 
         return view('investment-opening-balances.show', [
@@ -111,7 +133,14 @@ class InvestmentOpeningBalanceController extends Controller implements HasMiddle
 
     public function edit(InvestmentOpeningBalance $investmentOpeningBalance)
     {
-        $suppliers = Supplier::orderBy('supplier_name')->get(['id', 'supplier_name']);
+        $this->authorizeSupplierScope((int) $investmentOpeningBalance->supplier_id);
+
+        $userSupplierId = $this->getUserSupplierScope();
+
+        $suppliers = Supplier::query()
+            ->when($userSupplierId !== null, fn ($query) => $query->where('id', $userSupplierId))
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
 
         return view('investment-opening-balances.edit', [
             'balance' => $investmentOpeningBalance,
@@ -121,6 +150,9 @@ class InvestmentOpeningBalanceController extends Controller implements HasMiddle
 
     public function update(UpdateInvestmentOpeningBalanceRequest $request, InvestmentOpeningBalance $investmentOpeningBalance)
     {
+        $this->authorizeSupplierScope((int) $investmentOpeningBalance->supplier_id);
+        $this->authorizeSupplierScope((int) $request->validated()['supplier_id']);
+
         DB::beginTransaction();
 
         try {
@@ -173,6 +205,8 @@ class InvestmentOpeningBalanceController extends Controller implements HasMiddle
 
     public function destroy(InvestmentOpeningBalance $investmentOpeningBalance)
     {
+        $this->authorizeSupplierScope((int) $investmentOpeningBalance->supplier_id);
+
         try {
             $investmentOpeningBalance->delete();
 
@@ -187,6 +221,26 @@ class InvestmentOpeningBalanceController extends Controller implements HasMiddle
             ]);
 
             return back()->with('error', 'Failed to delete investment opening balance. Please try again.');
+        }
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($user->is_super_admin === 'Yes' || $user->hasRole('super-admin') || $user->hasRole('admin')) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function authorizeSupplierScope(int $supplierId): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId !== null && $supplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to access this supplier.');
         }
     }
 }

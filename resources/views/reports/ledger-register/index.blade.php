@@ -280,7 +280,7 @@
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
 
         {{-- Opening Balance Setting (only shows when suppliers without opening balance exist) --}}
-        @can('report-audit-ledger-register-manage')
+        @can('report-audit-ledger-register-set-opening-balance')
             @if ($suppliersWithoutOpeningBalance->count() > 0)
                 <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 no-print" x-data="{ showOpeningBalance: false, selectedSupplierId: '' }">
                     <div class="flex items-center justify-between">
@@ -471,7 +471,7 @@
                                     {{ number_format($entry->running_balance, 2) }}
                                 </td>
                                 <td class="text-center no-print" style="vertical-align: middle;">
-                                    @canany(['report-audit-ledger-register-post', 'report-audit-ledger-register-manage'])
+                                    @canany(['report-audit-ledger-register-post', 'report-audit-ledger-register-edit', 'report-audit-ledger-register-delete'])
                                         <div class="flex justify-center gap-1">
                                             @if ($entry->isPosted())
                                                 <span class="inline-flex items-center px-1.5 py-1 text-xs text-green-700"
@@ -491,7 +491,7 @@
                                                         </svg>
                                                     </button>
                                                 @endcan
-                                                @can('report-audit-ledger-register-manage')
+                                                @can('report-audit-ledger-register-edit')
                                                     <button type="button"
                                                         @click="openEditModal({{ json_encode([
                                                             'id' => $entry->id,
@@ -516,6 +516,8 @@
                                                                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                                         </svg>
                                                     </button>
+                                                @endcan
+                                                @can('report-audit-ledger-register-delete')
                                                     <form
                                                         action="{{ route('reports.ledger-register.destroy', $entry) }}"
                                                         method="POST"
@@ -547,7 +549,7 @@
                         @endforelse
 
                         {{-- Inline Add Form Row --}}
-                        @can('report-audit-ledger-register-manage')
+                        @can('report-audit-ledger-register-create')
                             <tr x-show="showAddRow" x-cloak class="bg-indigo-50 no-print">
                                 <td colspan="12" class="p-0">
                                     <form action="{{ route('reports.ledger-register.store') }}" method="POST">
@@ -676,7 +678,7 @@
                 </table>
 
                 {{-- Add Entry Toggle Button --}}
-                @can('report-audit-ledger-register-manage')
+                @can('report-audit-ledger-register-create')
                     <div class="mt-3 no-print">
                         <button type="button" @click="showAddRow = !showAddRow"
                             class="inline-flex items-center px-3 py-1.5 text-white text-sm rounded-md transition-colors"
@@ -744,7 +746,7 @@
     </div>
 
     {{-- Edit Modal with Backdrop Blur --}}
-    @can('report-audit-ledger-register-manage')
+    @can('report-audit-ledger-register-edit')
         <div x-data="editModal()" x-show="open" x-cloak
             class="fixed inset-0 z-50 overflow-y-auto no-print" style="display: none;"
             aria-labelledby="edit-modal-title" role="dialog" aria-modal="true">

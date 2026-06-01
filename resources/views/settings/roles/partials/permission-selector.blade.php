@@ -40,6 +40,7 @@
         'open',
         'bulk-update',
         'manage-mapping',
+        'set-opening-balance',
         'update',
         'import',
         'cancel',
@@ -65,6 +66,7 @@
         'sync',
         'manage',
         'manage-mapping',
+        'set-opening-balance',
         'open',
         'close',
         'bulk-update',
@@ -220,6 +222,7 @@
         'permission' => 'Permission Management',
         'accounting' => 'Accounting',
         'accounting-period' => 'Accounting Periods',
+        'investment-opening-balance' => 'Set Opening Balance',
         'chart-of-account' => 'Chart of Accounts',
         'journal-entry' => 'Journal Entries',
         'account-type' => 'Account Types',
@@ -298,6 +301,9 @@
 
     $rolePermissions = isset($user) ? $user->getPermissionsViaRoles()->pluck('id')->toArray() : [];
     $directPermissions = isset($user) ? $user->getDirectPermissions()->pluck('id')->toArray() : (isset($role) ? $role->permissions->pluck('id')->toArray() : []);
+    $actionLabels = [
+        'set-opening-balance' => 'Set Opening Balance',
+    ];
 @endphp
 
 <div class="space-y-3">
@@ -392,7 +398,7 @@
                                                 class="permission-checkbox mt-0.5 h-3.5 w-3.5 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                                                 {{ $isDirect || $isInherited ? 'checked' : '' }} {{ $isInherited ? 'disabled' : '' }}>
                                             <span class="min-w-0 flex-1">
-                                                <span class="block text-xs font-medium text-gray-700 dark:text-gray-300 capitalize">{{ str_replace('-', ' ', $actionName) }}</span>
+                                                <span class="block text-xs font-medium text-gray-700 dark:text-gray-300 capitalize">{{ $actionLabels[$actionName] ?? str_replace('-', ' ', $actionName) }}</span>
                                                 <span class="block text-[10px] text-gray-500 dark:text-gray-400 font-mono break-all">{{ $permission->name }}</span>
                                             </span>
                                             <span class="flex items-center gap-1">

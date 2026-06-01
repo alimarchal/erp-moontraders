@@ -19,26 +19,26 @@ class LedgerRegisterPolicy
 
     public function create(User $user): bool
     {
-        return $user->can('report-audit-ledger-register-manage');
+        return $user->can('report-audit-ledger-register-create');
     }
 
     public function update(User $user, LedgerRegister $ledgerRegister): bool
     {
-        return $user->can('report-audit-ledger-register-manage');
+        return $user->can('report-audit-ledger-register-edit');
     }
 
     public function delete(User $user, LedgerRegister $ledgerRegister): bool
     {
-        return $user->can('report-audit-ledger-register-manage');
+        return $user->can('report-audit-ledger-register-delete');
     }
 
     public function restore(User $user, LedgerRegister $ledgerRegister): bool
     {
-        return $user->can('report-audit-ledger-register-manage');
+        return $user->can('report-audit-ledger-register-edit');
     }
 
     public function forceDelete(User $user, LedgerRegister $ledgerRegister): bool
     {
-        return $user->can('report-audit-ledger-register-manage');
+        return $user->can('report-audit-ledger-register-delete');
     }
 }

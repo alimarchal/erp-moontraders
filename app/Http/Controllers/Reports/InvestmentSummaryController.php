@@ -53,7 +53,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
             ->distinct()
             ->whereNotNull('designation')
             ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
-            ->when(! $hasSupplierSelection, fn ($query) => $query->whereRaw('1 = 0'))
+            ->when(! $supplierId && ! $canViewAllSuppliers, fn ($query) => $query->whereRaw('1 = 0'))
             ->orderBy('designation')
             ->pluck('designation');
 

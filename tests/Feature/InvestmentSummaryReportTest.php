@@ -52,6 +52,32 @@ it('does not default to nestle for users who can view all suppliers', function (
     expect($response->viewData('stockAmount'))->toBe(0.0);
 });
 
+it('shows designation options before an all suppliers user applies a supplier filter', function () {
+    Employee::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+    ]);
+
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+
+    Employee::factory()->create([
+        'supplier_id' => $otherSupplier->id,
+        'designation' => 'Driver',
+    ]);
+
+    $this->user->forceFill([
+        'supplier_id' => null,
+        'is_super_admin' => 'Yes',
+    ])->save();
+
+    $response = $this->get(route('reports.investment-summary.index'));
+
+    $response->assertOk();
+
+    expect($response->viewData('designation'))->toBe('Salesman');
+    expect($response->viewData('designations')->all())->toContain('Salesman', 'Driver');
+});
+
 it('blocks filtering investment summary by another supplier for scoped users', function () {
     $otherSupplier = Supplier::factory()->create(['disabled' => false]);
 

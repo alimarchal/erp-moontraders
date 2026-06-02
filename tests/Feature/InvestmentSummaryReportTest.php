@@ -371,3 +371,63 @@ it('uses recalculated last month main investment instead of stale opening balanc
     expect($response->viewData('lastMonthMainInvestment'))->toBe(49633.84);
     expect($response->viewData('increaseInInvestmentMonth'))->toBe(-49633.84);
 });
+
+it('uses previous month saved main investment as last month investment when no snapshot exists on the report date', function () {
+    // Report runs for 2026-04-30; no opening-balance snapshot exists on that date,
+    // but the previous month-end (2026-03-31) has a saved CURRENT_MONTH_MAIN_INVESTMENT.
+    InvestmentOpeningBalance::create([
+        'supplier_id' => $this->supplier->id,
+        'date' => '2026-03-31',
+        'description' => 'CURRENT_MONTH_MAIN_INVESTMENT',
+        'amount' => 10627023.00,
+    ]);
+
+    InvestmentOpeningBalance::create([
+        'supplier_id' => $this->supplier->id,
+        'date' => '2026-03-31',
+        'description' => 'LAST_MONTH_MAIN_INVESTMENT',
+        'amount' => 9000000.00,
+    ]);
+
+    $response = $this->get(route('reports.investment-summary.index', [
+        'date' => '2026-04-30',
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+    ]));
+
+    $response->assertOk();
+
+    expect($response->viewData('lastMonthMainInvestment'))->toBe(10627023.00);
+});
+
+it('falls back to a stored last month main investment when no current month snapshot exists on previous month end', function () {
+    InvestmentOpeningBalance::create([
+        'supplier_id' => $this->supplier->id,
+        'date' => '2026-03-31',
+        'description' => 'LAST_MONTH_MAIN_INVESTMENT',
+        'amount' => 8500000.00,
+    ]);
+
+    $response = $this->get(route('reports.investment-summary.index', [
+        'date' => '2026-04-30',
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+    ]));
+
+    $response->assertOk();
+
+    expect($response->viewData('lastMonthMainInvestment'))->toBe(8500000.00);
+});
+
+it('live calculates last month main investment when no snapshot exists on previous month end', function () {
+    // No opening-balance snapshots anywhere; with no underlying data the live total is 0.
+    $response = $this->get(route('reports.investment-summary.index', [
+        'date' => '2026-04-30',
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+    ]));
+
+    $response->assertOk();
+
+    expect($response->viewData('lastMonthMainInvestment'))->toBe(0.0);
+});

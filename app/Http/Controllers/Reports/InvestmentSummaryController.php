@@ -128,7 +128,8 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
                 $expenseCategoryTotals = $this->getMonthlyExpenses($date, $supplierId);
                 $totalExpensesMonth = array_sum($expenseCategoryTotals);
                 $closingBalanceAfterExpenses = $closingBalanceBeforeExpenses - $totalExpensesMonth;
-                $lastMonthMainInvestment = $this->getMainInvestmentTotal($lastDayPrevMonth, $supplierId, $designation, $employeeIds);
+                $lastMonthMainInvestment = $this->getSavedMainInvestment($lastDayPrevMonth, $supplierId)
+                    ?? $this->getMainInvestmentTotal($lastDayPrevMonth, $supplierId, $designation, $employeeIds);
             }
         } else {
             $salesmanCreditData = collect();
@@ -681,5 +682,22 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
         }
 
         return $records->mapWithKeys(fn ($amount, $desc) => [$desc => (float) $amount])->all();
+    }
+
+    /**
+     * Returns the saved main investment for a given date if a snapshot exists,
+     * preferring the month's own CURRENT_MONTH_MAIN_INVESTMENT and falling back
+     * to a stored LAST_MONTH_MAIN_INVESTMENT. Null when no snapshot is saved.
+     */
+    private function getSavedMainInvestment(string $date, ?int $supplierId): ?float
+    {
+        $amounts = InvestmentOpeningBalance::where('date', $date)
+            ->when($supplierId, fn ($query) => $query->where('supplier_id', $supplierId))
+            ->whereIn('description', ['CURRENT_MONTH_MAIN_INVESTMENT', 'LAST_MONTH_MAIN_INVESTMENT'])
+            ->pluck('amount', 'description');
+
+        $amount = $amounts['CURRENT_MONTH_MAIN_INVESTMENT'] ?? $amounts['LAST_MONTH_MAIN_INVESTMENT'] ?? null;
+
+        return $amount !== null ? (float) $amount : null;
     }
 }

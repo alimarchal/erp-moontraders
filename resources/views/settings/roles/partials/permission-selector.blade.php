@@ -142,6 +142,7 @@
         'report-audit-opening-customer-balance',
 
         'report-audit-creditors-ledger',
+        'report-audit-customer-account-statement',
         'report-sales-credit-sales',
         'report-audit-cash-detail',
         'report-audit-investment-summary',
@@ -258,6 +259,7 @@
         'report-financial-income-statement' => 'Income Statement',
         'report-audit-opening-customer-balance' => 'Opening Customer Balance',
         'report-audit-creditors-ledger' => 'Creditors Ledger',
+        'report-audit-customer-account-statement' => 'Customer Account Statement',
         'report-sales-credit-sales' => 'Salesman Credit History',
         'report-audit-cash-detail' => 'Cash Collection Detail',
         'report-audit-investment-summary' => 'Investment Summary',

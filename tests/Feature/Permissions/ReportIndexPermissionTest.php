@@ -13,8 +13,9 @@ beforeEach(function () {
         'report-inventory-daily-stock-register',
         'report-sales-daily-sales',
         'report-audit-cash-detail',
+        'report-audit-customer-account-statement',
     ] as $perm) {
-        Permission::create(['name' => $perm]);
+        Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
     }
 
     $this->user = User::factory()->create();
@@ -43,4 +44,14 @@ it('allows reports index with a sales report permission', function () {
 it('allows reports index with an audit report permission', function () {
     $this->user->givePermissionTo('report-audit-cash-detail');
     $this->get(route('reports.index'))->assertSuccessful();
+});
+
+it('shows customer account statement on reports index with permission', function () {
+    $this->user->givePermissionTo('report-audit-customer-account-statement');
+
+    $response = $this->get(route('reports.index'));
+
+    $response->assertSuccessful();
+    $response->assertSee('Customer Account Statement');
+    $response->assertSee(route('reports.customer-account-statement.index'), false);
 });

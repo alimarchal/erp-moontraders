@@ -99,7 +99,7 @@
                 @endcanany
 
                 {{-- ─── Receivables & Core Reports ─── --}}
-                @canany(['report-audit-creditors-ledger', 'report-sales-credit-sales', 'report-audit-cash-detail', 'report-audit-investment-summary', 'report-audit-claim-register', 'report-audit-ledger-register', 'report-audit-cheque-register', 'report-audit-amr-dispose-register'])
+                @canany(['report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-sales-credit-sales', 'report-audit-cash-detail', 'report-audit-investment-summary', 'report-audit-claim-register', 'report-audit-ledger-register', 'report-audit-cheque-register', 'report-audit-amr-dispose-register'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Receivables
                             &amp; Core Reports</p>
@@ -108,6 +108,20 @@
                             @can('report-audit-creditors-ledger')
                                 <x-settings-row href="{{ route('reports.creditors-ledger.index') }}" label="Creditors Ledger"
                                     description="Outstanding balances by creditor" icon-bg="bg-amber-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('report-audit-customer-account-statement')
+                                <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('reports.customer-account-statement.index') }}"
+                                    label="Customer Account Statement"
+                                    description="Customer accounts and transaction statements" icon-bg="bg-sky-500">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24" stroke-width="1.8">

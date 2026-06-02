@@ -49,6 +49,7 @@ use App\Http\Controllers\Reports\CashDetailController;
 use App\Http\Controllers\Reports\ChequeRegisterController;
 use App\Http\Controllers\Reports\ClaimRegisterReportController;
 use App\Http\Controllers\Reports\CreditorsLedgerController;
+use App\Http\Controllers\Reports\CustomerAccountStatementController;
 use App\Http\Controllers\Reports\CustomSettlementReportController;
 use App\Http\Controllers\Reports\DailySalesReportController;
 use App\Http\Controllers\Reports\DailyStockRegisterController;
@@ -708,6 +709,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('goods-issue', [GoodsIssueReportController::class, 'index'])->name('goods-issue.index');
         Route::get('cash-detail', [CashDetailController::class, 'index'])->name('cash-detail.index');
         Route::get('investment-summary', [InvestmentSummaryController::class, 'index'])->name('investment-summary.index');
+        Route::get('customer-account-statement', [CustomerAccountStatementController::class, 'index'])->name('customer-account-statement.index');
+        Route::get('customer-account-statement/{customerEmployeeAccount}', [CustomerAccountStatementController::class, 'show'])->name('customer-account-statement.show');
         Route::get('sku-fmr-amr', [SkuFmrAmrController::class, 'index'])->name('sku-fmr-amr.index');
 
         /* Inventory & Stock Reports */

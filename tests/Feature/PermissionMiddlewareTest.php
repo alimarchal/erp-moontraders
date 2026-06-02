@@ -23,7 +23,7 @@ beforeEach(function () {
         'report-financial-general-ledger', 'report-financial-trial-balance', 'report-financial-account-balances', 'report-financial-balance-sheet', 'report-financial-income-statement',
         'report-inventory-daily-stock-register', 'report-inventory-salesman-stock-register', 'report-inventory-inventory-ledger', 'report-inventory-van-stock-batch', 'report-inventory-van-stock-ledger',
         'report-sales-daily-sales', 'report-sales-credit-sales', 'report-sales-fmr-amr-comparison', 'report-sales-settlement', 'report-sales-goods-issue', 'report-sales-roi', 'report-sales-scheme-discount', 'report-sales-shop-list', 'report-sales-sku-rates',
-        'report-audit-cash-detail', 'report-audit-custom-settlement', 'report-audit-creditors-ledger', 'report-audit-claim-register', 'report-audit-advance-tax', 'report-audit-percentage-expense',
+        'report-audit-cash-detail', 'report-audit-custom-settlement', 'report-audit-creditors-ledger', 'report-audit-customer-account-statement', 'report-audit-claim-register', 'report-audit-advance-tax', 'report-audit-percentage-expense',
         'chart-of-account-list', 'account-type-list', 'currency-list', 'accounting-period-list',
         'bank-account-list', 'cost-center-list', 'tax-list',
         'company-list', 'supplier-list', 'customer-list', 'employee-list',

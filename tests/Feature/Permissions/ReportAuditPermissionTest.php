@@ -8,11 +8,12 @@ beforeEach(function () {
         'report-audit-cash-detail',
         'report-audit-custom-settlement',
         'report-audit-creditors-ledger',
+        'report-audit-customer-account-statement',
         'report-audit-claim-register',
         'report-audit-advance-tax',
         'report-audit-percentage-expense',
     ] as $perm) {
-        Permission::create(['name' => $perm]);
+        Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
     }
 
     $this->user = User::factory()->create();
@@ -26,6 +27,15 @@ it('denies creditors ledger without report-audit-creditors-ledger permission', f
 it('allows creditors ledger with report-audit-creditors-ledger permission', function () {
     $this->user->givePermissionTo('report-audit-creditors-ledger');
     $this->get(route('reports.creditors-ledger.index'))->assertSuccessful();
+});
+
+it('denies customer account statement without report-audit-customer-account-statement permission', function () {
+    $this->get(route('reports.customer-account-statement.index'))->assertForbidden();
+});
+
+it('allows customer account statement with report-audit-customer-account-statement permission', function () {
+    $this->user->givePermissionTo('report-audit-customer-account-statement');
+    $this->get(route('reports.customer-account-statement.index'))->assertSuccessful();
 });
 
 it('denies creditors salesman-creditors without report-audit-creditors-ledger permission', function () {

@@ -96,9 +96,10 @@ class SkuFmrAmrController extends Controller implements HasMiddleware
             ->where('ss.status', 'posted')
             ->whereNull('ss.deleted_at')
             ->whereBetween('ss.settlement_date', [$startDate, $endDate])
-            ->selectRaw('sal.product_id, SUM(sal.amount) as amr_liquid_amount')
+            ->selectRaw('sal.product_id, SUM(sal.amount) as amr_liquid_amount, SUM(sal.quantity) as amr_liquid_qty')
             ->groupBy('sal.product_id')
-            ->pluck('amr_liquid_amount', 'product_id');
+            ->get()
+            ->keyBy('product_id');
 
         // AMR Powder from sales settlements
         $amrPowderData = DB::table('sales_settlement_amr_powders as sap')
@@ -107,16 +108,22 @@ class SkuFmrAmrController extends Controller implements HasMiddleware
             ->where('ss.status', 'posted')
             ->whereNull('ss.deleted_at')
             ->whereBetween('ss.settlement_date', [$startDate, $endDate])
-            ->selectRaw('sap.product_id, SUM(sap.amount) as amr_powder_amount')
+            ->selectRaw('sap.product_id, SUM(sap.amount) as amr_powder_amount, SUM(sap.quantity) as amr_powder_qty')
             ->groupBy('sap.product_id')
-            ->pluck('amr_powder_amount', 'product_id');
+            ->get()
+            ->keyBy('product_id');
 
         // Build report rows — all products shown with 0.00 defaults if no data
         $reportData = $reportProducts->map(function ($product) use ($fmrData, $amrLiquidData, $amrPowderData) {
             $fmr = (float) ($fmrData[$product->id] ?? 0);
-            $amrLiquid = (float) ($amrLiquidData[$product->id] ?? 0);
-            $amrPowder = (float) ($amrPowderData[$product->id] ?? 0);
+            $liquidRow = $amrLiquidData[$product->id] ?? null;
+            $powderRow = $amrPowderData[$product->id] ?? null;
+            $amrLiquid = (float) ($liquidRow->amr_liquid_amount ?? 0);
+            $amrLiquidQty = (float) ($liquidRow->amr_liquid_qty ?? 0);
+            $amrPowder = (float) ($powderRow->amr_powder_amount ?? 0);
+            $amrPowderQty = (float) ($powderRow->amr_powder_qty ?? 0);
             $totalAmr = $amrLiquid + $amrPowder;
+            $totalQty = $amrLiquidQty + $amrPowderQty;
 
             return (object) [
                 'product_id' => $product->id,
@@ -127,8 +134,11 @@ class SkuFmrAmrController extends Controller implements HasMiddleware
                 'brand' => $product->brand,
                 'fmr_amount' => $fmr,
                 'amr_liquid_amount' => $amrLiquid,
+                'amr_liquid_qty' => $amrLiquidQty,
                 'amr_powder_amount' => $amrPowder,
+                'amr_powder_qty' => $amrPowderQty,
                 'total_amr' => $totalAmr,
+                'total_qty' => $totalQty,
                 'difference' => $fmr - $totalAmr,
             ];
         });
@@ -136,8 +146,11 @@ class SkuFmrAmrController extends Controller implements HasMiddleware
         $grandTotals = (object) [
             'fmr_amount' => $reportData->sum('fmr_amount'),
             'amr_liquid_amount' => $reportData->sum('amr_liquid_amount'),
+            'amr_liquid_qty' => $reportData->sum('amr_liquid_qty'),
             'amr_powder_amount' => $reportData->sum('amr_powder_amount'),
+            'amr_powder_qty' => $reportData->sum('amr_powder_qty'),
             'total_amr' => $reportData->sum('total_amr'),
+            'total_qty' => $reportData->sum('total_qty'),
             'difference' => $reportData->sum('difference'),
         ];
 
@@ -160,8 +173,11 @@ class SkuFmrAmrController extends Controller implements HasMiddleware
         return (object) [
             'fmr_amount' => 0.0,
             'amr_liquid_amount' => 0.0,
+            'amr_liquid_qty' => 0.0,
             'amr_powder_amount' => 0.0,
+            'amr_powder_qty' => 0.0,
             'total_amr' => 0.0,
+            'total_qty' => 0.0,
             'difference' => 0.0,
         ];
     }

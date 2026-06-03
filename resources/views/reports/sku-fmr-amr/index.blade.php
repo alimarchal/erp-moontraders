@@ -199,6 +199,9 @@
                                 <th style="width: 110px;">FMR<br><span class="font-normal text-xs">(from GRN)</span></th>
                                 <th style="width: 110px;">AMR Liquid<br><span class="font-normal text-xs">(Settlement)</span></th>
                                 <th style="width: 110px;">AMR Powder<br><span class="font-normal text-xs">(Settlement)</span></th>
+                                <th style="width: 90px;">AMRL Qty</th>
+                                <th style="width: 90px;">AMRP Qty</th>
+                                <th style="width: 90px;">Total Qty</th>
                                 <th style="width: 110px;">Total AMR</th>
                                 <th style="width: 120px;">Net Benefit/(Cost)</th>
                             </tr>
@@ -216,6 +219,9 @@
                                     <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->fmr_amount, 2) }}</td>
                                     <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->amr_liquid_amount, 2) }}</td>
                                     <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->amr_powder_amount, 2) }}</td>
+                                    <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->amr_liquid_qty, 2) }}</td>
+                                    <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->amr_powder_qty, 2) }}</td>
+                                    <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->total_qty, 2) }}</td>
                                     <td class="text-right font-mono" style="vertical-align: middle;">{{ number_format($row->total_amr, 2) }}</td>
                                     <td class="text-right font-mono font-bold {{ $row->difference >= 0 ? 'text-green-600' : 'text-red-600' }}" style="vertical-align: middle;">
                                         {{ number_format($row->difference, 2) }}
@@ -229,6 +235,9 @@
                                 <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->fmr_amount, 2) }}</td>
                                 <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->amr_liquid_amount, 2) }}</td>
                                 <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->amr_powder_amount, 2) }}</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->amr_liquid_qty, 2) }}</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->amr_powder_qty, 2) }}</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->total_qty, 2) }}</td>
                                 <td class="text-right font-mono px-2 py-1">{{ number_format($grandTotals->total_amr, 2) }}</td>
                                 <td class="text-right font-mono px-2 py-1 {{ $grandTotals->difference >= 0 ? 'text-green-600' : 'text-red-600' }}">
                                     {{ number_format($grandTotals->difference, 2) }}

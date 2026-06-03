@@ -76,8 +76,11 @@ test('sku fmr amr report shows all supplier skus with zero defaults when no data
     expect($row)->not->toBeNull()
         ->and((float) $row->fmr_amount)->toBe(0.0)
         ->and((float) $row->amr_liquid_amount)->toBe(0.0)
+        ->and((float) $row->amr_liquid_qty)->toBe(0.0)
         ->and((float) $row->amr_powder_amount)->toBe(0.0)
+        ->and((float) $row->amr_powder_qty)->toBe(0.0)
         ->and((float) $row->total_amr)->toBe(0.0)
+        ->and((float) $row->total_qty)->toBe(0.0)
         ->and((float) $row->difference)->toBe(0.0);
 });
 
@@ -169,8 +172,11 @@ test('sku fmr amr report calculates amr from sales settlements', function () {
 
     expect($row)->not->toBeNull()
         ->and((float) $row->amr_liquid_amount)->toBe(400.0)
+        ->and((float) $row->amr_liquid_qty)->toBe(5.0)
         ->and((float) $row->amr_powder_amount)->toBe(600.0)
-        ->and((float) $row->total_amr)->toBe(1000.0);
+        ->and((float) $row->amr_powder_qty)->toBe(10.0)
+        ->and((float) $row->total_amr)->toBe(1000.0)
+        ->and((float) $row->total_qty)->toBe(15.0);
 });
 
 test('sku fmr amr report computes net difference correctly', function () {

@@ -875,8 +875,20 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         );
 
         $goodsReceiptNote->load(['items.product', 'supplier', 'warehouse']);
+        $currentProductIds = $goodsReceiptNote->items->pluck('product_id');
+        $products = Product::query()
+            ->where('supplier_id', $goodsReceiptNote->supplier_id)
+            ->where(function ($query) use ($currentProductIds) {
+                $query->where('is_active', true)
+                    ->orWhereIn('id', $currentProductIds);
+            })
+            ->orderBy('product_name')
+            ->get(['id', 'product_code', 'product_name', 'supplier_id', 'uom_id', 'is_powder']);
 
-        return view('goods-receipt-notes.edit-special', ['grn' => $goodsReceiptNote]);
+        return view('goods-receipt-notes.edit-special', [
+            'grn' => $goodsReceiptNote,
+            'products' => $products,
+        ]);
     }
 
     /**
@@ -906,6 +918,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $request->validate([
             'items' => 'required|array|min:1',
             'items.*.id' => 'required|integer|exists:goods_receipt_note_items,id',
+            'items.*.product_id' => 'required|integer|exists:products,id',
             'items.*.uom_conversion_factor' => 'required|numeric|min:0.0001',
         ]);
 
@@ -916,13 +929,58 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             $processedProducts = [];
 
             foreach ($request->input('items') as $formItem) {
-                $item = DB::table('goods_receipt_note_items')->where('id', $formItem['id'])->first();
+                $item = DB::table('goods_receipt_note_items')
+                    ->where('id', $formItem['id'])
+                    ->where('grn_id', $goodsReceiptNote->id)
+                    ->first();
 
+                if (! $item) {
+                    throw new \Exception('One or more submitted items do not belong to this GRN.');
+                }
+
+                $newProductId = (int) $formItem['product_id'];
                 $newFactor = (float) $formItem['uom_conversion_factor'];
+                $productChanged = $newProductId !== (int) $item->product_id;
 
                 // Skip lines where nothing changed
-                if (abs($newFactor - (float) $item->uom_conversion_factor) < 0.0001) {
+                if (! $productChanged && abs($newFactor - (float) $item->uom_conversion_factor) < 0.0001) {
                     continue;
+                }
+
+                $newProduct = Product::query()
+                    ->whereKey($newProductId)
+                    ->where('supplier_id', $goodsReceiptNote->supplier_id)
+                    ->where('is_active', true)
+                    ->first();
+
+                if (! $newProduct) {
+                    throw new \Exception("Product {$newProductId} is not active for this GRN supplier.");
+                }
+
+                $svl = DB::table('stock_valuation_layers')->where('grn_item_id', $item->id)->first();
+                if (! $svl) {
+                    throw new \Exception("Valuation layer not found for GRN item {$item->id} (product {$item->product_id}). Ensure this GRN was properly posted.");
+                }
+
+                if ($productChanged) {
+                    if ((int) $newProduct->uom_id !== (int) $item->stock_uom_id) {
+                        throw new \Exception("Product {$newProduct->product_name} must use the same stock UOM as the original GRN item.");
+                    }
+
+                    if ((bool) $newProduct->is_powder !== (bool) Product::query()->whereKey($item->product_id)->value('is_powder')) {
+                        throw new \Exception('Product cannot be changed between powder and non-powder classifications because the posted FMR journal would no longer match.');
+                    }
+
+                    $hasDownstreamMovement = DB::table('stock_movements')
+                        ->where('stock_batch_id', $svl->stock_batch_id)
+                        ->where('id', '!=', $svl->stock_movement_id)
+                        ->exists();
+
+                    $hasConsumedQuantity = (float) $svl->quantity_remaining < (float) $svl->quantity_received;
+
+                    if ($hasDownstreamMovement || $hasConsumedQuantity) {
+                        throw new \Exception("Product cannot be changed for GRN item {$item->id} because its batch has already been consumed or adjusted.");
+                    }
                 }
 
                 $newQty = round((float) $item->qty_in_purchase_uom * $newFactor, 2);
@@ -932,6 +990,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
                 // 1. goods_receipt_note_items
                 DB::table('goods_receipt_note_items')->where('id', $item->id)->update([
+                    'product_id' => $newProductId,
                     'qty_in_stock_uom' => $newQty,
                     'uom_conversion_factor' => $newFactor,
                     'quantity_received' => $newQty,
@@ -939,12 +998,6 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                     'unit_cost' => $newUnitCost,
                     // total_cost intentionally unchanged (invoice amount)
                 ]);
-
-                // Resolve linked SVL — throw if not found (GRN was not properly posted)
-                $svl = DB::table('stock_valuation_layers')->where('grn_item_id', $item->id)->first();
-                if (! $svl) {
-                    throw new \Exception("Valuation layer not found for GRN item {$item->id} (product {$item->product_id}). Ensure this GRN was properly posted.");
-                }
 
                 // Get the original GRN receipt row in SLE (quantity_in > 0, quantity_out = 0)
                 $sle = DB::table('stock_ledger_entries')
@@ -959,6 +1012,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
                 // 2. stock_movements — update quantity and unit_cost (total_value = invoice, unchanged)
                 DB::table('stock_movements')->where('id', $svl->stock_movement_id)->update([
+                    'product_id' => $newProductId,
                     'quantity' => $newQty,
                     'unit_cost' => $newUnitCost,
                     // total_value intentionally unchanged
@@ -966,38 +1020,27 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
                 // 3. stock_batches — update unit_cost so FIFO picks up correct cost
                 DB::table('stock_batches')->where('id', $svl->stock_batch_id)->update([
+                    'product_id' => $newProductId,
                     'unit_cost' => $newUnitCost,
                 ]);
 
                 // 4a. stock_ledger_entries — GRN receipt row
                 $newSleBalance = (float) $sle->quantity_balance + $delta;
                 DB::table('stock_ledger_entries')->where('id', $sle->id)->update([
+                    'product_id' => $newProductId,
                     'quantity_in' => $newQty,
                     'quantity_balance' => $newSleBalance,
                     'valuation_rate' => $newUnitCost,
                     'stock_value' => round($newSleBalance * $newUnitCost, 4),
                 ]);
 
-                // 4b. Cascade running balance to all later SLE rows for same product+warehouse
-                // (SLE is a running ledger; every subsequent entry's balance shifts by delta)
-                $laterRows = DB::table('stock_ledger_entries')
-                    ->where('product_id', $item->product_id)
-                    ->where('warehouse_id', $goodsReceiptNote->warehouse_id)
-                    ->where('id', '>', $sle->id)
-                    ->orderBy('id')
-                    ->get(['id', 'quantity_balance', 'valuation_rate']);
-
-                foreach ($laterRows as $laterRow) {
-                    $newLaterBalance = (float) $laterRow->quantity_balance + $delta;
-                    DB::table('stock_ledger_entries')->where('id', $laterRow->id)->update([
-                        'quantity_balance' => $newLaterBalance,
-                        'stock_value' => round($newLaterBalance * (float) $laterRow->valuation_rate, 4),
-                    ]);
-                }
-
                 // 5. stock_valuation_layers
                 $newRemaining = (float) $svl->quantity_remaining + $delta;
+                if ($newRemaining < 0) {
+                    throw new \Exception("The corrected quantity for GRN item {$item->id} cannot be less than its already consumed quantity.");
+                }
                 DB::table('stock_valuation_layers')->where('id', $svl->id)->update([
+                    'product_id' => $newProductId,
                     'quantity_received' => $newQty,
                     'quantity_remaining' => $newRemaining,
                     'unit_cost' => $newUnitCost,
@@ -1010,6 +1053,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 if ($csbb) {
                     $newCsbbQty = (float) $csbb->quantity_on_hand + $delta;
                     DB::table('current_stock_by_batch')->where('id', $csbb->id)->update([
+                        'product_id' => $newProductId,
                         'quantity_on_hand' => $newCsbbQty,
                         'unit_cost' => $newUnitCost,
                         'total_value' => round($newCsbbQty * $newUnitCost, 4),
@@ -1021,9 +1065,9 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 //    when the same product appears in multiple lines of this GRN
                 DB::table('inventory_ledger_entries')
                     ->where('goods_receipt_note_id', $goodsReceiptNote->id)
-                    ->where('product_id', $item->product_id)
                     ->where('stock_batch_id', $svl->stock_batch_id)
                     ->update([
+                        'product_id' => $newProductId,
                         'debit_qty' => $newQty,
                         'unit_cost' => $newUnitCost,
                     ]);
@@ -1033,6 +1077,15 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                     'product_id' => $item->product_id,
                     'warehouse_id' => $goodsReceiptNote->warehouse_id,
                 ];
+                $processedProducts[$newProductId] = [
+                    'product_id' => $newProductId,
+                    'warehouse_id' => $goodsReceiptNote->warehouse_id,
+                ];
+            }
+
+            foreach ($processedProducts as $entry) {
+                $this->recalculateStockLedgerBalances($entry['product_id'], $entry['warehouse_id']);
+                $this->recalculateInventoryLedgerBalances($entry['product_id']);
             }
 
             // 8. current_stock — full recalc via InventoryService
@@ -1057,7 +1110,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
             return redirect()
                 ->route('goods-receipt-notes.show', $goodsReceiptNote)
-                ->with('success', 'GRN quantities corrected successfully.');
+                ->with('success', 'GRN inventory corrections applied successfully.');
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -1068,6 +1121,45 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             ]);
 
             return back()->with('error', 'Update failed: '.$e->getMessage());
+        }
+    }
+
+    private function recalculateStockLedgerBalances(int $productId, int $warehouseId): void
+    {
+        $balance = 0.0;
+
+        $entries = DB::table('stock_ledger_entries')
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->orderBy('id')
+            ->get(['id', 'quantity_in', 'quantity_out', 'valuation_rate']);
+
+        foreach ($entries as $entry) {
+            $balance += (float) $entry->quantity_in - (float) $entry->quantity_out;
+
+            DB::table('stock_ledger_entries')->where('id', $entry->id)->update([
+                'quantity_balance' => $balance,
+                'stock_value' => round($balance * (float) $entry->valuation_rate, 4),
+            ]);
+        }
+    }
+
+    private function recalculateInventoryLedgerBalances(int $productId): void
+    {
+        $balance = 0.0;
+
+        $entries = DB::table('inventory_ledger_entries')
+            ->where('product_id', $productId)
+            ->orderBy('date')
+            ->orderBy('id')
+            ->get(['id', 'debit_qty', 'credit_qty']);
+
+        foreach ($entries as $entry) {
+            $balance += (float) $entry->debit_qty - (float) $entry->credit_qty;
+
+            DB::table('inventory_ledger_entries')->where('id', $entry->id)->update([
+                'running_balance' => $balance,
+            ]);
         }
     }
 

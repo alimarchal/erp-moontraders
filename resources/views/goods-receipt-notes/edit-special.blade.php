@@ -38,10 +38,12 @@
                         <p class="font-semibold mb-1">This action corrects inventory quantities across 8 tables
                             simultaneously.</p>
                         <ul class="list-disc list-inside space-y-0.5">
-                            <li>Only change the <strong>UOM Conversion Factor</strong> per line.</li>
+                            <li>Change the <strong>Product</strong> or <strong>UOM Conversion Factor</strong> per line.
+                            </li>
                             <li><strong>Total Cost</strong> (invoice amount) stays unchanged.</li>
                             <li><strong>Unit Cost</strong> is recalculated as: Total Cost ÷ New Qty.</li>
-                            <li>Journal entries are NOT affected.</li>
+                            <li>Product changes are limited to unconsumed batches and keep the supplier and stock UOM
+                                consistent.</li>
                             <li>Lines with no factor change are skipped automatically.</li>
                         </ul>
                     </div>
@@ -121,20 +123,26 @@
                             <tbody class="bg-white divide-y divide-gray-200">
                                 @foreach ($grn->items as $index => $item)
                                     <tr x-data="{
-                                                cartons: {{ (float) $item->qty_in_purchase_uom }},
-                                                newFactor: {{ (float) $item->uom_conversion_factor }},
-                                                origFactor: {{ (float) $item->uom_conversion_factor }},
-                                                totalCost: {{ (float) $item->total_cost }},
-                                                get newQty() { return Math.round(this.cartons * this.newFactor * 100) / 100; },
-                                                get newUnitCost() { return this.newQty > 0 ? Math.round((this.totalCost / this.newQty) * 1000000) / 1000000 : 0; },
-                                                get changed() { return Math.abs(this.newFactor - this.origFactor) >= 0.0001; }
-                                            }" class="hover:bg-gray-50" :class="changed ? 'bg-amber-50' : ''">
+                                                            cartons: {{ (float) $item->qty_in_purchase_uom }},
+                                                            newFactor: {{ (float) $item->uom_conversion_factor }},
+                                                            origFactor: {{ (float) $item->uom_conversion_factor }},
+                                                            totalCost: {{ (float) $item->total_cost }},
+                                                            get newQty() { return Math.round(this.cartons * this.newFactor * 100) / 100; },
+                                                            get newUnitCost() { return this.newQty > 0 ? Math.round((this.totalCost / this.newQty) * 1000000) / 1000000 : 0; },
+                                                            get changed() { return Math.abs(this.newFactor - this.origFactor) >= 0.0001; }
+                                                        }" class="hover:bg-gray-50" :class="changed ? 'bg-amber-50' : ''">
                                         <td class="px-3 py-2 text-gray-500">{{ $item->line_no }}</td>
-                                        <td class="px-3 py-2">
+                                        <td class="px-3 py-2 min-w-64">
                                             <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item->id }}">
-                                            <p class="font-medium text-gray-900">
-                                                {{ $item->product->product_name ?? 'Product #' . $item->product_id }}</p>
-                                            <p class="text-xs text-gray-400">{{ $item->product->product_code ?? '' }}</p>
+                                            <select name="items[{{ $index }}][product_id]"
+                                                class="product-select select2 border-gray-300 rounded-md shadow-sm text-sm w-full"
+                                                required>
+                                                @foreach ($products as $product)
+                                                    <option value="{{ $product->id }}" {{ (int) $product->id === (int) $item->product_id ? 'selected' : '' }}>
+                                                        {{ $product->product_code }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
                                         </td>
                                         <td class="px-3 py-2 text-right text-gray-700">
                                             {{ number_format((float) $item->qty_in_purchase_uom, 2) }}
@@ -185,7 +193,7 @@
                         Cancel
                     </a>
                     <button type="submit"
-                        onclick="return confirm('Apply these inventory corrections? This cannot be undone.\n\nOnly lines with a changed factor will be updated.')"
+                        onclick="return confirm('Apply these inventory corrections? This cannot be undone.\n\nOnly changed product and factor lines will be updated.')"
                         class="inline-flex items-center px-6 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition">
                         <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                             stroke="currentColor">
@@ -201,10 +209,25 @@
     @push('scripts')
         <script>
             function grnSpecialEdit() {
-                return {
-                    init() { }
-                };
+                return { init() { } };
             }
+
+            function initializeSpecialEditSelect2() {
+                if (typeof jQuery === 'undefined' || typeof jQuery.fn.select2 === 'undefined') {
+                    setTimeout(initializeSpecialEditSelect2, 100);
+                    return;
+                }
+
+                $(document).ready(function () {
+                    $('.product-select').select2({
+                        placeholder: 'Select Product',
+                        allowClear: false,
+                        width: '100%'
+                    });
+                });
+            }
+
+            initializeSpecialEditSelect2();
         </script>
     @endpush
 </x-app-layout>

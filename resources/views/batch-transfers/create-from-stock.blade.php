@@ -202,7 +202,7 @@
                                                     x-model="quantity"
                                                     :value="old('quantity')"
                                                     placeholder="Enter quantity"
-                                                    class="block w-full @error('quantity') border-red-500 @enderror" />
+                                                    class="block w-full {{ $errors->has('quantity') ? 'border-red-500' : '' }}" />
                                                 <template x-if="selectedBatch">
                                                     <button type="button" @click="setFullTransfer()"
                                                         class="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-xs font-medium text-gray-700 hover:bg-gray-200 whitespace-nowrap">

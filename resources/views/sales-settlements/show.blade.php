@@ -58,6 +58,17 @@
                             </button>
                         </form> --}}
                     @endcan
+                    @role('super-admin')
+                    <a href="{{ route('sales-settlements.edit-special', $settlement->id) }}"
+                        class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition no-print"
+                        title="Special Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+                            stroke="currentColor" class="size-6">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                    </a>
+                    @endrole
                 @endif
                 <a href="javascript:window.location.reload();"
                     class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
@@ -956,7 +967,8 @@
                         <div class="grid grid-cols-2 gap-1 items-start print:grid-cols-2 mt-1">
                             {{-- Advance Tax --}}
                             <div>
-                                <h4 class="font-bold text-sm border-x border-t border-black text-center">Advance Tax{{ $usesAdvanceTaxIncome ? ' - Income' : '' }}
+                                <h4 class="font-bold text-sm border-x border-t border-black text-center">Advance
+                                    Tax{{ $usesAdvanceTaxIncome ? ' - Income' : '' }}
                                     Benifits To NTN Customer
                                     (1161)</h4>
                                 <table class="report-table w-full">
@@ -1088,7 +1100,7 @@
                                 }
                                 $groupExpenseRows[] = [
                                     'label' => $usesAdvanceTaxIncome && $predef['code'] === '1161'
-                                        ? $predef['label'].' - Income'
+                                        ? $predef['label'] . ' - Income'
                                         : $predef['label'],
                                     'code' => $predef['code'],
                                     'amount' => $amount,
@@ -1761,10 +1773,12 @@
                         <div class="rounded-md bg-gray-50 p-3 text-xs text-gray-700 space-y-1">
                             <p><span class="font-semibold">Settlement #:</span> {{ $settlement->settlement_number }}</p>
                             <p><span class="font-semibold">Date:</span>
-                                {{ $settlement->settlement_date?->format('d-M-Y') ?? '-' }}</p>
+                                {{ $settlement->settlement_date?->format('d-M-Y') ?? '-' }}
+                            </p>
                             <p><span class="font-semibold">Salesman:</span> {{ $settlement->employee?->name ?? '-' }}</p>
                             <p><span class="font-semibold">Total Sales:</span>
-                                {{ number_format((float) ($settlement->total_sales_amount ?? 0), 2) }}</p>
+                                {{ number_format((float) ($settlement->total_sales_amount ?? 0), 2) }}
+                            </p>
                         </div>
                         <p class="font-medium text-gray-800">Do you want to continue?</p>
                     </div>
@@ -1782,7 +1796,8 @@
                         <div class="rounded-md bg-gray-50 p-3 text-xs text-gray-700 space-y-1">
                             <p><span class="font-semibold">Settlement #:</span> {{ $settlement->settlement_number }}</p>
                             <p><span class="font-semibold">Date:</span>
-                                {{ $settlement->settlement_date?->format('d-M-Y') ?? '-' }}</p>
+                                {{ $settlement->settlement_date?->format('d-M-Y') ?? '-' }}
+                            </p>
                             <p><span class="font-semibold">Salesman:</span> {{ $settlement->employee?->name ?? '-' }}</p>
                             <p><span class="font-semibold">Status:</span> {{ strtoupper($settlement->status) }}</p>
                         </div>

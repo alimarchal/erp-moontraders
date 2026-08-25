@@ -1923,4 +1923,139 @@ class SalesSettlementController extends Controller implements HasMiddleware
             range(1, $count),
         );
     }
+
+    /**
+     * Show special edit form for posted settlements — Super Admin only.
+     * Allows correcting settlement_date and cascades it to dependent records.
+     */
+    public function editSpecial(SalesSettlement $salesSettlement)
+    {
+        abort_unless(
+            auth()->user()->is_super_admin === 'Yes' || auth()->user()->hasRole('super-admin'),
+            403
+        );
+
+        $salesSettlement->load(['employee', 'vehicle', 'warehouse']);
+
+        return view('sales-settlements.edit-special', [
+            'settlement' => $salesSettlement,
+        ]);
+    }
+
+    /**
+     * Apply special date correction to a posted settlement — Super Admin only.
+     *
+     * Tables updated (8 total):
+     *   sales_settlements, stock_movements, inventory_ledger_entries,
+     *   customer_employee_account_transactions, sales_settlement_expenses,
+     *   sales_settlement_bank_transfers, sales_settlement_cheques,
+     *   sales_settlement_bank_slips.
+     *
+     * The 3 sub-document date fields (transfer_date, cheque_date, deposit_date)
+     * are only shifted when they still match the old settlement date — if the
+     * user entered a genuinely different date for one of those, it is left alone.
+     *
+     * The linked journal_entries row is intentionally left untouched — posted
+     * journal entries are immutable (enforced by a DB trigger). Use a
+     * reversing entry via AccountingService if the GL entry date must change too.
+     */
+    public function updateSpecial(Request $request, SalesSettlement $salesSettlement)
+    {
+        abort_unless(
+            auth()->user()->is_super_admin === 'Yes' || auth()->user()->hasRole('super-admin'),
+            403
+        );
+
+        if ($salesSettlement->status !== 'posted') {
+            return back()->with('error', 'Only posted settlements can be corrected. Current status: '.$salesSettlement->status);
+        }
+
+        $request->validate([
+            'settlement_date' => 'required|date',
+        ]);
+
+        $oldDate = $salesSettlement->settlement_date->toDateString();
+        $newDate = $request->input('settlement_date');
+
+        if ($oldDate === $newDate) {
+            return back()->with('error', 'The new date is the same as the current settlement date.');
+        }
+
+        $periodOpen = DB::table('accounting_periods')
+            ->whereDate('start_date', '<=', $newDate)
+            ->whereDate('end_date', '>=', $newDate)
+            ->where('status', 'open')
+            ->exists();
+
+        if (! $periodOpen) {
+            return back()->with('error', "No open accounting period found for {$newDate}.");
+        }
+
+        DB::beginTransaction();
+
+        try {
+            DB::table('sales_settlements')
+                ->where('id', $salesSettlement->id)
+                ->update(['settlement_date' => $newDate]);
+
+            DB::table('stock_movements')
+                ->where('reference_type', SalesSettlement::class)
+                ->where('reference_id', $salesSettlement->id)
+                ->where('movement_date', $oldDate)
+                ->update(['movement_date' => $newDate]);
+
+            DB::table('inventory_ledger_entries')
+                ->where('sales_settlement_id', $salesSettlement->id)
+                ->where('date', $oldDate)
+                ->update(['date' => $newDate]);
+
+            DB::table('customer_employee_account_transactions')
+                ->where('sales_settlement_id', $salesSettlement->id)
+                ->where('transaction_date', $oldDate)
+                ->update(['transaction_date' => $newDate]);
+
+            DB::table('sales_settlement_expenses')
+                ->where('sales_settlement_id', $salesSettlement->id)
+                ->where('expense_date', $oldDate)
+                ->update(['expense_date' => $newDate]);
+
+            DB::table('sales_settlement_bank_transfers')
+                ->where('sales_settlement_id', $salesSettlement->id)
+                ->where('transfer_date', $oldDate)
+                ->update(['transfer_date' => $newDate]);
+
+            DB::table('sales_settlement_cheques')
+                ->where('sales_settlement_id', $salesSettlement->id)
+                ->where('cheque_date', $oldDate)
+                ->update(['cheque_date' => $newDate]);
+
+            DB::table('sales_settlement_bank_slips')
+                ->where('sales_settlement_id', $salesSettlement->id)
+                ->where('deposit_date', $oldDate)
+                ->update(['deposit_date' => $newDate]);
+
+            DB::commit();
+
+            Log::info('Sales settlement special date correction applied', [
+                'settlement_id' => $salesSettlement->id,
+                'old_date' => $oldDate,
+                'new_date' => $newDate,
+                'user_id' => auth()->id(),
+            ]);
+
+            return redirect()
+                ->route('sales-settlements.show', $salesSettlement)
+                ->with('success', "Settlement date corrected from {$oldDate} to {$newDate}.");
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Error in sales settlement special update', [
+                'settlement_id' => $salesSettlement->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Update failed: '.$e->getMessage());
+        }
+    }
 }

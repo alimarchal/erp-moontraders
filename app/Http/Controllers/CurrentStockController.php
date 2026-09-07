@@ -105,7 +105,7 @@ class CurrentStockController extends Controller implements HasMiddleware
         // Attach batch data for Avg Cost breakdown display
         if ($stocks->isNotEmpty()) {
             $batchGroups = CurrentStockByBatch::query()
-                ->with('stockBatch')
+                ->with('stockBatch.valuationLayers.grnItem.grn')
                 ->where('quantity_on_hand', '>', 0)
                 ->whereIn('product_id', $stocks->pluck('product_id'))
                 ->whereIn('warehouse_id', $stocks->pluck('warehouse_id'))

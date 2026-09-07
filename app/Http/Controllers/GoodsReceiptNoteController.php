@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exports\GoodsReceiptNoteTemplateExport;
 use App\Http\Requests\ImportGoodsReceiptNoteRequest;
+use App\Http\Requests\PostGoodsReceiptNoteRequest;
 use App\Imports\GoodsReceiptNoteItemsImport;
 use App\Models\BankAccount;
 use App\Models\GoodsReceiptNote;
@@ -608,7 +609,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     /**
      * Post GRN to inventory
      */
-    public function post(GoodsReceiptNote $goodsReceiptNote)
+    public function post(PostGoodsReceiptNoteRequest $request, GoodsReceiptNote $goodsReceiptNote)
     {
         $this->authorizeGrnSupplierAccess($goodsReceiptNote);
 

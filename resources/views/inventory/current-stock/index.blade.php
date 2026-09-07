@@ -346,6 +346,7 @@
                                     @php
                                         $batchesJson = $batches->map(fn($b) => [
                                             'batch_code' => $b->stockBatch?->batch_code ?? '—',
+                                            'grn_number' => $b->stockBatch?->valuationLayers->first()?->grnItem?->grn?->grn_number,
                                             'receipt_date' => $b->stockBatch?->receipt_date ? \Carbon\Carbon::parse($b->stockBatch->receipt_date)->format('d-M-Y') : '—',
                                             'quantity' => rtrim(rtrim(number_format($b->quantity_on_hand, 2), '0'), '.'),
                                             'unit_cost' => $b->quantity_on_hand > 0 ? rtrim(rtrim(number_format($b->total_value / $b->quantity_on_hand, 6), '0'), '.') : rtrim(rtrim(number_format($b->unit_cost, 6), '0'), '.'),
@@ -505,7 +506,7 @@
 
                         html += '<tr style="background:' + rowBg + ';">';
                         html += '<td style="' + tdC + '">' + (i + 1) + '</td>';
-                        html += '<td style="' + td + 'font-weight:600;">' + b.batch_code + promo + '</td>';
+                        html += '<td style="' + td + 'font-weight:600;">' + (b.grn_number ? b.grn_number + '<br><span style="font-weight:400;">(' + b.batch_code + ')</span>' : b.batch_code) + promo + '</td>';
                         html += '<td style="' + tdC + '">' + b.receipt_date + '</td>';
                         html += '<td style="' + tdC + 'font-weight:600;">' + b.quantity + '</td>';
                         html += '<td style="' + tdC + '">₨' + b.unit_cost + '</td>';

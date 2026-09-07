@@ -8,7 +8,7 @@
             <div class="flex justify-center items-center space-x-2 no-print">
                 @if ($grn->status === 'draft')
                     @can('goods-receipt-note-post')
-                        <button type="button" x-data x-on:click="$dispatch('open-post-modal')"
+                        <button type="button" onclick="window.showPasswordModal('postGrnPasswordModal')"
                             class="inline-flex items-center px-4 py-2 bg-emerald-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-emerald-700 transition">
                             <svg class="w-4 h-4 mr-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                                 stroke="currentColor">
@@ -504,16 +504,17 @@
         warningClass="text-red-600" confirmButtonText="Confirm Reverse"
         confirmButtonClass="bg-red-600 hover:bg-red-700" />
 
-    <x-alpine-confirmation-modal
-        eventName="open-post-modal"
-        title="Post to Inventory"
-        message="Are you sure you want to post GRN <strong>{{ $grn->grn_number }}</strong> to inventory? This action cannot be undone."
-        confirmButtonText="Post to Inventory"
-        confirmButtonClass="bg-emerald-600 hover:bg-emerald-700"
-        iconBgClass="bg-emerald-100"
-        iconColorClass="text-emerald-600"
-        iconPath="M5 13l4 4L19 7"
-        formAction="{{ route('goods-receipt-notes.post', $grn->id) }}" />
+    <x-password-confirm-modal id="postGrnPasswordModal" title="Confirm GRN Posting"
+        message="Are you sure you want to post GRN {{ $grn->grn_number }} to inventory? This action cannot be undone."
+        secondaryMessage="GRN نمبر: {{ $grn->grn_number }}
+مصنوعات کی تفصیلات: {{ $grn->items->count() }} | کل رقم: Rs. {{ number_format($grn->items->sum('total_value_with_taxes') ?: $grn->grand_total, 2) }}"
+        secondaryMessageDirection="rtl"
+        confirmButtonText="Post to Inventory" confirmButtonClass="bg-emerald-600 hover:bg-emerald-700" />
+
+    <form id="postGrnForm" action="{{ route('goods-receipt-notes.post', $grn->id) }}" method="POST" class="hidden">
+        @csrf
+        <input type="hidden" id="post_grn_password" name="password">
+    </form>
 
     <script>
         function confirmReverseGrn() {
@@ -532,6 +533,9 @@
             if (modalId === 'reverseGrnModal') {
                 document.getElementById('password').value = password;
                 document.getElementById('reverseGrnForm').submit();
+            } else if (modalId === 'postGrnPasswordModal') {
+                document.getElementById('post_grn_password').value = password;
+                document.getElementById('postGrnForm').submit();
             }
         });
     </script>

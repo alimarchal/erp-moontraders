@@ -80,6 +80,11 @@ class StockBatch extends Model
         );
     }
 
+    public function valuationLayers(): HasMany
+    {
+        return $this->hasMany(StockValuationLayer::class);
+    }
+
     public function currentStockByBatch(): HasMany
     {
         return $this->hasMany(CurrentStockByBatch::class);

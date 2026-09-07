@@ -10,6 +10,7 @@ use App\Models\StockBatch;
 use App\Models\StockLedgerEntry;
 use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -20,10 +21,7 @@ class StockAdjustmentService
         try {
             DB::beginTransaction();
 
-            $adjustmentNumber = $this->generateAdjustmentNumber();
-
-            $adjustment = StockAdjustment::create([
-                'adjustment_number' => $adjustmentNumber,
+            $adjustment = $this->createAdjustmentRecord([
                 'adjustment_date' => $data['adjustment_date'],
                 'warehouse_id' => $data['warehouse_id'],
                 'adjustment_type' => $data['adjustment_type'],
@@ -32,6 +30,7 @@ class StockAdjustmentService
                 'notes' => $data['notes'] ?? null,
                 'status' => 'draft',
             ]);
+            $adjustmentNumber = $adjustment->adjustment_number;
 
             if (isset($data['items']) && is_array($data['items'])) {
                 foreach ($data['items'] as $itemData) {
@@ -351,14 +350,42 @@ class StockAdjustmentService
         $year = now()->year;
         $prefix = "SA-{$year}-";
 
-        $lastAdjustment = StockAdjustment::where('adjustment_number', 'like', "{$prefix}%")
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $nextNumber = $lastAdjustment
-            ? (int) substr($lastAdjustment->adjustment_number, strlen($prefix)) + 1
-            : 1;
+        $nextNumber = StockAdjustment::withTrashed()
+            ->where('adjustment_number', 'like', "{$prefix}%")
+            ->pluck('adjustment_number')
+            ->map(fn (string $number): int => (int) substr($number, strlen($prefix)))
+            ->max() + 1;
 
         return sprintf('%s%04d', $prefix, $nextNumber);
+    }
+
+    public function createAdjustmentRecord(array $data): StockAdjustment
+    {
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            try {
+                return StockAdjustment::create([
+                    'adjustment_number' => $this->generateAdjustmentNumber(),
+                    'adjustment_date' => $data['adjustment_date'],
+                    'warehouse_id' => $data['warehouse_id'],
+                    'adjustment_type' => $data['adjustment_type'],
+                    'product_recall_id' => $data['product_recall_id'] ?? null,
+                    'reason' => $data['reason'],
+                    'notes' => $data['notes'] ?? null,
+                    'status' => $data['status'] ?? 'draft',
+                ]);
+            } catch (QueryException $exception) {
+                if (! $this->isAdjustmentNumberCollision($exception) || $attempt === 2) {
+                    throw $exception;
+                }
+            }
+        }
+
+        throw new \RuntimeException('Unable to generate a unique stock adjustment number.');
+    }
+
+    protected function isAdjustmentNumberCollision(QueryException $exception): bool
+    {
+        return in_array($exception->getCode(), ['23000', '23505'], true)
+            && str_contains($exception->getMessage(), 'adjustment_number');
     }
 }

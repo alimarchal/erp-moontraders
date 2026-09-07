@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\CurrentStockByBatch;
 use App\Models\InventoryLedgerEntry;
 use App\Models\ProductRecall;
-use App\Models\StockAdjustment;
 use App\Models\StockAdjustmentItem;
 use App\Models\StockBatch;
 use Illuminate\Database\Eloquent\Collection;
@@ -80,8 +79,7 @@ class ProductRecallService
             $this->validateStockAvailability($recall);
 
             $adjustmentService = app(StockAdjustmentService::class);
-            $adjustment = StockAdjustment::create([
-                'adjustment_number' => $adjustmentService->generateAdjustmentNumber(),
+            $adjustment = $adjustmentService->createAdjustmentRecord([
                 'adjustment_date' => $recall->recall_date,
                 'warehouse_id' => $recall->warehouse_id,
                 'adjustment_type' => 'recall',

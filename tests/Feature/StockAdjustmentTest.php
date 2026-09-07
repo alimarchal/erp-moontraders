@@ -146,6 +146,17 @@ test('stock adjustment number is generated correctly', function () {
     expect($number)->toBe("SA-{$year}-0001");
 });
 
+test('stock adjustment numbers include soft deleted adjustments', function () {
+    $existingAdjustment = StockAdjustment::factory()->create([
+        'adjustment_number' => 'SA-'.now()->year.'-0011',
+    ]);
+    $existingAdjustment->delete();
+
+    $service = new StockAdjustmentService;
+
+    expect($service->generateAdjustmentNumber())->toBe('SA-'.now()->year.'-0012');
+});
+
 test('stock adjustment can be posted', function () {
     $batch = StockBatch::factory()->create([
         'product_id' => $this->product->id,

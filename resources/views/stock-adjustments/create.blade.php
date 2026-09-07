@@ -26,11 +26,23 @@
                         x-data="stockAdjustmentForm()" x-init="init()">
                         @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                             <div>
                                 <x-label for="adjustment_date" value="Adjustment Date *" />
                                 <x-input id="adjustment_date" name="adjustment_date" type="date"
                                     class="mt-1 block w-full" :value="old('adjustment_date', date('Y-m-d'))" required />
+                            </div>
+
+                            <div>
+                                <x-label for="supplier_id" value="Supplier *" />
+                                <select id="supplier_id" name="supplier_id" required x-model="supplierId"
+                                    @change="loadProductsBySupplier()"
+                                    class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
+                                    <option value="">Select Supplier</option>
+                                    @foreach ($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}">{{ $supplier->supplier_name }}</option>
+                                    @endforeach
+                                </select>
                             </div>
 
                             <div>
@@ -92,7 +104,7 @@
 
                                         <td class="px-2 py-2">
                                             <select :id="`product_${index}`" :name="`items[${index}][product_id]`"
-                                                required
+                                                required :disabled="!supplierId"
                                                 class="product-select border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">Select Product</option>
                                             </select>
@@ -225,10 +237,10 @@
 
     @push('scripts')
         <script>
-            const allAdjustmentProducts = {!! json_encode($products->map(fn($p) => ['id' => $p->id, 'name' => $p->product_name, 'uom_id' => $p->uom_id])) !!};
-
             function stockAdjustmentForm() {
                 return {
+                    supplierId: '{{ old("supplier_id", "") }}',
+                    products: [],
                     warehouseId: '{{ old("warehouse_id", "") }}',
                     items: [{
                         product_id: '',
@@ -245,11 +257,40 @@
 
                     init() {
                         this.$nextTick(() => {
+                            if (this.supplierId) {
+                                this.loadProductsBySupplier();
+                            }
                             this.items.forEach((item, index) => {
                                 initializeProductSelect2(index);
                                 initializeBatchSelect2(index, []);
                             });
                         });
+                    },
+
+                    async loadProductsBySupplier() {
+                        this.products = [];
+                        this.items.forEach((item, index) => {
+                            item.product_id = '';
+                            item.stock_batch_id = '';
+                            item.availableBatches = [];
+                            initializeProductSelect2(index);
+                            initializeBatchSelect2(index, []);
+                        });
+
+                        if (!this.supplierId) {
+                            return;
+                        }
+
+                        try {
+                            const response = await fetch(`/api/suppliers/${this.supplierId}/stock-adjustment-products`);
+                            if (!response.ok) {
+                                throw new Error('Unable to load supplier products');
+                            }
+                            this.products = await response.json();
+                            this.items.forEach((item, index) => initializeProductSelect2(index));
+                        } catch (error) {
+                            console.error('Failed to load supplier products:', error);
+                        }
                     },
 
                     addItem() {
@@ -314,7 +355,7 @@
                         item.adjustment_value = 0;
                         item.availableBatches = [];
 
-                        const product = allAdjustmentProducts.find(p => p.id == productId);
+                        const product = this.products.find(p => p.id == productId);
                         if (product && product.uom_id) {
                             item.uom_id = String(product.uom_id);
                         }
@@ -397,16 +438,17 @@
                     $select.select2('destroy');
                 }
 
+                const alpineComponent = Alpine.$data($select.closest('[x-data]')[0]);
+
                 $select.select2({
                     placeholder: 'Search product...',
                     allowClear: false,
                     width: '100%',
                     data: [{ id: '', text: 'Select Product' }].concat(
-                        allAdjustmentProducts.map(p => ({ id: p.id, text: p.name }))
+                        (alpineComponent?.products || []).map(p => ({ id: p.id, text: p.product_name }))
                     ),
                 });
 
-                const alpineComponent = Alpine.$data($select.closest('[x-data]')[0]);
                 if (alpineComponent && alpineComponent.items[index] && alpineComponent.items[index].product_id) {
                     $select.val(alpineComponent.items[index].product_id).trigger('change.select2');
                 }

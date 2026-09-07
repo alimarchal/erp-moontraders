@@ -541,6 +541,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::resource('stock-adjustments', StockAdjustmentController::class);
     Route::post('stock-adjustments/{stockAdjustment}/post', [StockAdjustmentController::class, 'post'])
         ->name('stock-adjustments.post');
+    Route::get('api/suppliers/{supplier}/stock-adjustment-products', [StockAdjustmentController::class, 'getProductsBySupplier'])
+        ->name('api.suppliers.stock-adjustment-products');
     Route::get('api/products/{product}/batches/{warehouse}', [StockAdjustmentController::class, 'getBatchesForProduct'])
         ->name('api.products.batches');
 

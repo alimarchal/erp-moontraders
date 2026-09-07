@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\StockAdjustment;
 use App\Models\StockAdjustmentItem;
 use App\Models\StockBatch;
+use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -305,10 +306,72 @@ test('stock adjustment controller index page renders', function () {
 });
 
 test('stock adjustment controller create page renders', function () {
+    $supplier = Supplier::factory()->create(['disabled' => false]);
+    $this->user->update(['supplier_id' => $supplier->id]);
+
     $this->get(route('stock-adjustments.create'))
         ->assertSuccessful()
         ->assertViewIs('stock-adjustments.create')
-        ->assertViewHas(['warehouses', 'products', 'uoms']);
+        ->assertViewHas(['warehouses', 'suppliers', 'uoms'])
+        ->assertViewHas('suppliers', fn ($suppliers) => $suppliers->pluck('id')->contains($supplier->id));
+});
+
+test('supplier user sees only related stock adjustments', function () {
+    $supplier = Supplier::factory()->create(['disabled' => false]);
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+    $this->user->update(['supplier_id' => $supplier->id]);
+
+    $relatedProduct = Product::factory()->create(['supplier_id' => $supplier->id]);
+    $otherProduct = Product::factory()->create(['supplier_id' => $otherSupplier->id]);
+    $relatedAdjustment = StockAdjustment::factory()->create(['adjustment_number' => 'SA-RELATED-001']);
+    $otherAdjustment = StockAdjustment::factory()->create(['adjustment_number' => 'SA-OTHER-001']);
+
+    $relatedAdjustment->items()->create([
+        'stock_adjustment_id' => $relatedAdjustment->id,
+        'product_id' => $relatedProduct->id,
+        'system_quantity' => 1,
+        'actual_quantity' => 1,
+        'adjustment_quantity' => 0,
+        'unit_cost' => 1,
+        'adjustment_value' => 0,
+        'uom_id' => $this->uom->id,
+    ]);
+    $otherAdjustment->items()->create([
+        'stock_adjustment_id' => $otherAdjustment->id,
+        'product_id' => $otherProduct->id,
+        'system_quantity' => 1,
+        'actual_quantity' => 1,
+        'adjustment_quantity' => 0,
+        'unit_cost' => 1,
+        'adjustment_value' => 0,
+        'uom_id' => $this->uom->id,
+    ]);
+
+    $this->get(route('stock-adjustments.index'))
+        ->assertSuccessful()
+        ->assertSee('SA-RELATED-001')
+        ->assertDontSee('SA-OTHER-001');
+});
+
+test('supplier user cannot load another supplier products for stock adjustment', function () {
+    $supplier = Supplier::factory()->create(['disabled' => false]);
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+    $this->user->update(['supplier_id' => $supplier->id]);
+
+    $this->getJson(route('api.suppliers.stock-adjustment-products', $otherSupplier))
+        ->assertForbidden();
+});
+
+test('super admin sees all stock adjustment suppliers and adjustments', function () {
+    $supplier = Supplier::factory()->create(['disabled' => false]);
+    $otherSupplier = Supplier::factory()->create(['disabled' => false]);
+    $this->user->update(['is_super_admin' => 'Yes']);
+
+    $this->get(route('stock-adjustments.create'))
+        ->assertViewHas('suppliers', function ($suppliers) use ($supplier, $otherSupplier) {
+            return $suppliers->pluck('id')->contains($supplier->id)
+                && $suppliers->pluck('id')->contains($otherSupplier->id);
+        });
 });
 
 test('batch status changes to depleted when fully adjusted', function () {

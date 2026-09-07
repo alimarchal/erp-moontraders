@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\StockAdjustment;
 use App\Models\StockBatch;
+use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\Warehouse;
 use App\Services\StockAdjustmentService;
@@ -31,9 +32,14 @@ class StockAdjustmentController extends Controller implements HasMiddleware
 
     public function index(Request $request)
     {
-        $adjustments = QueryBuilder::for(
-            StockAdjustment::query()->with(['warehouse', 'createdBy', 'postedBy'])
-        )
+        $query = StockAdjustment::query()->with(['warehouse', 'createdBy', 'postedBy']);
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId !== null) {
+            $query->whereHas('items.product', fn ($productQuery) => $productQuery->where('supplier_id', $userSupplierId));
+        }
+
+        $adjustments = QueryBuilder::for($query)
             ->allowedFilters([
                 AllowedFilter::partial('adjustment_number'),
                 AllowedFilter::exact('warehouse_id'),
@@ -54,17 +60,37 @@ class StockAdjustmentController extends Controller implements HasMiddleware
 
     public function create()
     {
+        $userSupplierId = $this->getUserSupplierScope();
+
         return view('stock-adjustments.create', [
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(),
-            'products' => Product::where('is_active', true)->with('uom:id,uom_name')->orderBy('product_name')->get(),
+            'suppliers' => Supplier::where('disabled', false)
+                ->when($userSupplierId !== null, fn ($query) => $query->where('id', $userSupplierId))
+                ->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'uoms' => Uom::where('enabled', true)->orderBy('uom_name')->get(),
         ]);
+    }
+
+    public function getProductsBySupplier(Request $request, int $supplierId)
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId !== null && $supplierId !== $userSupplierId) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        return response()->json(Product::where('is_active', true)
+            ->where('supplier_id', $supplierId)
+            ->with('uom:id,uom_name')
+            ->orderBy('product_name')
+            ->get(['id', 'product_name', 'uom_id', 'supplier_id']));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
             'adjustment_date' => 'required|date|before_or_equal:today',
+            'supplier_id' => 'required|exists:suppliers,id',
             'warehouse_id' => 'required|exists:warehouses,id',
             'adjustment_type' => 'required|in:damage,theft,count_variance,expiry,recall,other',
             'reason' => 'required|string|max:1000',
@@ -77,6 +103,9 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             'items.*.unit_cost' => 'required|numeric|min:0',
             'items.*.uom_id' => 'required|exists:uoms,id',
         ]);
+
+        $this->authorizeSupplierId((int) $validated['supplier_id']);
+        $this->validateProductsBelongToSupplier($validated['items'], (int) $validated['supplier_id']);
 
         foreach ($validated['items'] as &$item) {
             $item['adjustment_quantity'] = $item['actual_quantity'] - $item['system_quantity'];
@@ -96,6 +125,7 @@ class StockAdjustmentController extends Controller implements HasMiddleware
 
     public function show(StockAdjustment $stockAdjustment)
     {
+        $this->authorizeAdjustmentAccess($stockAdjustment);
         $stockAdjustment->load(['warehouse', 'items.product', 'items.stockBatch', 'items.uom', 'journalEntry', 'createdBy', 'postedBy']);
 
         return view('stock-adjustments.show', compact('stockAdjustment'));
@@ -103,6 +133,8 @@ class StockAdjustmentController extends Controller implements HasMiddleware
 
     public function edit(StockAdjustment $stockAdjustment)
     {
+        $this->authorizeAdjustmentAccess($stockAdjustment);
+
         if ($stockAdjustment->status !== 'draft') {
             return redirect()->route('stock-adjustments.show', $stockAdjustment)
                 ->with('error', 'Only draft adjustments can be edited');
@@ -120,6 +152,8 @@ class StockAdjustmentController extends Controller implements HasMiddleware
 
     public function update(Request $request, StockAdjustment $stockAdjustment)
     {
+        $this->authorizeAdjustmentAccess($stockAdjustment);
+
         if ($stockAdjustment->status !== 'draft') {
             return redirect()->route('stock-adjustments.show', $stockAdjustment)
                 ->with('error', 'Only draft adjustments can be updated');
@@ -158,6 +192,8 @@ class StockAdjustmentController extends Controller implements HasMiddleware
 
     public function destroy(StockAdjustment $stockAdjustment)
     {
+        $this->authorizeAdjustmentAccess($stockAdjustment);
+
         if ($stockAdjustment->status !== 'draft') {
             return redirect()->route('stock-adjustments.index')
                 ->with('error', 'Only draft adjustments can be deleted');
@@ -171,6 +207,8 @@ class StockAdjustmentController extends Controller implements HasMiddleware
 
     public function post(Request $request, StockAdjustment $stockAdjustment)
     {
+        $this->authorizeAdjustmentAccess($stockAdjustment);
+
         $request->validate([
             'password' => 'required',
         ]);
@@ -205,5 +243,44 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             ->values();
 
         return response()->json($batches);
+    }
+
+    private function getUserSupplierScope(): ?int
+    {
+        $user = auth()->user();
+
+        if ($user->is_super_admin === 'Yes' || $user->hasAnyRole(['super-admin', 'admin'])) {
+            return null;
+        }
+
+        return $user->supplier_id ? (int) $user->supplier_id : null;
+    }
+
+    private function authorizeSupplierId(int $supplierId): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId !== null && $supplierId !== $userSupplierId) {
+            abort(403, 'You do not have permission to access this supplier.');
+        }
+    }
+
+    private function authorizeAdjustmentAccess(StockAdjustment $stockAdjustment): void
+    {
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($userSupplierId !== null && ! $stockAdjustment->items()->whereHas('product', fn ($query) => $query->where('supplier_id', $userSupplierId))->exists()) {
+            abort(403, 'You do not have permission to access this stock adjustment.');
+        }
+    }
+
+    private function validateProductsBelongToSupplier(array $items, int $supplierId): void
+    {
+        $productIds = collect($items)->pluck('product_id')->unique();
+        $authorizedProductCount = Product::whereIn('id', $productIds)->where('supplier_id', $supplierId)->count();
+
+        if ($authorizedProductCount !== $productIds->count()) {
+            abort(422, 'All products must belong to the selected supplier.');
+        }
     }
 }

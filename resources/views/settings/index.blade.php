@@ -187,7 +187,7 @@
                 @endcanany
 
                 {{-- ─── Tax & Expenses ─── --}}
-                @canany(['tax-list', 'expense-detail-list', 'category-revenue-list', 'profit-category-list', 'cost-center-list', 'journal-entry-list'])
+                @canany(['tax-list', 'expense-detail-list', 'category-revenue-list', 'profit-category-list'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Tax &amp;
                             Expenses</p>
@@ -235,8 +235,8 @@
                             @can('category-revenue-list')
                                 <div class="ml-[58px] h-px bg-gray-100"></div>
                                 <x-settings-row href="{{ route('category-revenue.index') }}" label="Category Revenue"
-                                    description="Supplier-wise revenue category setup" :count="\App\Models\RevenueCategory::count()"
-                                    icon-bg="bg-emerald-500">
+                                    description="Supplier-wise revenue category setup"
+                                    :count="\App\Models\RevenueCategory::count()" icon-bg="bg-emerald-500">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24" stroke-width="1.8">
@@ -249,41 +249,13 @@
                             @can('profit-category-list')
                                 <div class="ml-[58px] h-px bg-gray-100"></div>
                                 <x-settings-row href="{{ route('profit-categories.index') }}" label="Profit Categories"
-                                    description="Supplier-wise profit after taxation category setup" :count="\App\Models\ProfitCategory::count()"
-                                    icon-bg="bg-cyan-600">
+                                    description="Supplier-wise profit after taxation category setup"
+                                    :count="\App\Models\ProfitCategory::count()" icon-bg="bg-cyan-600">
                                     <x-slot name="icon">
                                         <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                            @can('cost-center-list')
-                                <div class="ml-[58px] h-px bg-gray-100"></div>
-                                <x-settings-row href="{{ route('cost-centers.index') }}" label="Cost Centers"
-                                    description="Department & project cost tracking" :count="\App\Models\CostCenter::count()"
-                                    icon-bg="bg-fuchsia-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                            @can('journal-entry-list')
-                                <div class="ml-[58px] h-px bg-gray-100"></div>
-                                <x-settings-row href="{{ route('journal-entries.index') }}" label="Journal Entries"
-                                    description="Manual GL postings & adjustments" :count="\App\Models\JournalEntry::count()"
-                                    icon-bg="bg-violet-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>
@@ -600,6 +572,44 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                        </div>
+                    </div>
+                @endcanany
+
+                {{-- ─── Ledger & Costing ─── --}}
+                @canany(['cost-center-list', 'journal-entry-list'])
+                    <div>
+                        <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Ledger
+                            &amp; Costing</p>
+                        <div
+                            class="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-[0_20px_60px_-10px_rgba(0,0,0,0.15)] hover:-translate-y-0.5 transition-all duration-200">
+                            @can('cost-center-list')
+                                <x-settings-row href="{{ route('cost-centers.index') }}" label="Cost Centers"
+                                    description="Department & project cost tracking" :count="\App\Models\CostCenter::count()"
+                                    icon-bg="bg-fuchsia-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
+                                        </svg>
+                                    </x-slot>
+                                </x-settings-row>
+                            @endcan
+                            @can('journal-entry-list')
+                                <div class="ml-[58px] h-px bg-gray-100"></div>
+                                <x-settings-row href="{{ route('journal-entries.index') }}" label="Journal Entries"
+                                    description="Manual GL postings & adjustments" :count="\App\Models\JournalEntry::count()"
+                                    icon-bg="bg-violet-500">
+                                    <x-slot name="icon">
+                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24" stroke-width="1.8">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

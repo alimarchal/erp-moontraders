@@ -509,6 +509,7 @@
         secondaryMessage="GRN نمبر: {{ $grn->grn_number }}
 مصنوعات کی تفصیلات: {{ $grn->items->count() }} | کل رقم: Rs. {{ number_format($grn->items->sum('total_value_with_taxes') ?: $grn->grand_total, 2) }}"
         secondaryMessageDirection="rtl"
+        errorKey="password"
         confirmButtonText="Post to Inventory" confirmButtonClass="bg-emerald-600 hover:bg-emerald-700" />
 
     <form id="postGrnForm" action="{{ route('goods-receipt-notes.post', $grn->id) }}" method="POST" class="hidden">

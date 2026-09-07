@@ -5,6 +5,7 @@
     'messageDirection' => 'ltr',
     'secondaryMessage' => null,
     'secondaryMessageDirection' => 'ltr',
+    'errorKey' => null,
     'warningClass' => 'text-gray-600',
     'confirmButtonText' => 'Confirm',
     'confirmButtonClass' => 'bg-emerald-600 hover:bg-emerald-700',
@@ -42,6 +43,11 @@
                             <input type="password" id="{{ $id }}_input" autocomplete="current-password"
                                 class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-emerald-500 focus:ring-emerald-500"
                                 placeholder="Password">
+                            @if ($errorKey && $errors->has($errorKey))
+                                <p class="mt-2 text-sm font-medium text-red-600" role="alert">
+                                    {{ $errors->first($errorKey) }}
+                                </p>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -126,3 +132,13 @@
         </script>
     @endpush
 @endonce
+
+@if ($errorKey && $errors->has($errorKey))
+    @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                window.showPasswordModal('{{ $id }}');
+            });
+        </script>
+    @endpush
+@endif

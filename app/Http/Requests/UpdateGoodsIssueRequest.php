@@ -45,6 +45,16 @@ class UpdateGoodsIssueRequest extends FormRequest
                 'min:0.001',
                 function ($attribute, $value, $fail) {
                     $index = explode('.', $attribute)[1];
+                    $uomId = $this->input("items.{$index}.uom_id");
+                    $mustBeWholeNumber = $uomId && DB::table('uoms')->where('id', $uomId)->value('must_be_whole_number');
+
+                    if ($mustBeWholeNumber && $value != floor($value)) {
+                        $uomName = DB::table('uoms')->where('id', $uomId)->value('uom_name');
+                        $fail("The quantity ({$value}) must be a whole number for UOM '{$uomName}'.");
+                    }
+                },
+                function ($attribute, $value, $fail) {
+                    $index = explode('.', $attribute)[1];
                     $productId = $this->input("items.{$index}.product_id");
                     $warehouseId = $this->input('warehouse_id');
                     $excludePromotional = (bool) $this->input("items.{$index}.exclude_promotional");

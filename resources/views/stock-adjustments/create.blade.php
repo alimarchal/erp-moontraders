@@ -437,6 +437,7 @@
                 if ($select.data('select2')) {
                     $select.select2('destroy');
                 }
+                $select.empty();
 
                 const alpineComponent = Alpine.$data($select.closest('[x-data]')[0]);
 
@@ -469,6 +470,7 @@
                 if ($select.data('select2')) {
                     $select.select2('destroy');
                 }
+                $select.empty();
 
                 const data = [{ id: '', text: 'Select Batch' }].concat(
                     (batches || []).map(b => ({

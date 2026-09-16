@@ -111,6 +111,7 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             $item['adjustment_quantity'] = $item['actual_quantity'] - $item['system_quantity'];
             $item['adjustment_value'] = $item['adjustment_quantity'] * $item['unit_cost'];
         }
+        unset($item);
 
         $service = app(StockAdjustmentService::class);
         $result = $service->createAdjustment($validated);
@@ -178,6 +179,7 @@ class StockAdjustmentController extends Controller implements HasMiddleware
             $item['adjustment_quantity'] = $item['actual_quantity'] - $item['system_quantity'];
             $item['adjustment_value'] = $item['adjustment_quantity'] * $item['unit_cost'];
         }
+        unset($item);
 
         $stockAdjustment->update(Arr::except($validated, ['items']));
         $stockAdjustment->items()->delete();

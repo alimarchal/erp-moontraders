@@ -369,6 +369,7 @@
             if ($select.data('select2')) {
                 $select.select2('destroy');
             }
+            $select.empty();
 
             $select.select2({
                 placeholder: 'Search product...',
@@ -398,6 +399,7 @@
             if ($select.data('select2')) {
                 $select.select2('destroy');
             }
+            $select.empty();
 
             const data = [{ id: '', text: 'Select Batch' }].concat(
                 (batches || []).map(b => ({

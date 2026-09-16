@@ -139,6 +139,66 @@ test('stock adjustment can be created as draft', function () {
     expect($result['data']->items)->toHaveCount(1);
 });
 
+test('updating a stock adjustment keeps each item independent', function () {
+    $secondProduct = Product::factory()->create();
+
+    $batchOne = StockBatch::factory()->create(['product_id' => $this->product->id, 'status' => 'active']);
+    $batchTwo = StockBatch::factory()->create(['product_id' => $secondProduct->id, 'status' => 'active']);
+
+    $adjustment = StockAdjustment::factory()->create([
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'damage',
+        'status' => 'draft',
+    ]);
+
+    $adjustment->items()->create([
+        'product_id' => $this->product->id,
+        'stock_batch_id' => $batchOne->id,
+        'system_quantity' => 100,
+        'actual_quantity' => 90,
+        'adjustment_quantity' => -10,
+        'unit_cost' => 50.00,
+        'adjustment_value' => -500.00,
+        'uom_id' => $this->uom->id,
+    ]);
+
+    $response = $this->put(route('stock-adjustments.update', $adjustment), [
+        'adjustment_date' => now()->format('Y-m-d'),
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'damage',
+        'reason' => 'Recount after audit',
+        'items' => [
+            [
+                'product_id' => $this->product->id,
+                'stock_batch_id' => $batchOne->id,
+                'system_quantity' => 100,
+                'actual_quantity' => 90,
+                'unit_cost' => 50.00,
+                'uom_id' => $this->uom->id,
+            ],
+            [
+                'product_id' => $secondProduct->id,
+                'stock_batch_id' => $batchTwo->id,
+                'system_quantity' => 200,
+                'actual_quantity' => 150,
+                'unit_cost' => 25.00,
+                'uom_id' => $this->uom->id,
+            ],
+        ],
+    ]);
+
+    $response->assertRedirect(route('stock-adjustments.show', $adjustment));
+
+    $items = $adjustment->items()->orderBy('id')->get();
+    expect($items)->toHaveCount(2);
+    expect($items[0]->product_id)->toBe($this->product->id);
+    expect($items[0]->stock_batch_id)->toBe($batchOne->id);
+    expect((float) $items[0]->adjustment_value)->toBe(-500.00);
+    expect($items[1]->product_id)->toBe($secondProduct->id);
+    expect($items[1]->stock_batch_id)->toBe($batchTwo->id);
+    expect((float) $items[1]->adjustment_value)->toBe(-1250.00);
+});
+
 test('stock adjustment number is generated correctly', function () {
     $service = new StockAdjustmentService;
     $number = $service->generateAdjustmentNumber();

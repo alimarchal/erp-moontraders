@@ -6,10 +6,10 @@
     "semantic_hash": "f49d5f5c5163b1f7080db7438457e1b2"
   },
   ".mcp.json": {
-    "mtime": 1789552624.3649282,
-    "seen": 1789556118.223667,
-    "ast_hash": "526be89712b0640d82e59da75aa2f85f",
-    "semantic_hash": "526be89712b0640d82e59da75aa2f85f"
+    "mtime": 1789724474.1503239,
+    "seen": 1789724504.335177,
+    "ast_hash": "6f58d422bd3b8458502c32541ec97c5a",
+    "semantic_hash": "6f58d422bd3b8458502c32541ec97c5a"
   },
   "vite.config.js": {
     "mtime": 1789552624.5652764,
@@ -18,10 +18,10 @@
     "semantic_hash": "804b9fdf6105c34a0a14bed82a9d6026"
   },
   "boost.json": {
-    "mtime": 1789552624.4149458,
-    "seen": 1789556118.2239301,
-    "ast_hash": "7a56e5fdfdf4eee1ade3e51343600221",
-    "semantic_hash": "7a56e5fdfdf4eee1ade3e51343600221"
+    "mtime": 1789724474.1565423,
+    "seen": 1789724504.3417358,
+    "ast_hash": "ea3105f77585bad960eb29063d08fa76",
+    "semantic_hash": "ea3105f77585bad960eb29063d08fa76"
   },
   "artisan": {
     "mtime": 1789552624.4148743,
@@ -2622,10 +2622,10 @@
     "semantic_hash": "21d9240210630c8d19bea1e5505ff216"
   },
   "app/Http/Controllers/StockAdjustmentController.php": {
-    "mtime": 1789552624.3888502,
-    "seen": 1789556118.223752,
-    "ast_hash": "8d4382bc40635ad5d6962add922d6804",
-    "semantic_hash": "8d4382bc40635ad5d6962add922d6804"
+    "mtime": 1789573510.6832716,
+    "seen": 1789724504.3372211,
+    "ast_hash": "92aef15ddec934f925b3510543d73d70",
+    "semantic_hash": "92aef15ddec934f925b3510543d73d70"
   },
   "app/Http/Controllers/UserController.php": {
     "mtime": 1789552624.3911176,
@@ -3546,16 +3546,16 @@
     "semantic_hash": "f81307b9f2695506d14945aa6d945c9a"
   },
   "resources/views/stock-adjustments/edit.blade.php": {
-    "mtime": 1789552624.5287158,
-    "seen": 1789556118.224349,
-    "ast_hash": "b8961141b7cb1b48e9856459b1f02185",
-    "semantic_hash": "b8961141b7cb1b48e9856459b1f02185"
+    "mtime": 1789573273.188523,
+    "seen": 1789724504.352329,
+    "ast_hash": "9a93d57dece12eee0cc7441e3d177d8d",
+    "semantic_hash": "9a93d57dece12eee0cc7441e3d177d8d"
   },
   "resources/views/stock-adjustments/create.blade.php": {
-    "mtime": 1789552624.5285811,
-    "seen": 1789556118.2243478,
-    "ast_hash": "a642269bae82ccbf19e9d3320eec6384",
-    "semantic_hash": "a642269bae82ccbf19e9d3320eec6384"
+    "mtime": 1789573273.1894224,
+    "seen": 1789724504.3523278,
+    "ast_hash": "d49845123a79be0c8b65e409536a6b53",
+    "semantic_hash": "d49845123a79be0c8b65e409536a6b53"
   },
   "resources/views/stock-adjustments/show.blade.php": {
     "mtime": 1789552624.5290082,
@@ -5670,10 +5670,10 @@
     "semantic_hash": "734a1b23a06c38379ba26001222b5bb0"
   },
   "tests/Feature/StockAdjustmentTest.php": {
-    "mtime": 1789552624.5627463,
-    "seen": 1789556118.2244759,
-    "ast_hash": "4b542047e58538610b785e64d091b466",
-    "semantic_hash": "4b542047e58538610b785e64d091b466"
+    "mtime": 1789573590.5531332,
+    "seen": 1789724504.3554611,
+    "ast_hash": "24c2317d7305b3e158930071f15fd588",
+    "semantic_hash": "24c2317d7305b3e158930071f15fd588"
   },
   "tests/Feature/CreditorsLedgerTest.php": {
     "mtime": 1789552624.5413082,
@@ -6335,11 +6335,6 @@
     "ast_hash": "",
     "semantic_hash": ""
   },
-  ".agents/skills/pest-testing/SKILL.md": {
-    "mtime": 1776752564.2674983,
-    "ast_hash": "",
-    "semantic_hash": ""
-  },
   ".agents/skills/livewire-development/SKILL.md": {
     "mtime": 1776752564.2667396,
     "ast_hash": "",
@@ -6410,11 +6405,6 @@
     "ast_hash": "",
     "semantic_hash": ""
   },
-  ".agents/skills/laravel-best-practices/rules/testing.md": {
-    "mtime": 1776752564.264659,
-    "ast_hash": "",
-    "semantic_hash": ""
-  },
   ".agents/skills/laravel-best-practices/rules/config.md": {
     "mtime": 1776752564.264823,
     "ast_hash": "",
@@ -6462,11 +6452,6 @@
   },
   ".claude/skills/tailwindcss-development/SKILL.md": {
     "mtime": 1776752564.2358644,
-    "ast_hash": "",
-    "semantic_hash": ""
-  },
-  ".claude/skills/pest-testing/SKILL.md": {
-    "mtime": 1776752564.23497,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -6537,11 +6522,6 @@
   },
   ".claude/skills/laravel-best-practices/rules/queue-jobs.md": {
     "mtime": 1776752564.228782,
-    "ast_hash": "",
-    "semantic_hash": ""
-  },
-  ".claude/skills/laravel-best-practices/rules/testing.md": {
-    "mtime": 1776752564.2291114,
     "ast_hash": "",
     "semantic_hash": ""
   },
@@ -6620,11 +6600,6 @@
     "ast_hash": "",
     "semantic_hash": ""
   },
-  ".github/skills/pest-testing/SKILL.md": {
-    "mtime": 1776752564.25824,
-    "ast_hash": "",
-    "semantic_hash": ""
-  },
   ".github/skills/livewire-development/SKILL.md": {
     "mtime": 1776752564.2573714,
     "ast_hash": "",
@@ -6692,11 +6667,6 @@
   },
   ".github/skills/laravel-best-practices/rules/queue-jobs.md": {
     "mtime": 1776752564.254686,
-    "ast_hash": "",
-    "semantic_hash": ""
-  },
-  ".github/skills/laravel-best-practices/rules/testing.md": {
-    "mtime": 1776752564.2548935,
     "ast_hash": "",
     "semantic_hash": ""
   },

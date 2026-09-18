@@ -1,17 +1,30 @@
 <x-app-layout>
+    @php $isSpecialEdit = $isSpecialEdit ?? false; @endphp
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            Edit Sales Settlement
-        </h2>
-        <div class="flex justify-center items-center float-right space-x-2">
-            <a href="{{ route('sales-settlements.index') }}"
-                class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
+        <div class="flex justify-between items-center">
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
+                @if ($isSpecialEdit)
+                    Special Edit — Settlement: {{ $settlement->settlement_number }}
+                @else
+                    Edit Sales Settlement
+                @endif
+            </h2>
+            <div class="flex justify-center items-center space-x-2">
+                @if ($isSpecialEdit)
+                    <span
+                        class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                        Super Admin Only
+                    </span>
+                @endif
+                <a href="{{ $isSpecialEdit ? route('sales-settlements.show', $settlement) : route('sales-settlements.index') }}"
+                    class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-blue-900 transition">
+                    <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                </a>
+            </div>
         </div>
     </x-slot>
 
@@ -165,10 +178,35 @@
             <x-status-message class="mb-4 shadow-md" />
             <x-validation-errors class="mb-4" />
 
+            @if ($isSpecialEdit)
+                <div class="mb-4 p-4 bg-amber-50 border border-amber-300 rounded-lg shadow">
+                    <div class="flex items-start space-x-3">
+                        <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd"
+                                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                clip-rule="evenodd" />
+                        </svg>
+                        <div class="text-sm text-amber-800">
+                            <p class="font-semibold mb-1">This settlement is posted. Saving here will fully reverse
+                                its accounting, inventory, and ledger impact, apply your changes, and re-post it —
+                                all inside a single transaction.</p>
+                            <p>The original journal entry is never altered (posted entries are immutable); a
+                                reversing entry and a fresh corrected entry are created instead, so the full history
+                                stays intact. If the corrected figures fail posting validation, nothing is changed.</p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <form method="POST" action="{{ route('sales-settlements.update', $settlement) }}" id="settlementForm">
+                <form method="POST"
+                    action="{{ $isSpecialEdit ? route('sales-settlements.update-special', $settlement) : route('sales-settlements.update', $settlement) }}"
+                    id="settlementForm">
                     @csrf
-                    @method('PUT')
+                    @unless ($isSpecialEdit)
+                        @method('PUT')
+                    @endunless
                     {{-- Hidden input to store current employee ID for credit sales modal --}}
                     <input type="hidden" id="current_settlement_employee_id"
                         value="{{ old('employee_id', $settlement->employee_id) }}">
@@ -1019,13 +1057,20 @@
                     </div>
 
                     <div class="flex justify-end space-x-3 mb-4 mr-4">
-                        <a href="{{ route('sales-settlements.index') }}"
+                        <a href="{{ $isSpecialEdit ? route('sales-settlements.show', $settlement) : route('sales-settlements.index') }}"
                             class="inline-flex items-center px-4 py-2 bg-gray-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
                             Cancel
                         </a>
-                        <x-button type="submit">
-                            Update Settlement
-                        </x-button>
+                        @if ($isSpecialEdit)
+                            <x-button type="submit"
+                                onclick="return confirm('This will reverse the accounting and inventory impact of this posted settlement, apply your changes, and re-post it. Continue?');">
+                                Apply Correction &amp; Re-Post
+                            </x-button>
+                        @else
+                            <x-button type="submit">
+                                Update Settlement
+                            </x-button>
+                        @endif
                     </div>
                 </form>
             </div>

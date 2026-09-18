@@ -7,6 +7,7 @@ use App\Http\Requests\UpdateSalesSettlementRequest;
 use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\Customer;
+use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\InventoryLedgerEntry;
@@ -27,6 +28,7 @@ use App\Models\SalesSettlementItemBatch;
 use App\Models\SalesSettlementPercentageExpense;
 use App\Models\SalesSettlementRecovery;
 use App\Models\StockBatch;
+use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Vehicle;
@@ -745,6 +747,18 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 ->with('error', 'Only draft Sales Settlements can be edited.');
         }
 
+        return view('sales-settlements.edit', $this->buildEditViewData($salesSettlement));
+    }
+
+    /**
+     * Build the data payload shared by the normal edit page (draft
+     * settlements) and the Super Admin special edit page (posted
+     * settlements) — both render the same `sales-settlements.edit` view.
+     *
+     * @return array<string, mixed>
+     */
+    private function buildEditViewData(SalesSettlement $salesSettlement): array
+    {
         $salesSettlement->load([
             'goodsIssue.items.product',
             'goodsIssue.items.uom',
@@ -918,7 +932,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ['id' => 8, 'label' => 'Miscellaneous Expenses', 'account_code' => '5221', 'expense_account_id' => $predefinedAccountsMap['5221'] ?? null, 'is_predefined' => true, 'amount' => 0],
         ];
 
-        return view('sales-settlements.edit', [
+        return [
             'settlement' => $salesSettlement,
             'suppliers' => Supplier::where('disabled', false)
                 ->when($this->getUserSupplierScope(), function ($query, $userSupplierId) {
@@ -953,7 +967,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'cashDenom' => $cashDenom,
             'savedExpensesData' => $savedExpensesData,
             'predefinedExpenses' => $predefinedExpenses,
-        ]);
+        ];
     }
 
     /**
@@ -973,65 +987,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
-            $goodsIssue = GoodsIssue::with('items')->findOrFail($request->goods_issue_id);
-
-            $existingSettlement = SalesSettlement::where('goods_issue_id', $request->goods_issue_id)
-                ->where('id', '!=', $salesSettlement->id)
-                ->whereIn('status', ['draft', 'posted'])
-                ->first();
-
-            if ($existingSettlement) {
-                DB::rollBack();
-
-                return back()
-                    ->withInput()
-                    ->with('error', "Another settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. Cannot change to a Goods Issue that already has a settlement.");
-            }
-
-            $payload = $this->buildSettlementPayload($request);
-            $totals = $payload['totals'];
-            $itemFinancials = $payload['items_financials'];
-
-            $paymentBreakdownWarning = null;
-
-            if ($totals['cash_sales_amount'] < 0) {
-                $excess = number_format(abs($totals['cash_sales_amount']), 2);
-                $paymentBreakdownWarning = "Payment breakdown is currently unbalanced: credit sales and bank transfers exceed Net Sale (Sold Items Value) by {$excess}. Draft saved, but posting will fail until this is corrected.";
-            }
-
-            $salesSettlement->update([
-                'settlement_date' => $request->settlement_date,
-                'goods_issue_id' => $goodsIssue->id,
-                'employee_id' => $goodsIssue->employee_id,
-                'vehicle_id' => $goodsIssue->vehicle_id,
-                'warehouse_id' => $goodsIssue->warehouse_id,
-                'supplier_id' => $goodsIssue->employee->supplier_id ?? null,
-                'total_quantity_issued' => $totals['total_quantity_issued'],
-                'total_value_issued' => $totals['total_value_issued'],
-                'total_sales_amount' => $totals['total_sales_amount'],
-                'cash_sales_amount' => $totals['cash_sales_amount'],
-                'cheque_sales_amount' => $totals['cheque_sales_amount'],
-                'bank_transfer_amount' => $totals['bank_transfer_amount'],
-                'bank_slips_amount' => $totals['bank_slips_amount'],
-                'credit_sales_amount' => $totals['credit_sales_amount'],
-                'credit_recoveries' => $totals['credit_recoveries'],
-                'total_quantity_sold' => $totals['total_quantity_sold'],
-                'total_quantity_returned' => $totals['total_quantity_returned'],
-                'total_quantity_shortage' => $totals['total_quantity_shortage'],
-                'cash_collected' => $totals['cash_collected'],
-                'cheques_collected' => $totals['cheques_collected'],
-                'expenses_claimed' => $totals['expenses_claimed'],
-                'cash_to_deposit' => $totals['cash_to_deposit'],
-                'gross_profit' => $totals['gross_profit'],
-                'total_cogs' => $totals['total_cogs'],
-                'notes' => $request->notes,
-            ]);
-
-            $this->deleteAllChildRecords($salesSettlement);
-
-            $this->createChildRecords($request, $salesSettlement, $goodsIssue, $itemFinancials, $payload);
-
-            $this->recalcSettlementFinancials($salesSettlement);
+            $result = $this->applySettlementUpdate($request, $salesSettlement);
 
             DB::commit();
 
@@ -1039,12 +995,18 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 ->route('sales-settlements.show', $salesSettlement)
                 ->with('success', "Sales Settlement '{$salesSettlement->settlement_number}' updated successfully.");
 
-            if ($paymentBreakdownWarning !== null) {
-                $redirect->with('warning', $paymentBreakdownWarning);
+            if ($result['payment_breakdown_warning'] !== null) {
+                $redirect->with('warning', $result['payment_breakdown_warning']);
             }
 
             return $redirect;
 
+        } catch (\RuntimeException $e) {
+            DB::rollBack();
+
+            return back()
+                ->withInput()
+                ->with('error', $e->getMessage());
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -1058,6 +1020,78 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 ->withInput()
                 ->with('error', 'Unable to update Sales Settlement. Please try again.');
         }
+    }
+
+    /**
+     * Apply the submitted field values and rebuild every child record for a
+     * settlement. Shared by update() (draft settlements) and updateSpecial()
+     * (posted settlements, where this runs between a full revert() and a
+     * re-post() inside one transaction) so both paths run identical
+     * validation, totals, and record-building logic.
+     *
+     * @return array{payment_breakdown_warning: ?string}
+     *
+     * @throws \RuntimeException when the target Goods Issue already has another settlement.
+     */
+    private function applySettlementUpdate(UpdateSalesSettlementRequest $request, SalesSettlement $salesSettlement): array
+    {
+        $goodsIssue = GoodsIssue::with('items')->findOrFail($request->goods_issue_id);
+
+        $existingSettlement = SalesSettlement::where('goods_issue_id', $request->goods_issue_id)
+            ->where('id', '!=', $salesSettlement->id)
+            ->whereIn('status', ['draft', 'posted'])
+            ->first();
+
+        if ($existingSettlement) {
+            throw new \RuntimeException("Another settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. Cannot change to a Goods Issue that already has a settlement.");
+        }
+
+        $payload = $this->buildSettlementPayload($request);
+        $totals = $payload['totals'];
+        $itemFinancials = $payload['items_financials'];
+
+        $paymentBreakdownWarning = null;
+
+        if ($totals['cash_sales_amount'] < 0) {
+            $excess = number_format(abs($totals['cash_sales_amount']), 2);
+            $paymentBreakdownWarning = "Payment breakdown is currently unbalanced: credit sales and bank transfers exceed Net Sale (Sold Items Value) by {$excess}. Draft saved, but posting will fail until this is corrected.";
+        }
+
+        $salesSettlement->update([
+            'settlement_date' => $request->settlement_date,
+            'goods_issue_id' => $goodsIssue->id,
+            'employee_id' => $goodsIssue->employee_id,
+            'vehicle_id' => $goodsIssue->vehicle_id,
+            'warehouse_id' => $goodsIssue->warehouse_id,
+            'supplier_id' => $goodsIssue->employee->supplier_id ?? null,
+            'total_quantity_issued' => $totals['total_quantity_issued'],
+            'total_value_issued' => $totals['total_value_issued'],
+            'total_sales_amount' => $totals['total_sales_amount'],
+            'cash_sales_amount' => $totals['cash_sales_amount'],
+            'cheque_sales_amount' => $totals['cheque_sales_amount'],
+            'bank_transfer_amount' => $totals['bank_transfer_amount'],
+            'bank_slips_amount' => $totals['bank_slips_amount'],
+            'credit_sales_amount' => $totals['credit_sales_amount'],
+            'credit_recoveries' => $totals['credit_recoveries'],
+            'total_quantity_sold' => $totals['total_quantity_sold'],
+            'total_quantity_returned' => $totals['total_quantity_returned'],
+            'total_quantity_shortage' => $totals['total_quantity_shortage'],
+            'cash_collected' => $totals['cash_collected'],
+            'cheques_collected' => $totals['cheques_collected'],
+            'expenses_claimed' => $totals['expenses_claimed'],
+            'cash_to_deposit' => $totals['cash_to_deposit'],
+            'gross_profit' => $totals['gross_profit'],
+            'total_cogs' => $totals['total_cogs'],
+            'notes' => $request->notes,
+        ]);
+
+        $this->deleteAllChildRecords($salesSettlement);
+
+        $this->createChildRecords($request, $salesSettlement, $goodsIssue, $itemFinancials, $payload);
+
+        $this->recalcSettlementFinancials($salesSettlement);
+
+        return ['payment_breakdown_warning' => $paymentBreakdownWarning];
     }
 
     /**
@@ -1925,128 +1959,151 @@ class SalesSettlementController extends Controller implements HasMiddleware
     }
 
     /**
+     * Determine whether the current user may use Special Edit — Super Admin only.
+     */
+    private function isSuperAdmin(): bool
+    {
+        return auth()->user()->is_super_admin === 'Yes' || auth()->user()->hasRole('super-admin');
+    }
+
+    /**
      * Show special edit form for posted settlements — Super Admin only.
-     * Allows correcting settlement_date and cascades it to dependent records.
+     * Reuses the same full edit page/form as the normal draft edit, so every
+     * field can be corrected (not just the date).
      */
     public function editSpecial(SalesSettlement $salesSettlement)
     {
-        abort_unless(
-            auth()->user()->is_super_admin === 'Yes' || auth()->user()->hasRole('super-admin'),
-            403
-        );
+        abort_unless($this->isSuperAdmin(), 403);
 
-        $salesSettlement->load(['employee', 'vehicle', 'warehouse']);
+        if ($salesSettlement->status !== 'posted') {
+            return redirect()
+                ->route('sales-settlements.show', $salesSettlement)
+                ->with('error', 'Only posted Sales Settlements can use Special Edit. Use the regular edit page for drafts.');
+        }
 
-        return view('sales-settlements.edit-special', [
-            'settlement' => $salesSettlement,
+        return view('sales-settlements.edit', $this->buildEditViewData($salesSettlement) + [
+            'isSpecialEdit' => true,
         ]);
     }
 
     /**
-     * Apply special date correction to a posted settlement — Super Admin only.
+     * Apply a Super Admin correction to a posted settlement — any field can
+     * be changed, not just the date.
      *
-     * Tables updated (8 total):
-     *   sales_settlements, stock_movements, inventory_ledger_entries,
-     *   customer_employee_account_transactions, sales_settlement_expenses,
-     *   sales_settlement_bank_transfers, sales_settlement_cheques,
-     *   sales_settlement_bank_slips.
+     * Runs the exact same validation and record-building logic as the normal
+     * update() (via applySettlementUpdate()), sandwiched between a full
+     * revert() and a re-post():
      *
-     * The 3 sub-document date fields (transfer_date, cheque_date, deposit_date)
-     * are only shifted when they still match the old settlement date — if the
-     * user entered a genuinely different date for one of those, it is left alone.
+     *  1. SalesSettlementRevertService::revert() — identical to a manual
+     *     Revert: reverses the GL entry (new REV- journal entry; the
+     *     original posted entry is never mutated), inventory ledger, van
+     *     stock, warehouse stock, and customer ledger, and resets the
+     *     settlement to draft.
+     *  2. applySettlementUpdate() — identical to a normal draft update:
+     *     rebuilds every child record from the submitted form.
+     *  3. DistributionService::postSalesSettlement() — identical to a normal
+     *     Post: re-validates financial integrity and re-creates stock
+     *     movements, inventory ledger entries, van/warehouse stock, customer
+     *     ledger entries, and a fresh GL journal entry.
      *
-     * The linked journal_entries row is intentionally left untouched — posted
-     * journal entries are immutable (enforced by a DB trigger). Use a
-     * reversing entry via AccountingService if the GL entry date must change too.
+     * All three run inside one transaction: if the re-post fails (e.g. the
+     * corrected numbers no longer balance), everything rolls back and the
+     * settlement is left exactly as it was before the attempt.
      */
-    public function updateSpecial(Request $request, SalesSettlement $salesSettlement)
+    public function updateSpecial(UpdateSalesSettlementRequest $request, SalesSettlement $salesSettlement)
     {
-        abort_unless(
-            auth()->user()->is_super_admin === 'Yes' || auth()->user()->hasRole('super-admin'),
-            403
-        );
+        abort_unless($this->isSuperAdmin(), 403);
 
         if ($salesSettlement->status !== 'posted') {
-            return back()->with('error', 'Only posted settlements can be corrected. Current status: '.$salesSettlement->status);
-        }
-
-        $request->validate([
-            'settlement_date' => 'required|date',
-        ]);
-
-        $oldDate = $salesSettlement->settlement_date->toDateString();
-        $newDate = $request->input('settlement_date');
-
-        if ($oldDate === $newDate) {
-            return back()->with('error', 'The new date is the same as the current settlement date.');
+            return back()->with('error', 'Only posted settlements can be corrected here. Current status: '.$salesSettlement->status);
         }
 
         $periodOpen = DB::table('accounting_periods')
-            ->whereDate('start_date', '<=', $newDate)
-            ->whereDate('end_date', '>=', $newDate)
+            ->whereDate('start_date', '<=', $request->settlement_date)
+            ->whereDate('end_date', '>=', $request->settlement_date)
             ->where('status', 'open')
             ->exists();
 
         if (! $periodOpen) {
-            return back()->with('error', "No open accounting period found for {$newDate}.");
+            return back()->withInput()->with('error', "No open accounting period found for {$request->settlement_date}.");
         }
+
+        $originalSettlementNumber = $salesSettlement->settlement_number;
 
         DB::beginTransaction();
 
         try {
-            DB::table('sales_settlements')
-                ->where('id', $salesSettlement->id)
-                ->update(['settlement_date' => $newDate]);
+            // SalesSettlementRevertService reverses (rather than deletes) the
+            // customer ledger, inventory ledger, and stock-movement rows for
+            // this settlement — correct for a standalone Revert, which may
+            // leave the settlement in draft indefinitely and needs the
+            // reversal row to explain the balance change. But re-posting
+            // immediately below would otherwise create a THIRD set of rows
+            // on top of the original + its reversal, leaving permanent
+            // duplicate/ghost entries in the Customer Ledger and Inventory
+            // Ledger. Snapshot the inventory ledger high-water mark now so
+            // the untagged reversal rows revert() is about to insert can be
+            // identified afterwards (recordAdjustment() doesn't stamp them
+            // with sales_settlement_id).
+            $inventoryLedgerHighWaterMark = InventoryLedgerEntry::max('id') ?? 0;
 
-            DB::table('stock_movements')
-                ->where('reference_type', SalesSettlement::class)
+            $revertResult = app(SalesSettlementRevertService::class)->revert($salesSettlement);
+
+            if (! $revertResult['success']) {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', $revertResult['message']);
+            }
+
+            $salesSettlement->refresh();
+
+            // Purge both the pre-revert originals and revert()'s own
+            // reversal rows so the re-post below produces a single clean,
+            // correct set of ledger rows — exactly like a fresh post would.
+            // The GL journal entry is deliberately left alone: reversing
+            // entries are the correct, permanent audit trail there.
+            CustomerEmployeeAccountTransaction::where('sales_settlement_id', $salesSettlement->id)->delete();
+
+            InventoryLedgerEntry::where('sales_settlement_id', $salesSettlement->id)
+                ->orWhere('id', '>', $inventoryLedgerHighWaterMark)
+                ->delete();
+
+            StockMovement::where('reference_type', SalesSettlement::class)
                 ->where('reference_id', $salesSettlement->id)
-                ->where('movement_date', $oldDate)
-                ->update(['movement_date' => $newDate]);
+                ->delete();
 
-            DB::table('inventory_ledger_entries')
-                ->where('sales_settlement_id', $salesSettlement->id)
-                ->where('date', $oldDate)
-                ->update(['date' => $newDate]);
+            $updateResult = $this->applySettlementUpdate($request, $salesSettlement);
 
-            DB::table('customer_employee_account_transactions')
-                ->where('sales_settlement_id', $salesSettlement->id)
-                ->where('transaction_date', $oldDate)
-                ->update(['transaction_date' => $newDate]);
+            $postResult = app(DistributionService::class)->postSalesSettlement($salesSettlement);
 
-            DB::table('sales_settlement_expenses')
-                ->where('sales_settlement_id', $salesSettlement->id)
-                ->where('expense_date', $oldDate)
-                ->update(['expense_date' => $newDate]);
+            if (! $postResult['success']) {
+                DB::rollBack();
 
-            DB::table('sales_settlement_bank_transfers')
-                ->where('sales_settlement_id', $salesSettlement->id)
-                ->where('transfer_date', $oldDate)
-                ->update(['transfer_date' => $newDate]);
-
-            DB::table('sales_settlement_cheques')
-                ->where('sales_settlement_id', $salesSettlement->id)
-                ->where('cheque_date', $oldDate)
-                ->update(['cheque_date' => $newDate]);
-
-            DB::table('sales_settlement_bank_slips')
-                ->where('sales_settlement_id', $salesSettlement->id)
-                ->where('deposit_date', $oldDate)
-                ->update(['deposit_date' => $newDate]);
+                return back()->withInput()->with('error', 'Unable to re-post the corrected settlement: '.$postResult['message']);
+            }
 
             DB::commit();
 
-            Log::info('Sales settlement special date correction applied', [
+            Log::info('Sales settlement special edit applied (reverted, corrected, re-posted)', [
                 'settlement_id' => $salesSettlement->id,
-                'old_date' => $oldDate,
-                'new_date' => $newDate,
+                'settlement_number' => $originalSettlementNumber,
                 'user_id' => auth()->id(),
             ]);
 
-            return redirect()
+            $redirect = redirect()
                 ->route('sales-settlements.show', $salesSettlement)
-                ->with('success', "Settlement date corrected from {$oldDate} to {$newDate}.");
+                ->with('success', "Sales Settlement '{$originalSettlementNumber}' corrected and re-posted successfully.");
 
+            if ($updateResult['payment_breakdown_warning'] !== null) {
+                $redirect->with('warning', $updateResult['payment_breakdown_warning']);
+            }
+
+            return $redirect;
+
+        } catch (\RuntimeException $e) {
+            DB::rollBack();
+
+            return back()->withInput()->with('error', $e->getMessage());
         } catch (\Exception $e) {
             DB::rollBack();
 
@@ -2055,7 +2112,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 'error' => $e->getMessage(),
             ]);
 
-            return back()->with('error', 'Update failed: '.$e->getMessage());
+            return back()->withInput()->with('error', 'Update failed: '.$e->getMessage());
         }
     }
 }

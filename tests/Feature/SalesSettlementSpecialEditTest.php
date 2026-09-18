@@ -1,18 +1,105 @@
 <?php
 
 use App\Models\AccountingPeriod;
-use App\Models\BankAccount;
-use App\Models\ChartOfAccount;
+use App\Models\Customer;
+use App\Models\CustomerEmployeeAccount;
+use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
+use App\Models\GoodsIssue;
+use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
 use App\Models\SalesSettlement;
+use App\Models\SalesSettlementItem;
+use App\Models\StockMovement;
 use App\Models\Uom;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Models\Warehouse;
+use App\Services\DistributionService;
+use App\Services\SalesSettlementRevertService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
+
+// ──────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────
+
+function makeSpecialEditSetup(): array
+{
+    AccountingPeriod::firstOrCreate(
+        ['name' => now()->format('F Y')],
+        [
+            'start_date' => now()->startOfMonth(),
+            'end_date' => now()->endOfMonth(),
+            'status' => 'open',
+        ]
+    );
+
+    $superAdmin = User::factory()->create(['is_super_admin' => 'Yes']);
+    $employee = Employee::factory()->create();
+    $vehicle = Vehicle::factory()->create();
+    $warehouse = Warehouse::factory()->create();
+    $product = Product::factory()->create();
+
+    $goodsIssue = GoodsIssue::factory()->create([
+        'status' => 'issued',
+        'employee_id' => $employee->id,
+        'vehicle_id' => $vehicle->id,
+        'warehouse_id' => $warehouse->id,
+    ]);
+
+    $settlement = SalesSettlement::factory()->create([
+        'status' => 'posted',
+        'posted_at' => now(),
+        'goods_issue_id' => $goodsIssue->id,
+        'employee_id' => $employee->id,
+        'vehicle_id' => $vehicle->id,
+        'warehouse_id' => $warehouse->id,
+        'settlement_date' => now()->toDateString(),
+        'notes' => 'Original notes',
+    ]);
+
+    SalesSettlementItem::create([
+        'sales_settlement_id' => $settlement->id,
+        'product_id' => $product->id,
+        'quantity_issued' => 10,
+        'quantity_sold' => 10,
+        'quantity_returned' => 0,
+        'quantity_shortage' => 0,
+        'unit_selling_price' => 150,
+        'total_sales_value' => 1500,
+        'unit_cost' => 100,
+        'total_cogs' => 1000,
+    ]);
+
+    return compact('superAdmin', 'employee', 'vehicle', 'warehouse', 'product', 'goodsIssue', 'settlement');
+}
+
+function specialEditPayload(array $setup, array $overrides = []): array
+{
+    return array_merge([
+        'settlement_date' => $setup['settlement']->settlement_date->toDateString(),
+        'goods_issue_id' => $setup['goodsIssue']->id,
+        'items' => [[
+            'product_id' => $setup['product']->id,
+            'quantity_issued' => 10,
+            'quantity_sold' => 10,
+            'quantity_returned' => 0,
+            'quantity_shortage' => 0,
+            'unit_cost' => 100,
+            'selling_price' => 150,
+            'batches' => [],
+        ]],
+        'notes' => 'Corrected notes',
+        'denom_5000' => 0, 'denom_1000' => 1, 'denom_500' => 0, 'denom_100' => 0,
+        'denom_50' => 0, 'denom_20' => 0, 'denom_10' => 0, 'denom_coins' => 0,
+    ], $overrides);
+}
+
+// ──────────────────────────────────────────────────────
+// Access control
+// ──────────────────────────────────────────────────────
 
 it('denies non super admins access to the special edit form', function () {
     $this->actingAs(User::factory()->create(['is_super_admin' => 'No']));
@@ -22,127 +109,300 @@ it('denies non super admins access to the special edit form', function () {
     $this->get(route('sales-settlements.edit-special', $settlement))->assertForbidden();
 });
 
-it('corrects the settlement date across dependent tables for super admins', function () {
-    $this->actingAs(User::factory()->create(['is_super_admin' => 'Yes']));
+it('denies non super admins from submitting the special update', function () {
+    $setup = makeSpecialEditSetup();
+    $this->actingAs(User::factory()->create(['is_super_admin' => 'No']));
 
-    AccountingPeriod::factory()->create([
-        'start_date' => '2026-07-01',
-        'end_date' => '2026-09-30',
-        'status' => 'open',
-    ]);
+    $this->post(route('sales-settlements.update-special', $setup['settlement']), specialEditPayload($setup))
+        ->assertForbidden();
 
-    $settlement = SalesSettlement::factory()->create([
-        'settlement_date' => '2026-08-25',
-        'status' => 'posted',
-    ]);
+    expect($setup['settlement']->fresh()->notes)->toBe('Original notes');
+});
 
-    $expenseAccount = ChartOfAccount::factory()->create();
+it('redirects the special edit form away for draft settlements', function () {
+    $setup = makeSpecialEditSetup();
+    $setup['settlement']->update(['status' => 'draft']);
 
-    DB::table('sales_settlement_expenses')->insert([
-        'sales_settlement_id' => $settlement->id,
-        'expense_date' => '2026-08-25',
-        'expense_account_id' => $expenseAccount->id,
-        'amount' => 100,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+    $this->actingAs($setup['superAdmin'])
+        ->get(route('sales-settlements.edit-special', $setup['settlement']))
+        ->assertRedirect(route('sales-settlements.show', $setup['settlement']))
+        ->assertSessionHas('error');
+});
 
-    $uom = Uom::factory()->create();
-    $warehouse = Warehouse::factory()->create();
-    $product = Product::factory()->create();
+it('rejects the special update for a draft settlement', function () {
+    $setup = makeSpecialEditSetup();
+    $setup['settlement']->update(['status' => 'draft']);
 
-    DB::table('stock_movements')->insert([
-        'movement_type' => 'sale',
-        'reference_type' => SalesSettlement::class,
-        'reference_id' => $settlement->id,
-        'movement_date' => '2026-08-25',
-        'product_id' => $product->id,
-        'warehouse_id' => $warehouse->id,
-        'uom_id' => $uom->id,
-        'quantity' => -1,
-        'unit_cost' => 10,
-        'total_value' => -10,
-        'created_by' => $settlement->created_by,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+    $this->actingAs($setup['superAdmin'])
+        ->post(route('sales-settlements.update-special', $setup['settlement']), specialEditPayload($setup))
+        ->assertRedirect()
+        ->assertSessionHas('error', fn ($msg) => str_contains($msg, 'posted'));
 
-    $bankAccount = BankAccount::factory()->create();
-
-    DB::table('sales_settlement_bank_transfers')->insert([
-        'sales_settlement_id' => $settlement->id,
-        'bank_account_id' => $bankAccount->id,
-        'amount' => 500,
-        'transfer_date' => '2026-08-25',
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-
-    DB::table('sales_settlement_cheques')->insert([
-        'sales_settlement_id' => $settlement->id,
-        'cheque_number' => 'CHQ-001',
-        'amount' => 300,
-        'bank_name' => 'Test Bank',
-        'cheque_date' => '2026-08-20', // intentionally different from settlement date — must stay untouched
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-
-    DB::table('sales_settlement_bank_slips')->insert([
-        'sales_settlement_id' => $settlement->id,
-        'employee_id' => $settlement->employee_id ?? Employee::factory()->create()->id,
-        'bank_account_id' => $bankAccount->id,
-        'amount' => 200,
-        'deposit_date' => '2026-08-25',
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-
-    $this->post(route('sales-settlements.update-special', $settlement), [
-        'settlement_date' => '2026-07-25',
-    ])->assertRedirect(route('sales-settlements.show', $settlement));
-
-    expect($settlement->fresh()->settlement_date->toDateString())->toBe('2026-07-25');
-
-    $this->assertDatabaseHas('sales_settlement_expenses', [
-        'sales_settlement_id' => $settlement->id,
-        'expense_date' => '2026-07-25',
-    ]);
-
-    $this->assertDatabaseHas('stock_movements', [
-        'reference_type' => SalesSettlement::class,
-        'reference_id' => $settlement->id,
-        'movement_date' => '2026-07-25',
-    ]);
-
-    $this->assertDatabaseHas('sales_settlement_bank_transfers', [
-        'sales_settlement_id' => $settlement->id,
-        'transfer_date' => '2026-07-25',
-    ]);
-
-    $this->assertDatabaseHas('sales_settlement_bank_slips', [
-        'sales_settlement_id' => $settlement->id,
-        'deposit_date' => '2026-07-25',
-    ]);
-
-    // Cheque date intentionally differed from settlement_date — must be left untouched.
-    $this->assertDatabaseHas('sales_settlement_cheques', [
-        'sales_settlement_id' => $settlement->id,
-        'cheque_date' => '2026-08-20',
-    ]);
+    expect($setup['settlement']->fresh()->notes)->toBe('Original notes');
 });
 
 it('rejects the correction when no open accounting period covers the new date', function () {
-    $this->actingAs(User::factory()->create(['is_super_admin' => 'Yes']));
+    $setup = makeSpecialEditSetup();
 
-    $settlement = SalesSettlement::factory()->create([
-        'settlement_date' => '2026-08-25',
-        'status' => 'posted',
+    $this->mock(SalesSettlementRevertService::class, function ($mock) {
+        $mock->shouldNotReceive('revert');
+    });
+
+    $this->actingAs($setup['superAdmin'])
+        ->post(route('sales-settlements.update-special', $setup['settlement']), specialEditPayload($setup, [
+            'settlement_date' => '2099-01-01',
+        ]))
+        ->assertRedirect()
+        ->assertSessionHas('error', fn ($msg) => str_contains($msg, 'No open accounting period'));
+
+    expect($setup['settlement']->fresh()->notes)->toBe('Original notes');
+});
+
+// ──────────────────────────────────────────────────────
+// Revert → update → re-post orchestration
+// ──────────────────────────────────────────────────────
+
+it('reverts, applies the corrected fields, and re-posts atomically on success', function () {
+    $setup = makeSpecialEditSetup();
+
+    $this->mock(SalesSettlementRevertService::class, function ($mock) use ($setup) {
+        $mock->shouldReceive('revert')
+            ->once()
+            ->with(Mockery::on(fn ($settlement) => $settlement->id === $setup['settlement']->id))
+            ->andReturn(['success' => true, 'message' => 'Reverted']);
+    });
+
+    $this->mock(DistributionService::class, function ($mock) use ($setup) {
+        $mock->shouldReceive('postSalesSettlement')
+            ->once()
+            ->with(Mockery::on(fn ($settlement) => $settlement->id === $setup['settlement']->id))
+            ->andReturn(['success' => true, 'message' => 'Posted', 'data' => $setup['settlement']]);
+    });
+
+    $this->actingAs($setup['superAdmin'])
+        ->post(route('sales-settlements.update-special', $setup['settlement']), specialEditPayload($setup, [
+            'notes' => 'Corrected via special edit',
+        ]))
+        ->assertRedirect(route('sales-settlements.show', $setup['settlement']))
+        ->assertSessionHas('success');
+
+    expect($setup['settlement']->fresh()->notes)->toBe('Corrected via special edit');
+});
+
+it('rolls back the whole correction when revert fails, leaving the settlement untouched', function () {
+    $setup = makeSpecialEditSetup();
+
+    $this->mock(SalesSettlementRevertService::class, function ($mock) {
+        $mock->shouldReceive('revert')
+            ->once()
+            ->andReturn(['success' => false, 'message' => 'Cannot revert: cheque already cleared.']);
+    });
+
+    $this->mock(DistributionService::class, function ($mock) {
+        $mock->shouldNotReceive('postSalesSettlement');
+    });
+
+    $this->actingAs($setup['superAdmin'])
+        ->post(route('sales-settlements.update-special', $setup['settlement']), specialEditPayload($setup, [
+            'notes' => 'Should never be saved',
+        ]))
+        ->assertRedirect()
+        ->assertSessionHas('error', 'Cannot revert: cheque already cleared.');
+
+    $fresh = $setup['settlement']->fresh();
+    expect($fresh->status)->toBe('posted')
+        ->and($fresh->notes)->toBe('Original notes');
+});
+
+it('rolls back the whole correction when re-posting fails, leaving the settlement untouched', function () {
+    $setup = makeSpecialEditSetup();
+
+    $this->mock(SalesSettlementRevertService::class, function ($mock) {
+        $mock->shouldReceive('revert')
+            ->once()
+            ->andReturn(['success' => true, 'message' => 'Reverted']);
+    });
+
+    $this->mock(DistributionService::class, function ($mock) {
+        $mock->shouldReceive('postSalesSettlement')
+            ->once()
+            ->andReturn(['success' => false, 'message' => 'Cannot post: cash shortage of 100.00.']);
+    });
+
+    $this->actingAs($setup['superAdmin'])
+        ->post(route('sales-settlements.update-special', $setup['settlement']), specialEditPayload($setup, [
+            'notes' => 'Should be rolled back',
+        ]))
+        ->assertRedirect()
+        ->assertSessionHas('error', fn ($msg) => str_contains($msg, 'Cannot post: cash shortage'));
+
+    // Even though applySettlementUpdate() ran and wrote 'Should be rolled back'
+    // before the re-post failed, the outer transaction must undo it entirely —
+    // the settlement is left exactly as it was, still posted with its original data.
+    $fresh = $setup['settlement']->fresh();
+    expect($fresh->status)->toBe('posted')
+        ->and($fresh->notes)->toBe('Original notes');
+
+    expect(SalesSettlementItem::where('sales_settlement_id', $fresh->id)->sum('total_sales_value'))
+        ->toEqual(1500.0);
+});
+
+it('blocks changing to a Goods Issue that already has another settlement', function () {
+    $setup = makeSpecialEditSetup();
+
+    $otherGoodsIssue = GoodsIssue::factory()->create([
+        'status' => 'issued',
+        'employee_id' => $setup['employee']->id,
+        'vehicle_id' => Vehicle::factory()->create()->id,
+        'warehouse_id' => $setup['warehouse']->id,
     ]);
 
-    $this->post(route('sales-settlements.update-special', $settlement), [
-        'settlement_date' => '2026-07-25',
-    ])->assertRedirect();
+    SalesSettlement::factory()->create([
+        'status' => 'draft',
+        'goods_issue_id' => $otherGoodsIssue->id,
+        'settlement_number' => 'SETTLE-TEST-9001',
+    ]);
 
-    expect($settlement->fresh()->settlement_date->toDateString())->toBe('2026-08-25');
+    $this->mock(SalesSettlementRevertService::class, function ($mock) {
+        $mock->shouldReceive('revert')->once()->andReturn(['success' => true, 'message' => 'Reverted']);
+    });
+
+    $this->mock(DistributionService::class, function ($mock) {
+        $mock->shouldNotReceive('postSalesSettlement');
+    });
+
+    $this->actingAs($setup['superAdmin'])
+        ->post(route('sales-settlements.update-special', $setup['settlement']), specialEditPayload($setup, [
+            'goods_issue_id' => $otherGoodsIssue->id,
+        ]))
+        ->assertRedirect()
+        ->assertSessionHas('error', fn ($msg) => str_contains($msg, 'already exists for this Goods Issue'));
+
+    expect($setup['settlement']->fresh()->notes)->toBe('Original notes');
+});
+
+// ──────────────────────────────────────────────────────
+// Regression: no duplicate/ghost ledger rows after a correction
+// ──────────────────────────────────────────────────────
+
+it('purges pre-existing customer ledger, inventory ledger, and stock movement rows so the re-post leaves a single clean set (no duplicate/ghost entries)', function () {
+    $setup = makeSpecialEditSetup();
+    $settlement = $setup['settlement'];
+
+    $customerAccount = CustomerEmployeeAccount::create([
+        'account_number' => 'CA-'.fake()->unique()->numerify('####'),
+        'customer_id' => Customer::factory()->create()->id,
+        'employee_id' => $settlement->employee_id,
+        'opened_date' => now()->toDateString(),
+        'status' => 'active',
+    ]);
+
+    // Rows from the *original* post — these must not survive the correction.
+    CustomerEmployeeAccountTransaction::create([
+        'customer_employee_account_id' => $customerAccount->id,
+        'transaction_date' => now()->toDateString(),
+        'transaction_type' => 'recovery',
+        'reference_number' => 'REC-ORIGINAL',
+        'sales_settlement_id' => $settlement->id,
+        'description' => 'Original recovery',
+        'debit' => 0,
+        'credit' => 9913,
+        'payment_method' => 'cash',
+    ]);
+
+    InventoryLedgerEntry::create([
+        'date' => now()->toDateString(),
+        'transaction_type' => 'sale',
+        'product_id' => $setup['product']->id,
+        'vehicle_id' => $setup['vehicle']->id,
+        'sales_settlement_id' => $settlement->id,
+        'debit_qty' => 0,
+        'credit_qty' => 10,
+        'unit_cost' => 100,
+        'running_balance' => 0,
+    ]);
+
+    $uom = Uom::factory()->create();
+
+    StockMovement::create([
+        'movement_type' => 'sale',
+        'reference_type' => SalesSettlement::class,
+        'reference_id' => $settlement->id,
+        'movement_date' => now()->toDateString(),
+        'product_id' => $setup['product']->id,
+        'vehicle_id' => $setup['vehicle']->id,
+        'uom_id' => $uom->id,
+        'quantity' => -10,
+        'unit_cost' => 100,
+        'total_value' => 1000,
+        'created_by' => $setup['superAdmin']->id,
+    ]);
+
+    // The mock stands in for SalesSettlementRevertService::revert(), which
+    // for real would *append* reversal rows rather than delete the
+    // originals — simulate that here so the test proves the controller
+    // cleans up both generations, not just the ones it can see coming in.
+    $this->mock(SalesSettlementRevertService::class, function ($mock) use ($settlement, $customerAccount, $setup, $uom) {
+        $mock->shouldReceive('revert')
+            ->once()
+            ->andReturnUsing(function () use ($settlement, $customerAccount, $setup, $uom) {
+                CustomerEmployeeAccountTransaction::create([
+                    'customer_employee_account_id' => $customerAccount->id,
+                    'transaction_date' => now()->toDateString(),
+                    'transaction_type' => 'adjustment',
+                    'reference_number' => 'REV-REC-ORIGINAL',
+                    'sales_settlement_id' => $settlement->id,
+                    'description' => 'Reversal of original recovery',
+                    'debit' => 9913,
+                    'credit' => 0,
+                    'payment_method' => 'cash',
+                ]);
+
+                // Deliberately NOT tagged with sales_settlement_id, matching
+                // InventoryLedgerService::recordAdjustment() in production.
+                InventoryLedgerEntry::create([
+                    'date' => now()->toDateString(),
+                    'transaction_type' => 'adjustment',
+                    'product_id' => $setup['product']->id,
+                    'vehicle_id' => $setup['vehicle']->id,
+                    'debit_qty' => 10,
+                    'credit_qty' => 0,
+                    'unit_cost' => 100,
+                    'running_balance' => 0,
+                    'notes' => 'Reversal',
+                ]);
+
+                StockMovement::create([
+                    'movement_type' => 'adjustment',
+                    'reference_type' => SalesSettlement::class,
+                    'reference_id' => $settlement->id,
+                    'movement_date' => now()->toDateString(),
+                    'product_id' => $setup['product']->id,
+                    'vehicle_id' => $setup['vehicle']->id,
+                    'uom_id' => $uom->id,
+                    'quantity' => 10,
+                    'unit_cost' => 100,
+                    'total_value' => 1000,
+                    'created_by' => $setup['superAdmin']->id,
+                ]);
+
+                return ['success' => true, 'message' => 'Reverted'];
+            });
+    });
+
+    $this->mock(DistributionService::class, function ($mock) {
+        $mock->shouldReceive('postSalesSettlement')
+            ->once()
+            ->andReturn(['success' => true, 'message' => 'Posted']);
+    });
+
+    $this->actingAs($setup['superAdmin'])
+        ->post(route('sales-settlements.update-special', $settlement), specialEditPayload($setup))
+        ->assertRedirect(route('sales-settlements.show', $settlement))
+        ->assertSessionHas('success');
+
+    expect(CustomerEmployeeAccountTransaction::where('sales_settlement_id', $settlement->id)->count())->toBe(0)
+        ->and(InventoryLedgerEntry::where('sales_settlement_id', $settlement->id)->count())->toBe(0)
+        ->and(InventoryLedgerEntry::where('product_id', $setup['product']->id)->where('notes', 'Reversal')->count())->toBe(0)
+        ->and(StockMovement::where('reference_type', SalesSettlement::class)->where('reference_id', $settlement->id)->count())->toBe(0);
 });

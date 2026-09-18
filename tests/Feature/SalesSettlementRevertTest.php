@@ -462,3 +462,41 @@ it('transaction rolls back on inventory ledger failure', function () {
     // Settlement should still be posted
     expect($settlement->fresh()->status)->toBe('posted');
 });
+
+it('tags inventory ledger reversal entries with the settlement id', function () {
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id]);
+    $product = Product::factory()->create();
+
+    InventoryLedgerEntry::create([
+        'date' => now()->toDateString(),
+        'transaction_type' => 'sale',
+        'product_id' => $product->id,
+        'vehicle_id' => $settlement->vehicle_id,
+        'sales_settlement_id' => $settlement->id,
+        'debit_qty' => 0,
+        'credit_qty' => 10,
+        'unit_cost' => 100,
+        'running_balance' => 0,
+    ]);
+
+    $this->actingAs($user);
+
+    $mockAccounting = Mockery::mock(AccountingService::class);
+    $mockAccounting->shouldReceive('reverseJournalEntry')
+        ->once()
+        ->andReturn(['success' => true, 'message' => 'Reversed']);
+
+    $service = new SalesSettlementRevertService($mockAccounting, app(InventoryLedgerService::class));
+    $result = $service->revert($settlement);
+
+    expect($result['success'])->toBeTrue($result['message'] ?? '');
+
+    $reversal = InventoryLedgerEntry::where('sales_settlement_id', $settlement->id)
+        ->where('transaction_type', InventoryLedgerEntry::TYPE_ADJUSTMENT)
+        ->first();
+
+    expect($reversal)->not->toBeNull()
+        ->and((float) $reversal->debit_qty)->toBe(10.0)
+        ->and((float) $reversal->credit_qty)->toBe(0.0);
+});

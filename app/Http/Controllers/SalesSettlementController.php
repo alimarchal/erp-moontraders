@@ -1046,7 +1046,18 @@ class SalesSettlementController extends Controller implements HasMiddleware
             throw new \RuntimeException("Another settlement ({$existingSettlement->settlement_number}) already exists for this Goods Issue. Cannot change to a Goods Issue that already has a settlement.");
         }
 
-        $payload = $this->buildSettlementPayload($request);
+        $savedBatchPricing = [];
+        foreach ($salesSettlement->items()->with('batches')->get() as $existingItem) {
+            foreach ($existingItem->batches as $existingBatch) {
+                $savedBatchPricing[(int) $existingItem->product_id][(int) $existingBatch->stock_batch_id] = [
+                    'selling_price' => (float) $existingBatch->selling_price,
+                    'unit_cost' => (float) $existingBatch->unit_cost,
+                    'is_promotional' => (bool) $existingBatch->is_promotional,
+                ];
+            }
+        }
+
+        $payload = $this->buildSettlementPayload($request, $savedBatchPricing);
         $totals = $payload['totals'];
         $itemFinancials = $payload['items_financials'];
 
@@ -1140,8 +1151,17 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
     /**
      * Calculate item-level financials using batch-level pricing and costs.
+     *
+     * $savedBatchPricing holds the price/cost already recorded on this
+     * settlement's own batch rows, keyed [product_id][stock_batch_id]. A
+     * settlement is a record of what was charged on its date, so when one
+     * is edited those saved figures win over the live stock batch, whose
+     * price may have changed since. Live stock is only consulted for
+     * batches that are new to the settlement.
+     *
+     * @param  array<int, array<int, array{selling_price: float, unit_cost: float, is_promotional: bool}>>  $savedBatchPricing
      */
-    private function calculateItemFinancialsUsingBatches(array $item): array
+    private function calculateItemFinancialsUsingBatches(array $item, array $savedBatchPricing = []): array
     {
         $qtySold = (float) ($item['quantity_sold'] ?? 0);
         $unitCostFallback = (float) ($item['unit_cost'] ?? 0);
@@ -1154,13 +1174,18 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
         if (isset($item['batches']) && is_array($item['batches'])) {
             foreach ($item['batches'] as $index => $batch) {
-                $stockBatch = isset($batch['stock_batch_id']) ? StockBatch::find($batch['stock_batch_id']) : null;
+                $saved = $savedBatchPricing[(int) ($item['product_id'] ?? 0)][(int) ($batch['stock_batch_id'] ?? 0)] ?? null;
+                $stockBatch = ($saved === null && isset($batch['stock_batch_id'])) ? StockBatch::find($batch['stock_batch_id']) : null;
 
                 $effectiveSellingPrice = null;
                 $batchUnitCost = $unitCostFallback;
                 $isPromotional = (bool) ($batch['is_promotional'] ?? false);
 
-                if ($stockBatch) {
+                if ($saved !== null) {
+                    $effectiveSellingPrice = $saved['selling_price'];
+                    $batchUnitCost = $saved['unit_cost'];
+                    $isPromotional = $saved['is_promotional'];
+                } elseif ($stockBatch) {
                     $effectiveSellingPrice = $stockBatch->is_promotional
                         ? ($stockBatch->promotional_selling_price ?? $stockBatch->selling_price)
                         : $stockBatch->selling_price;
@@ -1587,7 +1612,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
      *
      * @return array{totals: array, items_financials: array, bank_transfers: array, cheques: array, bank_slips: array, recoveries: array, credit_sales: array, cash_recoveries: float, bank_recoveries: float}
      */
-    private function buildSettlementPayload(StoreSalesSettlementRequest|UpdateSalesSettlementRequest $request): array
+    private function buildSettlementPayload(StoreSalesSettlementRequest|UpdateSalesSettlementRequest $request, array $savedBatchPricing = []): array
     {
         $totalQuantityIssued = 0.0;
         $totalValueIssued = 0.0;
@@ -1605,7 +1630,7 @@ class SalesSettlementController extends Controller implements HasMiddleware
             $totalQuantityReturned += (float) ($item['quantity_returned'] ?? 0);
             $totalQuantityShortage += (float) ($item['quantity_shortage'] ?? 0);
 
-            $financials = $this->calculateItemFinancialsUsingBatches($item);
+            $financials = $this->calculateItemFinancialsUsingBatches($item, $savedBatchPricing);
             $itemFinancials[$index] = $financials;
 
             $totalCogs += $financials['total_cogs'];
@@ -2033,19 +2058,17 @@ class SalesSettlementController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
-            // SalesSettlementRevertService reverses (rather than deletes) the
-            // customer ledger, inventory ledger, and stock-movement rows for
-            // this settlement — correct for a standalone Revert, which may
-            // leave the settlement in draft indefinitely and needs the
-            // reversal row to explain the balance change. But re-posting
-            // immediately below would otherwise create a THIRD set of rows
-            // on top of the original + its reversal, leaving permanent
-            // duplicate/ghost entries in the Customer Ledger and Inventory
-            // Ledger. Snapshot the inventory ledger high-water mark now so
-            // the untagged reversal rows revert() is about to insert can be
-            // identified afterwards (recordAdjustment() doesn't stamp them
-            // with sales_settlement_id).
-            $inventoryLedgerHighWaterMark = InventoryLedgerEntry::max('id') ?? 0;
+            // Lock the row so two concurrent Special Edits of the same
+            // settlement serialise: the second one re-reads the status
+            // after the first commits and is turned away instead of
+            // reverting an already-reverted settlement.
+            $salesSettlement = SalesSettlement::whereKey($salesSettlement->id)->lockForUpdate()->firstOrFail();
+
+            if ($salesSettlement->status !== 'posted') {
+                DB::rollBack();
+
+                return back()->withInput()->with('error', 'This settlement was changed by another user while you were editing. Please reload and try again.');
+            }
 
             $revertResult = app(SalesSettlementRevertService::class)->revert($salesSettlement);
 
@@ -2057,16 +2080,21 @@ class SalesSettlementController extends Controller implements HasMiddleware
 
             $salesSettlement->refresh();
 
-            // Purge both the pre-revert originals and revert()'s own
-            // reversal rows so the re-post below produces a single clean,
-            // correct set of ledger rows — exactly like a fresh post would.
-            // The GL journal entry is deliberately left alone: reversing
-            // entries are the correct, permanent audit trail there.
+            // SalesSettlementRevertService reverses (rather than deletes) the
+            // customer ledger, inventory ledger, and stock-movement rows for
+            // this settlement — correct for a standalone Revert, which may
+            // leave the settlement in draft indefinitely. But re-posting
+            // immediately below would otherwise create a THIRD set of rows
+            // on top of the original + its reversal, leaving permanent
+            // duplicate/ghost entries in the Customer Ledger and Inventory
+            // Ledger. Purge both generations (originals and revert()'s own
+            // reversal rows, all tagged with this settlement's id) so the
+            // re-post produces a single clean set — exactly like a fresh
+            // post would. The GL journal entry is deliberately left alone:
+            // reversing entries are the correct, permanent audit trail there.
             CustomerEmployeeAccountTransaction::where('sales_settlement_id', $salesSettlement->id)->delete();
 
-            InventoryLedgerEntry::where('sales_settlement_id', $salesSettlement->id)
-                ->orWhere('id', '>', $inventoryLedgerHighWaterMark)
-                ->delete();
+            InventoryLedgerEntry::where('sales_settlement_id', $salesSettlement->id)->delete();
 
             StockMovement::where('reference_type', SalesSettlement::class)
                 ->where('reference_id', $salesSettlement->id)

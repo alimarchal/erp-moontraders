@@ -36,6 +36,8 @@
                     'sold' => (float) $batch->quantity_sold,
                     'returned' => (float) $batch->quantity_returned,
                     'shortage' => (float) $batch->quantity_shortage,
+                    'selling_price' => (float) $batch->selling_price,
+                    'unit_cost' => (float) $batch->unit_cost,
                 ];
             }
         }
@@ -2149,20 +2151,31 @@
 
                         let grandTotal = 0;
 
+                        const resolveSavedBatch = (item, batch) => savedBatchQuantities[`${item.id}_${batch.stock_batch_id}`] || {};
+
+                        // A settlement records the price actually charged on its date.
+                        // Prefer the price saved on this settlement's own batch row over
+                        // the live stock batch price, which may have changed since.
+                        const resolveSellingPrice = (item, batch) => {
+                            const saved = resolveSavedBatch(item, batch);
+                            return saved.selling_price != null ? parseFloat(saved.selling_price) : parseFloat(batch.selling_price);
+                        };
+
                         items.forEach((item, index) => {
                             const batchBreakdown = item.batch_breakdown || [];
-                            const itemTotal = item.calculated_total || item.total_value;
-                            grandTotal += parseFloat(itemTotal);
+                            let itemTotal = parseFloat(item.calculated_total || item.total_value) || 0;
 
                             // Calculate weighted average selling price from batch breakdown
                             let avgSellingPrice = 0;
                             if (batchBreakdown.length > 0) {
                                 const totalQty = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.quantity), 0);
-                                const totalValue = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.value), 0);
+                                const totalValue = batchBreakdown.reduce((sum, b) => sum + parseFloat(b.quantity) * resolveSellingPrice(item, b), 0);
+                                itemTotal = totalValue;
                                 avgSellingPrice = totalQty > 0 ? (totalValue / totalQty) : parseFloat(item.unit_cost);
                             } else {
                                 avgSellingPrice = parseFloat(item.unit_cost);
                             }
+                            grandTotal += itemTotal;
 
 
                             // Container div for product-level hidden fields (will be placed outside the table)
@@ -2186,10 +2199,11 @@
                             // Settlement rows (one per batch)
                             if (batchBreakdown.length > 0) {
                                 batchBreakdown.forEach((batch, batchIdx) => {
-                                    const batchValue = parseFloat(batch.quantity) * parseFloat(batch.selling_price);
+                                    const savedBatch = resolveSavedBatch(item, batch);
+                                    const sellingPrice = resolveSellingPrice(item, batch);
+                                    const batchValue = parseFloat(batch.quantity) * sellingPrice;
                                     // For B/F, distribute proportionally across batches or show on first batch only
                                     const batchBfQuantity = batchIdx === 0 ? itemBfQuantity : 0;
-                                    const savedBatch = savedBatchQuantities[`${item.id}_${batch.stock_batch_id}`] || {};
                                     const savedSold = Math.round(parseFloat(savedBatch.sold) || 0);
                                     const savedReturned = Math.round(parseFloat(savedBatch.returned) || 0);
                                     const savedShortage = Math.round(parseFloat(savedBatch.shortage) || 0);
@@ -2209,7 +2223,7 @@
                                                                                                                                                                                                                                                         </td>
                                                                                                                                                                                                                                                         <td class="py-1 px-1" style="max-width: 120px; min-width: 90px;">
                                                                                                                                                                                                                                                             <div class="text-xs text-gray-600">
-                                                                                                                                                                                                                                                                ${parseFloat(batch.quantity).toLocaleString()} × ${parseFloat(batch.selling_price).toFixed(2)} (${uomSymbol})
+                                                                                                                                                                                                                                                                ${parseFloat(batch.quantity).toLocaleString()} × ${sellingPrice.toFixed(2)} (${uomSymbol})
                                                                                                                                                                                                                                                             </div>
                                                                                                                                                                                                                                                         </td>
                                                                                                                                                                                                                                                         <td class="py-1 px-1 text-right">
@@ -2220,7 +2234,7 @@
                                                                                                                                                                                                                                                             <div class="font-semibold text-gray-900">${parseFloat(batch.quantity).toFixed(0)}</div>
                                                                                                                                                                                                                                                             <div class="text-xs text-gray-500">${data.issue_date || 'N/A'}</div>
                                                                                                                                                                                                                                                         </td>
-                                                                                                                                                                                                                                                        <td class="py-1 px-1 text-right text-sm">${parseFloat(batch.selling_price).toFixed(2)}</td>
+                                                                                                                                                                                                                                                        <td class="py-1 px-1 text-right text-sm">${sellingPrice.toFixed(2)}</td>
                                                                                                                                                                                                                                                         <td class="py-1 px-1 text-right font-bold text-green-700">${batchValue.toLocaleString('en-PK', { minimumFractionDigits: 2 })}</td>
                                                                                                                                                                                                                                                         <td class="py-1 px-1 text-right">
                                                                                                                                                                                                                                                             <input type="number"
@@ -2277,7 +2291,7 @@
                                                                                                                                                                                                                                                     <input type="hidden" name="items[${index}][batches][${batchIdx}][batch_code]" value="${batch.batch_code}">
                                                                                                                                                                                                                                                     <input type="hidden" name="items[${index}][batches][${batchIdx}][quantity_issued]" value="${batch.quantity}">
                                                                                                                                                                                                                                                     <input type="hidden" name="items[${index}][batches][${batchIdx}][unit_cost]" value="${batch.unit_cost}">
-                                                                                                                                                                                                                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${batch.selling_price}">
+                                                                                                                                                                                                                                                    <input type="hidden" name="items[${index}][batches][${batchIdx}][selling_price]" value="${sellingPrice}">
                                                                                                                                                                                                                                                     <input type="hidden" name="items[${index}][batches][${batchIdx}][is_promotional]" value="${batch.is_promotional ? 1 : 0}">
                                                                                                                                                                                                                                                 `;
                                     document.getElementById('settlementForm').appendChild(batchHiddenFields);

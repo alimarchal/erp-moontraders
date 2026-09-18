@@ -150,6 +150,7 @@ class SalesSettlementRevertService
                 date: now()->toDateString(),
                 notes: 'Reversal: '.($entry->notes ?? "SS {$settlement->settlement_number}"),
                 batchId: $entry->stock_batch_id,
+                salesSettlementId: $settlement->id,
             );
         }
     }

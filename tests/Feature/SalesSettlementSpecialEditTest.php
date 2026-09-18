@@ -6,10 +6,13 @@ use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
+use App\Models\GoodsIssueItem;
 use App\Models\InventoryLedgerEntry;
 use App\Models\Product;
 use App\Models\SalesSettlement;
 use App\Models\SalesSettlementItem;
+use App\Models\SalesSettlementItemBatch;
+use App\Models\StockBatch;
 use App\Models\StockMovement;
 use App\Models\Uom;
 use App\Models\User;
@@ -282,6 +285,150 @@ it('blocks changing to a Goods Issue that already has another settlement', funct
 });
 
 // ──────────────────────────────────────────────────────
+// Regression: edit grid must use the settlement's saved batch price,
+// not the live stock price (which may have changed since posting)
+// ──────────────────────────────────────────────────────
+
+it('loads the saved historical batch selling price into the edit grid, not the current stock batch price', function () {
+    $setup = makeSpecialEditSetup();
+    $settlement = $setup['settlement'];
+
+    $goodsIssueItem = GoodsIssueItem::factory()->create([
+        'goods_issue_id' => $setup['goodsIssue']->id,
+        'line_no' => 1,
+        'product_id' => $setup['product']->id,
+        'uom_id' => Uom::factory()->create()->id,
+        'quantity_issued' => 1,
+        'unit_cost' => 2696.66,
+        'selling_price' => 2881.97,
+        'total_value' => 2881.97,
+    ]);
+
+    // Price on the stock batch has moved since the settlement was posted.
+    $stockBatch = StockBatch::factory()->create([
+        'product_id' => $setup['product']->id,
+        'unit_cost' => 2696.66,
+        'selling_price' => 3026.07,
+    ]);
+
+    $item = SalesSettlementItem::where('sales_settlement_id', $settlement->id)->firstOrFail();
+    $item->update(['goods_issue_item_id' => $goodsIssueItem->id]);
+
+    SalesSettlementItemBatch::create([
+        'sales_settlement_item_id' => $item->id,
+        'stock_batch_id' => $stockBatch->id,
+        'batch_code' => $stockBatch->batch_code,
+        'quantity_issued' => 1,
+        'quantity_sold' => 1,
+        'quantity_returned' => 0,
+        'quantity_shortage' => 0,
+        'unit_cost' => 2696.66,
+        'selling_price' => 2881.97,
+        'is_promotional' => false,
+    ]);
+
+    $response = $this->actingAs($setup['superAdmin'])
+        ->get(route('sales-settlements.edit-special', $settlement, absolute: false));
+
+    $response->assertSuccessful();
+
+    $savedBatches = null;
+    if (preg_match('/const savedBatchQuantities = (\{.*?\});/', $response->getContent(), $matches)) {
+        $savedBatches = json_decode($matches[1], true);
+    }
+
+    $key = $goodsIssueItem->id.'_'.$stockBatch->id;
+
+    expect($savedBatches)->not->toBeNull()
+        ->and($savedBatches)->toHaveKey($key)
+        ->and((float) $savedBatches[$key]['selling_price'])->toBe(2881.97)
+        ->and((float) $savedBatches[$key]['unit_cost'])->toBe(2696.66);
+});
+
+it('re-posts using the settlement\'s saved batch price even when the client submits the drifted live price', function () {
+    $setup = makeSpecialEditSetup();
+    $settlement = $setup['settlement'];
+
+    $goodsIssueItem = GoodsIssueItem::factory()->create([
+        'goods_issue_id' => $setup['goodsIssue']->id,
+        'line_no' => 1,
+        'product_id' => $setup['product']->id,
+        'uom_id' => Uom::factory()->create()->id,
+        'quantity_issued' => 1,
+        'unit_cost' => 2696.66,
+        'selling_price' => 2881.97,
+        'total_value' => 2881.97,
+    ]);
+
+    $stockBatch = StockBatch::factory()->create([
+        'product_id' => $setup['product']->id,
+        'unit_cost' => 2696.66,
+        'selling_price' => 3026.07,
+    ]);
+
+    $item = SalesSettlementItem::where('sales_settlement_id', $settlement->id)->firstOrFail();
+    $item->update(['goods_issue_item_id' => $goodsIssueItem->id, 'quantity_issued' => 1, 'quantity_sold' => 1, 'total_sales_value' => 2881.97, 'total_cogs' => 2696.66]);
+
+    SalesSettlementItemBatch::create([
+        'sales_settlement_item_id' => $item->id,
+        'stock_batch_id' => $stockBatch->id,
+        'batch_code' => $stockBatch->batch_code,
+        'quantity_issued' => 1,
+        'quantity_sold' => 1,
+        'quantity_returned' => 0,
+        'quantity_shortage' => 0,
+        'unit_cost' => 2696.66,
+        'selling_price' => 2881.97,
+        'is_promotional' => false,
+    ]);
+
+    $this->mock(SalesSettlementRevertService::class, function ($mock) {
+        $mock->shouldReceive('revert')->once()->andReturn(['success' => true, 'message' => 'Reverted']);
+    });
+
+    $this->mock(DistributionService::class, function ($mock) {
+        $mock->shouldReceive('postSalesSettlement')->once()->andReturn(['success' => true, 'message' => 'Posted']);
+    });
+
+    $this->actingAs($setup['superAdmin'])
+        ->post(route('sales-settlements.update-special', $settlement), specialEditPayload($setup, [
+            'items' => [[
+                'product_id' => $setup['product']->id,
+                'goods_issue_item_id' => $goodsIssueItem->id,
+                'quantity_issued' => 1,
+                'quantity_sold' => 1,
+                'quantity_returned' => 0,
+                'quantity_shortage' => 0,
+                'unit_cost' => 2696.66,
+                'selling_price' => 3026.07,
+                'batches' => [[
+                    'stock_batch_id' => $stockBatch->id,
+                    'batch_code' => $stockBatch->batch_code,
+                    'quantity_issued' => 1,
+                    'quantity_sold' => 1,
+                    'quantity_returned' => 0,
+                    'quantity_shortage' => 0,
+                    'unit_cost' => 2696.66,
+                    'selling_price' => 3026.07, // drifted live price sent by the client
+                    'is_promotional' => false,
+                ]],
+            ]],
+            'denom_5000' => 0, 'denom_1000' => 2, 'denom_500' => 1, 'denom_100' => 3,
+            'denom_50' => 1, 'denom_20' => 1, 'denom_10' => 1, 'denom_coins' => 1.97,
+        ]))
+        ->assertRedirect(route('sales-settlements.show', $settlement))
+        ->assertSessionHas('success');
+
+    $rebuiltBatch = SalesSettlementItemBatch::whereHas('salesSettlementItem', fn ($q) => $q->where('sales_settlement_id', $settlement->id))
+        ->where('stock_batch_id', $stockBatch->id)
+        ->firstOrFail();
+
+    expect((float) $rebuiltBatch->selling_price)->toBe(2881.97)
+        ->and((float) $rebuiltBatch->unit_cost)->toBe(2696.66)
+        ->and((float) $settlement->fresh()->total_sales_amount)->toBe(2881.97);
+});
+
+// ──────────────────────────────────────────────────────
 // Regression: no duplicate/ghost ledger rows after a correction
 // ──────────────────────────────────────────────────────
 
@@ -358,18 +505,34 @@ it('purges pre-existing customer ledger, inventory ledger, and stock movement ro
                     'payment_method' => 'cash',
                 ]);
 
-                // Deliberately NOT tagged with sales_settlement_id, matching
-                // InventoryLedgerService::recordAdjustment() in production.
+                // Tagged with sales_settlement_id, matching what the real
+                // reverseInventoryLedgerEntries() now does via recordAdjustment().
                 InventoryLedgerEntry::create([
                     'date' => now()->toDateString(),
                     'transaction_type' => 'adjustment',
                     'product_id' => $setup['product']->id,
                     'vehicle_id' => $setup['vehicle']->id,
+                    'sales_settlement_id' => $settlement->id,
                     'debit_qty' => 10,
                     'credit_qty' => 0,
                     'unit_cost' => 100,
                     'running_balance' => 0,
                     'notes' => 'Reversal',
+                ]);
+
+                // Simulates another user's row committed concurrently (higher id,
+                // different settlement). The purge must never touch it.
+                InventoryLedgerEntry::create([
+                    'date' => now()->toDateString(),
+                    'transaction_type' => 'sale',
+                    'product_id' => $setup['product']->id,
+                    'vehicle_id' => $setup['vehicle']->id,
+                    'sales_settlement_id' => null,
+                    'debit_qty' => 0,
+                    'credit_qty' => 3,
+                    'unit_cost' => 100,
+                    'running_balance' => 0,
+                    'notes' => 'Concurrent unrelated row',
                 ]);
 
                 StockMovement::create([
@@ -404,5 +567,6 @@ it('purges pre-existing customer ledger, inventory ledger, and stock movement ro
     expect(CustomerEmployeeAccountTransaction::where('sales_settlement_id', $settlement->id)->count())->toBe(0)
         ->and(InventoryLedgerEntry::where('sales_settlement_id', $settlement->id)->count())->toBe(0)
         ->and(InventoryLedgerEntry::where('product_id', $setup['product']->id)->where('notes', 'Reversal')->count())->toBe(0)
+        ->and(InventoryLedgerEntry::where('notes', 'Concurrent unrelated row')->count())->toBe(1)
         ->and(StockMovement::where('reference_type', SalesSettlement::class)->where('reference_id', $settlement->id)->count())->toBe(0);
 });

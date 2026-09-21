@@ -3,12 +3,14 @@
 namespace App\Console\Commands\Stock;
 
 use App\Models\DailyInventorySnapshot;
+use App\Notifications\SnapshotRebuildSkippedProducts;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 class RebuildDailyInventorySnapshots extends Command
 {
@@ -117,6 +119,7 @@ class RebuildDailyInventorySnapshots extends Command
                     Log::warning('Snapshot rebuild skipped products whose ledger disagrees with current stock', [
                         'products' => $outOfStep,
                     ]);
+                    $this->emailSkippedProducts($outOfStep, $startDate, $endDate, $supplierId);
                 }
 
                 if ($productIds->isEmpty()) {
@@ -226,6 +229,35 @@ class RebuildDailyInventorySnapshots extends Command
         }
 
         return $outOfStep;
+    }
+
+    /**
+     * Tell whoever receives the backup emails, so a product skipped by the unattended
+     * nightly run does not go unnoticed in the log.
+     *
+     * @param  array<int, array{ledger: float, stock: float}>  $outOfStep
+     */
+    private function emailSkippedProducts(array $outOfStep, string $startDate, string $endDate, ?string $supplierId): void
+    {
+        $recipient = config('backup.notifications.mail.to');
+
+        if (! $recipient) {
+            return;
+        }
+
+        $names = DB::table('products')->whereIn('id', array_keys($outOfStep))->pluck('product_name', 'id');
+        $products = collect($outOfStep)
+            ->map(fn (array $quantities, int $productId) => ['name' => $names[$productId] ?? "Product {$productId}"] + $quantities)
+            ->all();
+
+        try {
+            Notification::route('mail', $recipient)
+                ->notify(new SnapshotRebuildSkippedProducts($products, $startDate, $endDate, $supplierId));
+        } catch (\Throwable $e) {
+            // The warning above is already logged; a mail outage must not stop the rebuild.
+            Log::error('Could not email the snapshot rebuild skip alert: '.$e->getMessage());
+            $this->warn('Could not send the alert email: '.$e->getMessage());
+        }
     }
 
     /**

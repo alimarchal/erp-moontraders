@@ -10,7 +10,9 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use App\Notifications\SnapshotRebuildSkippedProducts;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Support\Facades\Notification;
 
 use function Pest\Laravel\assertDatabaseCount;
 use function Pest\Laravel\assertDatabaseHas;
@@ -420,4 +422,31 @@ it('stops at today when the end date is in the future', function () {
     ])->assertSuccessful();
 
     expect(DailyInventorySnapshot::max('date'))->toStartWith('2026-03-03');
+});
+
+it('emails the backup recipient when it skips products', function () {
+    Notification::fake();
+    config(['backup.notifications.mail.to' => 'owner@example.com']);
+    recordStockMovement(['quantity' => 100, 'total_value' => 10000]);
+    CurrentStockByBatch::where('stock_batch_id', $this->batch->id)->update(['quantity_on_hand' => 90]);
+
+    $this->artisan('inventory:snapshots:rebuild', ['start_date' => '2026-03-01', 'end_date' => '2026-03-01'])
+        ->assertFailed();
+
+    Notification::assertSentOnDemand(
+        SnapshotRebuildSkippedProducts::class,
+        fn (SnapshotRebuildSkippedProducts $notification, array $channels, object $notifiable) => $notifiable->routes['mail'] === 'owner@example.com'
+            && str_contains(implode(' ', $notification->toMail($notifiable)->introLines), $this->product->product_name)
+    );
+});
+
+it('does not email about skipped products on a dry run', function () {
+    Notification::fake();
+    config(['backup.notifications.mail.to' => 'owner@example.com']);
+    recordStockMovement(['quantity' => 100, 'total_value' => 10000]);
+    CurrentStockByBatch::where('stock_batch_id', $this->batch->id)->update(['quantity_on_hand' => 90]);
+
+    $this->artisan('inventory:snapshots:rebuild', ['start_date' => '2026-03-01', 'end_date' => '2026-03-01', '--dry-run' => true]);
+
+    Notification::assertNothingSent();
 });

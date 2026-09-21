@@ -3,6 +3,7 @@
 use App\Models\Customer;
 use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
+use App\Models\DailyInventorySnapshot;
 use App\Models\Employee;
 use App\Models\ExpenseDetail;
 use App\Models\InvestmentOpeningBalance;
@@ -12,6 +13,8 @@ use App\Models\SalesSettlementAmrLiquid;
 use App\Models\SalesSettlementAmrPowder;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Models\Vehicle;
+use App\Models\Warehouse;
 use Spatie\Permission\Models\Permission;
 
 beforeEach(function () {
@@ -430,4 +433,37 @@ it('live calculates last month main investment when no snapshot exists on previo
     $response->assertOk();
 
     expect($response->viewData('lastMonthMainInvestment'))->toBe(0.0);
+});
+
+it('counts only warehouse rows in the stock amount for a past date', function () {
+    $product = Product::factory()->create(['supplier_id' => $this->supplier->id]);
+    $warehouse = Warehouse::factory()->create(['disabled' => false]);
+    $vehicle = Vehicle::factory()->create();
+
+    DailyInventorySnapshot::create([
+        'date' => '2026-05-26',
+        'product_id' => $product->id,
+        'warehouse_id' => $warehouse->id,
+        'quantity_on_hand' => 10,
+        'average_cost' => 100,
+        'total_value' => 1000,
+    ]);
+    DailyInventorySnapshot::create([
+        'date' => '2026-05-26',
+        'product_id' => $product->id,
+        'vehicle_id' => $vehicle->id,
+        'quantity_on_hand' => 4,
+        'average_cost' => 100,
+        'total_value' => 400,
+    ]);
+
+    $response = $this->get(route('reports.investment-summary.index', [
+        'date' => '2026-05-26',
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+    ]));
+
+    // Today's figure reads warehouse stock only, so a past date must not add the 400 that
+    // is sitting on a van.
+    expect($response->viewData('stockAmount'))->toBe(1000.0);
 });

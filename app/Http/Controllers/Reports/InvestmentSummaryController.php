@@ -404,10 +404,15 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
                 ->value('total');
         }
 
-        // For past dates, use daily inventory snapshots
+        // For past dates, use daily inventory snapshots. Warehouse rows only, so a past date
+        // is measured the same way as today above, which reads warehouse stock from
+        // current_stock_by_batch. The table also carries vehicle rows (warehouse_id null),
+        // and counting those here would make history jump above the live figure.
         $query = DB::table('daily_inventory_snapshots as dis')
             ->join('products as p', 'dis.product_id', '=', 'p.id')
             ->where('dis.date', $date)
+            ->whereNotNull('dis.warehouse_id')
+            ->whereNull('dis.vehicle_id')
             ->whereNull('p.deleted_at');
 
         if ($supplierId) {

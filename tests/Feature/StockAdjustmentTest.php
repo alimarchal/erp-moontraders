@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\StockAdjustment;
 use App\Models\StockAdjustmentItem;
 use App\Models\StockBatch;
+use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
@@ -586,4 +587,108 @@ test('posting is rolled back entirely when the journal entry cannot be written',
         'reference_type' => StockAdjustment::class,
         'reference_id' => $adjustment->id,
     ]);
+});
+
+test('an excess found on a count can be posted', function () {
+    $batch = StockBatch::factory()->create([
+        'product_id' => $this->product->id,
+        'status' => 'active',
+        'is_active' => true,
+        'priority_order' => 5,
+    ]);
+
+    CurrentStockByBatch::create([
+        'product_id' => $this->product->id,
+        'warehouse_id' => $this->warehouse->id,
+        'stock_batch_id' => $batch->id,
+        'quantity_on_hand' => 100,
+        'unit_cost' => 50.00,
+        'total_value' => 5000.00,
+        'status' => 'active',
+    ]);
+
+    $adjustment = StockAdjustment::factory()->create([
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'count_variance',
+        'status' => 'draft',
+    ]);
+
+    StockAdjustmentItem::create([
+        'stock_adjustment_id' => $adjustment->id,
+        'product_id' => $this->product->id,
+        'stock_batch_id' => $batch->id,
+        'system_quantity' => 100,
+        'actual_quantity' => 112,
+        'adjustment_quantity' => 12,
+        'unit_cost' => 50.00,
+        'adjustment_value' => 600.00,
+        'uom_id' => $this->uom->id,
+    ]);
+
+    $result = (new StockAdjustmentService)->postAdjustment($adjustment);
+
+    expect($result['success'])->toBeTrue()
+        ->and($adjustment->fresh()->status)->toBe('posted');
+
+    expect((float) CurrentStockByBatch::where('stock_batch_id', $batch->id)->value('quantity_on_hand'))->toBe(112.0);
+
+    $movement = StockMovement::where('reference_type', StockAdjustment::class)
+        ->where('reference_id', $adjustment->id)
+        ->sole();
+
+    // The new layer is tied to its movement and sells in its batch's order.
+    $this->assertDatabaseHas('stock_valuation_layers', [
+        'stock_batch_id' => $batch->id,
+        'stock_movement_id' => $movement->id,
+        'quantity_remaining' => 12,
+        'priority_order' => 5,
+    ]);
+
+    // An increase reverses the loss: Dr Stock In Hand, Cr Stock Loss.
+    $details = $adjustment->fresh()->journalEntry->details;
+    expect((float) $details->sum('debit'))->toBe(600.0)
+        ->and((float) $details->sum('credit'))->toBe(600.0);
+});
+
+test('an excess on a depleted batch makes that stock issuable again', function () {
+    $batch = StockBatch::factory()->create([
+        'product_id' => $this->product->id,
+        'status' => 'depleted',
+        'is_active' => false,
+    ]);
+
+    CurrentStockByBatch::create([
+        'product_id' => $this->product->id,
+        'warehouse_id' => $this->warehouse->id,
+        'stock_batch_id' => $batch->id,
+        'quantity_on_hand' => 0,
+        'unit_cost' => 50.00,
+        'total_value' => 0,
+        'status' => 'depleted',
+    ]);
+
+    $adjustment = StockAdjustment::factory()->create([
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'count_variance',
+        'status' => 'draft',
+    ]);
+
+    StockAdjustmentItem::create([
+        'stock_adjustment_id' => $adjustment->id,
+        'product_id' => $this->product->id,
+        'stock_batch_id' => $batch->id,
+        'system_quantity' => 0,
+        'actual_quantity' => 8,
+        'adjustment_quantity' => 8,
+        'unit_cost' => 50.00,
+        'adjustment_value' => 400.00,
+        'uom_id' => $this->uom->id,
+    ]);
+
+    expect((new StockAdjustmentService)->postAdjustment($adjustment)['success'])->toBeTrue();
+
+    // Goods issues allocate only from active rows, so found stock must not stay depleted.
+    expect(CurrentStockByBatch::where('stock_batch_id', $batch->id)->value('status'))->toBe('active')
+        ->and($batch->fresh()->status)->toBe('active')
+        ->and($batch->fresh()->is_active)->toBeTrue();
 });

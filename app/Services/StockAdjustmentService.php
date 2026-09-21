@@ -135,12 +135,21 @@ class StockAdjustmentService
             } elseif ($item->adjustment_quantity > 0) {
                 // Increase: add the exact adjustment value
                 $stockByBatch->total_value = round((float) ($stockByBatch->total_value ?? 0) + (float) $item->adjustment_value, 4);
+                // Goods issues only allocate from active rows, so stock found on a depleted
+                // batch would otherwise sit on the books but never be issued.
+                $stockByBatch->status = 'active';
             } else {
                 // Decrease: proportional deduction
                 $ratio = $qtyBefore > 0 ? $stockByBatch->quantity_on_hand / $qtyBefore : 0;
                 $stockByBatch->total_value = round((float) ($stockByBatch->total_value ?? 0) * $ratio, 4);
             }
             $stockByBatch->save();
+        }
+
+        if ($item->adjustment_quantity > 0) {
+            StockBatch::whereKey($item->stock_batch_id)
+                ->where('status', 'depleted')
+                ->update(['status' => 'active', 'is_active' => true]);
         }
 
         if ($item->adjustment_quantity < 0) {
@@ -196,7 +205,7 @@ class StockAdjustmentService
             'created_at' => now(),
         ]);
 
-        $this->updateValuationLayer($adjustment, $item);
+        $this->updateValuationLayer($adjustment, $item, $movement);
 
         // ⚠️  This call MUST remain the final step in processAdjustmentItem.
         // It re-aggregates current_stock from stock_valuation_layers using
@@ -207,7 +216,7 @@ class StockAdjustmentService
         $inventoryService->syncCurrentStockFromValuationLayers($item->product_id, $adjustment->warehouse_id);
     }
 
-    protected function updateValuationLayer(StockAdjustment $adjustment, $item): void
+    protected function updateValuationLayer(StockAdjustment $adjustment, $item, StockMovement $movement): void
     {
         // ⚠️  Only quantity_remaining and value_remaining are modified here.
         // stock_valuation_layers.total_value stores the ORIGINAL receipt value
@@ -243,19 +252,27 @@ class StockAdjustmentService
                 $qtyToReduce -= $qtyFromThisLayer;
             }
         } else {
+            // stock_movement_id is NOT NULL on this table and was never set here, so every
+            // increase failed on insert — no excess adjustment could ever be posted. The
+            // transaction_type / reference_* keys that stood in its place are not columns at
+            // all; mass assignment dropped them silently.
+            $batch = StockBatch::find($item->stock_batch_id);
+
             StockValuationLayer::create([
                 'product_id' => $item->product_id,
                 'warehouse_id' => $adjustment->warehouse_id,
                 'stock_batch_id' => $item->stock_batch_id,
+                'stock_movement_id' => $movement->id,
                 'receipt_date' => $adjustment->adjustment_date,
-                'transaction_type' => 'adjustment',
-                'reference_type' => StockAdjustment::class,
-                'reference_id' => $adjustment->id,
                 'quantity_received' => $item->adjustment_quantity,
                 'quantity_remaining' => $item->adjustment_quantity,
                 'unit_cost' => $item->unit_cost,
                 'total_value' => $item->adjustment_value,
                 'value_remaining' => $item->adjustment_value,
+                // Stock found on a count sits in its batch, so it sells in the batch's order.
+                'priority_order' => $batch->priority_order ?? 99,
+                'is_promotional' => (bool) ($batch->is_promotional ?? false),
+                'must_sell_before' => $batch->must_sell_before ?? null,
             ]);
         }
     }

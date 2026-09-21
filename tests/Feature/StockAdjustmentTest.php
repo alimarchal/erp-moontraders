@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AccountingPeriod;
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\CostCenter;
@@ -34,7 +35,8 @@ beforeEach(function () {
     $this->uom = Uom::factory()->create();
 
     // Create required GL accounts for testing
-    $currency = Currency::factory()->create();
+    // The journal entry is written in the base currency; without one it cannot be created.
+    $currency = Currency::factory()->base()->create();
     $accountType = AccountType::create(['type_name' => 'Expense', 'report_group' => 'IncomeStatement']);
     $assetType = AccountType::create(['type_name' => 'Asset', 'report_group' => 'BalanceSheet']);
 
@@ -92,7 +94,17 @@ beforeEach(function () {
         'normal_balance' => 'debit',
     ]);
 
-    CostCenter::create(['code' => 'CC006', 'name' => 'Warehouse', 'is_active' => true]);
+    // Named as in production, so a lookup by name rather than code would fail here too.
+    CostCenter::create(['code' => 'CC006', 'name' => 'Warehouse & Inventory', 'is_active' => true]);
+
+    // Without an open period the journal entry cannot be written, and posting has to fail
+    // rather than reduce stock with no GL entry behind it.
+    AccountingPeriod::create([
+        'name' => 'Test Period',
+        'start_date' => now()->subYear()->toDateString(),
+        'end_date' => now()->addYear()->toDateString(),
+        'status' => 'open',
+    ]);
 });
 
 test('stock adjustment can be created as draft', function () {
@@ -474,4 +486,104 @@ test('batch status changes to depleted when fully adjusted', function () {
     $batch->refresh();
     expect($batch->status)->toBe('depleted');
     expect($batch->is_active)->toBeFalse();
+});
+
+test('posting writes the journal entry against the warehouse cost center', function () {
+    $batch = StockBatch::factory()->create([
+        'product_id' => $this->product->id,
+        'status' => 'active',
+        'is_active' => true,
+    ]);
+
+    CurrentStockByBatch::create([
+        'product_id' => $this->product->id,
+        'warehouse_id' => $this->warehouse->id,
+        'stock_batch_id' => $batch->id,
+        'quantity_on_hand' => 100,
+        'unit_cost' => 50.00,
+        'total_value' => 5000.00,
+        'status' => 'active',
+    ]);
+
+    $adjustment = StockAdjustment::factory()->create([
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'count_variance',
+        'status' => 'draft',
+    ]);
+
+    StockAdjustmentItem::create([
+        'stock_adjustment_id' => $adjustment->id,
+        'product_id' => $this->product->id,
+        'stock_batch_id' => $batch->id,
+        'system_quantity' => 100,
+        'actual_quantity' => 90,
+        'adjustment_quantity' => -10,
+        'unit_cost' => 50.00,
+        'adjustment_value' => -500.00,
+        'uom_id' => $this->uom->id,
+    ]);
+
+    $result = (new StockAdjustmentService)->postAdjustment($adjustment);
+
+    expect($result['success'])->toBeTrue();
+
+    $journalEntry = $adjustment->fresh()->journalEntry;
+    $costCenterId = CostCenter::where('code', 'CC006')->value('id');
+
+    expect($journalEntry)->not->toBeNull()
+        ->and($journalEntry->details)->toHaveCount(2)
+        ->and($journalEntry->details->pluck('cost_center_id')->unique()->all())->toBe([$costCenterId])
+        ->and((float) $journalEntry->details->sum('debit'))->toBe(500.0)
+        ->and((float) $journalEntry->details->sum('credit'))->toBe(500.0);
+});
+
+test('posting is rolled back entirely when the journal entry cannot be written', function () {
+    // The Stock Loss account a count variance posts to is missing.
+    ChartOfAccount::where('account_name', 'Stock Loss - Other')->delete();
+
+    $batch = StockBatch::factory()->create([
+        'product_id' => $this->product->id,
+        'status' => 'active',
+        'is_active' => true,
+    ]);
+
+    CurrentStockByBatch::create([
+        'product_id' => $this->product->id,
+        'warehouse_id' => $this->warehouse->id,
+        'stock_batch_id' => $batch->id,
+        'quantity_on_hand' => 100,
+        'unit_cost' => 50.00,
+        'total_value' => 5000.00,
+        'status' => 'active',
+    ]);
+
+    $adjustment = StockAdjustment::factory()->create([
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'count_variance',
+        'status' => 'draft',
+    ]);
+
+    StockAdjustmentItem::create([
+        'stock_adjustment_id' => $adjustment->id,
+        'product_id' => $this->product->id,
+        'stock_batch_id' => $batch->id,
+        'system_quantity' => 100,
+        'actual_quantity' => 90,
+        'adjustment_quantity' => -10,
+        'unit_cost' => 50.00,
+        'adjustment_value' => -500.00,
+        'uom_id' => $this->uom->id,
+    ]);
+
+    $result = (new StockAdjustmentService)->postAdjustment($adjustment);
+
+    expect($result['success'])->toBeFalse()
+        ->and($adjustment->fresh()->status)->toBe('draft');
+
+    // Stock is exactly where it was: no movement, no reduction.
+    expect((float) CurrentStockByBatch::where('stock_batch_id', $batch->id)->value('quantity_on_hand'))->toBe(100.0);
+    $this->assertDatabaseMissing('stock_movements', [
+        'reference_type' => StockAdjustment::class,
+        'reference_id' => $adjustment->id,
+    ]);
 });

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AccountingPeriod;
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\CostCenter;
@@ -37,7 +38,8 @@ beforeEach(function () {
     $this->product = Product::factory()->create(['uom_id' => $this->uom->id]);
 
     // Create required GL accounts for testing
-    $currency = Currency::factory()->create();
+    // The journal entry is written in the base currency; without one it cannot be created.
+    $currency = Currency::factory()->base()->create();
     $accountType = AccountType::create(['type_name' => 'Expense', 'report_group' => 'IncomeStatement']);
     $assetType = AccountType::create(['type_name' => 'Asset', 'report_group' => 'BalanceSheet']);
 
@@ -95,7 +97,15 @@ beforeEach(function () {
         'normal_balance' => 'debit',
     ]);
 
-    CostCenter::create(['code' => 'CC006', 'name' => 'Warehouse', 'is_active' => true]);
+    CostCenter::create(['code' => 'CC006', 'name' => 'Warehouse & Inventory', 'is_active' => true]);
+
+    // Posting a recall writes a journal entry, which needs an open period for its date.
+    AccountingPeriod::create([
+        'name' => 'Test Period',
+        'start_date' => now()->subYear()->toDateString(),
+        'end_date' => now()->addYear()->toDateString(),
+        'status' => 'open',
+    ]);
 });
 
 test('product recall can be created as draft', function () {

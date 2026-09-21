@@ -264,7 +264,10 @@ class StockAdjustmentService
     {
         try {
             $inventoryAccount = ChartOfAccount::where('account_name', 'Stock In Hand')->first();
-            $warehouseCostCenter = CostCenter::where('name', 'Warehouse')->first();
+            // Looked up by code, as the GRN and goods issue postings do. The name differs
+            // between installs ("Warehouse & Inventory" in production), so a name lookup
+            // silently left every adjustment line without a cost center.
+            $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
             $expenseAccount = match ($adjustment->adjustment_type) {
                 'recall' => ChartOfAccount::where('account_name', 'Stock Loss on Recalls')->first(),
@@ -275,9 +278,10 @@ class StockAdjustmentService
             };
 
             if (! $inventoryAccount || ! $expenseAccount) {
-                Log::warning("Required accounts not found for adjustment {$adjustment->id}");
-
-                return null;
+                throw new \RuntimeException(
+                    'Required GL account not found for a '.$adjustment->adjustment_type.' adjustment '
+                    .'(Stock In Hand and its Stock Loss account must both exist). Nothing was posted.'
+                );
             }
 
             $totalValue = $adjustment->items->sum('adjustment_value');
@@ -337,11 +341,18 @@ class StockAdjustmentService
             $accountingService = app(AccountingService::class);
             $result = $accountingService->createJournalEntry($journalEntryData);
 
-            return $result['success'] ? $result['data'] : null;
+            if (! $result['success']) {
+                throw new \RuntimeException('Journal entry could not be created: '.$result['message']);
+            }
+
+            return $result['data'];
         } catch (\Exception $e) {
+            // Rethrown so postAdjustment rolls the whole posting back. Returning null here used
+            // to let the adjustment post anyway — stock reduced, GL untouched — leaving a
+            // silent difference between the stock report and Stock In Hand.
             Log::error('Failed to create journal entry for adjustment: '.$e->getMessage());
 
-            return null;
+            throw $e;
         }
     }
 

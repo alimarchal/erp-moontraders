@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Reports;
 use App\Http\Controllers\Controller;
 use App\Models\AccountingPeriod;
 use App\Models\ChartOfAccount;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -19,6 +20,19 @@ class AccountBalancesController extends Controller implements HasMiddleware
         return [
             new Middleware('can:report-financial-account-balances'),
         ];
+    }
+
+    /**
+     * Accept only a real Y-m-d date, falling back to today. The value is used inside raw SQL
+     * aggregates, so anything that is not a date must never reach the query.
+     */
+    private function normaliseAsOfDate(mixed $value): string
+    {
+        if (! is_string($value) || ! Carbon::hasFormat($value, 'Y-m-d')) {
+            return now()->toDateString();
+        }
+
+        return Carbon::createFromFormat('Y-m-d', $value)->toDateString();
     }
 
     /**
@@ -41,10 +55,9 @@ class AccountBalancesController extends Controller implements HasMiddleware
             }
         }
 
-        // Default to today if no date specified
-        if (! $asOfDate) {
-            $asOfDate = now()->format('Y-m-d');
-        }
+        // Default to today if no date specified. The value is normalised rather than trusted:
+        // it reaches raw SQL below, and it arrives straight from the query string.
+        $asOfDate = $this->normaliseAsOfDate($asOfDate);
 
         // Build query with date filtering - Show all accounts (posting and non-posting)
         $balancesQuery = ChartOfAccount::query()->select([
@@ -57,18 +70,19 @@ class AccountBalancesController extends Controller implements HasMiddleware
             'chart_of_accounts.normal_balance',
             'chart_of_accounts.is_active',
             'chart_of_accounts.is_group',
-            DB::raw("COALESCE(SUM(CASE WHEN journal_entries.entry_date <= '{$asOfDate}' THEN journal_entry_details.debit ELSE 0 END), 0) as total_debits"),
-            DB::raw("COALESCE(SUM(CASE WHEN journal_entries.entry_date <= '{$asOfDate}' THEN journal_entry_details.credit ELSE 0 END), 0) as total_credits"),
-            DB::raw("COALESCE(SUM(CASE 
-                WHEN journal_entries.entry_date <= '{$asOfDate}' THEN 
-                    CASE 
-                        WHEN chart_of_accounts.normal_balance = 'debit' THEN journal_entry_details.debit - journal_entry_details.credit
-                        WHEN chart_of_accounts.normal_balance = 'credit' THEN journal_entry_details.credit - journal_entry_details.debit
+            DB::raw('COALESCE(SUM(CASE WHEN journal_entries.entry_date <= ? THEN journal_entry_details.debit ELSE 0 END), 0) as total_debits'),
+            DB::raw('COALESCE(SUM(CASE WHEN journal_entries.entry_date <= ? THEN journal_entry_details.credit ELSE 0 END), 0) as total_credits'),
+            DB::raw('COALESCE(SUM(CASE
+                WHEN journal_entries.entry_date <= ? THEN
+                    CASE
+                        WHEN chart_of_accounts.normal_balance = \'debit\' THEN journal_entry_details.debit - journal_entry_details.credit
+                        WHEN chart_of_accounts.normal_balance = \'credit\' THEN journal_entry_details.credit - journal_entry_details.debit
                         ELSE journal_entry_details.debit - journal_entry_details.credit
                     END
-                ELSE 0 
-            END), 0) as balance"),
+                ELSE 0
+            END), 0) as balance'),
         ])
+            ->addBinding([$asOfDate, $asOfDate, $asOfDate], 'select')
             ->leftJoin('account_types', 'chart_of_accounts.account_type_id', '=', 'account_types.id')
             ->leftJoin('journal_entry_details', 'chart_of_accounts.id', '=', 'journal_entry_details.chart_of_account_id')
             ->leftJoin('journal_entries', function ($join) {

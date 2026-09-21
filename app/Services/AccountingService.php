@@ -441,10 +441,13 @@ class AccountingService
             throw new \Exception('At least two lines are required for a journal entry.');
         }
 
-        $totalDebits = $lines->sum('debit');
-        $totalCredits = $lines->sum('credit');
+        // Compared at the 2 decimals the ledger stores, and to the paisa. A tolerance here let
+        // a half-paisa through, which the database then rounded onto one side and refused to
+        // post; a caller that cannot make its lines add up needs a rounding line, not slack.
+        $totalDebits = round($lines->sum(fn (array $line) => round((float) ($line['debit'] ?? 0), 2)), 2);
+        $totalCredits = round($lines->sum(fn (array $line) => round((float) ($line['credit'] ?? 0), 2)), 2);
 
-        if (abs($totalDebits - $totalCredits) > 0.01) {
+        if (abs($totalDebits - $totalCredits) >= 0.005) {
             throw new \Exception("Entry is not balanced. Total Debits: {$totalDebits}, Total Credits: {$totalCredits}");
         }
 

@@ -410,14 +410,20 @@ class DailySalesReportController extends Controller implements HasMiddleware
                 : $giVehicleIds;
         }
 
+        // The member shown is whoever the goods issue put the stock out with. Reading it from
+        // vehicles.employee_id alone left the column blank, because most vehicles carry no
+        // assigned employee — the assignment lives on the goods issue.
         $query = DB::table('van_stock_batches as vsb')
             ->join('vehicles as v', 'vsb.vehicle_id', '=', 'v.id')
+            ->leftJoin('goods_issue_items as gii', 'vsb.goods_issue_item_id', '=', 'gii.id')
+            ->leftJoin('goods_issues as gi', 'gii.goods_issue_id', '=', 'gi.id')
+            ->leftJoin('employees as ie', 'gi.employee_id', '=', 'ie.id')
             ->leftJoin('employees as e', 'v.employee_id', '=', 'e.id')
             ->join('products as p', 'vsb.product_id', '=', 'p.id')
             ->select(
                 'v.id as vehicle_id',
                 'v.vehicle_number',
-                'e.name as employee_name',
+                DB::raw('COALESCE(ie.name, e.name) as employee_name'),
                 'p.id as product_id',
                 'p.product_code',
                 'p.product_name',

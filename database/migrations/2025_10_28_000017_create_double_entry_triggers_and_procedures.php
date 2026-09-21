@@ -812,20 +812,18 @@ return new class extends Migration
                 BEGIN
                     DECLARE v_debits DECIMAL(15,2);
                     DECLARE v_credits DECIMAL(15,2);
-                    DECLARE v_status VARCHAR(20);
                     DECLARE v_error_msg VARCHAR(500);
 
-                    SELECT status INTO v_status FROM journal_entries WHERE id = p_journal_id;
+                    -- The caller is a BEFORE UPDATE trigger that fires while the entry is being
+                    -- moved to 'posted', so journal_entries.status still holds the OLD value.
+                    -- Re-reading it here gated the whole check off and let unbalanced entries post.
+                    SELECT COALESCE(SUM(debit), 0), COALESCE(SUM(credit), 0)
+                    INTO v_debits, v_credits
+                    FROM journal_entry_details WHERE journal_entry_id = p_journal_id;
 
-                    IF v_status = 'posted' THEN
-                        SELECT COALESCE(SUM(debit), 0), COALESCE(SUM(credit), 0)
-                        INTO v_debits, v_credits
-                        FROM journal_entry_details WHERE journal_entry_id = p_journal_id;
-
-                        IF v_debits <> v_credits THEN
-                            SET v_error_msg = CONCAT('Journal entry ', p_journal_id, ' is unbalanced: Debits=', v_debits, ', Credits=', v_credits);
-                            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
-                        END IF;
+                    IF v_debits <> v_credits THEN
+                        SET v_error_msg = CONCAT('Journal entry ', p_journal_id, ' is unbalanced: Debits=', v_debits, ', Credits=', v_credits);
+                        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = v_error_msg;
                     END IF;
                 END
             ");

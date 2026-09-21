@@ -14,6 +14,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -679,4 +680,80 @@ it('splits FMR allowance between liquid and powder accounts based on product typ
     // Verify total creditors (3000 - 350 = 2650)
     $creditorsLine = $details->where('chart_of_account_id', $this->creditorsAccount->id)->first();
     expect((float) $creditorsLine->credit)->toBe(2650.00);
+});
+
+it('keeps the entry balanced when the inventory cost carries a half paisa', function () {
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'status' => 'draft',
+        'receipt_date' => now(),
+    ]);
+
+    // total_cost holds 4 decimals, so 10,000.005 used to reach the ledger as 10,000.01 while
+    // a 0.005 round-off line rounded up to 0.01 as well — leaving the entry a paisa out.
+    $grn->items()->create([
+        'line_no' => 1,
+        'product_id' => $this->product->id,
+        'stock_uom_id' => $this->uom->id,
+        'purchase_uom_id' => $this->uom->id,
+        'qty_in_purchase_uom' => 100,
+        'uom_conversion_factor' => 1,
+        'qty_in_stock_uom' => 100,
+        'extended_value' => 10000.01,
+        'discount_value' => 0,
+        'fmr_allowance' => 0,
+        'sales_tax_value' => 0,
+        'advance_income_tax' => 0,
+        'quantity_received' => 100,
+        'quantity_accepted' => 100,
+        'unit_cost' => 100.00005,
+        'total_cost' => 10000.005,
+    ]);
+
+    $result = app(InventoryService::class)->postGrnToInventory($grn->fresh());
+
+    expect($result['success'])->toBeTrue();
+
+    $details = JournalEntry::find($grn->fresh()->journal_entry_id)->details;
+
+    expect((float) $details->sum('debit'))->toBe((float) $details->sum('credit'));
+});
+
+it('leaves the books balanced across every posted entry', function () {
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'status' => 'draft',
+        'receipt_date' => now(),
+    ]);
+
+    $grn->items()->create([
+        'line_no' => 1,
+        'product_id' => $this->product->id,
+        'stock_uom_id' => $this->uom->id,
+        'purchase_uom_id' => $this->uom->id,
+        'qty_in_purchase_uom' => 33,
+        'uom_conversion_factor' => 1,
+        'qty_in_stock_uom' => 33,
+        'extended_value' => 3333.34,
+        'discount_value' => 0,
+        'fmr_allowance' => 11.115,
+        'sales_tax_value' => 0,
+        'advance_income_tax' => 0,
+        'quantity_received' => 33,
+        'quantity_accepted' => 33,
+        'unit_cost' => 101.0102,
+        'total_cost' => 3333.3366,
+    ]);
+
+    app(InventoryService::class)->postGrnToInventory($grn->fresh());
+
+    $books = DB::table('journal_entry_details as jed')
+        ->join('journal_entries as je', 'je.id', '=', 'jed.journal_entry_id')
+        ->where('je.status', 'posted')
+        ->selectRaw('COALESCE(SUM(jed.debit), 0) as debits, COALESCE(SUM(jed.credit), 0) as credits')
+        ->first();
+
+    expect((float) $books->debits)->toBe((float) $books->credits);
 });

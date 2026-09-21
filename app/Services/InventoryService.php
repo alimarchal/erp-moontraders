@@ -192,26 +192,21 @@ class InventoryService
                 }
             }
 
-            // Calculate ACTUAL inventory value from items (quantity_accepted × unit_cost)
-            // This is the true cost that should be recorded in Stock In Hand
-            $actualInventoryValue = $grn->items->sum('total_cost');
-
-            // Calculate invoice value (extended - discounts + GST + advance tax + excise)
-            $invoiceValue = $extendedValue - $totalDiscounts + $totalGst + $totalAdvanceTax + $totalExciseDuty;
-
-            // Rounding difference between invoice math and actual inventory cost
-            $roundingDifference = $invoiceValue - $actualInventoryValue;
+            // Every amount that reaches the ledger is rounded to the 2 decimals the ledger
+            // stores, before the lines are built. goods_receipt_note_items.total_cost carries
+            // 4 decimals, so leaving the rounding to the database let a half-paisa on the
+            // inventory line and a half-paisa on the round-off line both round up, and the
+            // entry landed a paisa out of balance.
+            $actualInventoryValue = round((float) $grn->items->sum('total_cost'), 2);
+            $invoiceValue = round($extendedValue - $totalDiscounts + $totalGst + $totalAdvanceTax + $totalExciseDuty, 2);
+            $fmrAllowanceLiquid = round($fmrAllowanceLiquid, 2);
+            $fmrAllowancePowder = round($fmrAllowancePowder, 2);
+            $totalFmrAllowance = round($fmrAllowanceLiquid + $fmrAllowancePowder, 2);
 
             // Amount payable to supplier (invoice less FMR allowance)
-            $creditorAmount = $invoiceValue - $totalFmrAllowance;
+            $creditorAmount = round($invoiceValue - $totalFmrAllowance, 2);
             if ($creditorAmount < 0) {
-                $creditorAmount = 0;
-            }
-
-            if (abs($roundingDifference) > 0.001 && ! $roundOffAccount) {
-                Log::warning('Rounding difference detected but Round Off account (5271) not found. Skipping journal entry for GRN: '.$grn->id);
-
-                return null;
+                $creditorAmount = 0.0;
             }
 
             if ($actualInventoryValue <= 0) {
@@ -233,18 +228,6 @@ class InventoryService
                 'description' => "Inventory received - {$grn->items->count()} item(s) (qty × unit cost)",
                 'cost_center_id' => $warehouseCostCenter->id,
             ];
-
-            // Dr. Round Off (if there's a rounding difference)
-            if (abs($roundingDifference) > 0.001 && $roundOffAccount) {
-                $journalLines[] = [
-                    'line_no' => $lineNo++,
-                    'account_id' => $roundOffAccount->id,
-                    'debit' => $roundingDifference > 0 ? $roundingDifference : 0,
-                    'credit' => $roundingDifference < 0 ? abs($roundingDifference) : 0,
-                    'description' => 'Rounding adjustment on GRN',
-                    'cost_center_id' => $warehouseCostCenter->id,
-                ];
-            }
 
             // Cr. FMR Allowance Liquid (if any) - Income/contra-cost
             if ($fmrAllowanceLiquid > 0) {
@@ -279,6 +262,30 @@ class InventoryService
                 'description' => "Amount payable to {$grn->supplier->supplier_name}",
                 'cost_center_id' => $warehouseCostCenter->id,
             ];
+
+            // Dr/Cr Round Off — the residual of the lines above, so the entry balances to the
+            // paisa by construction rather than by the invoice-versus-cost arithmetic agreeing.
+            $roundingDifference = round(
+                array_sum(array_column($journalLines, 'credit')) - array_sum(array_column($journalLines, 'debit')),
+                2
+            );
+
+            if (abs($roundingDifference) >= 0.01) {
+                if (! $roundOffAccount) {
+                    Log::warning('Rounding difference detected but Round Off account (5271) not found. Skipping journal entry for GRN: '.$grn->id);
+
+                    return null;
+                }
+
+                $journalLines[] = [
+                    'line_no' => $lineNo++,
+                    'account_id' => $roundOffAccount->id,
+                    'debit' => $roundingDifference > 0 ? $roundingDifference : 0,
+                    'credit' => $roundingDifference < 0 ? abs($roundingDifference) : 0,
+                    'description' => 'Rounding adjustment on GRN',
+                    'cost_center_id' => $warehouseCostCenter->id,
+                ];
+            }
 
             // Prepare journal entry data
             $journalEntryData = [

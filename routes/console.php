@@ -15,8 +15,9 @@ Schedule::command('inventory:snapshot')->dailyAt('23:45');
 // (a goods issue settled days later) leaves every snapshot in between frozen at the value
 // it held before that document existed. Replay the recent window from the stock_movements
 // ledger right afterwards, so history heals itself instead of needing a manual rebuild.
-// Vehicle rows are left out on purpose: pass --with-vans to backfill those deliberately.
-Schedule::command('inventory:snapshots:rebuild --days=90')
+// Vehicle rows are included: nothing else writes them, so leaving them out here would stop
+// van history the day after the one-off backfill.
+Schedule::command('inventory:snapshots:rebuild --days=90 --with-vans')
     ->dailyAt('23:50')
     ->name('inventory-snapshots-rolling-rebuild')
     ->withoutOverlapping();

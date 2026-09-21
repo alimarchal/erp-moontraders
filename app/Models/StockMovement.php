@@ -33,8 +33,10 @@ class StockMovement extends Model
     protected $casts = [
         'movement_date' => 'date',
         'quantity' => 'decimal:2',
-        'unit_cost' => 'decimal:2',
-        'total_value' => 'decimal:2',
+        // Match the column precision: unit_cost is decimal(15,6) and total_value decimal(15,4).
+        // Casting them down to 2 silently rounded every read, which hid cost defects.
+        'unit_cost' => 'decimal:6',
+        'total_value' => 'decimal:4',
     ];
 
     public function reference(): MorphTo

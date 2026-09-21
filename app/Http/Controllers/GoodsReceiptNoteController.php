@@ -16,6 +16,7 @@ use App\Models\TaxCode;
 use App\Models\TaxRate;
 use App\Models\Uom;
 use App\Models\Warehouse;
+use App\Services\BatchRecostService;
 use App\Services\InventoryService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -927,7 +928,10 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
         try {
             $inventoryService = app(InventoryService::class);
+            $batchRecostService = app(BatchRecostService::class);
             $processedProducts = [];
+            $cogsDelta = 0.0;
+            $recostedMovements = 0;
 
             foreach ($request->input('items') as $formItem) {
                 $item = DB::table('goods_receipt_note_items')
@@ -1073,6 +1077,18 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                         'unit_cost' => $newUnitCost,
                     ]);
 
+                // 7b. Everything already issued, sold or returned out of this batch was posted at
+                //     the old cost. Restate it too, otherwise the warehouse keeps a value residue
+                //     that matches no physical stock and those documents keep the wrong COGS.
+                $recost = $batchRecostService->recostBatch(
+                    (int) $svl->stock_batch_id,
+                    $newUnitCost,
+                    (int) $svl->stock_movement_id
+                );
+
+                $cogsDelta += $recost['cogs_delta'];
+                $recostedMovements += $recost['movements'];
+
                 // Queue product for current_stock recalc after all items processed
                 $processedProducts[$item->product_id] = [
                     'product_id' => $item->product_id,
@@ -1109,9 +1125,26 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
             DB::commit();
 
+            $message = 'GRN inventory corrections applied successfully.';
+
+            if ($recostedMovements > 0) {
+                Log::info('GRN correction re-costed already-posted stock movements', [
+                    'grn_id' => $goodsReceiptNote->id,
+                    'movements' => $recostedMovements,
+                    'cogs_delta' => $cogsDelta,
+                ]);
+
+                $message .= sprintf(
+                    ' %d already-posted stock movement(s) were re-costed. Posted journal entries were not '
+                    .'changed: COGS on those documents is out by %s and needs an adjusting entry.',
+                    $recostedMovements,
+                    number_format($cogsDelta, 2)
+                );
+            }
+
             return redirect()
                 ->route('goods-receipt-notes.show', $goodsReceiptNote)
-                ->with('success', 'GRN inventory corrections applied successfully.');
+                ->with('success', $message);
 
         } catch (\Exception $e) {
             DB::rollBack();

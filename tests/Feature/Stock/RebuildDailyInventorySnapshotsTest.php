@@ -349,7 +349,8 @@ it('schedules the rolling rebuild nightly, after the snapshot job', function () 
 
     expect($scheduled)->toHaveCount(1)
         ->and($scheduled[0]->expression)->toBe('50 23 * * *')
-        ->and($scheduled[0]->command)->toContain('--days=90');
+        ->and($scheduled[0]->command)->toContain('--days=90')
+        ->and($scheduled[0]->command)->toContain('--with-vans');
 });
 
 it('rejects a start date that is not in Y-m-d format', function () {

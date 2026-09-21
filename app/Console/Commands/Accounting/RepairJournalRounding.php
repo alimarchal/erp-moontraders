@@ -3,11 +3,11 @@
 namespace App\Console\Commands\Accounting;
 
 use App\Models\ChartOfAccount;
+use App\Services\DatabaseTriggerGuard;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 
 class RepairJournalRounding extends Command
 {
@@ -93,7 +93,8 @@ class RepairJournalRounding extends Command
 
         $this->line('Lifting the posted-line guards for the duration of the correction...');
 
-        $restore = $this->suspendImmutabilityGuards();
+        $restore = app(DatabaseTriggerGuard::class)
+            ->suspend('journal_entry_details', self::IMMUTABILITY_TRIGGERS);
 
         try {
             foreach ($repairable as $candidate) {
@@ -187,65 +188,5 @@ class RepairJournalRounding extends Command
             'description' => 'Rounding adjustment',
         ]);
         $this->line("  entry {$candidate->id}: added a Round Off line");
-    }
-
-    /**
-     * Lift the posted-line guards, returning the closure that puts them back exactly as they
-     * were. The audit triggers are deliberately left running, so the correction is recorded.
-     *
-     * @return callable(): void
-     */
-    private function suspendImmutabilityGuards(): callable
-    {
-        if (DB::getDriverName() === 'pgsql') {
-            foreach (self::IMMUTABILITY_TRIGGERS as $trigger) {
-                DB::statement("ALTER TABLE journal_entry_details DISABLE TRIGGER {$trigger}");
-            }
-
-            return function (): void {
-                foreach (self::IMMUTABILITY_TRIGGERS as $trigger) {
-                    DB::statement("ALTER TABLE journal_entry_details ENABLE TRIGGER {$trigger}");
-                }
-            };
-        }
-
-        $definitions = [];
-
-        foreach (self::IMMUTABILITY_TRIGGERS as $trigger) {
-            $row = DB::selectOne(
-                'SELECT ACTION_TIMING, EVENT_MANIPULATION, ACTION_STATEMENT FROM information_schema.TRIGGERS
-                 WHERE TRIGGER_SCHEMA = DATABASE() AND TRIGGER_NAME = ?',
-                [$trigger]
-            );
-
-            if (! $row) {
-                continue;
-            }
-
-            // Rebuilt without the DEFINER clause, so restoring does not need SUPER.
-            $definitions[$trigger] = sprintf(
-                'CREATE TRIGGER `%s` %s %s ON `journal_entry_details` FOR EACH ROW %s',
-                $trigger, $row->ACTION_TIMING, $row->EVENT_MANIPULATION, $row->ACTION_STATEMENT
-            );
-
-            DB::unprepared("DROP TRIGGER IF EXISTS `{$trigger}`");
-        }
-
-        return function () use ($definitions): void {
-            foreach ($definitions as $trigger => $sql) {
-                try {
-                    DB::unprepared("DROP TRIGGER IF EXISTS `{$trigger}`");
-                    DB::unprepared($sql);
-                } catch (Throwable $e) {
-                    // Losing a guard silently would be worse than the rounding it was lifted for.
-                    $this->error("FAILED to restore trigger {$trigger}: ".$e->getMessage());
-                    $this->error('Run `php artisan db:sync-objects` to reinstall it before using the system.');
-                    Log::error('Failed to restore journal immutability trigger', [
-                        'trigger' => $trigger,
-                        'error' => $e->getMessage(),
-                    ]);
-                }
-            }
-        };
     }
 }

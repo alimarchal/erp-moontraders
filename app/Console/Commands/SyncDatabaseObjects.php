@@ -182,6 +182,59 @@ class SyncDatabaseObjects extends Command
                     END
                 ",
             ],
+
+            // The journal immutability guards previously lived only in the original migration,
+            // which left no supported way to reinstall one after a correction tool had to lift
+            // it. They belong here, where `db:sync-objects` can put them back.
+            'trg_block_posted_journal_updates' => [
+                'table' => 'journal_entries',
+                'drop' => 'DROP TRIGGER IF EXISTS trg_block_posted_journal_updates',
+                'sql' => "
+                    CREATE TRIGGER trg_block_posted_journal_updates
+                    BEFORE UPDATE ON journal_entries
+                    FOR EACH ROW
+                    BEGIN
+                        IF OLD.status = 'posted' THEN
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = 'Posted journal entries are immutable. Create a reversing entry instead.';
+                        END IF;
+                    END
+                ",
+            ],
+            'trg_block_posted_detail_updates' => [
+                'table' => 'journal_entry_details',
+                'drop' => 'DROP TRIGGER IF EXISTS trg_block_posted_detail_updates',
+                'sql' => "
+                    CREATE TRIGGER trg_block_posted_detail_updates
+                    BEFORE UPDATE ON journal_entry_details
+                    FOR EACH ROW
+                    BEGIN
+                        DECLARE v_status VARCHAR(20);
+                        SELECT status INTO v_status FROM journal_entries WHERE id = OLD.journal_entry_id;
+                        IF v_status = 'posted' THEN
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = 'Lines of a posted journal are immutable. Create a reversing entry instead.';
+                        END IF;
+                    END
+                ",
+            ],
+            'trg_block_posted_detail_deletes' => [
+                'table' => 'journal_entry_details',
+                'drop' => 'DROP TRIGGER IF EXISTS trg_block_posted_detail_deletes',
+                'sql' => "
+                    CREATE TRIGGER trg_block_posted_detail_deletes
+                    BEFORE DELETE ON journal_entry_details
+                    FOR EACH ROW
+                    BEGIN
+                        DECLARE v_status VARCHAR(20);
+                        SELECT status INTO v_status FROM journal_entries WHERE id = OLD.journal_entry_id;
+                        IF v_status = 'posted' THEN
+                            SIGNAL SQLSTATE '45000'
+                            SET MESSAGE_TEXT = 'Cannot delete lines of a posted journal. Create a reversing entry instead.';
+                        END IF;
+                    END
+                ",
+            ],
         ];
 
         foreach ($triggers as $name => $def) {

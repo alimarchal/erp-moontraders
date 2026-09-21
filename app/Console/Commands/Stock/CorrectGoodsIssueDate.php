@@ -3,11 +3,11 @@
 namespace App\Console\Commands\Stock;
 
 use App\Models\GoodsIssue;
+use App\Services\DatabaseTriggerGuard;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 
 class CorrectGoodsIssueDate extends Command
 {
@@ -178,7 +178,7 @@ class CorrectGoodsIssueDate extends Command
      */
     private function moveJournalEntry(int $journalEntryId, string $newDate): void
     {
-        $restore = $this->suspendJournalGuard();
+        $restore = app(DatabaseTriggerGuard::class)->suspend('journal_entries', [self::JOURNAL_GUARD]);
 
         try {
             DB::table('journal_entries')->where('id', $journalEntryId)->update(['entry_date' => $newDate]);
@@ -186,46 +186,5 @@ class CorrectGoodsIssueDate extends Command
         } finally {
             $restore();
         }
-    }
-
-    /**
-     * @return callable(): void
-     */
-    private function suspendJournalGuard(): callable
-    {
-        if (DB::getDriverName() === 'pgsql') {
-            DB::statement('ALTER TABLE journal_entries DISABLE TRIGGER '.self::JOURNAL_GUARD);
-
-            return fn () => DB::statement('ALTER TABLE journal_entries ENABLE TRIGGER '.self::JOURNAL_GUARD);
-        }
-
-        $row = DB::selectOne(
-            'SELECT ACTION_TIMING, EVENT_MANIPULATION, ACTION_STATEMENT FROM information_schema.TRIGGERS
-             WHERE TRIGGER_SCHEMA = DATABASE() AND TRIGGER_NAME = ?',
-            [self::JOURNAL_GUARD]
-        );
-
-        if (! $row) {
-            return fn () => null;
-        }
-
-        // Rebuilt without the DEFINER clause, so restoring does not need SUPER.
-        $definition = sprintf(
-            'CREATE TRIGGER `%s` %s %s ON `journal_entries` FOR EACH ROW %s',
-            self::JOURNAL_GUARD, $row->ACTION_TIMING, $row->EVENT_MANIPULATION, $row->ACTION_STATEMENT
-        );
-
-        DB::unprepared('DROP TRIGGER IF EXISTS `'.self::JOURNAL_GUARD.'`');
-
-        return function () use ($definition): void {
-            try {
-                DB::unprepared('DROP TRIGGER IF EXISTS `'.self::JOURNAL_GUARD.'`');
-                DB::unprepared($definition);
-            } catch (Throwable $e) {
-                $this->error('FAILED to restore '.self::JOURNAL_GUARD.': '.$e->getMessage());
-                $this->error('Run `php artisan db:sync-objects` to reinstall it before using the system.');
-                Log::error('Failed to restore journal immutability trigger', ['error' => $e->getMessage()]);
-            }
-        };
     }
 }

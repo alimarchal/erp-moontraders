@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\Customer;
+use App\Models\CustomerEmployeeAccount;
+use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\User;
 use Spatie\Permission\Models\Permission;
@@ -159,4 +162,36 @@ it('shows all active employees in the filter dropdown', function () {
         return $employees->contains('id', $activeEmployee->id)
             && ! $employees->contains('id', $inactiveEmployee->id);
     });
+});
+
+it('includes a correction adjustment inside the period in the closing balance', function () {
+    $employee = Employee::factory()->create(['is_active' => true]);
+    $account = CustomerEmployeeAccount::create([
+        'account_number' => 'ACC-HIST001',
+        'customer_id' => Customer::factory()->create()->id,
+        'employee_id' => $employee->id,
+        'opened_date' => '2026-08-01',
+        'status' => 'active',
+    ]);
+
+    foreach ([['2026-07-20', 'credit_sale', 70000, 0], ['2026-08-31', 'adjustment', 0, 50000]] as [$date, $type, $debit, $credit]) {
+        CustomerEmployeeAccountTransaction::create([
+            'customer_employee_account_id' => $account->id,
+            'transaction_date' => $date,
+            'transaction_type' => $type,
+            'description' => $type,
+            'debit' => $debit,
+            'credit' => $credit,
+        ]);
+    }
+
+    $response = $this->get(route('reports.credit-sales.salesman-history', [
+        'filter' => ['start_date' => '2026-08-01', 'end_date' => '2026-08-31'],
+    ]));
+
+    $response->assertSuccessful();
+    $salesman = $response->viewData('salesmen')->firstWhere('id', $employee->id);
+    expect((float) $salesman->opening_balance)->toBe(20000.0)
+        ->and((float) $salesman->closing_balance)->toBe(20000.0)
+        ->and((float) $response->viewData('totals')->total_opening_balance)->toBe(20000.0);
 });

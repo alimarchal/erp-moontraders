@@ -256,7 +256,7 @@ class InvestmentSummaryController extends Controller implements HasMiddleware
                         $q->where('ceat.transaction_date', '<', $date)
                             ->orWhere(function ($q2) use ($date) {
                                 $q2->where('ceat.transaction_date', '=', $date)
-                                    ->where('ceat.transaction_type', 'opening_balance');
+                                    ->whereNotIn('ceat.transaction_type', ['credit_sale', 'recovery']);
                             });
                     })
                     ->whereNull('ceat.deleted_at')

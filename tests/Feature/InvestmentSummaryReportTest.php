@@ -183,6 +183,43 @@ it('does not double count opening balance on the next day', function () {
     $responseNextDay->assertSee('14,000.00');
 });
 
+it('counts a correction adjustment in salesman credit on its own date', function () {
+    $employee = Employee::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+        'is_active' => true,
+    ]);
+
+    $account = CustomerEmployeeAccount::create([
+        'account_number' => 'ACC-TEST003',
+        'customer_id' => Customer::factory()->create(['is_active' => true])->id,
+        'employee_id' => $employee->id,
+        'opened_date' => '2026-08-01',
+        'status' => 'active',
+        'created_by' => $this->user->id,
+    ]);
+
+    foreach ([['2026-08-10', 'credit_sale', 70000, 0], ['2026-08-31', 'adjustment', 0, 50000]] as [$date, $type, $debit, $credit]) {
+        CustomerEmployeeAccountTransaction::create([
+            'customer_employee_account_id' => $account->id,
+            'transaction_date' => $date,
+            'transaction_type' => $type,
+            'description' => $type,
+            'debit' => $debit,
+            'credit' => $credit,
+        ]);
+    }
+
+    $response = $this->get(route('reports.investment-summary.index', [
+        'date' => '2026-08-31',
+        'supplier_id' => $this->supplier->id,
+        'designation' => 'Salesman',
+    ]));
+
+    $response->assertOk();
+    expect($response->viewData('salesmanCreditData')->firstWhere('id', $employee->id)->total_credit)->toBe(20000.0);
+});
+
 it('only includes expenses up to selected investment summary date', function () {
     ExpenseDetail::factory()->posted()->create([
         'supplier_id' => $this->supplier->id,

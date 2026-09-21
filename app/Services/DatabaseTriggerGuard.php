@@ -83,9 +83,12 @@ class DatabaseTriggerGuard
 
     /**
      * Prove the connection may create a trigger on this table before any guard is dropped,
-     * by creating and removing an empty one.
+     * by creating and removing an empty one. Callers that write other tables first should
+     * call this up front, so a missing privilege stops them before anything changes.
+     *
+     * @throws RuntimeException
      */
-    private function assertTriggersCanBeCreated(string $table): void
+    public function assertTriggersCanBeCreated(string $table): void
     {
         $probe = 'trg_probe_'.bin2hex(random_bytes(6));
 

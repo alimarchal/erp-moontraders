@@ -8,6 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class CorrectGoodsIssueDate extends Command
 {
@@ -61,6 +62,18 @@ class CorrectGoodsIssueDate extends Command
             ->where('reference', $goodsIssue->issue_number)
             ->where('status', 'posted')
             ->first();
+
+        // Probed before anything is written: the stock tables are updated first, and a
+        // privilege failure later would leave them moved while the journal entry stayed put.
+        if ($journalEntry && ! $this->option('dry-run')) {
+            try {
+                app(DatabaseTriggerGuard::class)->assertTriggersCanBeCreated('journal_entries');
+            } catch (RuntimeException $e) {
+                $this->error($e->getMessage());
+
+                return self::FAILURE;
+            }
+        }
 
         $targets = $this->targets($goodsIssue, $journalEntry);
 

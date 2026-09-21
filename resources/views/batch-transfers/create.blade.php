@@ -30,8 +30,8 @@
             <div class="bg-purple-50 border border-purple-200 rounded-lg p-4 text-sm text-purple-900">
                 <p class="font-semibold mb-1">What does Batch Transfer do?</p>
                 <ul class="list-disc list-inside space-y-1 text-purple-800">
-                    <li><strong>Full transfer</strong> — moves entire remaining quantity to another product. Updates <code>stock_batches</code>, <code>stock_valuation_layers</code>, <code>current_stock_by_batch</code>, <code>current_stock</code>, <code>stock_movements</code>, and <strong>draft GI items</strong> automatically.</li>
-                    <li><strong>Partial transfer</strong> — moves a specific quantity. A new cloned batch is created for the target product. Draft GI items are NOT auto-updated (handle manually if needed).</li>
+                    <li><strong>Full transfer</strong> — moves entire remaining quantity to another product. Updates <code>stock_batches</code>, <code>stock_valuation_layers</code>, <code>current_stock_by_batch</code>, <code>current_stock</code>, <code>stock_movements</code>, both stock ledgers and <strong>draft GI items</strong> automatically. Not allowed while part of the batch is still on a van — settle those goods issues first.</li>
+                    <li><strong>Partial transfer</strong> — moves a specific quantity. A new cloned batch is created for the target product and today's ledger shows the quantity leaving the source product and arriving on the target. Draft GI items are NOT auto-updated (handle manually if needed).</li>
                     <li>All changes run in a single DB transaction — either everything succeeds or nothing changes.</li>
                 </ul>
             </div>

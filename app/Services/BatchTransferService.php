@@ -4,7 +4,10 @@ namespace App\Services;
 
 use App\Models\CurrentStockByBatch;
 use App\Models\GoodsIssueItem;
+use App\Models\Product;
 use App\Models\StockBatch;
+use App\Models\StockLedgerEntry;
+use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +16,8 @@ use Illuminate\Support\Facades\Log;
 class BatchTransferService
 {
     public function __construct(
-        private readonly InventoryService $inventoryService
+        private readonly InventoryService $inventoryService,
+        private readonly InventoryLedgerService $inventoryLedgerService
     ) {}
 
     /**
@@ -28,7 +32,11 @@ class BatchTransferService
      *   3. current_stock_by_batch     – product_id (full) | split: reduce source, create target CSB
      *   4. current_stock              – synced for both products via syncCurrentStockFromValuationLayers
      *   5. goods_issue_items          – product_id updated for DRAFT GIs only (full transfer only)
-     *   6. stock_movements            – product_id updated (full) | new transfer movements (partial)
+     *   6. stock_movements            – product_id updated (full) | out/in adjustment movements (partial)
+     *   7. stock_ledger_entries       – product_id updated (full) | out/in rows (partial)
+     *   8. inventory_ledger_entries   – product_id updated (full) | out/in rows (partial)
+     *
+     * Snapshots and ledgers are rebuilt per product from 6–8, so they must always agree with 1–3.
      *
      * @param  int  $stockBatchId  Source batch ID
      * @param  int  $targetProductId  Target product to assign the batch/quantity to
@@ -67,6 +75,14 @@ class BatchTransferService
             }
 
             $isFullTransfer = abs($quantity - $availableQty) < 0.001;
+
+            // A full transfer re-labels the batch's history. Stock still on a van would later be
+            // settled under the old product against a batch that now belongs to the new one.
+            if ($isFullTransfer && $this->quantityOnVans($batch->id) > 0.001) {
+                throw new \InvalidArgumentException(
+                    'Part of this batch is still on a van. Settle those goods issues before transferring the whole batch.'
+                );
+            }
 
             $result = $isFullTransfer
                 ? $this->executeFullTransfer($batch, $csb, $targetProductId, $warehouseId, $reason)
@@ -136,10 +152,17 @@ class BatchTransferService
         $csb->product_id = $targetProductId;
         $csb->save();
 
-        // 4. stock_movements – all movements tied to this batch
-        DB::table('stock_movements')
-            ->where('stock_batch_id', $batch->id)
-            ->update(['product_id' => $targetProductId]);
+        // 4. stock_movements and both ledgers – everything tied to this batch
+        foreach (['stock_movements', 'stock_ledger_entries', 'inventory_ledger_entries'] as $table) {
+            DB::table($table)
+                ->where('stock_batch_id', $batch->id)
+                ->update(['product_id' => $targetProductId]);
+        }
+
+        foreach ([$sourceProductId, $targetProductId] as $productId) {
+            $this->recalculateStockLedgerBalances($productId, $warehouseId);
+            $this->recalculateInventoryLedgerBalances($productId);
+        }
 
         // 5. goods_issue_items – DRAFT GIs only (posted GIs are immutable historical records)
         $affectedDraftItems = $this->reassignDraftGoodsIssueItems(
@@ -255,6 +278,15 @@ class BatchTransferService
             'last_updated' => now(),
         ]);
 
+        // Record the stock leaving the source product and arriving on the target, so the
+        // per-product ledgers keep agreeing with current stock.
+        $transferDate = now()->toDateString();
+        $unitCost = (float) $csb->unit_cost;
+        $notes = "Batch transfer {$batch->batch_code} → {$newBatch->batch_code}. Reason: {$reason}";
+
+        $this->recordTransferLeg($batch->product_id, $batch->id, $warehouseId, -$transferQty, $unitCost, $transferDate, $newBatch, $notes);
+        $this->recordTransferLeg($targetProductId, $newBatch->id, $warehouseId, $transferQty, $unitCost, $transferDate, $newBatch, $notes);
+
         return [
             'type' => 'partial',
             'source_batch_code' => $batch->batch_code,
@@ -262,6 +294,125 @@ class BatchTransferService
             'quantity_transferred' => $transferQty,
             'draft_gi_items_updated' => 0,
         ];
+    }
+
+    /**
+     * One side of a partial transfer: an adjustment movement plus its stock and inventory ledger rows.
+     */
+    private function recordTransferLeg(
+        int $productId,
+        int $stockBatchId,
+        int $warehouseId,
+        float $quantity,
+        float $unitCost,
+        string $date,
+        StockBatch $newBatch,
+        string $notes
+    ): void {
+        $movement = StockMovement::create([
+            'movement_type' => 'adjustment',
+            'reference_type' => StockBatch::class,
+            'reference_id' => $newBatch->id,
+            'movement_date' => $date,
+            'product_id' => $productId,
+            'stock_batch_id' => $stockBatchId,
+            'warehouse_id' => $warehouseId,
+            'quantity' => $quantity,
+            'uom_id' => Product::whereKey($productId)->value('uom_id'),
+            'unit_cost' => $unitCost,
+            'total_value' => round(abs($quantity) * $unitCost, 2),
+            'created_by' => auth()->id(),
+        ]);
+
+        $previousBalance = (float) StockLedgerEntry::where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->orderByDesc('id')
+            ->lockForUpdate()
+            ->value('quantity_balance');
+
+        $balance = $previousBalance + $quantity;
+
+        StockLedgerEntry::create([
+            'product_id' => $productId,
+            'warehouse_id' => $warehouseId,
+            'stock_batch_id' => $stockBatchId,
+            'entry_date' => $date,
+            'stock_movement_id' => $movement->id,
+            'quantity_in' => max($quantity, 0),
+            'quantity_out' => max(-$quantity, 0),
+            'quantity_balance' => $balance,
+            'valuation_rate' => $unitCost,
+            'stock_value' => $balance * $unitCost,
+            'reference_type' => StockBatch::class,
+            'reference_id' => $newBatch->id,
+            'created_at' => now(),
+        ]);
+
+        $this->inventoryLedgerService->recordAdjustment(
+            productId: $productId,
+            warehouseId: $warehouseId,
+            vehicleId: null,
+            debitQty: max($quantity, 0),
+            creditQty: max(-$quantity, 0),
+            unitCost: $unitCost,
+            date: $date,
+            notes: $notes,
+            batchId: $stockBatchId,
+        );
+    }
+
+    /**
+     * Units of this batch issued to vans and not yet sold, returned or written off.
+     */
+    private function quantityOnVans(int $stockBatchId): float
+    {
+        return (float) DB::table('stock_movements')
+            ->where('stock_batch_id', $stockBatchId)
+            ->whereNotNull('vehicle_id')
+            ->selectRaw("COALESCE(SUM(CASE
+                WHEN movement_type IN ('transfer', 'return') THEN -quantity
+                WHEN movement_type IN ('sale', 'shortage') THEN quantity
+                ELSE 0 END), 0) as on_vans")
+            ->value('on_vans');
+    }
+
+    private function recalculateStockLedgerBalances(int $productId, int $warehouseId): void
+    {
+        $balance = 0.0;
+
+        $entries = DB::table('stock_ledger_entries')
+            ->where('product_id', $productId)
+            ->where('warehouse_id', $warehouseId)
+            ->orderBy('id')
+            ->get(['id', 'quantity_in', 'quantity_out', 'valuation_rate']);
+
+        foreach ($entries as $entry) {
+            $balance += (float) $entry->quantity_in - (float) $entry->quantity_out;
+
+            DB::table('stock_ledger_entries')->where('id', $entry->id)->update([
+                'quantity_balance' => $balance,
+                'stock_value' => round($balance * (float) $entry->valuation_rate, 4),
+            ]);
+        }
+    }
+
+    private function recalculateInventoryLedgerBalances(int $productId): void
+    {
+        $balance = 0.0;
+
+        $entries = DB::table('inventory_ledger_entries')
+            ->where('product_id', $productId)
+            ->orderBy('date')
+            ->orderBy('id')
+            ->get(['id', 'debit_qty', 'credit_qty']);
+
+        foreach ($entries as $entry) {
+            $balance += (float) $entry->debit_qty - (float) $entry->credit_qty;
+
+            DB::table('inventory_ledger_entries')->where('id', $entry->id)->update([
+                'running_balance' => $balance,
+            ]);
+        }
     }
 
     /**

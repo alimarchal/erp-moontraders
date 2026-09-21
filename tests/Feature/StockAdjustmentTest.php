@@ -692,3 +692,48 @@ test('an excess on a depleted batch makes that stock issuable again', function (
         ->and($batch->fresh()->status)->toBe('active')
         ->and($batch->fresh()->is_active)->toBeTrue();
 });
+
+test('a shortage larger than what the batch now holds is refused', function () {
+    // Drafted when the batch held 378; by posting time only 3 were left.
+    $batch = StockBatch::factory()->create([
+        'product_id' => $this->product->id,
+        'status' => 'active',
+        'is_active' => true,
+    ]);
+
+    $stock = CurrentStockByBatch::create([
+        'product_id' => $this->product->id,
+        'warehouse_id' => $this->warehouse->id,
+        'stock_batch_id' => $batch->id,
+        'quantity_on_hand' => 3,
+        'unit_cost' => 50.00,
+        'total_value' => 150.00,
+        'status' => 'active',
+    ]);
+
+    $adjustment = StockAdjustment::factory()->create([
+        'warehouse_id' => $this->warehouse->id,
+        'adjustment_type' => 'damage',
+        'status' => 'draft',
+    ]);
+
+    StockAdjustmentItem::create([
+        'stock_adjustment_id' => $adjustment->id,
+        'product_id' => $this->product->id,
+        'stock_batch_id' => $batch->id,
+        'system_quantity' => 378,
+        'actual_quantity' => 366,
+        'adjustment_quantity' => -12,
+        'unit_cost' => 50.00,
+        'adjustment_value' => -600.00,
+        'uom_id' => $this->uom->id,
+    ]);
+
+    $result = (new StockAdjustmentService)->postAdjustment($adjustment);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('only 3')
+        ->and($adjustment->fresh()->status)->toBe('draft')
+        ->and((float) $stock->fresh()->quantity_on_hand)->toBe(3.0)
+        ->and(StockMovement::where('stock_batch_id', $batch->id)->exists())->toBeFalse();
+});

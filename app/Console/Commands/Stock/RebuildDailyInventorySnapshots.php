@@ -40,7 +40,8 @@ class RebuildDailyInventorySnapshots extends Command
         {--days=90 : Window length used when start_date is omitted}
         {--supplier_id= : Only rebuild snapshots for products of this supplier}
         {--with-vans : Also rebuild the vehicle rows, which no other job writes}
-        {--dry-run : Report what would change without saving}';
+        {--dry-run : Report what would change without saving}
+        {--force : Also rebuild products whose ledger disagrees with current stock}';
 
     protected $description = 'Recompute daily_inventory_snapshots for a date range from the stock_movements '
         .'ledger (keyed by real movement_date), instead of the current-state snapshot job. Use this to repair '
@@ -65,6 +66,14 @@ class RebuildDailyInventorySnapshots extends Command
 
         if ($endDate === null) {
             return self::FAILURE;
+        }
+
+        // The ledger knows nothing about days that have not happened yet; rows written for them
+        // would only go stale once those days' documents are posted.
+        $today = now()->toDateString();
+        if ($endDate > $today) {
+            $this->warn("end_date {$endDate} is in the future — rebuilding up to today ({$today}) only.");
+            $endDate = $today;
         }
 
         $startDate = $this->argument('start_date') !== null
@@ -94,6 +103,28 @@ class RebuildDailyInventorySnapshots extends Command
             $this->warn('No matching products found — nothing to do.');
 
             return self::SUCCESS;
+        }
+
+        $outOfStep = $this->productsOutOfStepWithCurrentStock($productIds);
+
+        if ($outOfStep !== []) {
+            $this->reportProductsOutOfStep($outOfStep);
+
+            if (! $this->option('force')) {
+                $productIds = $productIds->reject(fn ($productId) => isset($outOfStep[$productId]))->values();
+
+                if (! $isDryRun) {
+                    Log::warning('Snapshot rebuild skipped products whose ledger disagrees with current stock', [
+                        'products' => $outOfStep,
+                    ]);
+                }
+
+                if ($productIds->isEmpty()) {
+                    $this->error('Nothing left to rebuild.');
+
+                    return self::FAILURE;
+                }
+            }
         }
 
         $this->info(sprintf(
@@ -134,10 +165,12 @@ class RebuildDailyInventorySnapshots extends Command
             ])->values()->all()
         );
 
+        $skippedProducts = $outOfStep !== [] && ! $this->option('force');
+
         if ($isDryRun) {
             $this->warn('DRY RUN — no data was changed. Re-run without --dry-run to apply.');
 
-            return self::SUCCESS;
+            return $skippedProducts ? self::FAILURE : self::SUCCESS;
         }
 
         $this->info('Done.');
@@ -149,7 +182,72 @@ class RebuildDailyInventorySnapshots extends Command
             'totals' => $summary,
         ]);
 
+        if ($skippedProducts) {
+            $this->warn(count($outOfStep).' product(s) above were skipped. Their snapshots were left as they were.');
+
+            return self::FAILURE;
+        }
+
         return self::SUCCESS;
+    }
+
+    /**
+     * Snapshots are replayed from the movement ledger, so they can only be right for a product
+     * whose ledger ends where current stock stands. A product that does not is left alone
+     * rather than overwritten with figures that match neither.
+     *
+     * @return array<int, array{ledger: float, stock: float}>
+     */
+    private function productsOutOfStepWithCurrentStock(Collection $productIds): array
+    {
+        $ledger = DB::table('stock_movements')
+            ->whereIn('product_id', $productIds)
+            ->whereNotNull('warehouse_id')
+            ->whereIn('movement_type', self::WAREHOUSE_MOVEMENT_TYPES)
+            ->groupBy('product_id')
+            ->selectRaw('product_id, SUM(quantity) as quantity')
+            ->pluck('quantity', 'product_id');
+
+        $stock = DB::table('current_stock_by_batch')
+            ->whereIn('product_id', $productIds)
+            ->groupBy('product_id')
+            ->selectRaw('product_id, SUM(quantity_on_hand) as quantity')
+            ->pluck('quantity', 'product_id');
+
+        $outOfStep = [];
+
+        foreach ($ledger->keys()->merge($stock->keys())->unique() as $productId) {
+            $ledgerQuantity = round((float) ($ledger[$productId] ?? 0), 3);
+            $stockQuantity = round((float) ($stock[$productId] ?? 0), 3);
+
+            if (abs($ledgerQuantity - $stockQuantity) > self::QTY_EPSILON) {
+                $outOfStep[(int) $productId] = ['ledger' => $ledgerQuantity, 'stock' => $stockQuantity];
+            }
+        }
+
+        return $outOfStep;
+    }
+
+    /**
+     * @param  array<int, array{ledger: float, stock: float}>  $outOfStep
+     */
+    private function reportProductsOutOfStep(array $outOfStep): void
+    {
+        $names = DB::table('products')->whereIn('id', array_keys($outOfStep))->pluck('product_name', 'id');
+
+        $this->warn('The stock ledger does not match current stock for these products:');
+        $this->table(
+            ['Product', 'Name', 'Ledger qty', 'Current stock qty'],
+            collect($outOfStep)->map(fn (array $quantities, int $productId) => [
+                $productId,
+                $names[$productId] ?? '—',
+                number_format($quantities['ledger'], 3),
+                number_format($quantities['stock'], 3),
+            ])->values()->all()
+        );
+        $this->warn($this->option('force')
+            ? '--force given: rebuilding them from the ledger anyway.'
+            : 'They are skipped. Correct the ledger first, or re-run with --force to rebuild them from the ledger anyway.');
     }
 
     /**

@@ -74,6 +74,7 @@ class StockAdjustmentService
                     throw new \Exception('All items must have a stock batch assigned');
                 }
 
+                $this->guardAgainstRemovingMoreThanOnHand($adjustment, $item);
                 $this->processAdjustmentItem($adjustment, $item);
             }
 
@@ -101,6 +102,40 @@ class StockAdjustmentService
                 'success' => false,
                 'message' => 'Failed to post stock adjustment: '.$e->getMessage(),
             ];
+        }
+    }
+
+    /**
+     * A draft keeps the quantity counted when it was written, but the batch can be issued
+     * from before it is posted. Removing more than the batch now holds would floor current
+     * stock at zero while the ledger and the journal still take the full quantity out.
+     */
+    protected function guardAgainstRemovingMoreThanOnHand(StockAdjustment $adjustment, $item): void
+    {
+        if ($item->adjustment_quantity >= 0) {
+            return;
+        }
+
+        $onHand = (float) CurrentStockByBatch::where('stock_batch_id', $item->stock_batch_id)
+            ->where('warehouse_id', $adjustment->warehouse_id)
+            ->lockForUpdate()
+            ->get(['quantity_on_hand'])
+            ->sum('quantity_on_hand');
+
+        $removing = abs((float) $item->adjustment_quantity);
+
+        if ($removing - $onHand > 0.001) {
+            $batchCode = StockBatch::whereKey($item->stock_batch_id)->value('batch_code');
+            $productName = $item->product?->product_name ?? "product {$item->product_id}";
+
+            throw new \Exception(sprintf(
+                '%s batch %s has only %s in stock now, but this adjustment removes %s (it was counted at %s). Recount and update the draft before posting.',
+                $productName,
+                $batchCode,
+                rtrim(rtrim(number_format($onHand, 3, '.', ''), '0'), '.'),
+                rtrim(rtrim(number_format($removing, 3, '.', ''), '0'), '.'),
+                rtrim(rtrim(number_format((float) $item->system_quantity, 3, '.', ''), '0'), '.')
+            ));
         }
     }
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\CurrentStockByBatch;
 use App\Models\DailyInventorySnapshot;
 use App\Models\Product;
 use App\Models\StockBatch;
@@ -27,11 +28,15 @@ beforeEach(function () {
     ]);
 });
 
+/**
+ * Records a movement and, as posting does, moves current stock with it so the ledger and
+ * current_stock_by_batch agree.
+ */
 function recordStockMovement(array $overrides = []): StockMovement
 {
     $context = test();
 
-    return StockMovement::create(array_merge([
+    $movement = StockMovement::create(array_merge([
         'movement_type' => 'grn',
         'movement_date' => '2026-03-01',
         'product_id' => $context->product->id,
@@ -43,6 +48,17 @@ function recordStockMovement(array $overrides = []): StockMovement
         'total_value' => 0,
         'created_by' => $context->user->id,
     ], $overrides));
+
+    if ($movement->warehouse_id && in_array($movement->movement_type, ['grn', 'transfer', 'adjustment', 'return', 'damage', 'theft'], true)) {
+        $stock = CurrentStockByBatch::firstOrNew(
+            ['stock_batch_id' => $movement->stock_batch_id, 'warehouse_id' => $movement->warehouse_id],
+            ['product_id' => $movement->product_id, 'unit_cost' => 100, 'total_value' => 0, 'quantity_on_hand' => 0]
+        );
+        $stock->quantity_on_hand = (float) $stock->quantity_on_hand + (float) $movement->quantity;
+        $stock->save();
+    }
+
+    return $movement;
 }
 
 function recordSnapshot(string $date, array $overrides = []): DailyInventorySnapshot
@@ -365,4 +381,43 @@ it('rejects a range that ends before it starts', function () {
         'start_date' => '2026-03-10',
         'end_date' => '2026-03-05',
     ])->assertFailed();
+});
+
+it('skips a product whose ledger disagrees with current stock and names it', function () {
+    recordStockMovement(['quantity' => 100, 'total_value' => 10000]);
+    CurrentStockByBatch::where('stock_batch_id', $this->batch->id)->update(['quantity_on_hand' => 90]);
+
+    $this->artisan('inventory:snapshots:rebuild', [
+        'start_date' => '2026-03-01',
+        'end_date' => '2026-03-01',
+    ])
+        ->expectsOutputToContain($this->product->product_name)
+        ->assertFailed();
+
+    assertDatabaseCount('daily_inventory_snapshots', 0);
+});
+
+it('rebuilds an out-of-step product anyway when forced', function () {
+    recordStockMovement(['quantity' => 100, 'total_value' => 10000]);
+    CurrentStockByBatch::where('stock_batch_id', $this->batch->id)->update(['quantity_on_hand' => 90]);
+
+    $this->artisan('inventory:snapshots:rebuild', [
+        'start_date' => '2026-03-01',
+        'end_date' => '2026-03-01',
+        '--force' => true,
+    ])->assertSuccessful();
+
+    expect((float) DailyInventorySnapshot::sole()->quantity_on_hand)->toBe(100.0);
+});
+
+it('stops at today when the end date is in the future', function () {
+    $this->travelTo('2026-03-03');
+    recordStockMovement(['quantity' => 100, 'total_value' => 10000]);
+
+    $this->artisan('inventory:snapshots:rebuild', [
+        'start_date' => '2026-03-01',
+        'end_date' => '2026-03-10',
+    ])->assertSuccessful();
+
+    expect(DailyInventorySnapshot::max('date'))->toStartWith('2026-03-03');
 });

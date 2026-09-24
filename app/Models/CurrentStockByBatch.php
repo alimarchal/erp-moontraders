@@ -33,7 +33,8 @@ class CurrentStockByBatch extends Model
 
     protected $casts = [
         'quantity_on_hand' => 'decimal:2',
-        'unit_cost' => 'decimal:2',
+        // decimal(15,6) column — see StockValuationLayer for why the cast matters.
+        'unit_cost' => 'decimal:6',
         'selling_price' => 'decimal:2',
         'promotional_price' => 'decimal:2',
         'is_promotional' => 'boolean',

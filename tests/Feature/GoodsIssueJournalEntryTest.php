@@ -83,7 +83,7 @@ it('creates a GL transfer for goods issue (1155 Dr / 1151 Cr)', function () {
 
     App::instance(AccountingService::class, $fakeAccounting);
 
-    $service = new DistributionService;
+    $service = app(DistributionService::class);
 
     // Call the new public method directly with a sample cost
     $je = $service->createGoodsIssueJournalEntry($goodsIssue, 123.45);

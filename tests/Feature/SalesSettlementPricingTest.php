@@ -60,6 +60,7 @@ it('uses promotional batch selling price when calculating sales value', function
 
     // Post GRN to create batch with promotional_selling_price copied
     $inventoryService = app(InventoryService::class);
+    seedGrnPostingAccounts();
     $inventoryService->postGrnToInventory($grn->fresh());
 
     $stockBatch = StockBatch::where('product_id', $product->id)->firstOrFail();

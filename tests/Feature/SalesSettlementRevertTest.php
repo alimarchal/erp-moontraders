@@ -17,7 +17,9 @@ use App\Models\User;
 use App\Models\VanStockBalance;
 use App\Services\AccountingService;
 use App\Services\InventoryLedgerService;
+use App\Services\InventoryService;
 use App\Services\SalesSettlementRevertService;
+use App\Services\StockValuationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -203,6 +205,8 @@ it('resets settlement to draft and clears financial fields after revert', functi
     $service = new SalesSettlementRevertService(
         $mockAccounting,
         app(InventoryLedgerService::class),
+        app(StockValuationService::class),
+        app(InventoryService::class),
     );
 
     $result = $service->revert($settlement);
@@ -254,6 +258,8 @@ it('creates reversing CustomerEmployeeAccountTransaction entries on revert', fun
     $service = new SalesSettlementRevertService(
         $mockAccounting,
         app(InventoryLedgerService::class),
+        app(StockValuationService::class),
+        app(InventoryService::class),
     );
 
     $result = $service->revert($settlement);
@@ -306,6 +312,8 @@ it('restores van stock balance after revert', function () {
     $service = new SalesSettlementRevertService(
         $mockAccounting,
         app(InventoryLedgerService::class),
+        app(StockValuationService::class),
+        app(InventoryService::class),
     );
 
     $service->revert($settlement);
@@ -361,17 +369,73 @@ it('creates reversing stock movement entries after revert', function () {
     $service = new SalesSettlementRevertService(
         $mockAccounting,
         app(InventoryLedgerService::class),
+        app(StockValuationService::class),
+        app(InventoryService::class),
     );
 
     $service->revert($settlement);
 
+    // The reversal keeps the type of the row it undoes. Typing it 'adjustment'
+    // instead put a reversed sale on the warehouse's ledger, where nothing
+    // physically arrived, and left it off the van's — the snapshot rebuild, the
+    // consistency check and the Van Stock Batch report all read the type.
     $reversalMovement = StockMovement::where('reference_type', 'App\\Models\\SalesSettlement')
         ->where('reference_id', $settlement->id)
-        ->where('movement_type', 'adjustment')
+        ->where('quantity', '>', 0)
         ->first();
 
     expect($reversalMovement)->not->toBeNull()
+        ->and($reversalMovement->movement_type)->toBe('sale')
         ->and((float) $reversalMovement->quantity)->toBe(10.0); // negated from -10
+
+    expect(StockMovement::where('reference_id', $settlement->id)
+        ->where('movement_type', 'adjustment')->count())->toBe(0);
+});
+
+it('nets the reversal against earlier ones when a settlement is reverted twice', function () {
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id]);
+    $product = Product::factory()->create();
+    $uom = Uom::factory()->create();
+
+    // A sale, its earlier reversal, and the sale written again on re-posting.
+    foreach ([-10, 10, -10] as $quantity) {
+        StockMovement::create([
+            'movement_type' => 'sale',
+            'reference_type' => 'App\\Models\\SalesSettlement',
+            'reference_id' => $settlement->id,
+            'movement_date' => now()->toDateString(),
+            'product_id' => $product->id,
+            'vehicle_id' => $settlement->vehicle_id,
+            'uom_id' => $uom->id,
+            'quantity' => $quantity,
+            'unit_cost' => 100,
+            'total_value' => 1000,
+            'created_by' => $user->id,
+        ]);
+    }
+
+    $this->actingAs($user);
+
+    $mockAccounting = Mockery::mock(AccountingService::class);
+    $mockAccounting->shouldReceive('reverseJournalEntry')
+        ->once()
+        ->andReturn(['success' => true, 'message' => 'Reversed']);
+
+    $service = new SalesSettlementRevertService(
+        $mockAccounting,
+        app(InventoryLedgerService::class),
+        app(StockValuationService::class),
+        app(InventoryService::class),
+    );
+
+    $service->revert($settlement);
+
+    // Only the 10 still standing is reversed. Copying every row would reverse
+    // the earlier reversal as well and hand the van 20 units it never held.
+    expect((float) StockMovement::where('reference_id', $settlement->id)
+        ->where('movement_type', 'sale')->sum('quantity'))->toBe(0.0)
+        ->and(StockMovement::where('reference_id', $settlement->id)->count())->toBe(4);
 });
 
 it('returns error when GL reversal fails', function () {
@@ -388,6 +452,8 @@ it('returns error when GL reversal fails', function () {
     $service = new SalesSettlementRevertService(
         $mockAccounting,
         app(InventoryLedgerService::class),
+        app(StockValuationService::class),
+        app(InventoryService::class),
     );
 
     $result = $service->revert($settlement);
@@ -449,7 +515,7 @@ it('transaction rolls back on inventory ledger failure', function () {
     $mockInventory->shouldReceive('recordAdjustment')
         ->andThrow(new Exception('Inventory ledger failure'));
 
-    $service = new SalesSettlementRevertService($mockAccounting, $mockInventory);
+    $service = new SalesSettlementRevertService($mockAccounting, $mockInventory, app(StockValuationService::class), app(InventoryService::class));
     $result = $service->revert($settlement);
 
     expect($result['success'])->toBeFalse();
@@ -487,7 +553,7 @@ it('tags inventory ledger reversal entries with the settlement id', function () 
         ->once()
         ->andReturn(['success' => true, 'message' => 'Reversed']);
 
-    $service = new SalesSettlementRevertService($mockAccounting, app(InventoryLedgerService::class));
+    $service = new SalesSettlementRevertService($mockAccounting, app(InventoryLedgerService::class), app(StockValuationService::class), app(InventoryService::class));
     $result = $service->revert($settlement);
 
     expect($result['success'])->toBeTrue($result['message'] ?? '');

@@ -21,6 +21,11 @@ use Illuminate\Support\Facades\Log;
 
 class DistributionService
 {
+    public function __construct(
+        private StockValuationService $stockValuation,
+        private InventoryService $inventoryService,
+    ) {}
+
     /**
      * Post Goods Issue to transfer inventory from warehouse to vehicle
      * NOW WITH BATCH TRACKING AND PROMOTIONAL PRIORITY
@@ -127,25 +132,9 @@ class DistributionService
                         $stockByBatch->save();
                     }
 
-                    // Lock and update stock valuation layer
-                    $valuationLayer = StockValuationLayer::where('stock_batch_id', $batch->id)
-                        ->where('warehouse_id', $goodsIssue->warehouse_id)
-                        ->where('quantity_remaining', '>', 0)
-                        ->lockForUpdate()
-                        ->first();
-
-                    if ($valuationLayer) {
-                        $qtyBeforeLayer = (float) $valuationLayer->quantity_remaining;
-                        $valuationLayer->quantity_remaining -= $qtyFromBatch;
-                        if ($valuationLayer->quantity_remaining <= 0) {
-                            $valuationLayer->quantity_remaining = 0;
-                            $valuationLayer->total_value = 0.0;
-                        } else {
-                            $ratio = $qtyBeforeLayer > 0 ? $valuationLayer->quantity_remaining / $qtyBeforeLayer : 0;
-                            $valuationLayer->total_value = round((float) ($valuationLayer->total_value ?? 0) * $ratio, 4);
-                        }
-                        $valuationLayer->save();
-                    }
+                    // A batch can hold more than one layer, so hand the whole
+                    // amount to the service and let it spill across them.
+                    $this->stockValuation->consumeBatch($batch->id, $goodsIssue->warehouse_id, $qtyFromBatch);
 
                     // Record inventory ledger entries for this specific batch (double-entry)
                     $ledgerService = app(InventoryLedgerService::class);
@@ -163,7 +152,7 @@ class DistributionService
                     );
                 }
 
-                // Recalculate CurrentStock from StockValuationLayer (source of truth)
+                // Recalculate CurrentStock from current_stock_by_batch
                 $this->syncCurrentStockFromValuationLayers($item->product_id, $goodsIssue->warehouse_id);
 
                 // Update or create van stock balance (aggregate, not batch-specific)
@@ -347,24 +336,7 @@ class DistributionService
                         $stockByBatch->save();
                     }
 
-                    $valuationLayer = StockValuationLayer::where('stock_batch_id', $batch->id)
-                        ->where('warehouse_id', $goodsIssue->warehouse_id)
-                        ->where('quantity_remaining', '>', 0)
-                        ->lockForUpdate()
-                        ->first();
-
-                    if ($valuationLayer) {
-                        $qtyBeforeLayer = (float) $valuationLayer->quantity_remaining;
-                        $valuationLayer->quantity_remaining -= $qtyFromBatch;
-                        if ($valuationLayer->quantity_remaining <= 0) {
-                            $valuationLayer->quantity_remaining = 0;
-                            $valuationLayer->total_value = 0.0;
-                        } else {
-                            $ratio = $qtyBeforeLayer > 0 ? $valuationLayer->quantity_remaining / $qtyBeforeLayer : 0;
-                            $valuationLayer->total_value = round((float) ($valuationLayer->total_value ?? 0) * $ratio, 4);
-                        }
-                        $valuationLayer->save();
-                    }
+                    $this->stockValuation->consumeBatch($batch->id, $goodsIssue->warehouse_id, $qtyFromBatch);
 
                     $ledgerService = app(InventoryLedgerService::class);
                     $ledgerService->recordIssue(
@@ -690,67 +662,14 @@ class DistributionService
     }
 
     /**
-     * Sync CurrentStock from StockValuationLayer (source of truth)
-     * This ensures CurrentStock always matches the sum of valuation layers
+     * Sync CurrentStock for a product/warehouse.
+     *
+     * One implementation lives in InventoryService; the copies that used to sit
+     * here and in SalesSettlementRevertService drifted apart from it.
      */
     private function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
     {
-        // Calculate remaining stock value from the remaining quantity and unit cost.
-        // stock_valuation_layers.total_value can represent the original receipt
-        // total after GRN correction, so it must not be used for current stock.
-        $layerData = StockValuationLayer::where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('quantity_remaining', '>', 0)
-            ->selectRaw('
-                COALESCE(SUM(quantity_remaining), 0) as total_qty,
-                COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value
-            ')
-            ->first();
-
-        $totalQty = (float) ($layerData->total_qty ?? 0);
-        $totalValue = (float) ($layerData->total_value ?? 0);
-        $avgCost = $totalQty > 0 ? round($totalValue / $totalQty, 6) : 0;
-
-        // Count batches from current_stock_by_batch
-        $totalBatches = CurrentStockByBatch::where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('quantity_on_hand', '>', 0)
-            ->count();
-
-        $promotionalBatches = CurrentStockByBatch::where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('is_promotional', true)
-            ->where('quantity_on_hand', '>', 0)
-            ->count();
-
-        $priorityBatches = CurrentStockByBatch::where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('priority_order', '<', 99)
-            ->where('quantity_on_hand', '>', 0)
-            ->count();
-
-        // Update or create CurrentStock with calculated values
-        $currentStock = CurrentStock::lockForUpdate()->firstOrNew([
-            'product_id' => $productId,
-            'warehouse_id' => $warehouseId,
-        ]);
-
-        $currentStock->quantity_on_hand = $totalQty;
-        $currentStock->quantity_available = $totalQty - ($currentStock->quantity_reserved ?? 0);
-        $currentStock->average_cost = $avgCost;
-        $currentStock->total_value = $totalValue;
-        $currentStock->total_batches = $totalBatches;
-        $currentStock->promotional_batches = $promotionalBatches;
-        $currentStock->priority_batches = $priorityBatches;
-        $currentStock->last_updated = now();
-        $currentStock->save();
-
-        Log::debug('CurrentStock synced from valuation layers', [
-            'product_id' => $productId,
-            'warehouse_id' => $warehouseId,
-            'quantity_on_hand' => $totalQty,
-            'total_value' => $totalValue,
-        ]);
+        $this->inventoryService->syncCurrentStockFromValuationLayers($productId, $warehouseId);
     }
 
     /**
@@ -848,7 +767,7 @@ class DistributionService
 
                     // 2. RETURNS: Go back to SAME batch (not random allocation)
                     if ($returnedQty > 0) {
-                        StockMovement::create([
+                        $returnMovement = StockMovement::create([
                             'movement_type' => 'return',
                             'reference_type' => 'App\Models\SalesSettlement',
                             'reference_id' => $settlement->id,
@@ -891,16 +810,15 @@ class DistributionService
                             ]);
                         }
 
-                        // Update stock valuation layer for returns
-                        $valuationLayer = StockValuationLayer::where('stock_batch_id', $batch->id)
-                            ->where('warehouse_id', $settlement->warehouse_id)
-                            ->first();
-
-                        if ($valuationLayer) {
-                            $valuationLayer->quantity_remaining += $returnedQty;
-                            $valuationLayer->total_value = round((float) ($valuationLayer->total_value ?? 0) + $restoredValue, 4);
-                            $valuationLayer->save();
-                        }
+                        // Returned stock goes back into the batch's layers,
+                        // newest first; the service never drops the remainder.
+                        $this->stockValuation->restoreBatch(
+                            $batch->id,
+                            $settlement->warehouse_id,
+                            $returnedQty,
+                            (float) $itemBatch->unit_cost,
+                            $returnMovement->id
+                        );
                     }
 
                     // 3. SHORTAGES: Record as loss from SAME batch

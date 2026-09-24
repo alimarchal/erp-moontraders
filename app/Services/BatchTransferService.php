@@ -88,7 +88,7 @@ class BatchTransferService
                 ? $this->executeFullTransfer($batch, $csb, $targetProductId, $warehouseId, $reason)
                 : $this->executePartialTransfer($batch, $csb, $targetProductId, $warehouseId, $quantity, $reason);
 
-            // Sync current_stock for both source and target from SVL (source of truth)
+            // Sync current_stock for both source and target from current_stock_by_batch
             $this->inventoryService->syncCurrentStockFromValuationLayers($sourceProductId, $warehouseId);
             $this->inventoryService->syncCurrentStockFromValuationLayers($targetProductId, $warehouseId);
 

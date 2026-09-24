@@ -33,7 +33,10 @@ class StockValuationLayer extends Model
         'must_sell_before' => 'date',
         'quantity_received' => 'decimal:2',
         'quantity_remaining' => 'decimal:2',
-        'unit_cost' => 'decimal:2',
+        // The column is decimal(15,6); a decimal:2 cast rounded every cost read
+        // through Eloquent, which is how adjustment layers ended up at 393.40
+        // against the GRN's 393.397.
+        'unit_cost' => 'decimal:6',
         'is_promotional' => 'boolean',
         'is_depleted' => 'boolean',
     ];

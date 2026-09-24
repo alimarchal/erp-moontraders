@@ -25,8 +25,6 @@ use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\CurrentStockController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\EmployeeSalaryController;
-use App\Http\Controllers\EmployeeSalaryTransactionController;
 use App\Http\Controllers\ExpenseDetailController;
 use App\Http\Controllers\GoodsIssueController;
 use App\Http\Controllers\GoodsReceiptNoteController;
@@ -563,21 +561,6 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         ->name('product-recalls.create-claim');
     Route::get('api/suppliers/{supplier}/batches', [ProductRecallController::class, 'getBatchesForSupplier'])
         ->name('api.suppliers.batches');
-
-    /*
-    |----------------------------------------------------------------------
-    | Employee Salary Management
-    |----------------------------------------------------------------------
-    | Salary structures and double-entry salary transactions ledger.
-    | Post creates GL journal entry via SalaryService.
-    | Permissions: employee-salary-list, -create, -edit, -delete
-    |              employee-salary-transaction-list, -create, -edit, -delete, -post
-    */
-    Route::resource('employee-salaries', EmployeeSalaryController::class);
-    Route::resource('employee-salary-transactions', EmployeeSalaryTransactionController::class);
-    Route::post('employee-salary-transactions/{employeeSalaryTransaction}/post',
-        [EmployeeSalaryTransactionController::class, 'post'])
-        ->name('employee-salary-transactions.post');
 
     /*
     |----------------------------------------------------------------------

@@ -58,6 +58,8 @@ function setupStockWithPromotionalBatches(): array
         'status' => 'open',
     ]);
 
+    seedGrnPostingAccounts();
+
     $product = Product::factory()->create([
         'product_code' => 'TEST-EP-001',
         'product_name' => 'Test Exclude Promo Product',

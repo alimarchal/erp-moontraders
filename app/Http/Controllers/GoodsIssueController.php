@@ -172,7 +172,10 @@ class GoodsIssueController extends Controller implements HasMiddleware
         // 2) PRIORITY ORDER: Lower numbers first (1 = Urgent, 99 = Normal FIFO)
         // 3) FIFO: Oldest receipt date first
         $stockLayersQuery = DB::table('stock_valuation_layers as svl')
-            ->join('goods_receipt_note_items as grni', 'svl.grn_item_id', '=', 'grni.id')
+            // Left join: a layer without a grn_item_id still counts towards the
+            // available total above, so an inner join here would show stock that
+            // can never be picked.
+            ->leftJoin('goods_receipt_note_items as grni', 'svl.grn_item_id', '=', 'grni.id')
             ->leftJoin('stock_batches as sb', 'svl.stock_batch_id', '=', 'sb.id')
             ->where('svl.warehouse_id', $warehouseId)
             ->where('svl.product_id', $productId)
@@ -184,7 +187,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
         }
 
         $stockLayers = $stockLayersQuery->selectRaw('
-                grni.selling_price,
+                COALESCE(grni.selling_price, sb.selling_price) as selling_price,
                 svl.unit_cost,
                 svl.priority_order,
                 svl.receipt_date,
@@ -378,7 +381,9 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 $urgentDate = now()->addDays(30)->toDateString();
 
                 $stockLayersQuery = DB::table('stock_valuation_layers as svl')
-                    ->join('goods_receipt_note_items as grni', 'svl.grn_item_id', '=', 'grni.id')
+                    // Left join, as in stockLayers() above: a layer without a
+                    // grn_item_id must still be listed.
+                    ->leftJoin('goods_receipt_note_items as grni', 'svl.grn_item_id', '=', 'grni.id')
                     ->leftJoin('stock_batches as sb', 'svl.stock_batch_id', '=', 'sb.id')
                     ->where('svl.warehouse_id', $goodsIssue->warehouse_id)
                     ->where('svl.product_id', $item->product_id)
@@ -390,7 +395,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 }
 
                 $stockLayers = $stockLayersQuery->selectRaw('
-                        grni.selling_price,
+                        COALESCE(grni.selling_price, sb.selling_price) as selling_price,
                         svl.unit_cost,
                         svl.priority_order,
                         svl.quantity_remaining,

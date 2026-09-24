@@ -93,7 +93,11 @@ class InventoryService
                 );
             }
 
-            // Create Accounting Journal Entry
+            // Create Accounting Journal Entry. This throws if the entry cannot be
+            // written, which rolls the whole post back: a GRN that moved stock
+            // without a GL entry used to be saved with journal_entry_id = null and
+            // only a line in the log, leaving inventory and the ledger apart.
+            // Only an opening-stock GRN of zero value returns null here.
             $journalEntry = $this->createGrnJournalEntry($grn);
 
             $grn->update([
@@ -149,27 +153,19 @@ class InventoryService
             $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
             if (! $inventoryAccount) {
-                Log::warning('Inventory account (1151 - Stock In Hand) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
-
-                return null;
+                throw new \RuntimeException('Inventory account 1151 (Stock In Hand) is missing from the Chart of Accounts.');
             }
 
             if (! $apAccount) {
-                Log::warning('Accounts Payable account (2111 - Creditors) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
-
-                return null;
+                throw new \RuntimeException('Accounts Payable account 2111 (Creditors) is missing from the Chart of Accounts.');
             }
 
             if (! $fmrAllowanceLiquidAccount || ! $fmrAllowancePowderAccount) {
-                Log::warning('FMR Allowance accounts (4210 - Liquid or 4220 - Powder) not found in Chart of Accounts. Skipping journal entry for GRN: '.$grn->id);
-
-                return null;
+                throw new \RuntimeException('FMR Allowance accounts 4210 (Liquid) and 4220 (Powder) are missing from the Chart of Accounts.');
             }
 
             if (! $warehouseCostCenter) {
-                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping journal entry for GRN: '.$grn->id);
-
-                return null;
+                throw new \RuntimeException('Cost center CC006 (Warehouse & Inventory) is missing.');
             }
 
             // Calculate amounts from GRN items
@@ -304,16 +300,13 @@ class InventoryService
                 Log::info("Journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->entry_number} | Inventory: {$actualInventoryValue} | Rounding: {$roundingDifference} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | Excise: {$totalExciseDuty} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
 
                 return $result['data'];
-            } else {
-                Log::error("Failed to create journal entry for GRN {$grn->grn_number}: ".$result['message']);
-
-                return null;
             }
 
+            throw new \RuntimeException($result['message']);
         } catch (\Exception $e) {
             Log::error("Exception creating journal entry for GRN {$grn->id}: ".$e->getMessage());
 
-            return null;
+            throw $e;
         }
     }
 
@@ -330,14 +323,14 @@ class InventoryService
             $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
 
             if (! $inventoryAccount || ! $openingBalanceEquityAccount) {
-                Log::warning("Opening stock JE skipped for GRN {$grn->id}: missing Inventory (1151) or Opening Balance Equity account.");
-
-                return null;
+                throw new \RuntimeException('Inventory account 1151 (Stock In Hand) or the Opening Balance Equity account is missing from the Chart of Accounts.');
             }
 
             $totalCost = $grn->items->sum('total_cost');
 
             if ($totalCost <= 0) {
+                // Nothing to post. This is the one case where a GRN legitimately
+                // carries no journal entry.
                 Log::warning("Opening stock JE skipped for GRN {$grn->id}: total cost is zero.");
 
                 return null;
@@ -377,13 +370,11 @@ class InventoryService
                 return $result['data'];
             }
 
-            Log::error("Failed to create opening stock JE for GRN {$grn->grn_number}: ".$result['message']);
-
-            return null;
+            throw new \RuntimeException($result['message']);
         } catch (\Exception $e) {
             Log::error("Exception creating opening stock JE for GRN {$grn->id}: ".$e->getMessage());
 
-            return null;
+            throw $e;
         }
     }
 
@@ -737,39 +728,42 @@ class InventoryService
         $stockByBatch->last_updated = now();
         $stockByBatch->save();
 
-        // Sync CurrentStock from StockValuationLayer (source of truth)
+        // Sync CurrentStock from current_stock_by_batch
         $this->syncCurrentStockFromValuationLayers($productId, $warehouseId);
     }
 
     /**
-     * Sync CurrentStock from StockValuationLayer (source of truth)
-     * This ensures CurrentStock always matches the sum of valuation layers
+     * Sync CurrentStock from current_stock_by_batch, which is the record that
+     * agrees with the stock_movements ledger.
      */
     public function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
     {
-        // ⚠️  IMPORTANT — always derive value from quantity_remaining * unit_cost.
-        // Do NOT use SUM(total_value) or SUM(value_remaining) here.
+        // ⚠️  IMPORTANT — quantity comes from current_stock_by_batch, not from
+        // stock_valuation_layers.
         //
-        // Reason: stock_valuation_layers.total_value stores the original receipt
-        // value and is NEVER decremented when stock is issued, adjusted, or sold.
-        // Only quantity_remaining is kept current. Using total_value would inflate
-        // the reported stock value by the full receipt amount even after all stock
-        // from that layer has been consumed — this is what caused the Rs 6,512
-        // discrepancy after SA-2026-0001 was posted on 2026-04-21.
+        // Both used to be maintained separately, which meant two answers to
+        // "how much is on hand". current_stock_by_batch is the one that agrees
+        // with the stock_movements ledger, so it is the source; the layers hold
+        // cost, and a bug there must not be able to change the quantity shown
+        // on /inventory/current-stock.
         //
-        // Rule: current_stock.total_value = SUM(svl.quantity_remaining * svl.unit_cost)
-        //       for all layers where quantity_remaining > 0.
-        $layerData = StockValuationLayer::where('product_id', $productId)
+        // Value is still derived per batch as quantity * unit_cost — never
+        // SUM(total_value), which stores the original receipt value and is not
+        // decremented as stock is issued.
+        //
+        // Rule: current_stock.quantity_on_hand = SUM(csb.quantity_on_hand)
+        //       current_stock.total_value      = SUM(csb.quantity_on_hand * csb.unit_cost)
+        $batchData = CurrentStockByBatch::where('product_id', $productId)
             ->where('warehouse_id', $warehouseId)
-            ->where('quantity_remaining', '>', 0)
+            ->where('quantity_on_hand', '>', 0)
             ->selectRaw('
-                COALESCE(SUM(quantity_remaining), 0) as total_qty,
-                COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value
+                COALESCE(SUM(quantity_on_hand), 0) as total_qty,
+                COALESCE(SUM(quantity_on_hand * unit_cost), 0) as total_value
             ')
             ->first();
 
-        $totalQty = (float) ($layerData->total_qty ?? 0);
-        $totalValue = (float) ($layerData->total_value ?? 0);
+        $totalQty = (float) ($batchData->total_qty ?? 0);
+        $totalValue = (float) ($batchData->total_value ?? 0);
         $avgCost = $totalQty > 0 ? round($totalValue / $totalQty, 6) : 0;
 
         // Count batches from current_stock_by_batch
@@ -806,7 +800,7 @@ class InventoryService
         $currentStock->last_updated = now();
         $currentStock->save();
 
-        Log::debug('CurrentStock synced from valuation layers', [
+        Log::debug('CurrentStock synced from current_stock_by_batch', [
             'product_id' => $productId,
             'warehouse_id' => $warehouseId,
             'quantity_on_hand' => $totalQty,

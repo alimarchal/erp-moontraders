@@ -79,6 +79,7 @@ function setupWholeNumberUomStock(): array
 
     auth()->login($user);
 
+    seedGrnPostingAccounts();
     $result = app(InventoryService::class)->postGrnToInventory($grn->fresh());
     expect($result['success'])->toBeTrue($result['message'] ?? 'GRN posting failed');
 

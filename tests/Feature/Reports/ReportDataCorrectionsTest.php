@@ -65,6 +65,51 @@ describe('van stock report', function () {
 
         $response->assertOk()->assertSee('Zeeshan Ismail');
     });
+
+    it('totals the quantity column as well as the value', function () {
+        $vehicle = Vehicle::factory()->create();
+        $warehouse = Warehouse::factory()->create(['disabled' => false]);
+        $uom = Uom::factory()->create();
+
+        $goodsIssue = GoodsIssue::factory()->create([
+            'warehouse_id' => $warehouse->id,
+            'vehicle_id' => $vehicle->id,
+            'employee_id' => Employee::factory()->create()->id,
+            'issued_by' => $this->user->id,
+        ]);
+
+        foreach ([[10, 100], [25, 40]] as $line => [$quantity, $unitCost]) {
+            $item = GoodsIssueItem::create([
+                'goods_issue_id' => $goodsIssue->id,
+                'line_no' => $line + 1,
+                'product_id' => Product::factory()->create()->id,
+                'quantity_issued' => $quantity,
+                'unit_cost' => $unitCost,
+                'selling_price' => $unitCost + 50,
+                'uom_id' => $uom->id,
+                'total_value' => $quantity * ($unitCost + 50),
+            ]);
+
+            DB::table('van_stock_batches')->insert([
+                'vehicle_id' => $vehicle->id,
+                'product_id' => $item->product_id,
+                'goods_issue_item_id' => $item->id,
+                'goods_issue_number' => $goodsIssue->issue_number,
+                'quantity_on_hand' => $quantity,
+                'unit_cost' => $unitCost,
+                'selling_price' => $unitCost + 50,
+            ]);
+        }
+
+        $response = $this->get(route('reports.daily-sales.van-stock'));
+
+        // The footer used to span the Qty column to reach the value, so the report
+        // showed what the stock on the vans was worth but never how much of it
+        // there was. 10 + 25 units, worth 10 × 100 + 25 × 40.
+        $response->assertOk()
+            ->assertSee('35.00')
+            ->assertSee('2,000.00');
+    });
 });
 
 describe('account balances report', function () {

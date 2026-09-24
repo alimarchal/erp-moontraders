@@ -9,13 +9,14 @@ use App\Models\StockAdjustment;
 use App\Models\StockBatch;
 use App\Models\StockLedgerEntry;
 use App\Models\StockMovement;
-use App\Models\StockValuationLayer;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class StockAdjustmentService
 {
+    public function __construct(private StockValuationService $stockValuation) {}
+
     public function createAdjustment(array $data): array
     {
         try {
@@ -251,65 +252,37 @@ class StockAdjustmentService
         $inventoryService->syncCurrentStockFromValuationLayers($item->product_id, $adjustment->warehouse_id);
     }
 
+    /**
+     * Move the adjusted quantity through the batch's valuation layers.
+     *
+     * A count shortage is taken out oldest layer first; a count surplus goes
+     * back into the batch's own layer at its receipt cost. Creating a separate
+     * layer for a surplus is what broke current_stock before: that layer had no
+     * grn_item_id, so the Goods Issue batch picker (which joins
+     * goods_receipt_note_items) never offered it, the quantity could never be
+     * issued, and it stayed on the books forever.
+     */
     protected function updateValuationLayer(StockAdjustment $adjustment, $item, StockMovement $movement): void
     {
-        // ⚠️  Only quantity_remaining and value_remaining are modified here.
-        // stock_valuation_layers.total_value stores the ORIGINAL receipt value
-        // and must never be touched by adjustments, issues, or sales — it is a
-        // permanent historical record. current_stock is always recalculated from
-        // SUM(quantity_remaining * unit_cost) by syncCurrentStockFromValuationLayers.
-        if ($item->adjustment_quantity < 0) {
-            $qtyToReduce = abs($item->adjustment_quantity);
-            $layers = StockValuationLayer::where('product_id', $item->product_id)
-                ->where('warehouse_id', $adjustment->warehouse_id)
-                ->where('stock_batch_id', $item->stock_batch_id)
-                ->where('quantity_remaining', '>', 0)
-                ->orderBy('receipt_date')
-                ->get();
+        $quantity = (float) $item->adjustment_quantity;
 
-            foreach ($layers as $layer) {
-                if ($qtyToReduce <= 0) {
-                    break;
-                }
+        if ($quantity < 0) {
+            $this->stockValuation->consumeBatch(
+                (int) $item->stock_batch_id,
+                (int) $adjustment->warehouse_id,
+                abs($quantity)
+            );
 
-                $qtyFromThisLayer = min($layer->quantity_remaining, $qtyToReduce);
-                $qtyBeforeLayer = (float) $layer->quantity_remaining;
-                $layer->quantity_remaining -= $qtyFromThisLayer;
-                if ($layer->quantity_remaining <= 0) {
-                    $layer->quantity_remaining = 0;
-                    $layer->value_remaining = 0.0;
-                } else {
-                    $ratio = $qtyBeforeLayer > 0 ? $layer->quantity_remaining / $qtyBeforeLayer : 0;
-                    $layer->value_remaining = round((float) ($layer->value_remaining ?? $layer->total_value ?? 0) * $ratio, 4);
-                }
-                $layer->save();
-
-                $qtyToReduce -= $qtyFromThisLayer;
-            }
-        } else {
-            // stock_movement_id is NOT NULL on this table and was never set here, so every
-            // increase failed on insert — no excess adjustment could ever be posted. The
-            // transaction_type / reference_* keys that stood in its place are not columns at
-            // all; mass assignment dropped them silently.
-            $batch = StockBatch::find($item->stock_batch_id);
-
-            StockValuationLayer::create([
-                'product_id' => $item->product_id,
-                'warehouse_id' => $adjustment->warehouse_id,
-                'stock_batch_id' => $item->stock_batch_id,
-                'stock_movement_id' => $movement->id,
-                'receipt_date' => $adjustment->adjustment_date,
-                'quantity_received' => $item->adjustment_quantity,
-                'quantity_remaining' => $item->adjustment_quantity,
-                'unit_cost' => $item->unit_cost,
-                'total_value' => $item->adjustment_value,
-                'value_remaining' => $item->adjustment_value,
-                // Stock found on a count sits in its batch, so it sells in the batch's order.
-                'priority_order' => $batch->priority_order ?? 99,
-                'is_promotional' => (bool) ($batch->is_promotional ?? false),
-                'must_sell_before' => $batch->must_sell_before ?? null,
-            ]);
+            return;
         }
+
+        $this->stockValuation->restoreBatch(
+            (int) $item->stock_batch_id,
+            (int) $adjustment->warehouse_id,
+            $quantity,
+            (float) $item->unit_cost,
+            $movement->id
+        );
     }
 
     protected function createAdjustmentJournalEntry(StockAdjustment $adjustment)

@@ -250,10 +250,12 @@
                         </tbody>
                         <tfoot class="bg-gray-100 font-extrabold sticky bottom-0 border-t-2 border-black">
                             @php
+                                $grandQuantity = $groupedStock->flatten(1)->sum('quantity_on_hand');
                                 $grandTotal = $groupedStock->flatten(1)->sum('total_value');
                             @endphp
                             <tr>
-                                <td colspan="9" class="py-2 px-2 text-right">Grand Total:</td>
+                                <td colspan="8" class="py-2 px-2 text-right">Grand Total:</td>
+                                <td class="py-2 px-2 text-right tabular-nums font-mono">{{ number_format($grandQuantity, 2) }}</td>
                                 <td class="py-2 px-2 text-right tabular-nums font-mono">{{ number_format($grandTotal, 2) }}</td>
                             </tr>
                         </tfoot>

@@ -12,6 +12,7 @@ use App\Models\StockAdjustment;
 use App\Models\StockAdjustmentItem;
 use App\Models\StockBatch;
 use App\Models\StockMovement;
+use App\Models\StockValuationLayer;
 use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
@@ -108,11 +109,54 @@ beforeEach(function () {
     ]);
 });
 
+/**
+ * The valuation layer a GRN would have left behind for this batch.
+ *
+ * An adjustment moves its quantity through these layers, so a batch that has a
+ * current_stock_by_batch row and no layer is not a state the application can
+ * reach — and posting against one is refused.
+ */
+function layerFor(StockBatch $batch, float $quantity): StockValuationLayer
+{
+    $context = test();
+
+    $receipt = StockMovement::create([
+        'movement_type' => 'grn',
+        'reference_type' => 'App\\Models\\GoodsReceiptNote',
+        'reference_id' => $batch->id,
+        'movement_date' => now()->toDateString(),
+        'product_id' => $batch->product_id,
+        'stock_batch_id' => $batch->id,
+        'warehouse_id' => $context->warehouse->id,
+        'quantity' => $quantity,
+        'uom_id' => $context->uom->id,
+        'unit_cost' => 50.00,
+        'total_value' => $quantity * 50.00,
+        'created_by' => $context->user->id,
+    ]);
+
+    return StockValuationLayer::create([
+        'product_id' => $batch->product_id,
+        'warehouse_id' => $context->warehouse->id,
+        'stock_batch_id' => $batch->id,
+        'stock_movement_id' => $receipt->id,
+        'receipt_date' => now()->toDateString(),
+        'quantity_received' => $quantity,
+        'quantity_remaining' => $quantity,
+        'unit_cost' => 50.00,
+        'total_value' => $quantity * 50.00,
+        'value_remaining' => $quantity * 50.00,
+        'priority_order' => $batch->priority_order ?? 99,
+    ]);
+}
+
 test('stock adjustment can be created as draft', function () {
     $batch = StockBatch::factory()->create([
         'product_id' => $this->product->id,
         'status' => 'active',
     ]);
+
+    layerFor($batch, 100);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -142,7 +186,7 @@ test('stock adjustment can be created as draft', function () {
         ],
     ];
 
-    $service = new StockAdjustmentService;
+    $service = app(StockAdjustmentService::class);
     $result = $service->createAdjustment($data);
 
     expect($result['success'])->toBeTrue();
@@ -213,7 +257,7 @@ test('updating a stock adjustment keeps each item independent', function () {
 });
 
 test('stock adjustment number is generated correctly', function () {
-    $service = new StockAdjustmentService;
+    $service = app(StockAdjustmentService::class);
     $number = $service->generateAdjustmentNumber();
     $year = now()->year;
 
@@ -226,7 +270,7 @@ test('stock adjustment numbers include soft deleted adjustments', function () {
     ]);
     $existingAdjustment->delete();
 
-    $service = new StockAdjustmentService;
+    $service = app(StockAdjustmentService::class);
 
     expect($service->generateAdjustmentNumber())->toBe('SA-'.now()->year.'-0012');
 });
@@ -237,6 +281,8 @@ test('stock adjustment can be posted', function () {
         'status' => 'active',
         'is_active' => true,
     ]);
+
+    layerFor($batch, 100);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -266,7 +312,7 @@ test('stock adjustment can be posted', function () {
         'uom_id' => $this->uom->id,
     ]);
 
-    $service = new StockAdjustmentService;
+    $service = app(StockAdjustmentService::class);
     $result = $service->postAdjustment($adjustment);
 
     expect($result['success'])->toBeTrue();
@@ -281,6 +327,8 @@ test('stock adjustment updates inventory ledger', function () {
         'product_id' => $this->product->id,
         'status' => 'active',
     ]);
+
+    layerFor($batch, 100);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -308,7 +356,7 @@ test('stock adjustment updates inventory ledger', function () {
         'uom_id' => $this->uom->id,
     ]);
 
-    $service = new StockAdjustmentService;
+    $service = app(StockAdjustmentService::class);
     $service->postAdjustment($adjustment);
 
     $ledgerEntry = InventoryLedgerEntry::where('product_id', $this->product->id)
@@ -325,6 +373,8 @@ test('stock adjustment reduces current stock', function () {
         'product_id' => $this->product->id,
         'status' => 'active',
     ]);
+
+    layerFor($batch, 100);
 
     $currentStock = CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -352,7 +402,7 @@ test('stock adjustment reduces current stock', function () {
         'uom_id' => $this->uom->id,
     ]);
 
-    $service = new StockAdjustmentService;
+    $service = app(StockAdjustmentService::class);
     $service->postAdjustment($adjustment);
 
     $currentStock->refresh();
@@ -364,7 +414,7 @@ test('only draft adjustments can be posted', function () {
         'status' => 'posted',
     ]);
 
-    $service = new StockAdjustmentService;
+    $service = app(StockAdjustmentService::class);
     $result = $service->postAdjustment($adjustment);
 
     expect($result['success'])->toBeFalse();
@@ -454,6 +504,8 @@ test('batch status changes to depleted when fully adjusted', function () {
         'is_active' => true,
     ]);
 
+    layerFor($batch, 50);
+
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
         'warehouse_id' => $this->warehouse->id,
@@ -481,7 +533,7 @@ test('batch status changes to depleted when fully adjusted', function () {
         'uom_id' => $this->uom->id,
     ]);
 
-    $service = new StockAdjustmentService;
+    $service = app(StockAdjustmentService::class);
     $service->postAdjustment($adjustment);
 
     $batch->refresh();
@@ -495,6 +547,8 @@ test('posting writes the journal entry against the warehouse cost center', funct
         'status' => 'active',
         'is_active' => true,
     ]);
+
+    layerFor($batch, 100);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -524,7 +578,7 @@ test('posting writes the journal entry against the warehouse cost center', funct
         'uom_id' => $this->uom->id,
     ]);
 
-    $result = (new StockAdjustmentService)->postAdjustment($adjustment);
+    $result = app(StockAdjustmentService::class)->postAdjustment($adjustment);
 
     expect($result['success'])->toBeTrue();
 
@@ -548,6 +602,8 @@ test('posting is rolled back entirely when the journal entry cannot be written',
         'is_active' => true,
     ]);
 
+    layerFor($batch, 100);
+
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
         'warehouse_id' => $this->warehouse->id,
@@ -576,7 +632,7 @@ test('posting is rolled back entirely when the journal entry cannot be written',
         'uom_id' => $this->uom->id,
     ]);
 
-    $result = (new StockAdjustmentService)->postAdjustment($adjustment);
+    $result = app(StockAdjustmentService::class)->postAdjustment($adjustment);
 
     expect($result['success'])->toBeFalse()
         ->and($adjustment->fresh()->status)->toBe('draft');
@@ -596,6 +652,8 @@ test('an excess found on a count can be posted', function () {
         'is_active' => true,
         'priority_order' => 5,
     ]);
+
+    layerFor($batch, 100);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -625,24 +683,19 @@ test('an excess found on a count can be posted', function () {
         'uom_id' => $this->uom->id,
     ]);
 
-    $result = (new StockAdjustmentService)->postAdjustment($adjustment);
+    $result = app(StockAdjustmentService::class)->postAdjustment($adjustment);
 
     expect($result['success'])->toBeTrue()
         ->and($adjustment->fresh()->status)->toBe('posted');
 
     expect((float) CurrentStockByBatch::where('stock_batch_id', $batch->id)->value('quantity_on_hand'))->toBe(112.0);
 
-    $movement = StockMovement::where('reference_type', StockAdjustment::class)
-        ->where('reference_id', $adjustment->id)
-        ->sole();
-
-    // The new layer is tied to its movement and sells in its batch's order.
-    $this->assertDatabaseHas('stock_valuation_layers', [
-        'stock_batch_id' => $batch->id,
-        'stock_movement_id' => $movement->id,
-        'quantity_remaining' => 12,
-        'priority_order' => 5,
-    ]);
+    // The excess goes back into the batch's own layer at its receipt cost rather
+    // than into a second layer: a separate layer carries no grn_item_id, and the
+    // Goods Issue batch picker joins that column, so its quantity could be
+    // counted as available yet never picked.
+    expect(StockValuationLayer::where('stock_batch_id', $batch->id)->count())->toBe(1)
+        ->and((float) StockValuationLayer::where('stock_batch_id', $batch->id)->value('quantity_remaining'))->toBe(112.0);
 
     // An increase reverses the loss: Dr Stock In Hand, Cr Stock Loss.
     $details = $adjustment->fresh()->journalEntry->details;
@@ -656,6 +709,8 @@ test('an excess on a depleted batch makes that stock issuable again', function (
         'status' => 'depleted',
         'is_active' => false,
     ]);
+
+    layerFor($batch, 0);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -685,7 +740,7 @@ test('an excess on a depleted batch makes that stock issuable again', function (
         'uom_id' => $this->uom->id,
     ]);
 
-    expect((new StockAdjustmentService)->postAdjustment($adjustment)['success'])->toBeTrue();
+    expect(app(StockAdjustmentService::class)->postAdjustment($adjustment)['success'])->toBeTrue();
 
     // Goods issues allocate only from active rows, so found stock must not stay depleted.
     expect(CurrentStockByBatch::where('stock_batch_id', $batch->id)->value('status'))->toBe('active')
@@ -700,6 +755,8 @@ test('a shortage larger than what the batch now holds is refused', function () {
         'status' => 'active',
         'is_active' => true,
     ]);
+
+    layerFor($batch, 3);
 
     $stock = CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -729,11 +786,11 @@ test('a shortage larger than what the batch now holds is refused', function () {
         'uom_id' => $this->uom->id,
     ]);
 
-    $result = (new StockAdjustmentService)->postAdjustment($adjustment);
+    $result = app(StockAdjustmentService::class)->postAdjustment($adjustment);
 
     expect($result['success'])->toBeFalse()
         ->and($result['message'])->toContain('only 3')
         ->and($adjustment->fresh()->status)->toBe('draft')
         ->and((float) $stock->fresh()->quantity_on_hand)->toBe(3.0)
-        ->and(StockMovement::where('stock_batch_id', $batch->id)->exists())->toBeFalse();
+        ->and(StockMovement::where('reference_type', StockAdjustment::class)->exists())->toBeFalse();
 });

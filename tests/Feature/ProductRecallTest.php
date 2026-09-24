@@ -12,6 +12,8 @@ use App\Models\ProductRecall;
 use App\Models\ProductRecallItem;
 use App\Models\StockAdjustment;
 use App\Models\StockBatch;
+use App\Models\StockMovement;
+use App\Models\StockValuationLayer;
 use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
@@ -108,12 +110,55 @@ beforeEach(function () {
     ]);
 });
 
+/**
+ * The valuation layer a GRN would have left behind for this batch.
+ *
+ * A recall posts a stock adjustment, which moves the quantity through these
+ * layers, so a batch with a current_stock_by_batch row and no layer is not a
+ * state the application can reach — and posting against one is refused.
+ */
+function recallLayerFor(StockBatch $batch, float $quantity): StockValuationLayer
+{
+    $context = test();
+
+    $receipt = StockMovement::create([
+        'movement_type' => 'grn',
+        'reference_type' => 'App\\Models\\GoodsReceiptNote',
+        'reference_id' => $batch->id,
+        'movement_date' => now()->toDateString(),
+        'product_id' => $batch->product_id,
+        'stock_batch_id' => $batch->id,
+        'warehouse_id' => $context->warehouse->id,
+        'quantity' => $quantity,
+        'uom_id' => $context->uom->id,
+        'unit_cost' => 50.00,
+        'total_value' => $quantity * 50.00,
+        'created_by' => $context->user->id,
+    ]);
+
+    return StockValuationLayer::create([
+        'product_id' => $batch->product_id,
+        'warehouse_id' => $context->warehouse->id,
+        'stock_batch_id' => $batch->id,
+        'stock_movement_id' => $receipt->id,
+        'receipt_date' => now()->toDateString(),
+        'quantity_received' => $quantity,
+        'quantity_remaining' => $quantity,
+        'unit_cost' => 50.00,
+        'total_value' => $quantity * 50.00,
+        'value_remaining' => $quantity * 50.00,
+        'priority_order' => $batch->priority_order ?? 99,
+    ]);
+}
+
 test('product recall can be created as draft', function () {
     $batch = StockBatch::factory()->create([
         'product_id' => $this->product->id,
         'supplier_id' => $this->supplier->id,
         'status' => 'active',
     ]);
+
+    recallLayerFor($batch, 100);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -168,6 +213,8 @@ test('product recall can be posted and creates stock adjustment', function () {
         'is_active' => true,
     ]);
 
+    recallLayerFor($batch, 100);
+
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
         'warehouse_id' => $this->warehouse->id,
@@ -216,6 +263,8 @@ test('product recall validates stock availability', function () {
         'status' => 'active',
     ]);
 
+    recallLayerFor($batch, 10);
+
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
         'warehouse_id' => $this->warehouse->id,
@@ -253,6 +302,8 @@ test('product recall prevents recall if batch issued to vans', function () {
         'supplier_id' => $this->supplier->id,
         'status' => 'active',
     ]);
+
+    recallLayerFor($batch, 100);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -306,6 +357,8 @@ test('product recall prevents recall if batch has sales', function () {
         'status' => 'active',
     ]);
 
+    recallLayerFor($batch, 100);
+
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
         'warehouse_id' => $this->warehouse->id,
@@ -355,6 +408,8 @@ test('product recall marks batch as recalled when fully recalled', function () {
         'status' => 'active',
         'is_active' => true,
     ]);
+
+    recallLayerFor($batch, 50);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -491,6 +546,8 @@ test('get available batches filters by supplier and warehouse', function () {
         'status' => 'active',
     ]);
 
+    recallLayerFor($batch1, 100);
+
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
         'warehouse_id' => $this->warehouse->id,
@@ -499,6 +556,8 @@ test('get available batches filters by supplier and warehouse', function () {
         'unit_cost' => 50.00,
         'total_value' => 5000.00,
     ]);
+
+    recallLayerFor($batch2, 75);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,
@@ -523,6 +582,8 @@ test('partial batch recall keeps batch active', function () {
         'status' => 'active',
         'is_active' => true,
     ]);
+
+    recallLayerFor($batch, 100);
 
     CurrentStockByBatch::create([
         'product_id' => $this->product->id,

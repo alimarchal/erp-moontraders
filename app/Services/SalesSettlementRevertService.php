@@ -9,7 +9,6 @@ use App\Models\GoodsIssue;
 use App\Models\InventoryLedgerEntry;
 use App\Models\SalesSettlement;
 use App\Models\StockMovement;
-use App\Models\StockValuationLayer;
 use App\Models\VanStockBalance;
 use App\Models\VanStockBatch;
 use Illuminate\Support\Facades\DB;
@@ -20,6 +19,8 @@ class SalesSettlementRevertService
     public function __construct(
         private AccountingService $accountingService,
         private InventoryLedgerService $inventoryLedgerService,
+        private StockValuationService $stockValuation,
+        private InventoryService $inventoryService,
     ) {}
 
     /**
@@ -244,23 +245,10 @@ class SalesSettlementRevertService
                     $stockByBatch->save();
                 }
 
-                // Reverse StockValuationLayer
-                $valuationLayer = StockValuationLayer::where('stock_batch_id', $batchId)
-                    ->where('warehouse_id', $settlement->warehouse_id)
-                    ->lockForUpdate()
-                    ->first();
-
-                if ($valuationLayer) {
-                    $valueToRemove = round($returnedQty * (float) $itemBatch->unit_cost, 2);
-                    $valuationLayer->quantity_remaining = max(0, (float) $valuationLayer->quantity_remaining - $returnedQty);
-                    $valuationLayer->total_value = max(0, round((float) $valuationLayer->total_value - $valueToRemove, 2));
-
-                    if ($valuationLayer->quantity_remaining <= 0) {
-                        $valuationLayer->is_depleted = true;
-                    }
-
-                    $valuationLayer->save();
-                }
+                // Take the returned goods back out of the batch's layers, oldest
+                // first, so a batch holding several layers stays in step with
+                // current_stock_by_batch.
+                $this->stockValuation->consumeBatch($batchId, $settlement->warehouse_id, $returnedQty);
             }
         }
     }
@@ -309,28 +297,52 @@ class SalesSettlementRevertService
     }
 
     /**
-     * Create reversing stock movement rows (negate quantity) for audit trail.
+     * Create reversing stock movement rows for the settlement's van activity.
+     *
+     * Each reversal keeps the movement_type of the activity it undoes. Everything
+     * that reads this ledger decides whether a row belongs to the warehouse or to
+     * the van from its type — the snapshot rebuild, the consistency check and the
+     * Van Stock Batch report all do. Writing reversals as 'adjustment' instead put
+     * a reversed sale on the warehouse's books, where nothing physically arrived,
+     * and left it off the van's, so a reverted settlement pushed the warehouse
+     * ledger above current stock by the quantity that had been sold.
+     *
+     * The rows are netted per batch and type rather than copied one by one, so a
+     * settlement that is posted and reverted more than once reverses only what is
+     * currently standing — copying every row would reverse earlier reversals too.
      */
     private function markStockMovementsReversed(SalesSettlement $settlement): void
     {
-        $movements = StockMovement::where('reference_type', 'App\\Models\\SalesSettlement')
+        $standing = StockMovement::where('reference_type', 'App\\Models\\SalesSettlement')
             ->where('reference_id', $settlement->id)
+            ->whereIn('movement_type', ['sale', 'return', 'shortage'])
+            ->selectRaw('movement_type, product_id, stock_batch_id, warehouse_id, vehicle_id, uom_id,
+                MAX(unit_cost) as unit_cost,
+                SUM(quantity) as net_quantity,
+                SUM(total_value) as net_value')
+            ->groupBy('movement_type', 'product_id', 'stock_batch_id', 'warehouse_id', 'vehicle_id', 'uom_id')
             ->get();
 
-        foreach ($movements as $movement) {
+        foreach ($standing as $group) {
+            $netQuantity = (float) $group->net_quantity;
+
+            if (abs($netQuantity) <= 0.001) {
+                continue;
+            }
+
             StockMovement::create([
-                'movement_type' => 'adjustment',
+                'movement_type' => $group->movement_type,
                 'reference_type' => 'App\\Models\\SalesSettlement',
                 'reference_id' => $settlement->id,
                 'movement_date' => now()->toDateString(),
-                'product_id' => $movement->product_id,
-                'stock_batch_id' => $movement->stock_batch_id,
-                'warehouse_id' => $movement->warehouse_id,
-                'vehicle_id' => $movement->vehicle_id,
-                'quantity' => -((float) $movement->quantity),
-                'uom_id' => $movement->uom_id,
-                'unit_cost' => $movement->unit_cost,
-                'total_value' => $movement->total_value,
+                'product_id' => $group->product_id,
+                'stock_batch_id' => $group->stock_batch_id,
+                'warehouse_id' => $group->warehouse_id,
+                'vehicle_id' => $group->vehicle_id,
+                'quantity' => -$netQuantity,
+                'uom_id' => $group->uom_id,
+                'unit_cost' => $group->unit_cost,
+                'total_value' => abs((float) $group->net_value),
                 'created_by' => auth()->id(),
             ]);
         }
@@ -361,54 +373,11 @@ class SalesSettlementRevertService
     }
 
     /**
-     * Recalculate CurrentStock from stock_valuation_layers (source of truth).
-     * Copied from DistributionService to keep the revert service self-contained.
+     * Sync CurrentStock for a product/warehouse via the one implementation in
+     * InventoryService, rather than the copy that used to live here.
      */
     private function syncCurrentStockFromValuationLayers(int $productId, int $warehouseId): void
     {
-        $layerData = StockValuationLayer::where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('quantity_remaining', '>', 0)
-            ->selectRaw('
-                COALESCE(SUM(quantity_remaining), 0) as total_qty,
-                COALESCE(SUM(quantity_remaining * unit_cost), 0) as total_value
-            ')
-            ->first();
-
-        $totalQty = (float) ($layerData->total_qty ?? 0);
-        $totalValue = (float) ($layerData->total_value ?? 0);
-        $avgCost = $totalQty > 0 ? round($totalValue / $totalQty, 6) : 0;
-
-        $totalBatches = CurrentStockByBatch::where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('quantity_on_hand', '>', 0)
-            ->count();
-
-        $promotionalBatches = CurrentStockByBatch::where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('is_promotional', true)
-            ->where('quantity_on_hand', '>', 0)
-            ->count();
-
-        $priorityBatches = CurrentStockByBatch::where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('priority_order', '<', 99)
-            ->where('quantity_on_hand', '>', 0)
-            ->count();
-
-        $currentStock = CurrentStock::lockForUpdate()->firstOrNew([
-            'product_id' => $productId,
-            'warehouse_id' => $warehouseId,
-        ]);
-
-        $currentStock->quantity_on_hand = $totalQty;
-        $currentStock->quantity_available = $totalQty - ($currentStock->quantity_reserved ?? 0);
-        $currentStock->average_cost = $avgCost;
-        $currentStock->total_value = $totalValue;
-        $currentStock->total_batches = $totalBatches;
-        $currentStock->promotional_batches = $promotionalBatches;
-        $currentStock->priority_batches = $priorityBatches;
-        $currentStock->last_updated = now();
-        $currentStock->save();
+        $this->inventoryService->syncCurrentStockFromValuationLayers($productId, $warehouseId);
     }
 }

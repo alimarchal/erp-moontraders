@@ -228,6 +228,45 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
     expect((float) $totalDebits)->toBe(11302.00); // 9200 + 2102
 });
 
+it('refuses to post a GRN when the journal entry cannot be written', function () {
+    // The Creditors account the GRN credits is gone.
+    $this->creditorsAccount->delete();
+
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'status' => 'draft',
+        'receipt_date' => now(),
+    ]);
+
+    $grn->items()->create([
+        'line_no' => 1,
+        'product_id' => $this->product->id,
+        'stock_uom_id' => $this->uom->id,
+        'purchase_uom_id' => $this->uom->id,
+        'qty_in_purchase_uom' => 100,
+        'uom_conversion_factor' => 1,
+        'qty_in_stock_uom' => 100,
+        'extended_value' => 10000,
+        'quantity_received' => 100,
+        'quantity_accepted' => 100,
+        'unit_cost' => 100,
+        'total_cost' => 10000,
+    ]);
+
+    $result = app(InventoryService::class)->postGrnToInventory($grn->fresh());
+
+    // Posting used to save the GRN with journal_entry_id = null and only a line
+    // in the log, so stock moved with no entry in the general ledger.
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('2111')
+        ->and($grn->fresh()->status)->toBe('draft');
+
+    expect(DB::table('stock_movements')->where('reference_id', $grn->id)->count())->toBe(0)
+        ->and(DB::table('current_stock_by_batch')->where('product_id', $this->product->id)->count())->toBe(0)
+        ->and(DB::table('stock_valuation_layers')->where('product_id', $this->product->id)->count())->toBe(0);
+});
+
 it('creates journal entry with only inventory and creditors when no taxes or allowances', function () {
     // Create GRN without taxes and allowances
     $grn = GoodsReceiptNote::factory()->create([

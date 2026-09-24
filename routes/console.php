@@ -22,6 +22,15 @@ Schedule::command('inventory:snapshots:rebuild --days=90 --with-vans')
     ->name('inventory-snapshots-rolling-rebuild')
     ->withoutOverlapping();
 
+// The rebuild above replays the ledger; this checks that the four places warehouse stock is
+// recorded still hold the same number (ledger, current_stock_by_batch, stock_valuation_layers,
+// current_stock). Deliberately without --fix: a silent auto-repair would hide whichever posting
+// path caused the drift. The alert email says which command to run.
+Schedule::command('inventory:verify-consistency')
+    ->dailyAt('23:55')
+    ->name('inventory-consistency-check')
+    ->withoutOverlapping();
+
 // Database backups — twice daily
 // Schedule::command('backup:run --only-db')->dailyAt('06:00')->name('backup-morning')->withoutOverlapping();
 Schedule::command('backup:run --only-db')->dailyAt('23:40')->name('backup-night')->withoutOverlapping();

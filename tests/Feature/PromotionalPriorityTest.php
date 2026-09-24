@@ -102,9 +102,11 @@ test('promotional items (priority 1) are issued before regular items (priority 9
     // Step 3: Post both GRNs to create batches
     $inventoryService = app(InventoryService::class);
 
+    seedGrnPostingAccounts();
     $result1 = $inventoryService->postGrnToInventory($grn1->fresh());
     expect($result1['success'])->toBeTrue();
 
+    seedGrnPostingAccounts();
     $result2 = $inventoryService->postGrnToInventory($grn2->fresh());
     expect($result2['success'])->toBeTrue();
 
@@ -322,7 +324,9 @@ test('sales settlement calculates COGS from promotional batches first', function
     ]);
 
     $inventoryService = app(InventoryService::class);
+    seedGrnPostingAccounts();
     $inventoryService->postGrnToInventory($grn1->fresh());
+    seedGrnPostingAccounts();
     $inventoryService->postGrnToInventory($grn2->fresh());
 
     // Create and post goods issue for 120 units
@@ -460,6 +464,7 @@ test('multiple promotional batches are sorted by priority order correctly', func
             'priority_order' => $data['priority'],
         ]);
 
+        seedGrnPostingAccounts();
         $inventoryService->postGrnToInventory($grn->fresh());
     }
 

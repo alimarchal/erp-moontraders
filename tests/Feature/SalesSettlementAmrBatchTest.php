@@ -61,6 +61,7 @@ function buildAmrSettlementPayload(array $overrides = []): array
         'selling_price' => 100.00,
     ]);
 
+    seedGrnPostingAccounts();
     app(InventoryService::class)->postGrnToInventory($grn->fresh());
 
     $stockBatch = StockBatch::where('product_id', $product->id)->firstOrFail();

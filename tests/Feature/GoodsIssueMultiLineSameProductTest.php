@@ -57,6 +57,8 @@ function setupSingleBatchStockForMultiLineTest(): array
         'status' => 'open',
     ]);
 
+    seedGrnPostingAccounts();
+
     $product = Product::factory()->create([
         'product_code' => 'TEST-ML-001',
         'product_name' => 'Multi Line Test Product',

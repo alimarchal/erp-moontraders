@@ -6,15 +6,20 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Supplier;
 use App\Models\User;
+use App\Services\PermissionCatalog;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Activitylog\Models\Activity;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class UserController extends Controller implements HasMiddleware
 {
+    /** Rows-per-page choices on the list ("all" shows every matching user on one page). */
+    public const PER_PAGE = [10, 50, 100, 500, 'all'];
+
     public static function middleware(): array
     {
         return [
@@ -38,27 +43,64 @@ class UserController extends Controller implements HasMiddleware
             ])
             ->log('Viewed user list');
 
+        $requested = (string) $request->get('per_page', '10');
+        $perPage = in_array($requested, array_map('strval', self::PER_PAGE), true) ? $requested : '10';
+
         $users = QueryBuilder::for(User::class)
             ->allowedFilters(User::getAllowedFilters())
             ->allowedSorts(User::getAllowedSorts())
             ->allowedIncludes(User::getAllowedIncludes())
             ->with(['roles.permissions', 'permissions', 'supplier'])
-            ->defaultSort('-created_at')
-            ->paginate(request('per_page', 10))
+            ->defaultSort('-created_at');
+        $users = $users->paginate($perPage === 'all' ? max(1, $users->getEloquentBuilder()->clone()->reorder()->count()) : (int) $perPage)
             ->appends(request()->query());
 
         $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']);
+        $roles = Role::orderBy('name')->get(['id', 'name']);
 
-        return view('settings.users.index', compact('users', 'suppliers'));
+        return view('settings.users.index', [
+            'users' => $users,
+            'suppliers' => $suppliers,
+            'roles' => $roles,
+            'perPage' => $perPage,
+            'stats' => $this->listStats($request),
+        ]);
+    }
+
+    /**
+     * Headline numbers for the list. Tab counts follow the other filters
+     * (search, role, supplier ...) but not the Active / Suspended tab itself.
+     *
+     * @return array{total: int, active: int, inactive: int, super_admins: int, no_access: int}
+     */
+    private function listStats(Request $request): array
+    {
+        $filters = array_filter((array) $request->input('filter', []), fn ($v) => $v !== null && $v !== '');
+        unset($filters['is_active']);
+
+        $byStatus = QueryBuilder::for(User::class, new Request(['filter' => $filters]))
+            ->allowedFilters(User::getAllowedFilters())
+            ->getEloquentBuilder()
+            ->reorder()
+            ->selectRaw('is_active, COUNT(*) as aggregate')
+            ->groupBy('is_active')
+            ->pluck('aggregate', 'is_active');
+
+        return [
+            'total' => (int) $byStatus->sum(),
+            'active' => (int) ($byStatus['Yes'] ?? 0),
+            'inactive' => (int) ($byStatus['No'] ?? 0),
+            'super_admins' => User::query()->where(fn ($q) => $q->where('is_super_admin', 'Yes')->orWhereHas('roles', fn ($r) => $r->where('name', 'super-admin')))->count(),
+            'no_access' => User::query()->where('is_active', 'Yes')->doesntHave('roles')->doesntHave('permissions')->where('is_super_admin', '!=', 'Yes')->count(),
+        ];
     }
 
     public function create()
     {
-        $roles = Role::all();
-        $permissions = Permission::all();
-        $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']);
-
-        return view('settings.users.create', compact('roles', 'permissions', 'suppliers'));
+        return view('settings.users.create', $this->formData(new User([
+            'is_active' => 'Yes',
+            'is_super_admin' => 'No',
+        ])));
     }
 
     public function store(Request $request)
@@ -114,19 +156,60 @@ class UserController extends Controller implements HasMiddleware
     {
         $user->load(['roles.permissions', 'permissions', 'supplier']);
 
-        return view('settings.users.show', compact('user'));
+        // permission id => where it comes from (extra and / or role names)
+        $grants = [];
+        foreach ($user->permissions as $permission) {
+            $grants[(string) $permission->id]['direct'] = true;
+        }
+        foreach ($user->roles as $role) {
+            foreach ($role->permissions as $permission) {
+                $grants[(string) $permission->id]['roles'][] = $role->name;
+            }
+        }
+
+        $activity = rescue(fn () => Activity::query()
+            ->where(fn ($q) => $q->where(fn ($c) => $c->where('causer_type', $user->getMorphClass())->where('causer_id', $user->id))
+                ->orWhere(fn ($s) => $s->where('subject_type', $user->getMorphClass())->where('subject_id', $user->id)))
+            ->with('causer')
+            ->latest()
+            ->limit(10)
+            ->get(), collect(), false);
+
+        return view('settings.users.show', [
+            'user' => $user,
+            'catalog' => PermissionCatalog::build(Permission::all()),
+            'grants' => $grants,
+            'activity' => $activity,
+        ]);
     }
 
     public function edit(User $user)
     {
-        $roles = Role::all();
-        $permissions = Permission::all();
-        $suppliers = Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']);
-        $userRoles = $user->roles->pluck('id')->toArray();
-        $userPermissions = $user->permissions->pluck('id')->toArray();
-        $inheritedPermissions = $user->getPermissionsViaRoles()->pluck('id')->toArray();
+        return view('settings.users.edit', $this->formData($user));
+    }
 
-        return view('settings.users.edit', compact('user', 'roles', 'permissions', 'suppliers', 'userRoles', 'userPermissions', 'inheritedPermissions'));
+    /**
+     * Everything the add / edit form needs. Permissions come arranged like the
+     * Settings and Reports screens (see PermissionCatalog) so they are easy to give.
+     *
+     * @return array<string, mixed>
+     */
+    private function formData(User $user): array
+    {
+        $roles = Role::with('permissions:id')->orderBy('name')->get();
+        $permissions = Permission::all();
+        $isNew = ! $user->exists;
+
+        return [
+            'user' => $user,
+            'roles' => $roles,
+            'permissions' => $permissions,
+            'catalog' => PermissionCatalog::build($permissions),
+            'suppliers' => Supplier::where('disabled', false)->orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'userRoles' => $isNew ? [] : $user->roles->pluck('id')->toArray(),
+            'userPermissions' => $isNew ? [] : $user->permissions->pluck('id')->toArray(),
+            'inheritedPermissions' => $isNew ? [] : $user->getPermissionsViaRoles()->pluck('id')->toArray(),
+        ];
     }
 
     public function bulkUpdate(Request $request)

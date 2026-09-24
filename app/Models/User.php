@@ -113,6 +113,24 @@ class User extends Authenticatable
             'is_active',
             AllowedFilter::scope('role'),
             'created_at',
+            // One box for the list page: name, email or designation.
+            AllowedFilter::callback('search', function ($query, $value): void {
+                $value = trim((string) $value);
+                if ($value === '') {
+                    return;
+                }
+                // LOWER() keeps the match case-insensitive on MySQL and PostgreSQL alike.
+                $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_strtolower($value)).'%';
+                $query->where(fn ($q) => $q->whereRaw('LOWER(name) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(email) LIKE ?', [$like])
+                    ->orWhereRaw('LOWER(designation) LIKE ?', [$like]));
+            }),
+            // access=none: can sign in but has no role, no permission and is not a super admin.
+            AllowedFilter::callback('access', function ($query, $value): void {
+                if ($value === 'none') {
+                    $query->doesntHave('roles')->doesntHave('permissions')->where('is_super_admin', '!=', 'Yes');
+                }
+            }),
         ];
     }
 
@@ -121,6 +139,7 @@ class User extends Authenticatable
         return [
             'name',
             'email',
+            'designation',
             'created_at',
         ];
     }

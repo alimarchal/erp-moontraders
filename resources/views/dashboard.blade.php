@@ -1,9 +1,19 @@
+@php
+    $hour = (int) now()->format('G');
+    $greeting = $hour < 12 ? 'Good morning' : ($hour < 17 ? 'Good afternoon' : 'Good evening');
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Dashboard') }}
-        </h2>
+        <div class="ak-head">
+            <div class="ak-head-text">
+                <h1 class="ak-title">Dashboard</h1>
+                <p class="ak-sub">{{ $greeting }}, {{ auth()->user()->name }} &middot; {{ now()->format('l, d F Y') }}</p>
+            </div>
+        </div>
     </x-slot>
+
+    @include('settings.partials.ui-style')
 
     @livewire('dashboard')
 </x-app-layout>

@@ -368,7 +368,38 @@ it('schedules the rolling rebuild nightly, after the snapshot job', function () 
     expect($scheduled)->toHaveCount(1)
         ->and($scheduled[0]->expression)->toBe('50 23 * * *')
         ->and($scheduled[0]->command)->toContain('--days=90')
-        ->and($scheduled[0]->command)->toContain('--with-vans');
+        ->and($scheduled[0]->command)->toContain('--with-vans')
+        ->and($scheduled[0]->command)->toContain('--include-backdated=3');
+});
+
+it('reaches back past the --days window to a document posted today with an old date', function () {
+    $this->travelTo('2026-03-20');
+
+    // Keyed in today, dated a fortnight ago — well outside a 5-day window.
+    recordStockMovement(['movement_date' => '2026-03-06', 'quantity' => 100, 'total_value' => 10000]);
+    recordSnapshot('2026-03-08', ['quantity_on_hand' => 0, 'average_cost' => 0, 'total_value' => 0]);
+
+    $this->artisan('inventory:snapshots:rebuild', ['--days' => 5, '--include-backdated' => 3])
+        ->expectsOutputToContain('dated as far back as 2026-03-06')
+        ->assertSuccessful();
+
+    assertDatabaseHas('daily_inventory_snapshots', [
+        'date' => '2026-03-08',
+        'product_id' => $this->product->id,
+        'quantity_on_hand' => 100,
+    ]);
+});
+
+it('keeps to the --days window when nothing recent is backdated past it', function () {
+    $this->travelTo('2026-03-20');
+    recordStockMovement(['movement_date' => '2026-03-06', 'quantity' => 100, 'total_value' => 10000]);
+
+    // Posted long before the look-back, so it has already been healed.
+    StockMovement::query()->update(['created_at' => '2026-03-06 10:00:00']);
+
+    $this->artisan('inventory:snapshots:rebuild', ['--days' => 5, '--include-backdated' => 3])->assertSuccessful();
+
+    expect(DailyInventorySnapshot::min('date'))->toStartWith('2026-03-15');
 });
 
 it('rejects a start date that is not in Y-m-d format', function () {

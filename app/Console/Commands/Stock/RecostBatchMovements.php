@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Stock;
 
 use App\Services\BatchRecostService;
+use App\Services\InventoryGlAdjustmentService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -39,13 +40,29 @@ class RecostBatchMovements extends Command
         $totalCogsDelta = 0.0;
         $totalMovements = 0;
 
+        $adjustments = app(InventoryGlAdjustmentService::class);
+
         foreach ($drifted as $batch) {
-            $result = $recostService->recostBatch(
-                (int) $batch->stock_batch_id,
-                (float) $batch->receipt_cost,
-                (int) $batch->grn_movement_id,
-                $isDryRun
-            );
+            // Each batch is re-costed and its ledger difference posted together, or not at all.
+            $result = DB::transaction(function () use ($recostService, $adjustments, $batch, $isDryRun) {
+                $result = $recostService->recostBatch(
+                    (int) $batch->stock_batch_id,
+                    (float) $batch->receipt_cost,
+                    (int) $batch->grn_movement_id,
+                    $isDryRun
+                );
+
+                if (! $isDryRun) {
+                    $adjustments->postRecostAdjustment(
+                        $result['value_deltas'],
+                        "RECOST-BATCH-{$batch->stock_batch_id}-".now()->format('YmdHis'),
+                        "Re-cost of batch {$batch->stock_batch_id} to its receipt cost",
+                        vanValueDelta: $result['van_value_delta']
+                    );
+                }
+
+                return $result;
+            });
 
             $totalCogsDelta += $result['cogs_delta'];
             $totalMovements += $result['movements'];
@@ -74,9 +91,8 @@ class RecostBatchMovements extends Command
         }
 
         $this->info(sprintf('Re-costed %d movement(s).', $totalMovements));
-        $this->warn(sprintf(
-            'Posted journal entries were NOT changed. COGS across these documents is out by %s and needs an '
-            .'adjusting entry.',
+        $this->info(sprintf(
+            'The cost difference was posted as an adjusting journal entry per batch (COGS %s).',
             number_format($totalCogsDelta, 2)
         ));
 

@@ -20,6 +20,7 @@ use function Pest\Laravel\assertDatabaseHas;
  * onto the batch's receipt cost.
  */
 beforeEach(function () {
+    seedGrnPostingAccounts();
     $this->user = User::factory()->create();
     $this->uom = Uom::factory()->create();
     $this->warehouse = Warehouse::factory()->create(['disabled' => false]);

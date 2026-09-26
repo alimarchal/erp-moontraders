@@ -8,6 +8,7 @@ use App\Models\Employee;
 use App\Models\ExpenseDetail;
 use App\Models\Vehicle;
 use App\Services\ExpenseDetailService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
@@ -29,47 +30,13 @@ class ExpenseDetailController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index(Request $request)
+    /**
+     * Expenses are listed on the Expense Detail report; this page never had a view of its own,
+     * so the Settings link to it failed with "View [expense-details.index] not found".
+     */
+    public function index(): RedirectResponse
     {
-        $query = ExpenseDetail::query();
-
-        if ($request->filled('category')) {
-            $query->where('category', $request->input('category'));
-        }
-
-        if ($request->filled('date_from')) {
-            $query->whereDate('transaction_date', '>=', $request->input('date_from'));
-        }
-
-        if ($request->filled('date_to')) {
-            $query->whereDate('transaction_date', '<=', $request->input('date_to'));
-        }
-
-        // Calculate opening balance (records before date_from)
-        $openingBalance = 0;
-        $dateFrom = $request->input('date_from');
-
-        if ($dateFrom) {
-            $openingQuery = ExpenseDetail::query();
-
-            if ($request->filled('category')) {
-                $openingQuery->where('category', $request->input('category'));
-            }
-
-            $openingQuery->whereDate('transaction_date', '<', $dateFrom);
-            $openingBalance = (float) $openingQuery->sum('amount');
-        }
-
-        $expenses = $query
-            ->orderBy('transaction_date')
-            ->orderBy('id')
-            ->paginate(15)
-            ->withQueryString();
-
-        return view('expense-details.index', [
-            'expenses' => $expenses,
-            'openingBalance' => $openingBalance,
-        ]);
+        return redirect()->route('reports.expense-detail.index');
     }
 
     public function create()

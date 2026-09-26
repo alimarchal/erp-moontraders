@@ -42,6 +42,7 @@ class RebuildDailyInventorySnapshots extends Command
         {--days=90 : Window length used when start_date is omitted}
         {--supplier_id= : Only rebuild snapshots for products of this supplier}
         {--with-vans : Also rebuild the vehicle rows, which no other job writes}
+        {--include-backdated=0 : Also reach back to the oldest movement_date posted in the last N days, when that falls before the --days window}
         {--dry-run : Report what would change without saving}
         {--force : Also rebuild products whose ledger disagrees with current stock}';
 
@@ -84,6 +85,10 @@ class RebuildDailyInventorySnapshots extends Command
 
         if ($startDate === null) {
             return self::FAILURE;
+        }
+
+        if ($this->argument('start_date') === null) {
+            $startDate = $this->extendForBackdatedPostings($startDate);
         }
 
         if ($startDate > $endDate) {
@@ -192,6 +197,39 @@ class RebuildDailyInventorySnapshots extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * A document posted today can be dated months back (work caught up after a holiday or
+     * lockdown). A fixed window would leave every snapshot before it frozen at the value it
+     * held before that document existed, so the window is stretched back to the oldest date
+     * anything was recently posted against.
+     */
+    private function extendForBackdatedPostings(string $startDate): string
+    {
+        $lookbackDays = max(0, (int) $this->option('include-backdated'));
+
+        if ($lookbackDays === 0) {
+            return $startDate;
+        }
+
+        $oldestBackdated = DB::table('stock_movements')
+            ->where('created_at', '>=', now()->subDays($lookbackDays)->startOfDay())
+            ->min('movement_date');
+
+        if ($oldestBackdated === null) {
+            return $startDate;
+        }
+
+        $oldestBackdated = Carbon::parse($oldestBackdated)->toDateString();
+
+        if ($oldestBackdated >= $startDate) {
+            return $startDate;
+        }
+
+        $this->warn("Documents posted in the last {$lookbackDays} day(s) are dated as far back as {$oldestBackdated} — rebuilding from there instead of {$startDate}.");
+
+        return $oldestBackdated;
     }
 
     /**

@@ -2,12 +2,24 @@
 
 namespace App\Services;
 
+use App\Models\StockBatch;
 use Illuminate\Support\Facades\DB;
 
 class BatchRecostService
 {
     /** Movement types whose value reaches the P&L as cost of goods sold. */
     private const COGS_MOVEMENT_TYPES = ['sale', 'shortage'];
+
+    /** Movement types grouped the way InventoryGlAdjustmentService posts them. */
+    private const GL_DELTA_TYPES = [
+        'transfer' => 'transfer',
+        'sale' => 'sale',
+        'return' => 'return',
+        'shortage' => 'shortage',
+        'adjustment' => 'adjustment',
+        'damage' => 'adjustment',
+        'theft' => 'adjustment',
+    ];
 
     /**
      * Costs closer than this are treated as equal. It is deliberately a whole paisa rather
@@ -28,7 +40,14 @@ class BatchRecostService
      * Posted journal entries are deliberately not rewritten — the returned `cogs_delta` is
      * what an adjusting journal has to carry, and is the caller's to act on.
      *
-     * @return array{movements: int, ledger_rows: int, issue_items: int, van_rows: int, cogs_delta: float}
+     * `value_deltas` is SUM(quantity × (new − old cost)) per movement type, with quantities
+     * signed as stored, for InventoryGlAdjustmentService to post.
+     *
+     * `van_value_delta` is what the van_stock_batches rows' value changed by.
+     *
+     * @return array{movements: int, ledger_rows: int, issue_items: int, van_rows: int, cogs_delta: float, value_deltas: array<string, float>, van_value_delta: float}
+     *
+     * @throws \RuntimeException when part of the batch was moved to another product by a batch transfer
      */
     public function recostBatch(
         int $stockBatchId,
@@ -36,13 +55,13 @@ class BatchRecostService
         ?int $excludeMovementId = null,
         bool $dryRun = false
     ): array {
-        $result = ['movements' => 0, 'ledger_rows' => 0, 'issue_items' => 0, 'van_rows' => 0, 'cogs_delta' => 0.0];
+        $result = ['movements' => 0, 'ledger_rows' => 0, 'issue_items' => 0, 'van_rows' => 0, 'cogs_delta' => 0.0, 'value_deltas' => [], 'van_value_delta' => 0.0];
 
         $movements = DB::table('stock_movements')
             ->where('stock_batch_id', $stockBatchId)
             ->when($excludeMovementId !== null, fn ($query) => $query->where('id', '!=', $excludeMovementId))
             ->where('movement_type', '!=', 'grn')
-            ->get(['id', 'movement_type', 'quantity', 'unit_cost', 'goods_issue_item_id']);
+            ->get(['id', 'movement_type', 'quantity', 'unit_cost', 'goods_issue_item_id', 'reference_type', 'reference_id']);
 
         $stale = $movements->filter(
             fn ($movement) => abs((float) $movement->unit_cost - $newUnitCost) > self::COST_TOLERANCE
@@ -52,8 +71,24 @@ class BatchRecostService
             return $result;
         }
 
+        // A partial batch transfer carried units to another product's batch at the old cost.
+        // Re-costing only this side would leave the two batches valued apart from the GRN
+        // that bought them both.
+        $transferred = $stale->first(fn ($movement) => $movement->reference_type === StockBatch::class);
+
+        if ($transferred) {
+            throw new \RuntimeException(sprintf(
+                'Batch %s was partly transferred to another product (batch %s), so its cost cannot be corrected here.',
+                DB::table('stock_batches')->where('id', $stockBatchId)->value('batch_code'),
+                DB::table('stock_batches')->where('id', $transferred->reference_id)->value('batch_code')
+            ));
+        }
+
         foreach ($stale as $movement) {
             $quantity = abs((float) $movement->quantity);
+            $deltaType = self::GL_DELTA_TYPES[$movement->movement_type] ?? 'adjustment';
+            $result['value_deltas'][$deltaType] = ($result['value_deltas'][$deltaType] ?? 0.0)
+                + (float) $movement->quantity * ($newUnitCost - (float) $movement->unit_cost);
 
             if (in_array($movement->movement_type, self::COGS_MOVEMENT_TYPES, true)) {
                 $result['cogs_delta'] += $quantity * ($newUnitCost - (float) $movement->unit_cost);
@@ -78,6 +113,7 @@ class BatchRecostService
         }
 
         $result['cogs_delta'] = round($result['cogs_delta'], 2);
+        $result['value_deltas'] = array_map(fn (float $delta) => round($delta, 4), $result['value_deltas']);
         $result['ledger_rows'] = $this->recostInventoryLedger($stockBatchId, $newUnitCost, $dryRun);
 
         $itemIds = $stale->pluck('goods_issue_item_id')->filter()->unique()->values();
@@ -89,7 +125,7 @@ class BatchRecostService
             }
 
             $result['issue_items'] += $this->recostGoodsIssueItem((int) $itemId, $weighted, $dryRun);
-            $result['van_rows'] += $this->recostVanStock((int) $itemId, $weighted, $dryRun);
+            $result['van_rows'] += $this->recostVanStock((int) $itemId, $weighted, $dryRun, $result['van_value_delta']);
         }
 
         return $result;
@@ -149,10 +185,15 @@ class BatchRecostService
         return 1;
     }
 
-    private function recostVanStock(int $goodsIssueItemId, float $weighted, bool $dryRun): int
+    /**
+     * Van stock holds a 2-decimal cost, so what the re-cost changed on the van is taken from
+     * the rows themselves rather than from the movements.
+     */
+    private function recostVanStock(int $goodsIssueItemId, float $weighted, bool $dryRun, float &$valueDelta): int
     {
         $query = DB::table('van_stock_batches')->where('goods_issue_item_id', $goodsIssueItemId);
         $count = (clone $query)->whereRaw('ABS(unit_cost - ?) > 0.005', [$weighted])->count();
+        $valueDelta += (float) (clone $query)->selectRaw('COALESCE(SUM(quantity_on_hand * (? - unit_cost)), 0) as delta', [$weighted])->value('delta');
 
         if ($count > 0 && ! $dryRun) {
             $query->update(['unit_cost' => $weighted]);

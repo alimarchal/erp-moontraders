@@ -33,4 +33,24 @@ class GoodsReceiptNoteItemFactory extends Factory
             'priority_order' => 99,
         ];
     }
+
+    /**
+     * A line saved through the GRN screens always carries total_cost = quantity × unit cost,
+     * and its invoice value; posting refuses a line where they disagree. Fill both in when a
+     * test only states the quantity and unit cost.
+     */
+    public function configure(): static
+    {
+        return $this->afterMaking(function (GoodsReceiptNoteItem $item): void {
+            $lineValue = round((float) ($item->quantity_accepted ?? $item->quantity_received) * (float) $item->unit_cost, 4);
+
+            if ((float) $item->total_cost === 0.0 && $lineValue > 0) {
+                $item->total_cost = $lineValue;
+            }
+
+            if ((float) $item->extended_value === 0.0 && (float) $item->total_cost > 0) {
+                $item->extended_value = $item->total_cost;
+            }
+        });
+    }
 }

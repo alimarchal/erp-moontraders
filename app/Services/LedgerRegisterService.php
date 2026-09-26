@@ -79,7 +79,7 @@ class LedgerRegisterService
      * Post a ledger register entry to the GL.
      *
      * Double-entry per column:
-     *   invoice_amount  → DR 1151 Stock In Hand         / CR 2111 Creditors
+     *   invoice_amount  → DR 2142 Stock Received But Not Billed / CR 2111 Creditors
      *   online_amount   → DR 2111 Creditors             / CR 1171 HBL Main Account
      *   expenses_amount → DR 5210 Admin Expenses        / CR 2111 Creditors
      *   za_amount       → DR 2111 Creditors             / CR 4240 ZA 0.5% Incentive Income
@@ -143,7 +143,7 @@ class LedgerRegisterService
      */
     protected function resolveAccounts(): array
     {
-        $codes = ['2111', '1151', '1171', '5210', '4240', '1112'];
+        $codes = ['2111', InventoryService::STOCK_RECEIVED_NOT_BILLED_CODE, '1171', '5210', '4240', '1112'];
         $accounts = ChartOfAccount::whereIn('account_code', $codes)->get()->keyBy('account_code');
 
         $missing = array_filter($codes, fn ($code) => ! $accounts->has($code));
@@ -153,7 +153,7 @@ class LedgerRegisterService
 
         return [
             'creditors' => $accounts['2111']->id,
-            'stock_in_hand' => $accounts['1151']->id,
+            'stock_received_not_billed' => $accounts[InventoryService::STOCK_RECEIVED_NOT_BILLED_CODE]->id,
             'hbl_main' => $accounts['1171']->id,
             'admin_expenses' => $accounts['5210']->id,
             'za_incentive_income' => $accounts['4240']->id,
@@ -174,9 +174,10 @@ class LedgerRegisterService
         $docRef = $entry->document_number ?? "LR-{$entry->id}";
         $lines = [];
 
-        // invoice_amount: DR Stock In Hand / CR Creditors
+        // invoice_amount: DR Stock Received But Not Billed / CR Creditors. The stock itself
+        // reached Stock In Hand when its GRN was posted; the invoice only makes it payable.
         if ((float) $entry->invoice_amount > 0) {
-            $lines[] = ['account_id' => $accounts['stock_in_hand'], 'debit' => (float) $entry->invoice_amount, 'credit' => 0, 'description' => "Stock purchase from {$supplierName}", 'cost_center_id' => 1];
+            $lines[] = ['account_id' => $accounts['stock_received_not_billed'], 'debit' => (float) $entry->invoice_amount, 'credit' => 0, 'description' => "Invoice from {$supplierName} for stock received", 'cost_center_id' => 1];
             $lines[] = ['account_id' => $accounts['creditors'], 'debit' => 0, 'credit' => (float) $entry->invoice_amount, 'description' => "Stock purchase from {$supplierName}", 'cost_center_id' => 1];
         }
 

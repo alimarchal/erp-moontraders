@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AccountingPeriod;
 use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\CostCenter;
@@ -69,12 +70,27 @@ function seedGrnPostingAccounts(): void
         ['name' => 'Warehouse & Inventory', 'is_active' => true]
     );
 
+    // The journal entry is dated on the GRN's receipt date and needs an open period for it.
+    if (! AccountingPeriod::where('start_date', '<=', now())->where('end_date', '>=', now())->exists()) {
+        AccountingPeriod::create([
+            'name' => now()->format('F Y'),
+            'start_date' => now()->startOfMonth(),
+            'end_date' => now()->endOfMonth(),
+            'status' => 'open',
+        ]);
+    }
+
     $accounts = [
         '1151' => ['Stock In Hand', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
+        '1155' => ['Van Stock', 'Assets', 'BalanceSheet', 'Asset', 'debit'],
         '2111' => ['Creditors', 'Liabilities', 'BalanceSheet', 'Liability', 'credit'],
+        '2142' => ['Stock Received But Not Billed', 'Liabilities', 'BalanceSheet', 'Liability', 'credit'],
         '4210' => ['FMR Allowance Liquid', 'Income', 'IncomeStatement', 'Revenue', 'credit'],
         '4220' => ['FMR Allowance Powder', 'Income', 'IncomeStatement', 'Revenue', 'credit'],
+        '5111' => ['Cost of Goods Sold', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
+        '5213' => ['Inventory Shortage', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
         '5271' => ['Round Off', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
+        '5273' => ['Stock Loss - Other', 'Expenses', 'IncomeStatement', 'Expense', 'debit'],
     ];
 
     foreach ($accounts as $code => [$name, $typeName, $reportGroup, $category, $normalBalance]) {

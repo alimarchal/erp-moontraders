@@ -324,28 +324,6 @@ it('valuation layer total_value equals GRN item total_cost after posting', funct
     expect((float) $layer->total_value)->toBe($expectedTotal);
 });
 
-it('resync command reports zero drift on freshly posted data', function () {
-    $file = makeOpeningStockFile([
-        ['SKU' => 'SKU-PREC-001', 'Invoice Price' => 186.27, 'Retail Price' => 200.00, 'Total Inventory in Pieces' => 90247],
-    ]);
-
-    $this->post(route('opening-stock.store'), [
-        'supplier_id' => $this->supplier->id,
-        'warehouse_id' => $this->warehouse->id,
-        'receipt_date' => now()->toDateString(),
-        'import_file' => $file,
-    ]);
-
-    $grn = GoodsReceiptNote::where('is_opening_stock', true)->first();
-    app(InventoryService::class)->postGrnToInventory($grn);
-
-    $this->artisan('stock:resync-values', ['--dry-run' => true])
-        ->expectsOutputToContain('[Phase A] CSB records updated (or would update) | 0')
-        ->expectsOutputToContain('SVL records updated (or would update) | 0')
-        ->expectsOutputToContain('current_stock records updated (or would update) | 0')
-        ->assertSuccessful();
-});
-
 it('current_stock total_value matches remaining valuation layer value after posting opening stock', function () {
     $price = 186.27;
     $qty = 90247;

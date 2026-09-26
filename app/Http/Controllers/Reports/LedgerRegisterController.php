@@ -233,6 +233,12 @@ class LedgerRegisterController extends Controller implements HasMiddleware
         $this->authorizeSupplierScope((int) $ledgerRegister->supplier_id);
         $this->authorizeSupplierScope((int) $request->validated()['supplier_id']);
 
+        // Its journal entry is already in the ledger and is not rewritten by an edit, so the
+        // register and the GL would silently disagree from then on.
+        if ($ledgerRegister->isPosted()) {
+            return redirect()->back()->with('error', 'A posted entry cannot be edited. Its journal entry is already in the general ledger.');
+        }
+
         try {
             DB::transaction(function () use ($request, $ledgerRegister) {
                 $originalSupplierId = (int) $ledgerRegister->supplier_id;
@@ -273,6 +279,10 @@ class LedgerRegisterController extends Controller implements HasMiddleware
     public function destroy(LedgerRegister $ledgerRegister)
     {
         $this->authorizeSupplierScope((int) $ledgerRegister->supplier_id);
+
+        if ($ledgerRegister->isPosted()) {
+            return redirect()->back()->with('error', 'A posted entry cannot be deleted. Its journal entry is already in the general ledger.');
+        }
 
         try {
             $supplierId = $ledgerRegister->supplier_id;

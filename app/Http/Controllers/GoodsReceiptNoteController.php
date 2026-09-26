@@ -6,17 +6,16 @@ use App\Exports\GoodsReceiptNoteTemplateExport;
 use App\Http\Requests\ImportGoodsReceiptNoteRequest;
 use App\Http\Requests\PostGoodsReceiptNoteRequest;
 use App\Imports\GoodsReceiptNoteItemsImport;
-use App\Models\BankAccount;
 use App\Models\GoodsReceiptNote;
 use App\Models\Product;
 use App\Models\PromotionalCampaign;
 use App\Models\Supplier;
-use App\Models\SupplierPayment;
 use App\Models\TaxCode;
 use App\Models\TaxRate;
 use App\Models\Uom;
 use App\Models\Warehouse;
 use App\Services\BatchRecostService;
+use App\Services\InventoryGlAdjustmentService;
 use App\Services\InventoryService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -39,7 +38,7 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('permission:goods-receipt-note-list', only: ['index', 'show']),
-            new Middleware('permission:goods-receipt-note-create', only: ['create', 'store', 'createDraftPayment']),
+            new Middleware('permission:goods-receipt-note-create', only: ['create', 'store']),
             new Middleware('permission:goods-receipt-note-edit', only: ['edit', 'update']),
             new Middleware('permission:goods-receipt-note-delete', only: ['destroy']),
             new Middleware('permission:goods-receipt-note-post', only: ['post']),
@@ -617,71 +616,18 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
         $inventoryService = app(InventoryService::class);
         $result = $inventoryService->postGrnToInventory($goodsReceiptNote);
 
+        // No draft supplier payment is raised here any more: suppliers are paid through the
+        // ledger register (Online Amount), and posting an auto-drafted payment on top of that
+        // took the same money out of Creditors twice.
         if ($result['success']) {
-            // Auto-create draft supplier payment
-            $this->createDraftPayment($goodsReceiptNote);
-
             return redirect()
                 ->route('goods-receipt-notes.show', $goodsReceiptNote->id)
-                ->with('success', $result['message'].' A draft payment has been created for this GRN.');
+                ->with('success', $result['message']);
         }
 
         return redirect()
             ->back()
             ->with('error', $result['message']);
-    }
-
-    /**
-     * Create draft payment for GRN
-     */
-    private function createDraftPayment(GoodsReceiptNote $grn)
-    {
-        try {
-            return \DB::transaction(function () use ($grn) {
-                // Generate payment number with lock to prevent duplicates
-                $year = now()->year;
-                $lastPayment = SupplierPayment::withTrashed()
-                    ->whereYear('created_at', $year)
-                    ->where('payment_number', 'LIKE', "PAY-{$year}-%")
-                    ->lockForUpdate()
-                    ->orderBy('id', 'desc')
-                    ->first();
-
-                $sequence = $lastPayment ? ((int) substr($lastPayment->payment_number, -6)) + 1 : 1;
-                $paymentNumber = sprintf('PAY-%d-%06d', $year, $sequence);
-
-                // Get default bank account for auto-generated payment
-                $defaultBankAccount = BankAccount::where('is_active', true)
-                    ->orderBy('id')
-                    ->first();
-
-                // Create draft payment
-                $payment = SupplierPayment::create([
-                    'payment_number' => $paymentNumber,
-                    'supplier_id' => $grn->supplier_id,
-                    'bank_account_id' => $defaultBankAccount?->id,
-                    'payment_date' => now()->toDateString(),
-                    'payment_method' => 'bank_transfer',
-                    'reference_number' => 'Auto-generated for GRN: '.$grn->grn_number,
-                    'amount' => $grn->grand_total,
-                    'description' => 'Auto-generated payment for GRN: '.$grn->grn_number,
-                    'status' => 'draft',
-                    'created_by' => auth()->id(),
-                ]);
-
-                // Allocate to this GRN
-                $payment->grnAllocations()->create([
-                    'grn_id' => $grn->id,
-                    'allocated_amount' => $grn->grand_total,
-                ]);
-
-                return $payment;
-            });
-        } catch (\Exception $e) {
-            \Log::error('Failed to create auto payment: '.$e->getMessage());
-
-            return null;
-        }
     }
 
     /**
@@ -932,6 +878,8 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
             $processedProducts = [];
             $cogsDelta = 0.0;
             $recostedMovements = 0;
+            $valueDeltas = [];
+            $vanValueDelta = 0.0;
 
             foreach ($request->input('items') as $formItem) {
                 $item = DB::table('goods_receipt_note_items')
@@ -1089,6 +1037,12 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 $cogsDelta += $recost['cogs_delta'];
                 $recostedMovements += $recost['movements'];
 
+                $vanValueDelta += $recost['van_value_delta'];
+
+                foreach ($recost['value_deltas'] as $type => $value) {
+                    $valueDeltas[$type] = ($valueDeltas[$type] ?? 0.0) + $value;
+                }
+
                 // Queue product for current_stock recalc after all items processed
                 $processedProducts[$item->product_id] = [
                     'product_id' => $item->product_id,
@@ -1123,6 +1077,15 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                 'total_quantity' => $newTotalQty,
             ]);
 
+            // The documents posted out of these batches kept their journal entries at the old
+            // cost; carry the difference to the ledger so Stock In Hand stays equal to the stock.
+            $adjustment = app(InventoryGlAdjustmentService::class)->postRecostAdjustment(
+                $valueDeltas,
+                "RECOST-{$goodsReceiptNote->grn_number}-".now()->format('YmdHis'),
+                "Cost correction on {$goodsReceiptNote->grn_number}: stock already issued, sold or returned re-costed",
+                vanValueDelta: $vanValueDelta
+            );
+
             DB::commit();
 
             $message = 'GRN inventory corrections applied successfully.';
@@ -1132,13 +1095,14 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
                     'grn_id' => $goodsReceiptNote->id,
                     'movements' => $recostedMovements,
                     'cogs_delta' => $cogsDelta,
+                    'value_deltas' => $valueDeltas,
+                    'adjusting_journal_entry_id' => $adjustment?->id,
                 ]);
 
                 $message .= sprintf(
-                    ' %d already-posted stock movement(s) were re-costed. Posted journal entries were not '
-                    .'changed: COGS on those documents is out by %s and needs an adjusting entry.',
+                    ' %d already-posted stock movement(s) were re-costed%s.',
                     $recostedMovements,
-                    number_format($cogsDelta, 2)
+                    $adjustment ? " and journal entry #{$adjustment->id} posts the cost difference (COGS {$this->signedAmount($cogsDelta)})" : ''
                 );
             }
 
@@ -1156,6 +1120,11 @@ class GoodsReceiptNoteController extends Controller implements HasMiddleware
 
             return back()->with('error', 'Update failed: '.$e->getMessage());
         }
+    }
+
+    private function signedAmount(float $amount): string
+    {
+        return ($amount >= 0 ? '+' : '−').number_format(abs($amount), 2);
     }
 
     private function recalculateStockLedgerBalances(int $productId, int $warehouseId): void

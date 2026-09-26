@@ -285,3 +285,11 @@ test('unauthorized user cannot access expense detail report', function () {
 
     $response->assertForbidden();
 });
+
+it('sends the settings expense details link to the expense detail report', function () {
+    Permission::firstOrCreate(['name' => 'expense-detail-list', 'guard_name' => 'web']);
+    $this->user->givePermissionTo('expense-detail-list');
+
+    $this->get(route('expense-details.index'))
+        ->assertRedirect(route('reports.expense-detail.index'));
+});

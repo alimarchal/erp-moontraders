@@ -7,16 +7,69 @@ use App\Models\CostCenter;
 use App\Models\CurrentStock;
 use App\Models\CurrentStockByBatch;
 use App\Models\GoodsReceiptNote;
+use App\Models\JournalEntry;
 use App\Models\StockBatch;
 use App\Models\StockLedgerEntry;
 use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class InventoryService
 {
+    /** Liability a GRN credits until the supplier's invoice arrives. */
+    public const STOCK_RECEIVED_NOT_BILLED_CODE = '2142';
+
+    /**
+     * Reference of the entry that moves a pre-2142 GRN's credit from Creditors to
+     * Stock Received But Not Billed.
+     */
+    public static function grnReclassReference(GoodsReceiptNote $grn): string
+    {
+        return "GRNI-RECLASS-{$grn->grn_number}";
+    }
+
+    /**
+     * GRN items whose total_cost is not their accepted quantity at their unit cost.
+     *
+     * Stock is valued at unit_cost, but the journal entry debits Stock In Hand with
+     * total_cost. When the two disagree the ledger and the stock drift apart and the
+     * gap lands in Round Off — GRN-2026-0033 carried a Cerelac line at 769,919.87
+     * against 2,592 × 396.05 = 1,026,559.82, and its goods issues were costed off the
+     * wrong figure too.
+     *
+     * @return Collection<int, object>
+     */
+    public function itemsWithMismatchedTotals(GoodsReceiptNote $grn): Collection
+    {
+        return $grn->items()->with('product:id,product_name')->get()
+            ->filter(fn ($item) => abs((float) $item->total_cost - (float) ($item->quantity_accepted ?? $item->quantity_received) * (float) $item->unit_cost) > 1)
+            ->values();
+    }
+
+    /**
+     * @throws \RuntimeException naming each line whose total disagrees with its unit cost
+     */
+    protected function assertItemTotalsMatchUnitCost(GoodsReceiptNote $grn): void
+    {
+        $mismatched = $this->itemsWithMismatchedTotals($grn);
+
+        if ($mismatched->isEmpty()) {
+            return;
+        }
+
+        throw new \RuntimeException('Line total does not equal quantity × unit cost for '.$mismatched->map(fn ($item) => sprintf(
+            '%s (total %s, %s × %s = %s)',
+            $item->product?->product_name ?? "product {$item->product_id}",
+            number_format((float) $item->total_cost, 2),
+            rtrim(rtrim(number_format((float) ($item->quantity_accepted ?? $item->quantity_received), 3, '.', ''), '0'), '.'),
+            number_format((float) $item->unit_cost, 2),
+            number_format((float) ($item->quantity_accepted ?? $item->quantity_received) * (float) $item->unit_cost, 2)
+        ))->implode('; ').'. Correct the line before posting.');
+    }
+
     /**
      * Post GRN to inventory - creates stock batches and updates inventory
      */
@@ -32,6 +85,8 @@ class InventoryService
             if ($grn->status === 'cancelled') {
                 throw new \Exception('Cannot post cancelled GRN');
             }
+
+            $this->assertItemTotalsMatchUnitCost($grn);
 
             foreach ($grn->items as $item) {
                 $batchCode = $this->generateBatchCode();
@@ -132,7 +187,11 @@ class InventoryService
      * Dr. Inventory - Main (Asset) - Account 1151 Stock In Hand (actual cost; taxes included in cost)
      * Dr/Cr. Round Off - Account 5271 (rounding difference between invoice and actual cost)
      * Cr. FMR Allowance - Account 4210 (Liquid) or 4220 (Powder) (income/contra-cost, if any)
-     * Cr. Accounts Payable (Liability) - Account 2111 Creditors (amount payable to supplier)
+     * Cr. Stock Received But Not Billed - Account 2142 (amount the supplier will invoice)
+     *
+     * The GRN records the goods; the supplier's invoice, entered in the ledger register,
+     * is what makes the amount payable (Dr 2142 / Cr 2111 Creditors). Both used to debit
+     * Stock In Hand and credit Creditors, so every purchase reached the ledger twice.
      */
     protected function createGrnJournalEntry(GoodsReceiptNote $grn)
     {
@@ -146,7 +205,7 @@ class InventoryService
 
             // Find required accounts from Chart of Accounts
             $inventoryAccount = ChartOfAccount::where('account_code', '1151')->first();
-            $apAccount = ChartOfAccount::where('account_code', '2111')->first();
+            $receivedNotBilledAccount = ChartOfAccount::where('account_code', self::STOCK_RECEIVED_NOT_BILLED_CODE)->first();
             $fmrAllowanceLiquidAccount = ChartOfAccount::where('account_code', '4210')->first();
             $fmrAllowancePowderAccount = ChartOfAccount::where('account_code', '4220')->first();
             $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
@@ -156,8 +215,8 @@ class InventoryService
                 throw new \RuntimeException('Inventory account 1151 (Stock In Hand) is missing from the Chart of Accounts.');
             }
 
-            if (! $apAccount) {
-                throw new \RuntimeException('Accounts Payable account 2111 (Creditors) is missing from the Chart of Accounts.');
+            if (! $receivedNotBilledAccount) {
+                throw new \RuntimeException('Account 2142 (Stock Received But Not Billed) is missing from the Chart of Accounts.');
             }
 
             if (! $fmrAllowanceLiquidAccount || ! $fmrAllowancePowderAccount) {
@@ -249,13 +308,14 @@ class InventoryService
                 ];
             }
 
-            // Cr. Accounts Payable (amount payable to supplier)
+            // Cr. Stock Received But Not Billed — the supplier's invoice, posted through the
+            // ledger register, clears this into Creditors.
             $journalLines[] = [
                 'line_no' => $lineNo++,
-                'account_id' => $apAccount->id,
+                'account_id' => $receivedNotBilledAccount->id,
                 'debit' => 0,
                 'credit' => $creditorAmount,
-                'description' => "Amount payable to {$grn->supplier->supplier_name}",
+                'description' => "Received from {$grn->supplier->supplier_name}, awaiting invoice",
                 'cost_center_id' => $warehouseCostCenter->id,
             ];
 
@@ -379,193 +439,66 @@ class InventoryService
     }
 
     /**
-     * Create Reversing Journal Entry for GRN reversal
+     * Reverse the GRN's own posted journal entry, line for line with debit and
+     * credit swapped.
      *
-     * Reversal Entries (opposite of posting entries):
-     * Dr. Accounts Payable (Liability) - Account 2111 Creditors
-     * Dr. FMR Allowance - Account 4210 (Liquid) or 4220 (Powder) (reverse the credit, if any)
-     * Cr. Inventory (Asset) - Account 1151 Stock In Hand
-     * Dr/Cr. Round Off - Account 5271 (reverse rounding from posting)
+     * Mirroring the entry that was actually posted is the only way to undo it
+     * exactly: recomputing the lines from the GRN items could land a paisa off
+     * the original rounding, and would send an opening-stock GRN (posted against
+     * Opening Balance Equity) to Creditors instead.
+     *
+     * @throws \RuntimeException when the reversing entry cannot be written, so the
+     *                           caller rolls the stock reversal back with it
      */
-    protected function createGrnReversingJournalEntry(GoodsReceiptNote $grn)
+    protected function createGrnReversingJournalEntry(GoodsReceiptNote $grn): ?JournalEntry
     {
-        try {
-            // Load supplier and items with products relationship
-            $grn->loadMissing('supplier', 'items.product');
+        if (! $grn->journal_entry_id) {
+            $receiptValue = round((float) $grn->items()->sum('total_cost'), 2);
 
-            // Find required accounts from Chart of Accounts
-            $inventoryAccount = ChartOfAccount::where('account_code', '1151')->first();
-            $apAccount = ChartOfAccount::where('account_code', '2111')->first();
-            $fmrAllowanceLiquidAccount = ChartOfAccount::where('account_code', '4210')->first();
-            $fmrAllowancePowderAccount = ChartOfAccount::where('account_code', '4220')->first();
-            $roundOffAccount = ChartOfAccount::where('account_code', '5271')->first();
-            $warehouseCostCenter = CostCenter::where('code', 'CC006')->first();
-
-            if (! $inventoryAccount || ! $apAccount) {
-                Log::warning('Required accounts not found in Chart of Accounts. Skipping reversing journal entry for GRN: '.$grn->id);
-
+            // A zero-value opening-stock GRN never had an entry; there is nothing to undo.
+            if ($receiptValue <= 0) {
                 return null;
             }
 
-            if (! $fmrAllowanceLiquidAccount || ! $fmrAllowancePowderAccount) {
-                Log::warning('FMR Allowance accounts (4210 - Liquid or 4220 - Powder) not found in Chart of Accounts. Skipping reversing journal entry for GRN: '.$grn->id);
-
-                return null;
-            }
-
-            if (! $warehouseCostCenter) {
-                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping reversing journal entry for GRN: '.$grn->id);
-
-                return null;
-            }
-
-            if (! $warehouseCostCenter) {
-                Log::warning('Cost Center CC006 (Warehouse & Inventory) not found. Skipping reversing journal entry for GRN: '.$grn->id);
-
-                return null;
-            }
-
-            // Calculate amounts from GRN items (same as posting)
-            $extendedValue = $grn->items->sum('extended_value');
-            $totalDiscounts = $grn->items->sum('discount_value');
-            $totalFmrAllowance = $grn->items->sum('fmr_allowance');
-            $totalGst = $grn->items->sum('sales_tax_value');
-            $totalAdvanceTax = $grn->items->sum('advance_income_tax');
-            $totalExciseDuty = $grn->items->sum('excise_duty') ?? 0;
-
-            // Calculate FMR allowance by product type (same as posting)
-            $fmrAllowanceLiquid = 0;
-            $fmrAllowancePowder = 0;
-            foreach ($grn->items as $item) {
-                $fmrAmount = $item->fmr_allowance ?? 0;
-                if ($item->product && $item->product->is_powder) {
-                    $fmrAllowancePowder += $fmrAmount;
-                } else {
-                    $fmrAllowanceLiquid += $fmrAmount;
-                }
-            }
-
-            // Calculate ACTUAL inventory value from items (quantity_accepted × unit_cost)
-            $actualInventoryValue = $grn->items->sum('total_cost');
-
-            // Invoice value (extended - discounts + GST + advance tax + excise)
-            $invoiceValue = $extendedValue - $totalDiscounts + $totalGst + $totalAdvanceTax + $totalExciseDuty;
-
-            // Rounding difference (same orientation as posting: invoice minus actual)
-            $roundingDifference = $invoiceValue - $actualInventoryValue;
-
-            // Payable amount
-            $creditorAmount = $invoiceValue - $totalFmrAllowance;
-            if ($creditorAmount < 0) {
-                $creditorAmount = 0;
-            }
-
-            if (abs($roundingDifference) > 0.001 && ! $roundOffAccount) {
-                Log::warning('Rounding difference detected but Round Off account (5271) not found. Skipping reversing journal entry for GRN: '.$grn->id);
-
-                return null;
-            }
-
-            if ($actualInventoryValue <= 0) {
-                Log::warning('GRN actual inventory value is zero or negative. Skipping reversing journal entry for GRN: '.$grn->id);
-
-                return null;
-            }
-
-            // Build detailed description
-            $userName = auth()->user()->name ?? 'System';
-            $description = "REVERSAL: GRN {$grn->grn_number} - Goods returned to {$grn->supplier->supplier_name} (Password confirmed by: {$userName})";
-            $itemCount = $grn->items->count();
-            $itemsText = $itemCount === 1 ? '1 item' : "{$itemCount} items";
-
-            // Prepare reversing journal entry lines (opposite of posting entries)
-            $journalLines = [];
-            $lineNo = 1;
-
-            // Dr. Accounts Payable - reverse the credit
-            $journalLines[] = [
-                'line_no' => $lineNo++,
-                'account_id' => $apAccount->id,
-                'debit' => $creditorAmount,
-                'credit' => 0,
-                'description' => "Reversal - Liability to {$grn->supplier->supplier_name} reduced ({$itemsText})",
-                'cost_center_id' => $warehouseCostCenter->id,
-            ];
-
-            // Dr. FMR Allowance Liquid (if any) - reverse the credit
-            if ($fmrAllowanceLiquid > 0) {
-                $journalLines[] = [
-                    'line_no' => $lineNo++,
-                    'account_id' => $fmrAllowanceLiquidAccount->id,
-                    'debit' => $fmrAllowanceLiquid,
-                    'credit' => 0,
-                    'description' => 'Reversal - FMR allowance (Liquid)',
-                    'cost_center_id' => $warehouseCostCenter->id,
-                ];
-            }
-
-            // Dr. FMR Allowance Powder (if any) - reverse the credit
-            if ($fmrAllowancePowder > 0) {
-                $journalLines[] = [
-                    'line_no' => $lineNo++,
-                    'account_id' => $fmrAllowancePowderAccount->id,
-                    'debit' => $fmrAllowancePowder,
-                    'credit' => 0,
-                    'description' => 'Reversal - FMR allowance (Powder)',
-                    'cost_center_id' => $warehouseCostCenter->id,
-                ];
-            }
-
-            // Cr. Inventory (actual cost: quantity × unit_cost) - reverse the debit
-            $journalLines[] = [
-                'line_no' => $lineNo++,
-                'account_id' => $inventoryAccount->id,
-                'debit' => 0,
-                'credit' => $actualInventoryValue,
-                'description' => "Reversal - Inventory returned to supplier ({$itemsText})",
-                'cost_center_id' => $warehouseCostCenter->id,
-            ];
-
-            // Cr/Dr. Round Off (if there was a rounding difference) - reverse the posting
-            if (abs($roundingDifference) > 0.001 && $roundOffAccount) {
-                $journalLines[] = [
-                    'line_no' => $lineNo++,
-                    'account_id' => $roundOffAccount->id,
-                    'debit' => $roundingDifference < 0 ? abs($roundingDifference) : 0,
-                    'credit' => $roundingDifference > 0 ? $roundingDifference : 0,
-                    'description' => 'Reversal - Rounding adjustment',
-                    'cost_center_id' => $warehouseCostCenter->id,
-                ];
-            }
-
-            // Prepare reversing journal entry data
-            $journalEntryData = [
-                'entry_date' => now()->toDateString(),
-                'reference' => $grn->supplier_invoice_number ?? $grn->grn_number,
-                'description' => $description,
-                'lines' => $journalLines,
-                'auto_post' => true, // Automatically post the entry
-            ];
-
-            // Create journal entry using AccountingService
-            $accountingService = app(AccountingService::class);
-            $result = $accountingService->createJournalEntry($journalEntryData);
-
-            if ($result['success']) {
-                Log::info("Reversing journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->id} | Inventory: {$actualInventoryValue} | Rounding: {$roundingDifference} | GST: {$totalGst} | Advance Tax: {$totalAdvanceTax} | Excise: {$totalExciseDuty} | FMR: {$totalFmrAllowance} | Creditors: {$creditorAmount}");
-
-                return $result['data'];
-            } else {
-                Log::error("Failed to create reversing journal entry for GRN {$grn->grn_number}: ".$result['message']);
-
-                return null;
-            }
-
-        } catch (\Exception $e) {
-            Log::error("Exception creating reversing journal entry for GRN {$grn->id}: ".$e->getMessage());
-
-            return null;
+            throw new \RuntimeException(
+                "{$grn->grn_number} has no journal entry of its own, so its value reached the general ledger another way "
+                .'(e.g. through the supplier Ledger Register). Reverse it there first; reversing only the stock would leave the ledger out of step.'
+            );
         }
+
+        $userName = auth()->user()->name ?? 'System';
+        $grn->loadMissing('supplier');
+
+        $result = app(AccountingService::class)->reverseJournalEntry(
+            (int) $grn->journal_entry_id,
+            "REVERSAL: GRN {$grn->grn_number} - Goods returned to {$grn->supplier->supplier_name} (Password confirmed by: {$userName})"
+        );
+
+        if (! $result['success']) {
+            throw new \RuntimeException($result['message']);
+        }
+
+        // A GRN posted before Stock Received But Not Billed existed credited Creditors, and
+        // accounting:repost-supplier-invoices moved that credit across with a second entry.
+        // Undo that one too, or the reversal would leave Creditors and 2142 apart.
+        $reclassEntryId = JournalEntry::where('reference', self::grnReclassReference($grn))
+            ->where('status', 'posted')
+            ->value('id');
+
+        if ($reclassEntryId) {
+            $reclassReversal = app(AccountingService::class)->reverseJournalEntry(
+                (int) $reclassEntryId,
+                "REVERSAL: GRN {$grn->grn_number} - Stock Received But Not Billed reclassification"
+            );
+
+            if (! $reclassReversal['success']) {
+                throw new \RuntimeException($reclassReversal['message']);
+            }
+        }
+
+        Log::info("Reversing journal entry created for GRN {$grn->grn_number}: JE #{$result['data']->id} mirrors JE #{$grn->journal_entry_id}");
+
+        return $result['data'];
     }
 
     /**
@@ -830,40 +763,64 @@ class InventoryService
                 throw new \Exception('No stock movements found for this GRN');
             }
 
-            foreach ($movements as $movement) {
-                // Create reversing movement
+            // A GRN can carry more than one 'grn' movement per batch (edit-special
+            // corrections post the difference), so reverse the net received quantity.
+            $receipts = $movements
+                ->groupBy(fn (StockMovement $movement) => $movement->stock_batch_id.'|'.$movement->warehouse_id)
+                ->map(function ($batchMovements) {
+                    $first = $batchMovements->first();
+                    $quantity = (float) $batchMovements->sum('quantity');
+
+                    return (object) [
+                        'product_id' => (int) $first->product_id,
+                        'stock_batch_id' => (int) $first->stock_batch_id,
+                        'warehouse_id' => (int) $first->warehouse_id,
+                        'uom_id' => $first->uom_id,
+                        'quantity' => $quantity,
+                        'unit_cost' => $quantity > 0
+                            ? (float) $batchMovements->sum(fn ($movement) => (float) $movement->quantity * (float) $movement->unit_cost) / $quantity
+                            : (float) $first->unit_cost,
+                    ];
+                })
+                ->filter(fn ($receipt) => $receipt->quantity > StockValuationService::QTY_EPSILON)
+                ->values();
+
+            $this->assertGrnStockStillOnHand($grn, $receipts);
+
+            $stockValuation = app(StockValuationService::class);
+            $ledgerService = app(InventoryLedgerService::class);
+            $reversalDate = now()->toDateString();
+
+            foreach ($receipts as $receipt) {
                 $reversingMovement = StockMovement::create([
                     'movement_type' => 'adjustment',
                     'reference_type' => 'GRN Reversal',
                     'reference_id' => $grn->id,
-                    'movement_date' => now()->toDateString(),
-                    'product_id' => $movement->product_id,
-                    'stock_batch_id' => $movement->stock_batch_id,
-                    'warehouse_id' => $movement->warehouse_id,
-                    'quantity' => -$movement->quantity,
-                    'uom_id' => $movement->uom_id,
-                    'unit_cost' => $movement->unit_cost,
-                    'total_value' => round(abs((float) $movement->quantity) * (float) $movement->unit_cost, 4),
+                    'movement_date' => $reversalDate,
+                    'product_id' => $receipt->product_id,
+                    'stock_batch_id' => $receipt->stock_batch_id,
+                    'warehouse_id' => $receipt->warehouse_id,
+                    'quantity' => -$receipt->quantity,
+                    'uom_id' => $receipt->uom_id,
+                    'unit_cost' => $receipt->unit_cost,
+                    'total_value' => round($receipt->quantity * $receipt->unit_cost, 4),
                     'created_by' => auth()->id(),
                 ]);
 
-                // Create reversing ledger entry
-                $previousBalance = StockLedgerEntry::where('product_id', $movement->product_id)
-                    ->where('warehouse_id', $movement->warehouse_id)
+                $previousBalance = StockLedgerEntry::where('product_id', $receipt->product_id)
+                    ->where('warehouse_id', $receipt->warehouse_id)
                     ->orderBy('id', 'desc')
                     ->first();
 
-                $quantityBalance = ($previousBalance->quantity_balance ?? 0) - $movement->quantity;
-
                 StockLedgerEntry::create([
-                    'product_id' => $movement->product_id,
-                    'warehouse_id' => $movement->warehouse_id,
-                    'stock_batch_id' => $movement->stock_batch_id,
-                    'entry_date' => now()->toDateString(),
+                    'product_id' => $receipt->product_id,
+                    'warehouse_id' => $receipt->warehouse_id,
+                    'stock_batch_id' => $receipt->stock_batch_id,
+                    'entry_date' => $reversalDate,
                     'stock_movement_id' => $reversingMovement->id,
                     'quantity_in' => 0,
-                    'quantity_out' => $movement->quantity,
-                    'quantity_balance' => $quantityBalance,
+                    'quantity_out' => $receipt->quantity,
+                    'quantity_balance' => ($previousBalance->quantity_balance ?? 0) - $receipt->quantity,
                     'valuation_rate' => 0,
                     'stock_value' => 0,
                     'reference_type' => 'reversal',
@@ -871,76 +828,41 @@ class InventoryService
                     'created_at' => now(),
                 ]);
 
-                // Update or create reversing valuation layer
-                $this->createReversingValuationLayer(
-                    $movement->product_id,
-                    $movement->warehouse_id,
-                    $movement->quantity,
-                    $movement->stock_batch_id
+                $stockValuation->consumeBatch($receipt->stock_batch_id, $receipt->warehouse_id, $receipt->quantity);
+
+                $stockByBatch = CurrentStockByBatch::where('stock_batch_id', $receipt->stock_batch_id)
+                    ->where('warehouse_id', $receipt->warehouse_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                $stockByBatch->quantity_on_hand = (float) $stockByBatch->quantity_on_hand - $receipt->quantity;
+                if ($stockByBatch->quantity_on_hand <= StockValuationService::QTY_EPSILON) {
+                    $stockByBatch->quantity_on_hand = 0;
+                    $stockByBatch->total_value = 0.0;
+                    $stockByBatch->status = 'depleted';
+                } else {
+                    $stockByBatch->total_value = round((float) $stockByBatch->quantity_on_hand * (float) $stockByBatch->unit_cost, 2);
+                }
+                $stockByBatch->last_updated = now();
+                $stockByBatch->save();
+
+                if (CurrentStockByBatch::where('stock_batch_id', $receipt->stock_batch_id)->sum('quantity_on_hand') <= 0) {
+                    StockBatch::whereKey($receipt->stock_batch_id)->update(['status' => 'depleted']);
+                }
+
+                $this->syncCurrentStockFromValuationLayers($receipt->product_id, $receipt->warehouse_id);
+
+                $ledgerService->recordAdjustment(
+                    $receipt->product_id,
+                    $receipt->warehouse_id,
+                    null,
+                    0,
+                    $receipt->quantity,
+                    $receipt->unit_cost,
+                    $reversalDate,
+                    "GRN {$grn->grn_number} reversed",
+                    $receipt->stock_batch_id
                 );
-
-                // Update batch status if needed (no quantity_on_hand in stock_batches)
-                $batch = StockBatch::find($movement->stock_batch_id);
-                if ($batch) {
-                    // Check if batch is depleted by looking at current_stock_by_batch
-                    $remainingQty = CurrentStockByBatch::where('stock_batch_id', $batch->id)
-                        ->sum('quantity_on_hand');
-
-                    if ($remainingQty <= 0) {
-                        $batch->status = 'depleted';
-                        $batch->save();
-                    }
-                }
-
-                // Update current stock by batch
-                $stockByBatch = CurrentStockByBatch::where('product_id', $movement->product_id)
-                    ->where('warehouse_id', $movement->warehouse_id)
-                    ->where('stock_batch_id', $movement->stock_batch_id)
-                    ->first();
-
-                if ($stockByBatch) {
-                    $qtyBefore = (float) $stockByBatch->quantity_on_hand;
-                    $stockByBatch->quantity_on_hand -= $movement->quantity;
-                    if ($stockByBatch->quantity_on_hand <= 0) {
-                        $stockByBatch->quantity_on_hand = 0;
-                        $stockByBatch->total_value = 0.0;
-                        $stockByBatch->status = 'depleted';
-                    } else {
-                        $ratio = $qtyBefore > 0 ? $stockByBatch->quantity_on_hand / $qtyBefore : 0;
-                        $stockByBatch->total_value = round((float) $stockByBatch->total_value * $ratio, 4);
-                    }
-                    $stockByBatch->last_updated = now();
-                    $stockByBatch->save();
-                }
-
-                // Update current stock summary
-                $currentStock = CurrentStock::where('product_id', $movement->product_id)
-                    ->where('warehouse_id', $movement->warehouse_id)
-                    ->first();
-
-                if ($currentStock) {
-                    $currentStock->quantity_on_hand -= $movement->quantity;
-                    $currentStock->quantity_available -= $movement->quantity;
-                    if ($currentStock->quantity_on_hand < 0) {
-                        $currentStock->quantity_on_hand = 0;
-                    }
-                    if ($currentStock->quantity_available < 0) {
-                        $currentStock->quantity_available = 0;
-                    }
-
-                    // Recalculate totals
-                    $allBatches = CurrentStockByBatch::where('product_id', $movement->product_id)
-                        ->where('warehouse_id', $movement->warehouse_id)
-                        ->get();
-
-                    $totalValue = $allBatches->sum('total_value');
-                    $totalQty = $allBatches->sum('quantity_on_hand');
-
-                    $currentStock->total_value = $totalValue;
-                    $currentStock->average_cost = $totalQty > 0 ? round($totalValue / $totalQty, 6) : 0;
-                    $currentStock->last_updated = now();
-                    $currentStock->save();
-                }
             }
 
             // Update GRN status
@@ -975,31 +897,43 @@ class InventoryService
     }
 
     /**
-     * Create reversing valuation layer
+     * A GRN can only be sent back while everything it received is still in its
+     * batch. Once part of it has been issued, sold or adjusted, reversing the
+     * whole receipt would take the batch below zero: current_stock_by_batch used
+     * to clamp at zero while the ledger went negative, and the GL credited the
+     * full receipt for stock that was no longer there.
+     *
+     * @param  Collection<int, object{product_id: int, stock_batch_id: int, warehouse_id: int, quantity: float}>  $receipts
+     *
+     * @throws \RuntimeException naming each batch that is short
      */
-    protected function createReversingValuationLayer($productId, $warehouseId, $quantity, $batchId)
+    protected function assertGrnStockStillOnHand(GoodsReceiptNote $grn, Collection $receipts): void
     {
-        // Find the most recent valuation layer for this batch
-        $layer = StockValuationLayer::where('product_id', $productId)
-            ->where('warehouse_id', $warehouseId)
-            ->where('stock_batch_id', $batchId)
-            ->where('quantity_remaining', '>', 0)
-            ->orderBy('created_at', 'desc')
-            ->first();
+        $shortfalls = [];
 
-        if ($layer) {
-            $qtyBefore = (float) $layer->quantity_remaining;
-            $layer->quantity_remaining -= $quantity;
-            if ($layer->quantity_remaining <= 0) {
-                $layer->quantity_remaining = 0;
-                $layer->total_value = 0.0;
-                $layer->value_remaining = 0.0;
-            } else {
-                $ratio = $qtyBefore > 0 ? $layer->quantity_remaining / $qtyBefore : 0;
-                $layer->total_value = round((float) $layer->total_value * $ratio, 4);
-                $layer->value_remaining = round($layer->quantity_remaining * (float) $layer->unit_cost, 4);
+        foreach ($receipts as $receipt) {
+            $onHand = (float) CurrentStockByBatch::where('stock_batch_id', $receipt->stock_batch_id)
+                ->where('warehouse_id', $receipt->warehouse_id)
+                ->lockForUpdate()
+                ->value('quantity_on_hand');
+
+            if ($onHand + StockValuationService::QTY_EPSILON < $receipt->quantity) {
+                $batchCode = StockBatch::whereKey($receipt->stock_batch_id)->value('batch_code') ?? "#{$receipt->stock_batch_id}";
+                $shortfalls[] = sprintf('batch %s has %s of the %s received', $batchCode, $this->formatQuantity($onHand), $this->formatQuantity($receipt->quantity));
             }
-            $layer->save();
         }
+
+        if ($shortfalls !== []) {
+            throw new \RuntimeException(
+                "Stock from {$grn->grn_number} has already been issued, sold or adjusted ("
+                .implode('; ', $shortfalls)
+                .'). Return the remaining stock to the supplier with a stock adjustment instead.'
+            );
+        }
+    }
+
+    private function formatQuantity(float $quantity): string
+    {
+        return rtrim(rtrim(number_format($quantity, 3, '.', ''), '0'), '.');
     }
 }

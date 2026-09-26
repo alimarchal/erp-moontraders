@@ -5,9 +5,14 @@ use App\Models\AccountType;
 use App\Models\ChartOfAccount;
 use App\Models\CostCenter;
 use App\Models\Currency;
+use App\Models\CurrentStock;
+use App\Models\CurrentStockByBatch;
 use App\Models\GoodsReceiptNote;
+use App\Models\InventoryLedgerEntry;
 use App\Models\JournalEntry;
 use App\Models\Product;
+use App\Models\StockMovement;
+use App\Models\StockValuationLayer;
 use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
@@ -84,6 +89,16 @@ beforeEach(function () {
         'currency_id' => $currency->id,
         'account_code' => '2111',
         'account_name' => 'Creditors',
+        'normal_balance' => 'credit',
+        'is_active' => true,
+    ]);
+
+    // A GRN credits this; the supplier's invoice in the ledger register clears it into Creditors.
+    $this->receivedNotBilledAccount = ChartOfAccount::create([
+        'account_type_id' => $liabilityType->id,
+        'currency_id' => $currency->id,
+        'account_code' => '2142',
+        'account_name' => 'Stock Received But Not Billed',
         'normal_balance' => 'credit',
         'is_active' => true,
     ]);
@@ -197,7 +212,7 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
     // Verify journal entry details
     $details = $journalEntry->details;
 
-    // Should have 4 lines: Inventory Dr, Round Off Dr, FMR Allowance Cr, Creditors Cr
+    // Should have 4 lines: Inventory Dr, Round Off Dr, FMR Allowance Cr, Stock Received But Not Billed Cr
     // (GST and advance tax are included in invoice value, difference goes to Round Off)
     expect($details)->toHaveCount(4);
 
@@ -216,8 +231,8 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
     expect((float) $fmrLine->debit)->toBe(0.00);
     expect((float) $fmrLine->credit)->toBe(300.00);
 
-    // Cr. Creditors (11302 - 300 = 11002)
-    $creditorsLine = $details->where('chart_of_account_id', $this->creditorsAccount->id)->first();
+    // Cr. Stock Received But Not Billed (11302 - 300 = 11002)
+    $creditorsLine = $details->where('chart_of_account_id', $this->receivedNotBilledAccount->id)->first();
     expect((float) $creditorsLine->debit)->toBe(0.00);
     expect((float) $creditorsLine->credit)->toBe(11002.00);
 
@@ -229,8 +244,8 @@ it('creates journal entry with all accounts when posting GRN with taxes and allo
 });
 
 it('refuses to post a GRN when the journal entry cannot be written', function () {
-    // The Creditors account the GRN credits is gone.
-    $this->creditorsAccount->delete();
+    // The Stock Received But Not Billed account the GRN credits is gone.
+    $this->receivedNotBilledAccount->delete();
 
     $grn = GoodsReceiptNote::factory()->create([
         'supplier_id' => $this->supplier->id,
@@ -259,7 +274,7 @@ it('refuses to post a GRN when the journal entry cannot be written', function ()
     // Posting used to save the GRN with journal_entry_id = null and only a line
     // in the log, so stock moved with no entry in the general ledger.
     expect($result['success'])->toBeFalse()
-        ->and($result['message'])->toContain('2111')
+        ->and($result['message'])->toContain('2142')
         ->and($grn->fresh()->status)->toBe('draft');
 
     expect(DB::table('stock_movements')->where('reference_id', $grn->id)->count())->toBe(0)
@@ -304,7 +319,7 @@ it('creates journal entry with only inventory and creditors when no taxes or all
     $journalEntry = JournalEntry::find($grn->fresh()->journal_entry_id);
     $details = $journalEntry->details;
 
-    // Should have only 2 lines: Inventory Dr, Creditors Cr
+    // Should have only 2 lines: Inventory Dr, Stock Received But Not Billed Cr
     expect($details)->toHaveCount(2);
 
     // Dr. Inventory (10000)
@@ -312,8 +327,8 @@ it('creates journal entry with only inventory and creditors when no taxes or all
     expect((float) $inventoryLine->debit)->toBe(10000.00);
     expect((float) $inventoryLine->credit)->toBe(0.00);
 
-    // Cr. Creditors (10000)
-    $creditorsLine = $details->where('chart_of_account_id', $this->creditorsAccount->id)->first();
+    // Cr. Stock Received But Not Billed (10000)
+    $creditorsLine = $details->where('chart_of_account_id', $this->receivedNotBilledAccount->id)->first();
     expect((float) $creditorsLine->debit)->toBe(0.00);
     expect((float) $creditorsLine->credit)->toBe(10000.00);
 });
@@ -373,11 +388,11 @@ it('creates correct reversing journal entry when GRN is reversed', function () {
     $details = $reversingEntry->details;
 
     // Should have 4 lines (opposite of posting):
-    // Dr. Creditors, Dr. FMR, Cr. Inventory, Cr. Round Off
+    // Dr. Stock Received But Not Billed, Dr. FMR, Cr. Inventory, Cr. Round Off
     expect($details)->toHaveCount(4);
 
-    // Dr. Creditors (11002 - reverse the credit)
-    $creditorsLine = $details->where('chart_of_account_id', $this->creditorsAccount->id)->first();
+    // Dr. Stock Received But Not Billed (11002 - reverse the credit)
+    $creditorsLine = $details->where('chart_of_account_id', $this->receivedNotBilledAccount->id)->first();
     expect((float) $creditorsLine->debit)->toBe(11002.00);
     expect((float) $creditorsLine->credit)->toBe(0.00);
 
@@ -443,8 +458,8 @@ it('correctly handles discount reducing inventory value', function () {
     $inventoryLine = $details->where('chart_of_account_id', $this->inventoryAccount->id)->first();
     expect((float) $inventoryLine->debit)->toBe(9000.00);
 
-    // Cr. Creditors should also be 9000 (no taxes)
-    $creditorsLine = $details->where('chart_of_account_id', $this->creditorsAccount->id)->first();
+    // Cr. Stock Received But Not Billed should also be 9000 (no taxes)
+    $creditorsLine = $details->where('chart_of_account_id', $this->receivedNotBilledAccount->id)->first();
     expect((float) $creditorsLine->credit)->toBe(9000.00);
 });
 
@@ -551,7 +566,7 @@ it('posts inventory at actual cost (qty × unit_cost) with rounding difference t
     $journalEntry = JournalEntry::find($grn->fresh()->journal_entry_id);
     $details = $journalEntry->details;
 
-    // Should have 3 lines: Inventory Dr, Round Off Dr, Creditors Cr
+    // Should have 3 lines: Inventory Dr, Round Off Dr, Stock Received But Not Billed Cr
     expect($details)->toHaveCount(3);
 
     // Dr. Inventory should be ACTUAL cost (11186), not accounting value (11200)
@@ -564,8 +579,8 @@ it('posts inventory at actual cost (qty × unit_cost) with rounding difference t
     expect((float) $roundOffLine->debit)->toBe(14.00);
     expect((float) $roundOffLine->credit)->toBe(0.00);
 
-    // Cr. Creditors should be full accounting value (11200)
-    $creditorsLine = $details->where('chart_of_account_id', $this->creditorsAccount->id)->first();
+    // Cr. Stock Received But Not Billed should be full accounting value (11200)
+    $creditorsLine = $details->where('chart_of_account_id', $this->receivedNotBilledAccount->id)->first();
     expect((float) $creditorsLine->debit)->toBe(0.00);
     expect((float) $creditorsLine->credit)->toBe(11200.00);
 
@@ -617,7 +632,7 @@ it('handles negative rounding difference (actual > accounting) by crediting Roun
     $journalEntry = JournalEntry::find($grn->fresh()->journal_entry_id);
     $details = $journalEntry->details;
 
-    // Should have 3 lines: Inventory Dr, Round Off Cr, Creditors Cr
+    // Should have 3 lines: Inventory Dr, Round Off Cr, Stock Received But Not Billed Cr
     expect($details)->toHaveCount(3);
 
     // Dr. Inventory should be ACTUAL cost (11210)
@@ -629,8 +644,8 @@ it('handles negative rounding difference (actual > accounting) by crediting Roun
     expect((float) $roundOffLine->debit)->toBe(0.00);
     expect((float) $roundOffLine->credit)->toBe(10.00);
 
-    // Cr. Creditors = 11200
-    $creditorsLine = $details->where('chart_of_account_id', $this->creditorsAccount->id)->first();
+    // Cr. Stock Received But Not Billed = 11200
+    $creditorsLine = $details->where('chart_of_account_id', $this->receivedNotBilledAccount->id)->first();
     expect((float) $creditorsLine->credit)->toBe(11200.00);
 
     // Verify books balanced
@@ -717,7 +732,7 @@ it('splits FMR allowance between liquid and powder accounts based on product typ
     expect((float) $powderFmrLine->credit)->toBe(250.00);
 
     // Verify total creditors (3000 - 350 = 2650)
-    $creditorsLine = $details->where('chart_of_account_id', $this->creditorsAccount->id)->first();
+    $creditorsLine = $details->where('chart_of_account_id', $this->receivedNotBilledAccount->id)->first();
     expect((float) $creditorsLine->credit)->toBe(2650.00);
 });
 
@@ -795,4 +810,102 @@ it('leaves the books balanced across every posted entry', function () {
         ->first();
 
     expect((float) $books->debits)->toBe((float) $books->credits);
+});
+
+function postReversibleGrn(object $test): GoodsReceiptNote
+{
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $test->supplier->id,
+        'warehouse_id' => $test->warehouse->id,
+        'status' => 'draft',
+        'receipt_date' => now(),
+    ]);
+
+    $grn->items()->create([
+        'line_no' => 1,
+        'product_id' => $test->product->id,
+        'stock_uom_id' => $test->uom->id,
+        'purchase_uom_id' => $test->uom->id,
+        'qty_in_purchase_uom' => 100,
+        'uom_conversion_factor' => 1,
+        'qty_in_stock_uom' => 100,
+        'extended_value' => 9200,
+        'discount_value' => 0,
+        'fmr_allowance' => 0,
+        'sales_tax_value' => 0,
+        'advance_income_tax' => 0,
+        'quantity_received' => 100,
+        'quantity_accepted' => 100,
+        'unit_cost' => 92,
+        'total_cost' => 9200,
+    ]);
+
+    expect(app(InventoryService::class)->postGrnToInventory($grn->fresh())['success'])->toBeTrue();
+
+    return $grn->fresh();
+}
+
+it('takes a reversed GRN out of every stock record together', function () {
+    $grn = postReversibleGrn($this);
+
+    $result = app(InventoryService::class)->reverseGrnInventory($grn);
+
+    expect($result['success'])->toBeTrue();
+
+    $productId = $this->product->id;
+    $warehouseId = $this->warehouse->id;
+
+    expect((float) StockMovement::where('product_id', $productId)->where('warehouse_id', $warehouseId)->sum('quantity'))->toBe(0.0)
+        ->and((float) CurrentStockByBatch::where('product_id', $productId)->sum('quantity_on_hand'))->toBe(0.0)
+        ->and((float) StockValuationLayer::where('product_id', $productId)->sum('quantity_remaining'))->toBe(0.0)
+        ->and((float) CurrentStock::where('product_id', $productId)->value('quantity_on_hand'))->toBe(0.0)
+        ->and((float) CurrentStock::where('product_id', $productId)->value('total_value'))->toBe(0.0);
+
+    $ledger = InventoryLedgerEntry::where('product_id', $productId)->where('warehouse_id', $warehouseId);
+    expect((float) $ledger->sum('debit_qty') - (float) $ledger->sum('credit_qty'))->toBe(0.0);
+
+    $this->artisan('inventory:verify-consistency')->assertSuccessful();
+});
+
+it('refuses to reverse a GRN whose stock has already left the batch', function () {
+    $grn = postReversibleGrn($this);
+
+    // 30 of the 100 received have gone out on a goods issue.
+    CurrentStockByBatch::where('product_id', $this->product->id)->update(['quantity_on_hand' => 70]);
+
+    $result = app(InventoryService::class)->reverseGrnInventory($grn);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('already been issued')
+        ->and($grn->fresh()->status)->toBe('posted')
+        ->and(StockMovement::where('reference_type', 'GRN Reversal')->exists())->toBeFalse()
+        ->and(JournalEntry::where('description', 'like', 'REVERSAL%')->exists())->toBeFalse();
+});
+
+it('reverses exactly the journal entry the GRN posted', function () {
+    $grn = postReversibleGrn($this);
+
+    app(InventoryService::class)->reverseGrnInventory($grn);
+
+    $posted = JournalEntry::find($grn->journal_entry_id)->details;
+    $reversal = JournalEntry::where('description', 'like', 'REVERSAL%')->firstOrFail()->details;
+
+    foreach ($posted as $line) {
+        $mirror = $reversal->firstWhere('chart_of_account_id', $line->chart_of_account_id);
+
+        expect((float) $mirror->debit)->toBe((float) $line->credit)
+            ->and((float) $mirror->credit)->toBe((float) $line->debit);
+    }
+});
+
+it('refuses to reverse a GRN that has value but no journal entry of its own', function () {
+    $grn = postReversibleGrn($this);
+    DB::table('goods_receipt_notes')->where('id', $grn->id)->update(['journal_entry_id' => null]);
+
+    $result = app(InventoryService::class)->reverseGrnInventory($grn->fresh());
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('no journal entry of its own')
+        ->and($grn->fresh()->status)->toBe('posted')
+        ->and((float) CurrentStockByBatch::where('product_id', $this->product->id)->sum('quantity_on_hand'))->toBe(100.0);
 });

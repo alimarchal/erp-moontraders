@@ -40,6 +40,9 @@
         'draftJournalEntries' => ['Draft Journal Entries', 'journal-entries.index'],
     ];
     $hasAnySection = collect($sections)->contains(true);
+    // Card header link to the related report, only when the user may open it.
+    $rl = fn (string $permission, string $route, string $text) => auth()->user()->can($permission) && \Illuminate\Support\Facades\Route::has($route)
+        ? '<a href="'.e(route($route)).'">'.e($text).' →</a>' : '';
     $margin = ($k['totalSalesThisMonth'] ?? 0) > 0 ? round(($k['grossProfitThisMonth'] ?? 0) / $k['totalSalesThisMonth'] * 100, 1) : 0;
 @endphp
 
@@ -100,6 +103,11 @@
         .db-aging-chips button { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--ak-border); border-radius: 999px; background: #fff; font-size: 12px; font-weight: 600; color: var(--ak-text); cursor: pointer; }
         .db-aging-chips button b { color: #b45309; }
         .db-aging-chips button:hover, .db-aging-chips button.is-on { border-color: var(--ak-navy); background: var(--ak-navy-tint); color: var(--ak-navy); }
+        .db-supplier-pick { display: inline-flex; align-items: center; gap: 0; border: 1px solid var(--ak-navy); border-radius: 999px; overflow: hidden; background: #fff; font-size: 12px; font-weight: 600; }
+        .db-supplier-pick span { padding: 5px 10px; background: var(--ak-navy); color: #fff; }
+        .db-supplier-pick select { border: 0; height: 28px; padding: 0 28px 0 10px; font-size: 12.5px; font-weight: 600; color: var(--ak-text); background-color: #fff; }
+        .db-supplier-pick select:focus { outline: none; box-shadow: none; }
+        .db-card-links { display: flex; flex-wrap: wrap; gap: 10px; }
         .db-toc { display: flex; flex-wrap: wrap; gap: 6px; }
         .db-toc a { padding: 4px 10px; border: 1px solid var(--ak-border); border-radius: 999px; background: #fff; font-size: 12px; font-weight: 600; color: var(--ak-text); text-decoration: none; }
         .db-toc a:hover { border-color: var(--ak-navy); color: var(--ak-navy); }
@@ -109,7 +117,20 @@
         {{-- What am I looking at --}}
         <div class="db-scope" style="justify-content:space-between">
             <div class="db-scope">
-                <span class="ak-scope {{ $scope['supplier_id'] ? 'ak-scope-limited' : '' }}" title="Supplier data you can see">Supplier: {{ $scope['supplier'] }}</span>
+                @if ($scope['can_pick_supplier'] && $supplierOptions)
+                    <label class="db-supplier-pick" title="Show the whole dashboard for one supplier">
+                        <span>Supplier</span>
+                        <select onchange="window.location = this.value">
+                            <option value="{{ route('dashboard') }}">All suppliers</option>
+                            @foreach ($supplierOptions as $sid => $sname)
+                                <option value="{{ route('dashboard', ['supplier' => $sid]) }}" @selected($scope['supplier_id'] === $sid)>{{ $sname }}</option>
+                            @endforeach
+                        </select>
+                    </label>
+                    @if ($scope['supplier_id'])<a href="{{ route('dashboard') }}" class="ak-scope" style="text-decoration:none">✕ Clear</a>@endif
+                @else
+                    <span class="ak-scope {{ $scope['supplier_id'] ? 'ak-scope-limited' : '' }}" title="Supplier data you can see">Supplier: {{ $scope['supplier'] }}</span>
+                @endif
                 @if ($sections['sales'])
                     <span class="ak-scope {{ $scope['own_settlements'] ? 'ak-scope-limited' : '' }}">Settlements: {{ $ownNote($scope['own_settlements']) }}</span>
                 @endif
@@ -155,7 +176,15 @@
         {{-- ============================== Key figures (top) ============================== --}}
         @php
             $owedTop = isset($k['outstandingPayables']) ? (float) $k['outstandingPayables'] : null;
-            $creditUrl = auth()->user()->can('report-audit-creditors-ledger') ? route('reports.creditors-ledger.index', array_filter(['filter' => array_filter(['supplier_id' => $scope['supplier_id']])])) : null;
+            $canCreditors = auth()->user()->can('report-audit-creditors-ledger');
+            $creditUrl = $canCreditors ? route('reports.creditors-ledger.index', ['filter' => array_filter(['supplier_id' => $scope['supplier_id'], 'has_balance' => 'yes'])]) : null;
+            // Customer statement; with a salesman id it opens only that salesman's account for the customer.
+            $customerStatement = fn (int $id, ?int $employeeId = null) => $canCreditors
+                ? route('reports.creditors-ledger.customer-ledger', array_filter(['customer' => $id, 'filter' => $employeeId ? ['employee_id' => $employeeId] : null]))
+                : null;
+            $agingReportUrl = $canCreditors ? route('reports.creditors-ledger.aging-report', array_filter(['filter' => array_filter(['supplier_id' => $scope['supplier_id']])])) : null;
+            $salesmanCreditorsUrl = $canCreditors ? route('reports.creditors-ledger.salesman-creditors', array_filter(['filter' => array_filter(['supplier_id' => $scope['supplier_id']])])) : null;
+            $creditHistoryUrl = auth()->user()->can('report-sales-credit-sales') ? route('reports.credit-sales.salesman-history') : null;
         @endphp
         @if (isset($k['marketCredit']) || isset($k['totalInventoryValue']) || isset($k['totalSalesThisMonth']) || $owedTop !== null)
             <section aria-label="Key figures">
@@ -284,22 +313,22 @@
                     </div>
                 </div>
                 <div class="ak-kpis">
-                    <div class="ak-kpi" title="{{ $full($k['marketCredit'] ?? 0) }}">
+                    <a href="{{ $creditUrl ?? '#db-credit' }}" class="ak-kpi" title="{{ $full($k['marketCredit'] ?? 0) }}">
                         <span class="ak-kpi-icon ak-tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 0 0 2.25-2.25V6.75A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25v10.5A2.25 2.25 0 0 0 4.5 19.5Z" /></svg></span>
                         <span class="ak-kpi-body">
                             <span class="ak-kpi-label">Outstanding credit</span>
                             <span class="ak-kpi-value">Rs {{ $rs($k['marketCredit'] ?? 0) }}</span>
-                            <span class="ak-kpi-hint">{{ $n($k['creditCustomers'] ?? 0) }} customers owe</span>
+                            <span class="ak-kpi-hint">{{ $n($k['creditCustomers'] ?? 0) }} customers owe{{ $creditUrl ? ' · ledger →' : '' }}</span>
                         </span>
-                    </div>
-                    <div class="ak-kpi" title="{{ $full($k['creditGivenThisMonth'] ?? 0) }}">
+                    </a>
+                    <a href="{{ $creditHistoryUrl ?? '#db-credit' }}" class="ak-kpi" title="{{ $full($k['creditGivenThisMonth'] ?? 0) }}">
                         <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
                         <span class="ak-kpi-body">
                             <span class="ak-kpi-label">Credit given this month</span>
                             <span class="ak-kpi-value">Rs {{ $rs($k['creditGivenThisMonth'] ?? 0) }}</span>
-                            <span class="ak-kpi-hint">new credit sales</span>
+                            <span class="ak-kpi-hint">new credit sales{{ $creditHistoryUrl ? ' · by salesman →' : '' }}</span>
                         </span>
-                    </div>
+                    </a>
                     <div class="ak-kpi" title="{{ $full($k['creditRecoveredThisMonth'] ?? 0) }}">
                         <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
                         <span class="ak-kpi-body">
@@ -322,7 +351,7 @@
                 <div class="db-grid db-even">
                     @if ($scope['supplier_id'] === null)
                         <div class="db-card">
-                            <div class="db-card-head"><div><h3>Credit by company</h3><p class="db-card-sub">Outstanding now, per supplier</p></div></div>
+                            <div class="db-card-head"><div><h3>Credit by company</h3><p class="db-card-sub">Outstanding now, per supplier{{ $canCreditors ? ' · click a bar for its customers' : '' }}</p></div>@if ($creditUrl)<a href="{{ $creditUrl }}">Creditors ledger →</a>@endif</div>
                             @if (! empty($creditBreakdown['labels']))
                                 <div id="db-credit-breakdown" class="db-chart-sm" role="img" aria-label="Outstanding credit by company"></div>
                             @else
@@ -331,7 +360,8 @@
                         </div>
                     @endif
                     <div class="db-card">
-                        <div class="db-card-head"><div><h3>Credit by salesman</h3><p class="db-card-sub">Outstanding now, top {{ count($creditBySalesman['labels'] ?? []) }}</p></div></div>
+                        <div class="db-card-head"><div><h3>Credit by salesman</h3><p class="db-card-sub">Outstanding now, top {{ count($creditBySalesman['labels'] ?? []) }}{{ $canCreditors ? ' · click a bar for their customers' : '' }}</p></div>
+                            <div class="db-card-links">@if ($salesmanCreditorsUrl)<a href="{{ $salesmanCreditorsUrl }}">Salesman creditors →</a>@endif @if ($creditHistoryUrl)<a href="{{ $creditHistoryUrl }}">Credit history →</a>@endif</div></div>
                         @if (! empty($creditBySalesman['labels']))
                             <div id="db-credit-salesman" class="db-chart-sm" role="img" aria-label="Outstanding credit by salesman"></div>
                         @else
@@ -339,7 +369,7 @@
                         @endif
                     </div>
                     <div class="db-card">
-                        <div class="db-card-head"><div><h3>Credit aging</h3><p class="db-card-sub">Outstanding by days since the customer last paid &middot; click a bar to see the customers</p></div></div>
+                        <div class="db-card-head"><div><h3>Credit aging</h3><p class="db-card-sub">Outstanding by days since the customer last paid &middot; click a bar to see the customers</p></div>@if ($agingReportUrl)<a href="{{ $agingReportUrl }}">Aging report →</a>@endif</div>
                         @if (array_sum($creditAging['values'] ?? []) > 0)
                             <div id="db-credit-aging" class="db-chart-sm" role="img" aria-label="Outstanding credit by age" style="cursor:pointer"></div>
                             <div class="db-aging-chips">
@@ -357,14 +387,15 @@
                     </div>
                     <div class="db-card"{!! $scope['supplier_id'] === null ? '' : ' style="grid-column: 1 / -1"' !!}>
                         <div class="db-card-head">
-                            <div><h3>Top creditors</h3><p class="db-card-sub">Customers who owe the most, from their customer accounts</p></div>
+                            <div><h3>Top creditors</h3><p class="db-card-sub">Biggest customer balances, salesman-wise{{ $canCreditors ? ' · click to open that salesman\'s ledger' : '' }}</p></div>
                             @if ($creditUrl)<a href="{{ $creditUrl }}">Creditors ledger →</a>@endif
                         </div>
                         @if ($topCreditCustomers)
                             <ul class="db-list">
                                 @foreach ($topCreditCustomers as $cust)
                                     @php $late = $cust['last_paid_days'] === null || $cust['last_paid_days'] > 60; @endphp
-                                    <li><div class="db-row">
+                                    @php $stmt = $customerStatement($cust['id'], $cust['employee_id']); @endphp
+                                    <li>@if ($stmt)<a href="{{ $stmt }}" class="db-row" title="Open {{ $cust['salesmen'] }}'s ledger for this customer">@else<div class="db-row">@endif
                                         <span style="min-width:0">
                                             <span class="db-l1">{{ $loop->iteration }}. {{ $cust['name'] }}{{ $cust['code'] ? ' ('.$cust['code'].')' : '' }}{{ $cust['city'] ? ' · '.$cust['city'] : '' }}</span>
                                             <span class="db-l2">{{ $scope['supplier_id'] === null && $cust['suppliers'] ? $cust['suppliers'].' · ' : '' }}{{ $cust['salesmen'] ?: '—' }}</span>
@@ -373,7 +404,7 @@
                                             <b title="{{ $full($cust['used']) }}">Rs {{ $rs($cust['used']) }}</b>
                                             <span class="{{ $late ? 'db-down' : '' }}">{{ $cust['last_paid_days'] === null ? 'never paid' : ($cust['last_paid_days'] === 0 ? 'paid today' : 'paid '.$cust['last_paid_days'].' '.\Illuminate\Support\Str::plural('day', $cust['last_paid_days']).' ago') }}</span>
                                         </span>
-                                    </div></li>
+                                    @if ($stmt)</a>@else</div>@endif</li>
                                 @endforeach
                             </ul>
                         @else
@@ -385,17 +416,15 @@
                 {{-- Aging drill-down: opened from the "No payment" card, the aging bars or chips --}}
                 @php
                     $bucketNames = [1 => '31-60 days', 2 => '61-90 days', 3 => 'Over 90 days'];
-                    $custLedger = fn ($code) => route('reports.creditors-ledger.index', ['filter' => array_filter(['customer_code' => $code, 'supplier_id' => $scope['supplier_id']])]);
-                    $canCreditors = auth()->user()->can('report-audit-creditors-ledger');
                 @endphp
                 <div class="db-card" x-ref="agingList" x-show="aging !== null" x-cloak style="margin-top:16px; padding:0; overflow:hidden; scroll-margin-top:16px">
                     <div class="db-card-head" style="padding:16px 18px 8px; flex-wrap:wrap">
                         <div>
                             <h3 x-text="aging === 'late' ? 'No payment for 60+ days' : 'No payment for ' + ({{ \Illuminate\Support\Js::from($bucketNames) }})[aging]"></h3>
-                            <p class="db-card-sub">Customers still owing, biggest first. Days are counted from the last payment (or the credit sale if they never paid).</p>
+                            <p class="db-card-sub">Salesman-wise customer balances, biggest first. Days are counted from the last payment to that salesman (or the credit sale if never paid). Click a customer to open that salesman's ledger.</p>
                         </div>
                         <div class="db-aging-chips" style="margin:0">
-                            <button type="button" @click="aging = 'late'" :class="aging === 'late' && 'is-on'">60+ days <b>{{ $n($k['creditOverdueCustomers'] ?? 0) }}</b></button>
+                            <button type="button" @click="aging = 'late'" :class="aging === 'late' && 'is-on'">60+ days <b>{{ $n(($creditAging['counts'][2] ?? 0) + ($creditAging['counts'][3] ?? 0)) }}</b></button>
                             @foreach ($bucketNames as $i => $label)
                                 <button type="button" @click="aging = {{ $i }}" :class="aging === {{ $i }} && 'is-on'">{{ $label }} <b>{{ $n($creditAging['counts'][$i] ?? 0) }}</b></button>
                             @endforeach
@@ -417,12 +446,12 @@
                                 @foreach ($agingCustomers as $cust)
                                     <tr x-show="inAging({{ $cust['bucket'] }})">
                                         <td data-label="Customer">
-                                            @if ($canCreditors && $cust['code'])
-                                                <a href="{{ $custLedger($cust['code']) }}" class="ak-primary-link">{{ $cust['name'] }}</a>
+                                            @if ($canCreditors)
+                                                <a href="{{ $customerStatement($cust['id'], $cust['employee_id']) }}" class="ak-primary-link" title="Open {{ $cust['salesmen'] }}'s ledger for this customer">{{ $cust['name'] }}</a>
                                             @else
                                                 <span class="ak-strong">{{ $cust['name'] }}</span>
                                             @endif
-                                            <div class="ak-muted">{{ $cust['code'] }}{{ $cust['city'] ? ' · '.$cust['city'] : '' }}</div>
+                                            <div class="ak-muted">{{ $cust['code'] }}{{ $cust['city'] ? ' · '.$cust['city'] : '' }}@if ($canCreditors) · <a href="{{ $customerStatement($cust['id']) }}" title="All salesmen for this customer">full statement</a>@endif</div>
                                         </td>
                                         <td data-label="{{ $scope['supplier_id'] === null ? 'Company · salesman' : 'Salesman' }}">
                                             @if ($scope['supplier_id'] === null)<div>{{ $cust['suppliers'] ?: '—' }}</div>@endif
@@ -439,7 +468,8 @@
                     <p class="ak-muted" style="padding:10px 18px; margin:0">
                         Totals: 31-60 days Rs {{ $rs($creditAging['values'][1] ?? 0) }} &middot; 61-90 days Rs {{ $rs($creditAging['values'][2] ?? 0) }} &middot; over 90 days Rs {{ $rs($creditAging['values'][3] ?? 0) }}
                         @if (count($agingCustomers) >= 300) &middot; showing the 300 biggest @endif
-                        @if ($canCreditors && $creditUrl) &middot; <a href="{{ $creditUrl }}">Full creditors ledger →</a>@endif
+                        @if ($agingReportUrl) &middot; <a href="{{ $agingReportUrl }}">Aging report →</a>@endif
+                        @if ($creditUrl) &middot; <a href="{{ $creditUrl }}">Creditors ledger →</a>@endif
                     </p>
                 </div>
             </section>
@@ -504,11 +534,11 @@
                 @else
                     <div class="db-grid">
                         <div class="db-card">
-                            <div class="db-card-head"><div><h3>Monthly Sales &amp; Profit</h3><p class="db-card-sub">Posted settlements, last 12 months</p></div></div>
+                            <div class="db-card-head"><div><h3>Monthly Sales &amp; Profit</h3><p class="db-card-sub">Posted settlements, last 12 months</p></div>{!! $rl('report-sales-settlement', 'reports.sales-settlement.index', 'Settlement report') !!}</div>
                             <div id="db-sales-monthly" class="db-chart" role="img" aria-label="Monthly sales and gross profit"></div>
                         </div>
                         <div class="db-card">
-                            <div class="db-card-head"><div><h3>How customers paid</h3><p class="db-card-sub">This month's sales: cash, credit and bank transfer</p></div></div>
+                            <div class="db-card-head"><div><h3>How customers paid</h3><p class="db-card-sub">This month's sales: cash, credit and bank transfer</p></div>{!! $rl('report-sales-daily-sales', 'reports.daily-sales.index', 'Daily sales') !!}</div>
                             @if (array_sum($salesByPaymentMethod['values'] ?? []) > 0)
                                 <div id="db-sales-method" class="db-chart" role="img" aria-label="Sales by payment method"></div>
                             @else
@@ -525,7 +555,7 @@
                             <div id="db-sales-daily" class="db-chart-sm" role="img" aria-label="Daily sales, last 30 days"></div>
                         </div>
                         <div class="db-card">
-                            <div class="db-card-head"><div><h3>Top salesmen</h3><p class="db-card-sub">This month by sales</p></div></div>
+                            <div class="db-card-head"><div><h3>Top salesmen</h3><p class="db-card-sub">This month by sales</p></div>{!! $rl('report-sales-daily-sales', 'reports.daily-sales.salesman-wise', 'Salesman-wise') !!}</div>
                             @if (! empty($topSalespersonBySales['labels']))
                                 <div id="db-sales-salesmen" class="db-chart-sm" role="img" aria-label="Top salesmen this month"></div>
                             @else
@@ -536,7 +566,7 @@
 
                     <div class="db-grid">
                         <div class="db-card">
-                            <div class="db-card-head"><div><h3>Best-selling products</h3><p class="db-card-sub">This month, top {{ count($topProductsBySales['labels'] ?? []) }}</p></div></div>
+                            <div class="db-card-head"><div><h3>Best-selling products</h3><p class="db-card-sub">This month, top {{ count($topProductsBySales['labels'] ?? []) }}</p></div>{!! $rl('report-sales-daily-sales', 'reports.daily-sales.product-wise', 'Product-wise') !!}</div>
                             @if (! empty($topProductsBySales['labels']))
                                 <div id="db-sales-products" class="db-chart" role="img" aria-label="Best-selling products this month"></div>
                             @else
@@ -641,7 +671,7 @@
                 </div>
                 @if (! empty($grnVsGoodsIssueTrend['labels']))
                     <div class="db-card" style="margin-top:16px">
-                        <div class="db-card-head"><div><h3>Goods Receipt vs Goods Issue</h3><p class="db-card-sub">Stock in (GRN) and out to vans, last 6 months</p></div></div>
+                        <div class="db-card-head"><div><h3>Goods Receipt vs Goods Issue</h3><p class="db-card-sub">Stock in (GRN) and out to vans, last 6 months</p></div>{!! $rl('report-sales-goods-issue', 'reports.goods-issue.index', 'Goods issue report') !!}</div>
                         <div id="db-dist-flow" class="db-chart-sm" role="img" aria-label="Goods received vs goods issued per month"></div>
                     </div>
                 @endif
@@ -827,7 +857,7 @@
 
                 <div class="db-grid">
                     <div class="db-card">
-                        <div class="db-card-head"><div><h3>Top products by stock value</h3><p class="db-card-sub">Where the money sits</p></div></div>
+                        <div class="db-card-head"><div><h3>Top products by stock value</h3><p class="db-card-sub">Where the money sits</p></div>{!! $rl('report-audit-stock-availability', 'reports.stock-availability.index', 'Stock availability') !!}</div>
                         @if (! empty($topProductsByStockValue['labels']))
                             <div id="db-inv-products" class="db-chart" role="img" aria-label="Top products by stock value"></div>
                         @else
@@ -859,7 +889,7 @@
 
                 <div class="db-grid db-even">
                     <div class="db-card">
-                        <div class="db-card-head"><div><h3>Stock by Warehouse</h3><p class="db-card-sub">Value held at each location</p></div></div>
+                        <div class="db-card-head"><div><h3>Stock by Warehouse</h3><p class="db-card-sub">Value held at each location</p></div>{!! $rl('inventory-view', 'inventory.current-stock.index', 'Current stock') !!}</div>
                         @if (! empty($warehouseStockDistribution['labels']))
                             <div id="db-inv-warehouse" class="db-chart-sm" role="img" aria-label="Stock value by warehouse"></div>
                         @else
@@ -867,7 +897,7 @@
                         @endif
                     </div>
                     <div class="db-card">
-                        <div class="db-card-head"><div><h3>Stock movement</h3><p class="db-card-sub">In and out, last 30 days (value)</p></div></div>
+                        <div class="db-card-head"><div><h3>Stock movement</h3><p class="db-card-sub">In and out, last 30 days (value)</p></div>{!! $rl('report-inventory-inventory-ledger', 'reports.inventory-ledger.index', 'Inventory ledger') !!}</div>
                         @if (array_sum($stockMovementBreakdown['inward'] ?? []) + array_sum($stockMovementBreakdown['outward'] ?? []) > 0)
                             <div id="db-inv-movement" class="db-chart-sm" role="img" aria-label="Stock movement in and out"></div>
                         @else
@@ -894,7 +924,7 @@
                 </div>
                 <div class="db-grid">
                     <div class="db-card">
-                        <div class="db-card-head"><div><h3>Revenue vs COGS vs Expenses</h3><p class="db-card-sub">From posted settlements, last 6 months</p></div></div>
+                        <div class="db-card-head"><div><h3>Revenue vs COGS vs Expenses</h3><p class="db-card-sub">From posted settlements, last 6 months</p></div>{!! $rl('report-financial-income-statement', 'reports.income-statement.index', 'Income statement') !!}</div>
                         @if (array_sum($revenueVsCogs['revenue'] ?? []) > 0)
                             <div id="db-acc-rev" class="db-chart" role="img" aria-label="Revenue, cost of goods and expenses per month"></div>
                         @else
@@ -947,6 +977,11 @@
     </div>
 
     @php
+        $canCreditorsJs = auth()->user()->can('report-audit-creditors-ledger');
+        $chartLinks = [
+            'creditSupplier' => $canCreditorsJs ? array_map(fn ($id) => $id ? route('reports.creditors-ledger.index', ['filter' => ['supplier_id' => $id, 'has_balance' => 'yes']]) : null, $creditBreakdown['ids'] ?? []) : [],
+            'creditSalesman' => $canCreditorsJs ? array_map(fn ($id) => $id ? route('reports.creditors-ledger.index', ['filter' => array_filter(['employee_id' => $id, 'supplier_id' => $scope['supplier_id'], 'has_balance' => 'yes'])]) : null, $creditBySalesman['ids'] ?? []) : [],
+        ];
         $chartData = [
             'monthly' => $monthlySalesTrend ?: null,
             'method' => $salesByPaymentMethod ?: null,
@@ -974,6 +1009,9 @@
             document.addEventListener('DOMContentLoaded', function () {
                 if (typeof ApexCharts === 'undefined') { return; }
                 const data = {{ \Illuminate\Support\Js::from($chartData) }};
+                const links = {{ \Illuminate\Support\Js::from($chartLinks) }};
+                // Bars that lead somewhere open the matching report.
+                const openLink = (list, i) => { if (list && list[i]) { window.location = list[i]; } };
                 const css = getComputedStyle(document.querySelector('.db-page'));
                 const c = ['--s1', '--s2', '--s3', '--s4', '--s5', '--s6'].map(v => css.getPropertyValue(v).trim());
                 const ink = '#475569', grid = '#e2e8f0';
@@ -1083,10 +1121,10 @@
                     });
                 }
                 if (data.credit && data.credit.labels.length) {
-                    hbar('db-credit-breakdown', data.credit.labels, [{ name: 'Outstanding credit', data: data.credit.values }], [c[1]]);
+                    hbar('db-credit-breakdown', data.credit.labels, [{ name: 'Outstanding credit', data: data.credit.values }], [c[1]], { chart: { type: 'bar', height: Math.max(190, data.credit.labels.length * 32 + 80), events: { dataPointSelection: (e, ctx, o) => openLink(links.creditSupplier, o.dataPointIndex) } } });
                 }
                 if (data.creditSalesman && data.creditSalesman.labels.length) {
-                    hbar('db-credit-salesman', data.creditSalesman.labels, [{ name: 'Outstanding credit', data: data.creditSalesman.values }], [c[3]]);
+                    hbar('db-credit-salesman', data.creditSalesman.labels, [{ name: 'Outstanding credit', data: data.creditSalesman.values }], [c[3]], { chart: { type: 'bar', height: Math.max(190, data.creditSalesman.labels.length * 32 + 80), events: { dataPointSelection: (e, ctx, o) => openLink(links.creditSalesman, o.dataPointIndex) } } });
                 }
                 if (data.aging) {
                     draw('db-credit-aging', {

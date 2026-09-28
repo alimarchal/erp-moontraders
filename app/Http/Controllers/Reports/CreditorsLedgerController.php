@@ -8,10 +8,12 @@ use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\Supplier;
 use App\Services\LedgerService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class CreditorsLedgerController extends Controller implements HasMiddleware
@@ -508,32 +510,45 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
     }
 
     /**
-     * Display salesman-wise creditors ledger
+     * Salesman-wise creditors: what each salesman's customers still owe, and how much is 60+ days old.
      */
     public function salesmanCreditors(Request $request)
     {
-        $perPage = $request->input('per_page', 50);
-        $perPage = in_array($perPage, [10, 25, 50, 100, 250]) ? $perPage : 50;
+        $supplierIdFilter = $this->resolveSupplierFilter($request);
+        $accounts = $this->accountBalances(now()->toDateString(), $supplierIdFilter, null);
+        $today = now()->startOfDay();
 
-        $salesmenQuery = Employee::query()
-            ->whereHas('creditSales')
-            ->with('supplier')
-            ->withCount('creditSales')
-            ->withSum('creditSales', 'sale_amount');
+        $salesmen = $accounts->groupBy('employee_id')->map(function ($rows) use ($today) {
+            $owing = $rows->filter(fn ($row) => $row->balance > 0);
+            $overdue = $owing->filter(fn ($row) => $this->daysSinceLastPayment($row, $today) > 60);
+            $lastRecovery = $rows->pluck('last_recovery')->filter()->max();
+
+            return (object) [
+                'employee_id' => $rows->first()->employee_id,
+                'salesman' => $rows->first()->salesman,
+                'supplier' => $rows->first()->supplier,
+                'customers' => $owing->count(),
+                'credit_sales' => (float) $rows->sum('credit_sales'),
+                'recoveries' => (float) $rows->sum('recoveries'),
+                'balance' => (float) $rows->sum('balance'),
+                'overdue' => (float) $overdue->sum('balance'),
+                'overdue_customers' => $overdue->count(),
+                'last_recovery' => $lastRecovery,
+            ];
+        });
 
         if ($request->filled('filter.employee_name')) {
-            $salesmenQuery->where(function ($q) use ($request) {
-                $q->where('first_name', 'like', '%'.$request->input('filter.employee_name').'%')
-                    ->orWhere('last_name', 'like', '%'.$request->input('filter.employee_name').'%');
-            });
+            $needle = mb_strtolower($request->input('filter.employee_name'));
+            $salesmen = $salesmen->filter(fn ($row) => str_contains(mb_strtolower((string) $row->salesman), $needle));
         }
 
-        $salesmen = $salesmenQuery->orderByDesc('credit_sales_sum_sale_amount')
-            ->paginate($perPage)
-            ->withQueryString();
+        $salesmen = $salesmen->sortByDesc('balance')->values();
 
         return view('reports.creditors-ledger.salesman-creditors', [
             'salesmen' => $salesmen,
+            'suppliers' => $this->supplierOptions($supplierIdFilter),
+            'supplierIdFilter' => $supplierIdFilter,
+            'canViewAllSuppliers' => $this->canViewAllSuppliers(),
         ]);
     }
 
@@ -591,47 +606,159 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
     }
 
     /**
-     * Aging report for accounts receivable
+     * Aging report: every customer account (customer + salesman) still owing, aged by days since its last payment.
      */
     public function agingReport(Request $request)
     {
-        $asOfDate = $request->input('as_of_date', now()->toDateString());
+        $asOfDate = $request->input('as_of_date') ?: now()->toDateString();
+        $supplierIdFilter = $this->resolveSupplierFilter($request);
+        $employeeId = $request->integer('filter.employee_id') ?: null;
+        $bucketFilter = $request->input('filter.bucket');
+        $asOf = Carbon::parse($asOfDate)->startOfDay();
 
-        $customers = Customer::whereHas('ledgerEntries')
-            ->with([
-                'ledgerEntries' => function ($q) use ($asOfDate) {
-                    $q->whereDate('transaction_date', '<=', $asOfDate)
-                        ->orderBy('transaction_date', 'desc');
-                },
-            ])
-            ->get()
-            ->map(function ($customer) {
-                $balance = $customer->ledgerEntries->first()?->balance ?? 0;
+        $rows = $this->accountBalances($asOfDate, $supplierIdFilter, $employeeId)
+            ->filter(fn ($row) => $row->balance > 0)
+            ->map(function ($row) use ($asOf) {
+                $row->days = $this->daysSinceLastPayment($row, $asOf);
+                $row->bucket = match (true) {
+                    $row->days <= 30 => 'current',
+                    $row->days <= 60 => '31_60',
+                    $row->days <= 90 => '61_90',
+                    default => 'over_90',
+                };
 
-                if ($balance <= 0) {
-                    return null;
-                }
+                return $row;
+            });
 
-                $lastDebitEntry = $customer->ledgerEntries->where('debit', '>', 0)->first();
-                $daysSinceLastDebit = $lastDebitEntry
-                    ? now()->diffInDays($lastDebitEntry->transaction_date)
-                    : 0;
+        if ($request->filled('filter.customer')) {
+            $needle = mb_strtolower($request->input('filter.customer'));
+            $rows = $rows->filter(fn ($row) => str_contains(mb_strtolower($row->customer_name.' '.$row->customer_code), $needle));
+        }
 
-                return [
-                    'customer' => $customer,
-                    'balance' => $balance,
-                    'days_outstanding' => $daysSinceLastDebit,
-                    'current' => $daysSinceLastDebit <= 30 ? $balance : 0,
-                    '31_60_days' => $daysSinceLastDebit > 30 && $daysSinceLastDebit <= 60 ? $balance : 0,
-                    '61_90_days' => $daysSinceLastDebit > 60 && $daysSinceLastDebit <= 90 ? $balance : 0,
-                    'over_90_days' => $daysSinceLastDebit > 90 ? $balance : 0,
-                ];
-            })
-            ->filter();
+        $buckets = ['current' => '0-30 days', '31_60' => '31-60 days', '61_90' => '61-90 days', 'over_90' => 'Over 90 days'];
+        $totals = collect($buckets)->map(fn ($label, $key) => [
+            'label' => $label,
+            'amount' => (float) $rows->where('bucket', $key)->sum('balance'),
+            'count' => $rows->where('bucket', $key)->count(),
+        ]);
+
+        if ($bucketFilter === '60_plus') {
+            $rows = $rows->whereIn('bucket', ['61_90', 'over_90']);
+        } elseif (isset($buckets[$bucketFilter])) {
+            $rows = $rows->where('bucket', $bucketFilter);
+        }
+
+        $rows = $rows->sortByDesc('balance')->values();
+
+        $perPage = $request->input('per_page', 100);
+        $perPage = in_array($perPage, [50, 100, 250, 'all']) ? $perPage : 100;
+        $size = $perPage === 'all' ? max($rows->count(), 1) : (int) $perPage;
+        $page = $perPage === 'all' ? 1 : LengthAwarePaginator::resolveCurrentPage();
+        $accounts = new LengthAwarePaginator(
+            $rows->forPage($page, $size)->values(),
+            $rows->count(),
+            $size,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         return view('reports.creditors-ledger.aging-report', [
-            'customers' => $customers,
+            'accounts' => $accounts,
+            'filteredTotal' => (float) $rows->sum('balance'),
+            'totals' => $totals,
+            'buckets' => $buckets,
             'asOfDate' => $asOfDate,
+            'suppliers' => $this->supplierOptions($supplierIdFilter),
+            'employees' => $this->employeeOptions($supplierIdFilter),
+            'supplierIdFilter' => $supplierIdFilter,
+            'canViewAllSuppliers' => $this->canViewAllSuppliers(),
         ]);
+    }
+
+    /**
+     * Supplier to report on: a supplier user is locked to their own supplier; admins may pick one or see all.
+     */
+    private function resolveSupplierFilter(Request $request): ?int
+    {
+        $requested = $request->integer('filter.supplier_id') ?: null;
+        $userSupplierId = $this->getUserSupplierScope();
+
+        if ($requested && ! $this->canViewAllSuppliers() && $requested !== $userSupplierId) {
+            abort(403, 'You do not have permission to filter by this supplier.');
+        }
+
+        return $userSupplierId ?? $requested;
+    }
+
+    /**
+     * One row per customer account (customer + salesman) with its balance up to the given date.
+     *
+     * @return Collection<int, object>
+     */
+    private function accountBalances(string $asOfDate, ?int $supplierId, ?int $employeeId): Collection
+    {
+        $balance = 'COALESCE(SUM(ceat.debit), 0) - COALESCE(SUM(ceat.credit), 0)';
+
+        return DB::table('customer_employee_account_transactions as ceat')
+            ->join('customer_employee_accounts as cea', 'ceat.customer_employee_account_id', '=', 'cea.id')
+            ->join('customers as c', 'cea.customer_id', '=', 'c.id')
+            ->join('employees as e', 'cea.employee_id', '=', 'e.id')
+            ->leftJoin('suppliers as s', 'e.supplier_id', '=', 's.id')
+            ->whereNull('ceat.deleted_at')
+            ->whereNull('cea.deleted_at')
+            ->whereDate('ceat.transaction_date', '<=', $asOfDate)
+            ->when($supplierId, fn ($q) => $q->where('e.supplier_id', $supplierId))
+            ->when(! $supplierId && ! $this->canViewAllSuppliers(), fn ($q) => $q->whereRaw('1 = 0'))
+            ->when($employeeId, fn ($q) => $q->where('cea.employee_id', $employeeId))
+            ->select('cea.id as account_id', 'cea.customer_id', 'c.customer_code', 'c.customer_name', 'c.city', 'cea.employee_id', 'e.name as salesman', 'e.supplier_id', 's.supplier_name as supplier')
+            ->selectRaw("{$balance} as balance")
+            ->selectRaw("COALESCE(SUM(CASE WHEN ceat.transaction_type <> 'opening_balance' THEN ceat.debit ELSE 0 END), 0) as credit_sales")
+            ->selectRaw('COALESCE(SUM(ceat.credit), 0) as recoveries')
+            ->selectRaw('MAX(CASE WHEN ceat.credit > 0 THEN ceat.transaction_date END) as last_recovery')
+            ->selectRaw('MAX(CASE WHEN ceat.debit > 0 THEN ceat.transaction_date END) as last_credit_sale')
+            ->groupBy('cea.id', 'cea.customer_id', 'c.customer_code', 'c.customer_name', 'c.city', 'cea.employee_id', 'e.name', 'e.supplier_id', 's.supplier_name')
+            ->get()
+            ->map(function ($row) {
+                $row->balance = round((float) $row->balance, 2);
+                $row->credit_sales = (float) $row->credit_sales;
+                $row->recoveries = (float) $row->recoveries;
+
+                return $row;
+            });
+    }
+
+    /**
+     * Days since the account's last payment, or since its credit sale when it never paid.
+     */
+    private function daysSinceLastPayment(object $row, Carbon $asOf): int
+    {
+        $since = $row->last_recovery ?? $row->last_credit_sale;
+
+        return $since ? (int) abs(Carbon::parse($since)->startOfDay()->diffInDays($asOf)) : 9999;
+    }
+
+    /**
+     * @return Collection<int, Supplier>
+     */
+    private function supplierOptions(?int $supplierIdFilter): Collection
+    {
+        return Supplier::query()
+            ->whereHas('employees.customerAccounts')
+            ->when(! $this->canViewAllSuppliers(), fn ($q) => $supplierIdFilter ? $q->where('id', $supplierIdFilter) : $q->whereRaw('1 = 0'))
+            ->orderBy('supplier_name')
+            ->get(['id', 'supplier_name']);
+    }
+
+    /**
+     * @return Collection<int, Employee>
+     */
+    private function employeeOptions(?int $supplierIdFilter): Collection
+    {
+        return Employee::query()
+            ->whereHas('customerAccounts')
+            ->when($supplierIdFilter, fn ($q) => $q->where('supplier_id', $supplierIdFilter))
+            ->when(! $supplierIdFilter && ! $this->canViewAllSuppliers(), fn ($q) => $q->whereRaw('1 = 0'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
     }
 }

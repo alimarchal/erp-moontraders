@@ -111,3 +111,84 @@ test('creditors ledger requires authentication', function () {
     $this->get(route('reports.creditors-ledger.index'))
         ->assertRedirect(route('login'));
 });
+
+/**
+ * @return array{0: Supplier, 1: Employee, 2: Customer}
+ */
+function creditAccount(User $user, string $supplierName, string $salesmanName, string $customerName, float $debit, int $daysAgo, ?Customer $customer = null): array
+{
+    $supplier = Supplier::firstWhere('supplier_name', $supplierName) ?? Supplier::factory()->create(['supplier_name' => $supplierName]);
+    $employee = Employee::factory()->create(['supplier_id' => $supplier->id, 'name' => $salesmanName]);
+    $customer ??= Customer::factory()->create(['customer_name' => $customerName]);
+    $account = CustomerEmployeeAccount::create([
+        'account_number' => 'ACC-'.fake()->unique()->numerify('######'),
+        'customer_id' => $customer->id,
+        'employee_id' => $employee->id,
+        'opened_date' => now()->subDays($daysAgo),
+        'status' => 'active',
+        'created_by' => $user->id,
+    ]);
+    CustomerEmployeeAccountTransaction::create([
+        'customer_employee_account_id' => $account->id,
+        'transaction_date' => now()->subDays($daysAgo)->toDateString(),
+        'transaction_type' => 'credit_sale',
+        'description' => 'Credit sale',
+        'debit' => $debit,
+        'credit' => 0,
+        'created_by' => $user->id,
+    ]);
+
+    return [$supplier, $employee, $customer];
+}
+
+test('aging report ages each salesman account and links to that salesman ledger', function () {
+    [, $raja, $bakers] = creditAccount($this->user, 'Nestle', 'Raja Safeer', 'Baba Bakers', 50000, 75);
+    [, $ali] = creditAccount($this->user, 'Nestle', 'Ali Khan', 'Baba Bakers', 20000, 10, $bakers);
+    creditAccount($this->user, 'Engro', 'Engro Man', 'Engro Shop', 9000, 120);
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+
+    $response = $this->actingAs($this->user)->get(route('reports.creditors-ledger.aging-report'));
+
+    $response->assertSuccessful()
+        ->assertSee(e(route('reports.creditors-ledger.customer-ledger', ['customer' => $bakers->id, 'filter' => ['employee_id' => $raja->id]])), false)
+        ->assertSee(e(route('reports.creditors-ledger.customer-ledger', ['customer' => $bakers->id, 'filter' => ['employee_id' => $ali->id]])), false);
+    expect($response->viewData('totals')['current']['amount'])->toBe(20000.0)
+        ->and($response->viewData('totals')['61_90']['amount'])->toBe(50000.0)
+        ->and($response->viewData('totals')['over_90']['amount'])->toBe(9000.0);
+
+    $overdue = $this->actingAs($this->user)->get(route('reports.creditors-ledger.aging-report', ['filter' => ['bucket' => '60_plus']]));
+    expect($overdue->viewData('accounts')->pluck('salesman')->all())->toBe(['Raja Safeer', 'Engro Man']);
+});
+
+test('aging report and salesman creditors are scoped to the users supplier', function () {
+    [$nestle] = creditAccount($this->user, 'Nestle', 'Raja Safeer', 'Baba Bakers', 50000, 75);
+    [$engro] = creditAccount($this->user, 'Engro', 'Engro Man', 'Engro Shop', 9000, 120);
+    $this->user->forceFill(['supplier_id' => $nestle->id])->save();
+
+    $this->actingAs($this->user)->get(route('reports.creditors-ledger.aging-report'))
+        ->assertSuccessful()
+        ->assertSee('Baba Bakers')
+        ->assertDontSee('Engro Shop');
+
+    $salesmen = $this->actingAs($this->user)->get(route('reports.creditors-ledger.salesman-creditors'));
+    $salesmen->assertSuccessful()->assertSee('Raja Safeer')->assertDontSee('Engro Man');
+    expect($salesmen->viewData('salesmen')->first())
+        ->balance->toBe(50000.0)
+        ->overdue->toBe(50000.0)
+        ->customers->toBe(1);
+
+    $this->actingAs($this->user)
+        ->get(route('reports.creditors-ledger.aging-report', ['filter' => ['supplier_id' => $engro->id]]))
+        ->assertForbidden();
+});
+
+test('customer ledger filtered by salesman names the salesman', function () {
+    [, $raja, $bakers] = creditAccount($this->user, 'Nestle', 'Raja Safeer', 'Baba Bakers', 50000, 5);
+    creditAccount($this->user, 'Nestle', 'Ali Khan', 'Baba Bakers', 20000, 5, $bakers);
+
+    $this->actingAs($this->user)
+        ->get(route('reports.creditors-ledger.customer-ledger', ['customer' => $bakers->id, 'filter' => ['employee_id' => $raja->id]]))
+        ->assertSuccessful()
+        ->assertSeeInOrder(['Salesman:', 'Raja Safeer'])
+        ->assertSee('All salesmen');
+});

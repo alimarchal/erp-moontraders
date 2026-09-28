@@ -277,6 +277,22 @@
                         <span class="text-gray-500">- {{ $customer->business_name }}</span>
                     @endif
                 </div>
+                @php $filteredSalesman = request('filter.employee_id') ? $employees->firstWhere('id', (int) request('filter.employee_id')) : null; @endphp
+                <div class="text-center text-sm mb-1">
+                    Salesman: <span class="font-bold">{{ $filteredSalesman?->name ?? 'All salesmen' }}</span>
+                    @if ($employees->count() > 1)
+                        <span class="no-print text-xs">
+                            &middot;
+                            @if ($filteredSalesman)
+                                <a href="{{ route('reports.creditors-ledger.customer-ledger', $customer) }}" class="text-blue-700 hover:underline">All salesmen</a>
+                            @endif
+                            @foreach ($employees as $employee)
+                                @continue($filteredSalesman && $filteredSalesman->id === $employee->id)
+                                <a href="{{ route('reports.creditors-ledger.customer-ledger', ['customer' => $customer->id, 'filter' => ['employee_id' => $employee->id]]) }}" class="text-blue-700 hover:underline">{{ $employee->name }}</a>@if (! $loop->last) &middot; @endif
+                            @endforeach
+                        </span>
+                    @endif
+                </div>
                 <div class="text-center text-xs text-gray-600 mb-1">
                     @if($dateFrom && $dateTo)
                         Period: {{ \Carbon\Carbon::parse($dateFrom)->format('d-M-Y') }} to {{ \Carbon\Carbon::parse($dateTo)->format('d-M-Y') }}

@@ -14,6 +14,7 @@ beforeEach(function () {
         'report-sales-daily-sales',
         'report-audit-cash-detail',
         'report-audit-customer-account-statement',
+        'report-audit-creditors-ledger',
     ] as $perm) {
         Permission::firstOrCreate(['name' => $perm, 'guard_name' => 'web']);
     }
@@ -54,4 +55,17 @@ it('shows customer account statement on reports index with permission', function
     $response->assertSuccessful();
     $response->assertSee('Customer Account Statement');
     $response->assertSee(route('reports.customer-account-statement.index'), false);
+});
+
+it('shows the credit aging and salesman creditors reports with the creditors ledger permission', function () {
+    $this->get(route('reports.index'))->assertForbidden();
+
+    $this->user->givePermissionTo('report-audit-creditors-ledger');
+
+    $this->get(route('reports.index'))
+        ->assertSuccessful()
+        ->assertSee('Credit Aging Report')
+        ->assertSee(route('reports.creditors-ledger.aging-report'), false)
+        ->assertSee('Salesman-wise Creditors')
+        ->assertSee(route('reports.creditors-ledger.salesman-creditors'), false);
 });

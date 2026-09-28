@@ -349,6 +349,8 @@ it('shows market credit company wise and the top creditors', function () {
         ->assertSee('Top creditors')
         ->assertSet('agingCustomers', []);
 
+    $top = $component->get('topCreditCustomers.0');
+    $component->assertSee(e(route('reports.creditors-ledger.customer-ledger', ['customer' => $top['id'], 'filter' => ['employee_id' => $top['employee_id']]])), false);
     expect($component->get('topCreditCustomers.0'))->toMatchArray(['name' => 'Big Store', 'used' => 400000.0, 'suppliers' => 'Nestle', 'last_paid_days' => 0]);
 
     // A Nestle user sees only Nestle's credit, split by salesman.
@@ -401,6 +403,37 @@ it('shows the ledger balance per month and a supplier wise ledger table', functi
         ->and($component->get('supplierLedger.1'))->toMatchArray(['name' => 'Engro', 'balance' => 300000.0]);
 });
 
+it('splits a customer owed to two salesmen into one row per salesman ledger', function () {
+    $user = createSuperAdminUser();
+    $supplier = Supplier::factory()->create();
+    $customer = Customer::factory()->create(['customer_name' => 'Baba Bakers']);
+    $salesmen = Employee::factory()->count(2)->create(['supplier_id' => $supplier->id]);
+
+    foreach ([[$salesmen[0], 300000], [$salesmen[1], 100000]] as [$salesman, $debit]) {
+        $account = CustomerEmployeeAccount::create([
+            'account_number' => 'ACC-'.fake()->unique()->numerify('######'),
+            'customer_id' => $customer->id, 'employee_id' => $salesman->id, 'opened_date' => now()->subDays(95)->toDateString(),
+        ]);
+        CustomerEmployeeAccountTransaction::create([
+            'customer_employee_account_id' => $account->id, 'transaction_date' => now()->subDays(95)->toDateString(),
+            'transaction_type' => 'credit_sale', 'description' => 'credit sale', 'debit' => $debit, 'credit' => 0,
+        ]);
+    }
+
+    $component = Livewire::actingAs($user)->test(Dashboard::class)
+        ->assertSet('kpiCards.creditCustomers', 1)
+        ->assertSet('kpiCards.creditOverdueCustomers', 1)
+        ->assertCount('topCreditCustomers', 2)
+        ->assertCount('agingCustomers', 2)
+        ->assertSet('topCreditCustomers.0.employee_id', $salesmen[0]->id)
+        ->assertSet('topCreditCustomers.0.used', 300000.0)
+        ->assertSet('topCreditCustomers.1.employee_id', $salesmen[1]->id);
+
+    foreach ($salesmen as $salesman) {
+        $component->assertSee(e(route('reports.creditors-ledger.customer-ledger', ['customer' => $customer->id, 'filter' => ['employee_id' => $salesman->id]])), false);
+    }
+});
+
 it('lists customers with no payment for 60+ days for the aging drill-down', function () {
     $user = createSuperAdminUser();
     $supplier = Supplier::factory()->create();
@@ -422,4 +455,25 @@ it('lists customers with no payment for 60+ days for the aging drill-down', func
         ->assertSet('agingCustomers.0.name', 'Slow Payer')
         ->assertSet('agingCustomers.0.bucket', 2)
         ->assertSee('Slow Payer');
+});
+
+it('lets super admins narrow the dashboard to one supplier but not supplier users', function () {
+    createDashboardPermissions();
+    $nestle = Supplier::factory()->create(['supplier_name' => 'Nestle']);
+    $engro = Supplier::factory()->create(['supplier_name' => 'Engro']);
+    SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now(), 'total_sales_amount' => 1000, 'supplier_id' => $nestle->id]);
+    SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now(), 'total_sales_amount' => 9000, 'supplier_id' => $engro->id]);
+
+    $admin = createSuperAdminUser();
+    Livewire::withQueryParams(['supplier' => $engro->id])->actingAs($admin)->test(Dashboard::class)
+        ->assertSet('scope.supplier', 'Engro')
+        ->assertSet('kpiCards.totalSalesThisMonth', 9000.0)
+        ->assertSee('All suppliers');
+
+    $nestleUser = User::factory()->create(['supplier_id' => $nestle->id]);
+    $nestleUser->givePermissionTo(['sales-settlement-list', Permission::firstOrCreate(['name' => 'sales-settlement-view-all'])]);
+    Livewire::withQueryParams(['supplier' => $engro->id])->actingAs($nestleUser)->test(Dashboard::class)
+        ->assertSet('scope.supplier', 'Nestle')
+        ->assertSet('kpiCards.totalSalesThisMonth', 1000.0)
+        ->assertSet('supplierOptions', []);
 });

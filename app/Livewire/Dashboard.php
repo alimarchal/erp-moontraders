@@ -161,6 +161,13 @@ class Dashboard extends Component
      */
     public array $draftLinks = [];
 
+    /**
+     * Suppliers a super admin / admin can narrow the dashboard to.
+     *
+     * @var array<int, string>
+     */
+    public array $supplierOptions = [];
+
     /** Draft lists open from at least this date (the module lists default to today). */
     public const DRAFTS_FROM = '2026-03-01';
 
@@ -241,12 +248,22 @@ class Dashboard extends Component
     }
 
     /**
-     * @return array{supplier_id: int|null, supplier: string, own_settlements: bool, own_issues: bool, own_grns: bool, is_super_admin: bool, is_admin: bool}
+     * @return array{supplier_id: int|null, supplier: string, own_settlements: bool, own_issues: bool, own_grns: bool, is_super_admin: bool, is_admin: bool, can_pick_supplier: bool}
      */
     private function resolveScope(User $user): array
     {
         $isSuperAdmin = $user->is_super_admin === 'Yes' || $user->hasRole('super-admin');
         $supplierId = ($isSuperAdmin || $user->hasRole('admin') || ! $user->supplier_id) ? null : (int) $user->supplier_id;
+        $canPickSupplier = $supplierId === null;
+
+        // Users who see every supplier may narrow the whole dashboard to one (?supplier=ID).
+        if ($canPickSupplier) {
+            $this->supplierOptions = Supplier::where('disabled', false)->orderBy('supplier_name')->pluck('supplier_name', 'id')->all();
+            $picked = (int) request()->query('supplier', 0);
+            if ($picked && isset($this->supplierOptions[$picked])) {
+                $supplierId = $picked;
+            }
+        }
 
         return [
             'supplier_id' => $supplierId,
@@ -256,6 +273,7 @@ class Dashboard extends Component
             'own_grns' => ! $user->can('goods-receipt-note-view-all'),
             'is_super_admin' => $isSuperAdmin,
             'is_admin' => ! $isSuperAdmin && $user->hasRole('admin'),
+            'can_pick_supplier' => $canPickSupplier,
         ];
     }
 
@@ -1050,11 +1068,11 @@ class Dashboard extends Component
         $accounts = $this->customerLedger()
             ->join('customers as c', 'a.customer_id', '=', 'c.id')
             ->leftJoin('suppliers as s', 'e.supplier_id', '=', 's.id')
-            ->select('a.customer_id', 'c.customer_code', 'c.customer_name', 'c.city', 'e.name as salesman', 's.supplier_name as supplier')
+            ->select('a.customer_id', 'c.customer_code', 'c.customer_name', 'c.city', 'a.employee_id', 'e.name as salesman', 'e.supplier_id', 's.supplier_name as supplier')
             ->selectRaw("{$balance} as balance")
             ->selectRaw('MAX(CASE WHEN t.credit > 0 THEN t.transaction_date END) as last_recovery')
             ->selectRaw('MAX(CASE WHEN t.debit > 0 THEN t.transaction_date END) as last_credit_sale')
-            ->groupBy('a.id', 'a.customer_id', 'c.customer_code', 'c.customer_name', 'c.city', 'e.name', 's.supplier_name')
+            ->groupBy('a.id', 'a.customer_id', 'c.customer_code', 'c.customer_name', 'c.city', 'a.employee_id', 'e.name', 'e.supplier_id', 's.supplier_name')
             ->havingRaw("{$balance} <> 0")
             ->get();
 
@@ -1062,54 +1080,57 @@ class Dashboard extends Component
         $this->kpiCards['marketCredit'] = round((float) $accounts->sum('balance'), 2);
 
         $today = Carbon::today();
-        $top = function ($groupKey, int $limit) use ($owing): array {
-            $rows = $owing->groupBy($groupKey)
-                ->map(fn ($g) => round((float) $g->sum('balance'), 2))
-                ->sortDesc()
-                ->take($limit);
+        // Grouped by id (names can repeat); ids let each bar open the creditors ledger for it.
+        $top = function (string $idKey, string $nameKey, int $limit) use ($owing): array {
+            $rows = $owing->groupBy($idKey)
+                ->map(fn ($g) => ['id' => $g->first()->{$idKey}, 'label' => $g->first()->{$nameKey} ?: 'Not set', 'value' => round((float) $g->sum('balance'), 2)])
+                ->sortByDesc('value')
+                ->take($limit)
+                ->values();
 
-            return ['labels' => $rows->keys()->map(fn ($k) => $k ?: 'Not set')->values()->all(), 'values' => $rows->values()->all()];
+            return ['labels' => $rows->pluck('label')->all(), 'values' => $rows->pluck('value')->all(), 'ids' => $rows->pluck('id')->all()];
         };
-        $this->creditBreakdown = ['by' => 'supplier'] + $top('supplier', 10);
-        $this->creditBySalesman = $top('salesman', 10);
+        $this->creditBreakdown = ['by' => 'supplier'] + $top('supplier_id', 'supplier', 10);
+        $this->creditBySalesman = $top('employee_id', 'salesman', 10);
 
-        // One row per customer (all their salesman accounts together).
-        $customers = $accounts->groupBy('customer_id')->map(function ($rows) use ($today) {
-            $lastPaid = $rows->pluck('last_recovery')->filter()->max();
-            $since = $lastPaid ?? $rows->pluck('last_credit_sale')->filter()->max();
+        // One row per customer-salesman account, so every row opens that salesman's own ledger for the customer.
+        $rows = $owing->map(function ($r) use ($today) {
+            $since = $r->last_recovery ?? $r->last_credit_sale;
             $days = $since ? (int) abs(Carbon::parse($since)->diffInDays($today)) : 999;
 
             return [
                 'days' => $days,
-                // Aging bucket: days since the customer last paid (or since the credit sale if never paid).
+                // Aging bucket: days since this account last paid (or since the credit sale if never paid).
                 'bucket' => match (true) {
                     $days <= 30 => 0,
                     $days <= 60 => 1,
                     $days <= 90 => 2,
                     default => 3,
                 },
-                'name' => $rows->first()->customer_name,
-                'code' => $rows->first()->customer_code,
-                'city' => $rows->first()->city,
-                'used' => round((float) $rows->sum('balance'), 2),
-                'suppliers' => $rows->pluck('supplier')->filter()->unique()->values()->implode(', '),
-                'salesmen' => $rows->pluck('salesman')->filter()->unique()->values()->implode(', '),
-                'last_paid_days' => $lastPaid ? (int) abs(Carbon::parse($lastPaid)->diffInDays($today)) : null,
+                'id' => (int) $r->customer_id,
+                'employee_id' => $r->employee_id ? (int) $r->employee_id : null,
+                'name' => $r->customer_name,
+                'code' => $r->customer_code,
+                'city' => $r->city,
+                'used' => round((float) $r->balance, 2),
+                'suppliers' => (string) $r->supplier,
+                'salesmen' => (string) $r->salesman,
+                'last_paid_days' => $r->last_recovery ? (int) abs(Carbon::parse($r->last_recovery)->diffInDays($today)) : null,
             ];
-        })->filter(fn ($c) => $c['used'] > 0);
+        })->values();
 
         $this->creditAging = [
             'labels' => ['0-30 days', '31-60 days', '61-90 days', 'Over 90 days'],
-            'values' => array_map(fn ($b) => round((float) $customers->where('bucket', $b)->sum('used'), 2), [0, 1, 2, 3]),
-            'counts' => array_map(fn ($b) => $customers->where('bucket', $b)->count(), [0, 1, 2, 3]),
+            'values' => array_map(fn ($b) => round((float) $rows->where('bucket', $b)->sum('used'), 2), [0, 1, 2, 3]),
+            'counts' => array_map(fn ($b) => $rows->where('bucket', $b)->count(), [0, 1, 2, 3]),
         ];
         $this->kpiCards['creditOverdue'] = round($this->creditAging['values'][2] + $this->creditAging['values'][3], 2);
-        $this->kpiCards['creditOverdueCustomers'] = $this->creditAging['counts'][2] + $this->creditAging['counts'][3];
+        $this->kpiCards['creditOverdueCustomers'] = $rows->where('bucket', '>=', 2)->pluck('id')->unique()->count();
 
-        $this->kpiCards['creditCustomers'] = $customers->count();
-        $this->topCreditCustomers = $customers->sortByDesc('used')->take(8)->values()->all();
-        // Everyone past 30 days, biggest first, for the aging drill-down list.
-        $this->agingCustomers = $customers->where('bucket', '>', 0)->sortByDesc('used')->take(300)->values()->all();
+        $this->kpiCards['creditCustomers'] = $rows->pluck('id')->unique()->count();
+        $this->topCreditCustomers = $rows->sortByDesc('used')->take(8)->values()->all();
+        // Every account past 30 days, biggest first, for the aging drill-down list.
+        $this->agingCustomers = $rows->where('bucket', '>', 0)->sortByDesc('used')->take(300)->values()->all();
     }
 
     private function loadSalesBySupplier(): void

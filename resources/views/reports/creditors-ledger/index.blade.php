@@ -335,6 +335,13 @@
         </div>
     </div>
 
+    @php $reportFilter = array_filter(['supplier_id' => $supplierIdFilter, 'employee_id' => request('filter.employee_id')]); @endphp
+    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mb-3 no-print flex flex-wrap gap-3 text-sm">
+        <a href="{{ route('reports.creditors-ledger.aging-report', array_filter(['filter' => $reportFilter])) }}" class="text-blue-700 hover:underline">Aging report (30/60/90) →</a>
+        <a href="{{ route('reports.creditors-ledger.aging-report', ['filter' => $reportFilter + ['bucket' => '60_plus']]) }}" class="text-blue-700 hover:underline">No payment 60+ days →</a>
+        <a href="{{ route('reports.creditors-ledger.salesman-creditors', array_filter(['filter' => array_filter(['supplier_id' => $supplierIdFilter])])) }}" class="text-blue-700 hover:underline">Salesman-wise creditors →</a>
+    </div>
+
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 pb-16">
         <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
             <div class="overflow-x-auto">
@@ -372,6 +379,13 @@
                         </tr>
                     </thead>
                     <tbody>
+                        @php
+                            // When a salesman is filtered, open only that salesman's account for the customer.
+                            $ledgerUrl = fn ($customer) => route('reports.creditors-ledger.customer-ledger', array_filter([
+                                'customer' => $customer->id,
+                                'filter' => request('filter.employee_id') ? ['employee_id' => request('filter.employee_id')] : null,
+                            ]));
+                        @endphp
                         @forelse ($customers as $index => $customer)
                             @php
                                 $closingBalance = ($customer->total_debits ?? 0) - ($customer->total_credits ?? 0);
@@ -380,7 +394,7 @@
                                 <td class="text-center" style="vertical-align: middle;">{{ $customers->firstItem() + $index }}</td>
                                 <td class="font-mono" style="vertical-align: middle;">{{ $customer->customer_code }}</td>
                                 <td style="vertical-align: middle;">
-                                    {{ $customer->customer_name }}
+                                    <a href="{{ $ledgerUrl($customer) }}" class="text-blue-700 hover:underline" target="_blank">{{ $customer->customer_name }}</a>
                                     @if($customer->business_name)
                                         <div class="text-xs text-gray-600">{{ $customer->business_name }}</div>
                                     @endif
@@ -403,7 +417,7 @@
                                 </td>
                                 <td class="text-center no-print" style="vertical-align: middle;">
                                     <div class="flex justify-center gap-1">
-                                        <a href="{{ route('reports.creditors-ledger.customer-ledger', $customer) }}"
+                                        <a href="{{ $ledgerUrl($customer) }}"
                                             class="inline-flex items-center px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
                                             title="View Ledger" target="_blank">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

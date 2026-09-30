@@ -459,8 +459,9 @@ it('lists customers with no payment for 60+ days for the aging drill-down', func
 
 it('lets super admins narrow the dashboard to one supplier but not supplier users', function () {
     createDashboardPermissions();
-    $nestle = Supplier::factory()->create(['supplier_name' => 'Nestle']);
-    $engro = Supplier::factory()->create(['supplier_name' => 'Engro']);
+    // Only enabled suppliers can be picked, and the factory disables one in ten.
+    $nestle = Supplier::factory()->create(['supplier_name' => 'Nestle', 'disabled' => false]);
+    $engro = Supplier::factory()->create(['supplier_name' => 'Engro', 'disabled' => false]);
     SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now(), 'total_sales_amount' => 1000, 'supplier_id' => $nestle->id]);
     SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now(), 'total_sales_amount' => 9000, 'supplier_id' => $engro->id]);
 

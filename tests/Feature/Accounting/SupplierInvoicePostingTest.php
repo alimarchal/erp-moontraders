@@ -25,8 +25,12 @@ beforeEach(function () {
     // The ledger register posts against cost center 1.
     if (! CostCenter::whereKey(1)->exists()) {
         DB::table('cost_centers')->insert(['id' => 1, 'code' => 'CC001', 'name' => 'Administration', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
-        // Sequences are not rolled back with the test transaction, so only ever move it forward.
-        DB::statement("SELECT setval('cost_centers_id_seq', GREATEST((SELECT MAX(id) FROM cost_centers), (SELECT last_value FROM cost_centers_id_seq)))");
+        // PostgreSQL does not move the sequence past an explicit id, and sequences are not rolled
+        // back with the test transaction, so only ever move it forward. MySQL/MariaDB advance
+        // AUTO_INCREMENT on their own.
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("SELECT setval('cost_centers_id_seq', GREATEST((SELECT MAX(id) FROM cost_centers), (SELECT last_value FROM cost_centers_id_seq)))");
+        }
     }
 
     seedGrnPostingAccounts();
@@ -131,8 +135,11 @@ function postSupplierInvoice(object $test, float $amount, ?string $documentNumbe
 /** Put an entry's line back on the account it used before Stock Received But Not Billed existed. */
 function moveLineToLegacyAccount(int $journalEntryId, string $fromCode, string $toCode): void
 {
-    // Fire the deferred balance checks now; a table with pending trigger events cannot be altered.
-    DB::statement('SET CONSTRAINTS ALL IMMEDIATE');
+    // Fire the deferred balance checks now; a PostgreSQL table with pending trigger events cannot
+    // be altered. MySQL/MariaDB have no deferred triggers.
+    if (DB::getDriverName() === 'pgsql') {
+        DB::statement('SET CONSTRAINTS ALL IMMEDIATE');
+    }
     $restore = app(DatabaseTriggerGuard::class)->suspend('journal_entry_details', ['trg_block_posted_detail_updates']);
 
     try {
@@ -151,10 +158,14 @@ function dropJournalEntry(GoodsReceiptNote $grn): void
     $journalEntryId = $grn->journal_entry_id;
     DB::table('goods_receipt_notes')->where('id', $grn->id)->update(['journal_entry_id' => null]);
 
-    DB::statement('SET CONSTRAINTS ALL IMMEDIATE');
+    if (DB::getDriverName() === 'pgsql') {
+        DB::statement('SET CONSTRAINTS ALL IMMEDIATE');
+    }
     $guard = app(DatabaseTriggerGuard::class);
     $restoreDetails = $guard->suspend('journal_entry_details', ['trg_block_posted_detail_deletes']);
-    $restoreEntries = $guard->suspend('journal_entries', ['trg_block_posted_journal_deletes', 'trg_prevent_hard_delete']);
+    // The hard-delete guard is named per driver (see SyncDatabaseObjects).
+    $hardDeleteGuard = DB::getDriverName() === 'pgsql' ? 'trg_prevent_hard_delete' : 'trg_mysql_prevent_hard_delete';
+    $restoreEntries = $guard->suspend('journal_entries', ['trg_block_posted_journal_deletes', $hardDeleteGuard]);
 
     try {
         DB::table('journal_entry_details')->where('journal_entry_id', $journalEntryId)->delete();
@@ -207,6 +218,12 @@ it('clears the invoice versus GRN difference into purchase price difference', fu
     expect(DB::table('journal_entries')->count())->toBe($entries);
 });
 
+/**
+ * Rebuilding the pre-2142 history means editing posted journals, which lifts the immutability
+ * triggers. On MySQL/MariaDB that is DDL, and DDL commits the test's wrapping transaction: the
+ * data would outlive the test and the command's own transaction would lose its savepoint. The
+ * repost itself runs no DDL, so this only limits where the history can be staged.
+ */
 describe('reposting the double-counted history', function () {
     beforeEach(function () {
         // What production holds: the GRN credited Creditors and the invoice debited Stock In Hand.
@@ -308,7 +325,10 @@ describe('reposting the double-counted history', function () {
             ->and(glBalance('2111'))->toBe(-10000.0)
             ->and(glBalance('2142'))->toBe(0.0);
     });
-});
+})->skip(
+    fn () => DB::getDriverName() !== 'pgsql',
+    'Staging the legacy journals needs trigger DDL, which MySQL/MariaDB cannot roll back.'
+);
 
 it('no longer raises a draft supplier payment when a GRN is posted', function () {
     Permission::firstOrCreate(['name' => 'goods-receipt-note-post', 'guard_name' => 'web']);

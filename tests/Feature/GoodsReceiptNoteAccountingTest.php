@@ -11,6 +11,7 @@ use App\Models\GoodsReceiptNote;
 use App\Models\InventoryLedgerEntry;
 use App\Models\JournalEntry;
 use App\Models\Product;
+use App\Models\StockAdjustment;
 use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
 use App\Models\Supplier;
@@ -908,4 +909,55 @@ it('refuses to reverse a GRN that has value but no journal entry of its own', fu
         ->and($result['message'])->toContain('no journal entry of its own')
         ->and($grn->fresh()->status)->toBe('posted')
         ->and((float) CurrentStockByBatch::where('product_id', $this->product->id)->sum('quantity_on_hand'))->toBe(100.0);
+});
+
+it('refuses to reverse a GRN whose batch a stock adjustment has revalued', function () {
+    $grn = GoodsReceiptNote::factory()->create([
+        'supplier_id' => $this->supplier->id,
+        'warehouse_id' => $this->warehouse->id,
+        'status' => 'draft',
+        'receipt_date' => now(),
+    ]);
+
+    $grn->items()->create([
+        'line_no' => 1,
+        'product_id' => $this->product->id,
+        'stock_uom_id' => $this->uom->id,
+        'purchase_uom_id' => $this->uom->id,
+        'qty_in_purchase_uom' => 100,
+        'uom_conversion_factor' => 1,
+        'qty_in_stock_uom' => 100,
+        'extended_value' => 9200,
+        'quantity_received' => 100,
+        'quantity_accepted' => 100,
+        'unit_cost' => 92,
+        'total_cost' => 9200,
+    ]);
+
+    $inventoryService = app(InventoryService::class);
+    $inventoryService->postGrnToInventory($grn->fresh());
+
+    $receipt = StockMovement::where('movement_type', 'grn')->sole();
+
+    // The zero-quantity movement a cost correction leaves on the batch.
+    StockMovement::create([
+        'movement_type' => 'adjustment',
+        'reference_type' => StockAdjustment::class,
+        'reference_id' => 1,
+        'movement_date' => now()->toDateString(),
+        'product_id' => $this->product->id,
+        'stock_batch_id' => $receipt->stock_batch_id,
+        'warehouse_id' => $this->warehouse->id,
+        'quantity' => 0,
+        'uom_id' => $this->uom->id,
+        'unit_cost' => 80,
+        'total_value' => 0,
+        'created_by' => User::factory()->create()->id,
+    ]);
+
+    $result = $inventoryService->reverseGrnInventory($grn->fresh());
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('revalued')
+        ->and($grn->fresh()->status)->toBe('posted');
 });

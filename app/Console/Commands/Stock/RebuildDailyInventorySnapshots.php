@@ -3,6 +3,7 @@
 namespace App\Console\Commands\Stock;
 
 use App\Models\DailyInventorySnapshot;
+use App\Models\StockMovement;
 use App\Notifications\SnapshotRebuildSkippedProducts;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
@@ -62,6 +63,14 @@ class RebuildDailyInventorySnapshots extends Command
      * @var array<int, float>
      */
     private array $batchCosts = [];
+
+    /**
+     * Cost corrections posted by stock adjustments, per batch in the order they were posted.
+     * From its date on, a batch is valued at its latest revaluation instead of its receipt cost.
+     *
+     * @var array<int, list<array{movement_id: int, date: string, cost: float}>>
+     */
+    private array $batchRevaluations = [];
 
     public function handle(): int
     {
@@ -144,6 +153,7 @@ class RebuildDailyInventorySnapshots extends Command
             $isDryRun ? ' [DRY RUN]' : ''
         ));
 
+        $this->batchRevaluations = $this->loadBatchRevaluations();
         $this->batchCosts = $this->loadBatchCosts();
         $this->warnAboutMovementsPricedOffBatchCost($productIds, $endDate);
 
@@ -419,7 +429,86 @@ class RebuildDailyInventorySnapshots extends Command
             ->map(fn ($cost) => (float) $cost)
             ->all();
 
+        // A revaluation also moved the batch master's cost, so for a batch with no GRN row
+        // (one made by a batch transfer) the cost it came in at is its first movement's.
+        foreach ($this->batchRevaluations as $batchId => $revaluations) {
+            if (isset($costs[$batchId])) {
+                continue;
+            }
+
+            $firstCost = DB::table('stock_movements')
+                ->where('stock_batch_id', $batchId)
+                ->where('id', '<', $revaluations[0]['movement_id'])
+                ->orderBy('id')
+                ->value('unit_cost');
+
+            if ($firstCost !== null) {
+                $fallback[$batchId] = (float) $firstCost;
+            }
+        }
+
         return $costs + $fallback;
+    }
+
+    /**
+     * @return array<int, list<array{movement_id: int, date: string, cost: float}>>
+     */
+    private function loadBatchRevaluations(): array
+    {
+        $revaluations = [];
+
+        StockMovement::query()
+            ->revaluations()
+            ->whereNotNull('stock_batch_id')
+            ->orderBy('id')
+            ->toBase()
+            ->get(['id', 'stock_batch_id', 'movement_date', 'unit_cost'])
+            ->each(function ($movement) use (&$revaluations): void {
+                $revaluations[(int) $movement->stock_batch_id][] = [
+                    'movement_id' => (int) $movement->id,
+                    'date' => Carbon::parse($movement->movement_date)->toDateString(),
+                    'cost' => (float) $movement->unit_cost,
+                ];
+            });
+
+        return $revaluations;
+    }
+
+    /**
+     * What a batch was carried at by the end of a date.
+     */
+    private function batchCostOn(int|string $batchKey, string $date): float
+    {
+        $cost = $this->batchCosts[$batchKey] ?? 0.0;
+
+        foreach ($this->batchRevaluations[$batchKey] ?? [] as $revaluation) {
+            if ($revaluation['date'] > $date) {
+                break;
+            }
+
+            $cost = $revaluation['cost'];
+        }
+
+        return $cost;
+    }
+
+    /**
+     * What a batch was carried at when a movement was posted, taken by posting order so a
+     * movement dated the same day as a revaluation is judged by the cost it was posted at.
+     */
+    private function batchCostAtMovement(int $batchId, int $movementId): ?float
+    {
+        $cost = $this->batchCosts[$batchId] ?? null;
+
+        foreach ($this->batchRevaluations[$batchId] ?? [] as $revaluation) {
+            if ($revaluation['movement_id'] > $movementId) {
+                break;
+            }
+
+            $cost = $revaluation['cost'];
+        }
+
+        return $cost;
     }
 
     /**
@@ -499,7 +588,7 @@ class RebuildDailyInventorySnapshots extends Command
                     }
 
                     $quantity += $batchQuantity;
-                    $value += $batchQuantity * ($this->batchCosts[$batchKey] ?? 0.0);
+                    $value += $batchQuantity * $this->batchCostOn($batchKey, $dateString);
                 }
 
                 $quantity = round($quantity, 3);
@@ -688,7 +777,7 @@ class RebuildDailyInventorySnapshots extends Command
             ->where('movement_date', '<=', $endDate)
             ->get(['id', 'movement_date', 'reference_type', 'reference_id', 'product_id', 'stock_batch_id', 'quantity', 'unit_cost'])
             ->filter(function ($movement): bool {
-                $batchCost = $this->batchCosts[(int) $movement->stock_batch_id] ?? null;
+                $batchCost = $this->batchCostAtMovement((int) $movement->stock_batch_id, (int) $movement->id);
 
                 return $batchCost !== null && abs((float) $movement->unit_cost - $batchCost) > 0.01;
             });
@@ -714,7 +803,7 @@ class RebuildDailyInventorySnapshots extends Command
                     $movement->stock_batch_id,
                     $movement->quantity,
                     $movement->unit_cost,
-                    number_format($this->batchCosts[(int) $movement->stock_batch_id], 6),
+                    number_format($this->batchCostAtMovement((int) $movement->stock_batch_id, (int) $movement->id), 6),
                 ])->all()
             );
         }

@@ -18,7 +18,8 @@
     <p>{{ session('error.message') }}</p>
     <p class="text-xs text-gray-500 mt-2">{{ session('error.db') }}</p>
     @else
-    <p>{{ session('error') }}</p>
+    {{-- Escaped first, so a message listing several lines keeps them apart. --}}
+    <p>{!! nl2br(e(session('error'))) !!}</p>
     @endif
 </div>
 @endif

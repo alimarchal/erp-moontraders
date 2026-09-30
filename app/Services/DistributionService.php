@@ -24,6 +24,7 @@ class DistributionService
     public function __construct(
         private StockValuationService $stockValuation,
         private InventoryService $inventoryService,
+        private GoodsIssueStockCheck $stockCheck,
     ) {}
 
     /**
@@ -42,6 +43,9 @@ class DistributionService
             if ($goodsIssue->status === 'cancelled') {
                 throw new \Exception('Cannot post cancelled Goods Issue');
             }
+
+            // Every line is checked before any stock moves, so all shortfalls are named at once.
+            $this->stockCheck->assertCovered($goodsIssue->items, (int) $goodsIssue->warehouse_id, (string) $goodsIssue->issue_number);
 
             $totalIssueCost = 0.0;
             $totalIssueValue = 0.0;
@@ -63,10 +67,10 @@ class DistributionService
                         ->sum('quantity_remaining');
 
                     if ($availableNonPromoStock < $item->quantity_issued) {
-                        throw new \Exception("Insufficient non-promotional stock for product ID {$item->product_id}. Available (non-promo): {$availableNonPromoStock}, Required: {$item->quantity_issued}");
+                        throw new \Exception("Insufficient non-promotional stock for {$this->productName($item->product_id)}. Available (non-promo): {$availableNonPromoStock}, Required: {$item->quantity_issued}");
                     }
                 } elseif (! $warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
-                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: ".($warehouseStock->quantity_on_hand ?? 0).", Required: {$item->quantity_issued}");
+                    throw new \Exception("Insufficient stock for {$this->productName($item->product_id)}. Available: ".($warehouseStock->quantity_on_hand ?? 0).", Required: {$item->quantity_issued}");
                 }
 
                 // Allocate stock from batches with PROMOTIONAL PRIORITY
@@ -78,7 +82,7 @@ class DistributionService
                 );
 
                 if ($batchAllocations['total_allocated'] < $item->quantity_issued) {
-                    throw new \Exception("Could not allocate sufficient stock from batches for product ID {$item->product_id}");
+                    throw new \Exception("Could not allocate sufficient stock from batches for {$this->productName($item->product_id)}");
                 }
 
                 // Create stock movements for each batch
@@ -257,6 +261,8 @@ class DistributionService
                 throw new \Exception('No supplementary items to post');
             }
 
+            $this->stockCheck->assertCovered($newItems, (int) $goodsIssue->warehouse_id, (string) $goodsIssue->issue_number);
+
             $totalIssueCost = 0.0;
 
             foreach ($newItems as $item) {
@@ -275,10 +281,10 @@ class DistributionService
                         ->sum('quantity_remaining');
 
                     if ($availableNonPromoStock < $item->quantity_issued) {
-                        throw new \Exception("Insufficient non-promotional stock for product ID {$item->product_id}. Available (non-promo): {$availableNonPromoStock}, Required: {$item->quantity_issued}");
+                        throw new \Exception("Insufficient non-promotional stock for {$this->productName($item->product_id)}. Available (non-promo): {$availableNonPromoStock}, Required: {$item->quantity_issued}");
                     }
                 } elseif (! $warehouseStock || $warehouseStock->quantity_on_hand < $item->quantity_issued) {
-                    throw new \Exception("Insufficient stock for product ID {$item->product_id}. Available: ".($warehouseStock->quantity_on_hand ?? 0).", Required: {$item->quantity_issued}");
+                    throw new \Exception("Insufficient stock for {$this->productName($item->product_id)}. Available: ".($warehouseStock->quantity_on_hand ?? 0).", Required: {$item->quantity_issued}");
                 }
 
                 $batchAllocations = $this->allocateStockFromBatches(
@@ -289,7 +295,7 @@ class DistributionService
                 );
 
                 if ($batchAllocations['total_allocated'] < $item->quantity_issued) {
-                    throw new \Exception("Could not allocate sufficient stock from batches for product ID {$item->product_id}");
+                    throw new \Exception("Could not allocate sufficient stock from batches for {$this->productName($item->product_id)}");
                 }
 
                 foreach ($batchAllocations['batches'] as $batchAllocation) {
@@ -609,6 +615,13 @@ class DistributionService
      *
      * @return array ['batches' => [...], 'total_allocated' => float]
      */
+    private function productName(int|string $productId): string
+    {
+        $product = DB::table('products')->where('id', $productId)->first(['product_code', 'product_name']);
+
+        return $product ? "{$product->product_code} – {$product->product_name}" : "product #{$productId}";
+    }
+
     private function allocateStockFromBatches(int $productId, int $warehouseId, float $quantityNeeded, bool $excludePromotional = false): array
     {
         $allocations = [];
@@ -702,12 +715,12 @@ class DistributionService
                     ->first();
 
                 if (! $vanStock) {
-                    throw new \Exception("No van stock found for product ID {$item->product_id}");
+                    throw new \Exception("No van stock found for {$this->productName($item->product_id)}");
                 }
 
                 $totalToReduce = $item->quantity_sold + $item->quantity_returned + $item->quantity_shortage;
                 if ($vanStock->quantity_on_hand < $totalToReduce) {
-                    throw new \Exception("Insufficient van stock for product ID {$item->product_id}. Available: {$vanStock->quantity_on_hand}, Required: {$totalToReduce}");
+                    throw new \Exception("Insufficient van stock for {$this->productName($item->product_id)}. Available: {$vanStock->quantity_on_hand}, Required: {$totalToReduce}");
                 }
 
                 // Get UOM from goods issue item if available, otherwise from product

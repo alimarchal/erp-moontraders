@@ -97,10 +97,10 @@
         ['label' => 'Action', 'align' => 'text-center', 'width' => '70px'],
     ])">
                             <tbody class="bg-white divide-y divide-gray-200">
-                                <template x-for="(item, index) in items" :key="index">
+                                <template x-for="(item, index) in items" :key="item.uid">
                                     <tr class="align-top">
                                         <td class="px-2 py-2 align-middle">
-                                            <select :id="`product_${index}`" :name="`items[${index}][product_id]`"
+                                            <select :id="`product_${item.uid}`" :name="`items[${index}][product_id]`"
                                                 required
                                                 class="product-select select2 border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">Select Product</option>
@@ -117,10 +117,15 @@
                                                 title="Check to exclude promotional batches">
                                         </td>
                                         <td class="px-2 py-2 align-middle">
-                                            <input type="text" :id="`available_qty_${index}`" readonly
+                                            <input type="text" :id="`available_qty_${item.uid}`" readonly
                                                 x-model="item.available_qty"
                                                 :class="parseFloat(item.available_qty) <= 0 ? 'border-red-300 bg-red-50' : 'border-gray-300 bg-gray-100'"
                                                 class="rounded-md shadow-sm text-sm w-full text-center font-semibold">
+                                            <div x-show="item.in_other_drafts > 0" x-cloak class="mt-1 text-xs leading-tight text-center"
+                                                :class="draftsExceedFree(item) ? 'text-amber-700 font-semibold' : 'text-gray-500'"
+                                                :title="otherDraftsTitle(item)">
+                                                <span x-text="'In drafts: ' + formatQty(item.in_other_drafts)"></span>
+                                            </div>
                                         </td>
                                         @if($canEnterCartons)
                                         <td class="px-2 py-2 align-middle">
@@ -128,8 +133,8 @@
                                                 x-model="item.carton_qty"
                                                 @input="recalcFromCartonPieces(index)"
                                                 min="0" step="1"
-                                                :disabled="parseFloat(item.available_qty) <= 0 || !item.conversion_factor"
-                                                :class="(parseFloat(item.available_qty) <= 0 || !item.conversion_factor) ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
+                                                :disabled="(parseFloat(item.available_qty) <= 0 && !item.stock_short) || !item.conversion_factor"
+                                                :class="((parseFloat(item.available_qty) <= 0 && !item.stock_short) || !item.conversion_factor) ? 'bg-gray-200 cursor-not-allowed' : (item.stock_short ? 'bg-red-50 border-red-400' : 'bg-white')"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full text-center"
                                                 placeholder="0">
                                         </td>
@@ -138,8 +143,8 @@
                                                 x-model="item.pieces_qty"
                                                 @input="recalcFromCartonPieces(index)"
                                                 min="0" step="1"
-                                                :disabled="parseFloat(item.available_qty) <= 0"
-                                                :class="parseFloat(item.available_qty) <= 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
+                                                :disabled="parseFloat(item.available_qty) <= 0 && !item.stock_short"
+                                                :class="(parseFloat(item.available_qty) <= 0 && !item.stock_short) ? 'bg-gray-200 cursor-not-allowed' : (item.stock_short ? 'bg-red-50 border-red-400' : 'bg-white')"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full text-center"
                                                 placeholder="0">
                                         </td>
@@ -149,17 +154,17 @@
                                                 x-model="item.quantity_issued"
                                                 @input="onDirectQtyInput(index)" step="0.001"
                                                 :max="item.available_qty" min="0.001"
-                                                :disabled="parseFloat(item.available_qty) <= 0"
-                                                :required="parseFloat(item.available_qty) > 0"
-                                                :class="parseFloat(item.available_qty) <= 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
+                                                :disabled="parseFloat(item.available_qty) <= 0 && !item.stock_short"
+                                                :required="parseFloat(item.available_qty) > 0 || item.stock_short"
+                                                :class="(parseFloat(item.available_qty) <= 0 && !item.stock_short) ? 'bg-gray-200 cursor-not-allowed' : (item.stock_short ? 'bg-red-50 border-red-400' : 'bg-white')"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full"
                                                 @if($canEnterCartons) readonly title="Auto-calculated from Carton + Pieces" @endif>
                                         </td>
                                         <td class="px-2 py-2 align-middle">
                                             <select :name="`items[${index}][uom_id]`" x-model="item.uom_id"
-                                                :disabled="parseFloat(item.available_qty) <= 0"
-                                                :required="parseFloat(item.available_qty) > 0"
-                                                :class="parseFloat(item.available_qty) <= 0 ? 'bg-gray-200 cursor-not-allowed' : 'bg-white'"
+                                                :disabled="parseFloat(item.available_qty) <= 0 && !item.stock_short"
+                                                :required="parseFloat(item.available_qty) > 0 || item.stock_short"
+                                                :class="(parseFloat(item.available_qty) <= 0 && !item.stock_short) ? 'bg-gray-200 cursor-not-allowed' : (item.stock_short ? 'bg-red-50 border-red-400' : 'bg-white')"
                                                 class="border-gray-300 focus:border-indigo-500 rounded-md shadow-sm text-sm w-full">
                                                 <option value="">UOM</option>
                                                 @foreach ($uoms as $uom)
@@ -173,9 +178,9 @@
                                                 <span x-text="'1 Ctn = ' + item.conversion_factor + ' Pcs'"></span>
                                             </div>
                                             @endif
-                                            <div :id="`batch_info_${index}`" class="text-xs text-gray-600 max-w-xs">
+                                            <div :id="`batch_info_${item.uid}`" class="text-xs text-gray-600 max-w-xs">
                                             </div>
-                                            <div :id="`price_breakdown_${index}`"
+                                            <div :id="`price_breakdown_${item.uid}`"
                                                 class="text-xs text-gray-700 max-w-xs"></div>
                                             <input type="hidden" :name="`items[${index}][unit_cost]`"
                                                 x-model="item.unit_cost">
@@ -299,36 +304,113 @@
         <script>
             let allProducts = [];
             let productBatches = {};
+
+            let nextRowUid = 1;
+            let pendingShortages = [];
+            let shortageAlertTimer = null;
+
+            /**
+             * Rows are identified by a uid that never changes, not by their position. Removing a row
+             * used to re-bind every row below it by index, so the product, stock and quantities of
+             * neighbouring lines could end up on the wrong row.
+             */
+            function makeRow(values = {}) {
+                return Object.assign({
+                    uid: nextRowUid++,
+                    product_id: '',
+                    uom_id: '',
+                    quantity_issued: 0,
+                    unit_cost: 0,
+                    selling_price: 0,
+                    total_value: 0,
+                    available_qty: 0,
+                    exclude_promotional: false,
+                    carton_qty: 0,
+                    pieces_qty: 0,
+                    conversion_factor: 1,
+                    in_other_drafts: 0,
+                    other_drafts: [],
+                    stock_short: false,
+                }, values);
+            }
+
+            function formComponent() {
+                return Alpine.$data(document.getElementById('goodsIssueForm'));
+            }
+
+            function findRow(uid) {
+                return formComponent().items.find(row => row.uid === uid);
+            }
+
+            function rowElement(item, part) {
+                return document.getElementById(`${part}_${item.uid}`);
+            }
+
+            function escapeHtml(value) {
+                return String(value ?? '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+            }
+
+            function productLabel(productId) {
+                const product = allProducts.find(p => String(p.id) === String(productId));
+                return product ? `${product.product_code} - ${product.product_name}` : `Product #${productId}`;
+            }
+
+            function formatStockQty(quantity, factor) {
+                const pieces = Number((parseFloat(quantity) || 0).toFixed(3));
+                if (!canEnterCartons || !(factor > 1)) {
+                    return `${pieces} pcs`;
+                }
+                const cartons = Math.floor((pieces + 0.0001) / factor);
+                const loose = Number((pieces - cartons * factor).toFixed(3));
+                return `${cartons} ctn + ${loose} pcs (${pieces} pcs)`;
+            }
+
+            function otherDraftsHtml(item) {
+                if (!item.other_drafts || item.other_drafts.length === 0) {
+                    return '';
+                }
+                const factor = parseFloat(item.conversion_factor) || 1;
+                const lines = item.other_drafts
+                    .map(d => `<div>${escapeHtml(d.issue_number)}${d.vehicle ? ' (' + escapeHtml(d.vehicle) + ')' : ''}: ${formatStockQty(d.quantity, factor)}</div>`)
+                    .join('');
+                return `<div class="mt-1 border-t border-amber-300 pt-1 text-amber-700"><div class="font-semibold">Also in other drafts:</div>${lines}</div>`;
+            }
+
+            /**
+             * A draft is opened after other issues were posted: every line stock no longer covers is
+             * gathered into one alert, instead of one alert per line where only the last one shows.
+             */
+            function queueShortageAlert(entry) {
+                pendingShortages.push(entry);
+                clearTimeout(shortageAlertTimer);
+                shortageAlertTimer = setTimeout(() => {
+                    const rows = pendingShortages
+                        .map(s => `<li><span class="font-semibold">${escapeHtml(s.label)}</span>: in draft ${formatStockQty(s.quantity, s.factor)}, in stock ${formatStockQty(s.available, s.factor)}</li>`)
+                        .join('');
+                    pendingShortages = [];
+                    window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                        detail: {
+                            title: 'Not Enough Stock',
+                            message: `<p>Stock has gone down since this was saved. These lines are marked in red:</p><ul class="mt-2 list-disc pl-5 text-left">${rows}</ul><p class="mt-2 text-gray-700">Their quantities were kept. Reduce or remove them before saving.</p>`
+                        }
+                    }));
+                }, 400);
+            }
+
             const oldItems = @json(old('items', []));
             const canEnterCartons = @json($canEnterCartons);
 
             function goodsIssueForm() {
                 return {
-                    items: oldItems.length > 0 ? oldItems.map(item => ({
+                    items: oldItems.length > 0 ? oldItems.map(item => makeRow({
                         product_id: item.product_id || '',
                         uom_id: item.uom_id || '',
                         quantity_issued: parseFloat(item.quantity_issued) || 0,
                         unit_cost: parseFloat(item.unit_cost) || 0,
                         selling_price: parseFloat(item.selling_price) || 0,
                         total_value: parseFloat(item.total_value) || 0,
-                        available_qty: 0,
                         exclude_promotional: item.exclude_promotional == 1 || item.exclude_promotional === true || false,
-                        carton_qty: 0,
-                        pieces_qty: 0,
-                        conversion_factor: 1,
-                    })) : [{
-                        product_id: '',
-                        uom_id: '',
-                        quantity_issued: 0,
-                        unit_cost: 0,
-                        selling_price: 0,
-                        total_value: 0,
-                        available_qty: 0,
-                        exclude_promotional: false,
-                        carton_qty: 0,
-                        pieces_qty: 0,
-                        conversion_factor: 1,
-                    }],
+                    })) : [makeRow()],
 
                     addProductCount: 1,
 
@@ -340,6 +422,20 @@
                     },
 
                     validateAndSubmit() {
+                        const shortItems = this.items.filter(item => item.product_id && item.stock_short);
+                        if (shortItems.length > 0) {
+                            const names = shortItems
+                                .map(item => `<li>${escapeHtml(productLabel(item.product_id))}</li>`)
+                                .join('');
+                            window.dispatchEvent(new CustomEvent('open-alert-modal', {
+                                detail: {
+                                    title: 'Not Enough Stock',
+                                    message: `<p>These lines need more than is in stock:</p><ul class="mt-2 list-disc pl-5 text-left">${names}</ul><p class="mt-2">Reduce or remove them, then save again.</p>`
+                                }
+                            }));
+                            return false;
+                        }
+
                         const validItems = this.items.filter(item => {
                             const qty = parseFloat(item.quantity_issued) || 0;
                             return qty > 0 && item.product_id;
@@ -384,100 +480,106 @@
                             return;
                         }
 
-                        const newIndex = this.items.length;
-                        this.items.push({
-                            product_id: '',
-                            uom_id: '',
-                            quantity_issued: 0,
-                            unit_cost: 0,
-                            selling_price: 0,
-                            total_value: 0,
-                            available_qty: 0,
-                            exclude_promotional: false,
-                            carton_qty: 0,
-                            pieces_qty: 0,
-                            conversion_factor: 1,
-                        });
+                        const row = makeRow();
+                        this.items.push(row);
 
                         this.$nextTick(() => {
-                            initializeProductSelect2(newIndex);
+                            initializeProductSelect2(row.uid);
                         });
                     },
 
                     removeItem(index) {
-                        if (this.items.length > 1) {
-                            const productId = this.items[index].product_id;
-
-                            if (productId) {
-                                delete productBatches[productId];
-                                delete productBatches[`${productId}_np`];
-                            }
-
-                            this.items.splice(index, 1);
-
-                            this.$nextTick(() => {
-                                $('.product-select').each(function () {
-                                    if ($(this).data('select2')) {
-                                        $(this).select2('destroy');
-                                    }
-                                });
-
-                                $('.product-select').each(function (idx) {
-                                    initializeProductSelect2(idx);
-                                });
-                            });
+                        if (this.items.length <= 1) {
+                            return;
                         }
+
+                        const item = this.items[index];
+                        const $select = $(`#product_${item.uid}`);
+                        if ($select.data('select2')) {
+                            $select.select2('destroy');
+                        }
+
+                        // Only this row goes; every other row keeps its own element, dropdown and figures.
+                        this.items.splice(index, 1);
                     },
 
-                    updatePriceBasedOnQuantity(index) {
+                    indexOfRow(uid) {
+                        return this.items.findIndex(row => row.uid === uid);
+                    },
+
+                    formatQty(quantity) {
+                        return Number((parseFloat(quantity) || 0).toFixed(3)).toLocaleString('en-PK');
+                    },
+
+                    draftsExceedFree(item) {
+                        const free = (parseFloat(item.available_qty) || 0) - (parseFloat(item.in_other_drafts) || 0);
+                        return (parseFloat(item.quantity_issued) || 0) > free;
+                    },
+
+                    otherDraftsTitle(item) {
+                        return (item.other_drafts || [])
+                            .map(d => `${d.issue_number}${d.vehicle ? ' (' + d.vehicle + ')' : ''}: ${Number(d.quantity)}`)
+                            .join('\n');
+                    },
+
+                    updatePriceBasedOnQuantity(index, restoring = false) {
                         const item = this.items[index];
+                        if (!item) {
+                            return;
+                        }
+
                         const productId = item.product_id;
                         const quantity = parseFloat(item.quantity_issued) || 0;
                         const availableQty = parseFloat(item.available_qty) || 0;
                         const excludePromo = item.exclude_promotional;
                         const batchKey = excludePromo ? `${productId}_np` : productId;
+                        const batchInfoDiv = rowElement(item, 'batch_info');
+                        const priceBreakdownDiv = rowElement(item, 'price_breakdown');
+
+                        if (!batchInfoDiv || !priceBreakdownDiv) {
+                            return;
+                        }
 
                         if (!productId || !productBatches[batchKey]) {
-                            document.getElementById(`price_breakdown_${index}`).innerHTML = '';
-                            document.getElementById(`batch_info_${index}`).innerHTML = '';
+                            priceBreakdownDiv.innerHTML = '';
+                            batchInfoDiv.innerHTML = '';
                             item.total_value = 0;
+                            item.stock_short = false;
                             return;
                         }
 
                         if (quantity === 0) {
-                            document.getElementById(`price_breakdown_${index}`).innerHTML = '<span class="text-gray-400">Enter quantity</span>';
-                            document.getElementById(`batch_info_${index}`).innerHTML = '';
+                            priceBreakdownDiv.innerHTML = '<span class="text-gray-400">Enter quantity</span>';
+                            batchInfoDiv.innerHTML = '';
                             item.total_value = 0;
+                            item.stock_short = false;
                             return;
                         }
 
                         if (quantity > availableQty) {
                             const factor = parseFloat(item.conversion_factor) || 1;
-                            let enteredLabel = `${quantity.toFixed(0)} pcs`;
-                            let availableLabel = `${availableQty.toFixed(0)} pcs`;
-                            let excessLabel = `${(quantity - availableQty).toFixed(0)} pcs`;
+                            const label = productLabel(productId);
 
-                            if (canEnterCartons && factor > 1) {
-                                const enteredCtns = parseInt(item.carton_qty) || 0;
-                                const enteredPcs = parseInt(item.pieces_qty) || 0;
-                                enteredLabel = `${enteredCtns} ctn + ${enteredPcs} pcs (${quantity.toFixed(0)} pcs)`;
-                                const availCtns = Math.floor(availableQty / factor);
-                                const availPcs = Math.round(availableQty % factor);
-                                availableLabel = `${availCtns} ctn + ${availPcs} pcs (${availableQty.toFixed(0)} pcs)`;
-                                excessLabel = `${(quantity - availableQty).toFixed(0)} pcs`;
-                            }
-
-                            document.getElementById(`batch_info_${index}`).innerHTML = `
-                                <div class="text-red-600 font-bold">⚠️ ERROR: Quantity exceeds available stock!</div>
+                            batchInfoDiv.innerHTML = `
+                                <div class="text-red-600 font-bold">⚠️ Not enough stock for ${escapeHtml(label)}</div>
                             `;
-                            document.getElementById(`price_breakdown_${index}`).innerHTML = `
-                                <div class="text-red-600 font-semibold">Entered: ${enteredLabel}</div>
-                                <div class="text-green-600 font-semibold">Available: ${availableLabel}</div>
-                                <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Excess: ${excessLabel}</div>
+                            priceBreakdownDiv.innerHTML = `
+                                <div class="text-red-600 font-semibold">${restoring ? 'In draft' : 'Entered'}: ${formatStockQty(quantity, factor)}</div>
+                                <div class="text-green-600 font-semibold">In stock: ${formatStockQty(availableQty, factor)}</div>
+                                <div class="text-red-600 font-bold border-t border-red-300 pt-1 mt-1">Short: ${formatStockQty(quantity - availableQty, factor)}</div>
+                                ${otherDraftsHtml(item)}
                             `;
                             item.total_value = 0;
                             item.unit_cost = 0;
 
+                            if (restoring) {
+                                // A saved line keeps its quantity: the user decides what to cut, not the form.
+                                item.stock_short = true;
+                                queueShortageAlert({ label, quantity, available: availableQty, factor });
+                                return;
+                            }
+
+                            item.stock_short = false;
                             item.quantity_issued = availableQty;
                             if (canEnterCartons && factor > 1) {
                                 item.carton_qty = Math.floor(availableQty / factor);
@@ -486,13 +588,15 @@
                             this.updatePriceBasedOnQuantity(index);
 
                             setTimeout(() => {
-                                let alertMsg = `<p class="font-semibold text-red-600">You entered: ${enteredLabel}</p><p class="font-semibold text-green-600">Available stock: ${availableLabel}</p><p class="mt-2 text-gray-700">Quantity has been reset to maximum available.</p>`;
+                                const alertMsg = `<p class="font-semibold text-gray-900">${escapeHtml(label)}</p><p class="font-semibold text-red-600">You entered: ${formatStockQty(quantity, factor)}</p><p class="font-semibold text-green-600">Available stock: ${formatStockQty(availableQty, factor)}</p>${otherDraftsHtml(item)}<p class="mt-2 text-gray-700">Quantity has been reset to maximum available.</p>`;
                                 window.dispatchEvent(new CustomEvent('open-alert-modal', {
-                                    detail: { message: alertMsg }
+                                    detail: { title: 'Not Enough Stock', message: alertMsg }
                                 }));
                             }, 100);
                             return;
                         }
+
+                        item.stock_short = false;
 
                         const batches = productBatches[batchKey];
                         let remainingQty = quantity;
@@ -523,10 +627,10 @@
                         }
 
                         if (remainingQty > 0) {
-                            document.getElementById(`batch_info_${index}`).innerHTML = `
+                            batchInfoDiv.innerHTML = `
                                 <div class="text-red-600 font-bold">⚠️ Insufficient stock!</div>
                             `;
-                            document.getElementById(`price_breakdown_${index}`).innerHTML = `
+                            priceBreakdownDiv.innerHTML = `
                                 <div class="text-sm">Available: ${(quantity - remainingQty).toFixed(0)}</div>
                                 <div class="text-sm text-red-600">Short: ${remainingQty.toFixed(0)}</div>
                             `;
@@ -534,7 +638,6 @@
                             return;
                         }
 
-                        const batchInfoDiv = document.getElementById(`batch_info_${index}`);
                         if (batchesUsed.length > 0) {
                             let info = '<div class="text-blue-600 font-semibold mb-1">📦 Issuing from batches:</div>';
                             batchesUsed.forEach((b, bIndex) => {
@@ -544,7 +647,6 @@
                             batchInfoDiv.innerHTML = info;
                         }
 
-                        const priceBreakdownDiv = document.getElementById(`price_breakdown_${index}`);
                         if (batchesUsed.length === 1) {
                             const b = batchesUsed[0];
                             priceBreakdownDiv.innerHTML = `
@@ -569,22 +671,24 @@
 
                     async onExcludePromotionalChange(index) {
                         const item = this.items[index];
-                        if (!item.product_id) return;
+                        if (!item || !item.product_id) return;
 
+                        const uid = item.uid;
                         const savedQty = parseFloat(item.quantity_issued) || 0;
 
-                        const batchInfoDiv = document.getElementById(`batch_info_${index}`);
-                        const priceDiv = document.getElementById(`price_breakdown_${index}`);
+                        const batchInfoDiv = rowElement(item, 'batch_info');
+                        const priceDiv = rowElement(item, 'price_breakdown');
                         if (batchInfoDiv) batchInfoDiv.innerHTML = '<div class="text-gray-400">Loading...</div>';
                         if (priceDiv) priceDiv.innerHTML = '';
 
                         const warehouseId = document.getElementById('warehouse_id').value;
                         if (warehouseId && item.product_id) {
-                            await onProductChange(index, item.product_id, warehouseId);
+                            await onProductChange(uid, item.product_id, warehouseId);
 
                             item.quantity_issued = savedQty;
-                            if (savedQty > 0) {
-                                this.updatePriceBasedOnQuantity(index);
+                            const currentIndex = this.indexOfRow(uid);
+                            if (savedQty > 0 && currentIndex !== -1) {
+                                this.updatePriceBasedOnQuantity(currentIndex);
                             }
                         }
                     },
@@ -734,7 +838,7 @@
             }
 
             function refreshAllProductSelects() {
-                const alpineComponent = Alpine.$data(document.querySelector('[x-data="goodsIssueForm()"]'));
+                const alpineComponent = formComponent();
                 if (!alpineComponent) return;
 
                 const validProductIds = new Set(allProducts.map(p => String(p.id)));
@@ -745,23 +849,22 @@
                     }
                 });
 
-                alpineComponent.items.forEach((item, index) => {
+                alpineComponent.items.forEach(item => {
                     if (item.product_id && !validProductIds.has(String(item.product_id))) {
+                        delete productBatches[item.product_id];
                         item.product_id = '';
                         item.available_qty = 0;
                         item.quantity_issued = 0;
                         item.unit_cost = 0;
                         item.selling_price = 0;
                         item.total_value = 0;
-                        if (productBatches[item.product_id]) {
-                            delete productBatches[item.product_id];
-                        }
+                        item.stock_short = false;
+                        item.other_drafts = [];
+                        item.in_other_drafts = 0;
                     }
                 });
 
-                $('.product-select').each(function (idx) {
-                    initializeProductSelect2(idx);
-                });
+                alpineComponent.items.forEach(item => initializeProductSelect2(item.uid));
             }
 
             function resetEmployeeDropdown() {
@@ -783,10 +886,14 @@
                 $vehicle.prop('disabled', true);
             }
 
-            async function initializeProductSelect2(index) {
-                const $select = $(`#product_${index}`);
-                const alpineComponent = Alpine.$data($select.closest('form')[0]);
+            async function initializeProductSelect2(uid) {
+                const $select = $(`#product_${uid}`);
+                if (!$select.length) return;
 
+                const alpineComponent = formComponent();
+
+                // select2 appends its data as <option>s, so clear the previous ones before re-initialising.
+                $select.find('option').not('[value=""]').remove();
                 $select.select2({
                     placeholder: 'Select Product',
                     allowClear: false,
@@ -797,90 +904,112 @@
                     }))
                 });
 
-                if (alpineComponent && alpineComponent.items && alpineComponent.items[index] && alpineComponent.items[index].product_id) {
-                    const savedQuantity = alpineComponent.items[index].quantity_issued;
+                // Bound once per element and tied to the row's uid, so a handler can never write
+                // into a row that has since moved to this position.
+                $select.off('change.goodsIssueRow').on('change.goodsIssueRow', async function () {
+                    const item = findRow(uid);
+                    if (!item) return;
 
-                    $select.val(alpineComponent.items[index].product_id).trigger('change.select2');
+                    const productId = $(this).val();
+                    const warehouseId = $('#warehouse_id').val();
+                    item.product_id = productId;
+                    item.stock_short = false;
+
+                    if (productId && warehouseId) {
+                        await onProductChange(uid, productId, warehouseId);
+                    }
+                });
+
+                const item = alpineComponent.items.find(row => row.uid === uid);
+                if (item && item.product_id) {
+                    const savedQuantity = parseFloat(item.quantity_issued) || 0;
+
+                    $select.val(item.product_id).trigger('change.select2');
 
                     const warehouseId = $('#warehouse_id').val();
-                    if (warehouseId && alpineComponent.items[index].product_id) {
-                        await onProductChange(index, alpineComponent.items[index].product_id, warehouseId);
+                    if (warehouseId) {
+                        await onProductChange(uid, item.product_id, warehouseId);
 
                         if (savedQuantity > 0) {
-                            alpineComponent.items[index].quantity_issued = savedQuantity;
+                            item.quantity_issued = savedQuantity;
                             setTimeout(() => {
-                                alpineComponent.updatePriceBasedOnQuantity(index);
+                                const index = alpineComponent.indexOfRow(uid);
+                                if (index !== -1) {
+                                    alpineComponent.updatePriceBasedOnQuantity(index, true);
+                                }
                             }, 100);
                         }
                     }
                 }
-
-                $select.on('change', async function () {
-                    const productId = $(this).val();
-                    const warehouseId = $('#warehouse_id').val();
-
-                    if (alpineComponent && alpineComponent.items && alpineComponent.items[index]) {
-                        alpineComponent.items[index].product_id = productId;
-
-                        if (productId && warehouseId) {
-                            await onProductChange(index, productId, warehouseId);
-                        }
-                    }
-                });
             }
 
-            async function onProductChange(index, productId, warehouseId) {
+            async function onProductChange(uid, productId, warehouseId) {
                 if (!productId || !warehouseId) {
                     return;
                 }
 
-                const alpineComponent = Alpine.$data(document.querySelector('[x-data="goodsIssueForm()"]'));
+                const alpineComponent = formComponent();
+                const item = alpineComponent.items.find(row => row.uid === uid);
+                if (!item) return;
 
-                const isDuplicate = alpineComponent.items.some((item, idx) => {
-                    return idx !== index && String(item.product_id) === String(productId);
-                });
+                const isDuplicate = alpineComponent.items.some(row => row.uid !== uid && String(row.product_id) === String(productId));
 
                 if (isDuplicate) {
                     window.dispatchEvent(new CustomEvent('open-alert-modal', {
                         detail: {
                             title: 'Duplicate Product!',
-                            message: '<p>This product is already added to the list.</p><p class="mt-2">Please adjust the quantity in the existing row instead of adding it again.</p>'
+                            message: `<p><span class="font-semibold">${escapeHtml(productLabel(productId))}</span> is already added to the list.</p><p class="mt-2">Please adjust the quantity in the existing row instead of adding it again.</p>`
                         }
                     }));
-                    $(`#product_${index}`).val('').trigger('change');
-                    alpineComponent.items[index].product_id = '';
+                    $(`#product_${uid}`).val('').trigger('change.select2');
+                    item.product_id = '';
                     return;
                 }
 
                 try {
-                    const excludePromo = alpineComponent.items[index].exclude_promotional ? 1 : 0;
+                    const excludePromo = item.exclude_promotional ? 1 : 0;
                     const response = await fetch(`/api/warehouses/${warehouseId}/products/${productId}/stock?exclude_promotional=${excludePromo}`);
                     const data = await response.json();
+
+                    // The row may have been removed, or given another product, while this was loading.
+                    if (!alpineComponent.items.some(row => row.uid === uid) || String(item.product_id) !== String(productId)) {
+                        return;
+                    }
 
                     const batchKey = excludePromo ? `${productId}_np` : productId;
                     productBatches[batchKey] = data.batches || [];
 
-                    alpineComponent.items[index].available_qty = parseFloat(data.available_quantity || 0).toFixed(2);
-                    alpineComponent.items[index].uom_id = data.stock_uom_id || '';
+                    item.available_qty = parseFloat(data.available_quantity || 0).toFixed(2);
+                    item.uom_id = data.stock_uom_id || '';
+                    item.other_drafts = data.other_drafts || [];
+                    item.in_other_drafts = parseFloat(data.in_other_drafts || 0);
 
                     if (canEnterCartons) {
-                        alpineComponent.items[index].conversion_factor = parseFloat(data.conversion_factor) || 1;
-                        alpineComponent.items[index].carton_qty = 0;
-                        alpineComponent.items[index].pieces_qty = 0;
+                        const factor = parseFloat(data.conversion_factor) || 1;
+                        item.conversion_factor = factor;
+                        const totalQty = parseFloat(item.quantity_issued) || 0;
+                        if (totalQty > 0 && factor > 1) {
+                            item.carton_qty = Math.floor(totalQty / factor);
+                            item.pieces_qty = Math.round(totalQty % factor);
+                        } else {
+                            item.carton_qty = 0;
+                            item.pieces_qty = 0;
+                        }
                     }
 
                     if (data.batches && data.batches.length > 0) {
-                        alpineComponent.items[index].selling_price = parseFloat(data.batches[0].selling_price || 0);
+                        item.selling_price = parseFloat(data.batches[0].selling_price || 0);
                     } else {
-                        alpineComponent.items[index].selling_price = 0;
+                        item.selling_price = 0;
                     }
 
-                    displayBatchInfo(index, data.batches, data.has_multiple_prices, !!excludePromo);
+                    displayBatchInfo(uid, data.batches, data.has_multiple_prices, !!excludePromo);
 
-                    if (alpineComponent.items[index].quantity_issued === 0 || alpineComponent.items[index].quantity_issued === null || alpineComponent.items[index].quantity_issued === undefined) {
-                        alpineComponent.items[index].total_value = 0;
-                        alpineComponent.items[index].unit_cost = 0;
-                        document.getElementById(`price_breakdown_${index}`).innerHTML = '';
+                    if (item.quantity_issued === 0 || item.quantity_issued === null || item.quantity_issued === undefined) {
+                        item.total_value = 0;
+                        item.unit_cost = 0;
+                        const priceDiv = rowElement(item, 'price_breakdown');
+                        if (priceDiv) priceDiv.innerHTML = '';
                     }
 
                 } catch (error) {
@@ -894,8 +1023,9 @@
                 }
             }
 
-            function displayBatchInfo(index, batches, hasMultiplePrices, excludePromo = false) {
-                const batchInfoDiv = document.getElementById(`batch_info_${index}`);
+            function displayBatchInfo(uid, batches, hasMultiplePrices, excludePromo = false) {
+                const batchInfoDiv = document.getElementById(`batch_info_${uid}`);
+                if (!batchInfoDiv) return;
 
                 if (!batches || batches.length === 0) {
                     batchInfoDiv.innerHTML = excludePromo
@@ -951,9 +1081,7 @@
                     });
 
                     // Initialize product selects for existing items
-                    $('.product-select').each(function (index) {
-                        initializeProductSelect2(index);
-                    });
+                    formComponent().items.forEach(item => initializeProductSelect2(item.uid));
 
                     // Restore dynamic dropdowns when redirected back after validation error
                     const oldEmployeeId = @json(old('employee_id'));

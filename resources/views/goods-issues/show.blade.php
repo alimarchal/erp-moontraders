@@ -163,6 +163,87 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md no-print" />
 
+            @if ($goodsIssue->status === 'draft' && $stockPositions->isNotEmpty())
+                @php
+                    $shortPositions = $stockPositions->filter(fn ($p) => $p['short'] > 0.001 || $p['short_non_promotional'] > 0.001);
+                    $contestedPositions = $stockPositions->filter(fn ($p) => $p['short'] <= 0.001 && $p['short_non_promotional'] <= 0.001 && $p['required'] > $p['free'] + 0.001);
+                    $problemPositions = $shortPositions->merge($contestedPositions);
+                    $qty = fn (float $quantity, array $p) => \App\Services\GoodsIssueStockCheck::formatQuantity($quantity, $p['conversion_factor']);
+                @endphp
+                <div id="stock-check" class="no-print mb-4 overflow-hidden rounded-lg bg-white shadow-xl">
+                    <div @class([
+                        'flex flex-wrap items-center justify-between gap-2 border-l-4 px-4 py-3',
+                        'border-red-500 bg-red-50' => $shortPositions->isNotEmpty(),
+                        'border-amber-500 bg-amber-50' => $shortPositions->isEmpty() && $contestedPositions->isNotEmpty(),
+                        'border-green-500 bg-green-50' => $problemPositions->isEmpty(),
+                    ])>
+                        <p class="font-bold text-gray-800">Stock Check before posting</p>
+                        <p class="text-sm">
+                            @if ($shortPositions->isNotEmpty())
+                                <span class="font-semibold text-red-700">{{ $shortPositions->count() }} {{ Str::plural('product', $shortPositions->count()) }} short — this issue cannot be posted until they are reduced or removed.</span>
+                            @elseif ($contestedPositions->isNotEmpty())
+                                <span class="font-semibold text-amber-700">All in stock, but other drafts also need {{ $contestedPositions->count() }} of these {{ Str::plural('product', $contestedPositions->count()) }}. Whichever is posted first takes the stock.</span>
+                            @else
+                                <span class="font-semibold text-green-700">All {{ $stockPositions->count() }} products are in stock.</span>
+                            @endif
+                        </p>
+                    </div>
+
+                    @if ($problemPositions->isNotEmpty())
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200 text-sm">
+                                <thead class="bg-gray-50 text-xs uppercase text-gray-600">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left">Product</th>
+                                        <th class="px-3 py-2 text-right">This issue needs</th>
+                                        <th class="px-3 py-2 text-right">In stock now</th>
+                                        <th class="px-3 py-2 text-left">Also in other drafts</th>
+                                        <th class="px-3 py-2 text-left">Already issued {{ $goodsIssue->issue_date?->format('d-M') }}</th>
+                                        <th class="px-3 py-2 text-left">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    @foreach ($problemPositions as $position)
+                                        @php $isShort = $position['short'] > 0.001 || $position['short_non_promotional'] > 0.001; @endphp
+                                        <tr @class(['align-top', 'bg-red-50' => $isShort, 'bg-amber-50' => ! $isShort])>
+                                            <td class="px-3 py-2">
+                                                <div class="font-semibold text-gray-900">{{ $position['product_name'] }}</div>
+                                                <div class="text-xs text-gray-500">{{ $position['product_code'] }}</div>
+                                            </td>
+                                            <td class="px-3 py-2 text-right tabular-nums">{{ $qty($position['required'], $position) }}</td>
+                                            <td class="px-3 py-2 text-right tabular-nums">{{ $qty($position['on_hand'], $position) }}</td>
+                                            <td class="px-3 py-2 text-xs">
+                                                @forelse ($position['other_drafts'] as $draft)
+                                                    <div>{{ $draft['issue_number'] }}@if ($draft['vehicle']) ({{ $draft['vehicle'] }})@endif: {{ $qty($draft['quantity'], $position) }}</div>
+                                                @empty
+                                                    <span class="text-gray-400">—</span>
+                                                @endforelse
+                                            </td>
+                                            <td class="px-3 py-2 text-xs">
+                                                @forelse ($position['issued_same_day'] as $issued)
+                                                    <div>{{ $issued['issue_number'] }}@if ($issued['vehicle']) ({{ $issued['vehicle'] }})@endif: {{ $qty($issued['quantity'], $position) }}</div>
+                                                @empty
+                                                    <span class="text-gray-400">—</span>
+                                                @endforelse
+                                            </td>
+                                            <td class="px-3 py-2 text-xs font-semibold">
+                                                @if ($position['short'] > 0.001)
+                                                    <span class="text-red-700">Short {{ $qty($position['short'], $position) }}</span>
+                                                @elseif ($position['short_non_promotional'] > 0.001)
+                                                    <span class="text-red-700">Short {{ $qty($position['short_non_promotional'], $position) }} of non-promotional stock</span>
+                                                @else
+                                                    <span class="text-amber-700">Other drafts need more than is left</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            @endif
+
             <div class="bg-white overflow-hidden p-4 shadow-xl sm:rounded-lg mb-4 print:shadow-none print:pb-0">
                 <div class="overflow-x-auto">
 

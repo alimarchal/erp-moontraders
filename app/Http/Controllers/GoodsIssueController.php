@@ -15,6 +15,7 @@ use App\Models\Uom;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
+use App\Services\GoodsIssueStockCheck;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -210,6 +211,12 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
         $product = Product::with(['uom', 'salesUom'])->find($productId);
 
+        $position = app(GoodsIssueStockCheck::class)->positions(
+            [(object) ['product_id' => $productId, 'quantity_issued' => 0]],
+            (int) $warehouseId,
+            $request->integer('goods_issue_id') ?: null
+        )->first();
+
         // Format batch breakdown for display
         $batches = $stockLayers->map(function ($layer) {
             return [
@@ -233,6 +240,10 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'conversion_factor' => (float) ($product->uom_conversion_factor ?? 1),
             'batches' => $batches,
             'has_multiple_prices' => $stockLayers->pluck('selling_price')->unique()->count() > 1,
+            // Drafts do not hold stock, so the form shows what other drafts are counting on too.
+            'other_drafts' => $position['other_drafts'],
+            'in_other_drafts' => $position['in_other_drafts'],
+            'product_name' => $product->product_name ?? '',
         ]);
     }
 
@@ -441,6 +452,14 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
         return view('goods-issues.show', [
             'goodsIssue' => $goodsIssue,
+            'stockPositions' => $goodsIssue->status === 'draft'
+                ? app(GoodsIssueStockCheck::class)->positions(
+                    $goodsIssue->items,
+                    (int) $goodsIssue->warehouse_id,
+                    $goodsIssue->id,
+                    $goodsIssue->issue_date?->toDateString()
+                )
+                : collect(),
         ]);
     }
 

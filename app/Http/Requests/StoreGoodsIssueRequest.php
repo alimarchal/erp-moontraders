@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\GoodsIssueStockCheck;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
@@ -133,9 +134,16 @@ class StoreGoodsIssueRequest extends FormRequest
                         $availableStock = $query->sum('quantity_remaining');
 
                         if ($value > $availableStock) {
-                            $productName = DB::table('products')->where('id', $productId)->value('product_name');
+                            $product = DB::table('products')->where('id', $productId)->first(['product_name', 'uom_conversion_factor']);
+                            $factor = (float) ($product->uom_conversion_factor ?? 1);
                             $suffix = $excludePromotional ? ' (non-promotional only)' : '';
-                            $fail("The quantity for {$productName} ({$value}) exceeds available stock ({$availableStock}){$suffix}.");
+                            $fail(sprintf(
+                                'The quantity for %s (%s) exceeds available stock (%s)%s.',
+                                $product->product_name ?? "product #{$productId}",
+                                GoodsIssueStockCheck::formatQuantity((float) $value, $factor),
+                                GoodsIssueStockCheck::formatQuantity((float) $availableStock, $factor),
+                                $suffix
+                            ));
                         }
                     }
                 },

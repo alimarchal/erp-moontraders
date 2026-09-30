@@ -3,6 +3,7 @@
 use App\Models\CurrentStockByBatch;
 use App\Models\DailyInventorySnapshot;
 use App\Models\Product;
+use App\Models\StockAdjustment;
 use App\Models\StockBatch;
 use App\Models\StockMovement;
 use App\Models\Supplier;
@@ -480,4 +481,25 @@ it('does not email about skipped products on a dry run', function () {
     $this->artisan('inventory:snapshots:rebuild', ['start_date' => '2026-03-01', 'end_date' => '2026-03-01', '--dry-run' => true]);
 
     Notification::assertNothingSent();
+});
+
+it('values a batch at the cost a stock adjustment revalued it to from that date on', function () {
+    recordStockMovement(['quantity' => 100, 'unit_cost' => 100, 'total_value' => 10000]);
+    recordStockMovement([
+        'movement_type' => 'adjustment',
+        'reference_type' => StockAdjustment::class,
+        'reference_id' => 1,
+        'movement_date' => '2026-03-05',
+        'quantity' => 0,
+        'unit_cost' => 80,
+        'total_value' => 0,
+    ]);
+
+    $this->artisan('inventory:snapshots:rebuild', [
+        'start_date' => '2026-03-04',
+        'end_date' => '2026-03-05',
+    ])->assertSuccessful();
+
+    expect((float) DailyInventorySnapshot::where('date', '2026-03-04')->sole()->total_value)->toBe(10000.0)
+        ->and((float) DailyInventorySnapshot::where('date', '2026-03-05')->sole()->total_value)->toBe(8000.0);
 });

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -82,6 +83,17 @@ class StockMovement extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Revaluations posted by a stock adjustment: a zero-quantity adjustment movement whose
+     * unit_cost is what its batch is carried at from that movement on.
+     */
+    public function scopeRevaluations(Builder $query): Builder
+    {
+        return $query->where('movement_type', 'adjustment')
+            ->where('reference_type', StockAdjustment::class)
+            ->where('quantity', 0);
     }
 
     public function isInward(): bool

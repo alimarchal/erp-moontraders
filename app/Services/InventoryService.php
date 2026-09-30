@@ -786,6 +786,7 @@ class InventoryService
                 ->values();
 
             $this->assertGrnStockStillOnHand($grn, $receipts);
+            $this->assertGrnBatchesNotRevalued($grn, $receipts);
 
             $stockValuation = app(StockValuationService::class);
             $ledgerService = app(InventoryLedgerService::class);
@@ -930,6 +931,34 @@ class InventoryService
                 .'). Return the remaining stock to the supplier with a stock adjustment instead.'
             );
         }
+    }
+
+    /**
+     * The reversing journal credits Stock In Hand with what the GRN debited, but a batch a
+     * stock adjustment revalued is carried at a different cost, and that difference was
+     * already posted by the adjustment. Reversing it would put the ledger out of step.
+     *
+     * @param  Collection<int, object{stock_batch_id: int}>  $receipts
+     *
+     * @throws \RuntimeException naming each revalued batch
+     */
+    protected function assertGrnBatchesNotRevalued(GoodsReceiptNote $grn, Collection $receipts): void
+    {
+        $revaluedBatchIds = StockMovement::query()
+            ->revaluations()
+            ->whereIn('stock_batch_id', $receipts->pluck('stock_batch_id'))
+            ->distinct()
+            ->pluck('stock_batch_id');
+
+        if ($revaluedBatchIds->isEmpty()) {
+            return;
+        }
+
+        throw new \RuntimeException(sprintf(
+            'Stock from %s was revalued by a stock adjustment (batch %s), so the GRN cannot be reversed. Return the stock to the supplier with a stock adjustment instead.',
+            $grn->grn_number,
+            StockBatch::whereIn('id', $revaluedBatchIds)->pluck('batch_code')->implode(', ')
+        ));
     }
 
     private function formatQuantity(float $quantity): string

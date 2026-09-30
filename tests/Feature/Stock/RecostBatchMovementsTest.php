@@ -3,6 +3,7 @@
 use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
 use App\Models\Product;
+use App\Models\StockAdjustment;
 use App\Models\StockBatch;
 use App\Models\StockMovement;
 use App\Models\Supplier;
@@ -232,4 +233,28 @@ it('changes nothing on a dry run', function () {
         ->assertSuccessful();
 
     expect((float) $movement->fresh()->unit_cost)->toBe(400.0);
+});
+
+it('leaves a batch alone once a stock adjustment has revalued it', function () {
+    makeMovement([
+        'movement_type' => 'adjustment',
+        'reference_type' => StockAdjustment::class,
+        'reference_id' => 1,
+        'movement_date' => '2026-03-04',
+        'quantity' => 0,
+        'unit_cost' => 800,
+        'total_value' => 0,
+    ]);
+    $issue = makeMovement([
+        'movement_type' => 'transfer',
+        'movement_date' => '2026-03-05',
+        'vehicle_id' => $this->vehicle->id,
+        'quantity' => -10,
+        'unit_cost' => 800,
+        'total_value' => 8000,
+    ]);
+
+    $this->artisan('stock:recost-batch-movements')->assertSuccessful();
+
+    expect((float) $issue->fresh()->unit_cost)->toBe(800.0);
 });

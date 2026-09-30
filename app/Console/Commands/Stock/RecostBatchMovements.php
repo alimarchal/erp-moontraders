@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands\Stock;
 
+use App\Models\StockMovement;
 use App\Services\BatchRecostService;
 use App\Services\InventoryGlAdjustmentService;
 use Illuminate\Console\Command;
@@ -108,6 +109,9 @@ class RecostBatchMovements extends Command
     /**
      * Batches whose outbound movements disagree with the cost their own GRN recorded.
      *
+     * A batch a stock adjustment has revalued is carried at that cost on purpose, so it is
+     * left out rather than pulled back to its receipt cost.
+     *
      * @return Collection<int, object>
      */
     private function driftedBatches(): Collection
@@ -134,6 +138,7 @@ class RecostBatchMovements extends Command
                     ->where('sm.movement_type', '!=', 'grn')
                     ->whereRaw('ABS(sm.unit_cost - receipts.receipt_cost) > ?', [self::COST_TOLERANCE]);
             })
+            ->whereNotIn('receipts.stock_batch_id', StockMovement::query()->revaluations()->whereNotNull('stock_batch_id')->select('stock_batch_id'))
             ->orderBy('receipts.stock_batch_id')
             ->get();
     }

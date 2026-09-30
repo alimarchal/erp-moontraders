@@ -16,6 +16,7 @@ use App\Models\StockValuationLayer;
 use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\StockAdjustmentService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -793,4 +794,162 @@ test('a shortage larger than what the batch now holds is refused', function () {
         ->and($adjustment->fresh()->status)->toBe('draft')
         ->and((float) $stock->fresh()->quantity_on_hand)->toBe(3.0)
         ->and(StockMovement::where('reference_type', StockAdjustment::class)->exists())->toBeFalse();
+});
+
+/**
+ * A batch of 100 on hand at 50 in the test warehouse, as a GRN leaves it.
+ */
+function batchOnHandAtFifty(): StockBatch
+{
+    $context = test();
+
+    $batch = StockBatch::factory()->create([
+        'product_id' => $context->product->id,
+        'status' => 'active',
+        'is_active' => true,
+        'unit_cost' => 50.00,
+    ]);
+
+    layerFor($batch, 100);
+
+    CurrentStockByBatch::create([
+        'product_id' => $context->product->id,
+        'warehouse_id' => $context->warehouse->id,
+        'stock_batch_id' => $batch->id,
+        'quantity_on_hand' => 100,
+        'unit_cost' => 50.00,
+        'total_value' => 5000.00,
+        'status' => 'active',
+    ]);
+
+    return $batch;
+}
+
+function adjustmentLine(StockBatch $batch, float $adjustmentQuantity, float $unitCost): StockAdjustment
+{
+    $context = test();
+
+    $adjustment = StockAdjustment::factory()->create([
+        'warehouse_id' => $context->warehouse->id,
+        'adjustment_type' => 'count_variance',
+        'status' => 'draft',
+    ]);
+
+    StockAdjustmentItem::create([
+        'stock_adjustment_id' => $adjustment->id,
+        'product_id' => $context->product->id,
+        'stock_batch_id' => $batch->id,
+        'system_quantity' => 100,
+        'actual_quantity' => 100 + $adjustmentQuantity,
+        'adjustment_quantity' => $adjustmentQuantity,
+        'unit_cost' => $unitCost,
+        'adjustment_value' => $adjustmentQuantity * $unitCost,
+        'uom_id' => $context->uom->id,
+    ]);
+
+    return $adjustment;
+}
+
+test('a corrected unit cost with no quantity change revalues the batch', function () {
+    $batch = batchOnHandAtFifty();
+    $adjustment = adjustmentLine($batch, 0, 45.00);
+
+    $result = app(StockAdjustmentService::class)->postAdjustment($adjustment);
+
+    expect($result['success'])->toBeTrue();
+
+    $stock = CurrentStockByBatch::where('stock_batch_id', $batch->id)->sole();
+    $layer = StockValuationLayer::where('stock_batch_id', $batch->id)->sole();
+
+    expect((float) $stock->quantity_on_hand)->toBe(100.0)
+        ->and((float) $stock->unit_cost)->toBe(45.0)
+        ->and((float) $stock->total_value)->toBe(4500.0)
+        ->and((float) $layer->unit_cost)->toBe(45.0)
+        ->and((float) $layer->value_remaining)->toBe(4500.0)
+        // Goods issues cost what they take at the batch master's cost.
+        ->and((float) $batch->fresh()->unit_cost)->toBe(45.0);
+
+    $this->assertDatabaseHas('current_stock', [
+        'product_id' => $this->product->id,
+        'warehouse_id' => $this->warehouse->id,
+        'total_value' => 4500.00,
+        'average_cost' => 45.00,
+    ]);
+
+    // The write-down: Dr Stock Loss - Other, Cr Stock In Hand.
+    $details = $adjustment->fresh()->journalEntry->details;
+    $stockInHandId = ChartOfAccount::where('account_code', '1151')->value('id');
+
+    expect((float) $details->where('chart_of_account_id', $stockInHandId)->sum('credit'))->toBe(500.0)
+        ->and((float) $details->sum('debit'))->toBe(500.0);
+});
+
+test('a count posted at a corrected unit cost leaves the batch valued at that cost', function () {
+    $batch = batchOnHandAtFifty();
+    $adjustment = adjustmentLine($batch, -10, 45.00);
+
+    $result = app(StockAdjustmentService::class)->postAdjustment($adjustment);
+
+    expect($result['success'])->toBeTrue();
+
+    $stock = CurrentStockByBatch::where('stock_batch_id', $batch->id)->sole();
+    $layer = StockValuationLayer::where('stock_batch_id', $batch->id)->sole();
+
+    expect((float) $stock->quantity_on_hand)->toBe(90.0)
+        ->and((float) $stock->total_value)->toBe(4050.0)
+        ->and((float) $layer->quantity_remaining)->toBe(90.0)
+        ->and((float) $layer->value_remaining)->toBe(4050.0);
+
+    // 5,000 on the books before, 4,050 after.
+    $stockInHandId = ChartOfAccount::where('account_code', '1151')->value('id');
+    expect((float) $adjustment->fresh()->journalEntry->details->where('chart_of_account_id', $stockInHandId)->sum('credit'))->toBe(950.0);
+});
+
+test('a corrected unit cost is refused while the batch also holds stock in another warehouse', function () {
+    $batch = batchOnHandAtFifty();
+
+    CurrentStockByBatch::create([
+        'product_id' => $this->product->id,
+        'warehouse_id' => Warehouse::factory()->create()->id,
+        'stock_batch_id' => $batch->id,
+        'quantity_on_hand' => 20,
+        'unit_cost' => 50.00,
+        'total_value' => 1000.00,
+        'status' => 'active',
+    ]);
+
+    $adjustment = adjustmentLine($batch, 0, 45.00);
+
+    $result = app(StockAdjustmentService::class)->postAdjustment($adjustment);
+
+    expect($result['success'])->toBeFalse()
+        ->and($adjustment->fresh()->status)->toBe('draft')
+        ->and((float) $batch->fresh()->unit_cost)->toBe(50.0);
+});
+
+test('a corrected unit cost is refused while part of the batch is out on a van', function () {
+    $batch = batchOnHandAtFifty();
+
+    // Ten issued to a van and not yet settled.
+    StockMovement::create([
+        'movement_type' => 'transfer',
+        'movement_date' => now()->toDateString(),
+        'product_id' => $this->product->id,
+        'stock_batch_id' => $batch->id,
+        'warehouse_id' => $this->warehouse->id,
+        'vehicle_id' => Vehicle::factory()->create()->id,
+        'quantity' => -10,
+        'uom_id' => $this->uom->id,
+        'unit_cost' => 50.00,
+        'total_value' => 500.00,
+        'created_by' => $this->user->id,
+    ]);
+
+    $adjustment = adjustmentLine($batch, 0, 45.00);
+
+    $result = app(StockAdjustmentService::class)->postAdjustment($adjustment);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['message'])->toContain('van')
+        ->and((float) $batch->fresh()->unit_cost)->toBe(50.0);
 });

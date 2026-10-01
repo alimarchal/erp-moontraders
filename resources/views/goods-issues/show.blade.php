@@ -198,23 +198,23 @@
                 </span>
             </div>
             @php $employeeUrl = $gi->employee && auth()->user()->can('employee-list') ? route('employees.show', $gi->employee) : null; @endphp
-            <a @if ($employeeUrl) href="{{ $employeeUrl }}" @endif class="ak-kpi">
+            <div class="ak-kpi">
                 <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.5 20.12a7.5 7.5 0 0 1 15 0A17.93 17.93 0 0 1 12 21.75c-2.68 0-5.22-.58-7.5-1.63Z" /></svg></span>
                 <span class="ak-kpi-body">
                     <span class="ak-kpi-label">Salesman</span>
                     <span class="ak-kpi-value ak-kpi-value-sm">{{ $gi->employee->name ?? '—' }}</span>
-                    <span class="ak-kpi-hint">{{ $gi->employee->employee_code ?? '' }}{{ $employeeUrl ? ' · profile →' : '' }}</span>
+                    <span class="ak-kpi-hint">{{ $gi->employee->employee_code ?? '' }}</span>
                 </span>
-            </a>
+            </div>
             @php $vehicleUrl = $gi->vehicle && auth()->user()->can('vehicle-list') ? route('vehicles.show', $gi->vehicle) : null; @endphp
-            <a @if ($vehicleUrl) href="{{ $vehicleUrl }}" @endif class="ak-kpi">
+            <div class="ak-kpi">
                 <span class="ak-kpi-icon ak-tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.38a1.13 1.13 0 0 1-1.13-1.13V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.13c.62 0 1.13-.5 1.09-1.12a17.9 17.9 0 0 0-3.21-9.06 2.29 2.29 0 0 0-1.89-.95H14.25M16.5 18.75h-2.25m0-11.18v-.96c0-.57-.42-1.05-.98-1.12a48.6 48.6 0 0 0-10.04 0 1.13 1.13 0 0 0-.98 1.12v7.64m12 0v-6.68" /></svg></span>
                 <span class="ak-kpi-body">
                     <span class="ak-kpi-label">Vehicle</span>
                     <span class="ak-kpi-value ak-kpi-value-sm">{{ $gi->vehicle->vehicle_number ?? '—' }}</span>
                     <span class="ak-kpi-hint">{{ $gi->vehicle->vehicle_type ?? '' }} &middot; from {{ $gi->warehouse->warehouse_name ?? '—' }}</span>
                 </span>
-            </a>
+            </div>
         </section>
 
         @if ($isDraft && $stockPositions->isNotEmpty())

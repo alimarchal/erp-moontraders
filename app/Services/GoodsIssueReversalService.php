@@ -307,9 +307,11 @@ class GoodsIssueReversalService
 
     /**
      * A draft with the same header and the lines that were posted, numbered next in sequence.
-     * Lines for the same product at the same cost and price are merged, so a supplementary
-     * line folds into the line it topped up; a line at a different rate stays on its own so
-     * no unit changes price.
+     *
+     * Lines are merged to one per product, because the edit form allows one row per product
+     * and clears a second one on load. The merged rate is the quantity-weighted average of the
+     * lines, so the line and header totals equal the reversed issue's; the edit form reprices
+     * each row from the warehouse's live batches, and posting takes the batch costs anyway.
      */
     private function copyToDraft(GoodsIssue $goodsIssue): GoodsIssue
     {
@@ -317,13 +319,7 @@ class GoodsIssueReversalService
             ->where(fn ($query) => $query->where('is_supplementary', false)->orWhereNotNull('supplementary_posted_at'))
             ->orderBy('line_no')
             ->get()
-            ->groupBy(fn (GoodsIssueItem $item) => implode('|', [
-                $item->product_id,
-                $item->uom_id,
-                (int) $item->exclude_promotional,
-                number_format((float) $item->unit_cost, 2, '.', ''),
-                number_format((float) $item->selling_price, 2, '.', ''),
-            ]))
+            ->groupBy('product_id')
             ->values();
 
         $replacement = GoodsIssue::create([
@@ -338,7 +334,7 @@ class GoodsIssueReversalService
             'van_stock_account_id' => $goodsIssue->van_stock_account_id,
             'status' => 'draft',
             'total_quantity' => $lines->flatten()->sum(fn (GoodsIssueItem $item) => (float) $item->quantity_issued),
-            'total_value' => round($lines->sum(fn (Collection $items) => (float) $items->sum('quantity_issued') * (float) $items->first()->selling_price), 2),
+            'total_value' => round($lines->flatten()->sum(fn (GoodsIssueItem $item) => (float) $item->total_value), 2),
             'notes' => trim("Replaces {$goodsIssue->issue_number}. ".($goodsIssue->notes ?? '')),
             'replaces_goods_issue_id' => $goodsIssue->id,
         ]);
@@ -346,16 +342,19 @@ class GoodsIssueReversalService
         foreach ($lines as $index => $items) {
             $first = $items->first();
             $quantity = (float) $items->sum('quantity_issued');
+            $value = round((float) $items->sum(fn (GoodsIssueItem $item) => (float) $item->total_value), 2);
+            $cost = (float) $items->sum(fn (GoodsIssueItem $item) => (float) $item->quantity_issued * (float) $item->unit_cost);
 
             $replacement->items()->create([
                 'line_no' => $index + 1,
                 'product_id' => $first->product_id,
                 'quantity_issued' => $quantity,
-                'unit_cost' => $first->unit_cost,
-                'selling_price' => $first->selling_price,
+                'unit_cost' => $quantity > 0 ? round($cost / $quantity, 2) : 0,
+                'selling_price' => $quantity > 0 ? round($value / $quantity, 2) : 0,
                 'uom_id' => $first->uom_id,
-                'total_value' => round($quantity * (float) $first->selling_price, 2),
-                'exclude_promotional' => $first->exclude_promotional,
+                'total_value' => $value,
+                // Promotional stock stays excluded only when every merged line excluded it.
+                'exclude_promotional' => $items->every(fn (GoodsIssueItem $item) => (bool) $item->exclude_promotional),
             ]);
         }
 

@@ -24,6 +24,7 @@ use App\Services\DistributionService;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
@@ -299,7 +300,7 @@ it('does not reverse the same journal entry twice', function () {
         ->and($second['message'])->toContain("has already been reversed by entry #{$first['data']->id}");
 });
 
-it('keeps a supplementary line at a different price apart and leaves out unposted lines', function () {
+it('merges a product to one draft line at the weighted rate and leaves out unposted lines', function () {
     $data = postGoodsIssueToWrongVan();
     $uomId = $data['goodsIssue']->items->first()->uom_id;
     $supplementary = GoodsIssueItem::factory()->create([
@@ -326,8 +327,8 @@ it('keeps a supplementary line at a different price apart and leaves out unposte
     post(route('goods-issues.reverse', $data['goodsIssue']), ['reason' => 'Wrong salesman and van', 'password' => 'password']);
 
     $replacement = GoodsIssue::with('items')->where('replaces_goods_issue_id', $data['goodsIssue']->id)->firstOrFail();
-    expect($replacement->items->map(fn ($item) => [(float) $item->quantity_issued, (float) $item->selling_price])->all())
-        ->toEqual([[18.0, 15.0], [4.0, 16.0]])
+    expect($replacement->items->map(fn ($item) => [(float) $item->quantity_issued, (float) $item->selling_price, (float) $item->total_value])->all())
+        ->toEqual([[22.0, 15.18, 334.0]])
         ->and((float) $replacement->total_quantity)->toBe(22.0)
         ->and((float) $replacement->total_value)->toBe(334.0);
 });
@@ -354,4 +355,24 @@ it('names the active issue that holds a vehicle when a draft is moved onto it', 
     ])->assertSessionHasErrors(['vehicle_id' => "This vehicle already has an active Goods Issue ({$blocking->issue_number}). Post its settlement, or delete it if it is a draft, before moving this issue onto the vehicle."]);
 
     expect($replacement->fresh()->vehicle_id)->toBe($data['wrongVehicle']->id);
+});
+
+it('closes its transaction when a settlement already exists for the issue', function () {
+    $data = postGoodsIssueToWrongVan(['goods-issue-list', 'sales-settlement-create']);
+    $existing = SalesSettlement::factory()->create(['goods_issue_id' => $data['goodsIssue']->id, 'vehicle_id' => $data['wrongVehicle']->id]);
+    $levelBefore = DB::transactionLevel();
+
+    post(route('sales-settlements.store'), [
+        'settlement_date' => now()->toDateString(),
+        'goods_issue_id' => $data['goodsIssue']->id,
+        'items' => [[
+            'product_id' => $data['product']->id,
+            'quantity_issued' => 18,
+            'quantity_sold' => 18,
+            'unit_cost' => 10,
+            'selling_price' => 15,
+        ]],
+    ])->assertRedirect(route('sales-settlements.show', $existing));
+
+    expect(DB::transactionLevel())->toBe($levelBefore);
 });

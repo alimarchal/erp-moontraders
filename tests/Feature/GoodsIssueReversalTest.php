@@ -19,6 +19,7 @@ use App\Models\VanStockBalance;
 use App\Models\VanStockBatch;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
+use App\Services\AccountingService;
 use App\Services\DistributionService;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -31,6 +32,7 @@ use function Pest\Laravel\actingAs;
 use function Pest\Laravel\assertDatabaseMissing;
 use function Pest\Laravel\get;
 use function Pest\Laravel\post;
+use function Pest\Laravel\put;
 
 uses(RefreshDatabase::class);
 
@@ -250,4 +252,106 @@ it('links the reversed issue and its replacement on both show pages', function (
         ->assertSee("REV-GI-{$year}-2107")
         ->assertDontSee('Reverse &amp; Re-issue', false);
     get(route('goods-issues.show', $replacement))->assertSee("Copied from reversed <b>GI-{$year}-2107</b>", false);
+});
+
+it('refuses to settle a goods issue that has been reversed', function () {
+    $data = postGoodsIssueToWrongVan(['goods-issue-list', 'goods-issue-reverse', 'sales-settlement-create']);
+    $goodsIssueItem = $data['goodsIssue']->items->first();
+    post(route('goods-issues.reverse', $data['goodsIssue']), ['reason' => 'Wrong salesman and van', 'password' => 'password']);
+
+    post(route('sales-settlements.store'), [
+        'settlement_date' => now()->toDateString(),
+        'goods_issue_id' => $data['goodsIssue']->id,
+        'items' => [[
+            'product_id' => $data['product']->id,
+            'goods_issue_item_id' => $goodsIssueItem->id,
+            'quantity_issued' => 10,
+            'quantity_sold' => 10,
+            'unit_cost' => 10,
+            'selling_price' => 15,
+        ]],
+    ])->assertSessionHas('error', 'Goods Issue GI-'.now()->year.'-2107 is reversed and cannot be settled.');
+
+    assertDatabaseMissing('sales_settlements', ['goods_issue_id' => $data['goodsIssue']->id]);
+});
+
+it('refuses to reverse an issue whose journal entry accounts already reversed by hand', function () {
+    $data = postGoodsIssueToWrongVan();
+    $entry = JournalEntry::where('reference', $data['goodsIssue']->issue_number)->firstOrFail();
+    $manual = app(AccountingService::class)->reverseJournalEntry($entry->id);
+
+    post(route('goods-issues.reverse', $data['goodsIssue']), ['reason' => 'Wrong salesman and van', 'password' => 'password'])
+        ->assertSessionHas('error', fn (string $message) => str_contains($message, "already been reversed by entry #{$manual['data']->id}"));
+
+    expect($data['goodsIssue']->fresh()->status)->toBe('issued')
+        ->and(JournalEntry::where('reference', 'REV-'.$entry->reference)->count())->toBe(1);
+});
+
+it('does not reverse the same journal entry twice', function () {
+    $data = postGoodsIssueToWrongVan();
+    $entry = JournalEntry::where('reference', $data['goodsIssue']->issue_number)->firstOrFail();
+    $accounting = app(AccountingService::class);
+    $first = $accounting->reverseJournalEntry($entry->id);
+
+    $second = $accounting->reverseJournalEntry($entry->id);
+
+    expect($second['success'])->toBeFalse()
+        ->and($second['message'])->toContain("has already been reversed by entry #{$first['data']->id}");
+});
+
+it('keeps a supplementary line at a different price apart and leaves out unposted lines', function () {
+    $data = postGoodsIssueToWrongVan();
+    $uomId = $data['goodsIssue']->items->first()->uom_id;
+    $supplementary = GoodsIssueItem::factory()->create([
+        'goods_issue_id' => $data['goodsIssue']->id,
+        'product_id' => $data['product']->id,
+        'uom_id' => $uomId,
+        'quantity_issued' => 4,
+        'unit_cost' => 10.00,
+        'selling_price' => 16.00,
+        'total_value' => 64,
+        'is_supplementary' => true,
+    ]);
+    expect(app(DistributionService::class)->postSupplementaryItems($data['goodsIssue']->fresh(), collect([$supplementary]))['success'])->toBeTrue();
+    GoodsIssueItem::factory()->create([
+        'goods_issue_id' => $data['goodsIssue']->id,
+        'product_id' => $data['product']->id,
+        'uom_id' => $uomId,
+        'quantity_issued' => 50,
+        'unit_cost' => 10.00,
+        'selling_price' => 15.00,
+        'is_supplementary' => true,
+    ]);
+
+    post(route('goods-issues.reverse', $data['goodsIssue']), ['reason' => 'Wrong salesman and van', 'password' => 'password']);
+
+    $replacement = GoodsIssue::with('items')->where('replaces_goods_issue_id', $data['goodsIssue']->id)->firstOrFail();
+    expect($replacement->items->map(fn ($item) => [(float) $item->quantity_issued, (float) $item->selling_price])->all())
+        ->toEqual([[18.0, 15.0], [4.0, 16.0]])
+        ->and((float) $replacement->total_quantity)->toBe(22.0)
+        ->and((float) $replacement->total_value)->toBe(334.0);
+});
+
+it('names the active issue that holds a vehicle when a draft is moved onto it', function () {
+    $data = postGoodsIssueToWrongVan(['goods-issue-list', 'goods-issue-edit', 'goods-issue-reverse']);
+    post(route('goods-issues.reverse', $data['goodsIssue']), ['reason' => 'Wrong salesman and van', 'password' => 'password']);
+    $replacement = GoodsIssue::with('items')->where('replaces_goods_issue_id', $data['goodsIssue']->id)->firstOrFail();
+    $blocking = GoodsIssue::factory()->create(['vehicle_id' => $data['rightVehicle']->id, 'warehouse_id' => $data['warehouse']->id, 'status' => 'draft']);
+    $line = $replacement->items->first();
+
+    put(route('goods-issues.update', $replacement), [
+        'issue_date' => $replacement->issue_date->toDateString(),
+        'warehouse_id' => $data['warehouse']->id,
+        'vehicle_id' => $data['rightVehicle']->id,
+        'employee_id' => $data['rightEmployee']->id,
+        'items' => [[
+            'product_id' => $line->product_id,
+            'quantity_issued' => 18,
+            'unit_cost' => 10,
+            'selling_price' => 15,
+            'uom_id' => $line->uom_id,
+        ]],
+    ])->assertSessionHasErrors(['vehicle_id' => "This vehicle already has an active Goods Issue ({$blocking->issue_number}). Post its settlement, or delete it if it is a draft, before moving this issue onto the vehicle."]);
+
+    expect($replacement->fresh()->vehicle_id)->toBe($data['wrongVehicle']->id);
 });

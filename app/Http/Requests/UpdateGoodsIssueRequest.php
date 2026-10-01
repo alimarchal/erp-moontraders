@@ -34,6 +34,18 @@ class UpdateGoodsIssueRequest extends FormRequest
                         $fail('The selected vehicle does not belong to the selected supplier.');
                     }
                 },
+                function ($attribute, $value, $fail) {
+                    // Moving a draft onto a vehicle that another active issue holds would hit the
+                    // active_vehicle_lock unique index; name the blocking issue instead.
+                    $blocking = DB::table('goods_issues')
+                        ->where('active_vehicle_lock', $value)
+                        ->where('id', '!=', $this->route('goodsIssue')?->id)
+                        ->value('issue_number');
+
+                    if ($blocking) {
+                        $fail("This vehicle already has an active Goods Issue ({$blocking}). Post its settlement, or delete it if it is a draft, before moving this issue onto the vehicle.");
+                    }
+                },
             ],
             'employee_id' => 'required|exists:employees,id',
             'notes' => 'nullable|string',

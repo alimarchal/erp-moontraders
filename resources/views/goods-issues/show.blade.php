@@ -205,7 +205,7 @@
         @endif
         @if ($gi->replaces)
             <div class="gi-check gi-check-amber gi-no-print" role="status">
-                <span>Copied from reversed <b>{{ $gi->replaces->issue_number }}</b>{{ $isDraft ? '. Correct the salesman, vehicle or quantities, then post it.' : '.' }}</span>
+                <span>Copied from reversed <b>{{ $gi->replaces->issue_number }}</b>{{ $isDraft ? '. Correct the salesman, vehicle or quantities, then post it. Until then this draft holds the lock on vehicle '.($gi->vehicle->vehicle_number ?? '').'.' : '.' }}</span>
                 <a href="{{ route('goods-issues.show', $gi->replaces) }}" class="ak-btn ak-btn-outline ak-btn-sm">View {{ $gi->replaces->issue_number }} →</a>
             </div>
         @endif
@@ -452,7 +452,7 @@
                                 @if ($isDraft)
                                     Post this issue first; the settlement is made when the van comes back.
                                 @elseif ($isReversed)
-                                    Reversed: nothing to settle, and the vehicle is free.
+                                    Reversed: nothing to settle.
                                 @else
                                     No settlement yet. The vehicle stays locked until this issue is settled.
                                 @endif
@@ -600,27 +600,29 @@
                  x-show="show" x-cloak class="fixed inset-0 z-50" style="display: none;">
                 <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" @click="show = false"></div>
                 <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4">
-                    <form method="POST" action="{{ route('goods-issues.reverse', $gi->id) }}"
+                    <form method="POST" action="{{ route('goods-issues.reverse', $gi->id) }}" role="dialog" aria-modal="true" aria-labelledby="reverse-gi-title"
                           class="relative w-full max-w-lg overflow-hidden rounded-lg bg-white text-left shadow-xl" @click.outside="show = false">
                         @csrf
                         <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
-                            <h3 class="text-lg font-medium leading-6 text-gray-900">Reverse {{ $gi->issue_number }} &amp; re-issue</h3>
+                            <h3 id="reverse-gi-title" class="text-lg font-medium leading-6 text-gray-900">Reverse {{ $gi->issue_number }} &amp; re-issue</h3>
                             <div class="mt-2 space-y-2 text-sm text-gray-600">
                                 <p>This cancels the posted issue. Nothing is deleted:</p>
                                 <ul class="list-disc pl-5">
                                     <li>Stock goes back to {{ $gi->warehouse->warehouse_name ?? 'the warehouse' }}, batch by batch, at the cost it left at.</li>
-                                    <li>Vehicle {{ $gi->vehicle->vehicle_number ?? '' }} is emptied of it and unlocked.</li>
+                                    <li>Vehicle {{ $gi->vehicle->vehicle_number ?? '' }} is emptied of it. The new draft holds its lock until you change the draft's vehicle, post it or delete it.</li>
                                     <li>Offsetting journal entries (REV-{{ $gi->issue_number }}) are posted on {{ $gi->issue_date?->format('d M Y') }}.</li>
                                     <li>A new <b>draft</b> with the same items opens, so you can set the right salesman, vehicle or quantities and post it.</li>
                                 </ul>
                             </div>
                             <div class="mt-4">
                                 <label for="reverse_reason" class="block text-sm font-medium text-gray-700">Reason</label>
-                                <textarea id="reverse_reason" name="reason" rows="2" required minlength="5" maxlength="500"
+                                <textarea id="reverse_reason" name="reason" rows="2" required minlength="5" maxlength="500" autocomplete="off"
                                     class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
                                     placeholder="e.g. Posted to the wrong salesman and vehicle">{{ old('reason') }}</textarea>
                                 @error('reason')<p class="mt-1 text-sm font-medium text-red-600">{{ $message }}</p>@enderror
                             </div>
+                            {{-- Gives the browser's password manager a username field, so it does not fill the reason with the email. --}}
+                            <input type="text" name="username" value="{{ auth()->user()->email }}" autocomplete="username" hidden readonly tabindex="-1">
                             <div class="mt-3">
                                 <label for="reverse_password" class="block text-sm font-medium text-gray-700">Your password</label>
                                 <input id="reverse_password" type="password" name="password" required autocomplete="current-password"

@@ -848,6 +848,13 @@ class GoodsIssueController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
+            // Locked and re-checked so a reversal cannot run between the check above and the insert.
+            $goodsIssue = GoodsIssue::whereKey($goodsIssue->id)->lockForUpdate()->firstOrFail();
+
+            if (! $goodsIssue->canAcceptSupplementaryItems()) {
+                throw new \RuntimeException('this Goods Issue can no longer accept supplementary items.');
+            }
+
             $maxLineNo = (int) $goodsIssue->items()->max('line_no');
             $newItems = collect();
 

@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class GoodsIssue extends Model
@@ -28,6 +29,10 @@ class GoodsIssue extends Model
         'total_value',
         'notes',
         'posted_at',
+        'reversed_at',
+        'reversed_by',
+        'reversal_reason',
+        'replaces_goods_issue_id',
     ];
 
     /**
@@ -69,6 +74,7 @@ class GoodsIssue extends Model
         'issue_date' => 'date',
         'total_value' => 'decimal:2',
         'posted_at' => 'datetime',
+        'reversed_at' => 'datetime',
     ];
 
     public function warehouse(): BelongsTo
@@ -114,6 +120,50 @@ class GoodsIssue extends Model
     public function vanStockAccount(): BelongsTo
     {
         return $this->belongsTo(ChartOfAccount::class, 'van_stock_account_id');
+    }
+
+    public function reversedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reversed_by');
+    }
+
+    /**
+     * The reversed issue this draft was copied from.
+     */
+    public function replaces(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'replaces_goods_issue_id');
+    }
+
+    /**
+     * The draft that was copied from this issue when it was reversed.
+     */
+    public function replacement(): HasOne
+    {
+        return $this->hasOne(self::class, 'replaces_goods_issue_id');
+    }
+
+    public function isReversed(): bool
+    {
+        return $this->reversed_at !== null;
+    }
+
+    /**
+     * Next number in this year's GI-YYYY-NNNN sequence, counting soft-deleted issues
+     * so a number is never handed out twice.
+     */
+    public static function nextIssueNumber(): string
+    {
+        $prefix = 'GI-'.now()->year.'-';
+
+        $lastIssue = static::withTrashed()
+            ->where('issue_number', 'like', "{$prefix}%")
+            ->orderBy('id', 'desc')
+            ->first();
+
+        $sequence = $lastIssue ? (int) str_replace($prefix, '', $lastIssue->issue_number) + 1 : 1;
+
+        return sprintf('%s%04d', $prefix, $sequence);
     }
 
     public function isDraft(): bool

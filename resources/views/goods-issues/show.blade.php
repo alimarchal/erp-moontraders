@@ -7,9 +7,10 @@
 @php
     $gi = $goodsIssue;
     $isDraft = $gi->status === 'draft';
+    $isReversed = $gi->isReversed();
     $sellingValue = (float) $gi->items->sum(fn ($item) => $item->calculated_total ?? $item->total_value);
     $estimatedCost = (float) $gi->items->sum(fn ($item) => (float) $item->quantity_issued * (float) $item->unit_cost);
-    $postedCost = (float) $journalEntries->sum('total_debit');
+    $postedCost = (float) $journalEntries->reject(fn ($entry) => str_starts_with((string) $entry->reference, 'REV-'))->sum('total_debit');
     $cost = $postedCost > 0 ? $postedCost : $estimatedCost;
     $margin = $sellingValue - $cost;
     $totalPieces = (float) $gi->items->sum('quantity_issued');
@@ -35,6 +36,8 @@
             'at' => $items->first()->supplementary_posted_at ?? $items->first()->created_at,
             'text' => $items->count().' supplementary '.\Illuminate\Support\Str::plural('line', $items->count()).' added',
         ])->values())
+        ->push($isReversed ? ['at' => $gi->reversed_at, 'text' => 'Reversed'.($gi->reversedBy ? ' by '.$gi->reversedBy->name : '').': stock returned to '.($gi->warehouse->warehouse_name ?? 'warehouse').($gi->replacement ? ', lines copied to '.$gi->replacement->issue_number : '')] : null)
+        ->filter()
         ->merge($settlements->map(fn ($settlement) => [
             'at' => $settlement->created_at,
             'text' => 'Settlement '.$settlement->settlement_number.' '.($settlement->status === 'draft' ? 'started (draft)' : $settlement->status),
@@ -63,6 +66,8 @@
                             &middot;
                             @if ($isDraft)
                                 <span class="ak-status ak-status-amber"><i aria-hidden="true"></i>Draft</span>
+                            @elseif ($isReversed)
+                                <span class="ak-status ak-status-red"><i aria-hidden="true"></i>Reversed</span>
                             @else
                                 <span class="ak-status ak-status-green"><i aria-hidden="true"></i>{{ \Illuminate\Support\Str::headline($gi->status) }}</span>
                             @endif
@@ -81,6 +86,13 @@
                     @can('goods-issue-post')
                         <button type="button" x-data class="ak-btn ak-btn-success"
                             @click="$dispatch('open-post-gi-modal', { url: '{{ route('goods-issues.post', $gi->id) }}' })">Post Issue</button>
+                    @endcan
+                @endif
+                @if ($gi->status === 'issued')
+                    @can('goods-issue-reverse')
+                        <button type="button" x-data class="ak-btn ak-btn-outline" style="color:#b91c1c; border-color:#fca5a5"
+                            @if ($reversalRefusal) disabled title="{{ $reversalRefusal }}" @endif
+                            @click="$dispatch('open-reverse-gi-modal')">Reverse &amp; Re-issue</button>
                     @endcan
                 @endif
                 @if ($gi->canAcceptSupplementaryItems())
@@ -178,6 +190,25 @@
         </div>
 
         <x-status-message />
+
+        @if ($isReversed)
+            <div class="gi-check gi-check-red" role="status">
+                <span>
+                    <b>Reversed</b> on {{ $gi->reversed_at->format('d M Y, h:i A') }}{{ $gi->reversedBy ? ' by '.$gi->reversedBy->name : '' }}.
+                    Stock went back to {{ $gi->warehouse->warehouse_name ?? 'the warehouse' }} and the journal entries were offset on {{ $gi->issue_date?->format('d M Y') }}.
+                    <br><span class="ak-muted">Reason: {{ $gi->reversal_reason }}</span>
+                </span>
+                @if ($gi->replacement)
+                    <a href="{{ route('goods-issues.show', $gi->replacement) }}" class="ak-btn ak-btn-outline ak-btn-sm gi-no-print">Replaced by {{ $gi->replacement->issue_number }} →</a>
+                @endif
+            </div>
+        @endif
+        @if ($gi->replaces)
+            <div class="gi-check gi-check-amber gi-no-print" role="status">
+                <span>Copied from reversed <b>{{ $gi->replaces->issue_number }}</b>{{ $isDraft ? '. Correct the salesman, vehicle or quantities, then post it.' : '.' }}</span>
+                <a href="{{ route('goods-issues.show', $gi->replaces) }}" class="ak-btn ak-btn-outline ak-btn-sm">View {{ $gi->replaces->issue_number }} →</a>
+            </div>
+        @endif
 
         {{-- KPI cards --}}
         <section class="ak-kpis" aria-label="Issue summary">
@@ -418,9 +449,15 @@
                     <div class="uf-body" style="padding-top:4px; padding-bottom:4px">
                         @if ($settlements->isEmpty())
                             <p class="ak-muted" style="padding:10px 0; margin:0">
-                                {{ $isDraft ? 'Post this issue first; the settlement is made when the van comes back.' : 'No settlement yet. The vehicle stays locked until this issue is settled.' }}
+                                @if ($isDraft)
+                                    Post this issue first; the settlement is made when the van comes back.
+                                @elseif ($isReversed)
+                                    Reversed: nothing to settle, and the vehicle is free.
+                                @else
+                                    No settlement yet. The vehicle stays locked until this issue is settled.
+                                @endif
                             </p>
-                            @if (! $isDraft)
+                            @if ($gi->status === 'issued')
                                 @can('sales-settlement-create')
                                     <a href="{{ route('sales-settlements.create') }}" class="ak-btn ak-btn-outline ak-btn-sm" style="margin-bottom:10px">Start settlement</a>
                                 @endcan
@@ -553,6 +590,55 @@
             };
         }
     </script>
+
+    @if ($gi->status === 'issued')
+        @can('goods-issue-reverse')
+            {{-- Reverse & Re-issue: reason and password are both required; the server re-checks every condition. --}}
+            <div x-data="{ show: {{ $errors->has('reason') || $errors->has('password') ? 'true' : 'false' }} }"
+                 x-on:open-reverse-gi-modal.window="show = true"
+                 x-on:keydown.escape.window="show = false"
+                 x-show="show" x-cloak class="fixed inset-0 z-50" style="display: none;">
+                <div class="fixed inset-0 bg-gray-900/40 backdrop-blur-sm" @click="show = false"></div>
+                <div class="fixed inset-0 z-10 flex items-center justify-center overflow-y-auto p-4">
+                    <form method="POST" action="{{ route('goods-issues.reverse', $gi->id) }}"
+                          class="relative w-full max-w-lg overflow-hidden rounded-lg bg-white text-left shadow-xl" @click.outside="show = false">
+                        @csrf
+                        <div class="px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
+                            <h3 class="text-lg font-medium leading-6 text-gray-900">Reverse {{ $gi->issue_number }} &amp; re-issue</h3>
+                            <div class="mt-2 space-y-2 text-sm text-gray-600">
+                                <p>This cancels the posted issue. Nothing is deleted:</p>
+                                <ul class="list-disc pl-5">
+                                    <li>Stock goes back to {{ $gi->warehouse->warehouse_name ?? 'the warehouse' }}, batch by batch, at the cost it left at.</li>
+                                    <li>Vehicle {{ $gi->vehicle->vehicle_number ?? '' }} is emptied of it and unlocked.</li>
+                                    <li>Offsetting journal entries (REV-{{ $gi->issue_number }}) are posted on {{ $gi->issue_date?->format('d M Y') }}.</li>
+                                    <li>A new <b>draft</b> with the same items opens, so you can set the right salesman, vehicle or quantities and post it.</li>
+                                </ul>
+                            </div>
+                            <div class="mt-4">
+                                <label for="reverse_reason" class="block text-sm font-medium text-gray-700">Reason</label>
+                                <textarea id="reverse_reason" name="reason" rows="2" required minlength="5" maxlength="500"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500"
+                                    placeholder="e.g. Posted to the wrong salesman and vehicle">{{ old('reason') }}</textarea>
+                                @error('reason')<p class="mt-1 text-sm font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div class="mt-3">
+                                <label for="reverse_password" class="block text-sm font-medium text-gray-700">Your password</label>
+                                <input id="reverse_password" type="password" name="password" required autocomplete="current-password"
+                                    class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500">
+                                @error('password')<p class="mt-1 text-sm font-medium text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                        </div>
+                        <div class="flex flex-row justify-end gap-3 bg-gray-100 px-6 py-4">
+                            <button type="button" @click="show = false"
+                                class="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-widest text-gray-700 shadow-sm transition hover:bg-gray-50">Cancel</button>
+                            <button type="submit"
+                                class="inline-flex items-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-red-700">Reverse &amp; open draft</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endcan
+    @endif
 
     <x-alpine-confirmation-modal event-name="open-post-gi-modal" title="Post Goods Issue"
         message="Are you sure you want to post this Goods Issue? This will transfer inventory from warehouse to vehicle, lock the vehicle until settlement, and create the journal entries. Do you agree?"

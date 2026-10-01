@@ -16,12 +16,15 @@ use App\Models\Uom;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
+use App\Services\GoodsIssueReversalService;
 use App\Services\GoodsIssueStockCheck;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
@@ -39,6 +42,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
             new Middleware('permission:goods-issue-edit', only: ['edit', 'update', 'appendItemsForm', 'appendItems']),
             new Middleware('permission:goods-issue-delete', only: ['destroy']),
             new Middleware('permission:goods-issue-post', only: ['post']),
+            new Middleware('permission:goods-issue-reverse', only: ['reverse']),
         ];
     }
 
@@ -351,10 +355,13 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'vanStockAccount',
             'items.product',
             'items.uom',
+            'reversedBy',
+            'replaces',
+            'replacement',
         ]);
 
         foreach ($goodsIssue->items as $item) {
-            if ($goodsIssue->status === 'issued') {
+            if (in_array($goodsIssue->status, ['issued', 'cancelled'], true) && $goodsIssue->posted_at) {
                 // For posted goods issues, get ACTUAL batch breakdown from stock movements.
                 // Filter by goods_issue_item_id so multi-line GIs (same product on
                 // multiple lines) only return the movements that belong to *this* line.
@@ -364,6 +371,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
                     ->where('sm.reference_id', $goodsIssue->id)
                     ->where('sm.goods_issue_item_id', $item->id)
                     ->where('sm.movement_type', 'transfer')
+                    // A reversed issue also carries the offsetting rows; the note shows what was issued.
+                    ->where('sm.quantity', '<', 0)
                     ->select(
                         'sb.batch_code',
                         DB::raw('ABS(sm.quantity) as quantity'),
@@ -455,11 +464,14 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
         $goodsIssue->load(['settlement' => fn ($query) => $query->orderBy('settlement_date')]);
 
-        // Journal entries this issue posted: the main transfer and any supplementary (-S1, -S2 ...) entries.
+        // Journal entries this issue posted: the main transfer, any supplementary (-S1, -S2 ...)
+        // entries, and the REV- entries that offset them when the issue was reversed.
         $journalEntries = JournalEntry::query()
             ->where(fn ($query) => $query
                 ->where('reference', $goodsIssue->issue_number)
-                ->orWhere('reference', 'like', $goodsIssue->issue_number.'-S%'))
+                ->orWhere('reference', 'like', $goodsIssue->issue_number.'-S%')
+                ->orWhere('reference', 'REV-'.$goodsIssue->issue_number)
+                ->orWhere('reference', 'like', 'REV-'.$goodsIssue->issue_number.'-S%'))
             ->withSum('details as total_debit', 'debit')
             ->orderBy('id')
             ->get(['id', 'reference', 'entry_date', 'status', 'description']);
@@ -467,6 +479,9 @@ class GoodsIssueController extends Controller implements HasMiddleware
         return view('goods-issues.show', [
             'goodsIssue' => $goodsIssue,
             'journalEntries' => $journalEntries,
+            'reversalRefusal' => $goodsIssue->status === 'issued' && auth()->user()->can('goods-issue-reverse')
+                ? app(GoodsIssueReversalService::class)->refusal($goodsIssue)
+                : null,
             'stockPositions' => $goodsIssue->status === 'draft'
                 ? app(GoodsIssueStockCheck::class)->positions(
                     $goodsIssue->items,
@@ -621,6 +636,36 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
             return back()->with('error', 'Unable to delete Goods Issue.');
         }
+    }
+
+    /**
+     * Reverse a posted goods issue and open the draft copied from it, so a wrong
+     * salesman, van or quantity is corrected without editing a posted document.
+     */
+    public function reverse(Request $request, GoodsIssue $goodsIssue): RedirectResponse
+    {
+        $this->authorizeGoodsIssueSupplierAccess($goodsIssue);
+
+        $validated = $request->validate([
+            'reason' => 'required|string|min:5|max:500',
+            'password' => 'required|string',
+        ]);
+
+        if (! Hash::check($validated['password'], auth()->user()->password)) {
+            Log::warning("Failed GI reversal attempt for {$goodsIssue->issue_number} - invalid password by user: ".auth()->user()->name);
+
+            return back()->with('error', 'Invalid password. Reversing a goods issue requires your password confirmation.');
+        }
+
+        $result = app(GoodsIssueReversalService::class)->reverse($goodsIssue, $validated['reason']);
+
+        if (! $result['success']) {
+            return back()->with('error', $result['message']);
+        }
+
+        return redirect()
+            ->route('goods-issues.edit', $result['replacement'])
+            ->with('success', $result['message']);
     }
 
     /**
@@ -1057,20 +1102,6 @@ class GoodsIssueController extends Controller implements HasMiddleware
      */
     private function generateIssueNumber(): string
     {
-        $year = now()->year;
-        $prefix = "GI-{$year}-";
-
-        $lastIssue = GoodsIssue::withTrashed()
-            ->where('issue_number', 'like', "{$prefix}%")
-            ->orderBy('id', 'desc')
-            ->first();
-
-        $sequence = 1;
-        if ($lastIssue) {
-            $lastSequence = (int) str_replace($prefix, '', $lastIssue->issue_number);
-            $sequence = $lastSequence + 1;
-        }
-
-        return sprintf('%s%04d', $prefix, $sequence);
+        return GoodsIssue::nextIssueNumber();
     }
 }

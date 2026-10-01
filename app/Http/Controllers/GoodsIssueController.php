@@ -845,6 +845,9 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 ->with('error', 'This Goods Issue cannot accept supplementary items.');
         }
 
+        // Saving the lines and posting their stock is one transaction: when posting fails
+        // (stock taken by another issue, a closed period ...) the lines are not left on an
+        // issued GI as if they had been loaded, where the settlement form would pick them up.
         DB::beginTransaction();
 
         try {
@@ -858,7 +861,7 @@ class GoodsIssueController extends Controller implements HasMiddleware
             $maxLineNo = (int) $goodsIssue->items()->max('line_no');
             $newItems = collect();
 
-            foreach ($request->input('items', []) as $index => $item) {
+            foreach ($request->input('items', []) as $item) {
                 $maxLineNo++;
                 $newItems->push(GoodsIssueItem::create([
                     'goods_issue_id' => $goodsIssue->id,
@@ -874,8 +877,12 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 ]));
             }
 
-            // Recalculate GI totals from all items
-            $goodsIssue->refresh();
+            $result = app(DistributionService::class)->postSupplementaryItems($goodsIssue, $newItems);
+
+            if (! $result['success']) {
+                throw new \RuntimeException($result['message']);
+            }
+
             $goodsIssue->update([
                 'total_quantity' => $goodsIssue->items()->sum('quantity_issued'),
                 'total_value' => $goodsIssue->items()->sum('total_value'),
@@ -892,19 +899,6 @@ class GoodsIssueController extends Controller implements HasMiddleware
             return back()
                 ->withInput()
                 ->with('error', 'Unable to append items: '.$e->getMessage());
-        }
-
-        // If the GI is already issued, immediately post the supplementary items
-        // through the stock pipeline (separate transaction inside the service).
-        if ($goodsIssue->status === 'issued') {
-            $distributionService = app(DistributionService::class);
-            $result = $distributionService->postSupplementaryItems($goodsIssue->fresh(), $newItems);
-
-            if (! $result['success']) {
-                return redirect()
-                    ->route('goods-issues.show', $goodsIssue)
-                    ->with('error', $result['message']);
-            }
         }
 
         $message = "Items appended to Goods Issue '{$goodsIssue->issue_number}' successfully.";

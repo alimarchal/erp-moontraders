@@ -109,7 +109,8 @@ class AccountingService
     {
         try {
             return DB::transaction(function () use ($journalEntryId, $description, $entryDate) {
-                $originalEntry = JournalEntry::with(['details'])->findOrFail($journalEntryId);
+                // Locked so two reversals of the same entry cannot both pass the check below.
+                $originalEntry = JournalEntry::with(['details'])->lockForUpdate()->findOrFail($journalEntryId);
 
                 if ($originalEntry->status !== 'posted') {
                     throw new \Exception('Only posted entries can be reversed.');

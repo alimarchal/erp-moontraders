@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\AccountingPeriod;
+use App\Models\Currency;
 use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
 use App\Models\Product;
@@ -160,4 +162,28 @@ it('changes nothing on a dry run', function () {
         'id' => $this->movement->id,
         'movement_date' => '2026-09-25',
     ]);
+});
+
+it('moves the supplementary journal entries along with the main one', function () {
+    seedGrnPostingAccounts();
+    $periodId = AccountingPeriod::create([
+        'name' => 'Aug-Sep 2026', 'start_date' => '2026-08-01', 'end_date' => '2026-09-30', 'status' => 'open',
+    ])->id;
+    $currencyId = Currency::where('is_base_currency', true)->value('id');
+    $entryIds = collect(['', '-S1'])->map(fn (string $suffix) => DB::table('journal_entries')->insertGetId([
+        'currency_id' => $currencyId,
+        'accounting_period_id' => $periodId,
+        'entry_date' => '2026-09-25',
+        'reference' => $this->goodsIssue->issue_number.$suffix,
+        'description' => 'Goods issue transfer',
+        'status' => 'posted',
+        'fx_rate_to_base' => 1,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]));
+
+    $this->artisan('goods-issue:correct-date', ['goods_issue' => $this->goodsIssue->id])->assertSuccessful();
+
+    expect(DB::table('journal_entries')->whereIn('id', $entryIds)->pluck('entry_date')->map(fn ($date) => substr((string) $date, 0, 10))->all())
+        ->toBe(['2026-08-25', '2026-08-25']);
 });

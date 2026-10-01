@@ -580,6 +580,8 @@ class SalesSettlementController extends Controller implements HasMiddleware
                 ->first();
 
             if ($existingSettlement) {
+                DB::rollBack();
+
                 if ($existingSettlement->status === 'posted') {
                     return back()
                         ->withInput()

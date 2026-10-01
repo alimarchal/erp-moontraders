@@ -205,7 +205,7 @@
         @endif
         @if ($gi->replaces)
             <div class="gi-check gi-check-amber gi-no-print" role="status">
-                <span>Copied from reversed <b>{{ $gi->replaces->issue_number }}</b>{{ $isDraft ? '. Correct the salesman, vehicle or quantities, then post it. Until then this draft holds the lock on vehicle '.($gi->vehicle->vehicle_number ?? '').'.' : '.' }}</span>
+                <span>Copied from reversed <b>{{ $gi->replaces->issue_number }}</b>{{ $isDraft ? '. Correct the salesman, vehicle or quantities, then post it. This draft holds the lock on vehicle '.($gi->vehicle->vehicle_number ?? '').' until its vehicle is changed or it is deleted.' : '.' }}</span>
                 <a href="{{ route('goods-issues.show', $gi->replaces) }}" class="ak-btn ak-btn-outline ak-btn-sm">View {{ $gi->replaces->issue_number }} →</a>
             </div>
         @endif
@@ -609,7 +609,7 @@
                                 <p>This cancels the posted issue. Nothing is deleted:</p>
                                 <ul class="list-disc pl-5">
                                     <li>Stock goes back to {{ $gi->warehouse->warehouse_name ?? 'the warehouse' }}, batch by batch, at the cost it left at.</li>
-                                    <li>Vehicle {{ $gi->vehicle->vehicle_number ?? '' }} is emptied of it. The new draft holds its lock until you change the draft's vehicle, post it or delete it.</li>
+                                    <li>Vehicle {{ $gi->vehicle->vehicle_number ?? '' }} is emptied of it. The new draft takes over its lock: changing the draft's vehicle or deleting the draft frees it, while posting keeps it locked until the settlement is posted.</li>
                                     <li>Offsetting journal entries (REV-{{ $gi->issue_number }}) are posted on {{ $gi->issue_date?->format('d M Y') }}.</li>
                                     <li>A new <b>draft</b> with the same items opens, so you can set the right salesman, vehicle or quantities and post it.</li>
                                 </ul>

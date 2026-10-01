@@ -102,12 +102,13 @@ class AccountingService
     }
 
     /**
-     * Create a reversing entry for a posted journal entry.
+     * Create a reversing entry for a posted journal entry, dated today unless an
+     * entry date is given (a cancelled document is reversed on its own date).
      */
-    public function reverseJournalEntry(int $journalEntryId, ?string $description = null): array
+    public function reverseJournalEntry(int $journalEntryId, ?string $description = null, ?string $entryDate = null): array
     {
         try {
-            return DB::transaction(function () use ($journalEntryId, $description) {
+            return DB::transaction(function () use ($journalEntryId, $description, $entryDate) {
                 $originalEntry = JournalEntry::with(['details'])->findOrFail($journalEntryId);
 
                 if ($originalEntry->status !== 'posted') {
@@ -116,7 +117,7 @@ class AccountingService
 
                 $reversingEntry = new JournalEntry([
                     'currency_id' => $originalEntry->currency_id,
-                    'entry_date' => now()->toDateString(),
+                    'entry_date' => $entryDate ?? now()->toDateString(),
                     'reference' => $originalEntry->reference
                         ? 'REV-'.$originalEntry->reference
                         : 'REV-'.$originalEntry->id,

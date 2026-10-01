@@ -71,6 +71,7 @@
                     <option value="">All Statuses</option>
                     <option value="draft" {{ request('filter.status') === 'draft' ? 'selected' : '' }}>Draft</option>
                     <option value="issued" {{ request('filter.status') === 'issued' ? 'selected' : '' }}>Issued</option>
+                    <option value="cancelled" {{ request('filter.status') === 'cancelled' ? 'selected' : '' }}>Reversed</option>
                 </select>
             </div>
 
@@ -142,8 +143,9 @@
                     <span
                         class="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold rounded-full
                                                                                                                     {{ $gi->status === 'draft' ? 'bg-gray-200 text-gray-700' : '' }}
-                                                                                                                    {{ $gi->status === 'issued' ? 'bg-emerald-100 text-emerald-700' : '' }}">
-                        {{ ucfirst($gi->status) }}
+                                                                                                                    {{ $gi->status === 'issued' ? 'bg-emerald-100 text-emerald-700' : '' }}
+                                                                                                                    {{ $gi->status === 'cancelled' ? 'bg-red-100 text-red-700' : '' }}">
+                        {{ $gi->status === 'cancelled' ? 'Reversed' : ucfirst($gi->status) }}
                     </span>
                 </td>
                 <td class="py-0 px-2 text-center">

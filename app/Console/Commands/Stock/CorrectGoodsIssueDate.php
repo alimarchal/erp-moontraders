@@ -35,6 +35,13 @@ class CorrectGoodsIssueDate extends Command
             return self::FAILURE;
         }
 
+        // A reversed issue's offsetting REV- journal entries would stay on the old date.
+        if ($goodsIssue->isReversed()) {
+            $this->error("{$goodsIssue->issue_number} has been reversed. Correct the date on its replacement instead.");
+
+            return self::FAILURE;
+        }
+
         $settlement = DB::table('sales_settlements')->where('goods_issue_id', $goodsIssue->id)->first();
         $newDate = $this->resolveDate($settlement);
 

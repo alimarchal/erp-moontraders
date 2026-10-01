@@ -93,6 +93,29 @@ class InventoryLedgerService
     }
 
     /**
+     * Offset one ledger entry of a reversed goods issue: the quantities swap sides, so
+     * the warehouse gets its stock back and the van gives it up. The entry keeps the
+     * goods_issue_id, which lets the issue and its reversal net to zero together.
+     */
+    public function recordIssueReversal(InventoryLedgerEntry $original, string $date, string $notes): InventoryLedgerEntry
+    {
+        return $this->createEntry([
+            'date' => $date,
+            'transaction_type' => InventoryLedgerEntry::TYPE_ADJUSTMENT,
+            'product_id' => $original->product_id,
+            'stock_batch_id' => $original->stock_batch_id,
+            'warehouse_id' => $original->warehouse_id,
+            'vehicle_id' => $original->vehicle_id,
+            'employee_id' => $original->employee_id,
+            'goods_issue_id' => $original->goods_issue_id,
+            'debit_qty' => (float) $original->credit_qty,
+            'credit_qty' => (float) $original->debit_qty,
+            'unit_cost' => (float) $original->unit_cost,
+            'notes' => $notes,
+        ]);
+    }
+
+    /**
      * Record a sale - stock leaving vehicle (sold to customer)
      */
     public function recordSale(

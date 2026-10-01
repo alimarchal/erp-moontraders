@@ -454,6 +454,8 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     Route::resource('goods-issues', GoodsIssueController::class);
     Route::post('goods-issues/{goodsIssue}/post', [GoodsIssueController::class, 'post'])
         ->name('goods-issues.post');
+    Route::post('goods-issues/{goodsIssue}/reverse', [GoodsIssueController::class, 'reverse'])
+        ->name('goods-issues.reverse');
     Route::get('api/goods-issues/check-vehicle', [GoodsIssueController::class, 'checkVehicleGoodsIssue'])
         ->name('api.goods-issues.check-vehicle');
     Route::get('api/warehouses/{warehouse}/products/{product}/stock', [GoodsIssueController::class, 'getProductStock'])

@@ -10,6 +10,7 @@ use App\Models\GoodsIssueItem;
 use App\Models\InventoryLedgerEntry;
 use App\Models\JournalEntry;
 use App\Models\SalesSettlement;
+use App\Models\StockBatch;
 use App\Models\StockMovement;
 use App\Models\StockValuationLayer;
 use App\Models\VanStockBalance;
@@ -170,16 +171,7 @@ class DistributionService
                     $vanStock->opening_balance = 0;
                 }
 
-                $vanStock->quantity_on_hand += $item->quantity_issued;
-
-                // Calculate weighted average cost from batch allocations
-                $totalValue = 0;
-                // dump($batchAllocations);
-                foreach ($batchAllocations['batches'] as $batchAllocation) {
-                    // dump('Allocating batch: ' . $batchAllocation['batch']->batch_code . ' Qty: ' . $batchAllocation['quantity']);
-                    $totalValue += $batchAllocation['quantity'] * $batchAllocation['batch']->unit_cost;
-                }
-                $vanStock->average_cost = $item->quantity_issued > 0 ? $totalValue / $item->quantity_issued : 0;
+                $this->addToVanStock($vanStock, (float) $item->quantity_issued, $batchAllocations['batches']);
 
                 // Update latest issue details
                 $vanStock->last_issue_number = $goodsIssue->issue_number;
@@ -374,13 +366,7 @@ class DistributionService
                     $vanStock->opening_balance = 0;
                 }
 
-                $vanStock->quantity_on_hand += $item->quantity_issued;
-
-                $totalValue = 0;
-                foreach ($batchAllocations['batches'] as $batchAllocation) {
-                    $totalValue += $batchAllocation['quantity'] * $batchAllocation['batch']->unit_cost;
-                }
-                $vanStock->average_cost = $item->quantity_issued > 0 ? $totalValue / $item->quantity_issued : 0;
+                $this->addToVanStock($vanStock, (float) $item->quantity_issued, $batchAllocations['batches']);
 
                 $vanStock->last_issue_number = $goodsIssue->issue_number;
                 $vanStock->last_unit_cost = $item->unit_cost;
@@ -426,6 +412,25 @@ class DistributionService
                 'data' => null,
             ];
         }
+    }
+
+    /**
+     * Add an issue line to the van's balance, averaging its cost with what the van already
+     * holds (stock carried over, or the main issue when this is a supplementary line) rather
+     * than overwriting it with the new line's cost.
+     *
+     * @param  array<int, array{batch: StockBatch, quantity: float}>  $allocations
+     */
+    private function addToVanStock(VanStockBalance $vanStock, float $quantity, array $allocations): void
+    {
+        $addedValue = collect($allocations)->sum(fn (array $allocation) => (float) $allocation['quantity'] * (float) $allocation['batch']->unit_cost);
+        $heldQuantity = max(0.0, (float) $vanStock->quantity_on_hand);
+        $newQuantity = $heldQuantity + $quantity;
+
+        $vanStock->average_cost = $newQuantity > 0
+            ? ($heldQuantity * (float) $vanStock->average_cost + $addedValue) / $newQuantity
+            : 0;
+        $vanStock->quantity_on_hand = (float) $vanStock->quantity_on_hand + $quantity;
     }
 
     /**
@@ -484,7 +489,9 @@ class DistributionService
         ];
 
         $journalEntryData = [
-            'entry_date' => now()->toDateString(),
+            // Dated with the issue, like its stock movements and the main transfer entry; a
+            // GI keyed in late would otherwise carry its top-up in a later month's ledger.
+            'entry_date' => $goodsIssue->issue_date,
             'reference' => $reference,
             'description' => 'Supplementary Goods Issue #'.$reference.' - Additional items to vehicle '.$vehicleNumber.' (Salesman: '.$employeeName.')',
             'lines' => $lines,

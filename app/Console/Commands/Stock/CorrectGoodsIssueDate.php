@@ -65,14 +65,18 @@ class CorrectGoodsIssueDate extends Command
             return self::FAILURE;
         }
 
-        $journalEntry = DB::table('journal_entries')
-            ->where('reference', $goodsIssue->issue_number)
+        // The main transfer entry and any supplementary (-S1, -S2 ...) ones move together.
+        $journalEntries = DB::table('journal_entries')
+            ->where(fn ($query) => $query
+                ->where('reference', $goodsIssue->issue_number)
+                ->orWhere('reference', 'like', $goodsIssue->issue_number.'-S%'))
             ->where('status', 'posted')
-            ->first();
+            ->orderBy('id')
+            ->get();
 
         // Probed before anything is written: the stock tables are updated first, and a
         // privilege failure later would leave them moved while the journal entry stayed put.
-        if ($journalEntry && ! $this->option('dry-run')) {
+        if ($journalEntries->isNotEmpty() && ! $this->option('dry-run')) {
             try {
                 app(DatabaseTriggerGuard::class)->assertTriggersCanBeCreated('journal_entries');
             } catch (RuntimeException $e) {
@@ -82,7 +86,7 @@ class CorrectGoodsIssueDate extends Command
             }
         }
 
-        $targets = $this->targets($goodsIssue, $journalEntry);
+        $targets = $this->targets($goodsIssue, $journalEntries->count());
 
         $this->info("{$goodsIssue->issue_number}: {$currentDate} → {$newDate}"
             .($settlement ? "  (settlement {$settlement->settlement_number} is dated "
@@ -105,7 +109,7 @@ class CorrectGoodsIssueDate extends Command
             DB::table('inventory_ledger_entries')->where('goods_issue_id', $goodsIssue->id)->update(['date' => $newDate]);
         });
 
-        if ($journalEntry) {
+        foreach ($journalEntries as $journalEntry) {
             $this->moveJournalEntry((int) $journalEntry->id, $newDate);
         }
 
@@ -114,7 +118,7 @@ class CorrectGoodsIssueDate extends Command
             'goods_issue' => $goodsIssue->issue_number,
             'from' => $currentDate,
             'to' => $newDate,
-            'journal_entry' => $journalEntry->id ?? null,
+            'journal_entries' => $journalEntries->pluck('id')->all(),
         ]);
 
         $this->newLine();
@@ -167,7 +171,7 @@ class CorrectGoodsIssueDate extends Command
     /**
      * @return array<string, int>
      */
-    private function targets(object $goodsIssue, ?object $journalEntry): array
+    private function targets(object $goodsIssue, int $journalEntryCount): array
     {
         $movementIds = $this->movementIds($goodsIssue);
 
@@ -176,7 +180,7 @@ class CorrectGoodsIssueDate extends Command
             'stock_movements' => count($movementIds),
             'stock_ledger_entries' => DB::table('stock_ledger_entries')->whereIn('stock_movement_id', $movementIds)->count(),
             'inventory_ledger_entries' => DB::table('inventory_ledger_entries')->where('goods_issue_id', $goodsIssue->id)->count(),
-            'journal_entries' => $journalEntry ? 1 : 0,
+            'journal_entries' => $journalEntryCount,
         ];
     }
 

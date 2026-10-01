@@ -90,6 +90,11 @@ class DatabaseTriggerGuard
      */
     public function assertTriggersCanBeCreated(string $table): void
     {
+        // PostgreSQL guards are disabled and re-enabled in place, never dropped and recreated.
+        if (DB::getDriverName() === 'pgsql') {
+            return;
+        }
+
         $probe = 'trg_probe_'.bin2hex(random_bytes(6));
 
         try {

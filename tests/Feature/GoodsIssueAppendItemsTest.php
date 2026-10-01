@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\AccountType;
+use App\Models\ChartOfAccount;
+use App\Models\Currency;
 use App\Models\CurrentStock;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
@@ -8,15 +11,24 @@ use App\Models\GoodsReceiptNote;
 use App\Models\GoodsReceiptNoteItem;
 use App\Models\JournalEntry;
 use App\Models\Product;
+use App\Models\SalesSettlement;
+use App\Models\SalesSettlementCashDenomination;
+use App\Models\SalesSettlementItem;
+use App\Models\SalesSettlementItemBatch;
+use App\Models\StockBatch;
 use App\Models\Supplier;
 use App\Models\Uom;
 use App\Models\User;
 use App\Models\VanStockBalance;
+use App\Models\VanStockBatch;
 use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
 use App\Services\InventoryService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -135,4 +147,83 @@ it('leaves no line behind when the appended items cannot be posted', function ()
     expect(GoodsIssueItem::where('goods_issue_id', $data['goodsIssue']->id)->where('is_supplementary', true)->exists())->toBeFalse()
         ->and((float) CurrentStock::where('product_id', $data['product']->id)->value('quantity_on_hand'))->toBe(100.0)
         ->and((float) $data['goodsIssue']->fresh()->total_quantity)->toBe((float) $data['goodsIssue']->total_quantity);
+});
+
+it('stays in balance from issue through added items to the posted settlement', function () {
+    Notification::fake();
+    $data = postGoodsIssueForAppending();
+    $currencyId = Currency::where('is_base_currency', true)->value('id');
+    $typeId = AccountType::firstOrCreate(['type_name' => 'Assets'], ['report_group' => 'BalanceSheet'])->id;
+    foreach (['1121' => 'Cash', '1122' => 'Cheques In Hand', '1123' => 'Salesman Clearing', '1111' => 'Debtors', '4110' => 'Sales'] as $code => $name) {
+        ChartOfAccount::firstOrCreate(['account_code' => $code], [
+            'account_name' => $name, 'account_type_id' => $typeId, 'currency_id' => $currencyId, 'normal_balance' => 'debit', 'is_active' => true,
+        ]);
+    }
+    // The settlement entry books sales to cost center 4 and stock to cost center 6.
+    foreach ([4 => 'CC004', 6 => 'CC006-SETTLE'] as $id => $code) {
+        DB::table('cost_centers')->insert(['id' => $id, 'code' => $code, 'name' => $code, 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+    }
+    post(route('goods-issues.store-appended-items', $data['goodsIssue']), appendPayload($data, 10));
+    [$mainLine, $addedLine] = $data['goodsIssue']->items()->orderBy('line_no')->get()->all();
+    $settlement = SalesSettlement::factory()->create([
+        'goods_issue_id' => $data['goodsIssue']->id,
+        'vehicle_id' => $data['vehicle']->id,
+        'warehouse_id' => $data['goodsIssue']->warehouse_id,
+        'employee_id' => $data['goodsIssue']->employee_id,
+        'settlement_date' => $data['goodsIssue']->issue_date,
+        'cash_sales_amount' => 750,
+        'total_sales_amount' => 750,
+    ]);
+    // As the settlement form sends it: each line with the batch it was loaded from.
+    foreach ([[$mainLine, 18, 18, 0, 10], [$addedLine, 10, 7, 3, 20]] as [$line, $issued, $sold, $returned, $cost]) {
+        $batch = StockBatch::where('product_id', $data['product']->id)->where('unit_cost', $cost)->firstOrFail();
+        $settlementItem = SalesSettlementItem::factory()->create([
+            'sales_settlement_id' => $settlement->id,
+            'goods_issue_item_id' => $line->id,
+            'product_id' => $data['product']->id,
+            'quantity_issued' => $issued,
+            'quantity_sold' => $sold,
+            'quantity_returned' => $returned,
+            'quantity_shortage' => 0,
+            'unit_selling_price' => 30,
+            'total_sales_value' => $sold * 30,
+            'unit_cost' => 0,
+            'total_cogs' => 0,
+        ]);
+        SalesSettlementItemBatch::create([
+            'sales_settlement_item_id' => $settlementItem->id,
+            'stock_batch_id' => $batch->id,
+            'batch_code' => $batch->batch_code,
+            'quantity_issued' => $issued,
+            'quantity_sold' => $sold,
+            'quantity_returned' => $returned,
+            'quantity_shortage' => 0,
+            'unit_cost' => $cost,
+            'selling_price' => 30,
+            'is_promotional' => false,
+        ]);
+    }
+    SalesSettlementCashDenomination::create([
+        'sales_settlement_id' => $settlement->id,
+        'denom_5000' => 0, 'denom_1000' => 0, 'denom_500' => 1, 'denom_100' => 2, 'denom_50' => 1,
+        'denom_20' => 0, 'denom_10' => 0, 'denom_coins' => 0, 'total_amount' => 750,
+    ]);
+
+    $result = app(DistributionService::class)->postSalesSettlement($settlement->fresh());
+
+    expect($result['success'])->toBeTrue($result['message'] ?? '')
+        ->and((float) VanStockBalance::where('vehicle_id', $data['vehicle']->id)->value('quantity_on_hand'))->toBe(0.0)
+        ->and((float) VanStockBatch::where('vehicle_id', $data['vehicle']->id)->sum('quantity_on_hand'))->toBe(0.0)
+        ->and((float) CurrentStock::where('product_id', $data['product']->id)->value('quantity_on_hand'))->toBe(93.0)
+        ->and(Artisan::call('inventory:verify-consistency'))->toBe(0)
+        ->and(Artisan::call('accounting:reconcile-stock-gl', ['--tolerance' => 0.01]))->toBe(0);
+
+    $vanStockOnIssueDate = (float) DB::table('journal_entry_details as line')
+        ->join('journal_entries as entry', 'entry.id', '=', 'line.journal_entry_id')
+        ->join('chart_of_accounts as account', 'account.id', '=', 'line.chart_of_account_id')
+        ->where('entry.status', 'posted')
+        ->where('account.account_code', '1155')
+        ->whereDate('entry.entry_date', '<=', $data['goodsIssue']->issue_date)
+        ->sum(DB::raw('line.debit - line.credit'));
+    expect($vanStockOnIssueDate)->toBe(0.0);
 });

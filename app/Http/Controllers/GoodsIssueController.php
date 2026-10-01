@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\GoodsIssueExport;
 use App\Http\Requests\AppendGoodsIssueItemsRequest;
 use App\Http\Requests\StoreGoodsIssueRequest;
 use App\Http\Requests\UpdateGoodsIssueRequest;
@@ -23,14 +24,19 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 use Spatie\QueryBuilder\AllowedFilter;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class GoodsIssueController extends Controller implements HasMiddleware
 {
+    /** Rows-per-page choices on the list. */
+    public const PER_PAGE = [20, 50, 100, 500, 'all'];
+
     /**
      * Get the middleware that should be assigned to the controller.
      */
@@ -64,15 +70,15 @@ class GoodsIssueController extends Controller implements HasMiddleware
 
         $this->authorizeGoodsIssueFilterAccess($request, $userSupplierId);
 
-        $query = GoodsIssue::query()->with(['warehouse', 'vehicle', 'employee', 'supplier', 'issuedBy']);
+        $perPage = (string) $request->input('per_page', '20');
+        $perPage = in_array($perPage, array_map('strval', self::PER_PAGE), true) ? $perPage : '20';
 
-        if (! auth()->user()->can('goods-issue-view-all')) {
-            $query->where('issued_by', auth()->id());
-        }
-
-        if ($userSupplierId) {
-            $query->where('supplier_id', $userSupplierId);
-        }
+        /** Issues this user may see: own issues without view-all, own supplier when scoped. */
+        $visible = function () use ($userSupplierId) {
+            return GoodsIssue::query()
+                ->when(! auth()->user()->can('goods-issue-view-all'), fn ($query) => $query->where('goods_issues.issued_by', auth()->id()))
+                ->when($userSupplierId, fn ($query, $supplierId) => $query->where('goods_issues.supplier_id', $supplierId));
+        };
 
         $allowedFilters = [
             AllowedFilter::partial('issue_number'),
@@ -89,35 +95,96 @@ class GoodsIssueController extends Controller implements HasMiddleware
                     $q->where('product_id', $value);
                 });
             }),
+            AllowedFilter::callback('search', function ($query, $value) {
+                $term = '%'.mb_strtolower(trim((string) $value)).'%';
+                $query->where(fn ($q) => $q
+                    ->whereRaw('LOWER(issue_number) LIKE ?', [$term])
+                    ->orWhereHas('vehicle', fn ($v) => $v->whereRaw('LOWER(vehicle_number) LIKE ?', [$term]))
+                    ->orWhereHas('employee', fn ($e) => $e->whereRaw('LOWER(name) LIKE ?', [$term])->orWhereRaw('LOWER(employee_code) LIKE ?', [$term])));
+            }),
+            // Settlement: "pending" = issued but no verified/posted settlement yet; "settled" = has one.
+            AllowedFilter::callback('settlement', function ($query, $value) {
+                $finalized = fn ($q) => $q->whereIn('status', ['verified', 'posted']);
+                if ($value === 'pending') {
+                    $query->where('status', 'issued')->whereDoesntHave('settlement', $finalized);
+                } elseif ($value === 'settled') {
+                    $query->whereHas('settlement', $finalized);
+                }
+            }),
+        ];
+        $allowedSorts = ['issue_date', 'issue_number', 'total_value', 'created_at'];
+
+        $goodsIssues = QueryBuilder::for($visible()->with(['warehouse', 'vehicle', 'employee', 'supplier', 'issuedBy', 'settlement'])->withCount('items'))
+            ->allowedFilters($allowedFilters)
+            ->allowedSorts($allowedSorts)
+            ->defaultSort('-issue_date', '-id');
+
+        if ($request->input('export') === 'xlsx') {
+            $period = $request->input('filter.issue_date_from').'_to_'.$request->input('filter.issue_date_to');
+
+            return Excel::download(new GoodsIssueExport($goodsIssues->getEloquentBuilder()->clone()), "goods-issues-{$period}.xlsx");
+        }
+
+        // Row preview (the lines of each issue) is loaded only for normal page sizes.
+        if ($perPage !== 'all' && (int) $perPage <= 100) {
+            $goodsIssues->with(['items' => fn ($query) => $query->orderBy('line_no'), 'items.product:id,product_name,product_code,uom_conversion_factor']);
+        }
+
+        if ($perPage === 'all') {
+            $count = $goodsIssues->getEloquentBuilder()->clone()->reorder()->count();
+            $goodsIssues = $goodsIssues->paginate(max($count, 1))->withQueryString();
+        } else {
+            $goodsIssues = $goodsIssues->paginate((int) $perPage)->withQueryString();
+        }
+
+        // Card and tab counts use every filter except status / settlement, so they show what each tab would hold.
+        $statsRequest = new Request(['filter' => Arr::except((array) $request->input('filter', []), ['status', 'settlement'])]);
+        $statsQuery = fn () => QueryBuilder::for($visible(), $statsRequest)->allowedFilters($allowedFilters)->getEloquentBuilder();
+        $byStatus = $statsQuery()->reorder()->groupBy('status')->selectRaw('status, COUNT(*) as issues, COALESCE(SUM(total_value), 0) as value')->get()->keyBy('status');
+        $pending = $statsQuery()->reorder()->where('status', 'issued')
+            ->whereDoesntHave('settlement', fn ($q) => $q->whereIn('status', ['verified', 'posted']))
+            ->selectRaw('COUNT(*) as issues, COALESCE(SUM(total_value), 0) as value')->first();
+        $stats = [
+            'total' => (int) $byStatus->sum('issues'),
+            'draft' => (int) ($byStatus['draft']->issues ?? 0),
+            'issued' => (int) ($byStatus['issued']->issues ?? 0),
+            'cancelled' => (int) ($byStatus['cancelled']->issues ?? 0),
+            'issued_value' => (float) ($byStatus['issued']->value ?? 0),
+            'draft_value' => (float) ($byStatus['draft']->value ?? 0),
+            'pending' => (int) ($pending->issues ?? 0),
+            'pending_value' => (float) ($pending->value ?? 0),
         ];
 
-        $goodsIssues = QueryBuilder::for($query)
+        // Salesman-wise summary of what the filters show (reversed issues left out).
+        $bySalesman = QueryBuilder::for($visible())
             ->allowedFilters($allowedFilters)
-            ->defaultSort('-issue_date')
-            ->paginate(20)
-            ->withQueryString();
+            ->getEloquentBuilder()
+            ->reorder()
+            ->where('goods_issues.status', '!=', 'cancelled')
+            ->join('employees', 'employees.id', '=', 'goods_issues.employee_id')
+            ->groupBy('goods_issues.employee_id', 'employees.name')
+            ->selectRaw('goods_issues.employee_id, employees.name, COUNT(*) as issues, COALESCE(SUM(goods_issues.total_value), 0) as value')
+            ->selectRaw("SUM(CASE WHEN goods_issues.status = 'issued' AND NOT EXISTS (SELECT 1 FROM sales_settlements ss WHERE ss.goods_issue_id = goods_issues.id AND ss.status IN ('verified', 'posted') AND ss.deleted_at IS NULL) THEN 1 ELSE 0 END) as pending")
+            ->orderByDesc('value')
+            ->get();
 
-        // Calculate totals based on the same filters (excluding pagination)
-        $totalQuery = GoodsIssue::query();
-
-        if (! auth()->user()->can('goods-issue-view-all')) {
-            $totalQuery->where('issued_by', auth()->id());
-        }
-
-        if ($userSupplierId) {
-            $totalQuery->where('supplier_id', $userSupplierId);
-        }
-
-        $totalValue = QueryBuilder::for($totalQuery)
+        $totalValue = QueryBuilder::for($visible())
             ->allowedFilters($allowedFilters)
+            ->getEloquentBuilder()
+            ->reorder()
             ->sum('total_value');
 
         return view('goods-issues.index', [
             'totalValue' => $totalValue,
             'goodsIssues' => $goodsIssues,
+            'stats' => $stats,
+            'bySalesman' => $bySalesman,
+            'perPage' => $perPage,
             'warehouses' => Warehouse::where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'vehicles' => Vehicle::where('is_active', true)->orderBy('vehicle_number')->get(['id', 'vehicle_number', 'vehicle_type']),
-            'employees' => Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'employees' => Employee::where('is_active', true)
+                ->when($userSupplierId, fn ($query, $supplierId) => $query->where('supplier_id', $supplierId))
+                ->orderBy('name')->get(['id', 'name', 'employee_code']),
             'suppliers' => Supplier::query()
                 ->where('disabled', false)
                 ->when($userSupplierId, fn ($query, $supplierId) => $query->where('id', $supplierId))

@@ -89,7 +89,7 @@ class GoodsIssueReversalService
         return [
             'success' => true,
             'message' => "{$goodsIssue->issue_number} has been reversed and its stock returned to the warehouse. "
-                ."Draft {$replacement->issue_number} has been created with the same items: correct it and post it.",
+                ."Draft {$replacement->issue_number} has been created with the same items and now holds the vehicle lock: correct it and post it.",
             'replacement' => $replacement,
         ];
     }
@@ -108,6 +108,21 @@ class GoodsIssueReversalService
         if ($settlement) {
             return "Settlement {$settlement->settlement_number} ({$settlement->status}) has been made against it. "
                 .'Its stock has been sold or returned, so the settlement must be reverted or deleted first.';
+        }
+
+        $alreadyReversed = $this->postedJournalEntries($goodsIssue)
+            ->map(fn (JournalEntry $entry) => JournalEntry::where('status', 'posted')
+                ->where(fn ($query) => $query
+                    ->where('reverses_entry_id', $entry->id)
+                    // Reversals made before reverses_entry_id was filled in carry only the reference.
+                    ->orWhere('reference', 'REV-'.$entry->reference))
+                ->first())
+            ->filter()
+            ->first();
+
+        if ($alreadyReversed) {
+            return "Its journal entry has already been reversed by entry #{$alreadyReversed->id} ({$alreadyReversed->reference}). "
+                .'Reversing the issue would offset the ledger twice; ask accounts to look at that entry first.';
         }
 
         foreach ($this->issuedQuantities($goodsIssue) as $productId => $issued) {
@@ -162,14 +177,7 @@ class GoodsIssueReversalService
      */
     private function reverseJournalEntries(GoodsIssue $goodsIssue, string $date): void
     {
-        $entries = JournalEntry::where('status', 'posted')
-            ->where(fn ($query) => $query
-                ->where('reference', $goodsIssue->issue_number)
-                ->orWhere('reference', 'like', $goodsIssue->issue_number.'-S%'))
-            ->orderBy('id')
-            ->get();
-
-        foreach ($entries as $entry) {
+        foreach ($this->postedJournalEntries($goodsIssue) as $entry) {
             $result = $this->accountingService->reverseJournalEntry(
                 $entry->id,
                 "Reversal of Goods Issue {$entry->reference} (vehicle {$goodsIssue->vehicle?->vehicle_number}; salesman {$goodsIssue->employee?->name})",
@@ -180,6 +188,21 @@ class GoodsIssueReversalService
                 throw new \RuntimeException($result['message']);
             }
         }
+    }
+
+    /**
+     * The main transfer entry and every supplementary (-S1, -S2 ...) one.
+     *
+     * @return Collection<int, JournalEntry>
+     */
+    private function postedJournalEntries(GoodsIssue $goodsIssue): Collection
+    {
+        return JournalEntry::where('status', 'posted')
+            ->where(fn ($query) => $query
+                ->where('reference', $goodsIssue->issue_number)
+                ->orWhere('reference', 'like', $goodsIssue->issue_number.'-S%'))
+            ->orderBy('id')
+            ->get();
     }
 
     /**
@@ -283,16 +306,24 @@ class GoodsIssueReversalService
     }
 
     /**
-     * A draft with the same header and lines, numbered next in sequence. Lines for the same
-     * product are merged into one, so supplementary lines fold into the line they topped up
-     * and the edit form's one-row-per-product rule holds.
+     * A draft with the same header and the lines that were posted, numbered next in sequence.
+     * Lines for the same product at the same cost and price are merged, so a supplementary
+     * line folds into the line it topped up; a line at a different rate stays on its own so
+     * no unit changes price.
      */
     private function copyToDraft(GoodsIssue $goodsIssue): GoodsIssue
     {
         $lines = $goodsIssue->items()
+            ->where(fn ($query) => $query->where('is_supplementary', false)->orWhereNotNull('supplementary_posted_at'))
             ->orderBy('line_no')
             ->get()
-            ->groupBy(fn (GoodsIssueItem $item) => $item->product_id.'|'.$item->uom_id.'|'.(int) $item->exclude_promotional)
+            ->groupBy(fn (GoodsIssueItem $item) => implode('|', [
+                $item->product_id,
+                $item->uom_id,
+                (int) $item->exclude_promotional,
+                number_format((float) $item->unit_cost, 2, '.', ''),
+                number_format((float) $item->selling_price, 2, '.', ''),
+            ]))
             ->values();
 
         $replacement = GoodsIssue::create([
@@ -306,8 +337,8 @@ class GoodsIssueReversalService
             'stock_in_hand_account_id' => $goodsIssue->stock_in_hand_account_id,
             'van_stock_account_id' => $goodsIssue->van_stock_account_id,
             'status' => 'draft',
-            'total_quantity' => $goodsIssue->items()->sum('quantity_issued'),
-            'total_value' => $goodsIssue->items()->sum('total_value'),
+            'total_quantity' => $lines->flatten()->sum(fn (GoodsIssueItem $item) => (float) $item->quantity_issued),
+            'total_value' => round($lines->sum(fn (Collection $items) => (float) $items->sum('quantity_issued') * (float) $items->first()->selling_price), 2),
             'notes' => trim("Replaces {$goodsIssue->issue_number}. ".($goodsIssue->notes ?? '')),
             'replaces_goods_issue_id' => $goodsIssue->id,
         ]);

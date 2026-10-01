@@ -115,6 +115,12 @@ class AccountingService
                     throw new \Exception('Only posted entries can be reversed.');
                 }
 
+                $existingReversal = JournalEntry::where('reverses_entry_id', $originalEntry->id)->first();
+
+                if ($existingReversal) {
+                    throw new \Exception("Entry #{$originalEntry->id} has already been reversed by entry #{$existingReversal->id}.");
+                }
+
                 $reversingEntry = new JournalEntry([
                     'currency_id' => $originalEntry->currency_id,
                     'entry_date' => $entryDate ?? now()->toDateString(),
@@ -126,6 +132,7 @@ class AccountingService
                     'fx_rate_to_base' => $originalEntry->fx_rate_to_base,
                 ]);
 
+                $reversingEntry->reverses_entry_id = $originalEntry->id;
                 $reversingEntry->accounting_period_id = $this->resolveAccountingPeriodId($reversingEntry->entry_date);
                 $reversingEntry->save();
 

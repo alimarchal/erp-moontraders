@@ -253,6 +253,9 @@ class DistributionService
         try {
             DB::beginTransaction();
 
+            // Re-read under lock: a reversal may have cancelled the issue since it was loaded.
+            $goodsIssue = GoodsIssue::whereKey($goodsIssue->id)->lockForUpdate()->firstOrFail();
+
             if ($goodsIssue->status !== 'issued') {
                 throw new \Exception('Supplementary posting requires the Goods Issue to be in issued status');
             }

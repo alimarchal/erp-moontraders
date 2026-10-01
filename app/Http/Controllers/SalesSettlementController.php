@@ -558,7 +558,16 @@ class SalesSettlementController extends Controller implements HasMiddleware
         DB::beginTransaction();
 
         try {
-            $goodsIssue = GoodsIssue::with('items')->findOrFail($request->goods_issue_id);
+            // Locked so a reversal of this issue cannot run between this check and the insert.
+            $goodsIssue = GoodsIssue::with('items')->lockForUpdate()->findOrFail($request->goods_issue_id);
+
+            if ($goodsIssue->status !== 'issued') {
+                DB::rollBack();
+
+                return back()
+                    ->withInput()
+                    ->with('error', "Goods Issue {$goodsIssue->issue_number} is ".($goodsIssue->isReversed() ? 'reversed' : $goodsIssue->status).' and cannot be settled.');
+            }
 
             // Authorize supplier access
             $userSupplierId = $this->getUserSupplierScope();
@@ -1035,7 +1044,11 @@ class SalesSettlementController extends Controller implements HasMiddleware
      */
     private function applySettlementUpdate(UpdateSalesSettlementRequest $request, SalesSettlement $salesSettlement): array
     {
-        $goodsIssue = GoodsIssue::with('items')->findOrFail($request->goods_issue_id);
+        $goodsIssue = GoodsIssue::with('items')->lockForUpdate()->findOrFail($request->goods_issue_id);
+
+        if ($goodsIssue->status !== 'issued') {
+            throw new \RuntimeException("Goods Issue {$goodsIssue->issue_number} is ".($goodsIssue->isReversed() ? 'reversed' : $goodsIssue->status).' and cannot be settled.');
+        }
 
         $existingSettlement = SalesSettlement::where('goods_issue_id', $request->goods_issue_id)
             ->where('id', '!=', $salesSettlement->id)

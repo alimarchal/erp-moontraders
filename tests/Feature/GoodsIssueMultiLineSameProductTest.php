@@ -213,4 +213,12 @@ it('shows the correct per-line batch breakdown on the show page when one product
     // Grand total across both lines = 270, NOT 540 (which is what the bug produced).
     $grandTotal = $rendered->items->sum('calculated_total');
     expect((float) $grandTotal)->toBe(270.0);
+
+    // The page lists the journal entry the posting created and links to it.
+    $journalEntries = $response->viewData('journalEntries');
+    expect($journalEntries)->toHaveCount(1)
+        ->and($journalEntries->first()->reference)->toBe($goodsIssue->issue_number);
+    $response->assertSee('Items issued')
+        ->assertSee('Rs 270')
+        ->assertSee('JE #'.$journalEntries->first()->id);
 });

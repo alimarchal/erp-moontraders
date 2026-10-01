@@ -9,6 +9,7 @@ use App\Models\ChartOfAccount;
 use App\Models\Employee;
 use App\Models\GoodsIssue;
 use App\Models\GoodsIssueItem;
+use App\Models\JournalEntry;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Uom;
@@ -346,6 +347,8 @@ class GoodsIssueController extends Controller implements HasMiddleware
             'employee',
             'supplier',
             'issuedBy',
+            'stockInHandAccount',
+            'vanStockAccount',
             'items.product',
             'items.uom',
         ]);
@@ -450,8 +453,20 @@ class GoodsIssueController extends Controller implements HasMiddleware
             }
         }
 
+        $goodsIssue->load(['settlement' => fn ($query) => $query->orderBy('settlement_date')]);
+
+        // Journal entries this issue posted: the main transfer and any supplementary (-S1, -S2 ...) entries.
+        $journalEntries = JournalEntry::query()
+            ->where(fn ($query) => $query
+                ->where('reference', $goodsIssue->issue_number)
+                ->orWhere('reference', 'like', $goodsIssue->issue_number.'-S%'))
+            ->withSum('details as total_debit', 'debit')
+            ->orderBy('id')
+            ->get(['id', 'reference', 'entry_date', 'status', 'description']);
+
         return view('goods-issues.show', [
             'goodsIssue' => $goodsIssue,
+            'journalEntries' => $journalEntries,
             'stockPositions' => $goodsIssue->status === 'draft'
                 ? app(GoodsIssueStockCheck::class)->positions(
                     $goodsIssue->items,

@@ -187,3 +187,25 @@ it('moves the supplementary journal entries along with the main one', function (
     expect(DB::table('journal_entries')->whereIn('id', $entryIds)->pluck('entry_date')->map(fn ($date) => substr((string) $date, 0, 10))->all())
         ->toBe(['2026-08-25', '2026-08-25']);
 });
+
+it('leaves a journal entry alone whose reference only starts like a supplementary one', function () {
+    seedGrnPostingAccounts();
+    $periodId = AccountingPeriod::create([
+        'name' => 'Aug-Sep 2026 unrelated', 'start_date' => '2026-08-01', 'end_date' => '2026-09-30', 'status' => 'open',
+    ])->id;
+    $unrelatedId = DB::table('journal_entries')->insertGetId([
+        'currency_id' => Currency::where('is_base_currency', true)->value('id'),
+        'accounting_period_id' => $periodId,
+        'entry_date' => '2026-09-25',
+        'reference' => $this->goodsIssue->issue_number.'-SALE',
+        'description' => 'Unrelated entry',
+        'status' => 'posted',
+        'fx_rate_to_base' => 1,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $this->artisan('goods-issue:correct-date', ['goods_issue' => $this->goodsIssue->id])->assertSuccessful();
+
+    expect(substr((string) DB::table('journal_entries')->where('id', $unrelatedId)->value('entry_date'), 0, 10))->toBe('2026-09-25');
+});

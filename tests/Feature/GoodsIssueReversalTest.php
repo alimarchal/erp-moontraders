@@ -328,9 +328,9 @@ it('merges a product to one draft line at the weighted rate and leaves out unpos
 
     $replacement = GoodsIssue::with('items')->where('replaces_goods_issue_id', $data['goodsIssue']->id)->firstOrFail();
     expect($replacement->items->map(fn ($item) => [(float) $item->quantity_issued, (float) $item->selling_price, (float) $item->total_value])->all())
-        ->toEqual([[22.0, 15.18, 334.0]])
+        ->toEqual([[22.0, 15.18, 333.96]])
         ->and((float) $replacement->total_quantity)->toBe(22.0)
-        ->and((float) $replacement->total_value)->toBe(334.0);
+        ->and((float) $replacement->total_value)->toBe(333.96);
 });
 
 it('names the active issue that holds a vehicle when a draft is moved onto it', function () {

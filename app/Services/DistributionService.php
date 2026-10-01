@@ -460,7 +460,10 @@ class DistributionService
         }
 
         // Determine next supplementary sequence number for this GI
-        $existingSuppCount = JournalEntry::where('reference', 'like', $goodsIssue->issue_number.'-S%')->count();
+        $existingSuppCount = JournalEntry::where('reference', 'like', $goodsIssue->issue_number.'-S%')
+            ->pluck('reference')
+            ->filter(fn (string $reference) => $goodsIssue->ownsJournalReference($reference))
+            ->count();
         $sequence = $existingSuppCount + 1;
         $reference = "{$goodsIssue->issue_number}-S{$sequence}";
 
@@ -707,6 +710,10 @@ class DistributionService
             if ($settlement->status === 'posted') {
                 throw new \Exception('Sales Settlement is already posted');
             }
+
+            // Hold the goods issue, as Add More Items and a reversal do, so neither can change
+            // what is on the van while these settlement lines are being posted against it.
+            GoodsIssue::whereKey($settlement->goods_issue_id)->lockForUpdate()->first();
 
             // Load relationships including batch details
             $settlement->load(['items.goodsIssueItem', 'items.product', 'items.batches.stockBatch']);

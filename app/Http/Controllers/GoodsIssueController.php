@@ -474,7 +474,9 @@ class GoodsIssueController extends Controller implements HasMiddleware
                 ->orWhere('reference', 'like', 'REV-'.$goodsIssue->issue_number.'-S%'))
             ->withSum('details as total_debit', 'debit')
             ->orderBy('id')
-            ->get(['id', 'reference', 'entry_date', 'status', 'description']);
+            ->get(['id', 'reference', 'entry_date', 'status', 'description'])
+            ->filter(fn (JournalEntry $entry) => $goodsIssue->ownsJournalReference(preg_replace('/^REV-/', '', (string) $entry->reference)))
+            ->values();
 
         return view('goods-issues.show', [
             'goodsIssue' => $goodsIssue,

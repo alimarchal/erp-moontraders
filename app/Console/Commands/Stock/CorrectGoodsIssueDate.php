@@ -72,7 +72,9 @@ class CorrectGoodsIssueDate extends Command
                 ->orWhere('reference', 'like', $goodsIssue->issue_number.'-S%'))
             ->where('status', 'posted')
             ->orderBy('id')
-            ->get();
+            ->get()
+            ->filter(fn (object $entry) => $goodsIssue->ownsJournalReference($entry->reference))
+            ->values();
 
         // Probed before anything is written: the stock tables are updated first, and a
         // privilege failure later would leave them moved while the journal entry stayed put.

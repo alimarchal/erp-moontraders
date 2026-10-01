@@ -143,6 +143,17 @@ class GoodsIssue extends Model
         return $this->hasOne(self::class, 'replaces_goods_issue_id');
     }
 
+    /**
+     * Whether a journal entry reference belongs to this issue: its own number, or a
+     * supplementary posting on it (-S1, -S2 ...). A LIKE 'GI-…-S%' match alone would also
+     * catch free-form references such as 'GI-2026-0001-SALE'.
+     */
+    public function ownsJournalReference(?string $reference): bool
+    {
+        return $reference !== null
+            && preg_match('/^'.preg_quote($this->issue_number, '/').'(-S\d+)?$/', $reference) === 1;
+    }
+
     public function isReversed(): bool
     {
         return $this->reversed_at !== null;

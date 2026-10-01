@@ -124,6 +124,21 @@ class InventoryGlAdjustmentService
     }
 
     /**
+     * Write off the value of van stock that was left below one hundredth of a unit, against Stock
+     * Loss - Other, so Van Stock (1155) follows the van batches down to zero.
+     */
+    public function postVanResidueWriteOff(float $value, string $reference, string $date): ?JournalEntry
+    {
+        return $this->post([
+            self::STOCK_LOSS_OTHER => $value,
+            self::VAN_STOCK => -$value,
+        ], $reference, "Van stock residue below 0.01 unit written off as of {$date}", $date, [
+            self::STOCK_LOSS_OTHER => 'Van stock residue written off',
+            self::VAN_STOCK => 'Van stock residue written off',
+        ]);
+    }
+
+    /**
      * @param  array<string, float>  $amounts  positive = debit, negative = credit
      * @param  array<string, string>  $descriptions
      */

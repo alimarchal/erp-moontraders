@@ -70,14 +70,17 @@ function seedGrnPostingAccounts(): void
         ['name' => 'Warehouse & Inventory', 'is_active' => true]
     );
 
-    // The journal entry is dated on the GRN's receipt date and needs an open period for it.
-    if (! AccountingPeriod::where('start_date', '<=', now())->where('end_date', '>=', now())->exists()) {
-        AccountingPeriod::create([
-            'name' => now()->format('F Y'),
-            'start_date' => now()->startOfMonth(),
-            'end_date' => now()->endOfMonth(),
-            'status' => 'open',
-        ]);
+    // The journal entry is dated on the GRN's receipt date, which tests often set a few
+    // days back, so open last month's period too or they fail early in the month.
+    foreach ([now()->subMonthNoOverflow(), now()] as $month) {
+        if (! AccountingPeriod::where('start_date', '<=', $month)->where('end_date', '>=', $month)->exists()) {
+            AccountingPeriod::create([
+                'name' => $month->format('F Y'),
+                'start_date' => $month->copy()->startOfMonth(),
+                'end_date' => $month->copy()->endOfMonth(),
+                'status' => 'open',
+            ]);
+        }
     }
 
     $accounts = [

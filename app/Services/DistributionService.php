@@ -1221,6 +1221,27 @@ class DistributionService
                 );
             }
 
+            // 5a. Credit invoices that exceed the goods sold
+            // The expected-cash formula below counts a negative cash-sales amount, so the clearing
+            // account needs the matching credit or it keeps the difference forever. Only the
+            // advance-tax-income case reaches here (validateSettlementForPosting rejects any other
+            // negative amount): the invoice carries the tax, which is also booked as income, so the
+            // tax comes out of Sales instead of being counted twice.
+            if ($cashSalesAmount < 0) {
+                $addLine(
+                    $accounts['sales']->id,
+                    abs($cashSalesAmount),
+                    0,
+                    "Invoice amount above goods sold (advance tax income) - {$employeeLabel} - {$settlementReference}"
+                );
+                $addLine(
+                    $accounts['salesman_clearing']->id,
+                    0,
+                    abs($cashSalesAmount),
+                    "Invoice amount above goods sold (advance tax income) - {$employeeLabel} - {$settlementReference}"
+                );
+            }
+
             // 6. Expense Detail
             // Expenses paid from cash (using salesman_clearing)
             // We skip Advance Tax here because it's handled separately below via advanceTaxes relationship
@@ -1485,7 +1506,7 @@ class DistributionService
             $clearingDr = 0.0;
             $clearingCr = 0.0;
             foreach ($lines as $line) {
-                if (($line['chart_of_account_id'] ?? null) === $clearingAccountId) {
+                if (($line['account_id'] ?? null) === $clearingAccountId) {
                     $clearingDr += (float) ($line['debit'] ?? 0);
                     $clearingCr += (float) ($line['credit'] ?? 0);
                 }
@@ -1639,6 +1660,18 @@ class DistributionService
         // Cheques are cash-equivalents submitted by the salesman, included on the submission side
         $totalSubmitted = $actualPhysicalCash + $bankSlipsTotal + $chequeAmount;
         $shortExcess = round($totalSubmitted - $expectedClearingBalance, 2);
+
+        // 0. Credit sales and bank transfers must not exceed what the items sold for. A negative
+        // cash-sales amount is only legitimate when it is the advance tax income carried on the
+        // invoices of a flagged supplier; anything else leaves Salesman Clearing (1123) with a balance.
+        $cashSalesExcess = round(abs(min($cashSalesAmount, 0.0)) - $advanceTaxIncomeTotal, 2);
+        if ($cashSalesAmount < 0 && $cashSalesExcess > 0.01) {
+            throw new \RuntimeException(
+                'Cannot post: credit sales and bank transfers exceed the value of the goods sold by '.number_format($cashSalesExcess, 2).
+                ' (total sales '.number_format($totalSalesAmount, 2).', credit sales '.number_format($creditSalesAmount, 2).
+                ', bank transfers '.number_format($bankTransferAmount, 2).'). Correct the invoice amounts before posting.'
+            );
+        }
 
         if ($shortExcess < 0) {
             $shortfall = number_format(abs($shortExcess), 2);

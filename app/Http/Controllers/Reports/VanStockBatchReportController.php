@@ -9,7 +9,7 @@ use App\Models\Vehicle;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
 
 class VanStockBatchReportController extends Controller implements HasMiddleware
 {
@@ -27,20 +27,16 @@ class VanStockBatchReportController extends Controller implements HasMiddleware
         $expiryStatus = $request->input('filter.expiry_status');
 
         $query = StockMovement::query()
-            ->select(
-                'vehicle_id',
-                'product_id',
-                'stock_batch_id',
-                DB::raw("SUM(
+            ->select('vehicle_id', 'product_id', 'stock_batch_id')
+            ->selectRaw("SUM(
                     CASE
-                        WHEN movement_type = 'transfer' AND reference_type = 'App\\\\Models\\\\GoodsIssue' THEN -quantity
+                        WHEN movement_type = 'transfer' AND reference_type = ? THEN -quantity
                         WHEN movement_type = 'sale' THEN quantity
                         WHEN movement_type = 'return' THEN -quantity
                         WHEN movement_type = 'shortage' THEN quantity
                         ELSE 0
                     END
-                ) as quantity_on_hand")
-            )
+                ) as quantity_on_hand", ['App\\Models\\GoodsIssue'])
             ->whereNotNull('vehicle_id')
             ->groupBy('vehicle_id', 'product_id', 'stock_batch_id')
             ->havingRaw("SUM(
@@ -51,7 +47,7 @@ class VanStockBatchReportController extends Controller implements HasMiddleware
                         WHEN movement_type = 'shortage' THEN quantity
                         ELSE 0
                     END
-                ) > 0", ['App\\Models\\GoodsIssue']);
+                ) <> 0", ['App\\Models\\GoodsIssue']);
 
         if ($vehicleId) {
             $query->where('vehicle_id', $vehicleId);
@@ -61,8 +57,9 @@ class VanStockBatchReportController extends Controller implements HasMiddleware
             $query->where('product_id', $productId);
         }
 
-        $stocks = $query->with(['vehicle', 'product', 'stockBatch'])
-            ->get();
+        $stocks = $this->netBatchAttribution(
+            $query->with(['vehicle', 'product', 'stockBatch'])->get()
+        );
 
         // Apply expiry status filter after fetching (since expiry_date is on stockBatch)
         if ($expiryStatus) {
@@ -117,5 +114,36 @@ class VanStockBatchReportController extends Controller implements HasMiddleware
             'selectedVehicle' => $vehicleId,
             'selectedProduct' => $productId,
         ]);
+    }
+
+    /**
+     * Stock is issued to a van batch by batch, but a settlement can sell it from a slightly
+     * different split (an issue of 767.06 + 663.94 settled as 767 + 664), which leaves one batch
+     * a little over and its neighbour the same amount under. Showing only the batches that are
+     * over would invent stock that is not on the van, so what a batch is under is taken off the
+     * oldest batches of the same vehicle and product first, and anything below one hundredth of a
+     * unit (what a two-decimal column can hold) is dropped.
+     *
+     * @param  Collection<int, StockMovement>  $stocks  one row per vehicle, product and batch
+     * @return Collection<int, StockMovement>
+     */
+    private function netBatchAttribution(Collection $stocks): Collection
+    {
+        return $stocks
+            ->groupBy(fn (StockMovement $stock): string => $stock->vehicle_id.'-'.$stock->product_id)
+            ->flatMap(function (Collection $batches): Collection {
+                $shortBy = abs((float) $batches->where('quantity_on_hand', '<', 0)->sum('quantity_on_hand'));
+
+                return $batches
+                    ->where('quantity_on_hand', '>', 0)
+                    ->sortBy('stock_batch_id')
+                    ->each(function (StockMovement $stock) use (&$shortBy): void {
+                        $absorbed = min($shortBy, (float) $stock->quantity_on_hand);
+                        $stock->setAttribute('quantity_on_hand', round((float) $stock->quantity_on_hand - $absorbed, 3));
+                        $shortBy -= $absorbed;
+                    });
+            })
+            ->filter(fn (StockMovement $stock): bool => (float) $stock->quantity_on_hand >= 0.005)
+            ->values();
     }
 }

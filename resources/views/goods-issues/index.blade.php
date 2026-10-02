@@ -75,7 +75,11 @@
                 <p class="ak-sub">Stock loaded from the warehouse onto vans &middot; {{ $periodLabel }}</p>
             </div>
             <div class="ak-head-actions">
-                <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+                @if ($goodsIssues->hasPages())
+                    <a href="{{ request()->fullUrlWithQuery(['per_page' => 'all', 'page' => null, 'print' => 1]) }}" class="ak-btn ak-btn-outline" title="Print all {{ number_format($goodsIssues->total()) }} issues, not only this page">Print</a>
+                @else
+                    <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
+                @endif
                 <a href="{{ request()->fullUrlWithQuery(['export' => 'xlsx', 'page' => null]) }}" class="ak-btn ak-btn-outline" title="Download the filtered list as Excel">Export Excel</a>
                 @can('report-sales-goods-issue')
                     <a href="{{ route('reports.goods-issue.index', ['filter' => ['start_date' => $dateFrom, 'end_date' => $dateTo]]) }}" class="ak-btn ak-btn-outline">Goods issue report</a>
@@ -195,7 +199,7 @@
             </a>
         </section>
 
-        @if ($bySalesman->count() > 1)
+        @if ($bySalesman->isNotEmpty())
             <section class="ak-card gl-salesmen" aria-label="By salesman" x-data="{ all: false }">
                 <div class="gl-salesmen-head">
                     <h2>By salesman <span class="ak-muted">&middot; {{ $periodLabel }}, reversed left out</span></h2>
@@ -524,6 +528,9 @@
         </div>
     </div>
     @push('scripts')
+        @if (request()->boolean('print'))
+            <script>window.addEventListener('load', () => window.print());</script>
+        @endif
         <script>
             // Searchable dropdowns: type to find a supplier, salesman, vehicle or warehouse.
             $(function () {

@@ -8,6 +8,10 @@ use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Vehicle;
 use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\Cell\Cell;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Cell\DefaultValueBinder;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 beforeEach(function () {
     $this->user = User::factory()->create(['is_super_admin' => 'Yes']);
@@ -90,4 +94,48 @@ it('downloads the filtered list as an Excel file', function () {
 
     Excel::assertDownloaded('goods-issues-'.now()->toDateString().'_to_'.now()->toDateString().'.xlsx',
         fn (GoodsIssueExport $export) => $export->query()->count() === 1);
+});
+
+it('sorts by value in both directions', function () {
+    $middle = GoodsIssue::factory()->create(['issue_date' => now(), 'total_value' => 500]);
+    $high = GoodsIssue::factory()->create(['issue_date' => now(), 'total_value' => 900]);
+    $low = GoodsIssue::factory()->create(['issue_date' => now(), 'total_value' => 100]);
+
+    foreach (['total_value' => [$low->id, $middle->id, $high->id], '-total_value' => [$high->id, $middle->id, $low->id]] as $sort => $expected) {
+        $ids = $this->actingAs($this->user)->get(route('goods-issues.index', ['sort' => $sort]))->viewData('goodsIssues')->pluck('id');
+        expect($ids->all())->toBe($expected);
+    }
+});
+
+it('writes names as text in the Excel file so they cannot run as formulas', function () {
+    GoodsIssue::factory()->create([
+        'issue_date' => now(),
+        'total_value' => 750,
+        'employee_id' => Employee::factory()->create(['name' => '=HYPERLINK("http://example.com","x")'])->id,
+    ]);
+
+    $file = $this->actingAs($this->user)->get(route('goods-issues.index', ['export' => 'xlsx']))->baseResponse->getFile();
+    // The export's binder is set globally while writing; read the file back with the stock one.
+    Cell::setValueBinder(new DefaultValueBinder);
+    $sheet = IOFactory::load($file->getPathname())->getActiveSheet();
+
+    expect($sheet->getCell('E2')->getDataType())->toBe(DataType::TYPE_STRING)
+        ->and($sheet->getCell('E2')->getValue())->toBe('=HYPERLINK("http://example.com","x")')
+        ->and($sheet->getCell('J2')->getDataType())->toBe(DataType::TYPE_NUMERIC);
+});
+
+it('prints every matching issue, not only the current page', function () {
+    GoodsIssue::factory()->count(21)->create(['issue_date' => now()]);
+
+    $response = $this->actingAs($this->user)->get(route('goods-issues.index'));
+
+    $response->assertSee('per_page=all', false)->assertSee('print=1', false);
+});
+
+it('keeps the salesman summary when one salesman matches, so the filter can be removed there', function () {
+    $ali = Employee::factory()->create(['name' => 'Ali']);
+    GoodsIssue::factory()->create(['employee_id' => $ali->id, 'status' => 'issued', 'issue_date' => now()]);
+
+    $this->actingAs($this->user)->get(route('goods-issues.index', ['filter' => ['employee_id' => $ali->id]]))
+        ->assertSee('Remove this filter');
 });

@@ -269,11 +269,16 @@ class SalesSettlementRevertService
     }
 
     /**
-     * Create reversing customer sub-ledger transactions (swap debit ↔ credit).
+     * Create reversing customer sub-ledger transactions (swap debit ↔ credit), each linked
+     * to the row it undoes. Only rows still in effect are reversed: on a second revert the
+     * first posting and its reversals have already cancelled out.
      */
     private function reverseCustomerLedgerEntries(SalesSettlement $settlement): void
     {
-        $transactions = CustomerEmployeeAccountTransaction::where('sales_settlement_id', $settlement->id)->get();
+        $transactions = CustomerEmployeeAccountTransaction::where('sales_settlement_id', $settlement->id)
+            ->whereNull('reverses_transaction_id')
+            ->whereDoesntHave('reversals')
+            ->get();
 
         foreach ($transactions as $txn) {
             CustomerEmployeeAccountTransaction::create([
@@ -282,6 +287,7 @@ class SalesSettlementRevertService
                 'transaction_type' => 'adjustment',
                 'reference_number' => 'REV-'.($txn->reference_number ?? $settlement->settlement_number),
                 'sales_settlement_id' => $settlement->id,
+                'reverses_transaction_id' => $txn->id,
                 'invoice_number' => $txn->invoice_number,
                 'description' => 'Reversal: '.($txn->description ?? "SS {$settlement->settlement_number}"),
                 'debit' => $txn->credit,

@@ -145,7 +145,7 @@
                 <div class="text-xs text-gray-500">{{ number_format($salesmen->sum('customers')) }} customer accounts</div>
             </a>
             <a href="{{ route('reports.creditors-ledger.aging-report', $filterFor(['bucket' => '60_plus'])) }}" class="bg-white rounded-lg shadow p-4 border-l-4 border-red-500 block">
-                <div class="text-sm text-gray-500">No payment 60+ days</div>
+                <div class="text-sm text-gray-500">Credit older than 60 days</div>
                 <div class="text-2xl font-bold text-red-700">{{ number_format($salesmen->sum('overdue'), 0) }}</div>
                 <div class="text-xs text-gray-500">{{ number_format($salesmen->sum('overdue_customers')) }} accounts &middot; aging report →</div>
             </a>

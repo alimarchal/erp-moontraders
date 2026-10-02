@@ -236,7 +236,7 @@ it('creates reversing CustomerEmployeeAccountTransaction entries on revert', fun
         'status' => 'active',
     ]);
 
-    CustomerEmployeeAccountTransaction::create([
+    $sale = CustomerEmployeeAccountTransaction::create([
         'customer_employee_account_id' => $customerAccount->id,
         'transaction_date' => now()->toDateString(),
         'transaction_type' => 'credit_sale',
@@ -272,7 +272,54 @@ it('creates reversing CustomerEmployeeAccountTransaction entries on revert', fun
     expect($reversalTxn)->not->toBeNull()
         ->and((float) $reversalTxn->debit)->toBe(0.0)
         ->and((float) $reversalTxn->credit)->toBe(2500.0)
-        ->and($reversalTxn->reference_number)->toStartWith('REV-');
+        ->and($reversalTxn->reference_number)->toStartWith('REV-')
+        ->and($reversalTxn->reverses_transaction_id)->toBe($sale->id);
+});
+
+it('reverses only the customer ledger rows still in effect when a settlement is reverted twice', function () {
+    $user = makeRevertUser();
+    $settlement = makePostedSettlement(['created_by' => $user->id]);
+    $customerAccount = CustomerEmployeeAccount::create([
+        'account_number' => 'CA-'.fake()->unique()->numerify('####'),
+        'customer_id' => Customer::factory()->create()->id,
+        'employee_id' => $settlement->employee_id,
+        'opened_date' => now()->toDateString(),
+        'status' => 'active',
+    ]);
+    $line = fn (float $debit, float $credit, ?int $reverses = null) => CustomerEmployeeAccountTransaction::create([
+        'customer_employee_account_id' => $customerAccount->id,
+        'transaction_date' => now()->toDateString(),
+        'transaction_type' => $reverses ? 'adjustment' : 'credit_sale',
+        'sales_settlement_id' => $settlement->id,
+        'reverses_transaction_id' => $reverses,
+        'description' => 'Line',
+        'debit' => $debit,
+        'credit' => $credit,
+    ]);
+
+    // The first posting, its reversal, and the sale written again on re-posting.
+    $first = $line(2500, 0);
+    $line(0, 2500, $first->id);
+    $reposted = $line(2500, 0);
+
+    $this->actingAs($user);
+    $mockAccounting = Mockery::mock(AccountingService::class);
+    $mockAccounting->shouldReceive('reverseJournalEntry')->once()->andReturn(['success' => true, 'message' => 'Reversed']);
+    $service = new SalesSettlementRevertService(
+        $mockAccounting,
+        app(InventoryLedgerService::class),
+        app(StockValuationService::class),
+        app(InventoryService::class),
+    );
+
+    expect($service->revert($settlement)['success'])->toBeTrue();
+
+    // Copying every row would also reverse the first posting and its reversal again.
+    $newReversals = CustomerEmployeeAccountTransaction::where('id', '>', $reposted->id)->get();
+
+    expect($newReversals)->toHaveCount(1)
+        ->and($newReversals->first()->reverses_transaction_id)->toBe($reposted->id)
+        ->and(CustomerEmployeeAccountTransaction::calculateBalance($customerAccount->id))->toBe(0.0);
 });
 
 it('restores van stock balance after revert', function () {

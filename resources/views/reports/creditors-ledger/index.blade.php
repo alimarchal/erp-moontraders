@@ -338,7 +338,7 @@
     @php $reportFilter = array_filter(['supplier_id' => $supplierIdFilter, 'employee_id' => request('filter.employee_id')]); @endphp
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 mb-3 no-print flex flex-wrap gap-3 text-sm">
         <a href="{{ route('reports.creditors-ledger.aging-report', array_filter(['filter' => $reportFilter])) }}" class="text-blue-700 hover:underline">Aging report (30/60/90) →</a>
-        <a href="{{ route('reports.creditors-ledger.aging-report', ['filter' => $reportFilter + ['bucket' => '60_plus']]) }}" class="text-blue-700 hover:underline">No payment 60+ days →</a>
+        <a href="{{ route('reports.creditors-ledger.aging-report', ['filter' => $reportFilter + ['bucket' => '60_plus']]) }}" class="text-blue-700 hover:underline">Credit older than 60 days →</a>
         <a href="{{ route('reports.creditors-ledger.salesman-creditors', array_filter(['filter' => array_filter(['supplier_id' => $supplierIdFilter])])) }}" class="text-blue-700 hover:underline">Salesman-wise creditors →</a>
     </div>
 

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Carbon\Carbon;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -82,13 +83,7 @@ class CustomerCreditAging
     }
 
     /**
-     * Credit sales (debits) of the accounts up to the date, newest first, keyed by account.
-     *
-     * A settlement revert offsets each ledger row with a reversal linked through
-     * `reverses_transaction_id`. Both rows of a pair are left out: together they add
-     * nothing to the balance, and keeping either would misplace it -- a reversed
-     * recovery would look like fresh credit, and a reversed sale would stay "unpaid"
-     * while its reversal paid off some other, older sale.
+     * The credit sales each account's balance is still made of, newest first, keyed by account.
      *
      * @param  array<int, int>  $accountIds
      * @return Collection<int, Collection<int, object>>
@@ -97,21 +92,47 @@ class CustomerCreditAging
     {
         return collect($accountIds)
             ->chunk(1000)
-            ->flatMap(fn (Collection $ids) => DB::table('customer_employee_account_transactions')
-                ->whereIn('customer_employee_account_id', $ids->all())
-                ->whereNull('deleted_at')
-                ->where(fn ($query) => $query->where('debit', '>', 0)->orWhereNotNull('reverses_transaction_id'))
-                ->whereDate('transaction_date', '<=', $asOfDate)
-                ->orderByDesc('transaction_date')
-                ->orderByDesc('id')
-                ->get(['id', 'customer_employee_account_id', 'transaction_date', 'debit', 'reverses_transaction_id']))
-            ->groupBy('customer_employee_account_id')
-            ->map(function (Collection $rows) {
-                $reversed = $rows->pluck('reverses_transaction_id')->filter()->flip();
+            ->flatMap(fn (Collection $ids) => $this->unpaidSalesQuery($ids->all(), $asOfDate)->get())
+            ->groupBy('customer_employee_account_id');
+    }
 
-                return $rows
-                    ->filter(fn ($row) => $row->reverses_transaction_id === null && ! $reversed->has($row->id) && (float) $row->debit > 0)
-                    ->values();
-            });
+    /**
+     * Only the newest sales are fetched: a running total of sales from the newest back
+     * stops once it covers the account's balance, so older history never leaves the
+     * database however long the ledger grows.
+     *
+     * A settlement revert offsets each ledger row with a reversal linked through
+     * `reverses_transaction_id`. Both rows of a pair are left out: together they add
+     * nothing to the balance, and keeping either would misplace it -- a reversed
+     * recovery would look like fresh credit, and a reversed sale would stay "unpaid"
+     * while its reversal paid off some other, older sale.
+     *
+     * @param  array<int, int>  $accountIds
+     */
+    private function unpaidSalesQuery(array $accountIds, string $asOfDate): Builder
+    {
+        $isSale = 't.debit > 0 AND t.reverses_transaction_id IS NULL AND NOT EXISTS (
+            SELECT 1 FROM customer_employee_account_transactions r
+            WHERE r.reverses_transaction_id = t.id AND r.deleted_at IS NULL AND r.transaction_date <= ?)';
+
+        $ledger = DB::table('customer_employee_account_transactions as t')
+            ->whereIn('t.customer_employee_account_id', $accountIds)
+            ->whereNull('t.deleted_at')
+            ->where('t.transaction_date', '<=', $asOfDate)
+            ->select('t.id', 't.customer_employee_account_id', 't.transaction_date', 't.debit')
+            ->selectRaw("CASE WHEN {$isSale} THEN 1 ELSE 0 END AS is_sale", [$asOfDate])
+            ->selectRaw('SUM(t.debit - t.credit) OVER (PARTITION BY t.customer_employee_account_id) AS balance')
+            ->selectRaw("SUM(CASE WHEN {$isSale} THEN t.debit ELSE 0 END) OVER (
+                PARTITION BY t.customer_employee_account_id ORDER BY t.transaction_date DESC, t.id DESC
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS newer_sales", [$asOfDate]);
+
+        return DB::query()
+            ->fromSub($ledger, 'l')
+            ->where('l.is_sale', 1)
+            ->whereRaw('l.newer_sales - l.debit < l.balance')
+            ->orderBy('l.customer_employee_account_id')
+            ->orderByDesc('l.transaction_date')
+            ->orderByDesc('l.id')
+            ->select('l.customer_employee_account_id', 'l.transaction_date', 'l.debit');
     }
 }

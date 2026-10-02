@@ -401,3 +401,33 @@ it('saves a draft that keeps its own vehicle, since the vehicle lock it holds is
 
     expect((float) $replacement->fresh()->items()->sum('quantity_issued'))->toBe(20.0);
 });
+
+it('leaves the replacement draft with the original owner when an admin reverses it', function () {
+    $data = postGoodsIssueToWrongVan();
+    $admin = User::factory()->create();
+    $admin->givePermissionTo(['goods-issue-list', 'goods-issue-reverse']);
+
+    actingAs($admin);
+    post(route('goods-issues.reverse', $data['goodsIssue']), ['reason' => 'Wrong salesman and van', 'password' => 'password']);
+
+    $replacement = GoodsIssue::where('replaces_goods_issue_id', $data['goodsIssue']->id)->firstOrFail();
+    expect($replacement->issued_by)->toBe($data['user']->id)
+        ->and($data['goodsIssue']->fresh()->reversed_by)->toBe($admin->id);
+
+    actingAs($data['user']);
+    get(route('goods-issues.index'))->assertOk()->assertSee($replacement->issue_number);
+    get(route('goods-issues.show', $replacement))
+        ->assertSee("Copied as draft from reversed {$data['goodsIssue']->issue_number} by {$admin->name}, owned by {$data['user']->name}");
+});
+
+it('gives every replacement in a chain of reversals the first issue\'s owner', function () {
+    [$owner, $firstAdmin, $secondAdmin] = User::factory()->count(3)->create();
+    $first = GoodsIssue::factory()->create(['issued_by' => $owner->id, 'status' => 'cancelled']);
+    $second = GoodsIssue::factory()->create(['issued_by' => $firstAdmin->id, 'status' => 'cancelled', 'replaces_goods_issue_id' => $first->id]);
+    $third = GoodsIssue::factory()->create(['issued_by' => $secondAdmin->id, 'status' => 'draft', 'replaces_goods_issue_id' => $second->id]);
+
+    (require database_path('migrations/2026_10_02_095021_give_goods_issue_replacements_their_original_owner.php'))->up();
+
+    expect($second->fresh()->issued_by)->toBe($owner->id)
+        ->and($third->fresh()->issued_by)->toBe($owner->id);
+});

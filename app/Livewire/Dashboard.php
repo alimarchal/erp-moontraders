@@ -58,9 +58,6 @@ class Dashboard extends Component
     public array $purchasesVsPayments = [];
 
     /** @var array<string, mixed> */
-    public array $settlementStatusDistribution = [];
-
-    /** @var array<string, mixed> */
     public array $dailySalesTrend = [];
 
     /** @var array<string, mixed> */
@@ -79,9 +76,6 @@ class Dashboard extends Component
     public array $pendingItems = [];
 
     /** @var array<string, mixed> */
-    public array $profitMarginGauge = [];
-
-    /** @var array<string, mixed> */
     public array $cashVsCreditTrend = [];
 
     /** @var array<string, mixed> */
@@ -92,9 +86,6 @@ class Dashboard extends Component
 
     /** @var array<string, mixed> */
     public array $stockMovementBreakdown = [];
-
-    /** @var array<string, mixed> */
-    public array $customerChannelDistribution = [];
 
     /**
      * What the user is looking at: supplier + own/all per module.
@@ -207,12 +198,9 @@ class Dashboard extends Component
             $this->loadSalesByPaymentMethod();
             $this->loadDailySalesTrend();
             $this->loadTopProductsBySales();
-            $this->loadSettlementStatusDistribution();
             $this->loadTopSalespersonBySales();
-            $this->loadProfitMarginGauge();
             $this->loadCashVsCreditTrend();
             $this->loadSalesByDayOfWeek();
-            $this->loadCustomerChannelDistribution();
         }
 
         if ($user->can('sales-settlement-list')) {
@@ -503,9 +491,9 @@ class Dashboard extends Component
     {
         $data = $this->stock()
             ->where('current_stock.quantity_on_hand', '>', 0)
-            ->select('products.product_name')
+            ->select('products.id', 'products.product_name')
             ->selectRaw('SUM(current_stock.total_value) as total_value')
-            ->groupBy('products.product_name')
+            ->groupBy('products.id', 'products.product_name')
             ->orderByDesc('total_value')
             ->limit(10)
             ->get();
@@ -671,20 +659,6 @@ class Dashboard extends Component
         }
     }
 
-    private function loadSettlementStatusDistribution(): void
-    {
-        $data = $this->settlements()
-            ->selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')
-            ->pluck('count', 'status')
-            ->toArray();
-
-        $this->settlementStatusDistribution = [
-            'labels' => array_map(fn ($s) => ucfirst($s), array_keys($data)),
-            'values' => array_map('intval', array_values($data)),
-        ];
-    }
-
     private function loadDailySalesTrend(): void
     {
         $data = $this->settlements()
@@ -735,9 +709,9 @@ class Dashboard extends Component
             ->whereNull('sales_settlements.deleted_at');
 
         $data = $this->scopeSettlements($query)
-            ->select('products.product_name')
+            ->select('products.id', 'products.product_name')
             ->selectRaw('SUM(sales_settlement_items.total_sales_value) as total_sales')
-            ->groupBy('products.product_name')
+            ->groupBy('products.id', 'products.product_name')
             ->orderByDesc('total_sales')
             ->limit(10)
             ->get();
@@ -752,8 +726,7 @@ class Dashboard extends Component
     {
         $from = Carbon::now()->subMonths(5)->startOfMonth();
 
-        $grns = GoodsReceiptNote::query()
-            ->when($this->scope['supplier_id'], fn ($q, $id) => $q->where('supplier_id', $id))
+        $grns = $this->grns()
             ->where('status', 'posted')
             ->where('receipt_date', '>=', $from)
             ->selectRaw('EXTRACT(YEAR FROM receipt_date) as year, EXTRACT(MONTH FROM receipt_date) as month')
@@ -762,8 +735,7 @@ class Dashboard extends Component
             ->get()
             ->keyBy(fn ($row) => (int) $row->year.'-'.(int) $row->month);
 
-        $issues = GoodsIssue::query()
-            ->when($this->scope['supplier_id'], fn ($q, $id) => $q->where('supplier_id', $id))
+        $issues = $this->goodsIssues()
             ->where('status', 'issued')
             ->where('issue_date', '>=', $from)
             ->selectRaw('EXTRACT(YEAR FROM issue_date) as year, EXTRACT(MONTH FROM issue_date) as month')
@@ -799,10 +771,10 @@ class Dashboard extends Component
             ->whereBetween('sales_settlements.settlement_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()]);
 
         $data = $this->scopeSettlements($query)
-            ->select('employees.name')
+            ->select('employees.id', 'employees.name')
             ->selectRaw('SUM(sales_settlements.total_sales_amount) as total_sales')
             ->selectRaw('COUNT(*) as trips')
-            ->groupBy('employees.name')
+            ->groupBy('employees.id', 'employees.name')
             ->orderByDesc('total_sales')
             ->limit(8)
             ->get();
@@ -838,24 +810,6 @@ class Dashboard extends Component
         if ($user->can('supplier-payment-list')) {
             $this->pendingItems['draftPayments'] = $this->supplierPayments()->where('status', 'draft')->count();
         }
-    }
-
-    private function loadProfitMarginGauge(): void
-    {
-        $data = $this->settlements()
-            ->where('status', 'posted')
-            ->whereBetween('settlement_date', [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()])
-            ->selectRaw('SUM(total_sales_amount) as revenue, SUM(gross_profit) as profit')
-            ->first();
-
-        $revenue = (float) ($data->revenue ?? 0);
-        $profit = (float) ($data->profit ?? 0);
-
-        $this->profitMarginGauge = [
-            'margin' => $revenue > 0 ? round(($profit / $revenue) * 100, 1) : 0,
-            'revenue' => round($revenue, 2),
-            'profit' => round($profit, 2),
-        ];
     }
 
     private function loadCashVsCreditTrend(): void
@@ -975,23 +929,6 @@ class Dashboard extends Component
         ];
     }
 
-    private function loadCustomerChannelDistribution(): void
-    {
-        $data = Customer::query()
-            ->where('is_active', true)
-            ->selectRaw('channel_type, COUNT(*) as count')
-            ->selectRaw('SUM(credit_used) as total_credit')
-            ->groupBy('channel_type')
-            ->orderByDesc('count')
-            ->get();
-
-        $this->customerChannelDistribution = [
-            'labels' => $data->pluck('channel_type')->map(fn ($v) => $v ?: 'Not set')->toArray(),
-            'counts' => $data->pluck('count')->map(fn ($v) => (int) $v)->toArray(),
-            'credit' => $data->pluck('total_credit')->map(fn ($v) => round((float) ($v ?? 0), 2))->toArray(),
-        ];
-    }
-
     private function loadRecentSettlements(): void
     {
         $this->recentSettlements = $this->settlements()
@@ -1079,6 +1016,8 @@ class Dashboard extends Component
 
         $owing = $accounts->filter(fn ($r) => (float) $r->balance > 0);
         $this->kpiCards['marketCredit'] = round((float) $accounts->sum('balance'), 2);
+        // What customers owe before netting off advances: the base the aging shares are taken from.
+        $this->kpiCards['creditOwed'] = round((float) $owing->sum('balance'), 2);
 
         $today = Carbon::today();
         // Grouped by id (names can repeat); ids let each bar open the creditors ledger for it.

@@ -8,6 +8,7 @@ use App\Models\Customer;
 use App\Models\CustomerEmployeeAccount;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
+use App\Models\GoodsIssue;
 use App\Models\GoodsReceiptNote;
 use App\Models\JournalEntry;
 use App\Models\LedgerRegister;
@@ -114,22 +115,6 @@ it('loads pending items count', function () {
         ->assertSet('pendingItems.draftGrns', 2)
         ->assertSet('pendingItems.draftJournalEntries', 1)
         ->assertSuccessful();
-});
-
-it('shows settlement status distribution', function () {
-    $user = createSuperAdminUser();
-
-    SalesSettlement::factory()->count(2)->create(['status' => 'draft']);
-    SalesSettlement::factory()->count(3)->create([
-        'status' => 'posted',
-        'settlement_date' => now(),
-        'total_sales_amount' => 1000,
-    ]);
-
-    $component = Livewire::actingAs($user)->test(Dashboard::class);
-
-    expect($component->get('settlementStatusDistribution.labels'))->toContain('Draft');
-    expect($component->get('settlementStatusDistribution.labels'))->toContain('Posted');
 });
 
 // ── Role-based visibility ───────────────────────────────────────────
@@ -501,4 +486,51 @@ it('ages dashboard credit by unpaid credit sales, so fresh credit after a cleare
         ->assertSet('kpiCards.creditOverdueAccounts', 1)
         ->assertSet('agingCustomers.0.days', 100)
         ->assertSet('agingCustomers.0.buckets', [253600.0, 0.0, 0.0, 40000.0]);
+});
+
+it('limits the goods receipt vs goods issue chart to the user\'s own issues without view-all', function () {
+    createDashboardPermissions();
+    $user = User::factory()->create();
+    $user->givePermissionTo(['goods-issue-list', 'inventory-view']);
+
+    GoodsIssue::factory()->create(['status' => 'issued', 'total_value' => 9000, 'issued_by' => User::factory()->create()->id]);
+    GoodsIssue::factory()->create(['status' => 'issued', 'total_value' => 700, 'issued_by' => $user->id]);
+
+    Livewire::actingAs($user)->test(Dashboard::class)
+        ->assertSet('kpiCards.goodsIssuedThisMonth', 700.0)
+        ->assertSet('grnVsGoodsIssueTrend.issues.5', 700.0);
+});
+
+it('keeps salesmen who share a name apart in top salesmen', function () {
+    $user = createSuperAdminUser();
+    foreach (Employee::factory()->count(2)->create(['name' => 'Muhammad Ali']) as $salesman) {
+        SalesSettlement::factory()->create(['status' => 'posted', 'settlement_date' => now(), 'total_sales_amount' => 1000, 'employee_id' => $salesman->id]);
+    }
+
+    Livewire::actingAs($user)->test(Dashboard::class)
+        ->assertSet('topSalespersonBySales.labels', ['Muhammad Ali', 'Muhammad Ali'])
+        ->assertSet('topSalespersonBySales.values', [1000.0, 1000.0]);
+});
+
+it('takes the overdue share from what customers owe, not from credit net of advances', function () {
+    $user = createSuperAdminUser();
+    $supplier = Supplier::factory()->create();
+    foreach ([[80, 1000, 0], [5, 0, 600]] as [$daysAgo, $debit, $credit]) {
+        $account = CustomerEmployeeAccount::create([
+            'account_number' => 'ACC-'.fake()->unique()->numerify('######'),
+            'customer_id' => Customer::factory()->create()->id,
+            'employee_id' => Employee::factory()->create(['supplier_id' => $supplier->id])->id,
+            'opened_date' => now()->subDays($daysAgo)->toDateString(),
+        ]);
+        CustomerEmployeeAccountTransaction::create([
+            'customer_employee_account_id' => $account->id, 'transaction_date' => now()->subDays($daysAgo)->toDateString(),
+            'transaction_type' => $debit > 0 ? 'credit_sale' : 'recovery', 'description' => 'line', 'debit' => $debit, 'credit' => $credit,
+        ]);
+    }
+
+    Livewire::actingAs($user)->test(Dashboard::class)
+        ->assertSet('kpiCards.marketCredit', 400.0)
+        ->assertSet('kpiCards.creditOwed', 1000.0)
+        ->assertSet('kpiCards.creditOverdue', 1000.0)
+        ->assertSee('100% of what is owed');
 });

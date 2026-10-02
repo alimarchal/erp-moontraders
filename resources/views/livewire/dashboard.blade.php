@@ -344,7 +344,7 @@
                         <span class="ak-kpi-body">
                             <span class="ak-kpi-label">Credit older than 60 days</span>
                             <span class="ak-kpi-value">Rs {{ $rs($k['creditOverdue'] ?? 0) }}</span>
-                            <span class="ak-kpi-hint">{{ $n($k['creditOverdueAccounts'] ?? 0) }} {{ \Illuminate\Support\Str::plural('account', $k['creditOverdueAccounts'] ?? 0) }}@if (($k['creditOverdueAccounts'] ?? 0) !== ($k['creditOverdueCustomers'] ?? 0)) ({{ $n($k['creditOverdueCustomers'] ?? 0) }} customers)@endif &middot; {{ ($k['marketCredit'] ?? 0) > 0 ? round(($k['creditOverdue'] ?? 0) / $k['marketCredit'] * 100).'% of credit' : '—' }} &middot; show list →</span>
+                            <span class="ak-kpi-hint">{{ $n($k['creditOverdueAccounts'] ?? 0) }} {{ \Illuminate\Support\Str::plural('account', $k['creditOverdueAccounts'] ?? 0) }}@if (($k['creditOverdueAccounts'] ?? 0) !== ($k['creditOverdueCustomers'] ?? 0)) ({{ $n($k['creditOverdueCustomers'] ?? 0) }} customers)@endif &middot; {{ ($k['creditOwed'] ?? 0) > 0 ? round(($k['creditOverdue'] ?? 0) / $k['creditOwed'] * 100).'% of what is owed' : '—' }} &middot; show list →</span>
                         </span>
                     </button>
                 </div>

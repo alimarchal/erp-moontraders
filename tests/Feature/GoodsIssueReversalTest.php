@@ -390,12 +390,14 @@ it('saves a draft that keeps its own vehicle, since the vehicle lock it holds is
         'employee_id' => $replacement->employee_id,
         'items' => [[
             'product_id' => $line->product_id,
-            'quantity_issued' => 18,
+            'quantity_issued' => 20,
             'unit_cost' => 10,
             'selling_price' => 15,
             'uom_id' => $line->uom_id,
         ]],
-    ])->assertSessionHasNoErrors();
+    ])->assertSessionHasNoErrors()
+        ->assertRedirect(route('goods-issues.show', $replacement))
+        ->assertSessionHas('success');
 
-    expect((float) $replacement->fresh()->items()->sum('quantity_issued'))->toBe(18.0);
+    expect((float) $replacement->fresh()->items()->sum('quantity_issued'))->toBe(20.0);
 });

@@ -401,3 +401,19 @@ it('saves a draft that keeps its own vehicle, since the vehicle lock it holds is
 
     expect((float) $replacement->fresh()->items()->sum('quantity_issued'))->toBe(20.0);
 });
+
+it('leaves the replacement draft with the original owner when an admin reverses it', function () {
+    $data = postGoodsIssueToWrongVan();
+    $admin = User::factory()->create();
+    $admin->givePermissionTo(['goods-issue-list', 'goods-issue-reverse']);
+
+    actingAs($admin);
+    post(route('goods-issues.reverse', $data['goodsIssue']), ['reason' => 'Wrong salesman and van', 'password' => 'password']);
+
+    $replacement = GoodsIssue::where('replaces_goods_issue_id', $data['goodsIssue']->id)->firstOrFail();
+    expect($replacement->issued_by)->toBe($data['user']->id)
+        ->and($data['goodsIssue']->fresh()->reversed_by)->toBe($admin->id);
+
+    actingAs($data['user']);
+    get(route('goods-issues.index'))->assertOk()->assertSee($replacement->issue_number);
+});

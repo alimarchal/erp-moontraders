@@ -315,6 +315,9 @@ class GoodsIssueReversalService
      * lines, rounded to paisa, so a merged total can differ from the reversed issue's by a few
      * paisa. The edit form reprices each row from the warehouse's live batches, and posting
      * takes the batch costs anyway.
+     *
+     * The draft stays with the original issue's owner, so a user who sees only their own
+     * issues can finish it. Who reversed it is kept on the reversed issue.
      */
     private function copyToDraft(GoodsIssue $goodsIssue): GoodsIssue
     {
@@ -332,7 +335,7 @@ class GoodsIssueReversalService
             'vehicle_id' => $goodsIssue->vehicle_id,
             'employee_id' => $goodsIssue->employee_id,
             'supplier_id' => $goodsIssue->supplier_id,
-            'issued_by' => auth()->id(),
+            'issued_by' => $goodsIssue->issued_by,
             'stock_in_hand_account_id' => $goodsIssue->stock_in_hand_account_id,
             'van_stock_account_id' => $goodsIssue->van_stock_account_id,
             'status' => 'draft',

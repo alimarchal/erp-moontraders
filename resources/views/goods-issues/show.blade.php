@@ -29,7 +29,7 @@
 
     // Timeline: what happened to this issue, oldest first.
     $timeline = collect([
-        ['at' => $gi->created_at, 'text' => 'Created as draft'.($gi->issuedBy ? ' by '.$gi->issuedBy->name : '')],
+        ['at' => $gi->created_at, 'text' => ($gi->replaces ? 'Copied as draft from reversed '.$gi->replaces->issue_number.($gi->replaces->reversedBy ? ' by '.$gi->replaces->reversedBy->name : '') : 'Created as draft').($gi->issuedBy ? ($gi->replaces ? ', owned by ' : ' by ').$gi->issuedBy->name : '')],
         $gi->posted_at ? ['at' => $gi->posted_at, 'text' => 'Posted: stock moved from '.($gi->warehouse->warehouse_name ?? 'warehouse').' to vehicle '.($gi->vehicle->vehicle_number ?? '')] : null,
     ])->filter()
         ->merge($supplementary->groupBy(fn ($item) => optional($item->supplementary_posted_at)->format('Y-m-d H:i'))->map(fn ($items) => [

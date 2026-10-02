@@ -1,32 +1,39 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="font-semibold text-xl text-gray-800 leading-tight inline-block">
-            Create Goods Issue
-        </h2>
-        <div class="flex justify-center items-center float-right">
-            <a href="{{ route('goods-issues.index') }}"
-                class="inline-flex items-center ml-2 px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150">
-                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
-                    stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-            </a>
+        <div class="ak-head">
+            <div>
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('goods-issues.index') }}">Goods Issues</a><span aria-hidden="true">›</span><span>New</span>
+                </nav>
+                <h1 class="ak-title">New Goods Issue</h1>
+                <p class="ak-sub">Load stock from a warehouse onto a salesman's van. It is saved as a draft; stock moves only when you post it.</p>
+            </div>
+            <div class="ak-head-actions">
+                <a href="{{ route('goods-issues.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to Goods Issues</a>
+            </div>
         </div>
     </x-slot>
 
-    <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
-            <x-status-message class="mb-4 mt-4 shadow-md" />
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="p-6">
-                    <x-validation-errors class="mb-4 mt-4" />
+    @include('settings.partials.ui-style')
+    @include('goods-issues.partials.form-style')
+
+    <div class="ak-page gf-page">
+        <x-status-message class="mb-4 mt-4 shadow-md" />
+        <x-validation-errors class="mb-4" />
 
                     <form method="POST" action="{{ route('goods-issues.store') }}" id="goodsIssueForm"
                         x-data="goodsIssueForm()">
                         @csrf
 
-                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+                        <section class="uf-card gf-card" aria-labelledby="gf-details">
+                            <header class="uf-card-head">
+                                <div>
+                                    <h2 class="uf-card-title" id="gf-details"><span class="uf-step">1</span> Issue details</h2>
+                                    <p class="uf-card-sub">Pick the supplier first: its salesmen appear, then the salesman's vehicle.</p>
+                                </div>
+                            </header>
+                            <div class="uf-body">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                             <div>
                                 <x-label for="supplier_ids" value="Supplier *" />
                                 {{-- For multiple suppliers, uncomment this and remove the single select below:
@@ -81,10 +88,23 @@
                                 </select>
                             </div>
                         </div>
+                            </div>
+                        </section>
 
-
-
-                        <x-form-table title="Products to Issue" :sticky-header="true" :headers="array_filter([
+                        <section class="uf-card gf-card" aria-labelledby="gf-products">
+                            <header class="uf-card-head">
+                                <div>
+                                    <h2 class="uf-card-title" id="gf-products"><span class="uf-step">2</span> Products to issue</h2>
+                                    <p class="uf-card-sub">Stock is taken from the oldest / soonest-expiring batches first. Lines in red have less stock than needed.</p>
+                                </div>
+                                <div class="gf-head-stats">
+                                    <span class="ak-pill" x-text="items.filter(i => i.product_id).length + ' of ' + items.length + ' lines filled'"></span>
+                                    <span class="ak-pill ak-pill-red" x-show="items.some(i => i.product_id && i.stock_short)" x-cloak
+                                        x-text="items.filter(i => i.product_id && i.stock_short).length + ' short of stock'"></span>
+                                </div>
+                            </header>
+                            <div class="gf-table">
+                        <x-form-table :title="null" :sticky-header="true" :headers="array_filter([
         ['label' => 'Product', 'align' => 'text-left', 'width' => '300px'],
         ['label' => 'Non-Promo<br>Only', 'align' => 'text-center', 'width' => '70px'],
         ['label' => 'Qty<br>Available', 'align' => 'text-center', 'width' => '110px'],
@@ -237,30 +257,35 @@
                                 </tr>
                             </tfoot>
                         </x-form-table>
+                            </div>
+                        </section>
 
-
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                            <hr class="my-6 border-gray-200">
-
-                            <div class="md:col-span-4">
+                        <section class="uf-card gf-card" aria-labelledby="gf-notes">
+                            <header class="uf-card-head">
+                                <h2 class="uf-card-title" id="gf-notes"><span class="uf-step">3</span> Notes <span class="ak-muted" style="font-weight:400; font-size:12.5px">(optional)</span></h2>
+                            </header>
+                            <div class="uf-body">
                                 <x-label for="notes" value="Notes" />
                                 <textarea id="notes" name="notes" rows="2"
                                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm mt-1 block w-full">{{ old('notes') }}</textarea>
                             </div>
-                        </div>
+                        </section>
 
-
-
-
-                        <div class="flex items-center justify-end mt-6">
-                            <x-button type="button" @click="validateAndSubmit()">
+                        <div class="uf-actions gf-actions">
+                            <div class="gf-totals" aria-live="polite">
+                                <span><b x-text="items.filter(i => i.product_id).length"></b> products</span>
+                                <span><b x-text="formatNumber(items.reduce((sum, item) => sum + (parseFloat(item.quantity_issued) || 0), 0))"></b> total qty</span>
+                                <span>Value Rs <b x-text="formatNumber(grandTotal)"></b></span>
+                                <span class="gf-warn" x-show="items.some(i => i.product_id && i.stock_short)" x-cloak>Reduce or remove the red lines before saving</span>
+                            </div>
+                            <div>
+                                <a href="{{ route('goods-issues.index') }}" class="ak-btn ak-btn-outline">Cancel</a>
+                                <x-button type="button" @click="validateAndSubmit()">
                                 Create Goods Issue
                             </x-button>
+                            </div>
                         </div>
                     </form>
-                </div>
-            </div>
-        </div>
     </div>
 
     @push('header')

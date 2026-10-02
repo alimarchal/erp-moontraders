@@ -376,3 +376,28 @@ it('closes its transaction when a settlement already exists for the issue', func
 
     expect(DB::transactionLevel())->toBe($levelBefore);
 });
+
+it('saves a draft that keeps its own vehicle, since the vehicle lock it holds is its own', function () {
+    $data = postGoodsIssueToWrongVan(['goods-issue-list', 'goods-issue-edit', 'goods-issue-reverse']);
+    post(route('goods-issues.reverse', $data['goodsIssue']), ['reason' => 'Wrong salesman and van', 'password' => 'password']);
+    $replacement = GoodsIssue::with('items')->where('replaces_goods_issue_id', $data['goodsIssue']->id)->firstOrFail();
+    $line = $replacement->items->first();
+
+    put(route('goods-issues.update', $replacement), [
+        'issue_date' => $replacement->issue_date->toDateString(),
+        'warehouse_id' => $data['warehouse']->id,
+        'vehicle_id' => $replacement->vehicle_id,
+        'employee_id' => $replacement->employee_id,
+        'items' => [[
+            'product_id' => $line->product_id,
+            'quantity_issued' => 20,
+            'unit_cost' => 10,
+            'selling_price' => 15,
+            'uom_id' => $line->uom_id,
+        ]],
+    ])->assertSessionHasNoErrors()
+        ->assertRedirect(route('goods-issues.show', $replacement))
+        ->assertSessionHas('success');
+
+    expect((float) $replacement->fresh()->items()->sum('quantity_issued'))->toBe(20.0);
+});

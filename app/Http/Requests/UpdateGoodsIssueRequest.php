@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\GoodsIssue;
 use App\Services\GoodsIssueStockCheck;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
@@ -39,7 +40,7 @@ class UpdateGoodsIssueRequest extends FormRequest
                     // active_vehicle_lock unique index; name the blocking issue instead.
                     $blocking = DB::table('goods_issues')
                         ->where('active_vehicle_lock', $value)
-                        ->where('id', '!=', $this->route('goodsIssue')?->id)
+                        ->where('id', '!=', $this->goodsIssueId())
                         ->value('issue_number');
 
                     if ($blocking) {
@@ -105,5 +106,16 @@ class UpdateGoodsIssueRequest extends FormRequest
             'items.*.uom_id' => 'required|exists:uoms,id',
             'items.*.exclude_promotional' => 'nullable|boolean',
         ];
+    }
+
+    /**
+     * The issue being edited. The resource route names its parameter `goods_issue`,
+     * so `route('goodsIssue')` was always null and the draft was blocked by its own lock.
+     */
+    private function goodsIssueId(): int
+    {
+        $goodsIssue = $this->route('goods_issue');
+
+        return (int) ($goodsIssue instanceof GoodsIssue ? $goodsIssue->getKey() : $goodsIssue);
     }
 }

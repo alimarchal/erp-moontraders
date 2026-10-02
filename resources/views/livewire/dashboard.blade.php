@@ -1136,7 +1136,7 @@
                         // Clicking a bar (except 0-30 days) opens the customer list for that age.
                         chart: { type: 'bar', height: 230, events: { dataPointSelection: (e, ctx, o) => { if (o.dataPointIndex > 0) { window.dispatchEvent(new CustomEvent('aging-bucket', { detail: o.dataPointIndex })); } } } },
                         series: [{ name: 'Outstanding', data: data.aging.values }],
-                        tooltip: { y: { formatter: (v, o) => rupees(v) + ' · ' + data.aging.counts[o.dataPointIndex] + ' customers' } },
+                        tooltip: { y: { formatter: (v, o) => rupees(v) + ' · ' + data.aging.counts[o.dataPointIndex] + (data.aging.counts[o.dataPointIndex] === 1 ? ' account' : ' accounts') } },
                         states: { hover: { filter: { type: 'darken', value: 0.85 } }, active: { filter: { type: 'none' } } },
                         colors: [c[2], c[3], c[1], '#b91c1c'],
                         plotOptions: { bar: { columnWidth: '55%', borderRadius: 4, borderRadiusApplication: 'end', distributed: true, dataLabels: { position: 'top' } } },

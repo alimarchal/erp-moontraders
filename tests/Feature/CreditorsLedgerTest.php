@@ -193,18 +193,19 @@ test('customer ledger filtered by salesman names the salesman', function () {
         ->assertSee('All salesmen');
 });
 
-/** Adds a dated credit sale (debit) or recovery (credit) to an account. */
-function ledgerLine(User $user, int $accountId, int $daysAgo, float $debit, float $credit): void
+/** Adds a dated credit sale (debit) or recovery (credit) to an account, or a settlement-revert reversal of another row. */
+function ledgerLine(User $user, int $accountId, int $daysAgo, float $debit, float $credit, ?int $reverses = null): int
 {
-    CustomerEmployeeAccountTransaction::create([
+    return CustomerEmployeeAccountTransaction::create([
         'customer_employee_account_id' => $accountId,
         'transaction_date' => now()->subDays($daysAgo)->toDateString(),
-        'transaction_type' => $debit > 0 ? 'credit_sale' : 'recovery',
+        'transaction_type' => $reverses ? 'adjustment' : ($debit > 0 ? 'credit_sale' : 'recovery'),
+        'reverses_transaction_id' => $reverses,
         'description' => 'Line',
         'debit' => $debit,
         'credit' => $credit,
         'created_by' => $user->id,
-    ]);
+    ])->id;
 }
 
 test('aging counts new credit taken after the old balance was cleared as new, not as overdue', function () {
@@ -244,4 +245,33 @@ test('aging splits a part-paid balance by the age of each unpaid sale, oldest pa
 
     $salesmen = $this->actingAs($this->user)->get(route('reports.creditors-ledger.salesman-creditors'));
     expect($salesmen->viewData('salesmen')->first()->overdue)->toBe(400.0);
+});
+
+test('aging keeps an old sale overdue when the recovery that paid it is reversed, instead of reading the reversal as fresh credit', function () {
+    [, , $customer] = creditAccount($this->user, 'Nestle', 'Raja Safeer', 'Baba Bakers', 1000, 100);
+    $accountId = CustomerEmployeeAccount::where('customer_id', $customer->id)->value('id');
+    $recovery = ledgerLine($this->user, $accountId, 50, 0, 1000);
+    ledgerLine($this->user, $accountId, 10, 300, 0);
+    ledgerLine($this->user, $accountId, 0, 1000, 0, reverses: $recovery);
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+
+    $row = $this->actingAs($this->user)->get(route('reports.creditors-ledger.aging-report'))->viewData('accounts')->first();
+
+    expect($row->balance)->toBe(1300.0)
+        ->and($row->days)->toBe(100)
+        ->and($row->amounts)->toBe(['current' => 300.0, '31_60' => 0.0, '61_90' => 0.0, 'over_90' => 1000.0]);
+});
+
+test('aging drops a reversed credit sale instead of letting its reversal pay off an older sale', function () {
+    [, , $customer] = creditAccount($this->user, 'Nestle', 'Raja Safeer', 'Baba Bakers', 1000, 100);
+    $accountId = CustomerEmployeeAccount::where('customer_id', $customer->id)->value('id');
+    $sale = ledgerLine($this->user, $accountId, 10, 400, 0);
+    ledgerLine($this->user, $accountId, 0, 0, 400, reverses: $sale);
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+
+    $row = $this->actingAs($this->user)->get(route('reports.creditors-ledger.aging-report'))->viewData('accounts')->first();
+
+    expect($row->balance)->toBe(1000.0)
+        ->and($row->days)->toBe(100)
+        ->and($row->amounts)->toBe(['current' => 0.0, '31_60' => 0.0, '61_90' => 0.0, 'over_90' => 1000.0]);
 });

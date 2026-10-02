@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CustomerEmployeeAccountTransaction extends Model
@@ -17,6 +18,7 @@ class CustomerEmployeeAccountTransaction extends Model
         'transaction_type',
         'reference_number',
         'sales_settlement_id',
+        'reverses_transaction_id',
         'invoice_number',
         'description',
         'debit',
@@ -51,6 +53,22 @@ class CustomerEmployeeAccountTransaction extends Model
     public function salesSettlement(): BelongsTo
     {
         return $this->belongsTo(SalesSettlement::class);
+    }
+
+    /**
+     * The row this one undoes, when it is a settlement-revert reversal.
+     */
+    public function reversedTransaction(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'reverses_transaction_id');
+    }
+
+    /**
+     * Reversal rows that undo this one.
+     */
+    public function reversals(): HasMany
+    {
+        return $this->hasMany(self::class, 'reverses_transaction_id');
     }
 
     public function bankAccount(): BelongsTo

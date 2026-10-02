@@ -84,6 +84,12 @@ class CustomerCreditAging
     /**
      * Credit sales (debits) of the accounts up to the date, newest first, keyed by account.
      *
+     * A settlement revert offsets each ledger row with a reversal linked through
+     * `reverses_transaction_id`. Both rows of a pair are left out: together they add
+     * nothing to the balance, and keeping either would misplace it -- a reversed
+     * recovery would look like fresh credit, and a reversed sale would stay "unpaid"
+     * while its reversal paid off some other, older sale.
+     *
      * @param  array<int, int>  $accountIds
      * @return Collection<int, Collection<int, object>>
      */
@@ -94,11 +100,18 @@ class CustomerCreditAging
             ->flatMap(fn (Collection $ids) => DB::table('customer_employee_account_transactions')
                 ->whereIn('customer_employee_account_id', $ids->all())
                 ->whereNull('deleted_at')
-                ->where('debit', '>', 0)
+                ->where(fn ($query) => $query->where('debit', '>', 0)->orWhereNotNull('reverses_transaction_id'))
                 ->whereDate('transaction_date', '<=', $asOfDate)
                 ->orderByDesc('transaction_date')
                 ->orderByDesc('id')
-                ->get(['customer_employee_account_id', 'transaction_date', 'debit']))
-            ->groupBy('customer_employee_account_id');
+                ->get(['id', 'customer_employee_account_id', 'transaction_date', 'debit', 'reverses_transaction_id']))
+            ->groupBy('customer_employee_account_id')
+            ->map(function (Collection $rows) {
+                $reversed = $rows->pluck('reverses_transaction_id')->filter()->flip();
+
+                return $rows
+                    ->filter(fn ($row) => $row->reverses_transaction_id === null && ! $reversed->has($row->id) && (float) $row->debit > 0)
+                    ->values();
+            });
     }
 }

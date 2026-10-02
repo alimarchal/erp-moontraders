@@ -143,13 +143,13 @@ class Dashboard extends Component
     public array $supplierLedger = [];
 
     /**
-     * Outstanding credit by days since the customer last paid.
+     * Outstanding credit by the age of each unpaid credit sale (see CustomerCreditAging).
      *
-     * @var array{labels?: array<int, string>, values?: array<int, float>}
+     * @var array{labels?: array<int, string>, values?: array<int, float>, counts?: array<int, int>}
      */
     public array $creditAging = [];
 
-    /** @var array<int, array<string, mixed>> Customers with no payment for 30+ days (aging drill-down). */
+    /** @var array<int, array<string, mixed>> Accounts with credit older than 30 days (aging drill-down). */
     public array $agingCustomers = [];
 
     /** @var array<string, mixed> */

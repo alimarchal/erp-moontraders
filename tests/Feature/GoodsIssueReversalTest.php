@@ -416,4 +416,18 @@ it('leaves the replacement draft with the original owner when an admin reverses 
 
     actingAs($data['user']);
     get(route('goods-issues.index'))->assertOk()->assertSee($replacement->issue_number);
+    get(route('goods-issues.show', $replacement))
+        ->assertSee("Copied as draft from reversed {$data['goodsIssue']->issue_number} by {$admin->name}, owned by {$data['user']->name}");
+});
+
+it('gives every replacement in a chain of reversals the first issue\'s owner', function () {
+    [$owner, $firstAdmin, $secondAdmin] = User::factory()->count(3)->create();
+    $first = GoodsIssue::factory()->create(['issued_by' => $owner->id, 'status' => 'cancelled']);
+    $second = GoodsIssue::factory()->create(['issued_by' => $firstAdmin->id, 'status' => 'cancelled', 'replaces_goods_issue_id' => $first->id]);
+    $third = GoodsIssue::factory()->create(['issued_by' => $secondAdmin->id, 'status' => 'draft', 'replaces_goods_issue_id' => $second->id]);
+
+    (require database_path('migrations/2026_10_02_095021_give_goods_issue_replacements_their_original_owner.php'))->up();
+
+    expect($second->fresh()->issued_by)->toBe($owner->id)
+        ->and($third->fresh()->issued_by)->toBe($owner->id);
 });

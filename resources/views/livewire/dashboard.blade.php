@@ -299,7 +299,8 @@
                 x-data="{
                     aging: null,
                     showAging(bucket) { this.aging = bucket; this.$nextTick(() => this.$refs.agingList?.scrollIntoView({ behavior: 'smooth', block: 'start' })); },
-                    inAging(b) { return this.aging === 'late' ? b >= 2 : this.aging === b; },
+                    inAging(bs) { return this.aging === 'late' ? bs.some(b => b >= 2) : bs.includes(this.aging); },
+                    partOf(parts) { return this.aging === 'late' ? parts[2] + parts[3] : (parts[this.aging] ?? 0); },
                 }"
                 @aging-bucket.window="showAging($event.detail)">
                 <div class="db-section-head">
@@ -341,9 +342,9 @@
                     <button type="button" @click="showAging('late')" class="ak-kpi{{ ($k['creditOverdue'] ?? 0) > 0 ? ' ak-kpi-action' : '' }}" style="text-align:left; cursor:pointer; font:inherit; width:100%" title="Show the customers — {{ $full($k['creditOverdue'] ?? 0) }}">
                         <span class="ak-kpi-icon ak-tone-amber" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.3 3.38c-.87 1.5.22 3.37 1.95 3.37h14.7c1.73 0 2.82-1.87 1.95-3.37L13.95 3.38c-.87-1.5-3.03-1.5-3.9 0L2.7 16.13ZM12 15.75h.01" /></svg></span>
                         <span class="ak-kpi-body">
-                            <span class="ak-kpi-label">No payment for 60+ days</span>
+                            <span class="ak-kpi-label">Credit older than 60 days</span>
                             <span class="ak-kpi-value">Rs {{ $rs($k['creditOverdue'] ?? 0) }}</span>
-                            <span class="ak-kpi-hint">{{ $n($k['creditOverdueCustomers'] ?? 0) }} customers &middot; {{ ($k['marketCredit'] ?? 0) > 0 ? round(($k['creditOverdue'] ?? 0) / $k['marketCredit'] * 100).'% of credit' : '—' }} &middot; show list →</span>
+                            <span class="ak-kpi-hint">{{ $n($k['creditOverdueAccounts'] ?? 0) }} {{ \Illuminate\Support\Str::plural('account', $k['creditOverdueAccounts'] ?? 0) }}@if (($k['creditOverdueAccounts'] ?? 0) !== ($k['creditOverdueCustomers'] ?? 0)) ({{ $n($k['creditOverdueCustomers'] ?? 0) }} customers)@endif &middot; {{ ($k['marketCredit'] ?? 0) > 0 ? round(($k['creditOverdue'] ?? 0) / $k['marketCredit'] * 100).'% of credit' : '—' }} &middot; show list →</span>
                         </span>
                     </button>
                 </div>
@@ -369,7 +370,7 @@
                         @endif
                     </div>
                     <div class="db-card">
-                        <div class="db-card-head"><div><h3>Credit aging</h3><p class="db-card-sub">Outstanding by days since the customer last paid &middot; click a bar to see the customers</p></div>@if ($agingReportUrl)<a href="{{ $agingReportUrl }}">Aging report →</a>@endif</div>
+                        <div class="db-card-head"><div><h3>Credit aging</h3><p class="db-card-sub">What is owed, aged by the date of each unpaid credit sale (payments clear the oldest sales first) &middot; click a bar to see the customers</p></div>@if ($agingReportUrl)<a href="{{ $agingReportUrl }}">Aging report →</a>@endif</div>
                         @if (array_sum($creditAging['values'] ?? []) > 0)
                             <div id="db-credit-aging" class="db-chart-sm" role="img" aria-label="Outstanding credit by age" style="cursor:pointer"></div>
                             <div class="db-aging-chips">
@@ -393,7 +394,7 @@
                         @if ($topCreditCustomers)
                             <ul class="db-list">
                                 @foreach ($topCreditCustomers as $cust)
-                                    @php $late = $cust['last_paid_days'] === null || $cust['last_paid_days'] > 60; @endphp
+                                    @php $late = $cust['days'] > 60; @endphp
                                     @php $stmt = $customerStatement($cust['id'], $cust['employee_id']); @endphp
                                     <li>@if ($stmt)<a href="{{ $stmt }}" class="db-row" title="Open {{ $cust['salesmen'] }}'s ledger for this customer">@else<div class="db-row">@endif
                                         <span style="min-width:0">
@@ -402,7 +403,7 @@
                                         </span>
                                         <span class="db-r">
                                             <b title="{{ $full($cust['used']) }}">Rs {{ $rs($cust['used']) }}</b>
-                                            <span class="{{ $late ? 'db-down' : '' }}">{{ $cust['last_paid_days'] === null ? 'never paid' : ($cust['last_paid_days'] === 0 ? 'paid today' : 'paid '.$cust['last_paid_days'].' '.\Illuminate\Support\Str::plural('day', $cust['last_paid_days']).' ago') }}</span>
+                                            <span class="{{ $late ? 'db-down' : '' }}">{{ $cust['days'] === 0 ? 'credit from today' : 'oldest unpaid '.$cust['days'].' '.\Illuminate\Support\Str::plural('day', $cust['days']) }}</span>
                                         </span>
                                     @if ($stmt)</a>@else</div>@endif</li>
                                 @endforeach
@@ -413,18 +414,18 @@
                     </div>
                 </div>
 
-                {{-- Aging drill-down: opened from the "No payment" card, the aging bars or chips --}}
+                {{-- Aging drill-down: opened from the "Credit older than 60 days" card, the aging bars or chips --}}
                 @php
                     $bucketNames = [1 => '31-60 days', 2 => '61-90 days', 3 => 'Over 90 days'];
                 @endphp
                 <div class="db-card" x-ref="agingList" x-show="aging !== null" x-cloak style="margin-top:16px; padding:0; overflow:hidden; scroll-margin-top:16px">
                     <div class="db-card-head" style="padding:16px 18px 8px; flex-wrap:wrap">
                         <div>
-                            <h3 x-text="aging === 'late' ? 'No payment for 60+ days' : 'No payment for ' + ({{ \Illuminate\Support\Js::from($bucketNames) }})[aging]"></h3>
-                            <p class="db-card-sub">Salesman-wise customer balances, biggest first. Days are counted from the last payment to that salesman (or the credit sale if never paid). Click a customer to open that salesman's ledger.</p>
+                            <h3 x-text="aging === 'late' ? 'Credit older than 60 days' : 'Credit ' + ({{ \Illuminate\Support\Js::from($bucketNames) }})[aging] + ' old'"></h3>
+                            <p class="db-card-sub">Salesman-wise customer balances, biggest first. Payments clear the oldest credit sales first; "Days" is the age of the oldest sale still unpaid, and "In this range" is the part of the balance that falls in the chosen age. Click a customer to open that salesman's ledger.</p>
                         </div>
                         <div class="db-aging-chips" style="margin:0">
-                            <button type="button" @click="aging = 'late'" :class="aging === 'late' && 'is-on'">60+ days <b>{{ $n(($creditAging['counts'][2] ?? 0) + ($creditAging['counts'][3] ?? 0)) }}</b></button>
+                            <button type="button" @click="aging = 'late'" :class="aging === 'late' && 'is-on'">60+ days <b>{{ $n($k['creditOverdueAccounts'] ?? 0) }}</b></button>
                             @foreach ($bucketNames as $i => $label)
                                 <button type="button" @click="aging = {{ $i }}" :class="aging === {{ $i }} && 'is-on'">{{ $label }} <b>{{ $n($creditAging['counts'][$i] ?? 0) }}</b></button>
                             @endforeach
@@ -432,19 +433,21 @@
                         </div>
                     </div>
                     <div style="max-height: 28rem; overflow:auto; border-top:1px solid var(--ak-line)">
-                        <table class="ak-dt" style="min-width:720px">
+                        <table class="ak-dt" style="min-width:900px">
                             <thead>
                                 <tr>
                                     <th scope="col">Customer</th>
                                     <th scope="col">{{ $scope['supplier_id'] === null ? 'Company · salesman' : 'Salesman' }}</th>
                                     <th scope="col" class="ak-num">Owes (Rs)</th>
+                                    <th scope="col" class="ak-num">In this range</th>
+                                    <th scope="col" class="ak-c">Oldest unpaid sale</th>
                                     <th scope="col" class="ak-c">Last paid</th>
                                     <th scope="col" class="ak-c">Days</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 @foreach ($agingCustomers as $cust)
-                                    <tr x-show="inAging({{ $cust['bucket'] }})">
+                                    <tr x-show="inAging({{ \Illuminate\Support\Js::from($cust['in']) }})">
                                         <td data-label="Customer">
                                             @if ($canCreditors)
                                                 <a href="{{ $customerStatement($cust['id'], $cust['employee_id']) }}" class="ak-primary-link" title="Open {{ $cust['salesmen'] }}'s ledger for this customer">{{ $cust['name'] }}</a>
@@ -458,8 +461,10 @@
                                             <div class="{{ $scope['supplier_id'] === null ? 'ak-muted' : '' }}">{{ $cust['salesmen'] ?: '—' }}</div>
                                         </td>
                                         <td class="ak-num ak-strong" data-label="Owes (Rs)">{{ number_format($cust['used']) }}</td>
+                                        <td class="ak-num" data-label="In this range" x-text="Math.round(partOf({{ \Illuminate\Support\Js::from($cust['buckets']) }})).toLocaleString('en-PK')"></td>
+                                        <td class="ak-c" data-label="Oldest unpaid sale">{{ $cust['oldest_unpaid'] ? \Carbon\Carbon::parse($cust['oldest_unpaid'])->format('d M Y') : '—' }}</td>
                                         <td class="ak-c" data-label="Last paid">{{ $cust['last_paid_days'] === null ? 'Never' : now()->subDays($cust['last_paid_days'])->format('d M Y') }}</td>
-                                        <td class="ak-c" data-label="Days"><span class="ak-status {{ $cust['bucket'] >= 3 ? 'ak-status-red' : 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $cust['days'] >= 999 ? '—' : $cust['days'] }}</span></td>
+                                        <td class="ak-c" data-label="Days"><span class="ak-status {{ $cust['bucket'] >= 3 ? 'ak-status-red' : 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $cust['days'] }}</span></td>
                                     </tr>
                                 @endforeach
                             </tbody>

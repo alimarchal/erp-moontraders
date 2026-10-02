@@ -478,3 +478,27 @@ it('lets super admins narrow the dashboard to one supplier but not supplier user
         ->assertSet('kpiCards.totalSalesThisMonth', 1000.0)
         ->assertSet('supplierOptions', []);
 });
+
+it('ages dashboard credit by unpaid credit sales, so fresh credit after a cleared balance is not overdue', function () {
+    $user = createSuperAdminUser();
+    $account = CustomerEmployeeAccount::create([
+        'account_number' => 'ACC-900777',
+        'customer_id' => Customer::factory()->create(['customer_name' => 'Murree Traders II'])->id,
+        'employee_id' => Employee::factory()->create(['supplier_id' => Supplier::factory()->create()->id])->id,
+        'opened_date' => now()->subDays(150)->toDateString(),
+    ]);
+    foreach ([[144, 25442, 0], [140, 0, 25442], [100, 40000, 0], [2, 253600, 0]] as [$daysAgo, $debit, $credit]) {
+        CustomerEmployeeAccountTransaction::create([
+            'customer_employee_account_id' => $account->id, 'transaction_date' => now()->subDays($daysAgo)->toDateString(),
+            'transaction_type' => $debit > 0 ? 'credit_sale' : 'recovery', 'description' => 'line', 'debit' => $debit, 'credit' => $credit,
+        ]);
+    }
+
+    Livewire::actingAs($user)->test(Dashboard::class)
+        ->assertSet('creditAging.values', [253600.0, 0.0, 0.0, 40000.0])
+        ->assertSet('creditAging.counts', [1, 0, 0, 1])
+        ->assertSet('kpiCards.creditOverdue', 40000.0)
+        ->assertSet('kpiCards.creditOverdueAccounts', 1)
+        ->assertSet('agingCustomers.0.days', 100)
+        ->assertSet('agingCustomers.0.buckets', [253600.0, 0.0, 0.0, 40000.0]);
+});

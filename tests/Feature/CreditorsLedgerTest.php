@@ -192,3 +192,56 @@ test('customer ledger filtered by salesman names the salesman', function () {
         ->assertSeeInOrder(['Salesman:', 'Raja Safeer'])
         ->assertSee('All salesmen');
 });
+
+/** Adds a dated credit sale (debit) or recovery (credit) to an account. */
+function ledgerLine(User $user, int $accountId, int $daysAgo, float $debit, float $credit): void
+{
+    CustomerEmployeeAccountTransaction::create([
+        'customer_employee_account_id' => $accountId,
+        'transaction_date' => now()->subDays($daysAgo)->toDateString(),
+        'transaction_type' => $debit > 0 ? 'credit_sale' : 'recovery',
+        'description' => 'Line',
+        'debit' => $debit,
+        'credit' => $credit,
+        'created_by' => $user->id,
+    ]);
+}
+
+test('aging counts new credit taken after the old balance was cleared as new, not as overdue', function () {
+    // Murree Traders II: two old sales paid off in full, then fresh credit 2 days ago.
+    [, $salesman, $customer] = creditAccount($this->user, 'Nestle', 'Mujahid Shah', 'Murree Traders II', 25442, 144);
+    $accountId = CustomerEmployeeAccount::where('customer_id', $customer->id)->value('id');
+    ledgerLine($this->user, $accountId, 142, 11165, 0);
+    ledgerLine($this->user, $accountId, 140, 0, 25442);
+    ledgerLine($this->user, $accountId, 123, 0, 11165);
+    ledgerLine($this->user, $accountId, 2, 253600, 0);
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+
+    $response = $this->actingAs($this->user)->get(route('reports.creditors-ledger.aging-report'));
+
+    $row = $response->viewData('accounts')->first();
+    expect($row->balance)->toBe(253600.0)
+        ->and($row->days)->toBe(2)
+        ->and($row->amounts)->toBe(['current' => 253600.0, '31_60' => 0.0, '61_90' => 0.0, 'over_90' => 0.0])
+        ->and($response->viewData('overdueCount'))->toBe(0);
+});
+
+test('aging splits a part-paid balance by the age of each unpaid sale, oldest paid first', function () {
+    [, , $customer] = creditAccount($this->user, 'Nestle', 'Raja Safeer', 'Baba Bakers', 1000, 100);
+    $accountId = CustomerEmployeeAccount::where('customer_id', $customer->id)->value('id');
+    ledgerLine($this->user, $accountId, 45, 500, 0);
+    ledgerLine($this->user, $accountId, 10, 300, 0);
+    ledgerLine($this->user, $accountId, 5, 0, 600);   // clears 600 of the 1,000 sale from 100 days ago
+    $this->user->forceFill(['is_super_admin' => 'Yes'])->save();
+
+    $response = $this->actingAs($this->user)->get(route('reports.creditors-ledger.aging-report'));
+
+    $row = $response->viewData('accounts')->first();
+    expect($row->balance)->toBe(1200.0)
+        ->and($row->days)->toBe(100)
+        ->and($row->amounts)->toBe(['current' => 300.0, '31_60' => 500.0, '61_90' => 0.0, 'over_90' => 400.0])
+        ->and($response->viewData('totals')['over_90']['amount'])->toBe(400.0);
+
+    $salesmen = $this->actingAs($this->user)->get(route('reports.creditors-ledger.salesman-creditors'));
+    expect($salesmen->viewData('salesmen')->first()->overdue)->toBe(400.0);
+});

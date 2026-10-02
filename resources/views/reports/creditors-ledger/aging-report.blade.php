@@ -150,7 +150,7 @@
             </div>
 
             <div>
-                <x-label for="filter_bucket" value="Days Since Last Payment" />
+                <x-label for="filter_bucket" value="Credit Age" />
                 <select id="filter_bucket" name="filter[bucket]"
                     class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
                     <option value="">All</option>
@@ -190,9 +190,9 @@
                 </a>
             @endforeach
             <a href="{{ $bucketUrl($activeBucket === '60_plus' ? null : '60_plus') }}" class="bg-white rounded-lg shadow p-4 border-l-4 border-red-700 text-red-800 {{ $activeBucket === '60_plus' ? 'is-on' : '' }}">
-                <div class="text-sm text-gray-500">No payment 60+ days</div>
+                <div class="text-sm text-gray-500">Credit older than 60 days</div>
                 <div class="text-2xl font-bold">{{ number_format($totals['61_90']['amount'] + $totals['over_90']['amount'], 0) }}</div>
-                <div class="text-xs text-gray-500">{{ number_format($totals['61_90']['count'] + $totals['over_90']['count']) }} accounts</div>
+                <div class="text-xs text-gray-500">{{ number_format($overdueCount) }} accounts</div>
             </a>
         </div>
     </div>
@@ -211,7 +211,7 @@
                         Printed by: {{ auth()->user()->name }} | {{ now()->format('d-M-Y h:i A') }}
                     </span>
                 </p>
-                <p class="text-xs text-gray-500 mb-2 no-print">Days are counted from the account's last payment (or its credit sale if it never paid). Click a customer to open that salesman's ledger for the customer; "All" opens the full statement.</p>
+                <p class="text-xs text-gray-500 mb-2 no-print">Payments clear the oldest credit sales first; what is still owed is split into the columns by the age of each unpaid sale. "Days" is the age of the oldest unpaid sale. Click a customer to open that salesman's ledger for the customer; "All" opens the full statement.</p>
 
                 <table class="report-table">
                     <thead>
@@ -225,7 +225,7 @@
                             @endif
                             <th style="width: 120px;">Salesman</th>
                             <th style="width: 85px;">Last Paid</th>
-                            <th style="width: 50px;">Days</th>
+                            <th style="width: 50px;" title="Age of the oldest unpaid credit sale">Days</th>
                             <th style="width: 95px;">0-30</th>
                             <th style="width: 95px;">31-60</th>
                             <th style="width: 95px;">61-90</th>
@@ -248,9 +248,9 @@
                                 @endif
                                 <td><a href="{{ route('reports.creditors-ledger.index', ['filter' => array_filter(['employee_id' => $row->employee_id, 'supplier_id' => $supplierIdFilter, 'has_balance' => 'yes'])]) }}" title="All customers of this salesman">{{ $row->salesman }}</a></td>
                                 <td class="text-center">{{ $row->last_recovery ? \Carbon\Carbon::parse($row->last_recovery)->format('d-M-y') : 'Never' }}</td>
-                                <td class="text-center">{{ $row->days >= 9999 ? '-' : $row->days }}</td>
+                                <td class="text-center" title="Oldest unpaid credit sale: {{ $row->oldest_unpaid ? \Carbon\Carbon::parse($row->oldest_unpaid)->format('d-M-Y') : '-' }}">{{ $row->days }}</td>
                                 @foreach (array_keys($buckets) as $key)
-                                    <td class="text-right font-mono">{{ $row->bucket === $key ? number_format($row->balance, 2) : '' }}</td>
+                                    <td class="text-right font-mono">{{ $row->amounts[$key] > 0 ? number_format($row->amounts[$key], 2) : '' }}</td>
                                 @endforeach
                                 <td class="text-right font-mono font-bold">{{ number_format($row->balance, 2) }}</td>
                             </tr>
@@ -264,7 +264,7 @@
                         <tr>
                             <td colspan="{{ $canViewAllSuppliers && ! $supplierIdFilter ? 8 : 7 }}" class="text-center px-2 py-1">Page Total ({{ $accounts->count() }} accounts)</td>
                             @foreach (array_keys($buckets) as $key)
-                                <td class="text-right font-mono px-2 py-1">{{ number_format($accounts->getCollection()->where('bucket', $key)->sum('balance'), 2) }}</td>
+                                <td class="text-right font-mono px-2 py-1">{{ number_format($accounts->getCollection()->sum(fn ($row) => $row->amounts[$key]), 2) }}</td>
                             @endforeach
                             <td class="text-right font-mono px-2 py-1">{{ number_format($accounts->getCollection()->sum('balance'), 2) }}</td>
                         </tr>

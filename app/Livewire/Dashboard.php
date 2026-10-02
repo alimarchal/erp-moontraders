@@ -17,6 +17,7 @@ use App\Models\Supplier;
 use App\Models\SupplierPayment;
 use App\Models\User;
 use App\Models\Vehicle;
+use App\Services\CustomerCreditAging;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -1068,7 +1069,7 @@ class Dashboard extends Component
         $accounts = $this->customerLedger()
             ->join('customers as c', 'a.customer_id', '=', 'c.id')
             ->leftJoin('suppliers as s', 'e.supplier_id', '=', 's.id')
-            ->select('a.customer_id', 'c.customer_code', 'c.customer_name', 'c.city', 'a.employee_id', 'e.name as salesman', 'e.supplier_id', 's.supplier_name as supplier')
+            ->select('a.id as account_id', 'a.customer_id', 'c.customer_code', 'c.customer_name', 'c.city', 'a.employee_id', 'e.name as salesman', 'e.supplier_id', 's.supplier_name as supplier')
             ->selectRaw("{$balance} as balance")
             ->selectRaw('MAX(CASE WHEN t.credit > 0 THEN t.transaction_date END) as last_recovery')
             ->selectRaw('MAX(CASE WHEN t.debit > 0 THEN t.transaction_date END) as last_credit_sale')
@@ -1094,43 +1095,39 @@ class Dashboard extends Component
         $this->creditBySalesman = $top('employee_id', 'salesman', 10);
 
         // One row per customer-salesman account, so every row opens that salesman's own ledger for the customer.
-        $rows = $owing->map(function ($r) use ($today) {
-            $since = $r->last_recovery ?? $r->last_credit_sale;
-            $days = $since ? (int) abs(Carbon::parse($since)->diffInDays($today)) : 999;
-
-            return [
-                'days' => $days,
-                // Aging bucket: days since this account last paid (or since the credit sale if never paid).
-                'bucket' => match (true) {
-                    $days <= 30 => 0,
-                    $days <= 60 => 1,
-                    $days <= 90 => 2,
-                    default => 3,
-                },
-                'id' => (int) $r->customer_id,
-                'employee_id' => $r->employee_id ? (int) $r->employee_id : null,
-                'name' => $r->customer_name,
-                'code' => $r->customer_code,
-                'city' => $r->city,
-                'used' => round((float) $r->balance, 2),
-                'suppliers' => (string) $r->supplier,
-                'salesmen' => (string) $r->salesman,
-                'last_paid_days' => $r->last_recovery ? (int) abs(Carbon::parse($r->last_recovery)->diffInDays($today)) : null,
-            ];
-        })->values();
+        // Aged the receivables way: recoveries clear the oldest credit sales first, and what is still
+        // owed is aged by the date of each unpaid sale (see CustomerCreditAging).
+        $rows = app(CustomerCreditAging::class)->age($owing->values(), $today->toDateString())->map(fn ($r) => [
+            'days' => (int) $r->days,
+            'bucket' => (int) $r->bucket,
+            'buckets' => $r->buckets,
+            'in' => array_keys(array_filter($r->buckets, fn ($amount) => $amount > 0)),
+            'oldest_unpaid' => $r->oldest_unpaid,
+            'id' => (int) $r->customer_id,
+            'employee_id' => $r->employee_id ? (int) $r->employee_id : null,
+            'name' => $r->customer_name,
+            'code' => $r->customer_code,
+            'city' => $r->city,
+            'used' => round((float) $r->balance, 2),
+            'suppliers' => (string) $r->supplier,
+            'salesmen' => (string) $r->salesman,
+            'last_paid_days' => $r->last_recovery ? (int) abs(Carbon::parse($r->last_recovery)->diffInDays($today)) : null,
+        ])->values();
 
         $this->creditAging = [
-            'labels' => ['0-30 days', '31-60 days', '61-90 days', 'Over 90 days'],
-            'values' => array_map(fn ($b) => round((float) $rows->where('bucket', $b)->sum('used'), 2), [0, 1, 2, 3]),
-            'counts' => array_map(fn ($b) => $rows->where('bucket', $b)->count(), [0, 1, 2, 3]),
+            'labels' => CustomerCreditAging::LABELS,
+            'values' => array_map(fn ($b) => round((float) $rows->sum(fn ($row) => $row['buckets'][$b]), 2), [0, 1, 2, 3]),
+            'counts' => array_map(fn ($b) => $rows->filter(fn ($row) => $row['buckets'][$b] > 0)->count(), [0, 1, 2, 3]),
         ];
         $this->kpiCards['creditOverdue'] = round($this->creditAging['values'][2] + $this->creditAging['values'][3], 2);
-        $this->kpiCards['creditOverdueCustomers'] = $rows->where('bucket', '>=', 2)->pluck('id')->unique()->count();
+        $overdueRows = $rows->filter(fn ($row) => $row['buckets'][2] + $row['buckets'][3] > 0);
+        $this->kpiCards['creditOverdueCustomers'] = $overdueRows->pluck('id')->unique()->count();
+        $this->kpiCards['creditOverdueAccounts'] = $overdueRows->count();
 
         $this->kpiCards['creditCustomers'] = $rows->pluck('id')->unique()->count();
         $this->topCreditCustomers = $rows->sortByDesc('used')->take(8)->values()->all();
-        // Every account past 30 days, biggest first, for the aging drill-down list.
-        $this->agingCustomers = $rows->where('bucket', '>', 0)->sortByDesc('used')->take(300)->values()->all();
+        // Every account with credit older than 30 days, biggest first, for the aging drill-down list.
+        $this->agingCustomers = $rows->filter(fn ($row) => $row['bucket'] > 0)->sortByDesc('used')->take(300)->values()->all();
     }
 
     private function loadSalesBySupplier(): void

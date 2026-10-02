@@ -7,8 +7,8 @@ use App\Models\Customer;
 use App\Models\CustomerEmployeeAccountTransaction;
 use App\Models\Employee;
 use App\Models\Supplier;
+use App\Services\CustomerCreditAging;
 use App\Services\LedgerService;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -25,7 +25,7 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
         ];
     }
 
-    public function __construct(protected LedgerService $ledgerService) {}
+    public function __construct(protected LedgerService $ledgerService, protected CustomerCreditAging $aging) {}
 
     /**
      * Display creditors (accounts receivable) ledger summary
@@ -515,12 +515,12 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
     public function salesmanCreditors(Request $request)
     {
         $supplierIdFilter = $this->resolveSupplierFilter($request);
-        $accounts = $this->accountBalances(now()->toDateString(), $supplierIdFilter, null);
-        $today = now()->startOfDay();
+        $accounts = $this->aging->age($this->accountBalances(now()->toDateString(), $supplierIdFilter, null));
 
-        $salesmen = $accounts->groupBy('employee_id')->map(function ($rows) use ($today) {
+        $salesmen = $accounts->groupBy('employee_id')->map(function ($rows) {
             $owing = $rows->filter(fn ($row) => $row->balance > 0);
-            $overdue = $owing->filter(fn ($row) => $this->daysSinceLastPayment($row, $today) > 60);
+            // Part of each balance whose credit sales are more than 60 days old (oldest sales are paid first).
+            $overdue = $owing->filter(fn ($row) => $row->buckets[2] + $row->buckets[3] > 0);
             $lastRecovery = $rows->pluck('last_recovery')->filter()->max();
 
             return (object) [
@@ -531,7 +531,7 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
                 'credit_sales' => (float) $rows->sum('credit_sales'),
                 'recoveries' => (float) $rows->sum('recoveries'),
                 'balance' => (float) $rows->sum('balance'),
-                'overdue' => (float) $overdue->sum('balance'),
+                'overdue' => round((float) $overdue->sum(fn ($row) => $row->buckets[2] + $row->buckets[3]), 2),
                 'overdue_customers' => $overdue->count(),
                 'last_recovery' => $lastRecovery,
             ];
@@ -614,18 +614,14 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
         $supplierIdFilter = $this->resolveSupplierFilter($request);
         $employeeId = $request->integer('filter.employee_id') ?: null;
         $bucketFilter = $request->input('filter.bucket');
-        $asOf = Carbon::parse($asOfDate)->startOfDay();
+        $keys = ['current', '31_60', '61_90', 'over_90'];
 
-        $rows = $this->accountBalances($asOfDate, $supplierIdFilter, $employeeId)
-            ->filter(fn ($row) => $row->balance > 0)
-            ->map(function ($row) use ($asOf) {
-                $row->days = $this->daysSinceLastPayment($row, $asOf);
-                $row->bucket = match (true) {
-                    $row->days <= 30 => 'current',
-                    $row->days <= 60 => '31_60',
-                    $row->days <= 90 => '61_90',
-                    default => 'over_90',
-                };
+        // Receivables aging: recoveries clear the oldest credit sales first, and the balance
+        // left is split by the age of each unpaid sale.
+        $rows = $this->aging->age($this->accountBalances($asOfDate, $supplierIdFilter, $employeeId)->filter(fn ($row) => $row->balance > 0)->values(), $asOfDate)
+            ->map(function ($row) use ($keys) {
+                $row->amounts = array_combine($keys, $row->buckets);
+                $row->bucket = $keys[$row->bucket];
 
                 return $row;
             });
@@ -638,14 +634,16 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
         $buckets = ['current' => '0-30 days', '31_60' => '31-60 days', '61_90' => '61-90 days', 'over_90' => 'Over 90 days'];
         $totals = collect($buckets)->map(fn ($label, $key) => [
             'label' => $label,
-            'amount' => (float) $rows->where('bucket', $key)->sum('balance'),
-            'count' => $rows->where('bucket', $key)->count(),
+            'amount' => round((float) $rows->sum(fn ($row) => $row->amounts[$key]), 2),
+            'count' => $rows->filter(fn ($row) => $row->amounts[$key] > 0)->count(),
         ]);
 
+        $overdueCount = $rows->filter(fn ($row) => $row->amounts['61_90'] + $row->amounts['over_90'] > 0)->count();
+
         if ($bucketFilter === '60_plus') {
-            $rows = $rows->whereIn('bucket', ['61_90', 'over_90']);
+            $rows = $rows->filter(fn ($row) => $row->amounts['61_90'] + $row->amounts['over_90'] > 0);
         } elseif (isset($buckets[$bucketFilter])) {
-            $rows = $rows->where('bucket', $bucketFilter);
+            $rows = $rows->filter(fn ($row) => $row->amounts[$bucketFilter] > 0);
         }
 
         $rows = $rows->sortByDesc('balance')->values();
@@ -665,6 +663,7 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
         return view('reports.creditors-ledger.aging-report', [
             'accounts' => $accounts,
             'filteredTotal' => (float) $rows->sum('balance'),
+            'overdueCount' => $overdueCount,
             'totals' => $totals,
             'buckets' => $buckets,
             'asOfDate' => $asOfDate,
@@ -725,16 +724,6 @@ class CreditorsLedgerController extends Controller implements HasMiddleware
 
                 return $row;
             });
-    }
-
-    /**
-     * Days since the account's last payment, or since its credit sale when it never paid.
-     */
-    private function daysSinceLastPayment(object $row, Carbon $asOf): int
-    {
-        $since = $row->last_recovery ?? $row->last_credit_sale;
-
-        return $since ? (int) abs(Carbon::parse($since)->startOfDay()->diffInDays($asOf)) : 9999;
     }
 
     /**

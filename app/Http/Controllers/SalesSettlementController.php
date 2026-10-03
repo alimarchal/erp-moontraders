@@ -40,10 +40,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
 use Spatie\QueryBuilder\QueryBuilder;
 
 class SalesSettlementController extends Controller implements HasMiddleware
@@ -87,52 +89,72 @@ class SalesSettlementController extends Controller implements HasMiddleware
         }
     }
 
+    /** Rows-per-page choices on the list. */
+    public const PER_PAGE = [50, 100, 200, 500, 1000, 'all'];
+
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
         $today = now()->toDateString();
 
-        if (! request()->has('filter.settlement_date_from') && ! request()->has('filter.settlement_date_to')) {
-            request()->merge([
-                'filter' => array_merge(request('filter', []), [
+        if (! $request->has('filter.settlement_date_from') && ! $request->has('filter.settlement_date_to')) {
+            $request->merge([
+                'filter' => array_merge($request->input('filter', []), [
                     'settlement_date_from' => $today,
                     'settlement_date_to' => $today,
                 ]),
             ]);
         }
 
-        $baseQuery = SalesSettlement::query()->with(['employee', 'vehicle', 'warehouse', 'goodsIssue', 'creator', 'supplier']);
-
-        if (! auth()->user()->can('sales-settlement-view-all')) {
-            $baseQuery->where('created_by', auth()->id());
-        }
-
-        // Apply supplier scoping for non-admin users
         $userSupplierId = $this->getUserSupplierScope();
-        if ($userSupplierId !== null) {
-            $baseQuery->where('supplier_id', $userSupplierId);
-        }
 
-        $settlementsQuery = QueryBuilder::for($baseQuery)
-            ->allowedFilters([
-                AllowedFilter::partial('settlement_number'),
-                AllowedFilter::exact('employee_id'),
-                AllowedFilter::exact('vehicle_id'),
-                AllowedFilter::exact('warehouse_id'),
-                AllowedFilter::exact('status'),
-                AllowedFilter::exact('created_by'),
-                AllowedFilter::exact('supplier_id'),
-                AllowedFilter::scope('settlement_date_from'),
-                AllowedFilter::scope('settlement_date_to'),
-                AllowedFilter::callback('product_id', function ($query, $value) {
-                    $query->whereHas('items', function ($q) use ($value) {
-                        $q->where('product_id', $value);
-                    });
-                }),
+        $perPage = (string) $request->input('per_page', '50');
+        $perPage = in_array($perPage, array_map('strval', self::PER_PAGE), true) ? $perPage : '50';
+
+        /** Settlements this user may see: own settlements without view-all, own supplier when scoped. */
+        $visible = function () use ($userSupplierId) {
+            return SalesSettlement::query()
+                ->when(! auth()->user()->can('sales-settlement-view-all'), fn ($query) => $query->where('sales_settlements.created_by', auth()->id()))
+                ->when($userSupplierId, fn ($query, $supplierId) => $query->where('sales_settlements.supplier_id', $supplierId));
+        };
+
+        $allowedFilters = [
+            AllowedFilter::partial('settlement_number'),
+            AllowedFilter::exact('employee_id'),
+            AllowedFilter::exact('vehicle_id'),
+            AllowedFilter::exact('warehouse_id'),
+            AllowedFilter::exact('status'),
+            AllowedFilter::exact('created_by'),
+            AllowedFilter::exact('supplier_id'),
+            AllowedFilter::scope('settlement_date_from'),
+            AllowedFilter::scope('settlement_date_to'),
+            AllowedFilter::callback('product_id', function ($query, $value) {
+                $query->whereHas('items', function ($q) use ($value) {
+                    $q->where('product_id', $value);
+                });
+            }),
+            // One box for settlement number, goods issue number, vehicle or salesman.
+            AllowedFilter::callback('search', function ($query, $value) {
+                $term = '%'.mb_strtolower(trim((string) $value)).'%';
+                $query->where(fn ($q) => $q
+                    ->whereRaw('LOWER(settlement_number) LIKE ?', [$term])
+                    ->orWhereHas('goodsIssue', fn ($g) => $g->whereRaw('LOWER(issue_number) LIKE ?', [$term]))
+                    ->orWhereHas('vehicle', fn ($v) => $v->whereRaw('LOWER(registration_number) LIKE ?', [$term])->orWhereRaw('LOWER(vehicle_number) LIKE ?', [$term]))
+                    ->orWhereHas('employee', fn ($e) => $e->whereRaw('LOWER(name) LIKE ?', [$term])));
+            }),
+        ];
+
+        $settlementsQuery = QueryBuilder::for($visible()->with(['employee', 'vehicle', 'warehouse', 'goodsIssue', 'creator', 'supplier']))
+            ->allowedFilters($allowedFilters)
+            ->allowedSorts([
+                'settlement_date',
+                'settlement_number',
+                'created_at',
+                AllowedSort::field('total_sales', 'items_sum_total_sales_value'),
             ])
-            ->defaultSort('-settlement_date')
+            ->defaultSort('-settlement_date', '-id')
             ->withSum('items', 'total_sales_value') // For total sales
             ->withSum('items', 'total_cogs')        // For COGS
             ->withSum('expenses', 'amount')         // Expense 1
@@ -144,87 +166,39 @@ class SalesSettlementController extends Controller implements HasMiddleware
             ->withSum('items as total_quantity_returned_sum', 'quantity_returned')
             ->withSum('items as total_quantity_shortage_sum', 'quantity_shortage');
 
-        $perPage = request('per_page', 50);
-        $settlements = $settlementsQuery->paginate($perPage === 'all' ? PHP_INT_MAX : (int) $perPage)->withQueryString();
-
-        // Calculate Totals Helper
-        // We reuse the allowed filters logic to get the constrained query for aggregation
-        $filterBaseQuery = SalesSettlement::query();
-
-        if (! auth()->user()->can('sales-settlement-view-all')) {
-            $filterBaseQuery->where('created_by', auth()->id());
+        if ($perPage === 'all') {
+            $count = $settlementsQuery->getEloquentBuilder()->clone()->reorder()->count();
+            $settlements = $settlementsQuery->paginate(max($count, 1))->withQueryString();
+        } else {
+            $settlements = $settlementsQuery->paginate((int) $perPage)->withQueryString();
         }
 
-        // Apply supplier scoping for non-admin users
-        if ($userSupplierId !== null) {
-            $filterBaseQuery->where('supplier_id', $userSupplierId);
-        }
+        // Totals use the same filters (all pages) as the list.
+        $filterQuery = QueryBuilder::for($visible())->allowedFilters($allowedFilters)->select('sales_settlements.id');
+        $ids = fn () => $filterQuery->clone()->getEloquentBuilder();
 
-        $filterQuery = QueryBuilder::for($filterBaseQuery)
-            ->allowedFilters([
-                AllowedFilter::partial('settlement_number'),
-                AllowedFilter::exact('employee_id'),
-                AllowedFilter::exact('vehicle_id'),
-                AllowedFilter::exact('warehouse_id'),
-                AllowedFilter::exact('status'),
-                AllowedFilter::exact('created_by'),
-                AllowedFilter::exact('supplier_id'),
-                AllowedFilter::scope('settlement_date_from'),
-                AllowedFilter::scope('settlement_date_to'),
-                AllowedFilter::callback('product_id', function ($query, $value) {
-                    $query->whereHas('items', function ($q) use ($value) {
-                        $q->where('product_id', $value);
-                    });
-                }),
-            ])
-            ->select('id');
+        $totalSales = SalesSettlementItem::whereIn('sales_settlement_id', $ids())->sum('total_sales_value');
+        $totalCogs = SalesSettlementItem::whereIn('sales_settlement_id', $ids())->sum('total_cogs');
+        $totalSoldQty = SalesSettlementItem::whereIn('sales_settlement_id', $ids())->sum('quantity_sold');
+        $totalReturnedQty = SalesSettlementItem::whereIn('sales_settlement_id', $ids())->sum('quantity_returned');
+        $totalShortageQty = SalesSettlementItem::whereIn('sales_settlement_id', $ids())->sum('quantity_shortage');
 
-        // We use the filter query as a subquery constraint
-        // Note: Using clone logic or re-instantiating is safer to avoid modifying the reference if used multiple times,
-        // but here we just pass the builder/query object to whereIn which compiles it to a subquery.
-
-        $totalSales = SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
-            ->sum('total_sales_value');
-
-        $totalCogs = SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
-            ->sum('total_cogs');
-
-        $totalSoldQty = SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
-            ->sum('quantity_sold');
-
-        $totalReturnedQty = SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
-            ->sum('quantity_returned');
-
-        $totalShortageQty = SalesSettlementItem::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())
-            ->sum('quantity_shortage');
-
-        // Expenses Summation
-        // The sales_settlement_expenses table contains ALL expenses including the totals of the breakdown tables.
-        // So we only need to sum this one table to avoid double counting.
-        $totalExpenses = SalesSettlementExpense::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
+        // The expenses table holds every expense, including the totals of the breakdown tables,
+        // so summing this one table avoids double counting.
+        $totalExpenses = SalesSettlementExpense::whereIn('sales_settlement_id', $ids())->sum('amount');
 
         $totalGrossProfit = $totalSales - $totalCogs;
         $totalNetProfit = $totalGrossProfit - $totalExpenses;
 
-        // Cash/Bank details still need to be summed. For accuracy, we should sum from their respective tables too if possible,
-        // or rely on the cached columns if we trust them.
-        // User asked to verify tables. Let's try to sum tables if they exist.
-        // sales_settlement_cash_denominations (total_amount), bank_transfers, cheques, recoveries, credit_sales.
+        $totalCashCollected = SalesSettlementCashDenomination::whereIn('sales_settlement_id', $ids())->sum('total_amount');
+        $totalBankTransfers = SalesSettlementBankTransfer::whereIn('sales_settlement_id', $ids())->sum('amount');
+        $totalCheques = SalesSettlementCheque::whereIn('sales_settlement_id', $ids())->sum('amount');
+        $totalRecoveries = SalesSettlementRecovery::whereIn('sales_settlement_id', $ids())->sum('amount');
+        $totalCreditSales = SalesSettlementCreditSale::whereIn('sales_settlement_id', $ids())->sum('sale_amount');
+        $totalBankSlips = SalesSettlementBankSlip::whereIn('sales_settlement_id', $ids())->sum('amount');
 
-        $totalCashCollected = SalesSettlementCashDenomination::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('total_amount');
-        $totalBankTransfers = SalesSettlementBankTransfer::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
-        $totalCheques = SalesSettlementCheque::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
-        $totalRecoveries = SalesSettlementRecovery::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('amount');
-        $totalCreditSales = SalesSettlementCreditSale::whereIn('sales_settlement_id', $filterQuery->clone()->getEloquentBuilder())->sum('sale_amount');
-
-        // Cash Sales (Gross) = Total Sales - Credit - Cheque - Bank
-        // Note: This logic depends on business rule. Usually Cash Sales is stored.
-        // But if we want to calculate it:
         // Cash Sales = Total Sales - Credit Sales - Bank Transfers - Cheques
         $totalCashSales = $totalSales - $totalCreditSales - $totalBankTransfers - $totalCheques;
-
-        // Cash To Deposit = Cash Collected
-        $totalCashDeposit = $totalCashCollected;
 
         $totals = (object) [
             'total_sold_qty' => $totalSoldQty,
@@ -240,10 +214,54 @@ class SalesSettlementController extends Controller implements HasMiddleware
             'total_cheque_sales' => $totalCheques,
             'total_bank_transfer' => $totalBankTransfers,
             'total_recoveries' => $totalRecoveries,
-            'total_cash_deposit' => $totalCashDeposit,
+            'total_cash_deposit' => $totalCashCollected,
+            'total_bank_slips' => $totalBankSlips,
         ];
 
-        $employees = Employee::where('is_active', true)->orderBy('name')->get(['id', 'name']);
+        // Card and tab counts use every filter except status, so they show what each tab would hold.
+        $statsRequest = new Request(['filter' => Arr::except((array) $request->input('filter', []), ['status'])]);
+        $statsQuery = fn () => QueryBuilder::for($visible(), $statsRequest)->allowedFilters($allowedFilters)->getEloquentBuilder()->reorder();
+        $byStatus = $statsQuery()->groupBy('status')->selectRaw('status, COUNT(*) as settlements')->pluck('settlements', 'status');
+        $draftSales = (float) SalesSettlementItem::whereIn('sales_settlement_id', $statsQuery()->where('status', 'draft')->select('sales_settlements.id'))->sum('total_sales_value');
+        $stats = [
+            'total' => (int) $byStatus->sum(),
+            'draft' => (int) ($byStatus['draft'] ?? 0),
+            'verified' => (int) ($byStatus['verified'] ?? 0),
+            'posted' => (int) ($byStatus['posted'] ?? 0),
+            'draft_sales' => $draftSales,
+        ];
+
+        // Vans loaded but not settled yet (any date), for the "waiting" card.
+        $waitingVans = GoodsIssue::query()
+            ->where('status', 'issued')
+            ->whereDoesntHave('settlement', fn ($q) => $q->whereIn('status', ['verified', 'posted']))
+            ->when(! auth()->user()->can('goods-issue-view-all'), fn ($query) => $query->where('issued_by', auth()->id()))
+            ->when($userSupplierId, fn ($query, $supplierId) => $query->where('supplier_id', $supplierId))
+            ->selectRaw('COUNT(*) as issues, COALESCE(SUM(total_value), 0) as value')
+            ->first();
+
+        // Salesman-wise sales of what the filters show.
+        $bySalesman = QueryBuilder::for($visible())
+            ->allowedFilters($allowedFilters)
+            ->getEloquentBuilder()
+            ->reorder()
+            ->join('employees', 'employees.id', '=', 'sales_settlements.employee_id')
+            ->leftJoinSub(
+                SalesSettlementItem::query()->groupBy('sales_settlement_id')->selectRaw('sales_settlement_id, SUM(total_sales_value) as sales, SUM(total_cogs) as cogs'),
+                'item_totals',
+                'item_totals.sales_settlement_id',
+                '=',
+                'sales_settlements.id'
+            )
+            ->groupBy('sales_settlements.employee_id', 'employees.name')
+            ->selectRaw('sales_settlements.employee_id, employees.name, COUNT(*) as settlements, COALESCE(SUM(item_totals.sales), 0) as sales, COALESCE(SUM(item_totals.cogs), 0) as cogs')
+            ->selectRaw("SUM(CASE WHEN sales_settlements.status = 'draft' THEN 1 ELSE 0 END) as drafts")
+            ->orderByDesc('sales')
+            ->get();
+
+        $employees = Employee::where('is_active', true)
+            ->when($userSupplierId, fn ($query, $supplierId) => $query->where('supplier_id', $supplierId))
+            ->orderBy('name')->get(['id', 'name']);
         $vehicles = Vehicle::where('is_active', true)->orderBy('registration_number')->get(['id', 'registration_number']);
         $warehouses = Warehouse::orderBy('warehouse_name')->get(['id', 'warehouse_name']);
 
@@ -258,6 +276,10 @@ class SalesSettlementController extends Controller implements HasMiddleware
         return view('sales-settlements.index', [
             'settlements' => $settlements,
             'totals' => $totals,
+            'stats' => $stats,
+            'waitingVans' => $waitingVans,
+            'bySalesman' => $bySalesman,
+            'perPage' => $perPage,
             'employees' => $employees,
             'vehicles' => $vehicles,
             'warehouses' => $warehouses,

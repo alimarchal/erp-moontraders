@@ -165,4 +165,30 @@ it('does not double-count advance tax in short/excess calculation', function () 
     // The page should show 0.88 (excess), NOT the double-counted 2,000.88
     $response->assertSee('0.88');
     $response->assertDontSee('2,000.88');
+
+    // The screen summary above the sheet gives the same result.
+    $response->assertSeeInOrder(['Cash check', 'Excess Rs 0.88', 'expected Rs 49,999', 'submitted Rs 50,000']);
+    $response->assertSee(route('sales-settlements.show', [$settlement, 'layout' => 'print2']), false);
+    $response->assertSee(e(route('sales-settlements.show', [$settlement, 'layout' => 'print2', 'format' => 'pdf', 'orientation' => 'portrait'])), false);
+    $response->assertSee(e(route('sales-settlements.show', [$settlement, 'layout' => 'print2', 'format' => 'pdf', 'orientation' => 'landscape'])), false);
+
+    // Print 2 (alternative printable sheet) shows the same figures and every section.
+    $print = $this->actingAs($user)
+        ->get(route('sales-settlements.show', [$settlement, 'layout' => 'print2']));
+
+    $print->assertSuccessful();
+    $print->assertSee('EXCESS 0.88');
+    $print->assertDontSee('2,000.88');
+    $print->assertSee(['49,999.12', '50,000.00', '130913', 'ATI-00001', 'TC002', 'AMR Liquid', 'Advance Tax']);
+    $print->assertSeeInOrder(['Stock &amp; Sales', 'Credit Sales', 'Recoveries', 'Expense Details', 'Group expenses', 'Cash check', 'Bank slips', 'Physical cash', 'Sales Summary &amp; Profit', 'Credit Report', 'Authorized Signature'], false);
+    $print->assertSee(e(route('sales-settlements.show', [$settlement, 'layout' => 'print2', 'format' => 'pdf', 'orientation' => 'landscape'])), false);
+
+    // The same sheet downloads as an A4 PDF.
+    $pdf = $this->actingAs($user)
+        ->get(route('sales-settlements.show', [$settlement, 'layout' => 'print2', 'format' => 'pdf', 'orientation' => 'landscape']));
+
+    $pdf->assertSuccessful();
+    $pdf->assertHeader('content-type', 'application/pdf');
+    expect($pdf->headers->get('content-disposition'))->toContain($settlement->settlement_number.'.pdf');
+    expect(substr($pdf->getContent(), 0, 4))->toBe('%PDF');
 });

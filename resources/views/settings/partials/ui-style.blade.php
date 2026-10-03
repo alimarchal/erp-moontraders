@@ -10,8 +10,8 @@
         --ak-green: #15803d; --ak-green-bg: #dcfce7; --ak-amber: #b45309; --ak-amber-bg: #fef3c7;
         --ak-slate-bg: #f1f5f9; --ak-border: #cbd5e1; --ak-border-strong: #94a3b8; --ak-line: #e2e8f0;
         --ak-text: #0f172a; --ak-muted: #475569; --ak-soft: #f8fafc; --ak-radius: 12px;
-        --ak-shadow: 0 1px 2px rgba(15,23,42,.06), 0 1px 3px rgba(15,23,42,.08);
-        --ak-shadow-hover: 0 4px 6px rgba(15,23,42,.06), 0 10px 20px rgba(15,23,42,.08);
+        --ak-shadow: 0 1px 3px rgba(15,23,42,.08), 0 6px 18px -6px rgba(15,23,42,.14);
+        --ak-shadow-hover: 0 4px 8px rgba(15,23,42,.08), 0 14px 28px -8px rgba(15,23,42,.18);
     }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
     [x-cloak] { display: none !important; }

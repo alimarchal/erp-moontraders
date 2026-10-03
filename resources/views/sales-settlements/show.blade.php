@@ -1,43 +1,52 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex justify-between items-center">
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Settlement Details') }}
-            </h2>
-            <div class="flex space-x-2 no-print">
+        @php
+            $ssTone = ['draft' => 'ak-status-amber', 'verified' => 'ak-status-green', 'posted' => 'ak-status-green'][$settlement->status] ?? 'ak-status-red';
+        @endphp
+        <div class="ak-head">
+            <div>
+                <nav class="ak-crumbs" aria-label="Breadcrumb">
+                    <a href="{{ route('sales-settlements.index') }}">Sales Settlements</a><span aria-hidden="true">›</span>
+                    <span>{{ $settlement->settlement_number }}</span>
+                </nav>
+                <div class="ak-person" style="align-items:center; margin-top:6px">
+                    <span class="ak-avatar" style="width:48px; height:48px" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 0 0 2.25-2.25V6.11c0-1.13-.84-2.09-1.96-2.18a48.42 48.42 0 0 0-1.12-.08m-5.8 0c-.07.21-.1.45-.1.69 0 .41.34.75.75.75h4.5a.75.75 0 0 0 .75-.75 2.25 2.25 0 0 0-.1-.69m-5.8 0A2.25 2.25 0 0 1 13.5 2.25H15c1.01 0 1.87.67 2.15 1.6m-5.8 0c-.38.02-.75.05-1.12.08C9.1 4.02 8.25 4.98 8.25 6.11V8.25m0 0H4.88c-.62 0-1.13.5-1.13 1.13v11.25c0 .62.5 1.12 1.13 1.12h9.75c.62 0 1.12-.5 1.12-1.12V9.38c0-.62-.5-1.13-1.12-1.13H8.25Z" /></svg>
+                    </span>
+                    <div>
+                        <h1 class="ak-title" style="margin:0">Settlement {{ $settlement->settlement_number }}</h1>
+                        <p class="ak-sub" style="margin-top:2px">
+                            {{ $settlement->settlement_date?->format('l, d M Y') }}
+                            &middot; {{ $settlement->employee->name ?? '—' }} &middot; {{ $settlement->vehicle->registration_number ?? '' }}
+                            &middot; {{ $settlement->supplier?->supplier_name ?? $settlement->goodsIssue?->supplier?->supplier_name ?? '' }}
+                            &middot; <span class="ak-status {{ $ssTone }}"><i aria-hidden="true"></i>{{ ucfirst($settlement->status) }}</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="ak-head-actions no-print">
+                <a href="{{ route('sales-settlements.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to Settlements</a>
+                <a href="javascript:window.location.reload();" class="ak-btn ak-btn-outline" title="Refresh">Refresh</a>
+                {{-- Print loads the printable sheet (layout=print2) in a hidden frame and opens the print dialog with it --}}
+                <button type="button" class="ak-btn ak-btn-outline" data-print-url="{{ route('sales-settlements.show', [$settlement, 'layout' => 'print2']) }}" onclick="ssPrintSheet(this)" title="Print the settlement sheet (A4, portrait or landscape)">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.83c-.24.03-.48.06-.72.1m.72-.1a42.4 42.4 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.17c.24.03.48.06.72.1m-.72-.1L17.66 18m0 0 .23 2.5a1.13 1.13 0 0 1-1.12 1.24H7.23a1.13 1.13 0 0 1-1.12-1.24L6.34 18m11.32 0h1.09A2.25 2.25 0 0 0 21 15.75V9.46c0-1.08-.77-2.01-1.84-2.18a48 48 0 0 0-1.41-.2M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.46c0-1.08.77-2.01 1.84-2.18.47-.07.94-.14 1.41-.2m0 0a48.6 48.6 0 0 1 11.5 0m-11.5 0V3.38c0-.62.5-1.13 1.13-1.13h9.24c.63 0 1.13.5 1.13 1.13v3.7M18 10.5h.01" /></svg>
+                    <span>Print</span>
+                </button>
+                @foreach (['portrait' => 'PDF Portrait', 'landscape' => 'PDF Landscape'] as $pdfOrientation => $pdfLabel)
+                    <a href="{{ route('sales-settlements.show', [$settlement, 'layout' => 'print2', 'format' => 'pdf', 'orientation' => $pdfOrientation]) }}" class="ak-btn ak-btn-outline" title="Download the settlement sheet as an A4 {{ $pdfOrientation }} PDF">
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                        {{ $pdfLabel }}
+                    </a>
+                @endforeach
                 @if ($settlement->status === 'draft')
                     @can('sales-settlement-edit')
-                        <a href="{{ route('sales-settlements.edit', $settlement) }}"
-                            class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                            title="Edit">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="size-6">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931ZM16.5 7.125 18.375 9" />
-                            </svg>
-                        </a>
-                    @endcan
-                    @can('sales-settlement-post')
-                        <button type="button" x-data x-on:click="$dispatch('open-sales-settlement-post-modal')"
-                            class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                            title="Post Settlement">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="size-6">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M9 12.75 11.25 15 15 9.75m6 2.25a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                            </svg>
-                        </button>
+                        <a href="{{ route('sales-settlements.edit', $settlement) }}" class="ak-btn ak-btn-outline">Edit</a>
                     @endcan
                     @can('sales-settlement-delete')
-                        <button type="button" x-data x-on:click="$dispatch('open-sales-settlement-delete-modal')"
-                            class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                            title="Delete Draft">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                                stroke="currentColor" class="size-6">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                            </svg>
-                        </button>
+                        <button type="button" x-data x-on:click="$dispatch('open-sales-settlement-delete-modal')" class="ak-btn ak-btn-danger-outline">Delete Draft</button>
+                    @endcan
+                    @can('sales-settlement-post')
+                        <button type="button" x-data x-on:click="$dispatch('open-sales-settlement-post-modal')" class="ak-btn ak-btn-success">Post Settlement</button>
                     @endcan
                 @endif
                 @if ($settlement->status === 'posted')
@@ -59,44 +68,9 @@
                         </form> --}}
                     @endcan
                     @role('super-admin')
-                    <a href="{{ route('sales-settlements.edit-special', $settlement->id) }}"
-                        class="inline-flex items-center px-4 py-2 bg-amber-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-amber-700 transition no-print"
-                        title="Special Edit">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                            stroke="currentColor" class="size-6">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                    </a>
+                        <a href="{{ route('sales-settlements.edit-special', $settlement->id) }}" class="ak-btn ak-btn-outline" style="color:#b45309; border-color:#fcd34d">Special Edit</a>
                     @endrole
                 @endif
-                <a href="javascript:window.location.reload();"
-                    class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                    title="Refresh">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-                    </svg>
-                </a>
-                <a href="{{ route('sales-settlements.index') }}"
-                    class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-800 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                    title="Back">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
-                    </svg>
-                </a>
-                <button type="button" onclick="window.print();"
-                    class="inline-flex items-center px-4 py-2 bg-blue-950 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-green-950 focus:bg-green-800 active:bg-green-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition ease-in-out duration-150"
-                    title="Print">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
-                        stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096m-.72-.096L17.66 18m0 0 .229 2.523a1.125 1.125 0 0 1-1.12 1.227H7.231c-.662 0-1.18-.568-1.12-1.227L6.34 18m11.318 0h1.091A2.25 2.25 0 0 0 21 15.75V9.456c0-1.081-.768-2.015-1.837-2.175a48.055 48.055 0 0 0-1.913-.247M6.34 18H5.25A2.25 2.25 0 0 1 3 15.75V9.456c0-1.081.768-2.015 1.837-2.175a48.041 48.041 0 0 1 1.913-.247m10.5 0a48.536 48.536 0 0 0-10.5 0m10.5 0V3.375c0-.621-.504-1.125-1.125-1.125h-8.25c-.621 0-1.125.504-1.125 1.125v3.659M18 10.5h.008v.008H18V10.5Zm-3 0h.008v.008H15V10.5Z" />
-                    </svg>
-                </button>
             </div>
         </div>
     </x-slot>
@@ -143,7 +117,7 @@
                 }
 
                 .max-w-8xl,
-                .max-w-8xl {
+                .max-w-7xl {
                     max-width: 100% !important;
                     width: 100% !important;
                     margin: 0 !important;
@@ -246,6 +220,36 @@
                 .page-footer {
                     display: none;
                 }
+
+                /* Side-by-side tables (two or three across) get a slightly smaller font so the
+                   last column is not cut off at the page edge; long names wrap inside their cell. */
+                .grid .report-table,
+                .flex .report-table {
+                    font-size: 10px !important;
+                    line-height: 1.15;
+                }
+
+                .grid .report-table th,
+                .grid .report-table td,
+                .flex .report-table th,
+                .flex .report-table td {
+                    padding: 1px 2px !important;
+                    word-break: break-word;
+                }
+
+                .grid > div,
+                .flex > div {
+                    min-width: 0;
+                }
+
+                /* Keep a box title with its tables, and do not leave a blank page after the signatures */
+                .ss-keep { break-inside: avoid; page-break-inside: avoid; }
+                h3, h4 { break-after: avoid; page-break-after: avoid; }
+                .py-6 { padding-top: 0 !important; padding-bottom: 0 !important; }
+                .ss-sign { margin-top: 2.5rem !important; }
+                .min-h-screen { min-height: 0 !important; }
+                .fixed, [x-cloak] { display: none !important; }
+                main > div:last-child > *:last-child { margin-bottom: 0 !important; }
 
                 /* Force grid for summary tables in print */
                 .summary-grid {
@@ -368,9 +372,96 @@
         $bfOutValue = $totalAvailableValue - $valueTotals['sold_value'] - $valueTotals['returned_value'] - $valueTotals['shortage_value'];
     @endphp
 
+    @include('settings.partials.ui-style')
+    <style>
+        .ss-summary { display: flex; flex-direction: column; gap: 14px; margin-bottom: 16px; }
+        .ss-strip { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+        .ss-chip { padding: 10px 12px; border: 1px solid var(--ak-border); border-radius: 10px; background: #fff; box-shadow: var(--ak-shadow); font-size: 12.5px; color: var(--ak-muted); }
+        .ss-chip b { display: block; font-size: 15px; color: var(--ak-text); font-variant-numeric: tabular-nums; }
+        .ss-chip.is-bad b { color: #b91c1c; }
+        .ss-links { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; }
+        .ss-links span { color: var(--ak-muted); font-weight: 600; margin-right: 2px; }
+        .ss-links a { padding: 5px 10px; border: 1px solid var(--ak-border); border-radius: 999px; color: var(--ak-navy); text-decoration: none; background: #fff; font-weight: 600; }
+        .ss-links a:hover { background: var(--ak-soft); }
+        .ss-short { color: #b91c1c !important; }
+        .ss-excess { color: #047857 !important; }
+        @media print { .ss-summary { display: none !important; } }
+    </style>
+
     <div class="py-6">
-        <div class="max-w-8xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <x-status-message class="mb-4 shadow-md no-print" />
+
+            {{-- Screen summary (not printed): the key figures of the sheet below, and where to go next --}}
+            @php
+                $ssUser = auth()->user();
+                $submittedTotal = $actualPhysicalCash + $chequesTotal + $bankSlipsTotal;
+                $ssSince = '2020-01-01';
+                $ssToday = now()->toDateString();
+                $ssLinks = array_filter([
+                    $settlement->goodsIssue && $ssUser->can('goods-issue-list') ? ['Goods Issue '.$settlement->goodsIssue->issue_number, route('goods-issues.show', $settlement->goodsIssue)] : null,
+                    $settlement->journalEntry && $ssUser->can('journal-entry-list') ? ['Journal entry #'.$settlement->journalEntry->id, route('journal-entries.show', $settlement->journalEntry)] : null,
+                    $ssUser->can('report-audit-creditors-ledger') ? [($settlement->employee->name ?? 'Salesman').'\'s customer credit', route('reports.creditors-ledger.index', ['filter' => ['employee_id' => $settlement->employee_id, 'has_balance' => 'yes']])] : null,
+                    $ssUser->can('report-inventory-van-stock-ledger') && $settlement->vehicle_id ? ['Van stock ledger', route('reports.van-stock-ledger.vehicle-ledger', $settlement->vehicle_id)] : null,
+                    $ssUser->can('sales-settlement-list') && $settlement->vehicle_id ? ['Settlements of this vehicle', route('sales-settlements.index', ['filter' => ['vehicle_id' => $settlement->vehicle_id, 'settlement_date_from' => $ssSince, 'settlement_date_to' => $ssToday]])] : null,
+                    $ssUser->can('report-sales-daily-sales') ? ['Daily sales report', route('reports.daily-sales.index', ['filter' => ['start_date' => $settlement->settlement_date?->toDateString(), 'end_date' => $settlement->settlement_date?->toDateString()]])] : null,
+                ]);
+            @endphp
+            <div class="ss-summary no-print">
+                <section class="ak-kpis" aria-label="Settlement summary">
+                    <div class="ak-kpi" title="Rs {{ number_format($netSale, 2) }}">
+                        <span class="ak-kpi-icon ak-tone-green" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18 9 11.25l4.31 4.31a11.95 11.95 0 0 1 5.81-5.52l2.74-1.22m0 0-5.94-2.28m5.94 2.28-2.28 5.94" /></svg></span>
+                        <span class="ak-kpi-body">
+                            <span class="ak-kpi-label">Net sale (sold value)</span>
+                            <span class="ak-kpi-value">Rs {{ number_format($netSale) }}</span>
+                            <span class="ak-kpi-hint">cash {{ number_format($theoreticalCashSales) }} &middot; credit {{ number_format($creditSalesAmount) }} &middot; bank {{ number_format($bankSalesAmount) }}{{ $chequesTotal > 0 ? ' · cheques '.number_format($chequesTotal) : '' }}</span>
+                        </span>
+                    </div>
+                    <div class="ak-kpi" title="Rs {{ number_format($recoveryTotal, 2) }}">
+                        <span class="ak-kpi-icon ak-tone-navy" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
+                        <span class="ak-kpi-body">
+                            <span class="ak-kpi-label">Credit recovered</span>
+                            <span class="ak-kpi-value">Rs {{ number_format($recoveryTotal) }}</span>
+                            <span class="ak-kpi-hint">{{ $settlement->recoveries->count() }} {{ \Illuminate\Support\Str::plural('recovery', $settlement->recoveries->count()) }} &middot; cash {{ number_format($recoveryCash) }} &middot; bank {{ number_format($recoveryBank) }}</span>
+                        </span>
+                    </div>
+                    <div class="ak-kpi">
+                        <span class="ak-kpi-icon {{ round($shortExcess, 2) < 0 ? 'ak-tone-amber' : 'ak-tone-green' }}" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0 1 15.8 2.1c.73.2 1.45-.34 1.45-1.1V18.75M3.75 4.5v.75A.75.75 0 0 1 3 6h-.75m0 0v-.38c0-.62.5-1.12 1.13-1.12H20.25M2.25 6v9m18-10.5v.75c0 .41.34.75.75.75h.75m-1.5-1.5h.38c.62 0 1.12.5 1.12 1.13v9.75c0 .62-.5 1.12-1.12 1.12h-.38m1.5-1.5H21a.75.75 0 0 0-.75.75v.75m0 0H3.75m0 0h-.38a1.13 1.13 0 0 1-1.12-1.12V15m1.5 1.5v-.75A.75.75 0 0 0 3 15h-.75M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg></span>
+                        <span class="ak-kpi-body">
+                            <span class="ak-kpi-label">Cash check</span>
+                            @php $roundedShortExcess = round($shortExcess, 2); @endphp
+                            <span class="ak-kpi-value {{ $roundedShortExcess < 0 ? 'ss-short' : ($roundedShortExcess > 0 ? 'ss-excess' : '') }}">{{ $roundedShortExcess == 0 ? 'Balanced' : ($roundedShortExcess < 0 ? 'Short Rs '.number_format(abs($roundedShortExcess), 2) : 'Excess Rs '.number_format($roundedShortExcess, 2)) }}</span>
+                            <span class="ak-kpi-hint">expected Rs {{ number_format($expectedCashNet) }} &middot; submitted Rs {{ number_format($submittedTotal) }} (cash {{ number_format($actualPhysicalCash) }}{{ $chequesTotal > 0 ? ' + cheques '.number_format($chequesTotal) : '' }}{{ $bankSlipsTotal > 0 ? ' + slips '.number_format($bankSlipsTotal) : '' }})</span>
+                        </span>
+                    </div>
+                    <div class="ak-kpi">
+                        <span class="ak-kpi-icon ak-tone-slate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.13C3 12.5 3.5 12 4.13 12h2.25c.62 0 1.12.5 1.12 1.13v6.75C7.5 20.5 7 21 6.38 21H4.13A1.13 1.13 0 0 1 3 19.88v-6.75ZM9.75 8.63c0-.63.5-1.13 1.13-1.13h2.25c.62 0 1.12.5 1.12 1.13v11.25c0 .62-.5 1.12-1.12 1.12h-2.25a1.13 1.13 0 0 1-1.13-1.12V8.63ZM16.5 4.13c0-.63.5-1.13 1.13-1.13h2.25C20.5 3 21 3.5 21 4.13v15.75c0 .62-.5 1.12-1.12 1.12h-2.25a1.13 1.13 0 0 1-1.13-1.12V4.13Z" /></svg></span>
+                        <span class="ak-kpi-body">
+                            <span class="ak-kpi-label">Gross profit</span>
+                            <span class="ak-kpi-value">Rs {{ number_format($grossProfit) }}</span>
+                            <span class="ak-kpi-hint">{{ number_format($grossMargin, 1) }}% margin &middot; after expenses Rs {{ number_format($netProfit) }} ({{ number_format($netMargin, 1) }}%)</span>
+                        </span>
+                    </div>
+                </section>
+
+                <div class="ss-strip" aria-label="Stock on this settlement">
+                    <div class="ss-chip">Issued<b>{{ number_format($valueTotals['issued_qty'], 0) }} pcs</b>Rs {{ number_format($valueTotals['issued_value']) }}</div>
+                    <div class="ss-chip">Sold<b>{{ number_format($valueTotals['sold_qty'], 0) }} pcs</b>Rs {{ number_format($valueTotals['sold_value']) }}</div>
+                    <div class="ss-chip">Returned<b>{{ number_format($valueTotals['returned_qty'], 0) }} pcs</b>Rs {{ number_format($valueTotals['returned_value']) }}</div>
+                    <div class="ss-chip{{ $valueTotals['shortage_qty'] > 0 ? ' is-bad' : '' }}">Shortage<b>{{ number_format($valueTotals['shortage_qty'], 0) }} pcs</b>Rs {{ number_format($valueTotals['shortage_value']) }}</div>
+                    <div class="ss-chip">Expenses<b>Rs {{ number_format($totalExpenses) }}</b>{{ $settlement->expenses->count() }} {{ \Illuminate\Support\Str::plural('entry', $settlement->expenses->count()) }}</div>
+                    <div class="ss-chip">Credit given<b>Rs {{ number_format($creditSalesAmount) }}</b>{{ $settlement->creditSales->count() }} {{ \Illuminate\Support\Str::plural('customer', $settlement->creditSales->count()) }}</div>
+                </div>
+
+                @if ($ssLinks)
+                    <nav class="ss-links" aria-label="Related">
+                        <span>Related:</span>
+                        @foreach ($ssLinks as [$label, $url])
+                            <a href="{{ $url }}">{{ $label }} →</a>
+                        @endforeach
+                    </nav>
+                @endif
+            </div>
 
             @if ($isPaymentBreakdownExceeded)
                 <div class="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900 shadow-sm">
@@ -418,7 +509,7 @@
                         </tr>
                         <tr>
                             <td class="text-left font-semibold">Goods Issue:</td>
-                            <td class="text-left">{{ $settlement->goodsIssue->issue_number }}</td>
+                            <td class="text-left">@can('goods-issue-list')<a href="{{ route('goods-issues.show', $settlement->goodsIssue) }}" class="text-blue-700 underline print:text-black print:no-underline">{{ $settlement->goodsIssue->issue_number }}</a>@else{{ $settlement->goodsIssue->issue_number }}@endcan</td>
                             <td class="text-left font-semibold">GI Date/Time:</td>
                             <td class="text-left">
                                 {{ $settlement->goodsIssue->issue_date ? \Carbon\Carbon::parse($settlement->goodsIssue->issue_date)->format('d-M-Y') : '' }}
@@ -1157,7 +1248,7 @@
 
                     {{-- Other Expenses & Cash Detail Row --}}
                     {{-- Group 1: Expenses & Collections Detail --}}
-                    <div class="border-2 border-black rounded-lg px-2 pb-2 mt-4">
+                    <div class="border-2 border-black rounded-lg px-2 pb-2 mt-4 ss-keep">
                         <h3 class="font-bold text-md text-center text-black pb-1 border-b border-black mb-2">Expenses &
                             Cash/Bank Deposits Detail</h3>
 
@@ -1321,7 +1412,7 @@
                     {{-- Financial Summary --}}
                     {{-- Financial Summary Grid --}}
                     {{-- Group 2: Sales & Collection Summary --}}
-                    <div class="border-2 border-black rounded-lg px-2 pb-2 mt-4">
+                    <div class="border-2 border-black rounded-lg px-2 pb-2 mt-4 ss-keep">
                         <h3 class="font-bold text-md text-center text-black pb-1 border-b border-black mb-2">Sales &
                             Collection Summary</h3>
 
@@ -1736,7 +1827,7 @@
                             Posted on {{ $settlement->posted_at->format('d M Y, h:i A') }}
                             @if ($settlement->journalEntry)
                                 | Journal Entry: <a href="{{ route('journal-entries.show', $settlement->journalEntry) }}"
-                                    class="underline hover:text-blue-600">{{ $settlement->journalEntry->entry_number }}</a>
+                                    class="underline hover:text-blue-600">{{ $settlement->journalEntry->entry_number ?? 'JE #'.$settlement->journalEntry->id }}</a>
                             @endif
                         </div>
                     @endif
@@ -1745,7 +1836,7 @@
 
 
                     {{-- Final Signature Area --}}
-                    <div class="mt-16 grid grid-cols-3 gap-8 text-center print:flex print:justify-between print:mt-32"
+                    <div class="ss-sign mt-16 grid grid-cols-3 gap-8 text-center print:flex print:justify-between"
                         style="page-break-inside: avoid;">
                         <div class="border-t border-black pt-2">
                             <p class="font-bold text-sm">Prepared By</p>
@@ -1835,4 +1926,37 @@
                 </script>
             @endcan
         @endif
+    <script>
+        /** Loads the printable sheet in a hidden frame, then opens the browser print dialog for it. */
+        function ssPrintSheet(button) {
+            const label = button.querySelector('span');
+            const frameId = 'ss-print-frame';
+            document.getElementById(frameId)?.remove();
+            const frame = document.createElement('iframe');
+            frame.id = frameId;
+            frame.setAttribute('aria-hidden', 'true');
+            frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden';
+            label.textContent = 'Preparing…';
+            button.disabled = true;
+            frame.onload = () => {
+                label.textContent = 'Print';
+                button.disabled = false;
+                frame.contentWindow.focus();
+                frame.contentWindow.print();
+            };
+            frame.src = button.dataset.printUrl;
+            document.body.appendChild(frame);
+        }
+
+        // Ctrl+P / Cmd+P prints the same sheet as the Print button instead of the screen page.
+        document.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && event.key.toLowerCase() === 'p') {
+                const button = document.querySelector('[data-print-url]');
+                if (button && !button.disabled) {
+                    event.preventDefault();
+                    ssPrintSheet(button);
+                }
+            }
+        });
+    </script>
 </x-app-layout>

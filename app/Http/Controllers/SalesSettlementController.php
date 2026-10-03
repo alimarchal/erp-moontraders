@@ -35,6 +35,7 @@ use App\Models\Vehicle;
 use App\Models\Warehouse;
 use App\Services\DistributionService;
 use App\Services\SalesSettlementRevertService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -736,6 +737,25 @@ class SalesSettlementController extends Controller implements HasMiddleware
                     $bfMap[$productId] = 0;
                 }
             }
+        }
+
+        // ?layout=print2 opens the alternative printable sheet with the same data;
+        // adding format=pdf downloads that sheet as an A4 PDF (portrait or landscape).
+        if (request()->query('layout') === 'print2') {
+            $orientation = request()->query('orientation') === 'landscape' ? 'landscape' : 'portrait';
+            $data = ['settlement' => $salesSettlement, 'bfMap' => $bfMap, 'orientation' => $orientation];
+
+            if (request()->query('format') === 'pdf') {
+                $pdf = Pdf::loadView('sales-settlements.print2', $data + ['isPdf' => true])->setPaper('a4', $orientation);
+                $pdf->render();
+                $dompdf = $pdf->getDomPDF();
+                $canvas = $dompdf->getCanvas();
+                $canvas->page_text($canvas->get_width() - 80, $canvas->get_height() - 25, 'Page {PAGE_NUM} of {PAGE_COUNT}', $dompdf->getFontMetrics()->getFont('Helvetica'), 7);
+
+                return $pdf->download($salesSettlement->settlement_number.'.pdf');
+            }
+
+            return view('sales-settlements.print2', $data);
         }
 
         return view('sales-settlements.show', [

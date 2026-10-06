@@ -38,6 +38,7 @@
         'draftGrns' => ['Draft GRNs', 'goods-receipt-notes.index'],
         'draftPayments' => ['Draft Payments', 'supplier-payments.index'],
         'draftJournalEntries' => ['Draft Journal Entries', 'journal-entries.index'],
+        'pendingTickets' => ['Pending Tickets', 'tickets.index'],
     ];
     $hasAnySection = collect($sections)->contains(true);
     // Card header link to the related report, only when the user may open it.

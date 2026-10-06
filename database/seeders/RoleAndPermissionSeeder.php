@@ -63,6 +63,7 @@ class RoleAndPermissionSeeder extends Seeder
             'revenue-detail' => ['create', 'edit', 'delete', 'post'],
             'profit-category' => ['list', 'create', 'edit', 'delete'],
             'profit-after-category' => ['create', 'edit', 'delete', 'post'],
+            'ticket' => ['list', 'create', 'edit', 'delete', 'approve'],
 
             // Employee Salary Management
             'employee-salary' => ['list', 'create', 'edit', 'delete'],
@@ -108,7 +109,8 @@ class RoleAndPermissionSeeder extends Seeder
                 || str_starts_with($name, 'category-revenue-')
                 || str_starts_with($name, 'revenue-detail-')
                 || str_starts_with($name, 'profit-category-')
-                || str_starts_with($name, 'profit-after-category-');
+                || str_starts_with($name, 'profit-after-category-')
+                || str_starts_with($name, 'ticket-');
         }));
 
         // Accountant

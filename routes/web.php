@@ -91,6 +91,7 @@ use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\TaxCodeController;
 use App\Http\Controllers\TaxRateController;
 use App\Http\Controllers\TaxTransactionController;
+use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UomController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
@@ -652,6 +653,12 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
         Route::get('vehicles/export/excel', [VehicleController::class, 'exportExcel'])->name('vehicles.export.excel');
         Route::get('vehicles/export/pdf', [VehicleController::class, 'exportPdf'])->name('vehicles.export.pdf');
         Route::resource('vehicles', VehicleController::class);
+
+        /* Product change tickets (raised by company users, approved by admin) */
+        Route::get('tickets/products/{product}/batches', [TicketController::class, 'batches'])->name('tickets.product-batches');
+        Route::post('tickets/{ticket}/approve', [TicketController::class, 'approve'])->name('tickets.approve');
+        Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject'])->name('tickets.reject');
+        Route::resource('tickets', TicketController::class);
 
         /* Products & Inventory */
         Route::get('products/export/excel', [ProductController::class, 'exportExcel'])->name('products.export.excel');

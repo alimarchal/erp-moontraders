@@ -120,6 +120,7 @@ class TicketController extends Controller implements HasMiddleware
 
     public function approve(Request $request, Ticket $ticket): RedirectResponse
     {
+        $this->authorizeVisible($request, $ticket);
         $data = $request->validate(['review_remarks' => ['nullable', 'string', 'max:2000']]);
 
         $this->tickets->approve($ticket, $request->user(), $data['review_remarks'] ?? null);
@@ -130,6 +131,7 @@ class TicketController extends Controller implements HasMiddleware
 
     public function reject(Request $request, Ticket $ticket): RedirectResponse
     {
+        $this->authorizeVisible($request, $ticket);
         $data = $request->validate(['review_remarks' => ['required', 'string', 'max:2000']]);
 
         $this->tickets->reject($ticket, $request->user(), $data['review_remarks']);
@@ -167,7 +169,8 @@ class TicketController extends Controller implements HasMiddleware
 
     private function authorizeVisible(Request $request, Ticket $ticket): void
     {
-        abort_unless($ticket->canBeSeenBy($request->user()), 403);
+        // 404, not 403: a ticket of another company must not even reveal that it exists.
+        abort_unless($ticket->canBeSeenBy($request->user()), 404);
     }
 
     /**

@@ -260,7 +260,7 @@ it('keeps approval for users with the approve permission and company tickets pri
         ->assertOk()->assertSee('Our ticket')->assertSee('Their ticket');
 
     $foreign = Ticket::where('title', 'Their ticket')->first();
-    $this->actingAs($this->companyUser)->get(route('tickets.show', $foreign))->assertForbidden();
+    $this->actingAs($this->companyUser)->get(route('tickets.show', $foreign))->assertNotFound();
     $this->actingAs($this->companyUser)->get(route('tickets.show', $own))->assertOk()->assertSee('Ticket history');
 });
 
@@ -328,4 +328,44 @@ it('filters the ticket list by status tab and shows per-status counts', function
 it('renders the issue-style create form with its submit action', function () {
     $this->actingAs($this->companyUser)->get(route('tickets.create'))
         ->assertOk()->assertSee('data-product-picker', false)->assertSee('Submit for approval');
+});
+
+it('identifies tickets by uuid in every URL so ids cannot be guessed', function () {
+    $ticket = Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id]);
+
+    expect($ticket->uuid)->toBeString()->toMatch('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/')
+        ->and(route('tickets.show', $ticket))->toEndWith('/tickets/'.$ticket->uuid)
+        ->and(route('tickets.approve', $ticket))->toContain($ticket->uuid);
+
+    $this->actingAs($this->companyUser)->get(route('tickets.show', $ticket))->assertOk();
+    $this->actingAs($this->companyUser)->get('/tickets/'.$ticket->id)->assertNotFound();
+    $this->actingAs($this->companyUser)->get('/tickets/'.$ticket->id.'/edit')->assertNotFound();
+    $this->actingAs($this->admin)->post('/tickets/'.$ticket->id.'/approve')->assertNotFound();
+    $this->actingAs($this->admin)->get('/tickets/'.str_replace('-', '', $ticket->uuid))->assertNotFound();
+
+    $this->actingAs($this->admin)->get(route('tickets.index'))->assertOk()
+        ->assertSee(route('tickets.show', $ticket), false)->assertDontSee('/tickets/'.$ticket->id.'"', false);
+});
+
+it('hides other companies tickets completely, even when their uuid is known', function () {
+    $foreign = Ticket::factory()->create(['supplier_id' => $this->otherSupplier->id, 'title' => 'Their secret']);
+    $foreign->items()->create(['product_id' => $this->product->id, 'old_unit_sell_price' => 100, 'new_unit_sell_price' => 1]);
+
+    $scopedApprover = User::factory()->create(['supplier_id' => $this->supplier->id]);
+    $scopedApprover->givePermissionTo(['ticket-list', 'ticket-create', 'ticket-edit', 'ticket-delete', 'ticket-approve']);
+
+    foreach ([$this->companyUser, $scopedApprover] as $user) {
+        $this->actingAs($user);
+        $this->get(route('tickets.show', $foreign))->assertNotFound();
+        $this->get(route('tickets.edit', $foreign))->assertNotFound();
+        $this->delete(route('tickets.destroy', $foreign))->assertNotFound();
+
+        // Without ticket-approve the permission check answers first; with it, the company scope does.
+        $expected = $user->can('ticket-approve') ? 404 : 403;
+        $this->post(route('tickets.approve', $foreign))->assertStatus($expected);
+        $this->post(route('tickets.reject', $foreign), ['review_remarks' => 'x'])->assertStatus($expected);
+    }
+
+    expect($foreign->fresh()->status)->toBe(TicketStatus::Pending)
+        ->and($this->product->fresh()->unit_sell_price)->toBe('100.00');
 });

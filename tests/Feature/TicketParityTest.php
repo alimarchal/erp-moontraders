@@ -205,3 +205,36 @@ it('warns the approver when the product changed after the ticket was raised', fu
 
     expect($ticket->fresh()->status)->toBe(TicketStatus::Pending);
 });
+
+it('shows ticket approvals in the Product Price Change Log report just like product edits', function () {
+    Permission::findOrCreate('report-audit-product-price-change-log');
+    $this->admin->update(['name' => 'Approving Admin']);
+
+    $viaProduct = buildParityProduct($this);
+    $viaTicket = buildParityProduct($this);
+    $viaProduct['product']->update(['product_name' => 'Edited On Products Screen']);
+    $viaTicket['product']->update(['product_name' => 'Changed By Ticket']);
+
+    $this->actingAs($this->admin)->put(route('products.update', $viaProduct['product']), [
+        'product_code' => $viaProduct['product']->product_code, 'product_name' => 'Edited On Products Screen',
+        'uom_id' => $this->uom->id, 'valuation_method' => 'FIFO', 'supplier_id' => $this->supplier->id,
+        'unit_sell_price' => 125, 'cost_price' => 90, 'expiry_price' => 40, 'reorder_level' => 25, 'is_active' => 1,
+    ]);
+
+    $ticket = Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->admin->id]);
+    $ticket->items()->create([
+        'product_id' => $viaTicket['product']->id, 'apply_to_all_batches' => true,
+        'new_unit_sell_price' => 125, 'new_cost_price' => 90, 'new_expiry_price' => 40, 'new_reorder_level' => 25,
+    ]);
+    $this->post(route('tickets.approve', $ticket));
+
+    $report = $this->get(route('reports.product-price-change-log.index'))->assertSuccessful();
+
+    $report->assertSee('Edited On Products Screen')->assertSee('Changed By Ticket')->assertSee('Approving Admin');
+
+    $rows = fn ($product) => $report->viewData('logs')->filter(fn ($log) => $log->product_id === $product->id)
+        ->map(fn ($log) => [$log->price_type, (float) $log->old_price, (float) $log->new_price, $log->impacted_batch_count])
+        ->sort()->values()->all();
+
+    expect($rows($viaTicket['product']))->toHaveCount(3)->toEqual($rows($viaProduct['product']));
+});

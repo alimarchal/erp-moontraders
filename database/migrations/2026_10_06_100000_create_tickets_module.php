@@ -26,6 +26,7 @@ return new class extends Migration
     {
         Schema::create('tickets', function (Blueprint $table) {
             $table->id();
+            $table->uuid('uuid')->unique()->comment('Public identifier used in URLs; the numeric id is never exposed');
             $table->string('ticket_number')->nullable()->unique();
             $table->string('title');
             $table->string('type', 30)->index()->comment('price_update | new_sku | reactivate_sku');

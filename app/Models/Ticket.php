@@ -6,6 +6,7 @@ use App\Enums\TicketStatus;
 use App\Enums\TicketType;
 use Database\Factories\TicketFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Ticket extends Model
 {
     /** @use HasFactory<TicketFactory> */
-    use HasFactory;
+    use HasFactory, HasUuids;
 
     protected $fillable = [
         'ticket_number',
@@ -28,6 +29,24 @@ class Ticket extends Model
         'reviewed_at',
         'review_remarks',
     ];
+
+    /**
+     * Only the uuid is generated for new tickets; the numeric id stays the primary key for relations.
+     *
+     * @return array<int, string>
+     */
+    public function uniqueIds(): array
+    {
+        return ['uuid'];
+    }
+
+    /**
+     * URLs use the uuid so ticket ids cannot be guessed or enumerated.
+     */
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     protected function casts(): array
     {

@@ -35,13 +35,17 @@ class ProductPricingService
     }
 
     /**
-     * Push a new selling price to the given batches, their current-stock rows
-     * and the GRN lines that still have stock.
+     * Push a new selling price to batches, their current-stock rows and the GRN lines that still
+     * hold stock. This is the single implementation behind both the product edit screen and an
+     * approved ticket.
      *
-     * @param  Collection<int, int>  $batchIds
+     * @param  Collection<int, int>|null  $onlyBatchIds  null = every batch with stock; otherwise just these batches
+     * @return Collection<int, int> ids of the batches that were updated
      */
-    public function applySellingPriceToBatches(Product $product, Collection $batchIds, float|string $newPrice): void
+    public function cascadeSellingPrice(Product $product, float|string $newPrice, ?Collection $onlyBatchIds = null): Collection
     {
+        $batchIds = $onlyBatchIds ?? $this->batchIdsWithStock($product);
+
         if ($batchIds->isNotEmpty()) {
             DB::table('stock_batches')
                 ->whereIn('id', $batchIds)
@@ -56,11 +60,11 @@ class ProductPricingService
 
         $activeGrnItemIds = DB::table('stock_valuation_layers')
             ->where('product_id', $product->id)
-            ->whereIn('stock_batch_id', $batchIds)
             ->where('is_depleted', false)
             ->where('quantity_remaining', '>', 0)
             ->where('is_promotional', false)
             ->whereNotNull('grn_item_id')
+            ->when($onlyBatchIds !== null, fn ($query) => $query->whereIn('stock_batch_id', $batchIds))
             ->pluck('grn_item_id')
             ->unique();
 
@@ -70,6 +74,8 @@ class ProductPricingService
                 ->where('is_promotional', false)
                 ->update(['selling_price' => $newPrice]);
         }
+
+        return $batchIds;
     }
 
     /**

@@ -170,6 +170,9 @@
                 <div class="db-empty">
                     <b>Nothing to show yet</b>
                     <span>No module is enabled for your account. Ask the administrator to give you a role on Settings &rarr; Users.</span>
+                    @can('ticket-list')
+                        <a href="{{ route('tickets.index') }}" class="ak-btn" style="margin-top:12px">Open Tickets &rarr;</a>
+                    @endcan
                 </div>
             </div>
         @endunless

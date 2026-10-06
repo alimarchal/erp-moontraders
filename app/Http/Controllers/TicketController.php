@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Ticket;
 use App\Models\Uom;
+use App\Services\ProductPricingService;
 use App\Services\TicketService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +22,7 @@ use Illuminate\View\View;
 
 class TicketController extends Controller implements HasMiddleware
 {
-    public function __construct(private TicketService $tickets) {}
+    public function __construct(private TicketService $tickets, private ProductPricingService $pricing) {}
 
     public static function middleware(): array
     {
@@ -143,14 +144,23 @@ class TicketController extends Controller implements HasMiddleware
     {
         abort_unless($this->productsFor($request)->whereKey($product->id)->exists(), 403);
 
-        $batches = DB::table('current_stock_by_batch as csb')
-            ->join('stock_batches as sb', 'sb.id', '=', 'csb.stock_batch_id')
-            ->where('csb.product_id', $product->id)
-            ->where('csb.quantity_on_hand', '>', 0)
-            ->where('csb.is_promotional', false)
-            ->groupBy('sb.id', 'sb.batch_code', 'sb.expiry_date', 'sb.selling_price')
-            ->orderBy('sb.expiry_date')
-            ->get(['sb.id', 'sb.batch_code', 'sb.expiry_date', 'sb.selling_price', DB::raw('SUM(csb.quantity_on_hand) as quantity')]);
+        // The very same batches an "All batches" approval would update.
+        $batchIds = $this->pricing->batchIdsWithStock($product);
+
+        $onHand = DB::table('current_stock_by_batch')->whereIn('stock_batch_id', $batchIds)
+            ->groupBy('stock_batch_id')->selectRaw('stock_batch_id, sum(quantity_on_hand) as quantity')->pluck('quantity', 'stock_batch_id');
+        $inLayers = DB::table('stock_valuation_layers')->whereIn('stock_batch_id', $batchIds)->where('is_depleted', false)
+            ->groupBy('stock_batch_id')->selectRaw('stock_batch_id, sum(quantity_remaining) as quantity')->pluck('quantity', 'stock_batch_id');
+
+        $batches = DB::table('stock_batches')
+            ->whereIn('id', $batchIds)
+            ->where('is_promotional', false)
+            ->orderBy('expiry_date')
+            ->get(['id', 'batch_code', 'expiry_date', 'selling_price'])
+            ->map(fn ($batch) => (object) [
+                ...(array) $batch,
+                'quantity' => (float) ($onHand[$batch->id] ?? $inLayers[$batch->id] ?? 0),
+            ])->values();
 
         return response()->json($batches);
     }

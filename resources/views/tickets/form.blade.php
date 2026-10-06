@@ -69,6 +69,10 @@
                 return this.rows.reduce((n, row) => n + fields.filter(([f]) => row.product_id && this.diff(row, f) !== null).length, 0);
             },
             productCount() { return this.rows.filter((r) => r.product_id).length; },
+            applyPercent(row, field, percent) {
+                const base = this.current(row, field);
+                row[field] = percent === '' || base === null ? '' : (base * (1 + parseFloat(percent) / 100)).toFixed(2);
+            },
             pick(row, p) { row.product_id = p.id; row.batch_ids = []; row.batches = []; if (row.batch_scope === 'selected') { this.loadBatches(row); } },
             addRow() { this.rows.push(blank()); },
             removeRow(index) { this.rows.splice(index, 1); },
@@ -315,6 +319,9 @@
                                                 <td class="px-3 py-2">
                                                     <input type="number" step="0.01" min="0" placeholder="unchanged" :name="`items[${index}][${f[0]}]`" x-model="row[f[0]]"
                                                         class="w-full rounded-lg border-gray-300 py-1.5 text-sm tabular-nums focus:border-indigo-500 focus:ring-indigo-500">
+                                                    <input type="number" step="0.1" placeholder="or ± %" title="Type a percentage to fill the new value" data-percent
+                                                        @input="applyPercent(row, f[0], $event.target.value)"
+                                                        class="mt-1 w-24 rounded-md border-gray-200 py-0.5 text-xs text-gray-500 focus:border-indigo-400 focus:ring-indigo-400">
                                                 </td>
                                                 <td class="px-3 py-2 text-right">
                                                     <span x-show="diff(row, f[0]) !== null" class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums"

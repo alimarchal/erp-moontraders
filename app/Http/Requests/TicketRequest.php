@@ -192,7 +192,11 @@ class TicketRequest extends FormRequest
             $validator->errors()->add("items.$index.unit_sell_price", "Enter at least one new value different from the current one for {$product->product_name}.");
         }
 
-        if (($row['batch_scope'] ?? 'all') === 'selected') {
+        if ($perBatch && (! isset($row['unit_sell_price']) || $row['unit_sell_price'] === '')) {
+            $validator->errors()->add("items.$index.unit_sell_price", "Enter the new selling price for the selected batches of {$product->product_name}, or choose All batches.");
+        }
+
+        if ($perBatch) {
             $valid = StockBatch::whereIn('id', $row['batch_ids'] ?? [])->where('product_id', $product->id)->count();
 
             if ($valid !== count(array_unique($row['batch_ids'] ?? []))) {

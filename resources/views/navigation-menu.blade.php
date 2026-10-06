@@ -39,8 +39,17 @@
                         </x-nav-link>
                     @endcan
                     @can('setting-view')
-                        <x-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('tax-rates.*') || request()->routeIs('tax-transactions.*') || request()->routeIs('product-tax-mappings.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('category-revenue.*') || request()->routeIs('profit-categories.*') || request()->routeIs('tickets.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*') || request()->routeIs('users.*') || request()->routeIs('roles.*') || request()->routeIs('permissions.*') || request()->routeIs('companies.*') || request()->routeIs('uoms.*') || request()->routeIs('vehicles.*') || request()->routeIs('warehouses.*') || request()->routeIs('warehouse-types.*') || request()->routeIs('stock-adjustments.*') || request()->routeIs('product-recalls.*') || request()->routeIs('supplier-payments.*')">
+                        <x-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('tax-rates.*') || request()->routeIs('tax-transactions.*') || request()->routeIs('product-tax-mappings.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('category-revenue.*') || request()->routeIs('profit-categories.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*') || request()->routeIs('users.*') || request()->routeIs('roles.*') || request()->routeIs('permissions.*') || request()->routeIs('companies.*') || request()->routeIs('uoms.*') || request()->routeIs('vehicles.*') || request()->routeIs('warehouses.*') || request()->routeIs('warehouse-types.*') || request()->routeIs('stock-adjustments.*') || request()->routeIs('product-recalls.*') || request()->routeIs('supplier-payments.*')">
                             {{ __('Settings') }}
+                        </x-nav-link>
+                    @endcan
+                    @can('ticket-list')
+                        @php($pendingTickets = \App\Models\Ticket::query()->visibleTo(auth()->user())->where('status', 'pending')->count())
+                        <x-nav-link href="{{ route('tickets.index') }}" :active="request()->routeIs('tickets.*')">
+                            {{ __('Tickets') }}
+                            @if ($pendingTickets > 0)
+                                <span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[11px] font-bold leading-5 text-white">{{ $pendingTickets }}</span>
+                            @endif
                         </x-nav-link>
                     @endcan
                     @can('view-any-report')
@@ -211,8 +220,13 @@
                 </x-responsive-nav-link>
             @endcan
             @can('setting-view')
-                <x-responsive-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('tax-rates.*') || request()->routeIs('tax-transactions.*') || request()->routeIs('product-tax-mappings.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('category-revenue.*') || request()->routeIs('profit-categories.*') || request()->routeIs('tickets.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*') || request()->routeIs('users.*') || request()->routeIs('roles.*') || request()->routeIs('permissions.*') || request()->routeIs('companies.*') || request()->routeIs('uoms.*') || request()->routeIs('vehicles.*') || request()->routeIs('warehouses.*') || request()->routeIs('warehouse-types.*') || request()->routeIs('stock-adjustments.*') || request()->routeIs('product-recalls.*') || request()->routeIs('supplier-payments.*')">
+                <x-responsive-nav-link href="{{ route('settings.index') }}" :active="request()->routeIs('settings.*') || request()->routeIs('account-types.*') || request()->routeIs('accounting-periods.*') || request()->routeIs('tax-codes.*') || request()->routeIs('tax-rates.*') || request()->routeIs('tax-transactions.*') || request()->routeIs('product-tax-mappings.*') || request()->routeIs('chart-of-accounts.*') || request()->routeIs('currencies.*') || request()->routeIs('cost-centers.*') || request()->routeIs('category-revenue.*') || request()->routeIs('profit-categories.*') || request()->routeIs('suppliers.*') || request()->routeIs('employees.*') || request()->routeIs('product-categories.*') || request()->routeIs('products.*') || request()->routeIs('categories.*') || request()->routeIs('customers.*') || request()->routeIs('bank-accounts.*') || request()->routeIs('users.*') || request()->routeIs('roles.*') || request()->routeIs('permissions.*') || request()->routeIs('companies.*') || request()->routeIs('uoms.*') || request()->routeIs('vehicles.*') || request()->routeIs('warehouses.*') || request()->routeIs('warehouse-types.*') || request()->routeIs('stock-adjustments.*') || request()->routeIs('product-recalls.*') || request()->routeIs('supplier-payments.*')">
                     {{ __('Settings') }}
+                </x-responsive-nav-link>
+            @endcan
+            @can('ticket-list')
+                <x-responsive-nav-link href="{{ route('tickets.index') }}" :active="request()->routeIs('tickets.*')">
+                    {{ __('Tickets') }}
                 </x-responsive-nav-link>
             @endcan
             @can('view-any-report')

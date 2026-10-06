@@ -346,7 +346,7 @@
                 @endcanany
 
                 {{-- ─── Inventory & Products ─── --}}
-                @canany(['product-list', 'category-list', 'uom-list', 'goods-receipt-note-list', 'inventory-view', 'ticket-list'])
+                @canany(['product-list', 'category-list', 'uom-list', 'goods-receipt-note-list', 'inventory-view'])
                     <div>
                         <p class="px-4 mb-1 text-[11px] font-semibold uppercase tracking-widest text-gray-500">Inventory
                             &amp; Products</p>
@@ -416,21 +416,6 @@
                                             viewBox="0 0 24 24" stroke-width="1.8">
                                             <path stroke-linecap="round" stroke-linejoin="round"
                                                 d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
-                                        </svg>
-                                    </x-slot>
-                                </x-settings-row>
-                            @endcan
-                            @can('ticket-list')
-                                <div class="ml-[58px] h-px bg-gray-100"></div>
-                                <x-settings-row href="{{ route('tickets.index') }}" label="Tickets"
-                                    description="Price, new SKU & re-activation requests for approval"
-                                    :count="\App\Models\Ticket::query()->visibleTo(auth()->user())->where('status', 'pending')->count()"
-                                    icon-bg="bg-orange-500">
-                                    <x-slot name="icon">
-                                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor"
-                                            viewBox="0 0 24 24" stroke-width="1.8">
-                                            <path stroke-linecap="round" stroke-linejoin="round"
-                                                d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
                                         </svg>
                                     </x-slot>
                                 </x-settings-row>

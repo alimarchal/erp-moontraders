@@ -203,15 +203,19 @@ class TicketService
         $old = $product->unit_sell_price;
 
         if ($item->apply_to_all_batches) {
-            $batchIds = $this->pricing->batchIdsWithStock($product);
-
-            if ((float) $new !== (float) $old) {
-                $product->update(['unit_sell_price' => $new]);
+            // Same behaviour as editing the product: nothing to do when the price is not actually changing.
+            if ((float) $new === (float) $old) {
+                return;
             }
-            $this->pricing->applySellingPriceToBatches($product, $batchIds, $new);
+
+            $product->update(['unit_sell_price' => $new]);
+            $batchIds = $this->pricing->cascadeSellingPrice($product, $new);
         } else {
-            $batchIds = collect($item->batch_ids)->map(fn ($id) => (int) $id)->values();
-            $this->pricing->applySellingPriceToBatches($product, $batchIds, $new);
+            $batchIds = $this->pricing->cascadeSellingPrice(
+                $product,
+                $new,
+                collect($item->batch_ids)->map(fn ($id) => (int) $id)->values()
+            );
         }
 
         $this->pricing->logChange($product, 'selling_price', $old, $new, $admin->id, $batchIds);

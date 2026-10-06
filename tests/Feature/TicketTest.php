@@ -287,16 +287,32 @@ it('allows editing and deleting only while a ticket is pending', function () {
     $this->actingAs($this->companyUser)->delete(route('tickets.destroy', $ticket))->assertForbidden();
 });
 
-it('shows the ticket form for every ticket type and the dashboard pending count', function () {
+it('shows the ticket form for every ticket type', function () {
     foreach (TicketType::cases() as $type) {
         $this->actingAs($this->companyUser)->get(route('tickets.create', ['type' => $type->value]))
             ->assertOk()->assertSee($type->label());
     }
+});
 
+it('gives tickets their own menu item after Settings, only to users with ticket-list', function () {
     Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id]);
-    $this->companyUser->givePermissionTo('setting-view');
 
-    $this->actingAs($this->companyUser)->get(route('settings.index'))->assertOk()->assertSee('Tickets');
+    // Tickets do not depend on Settings access ...
+    $page = $this->actingAs($this->companyUser)->get(route('tickets.index'))
+        ->assertOk()->assertSee('href="'.route('tickets.index').'"', false);
+    expect($page->getContent())->not->toMatch('/>\s*Settings\s*<\/a>/');
+
+    // ... and sit right after Settings for users who have both.
+    $this->companyUser->givePermissionTo('setting-view');
+    $page = $this->actingAs($this->companyUser)->get(route('settings.index'))->assertOk();
+    expect($page->getContent())->toMatch('/>\s*Settings\s*<\/a>.*?>\s*Tickets/s');
+
+    expect(route('tickets.index', [], false))->toBe('/tickets');
+
+    $noAccess = User::factory()->create();
+    $noAccess->givePermissionTo('setting-view');
+    expect($this->actingAs($noAccess)->get(route('settings.index'))->getContent())->not->toMatch('/>\s*Tickets/');
+    $this->actingAs($noAccess)->get(route('tickets.index'))->assertForbidden();
 });
 
 it('filters the ticket list by status tab and shows per-status counts', function () {

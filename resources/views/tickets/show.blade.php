@@ -106,6 +106,20 @@
                                         @endforeach
                                     </tbody>
                                 </table>
+                                @if ($ticket->isPending() && $item->product)
+                                    @php
+                                        $stale = collect($item->priceChanges())->filter(fn ($c) => $c['old'] !== null && round((float) $item->product->{$c['field']}, 2) !== round($c['old'], 2));
+                                    @endphp
+                                    @if ($stale->isNotEmpty())
+                                        <div class="border-t border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-800">
+                                            <b>Heads up:</b> the product changed after this ticket was raised —
+                                            @foreach ($stale as $c)
+                                                {{ $c['label'] }} is now {{ $money($item->product->{$c['field']}) }} (ticket was written against {{ $money($c['old']) }}).@if (! $loop->last) @endif
+                                            @endforeach
+                                            Approving will overwrite the current value with the new one.
+                                        </div>
+                                    @endif
+                                @endif
                                 @if ($item->new_unit_sell_price !== null)
                                     <div class="border-t border-gray-100 px-5 py-3 text-sm">
                                         <span class="text-xs uppercase tracking-wide text-gray-500">Selling price applies to</span>

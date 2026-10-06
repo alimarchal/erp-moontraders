@@ -30,7 +30,7 @@ class TicketItem extends Model
         'new_reorder_level',
         'old_is_active',
         'new_is_active',
-        'new_sku_data',
+        'payload',
         'remarks',
     ];
 
@@ -39,7 +39,7 @@ class TicketItem extends Model
         return [
             'apply_to_all_batches' => 'boolean',
             'batch_ids' => 'array',
-            'new_sku_data' => 'array',
+            'payload' => 'array',
             'old_unit_sell_price' => 'decimal:2',
             'new_unit_sell_price' => 'decimal:2',
             'old_cost_price' => 'decimal:2',

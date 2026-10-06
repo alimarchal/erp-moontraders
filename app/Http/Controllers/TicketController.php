@@ -11,6 +11,7 @@ use App\Models\Supplier;
 use App\Models\Ticket;
 use App\Models\Uom;
 use App\Models\User;
+use App\Models\Warehouse;
 use App\Services\ProductPricingService;
 use App\Services\TicketService;
 use Illuminate\Http\JsonResponse;
@@ -20,6 +21,8 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class TicketController extends Controller implements HasMiddleware
@@ -30,14 +33,14 @@ class TicketController extends Controller implements HasMiddleware
     {
         return [
             new Middleware('can:ticket-list', only: ['index', 'show']),
-            new Middleware('can:ticket-create', only: ['create', 'store', 'batches']),
+            new Middleware('can:ticket-create', only: ['create', 'store', 'batches', 'adjustmentBatches']),
             new Middleware('can:ticket-edit', only: ['edit', 'update']),
             new Middleware('can:ticket-delete', only: ['destroy']),
             new Middleware('can:ticket-approve', only: ['approve', 'reject']),
         ];
     }
 
-    public const PER_PAGE = [15, 25, 50, 100];
+    public const PER_PAGE = [15, 25, 50, 100, 500, 'all'];
 
     private const SORTS = ['created_at', 'ticket_number', 'title', 'status'];
 
@@ -51,7 +54,10 @@ class TicketController extends Controller implements HasMiddleware
             $sort = '-created_at';
         }
 
-        $perPage = in_array((int) $request->input('per_page'), self::PER_PAGE, true) ? (int) $request->input('per_page') : 25;
+        $perPage = (string) $request->input('per_page', '25');
+        if (! in_array($perPage, array_map('strval', self::PER_PAGE), true)) {
+            $perPage = '25';
+        }
 
         $counts = $this->filteredTickets($user, Arr::except($filters, 'status'))
             ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
@@ -61,7 +67,7 @@ class TicketController extends Controller implements HasMiddleware
             ->withCount('items')
             ->orderBy(ltrim($sort, '-'), str_starts_with($sort, '-') ? 'desc' : 'asc')
             ->orderByDesc('id')
-            ->paginate($perPage)
+            ->paginate($perPage === 'all' ? max(1, (int) $counts->sum()) : (int) $perPage)
             ->withQueryString();
 
         return view('tickets.index', [
@@ -162,6 +168,7 @@ class TicketController extends Controller implements HasMiddleware
     {
         $this->authorizeVisible($request, $ticket);
         $data = $request->validate(['review_remarks' => ['nullable', 'string', 'max:2000']]);
+        $this->authorizeStockAdjustmentPosting($request, $ticket);
 
         $this->tickets->approve($ticket, $request->user(), $data['review_remarks'] ?? null);
 
@@ -177,6 +184,45 @@ class TicketController extends Controller implements HasMiddleware
         $this->tickets->reject($ticket, $request->user(), $data['review_remarks']);
 
         return redirect()->route('tickets.show', $ticket)->with('success', "Ticket {$ticket->ticket_number} rejected.");
+    }
+
+    /**
+     * Approving a stock adjustment posts inventory and accounting entries, so it needs the same
+     * right and the same password confirmation as posting it on the Stock Adjustments screen.
+     */
+    private function authorizeStockAdjustmentPosting(Request $request, Ticket $ticket): void
+    {
+        if ($ticket->type !== TicketType::StockAdjustment) {
+            return;
+        }
+
+        abort_unless($request->user()->can('stock-adjustment-post'), 403, 'Approving a stock adjustment needs the stock-adjustment-post permission.');
+
+        $request->validate(['password' => ['required']]);
+
+        if (! Hash::check((string) $request->input('password'), $request->user()->password)) {
+            throw ValidationException::withMessages(['password' => 'Invalid password.']);
+        }
+    }
+
+    /**
+     * Batches of one product that hold stock in a warehouse, for the stock adjustment lines.
+     */
+    public function adjustmentBatches(Request $request, Product $product, Warehouse $warehouse): JsonResponse
+    {
+        abort_unless($this->productsFor($request)->whereKey($product->id)->exists(), 403);
+
+        $batches = DB::table('current_stock_by_batch as csb')
+            ->join('stock_batches as sb', 'sb.id', '=', 'csb.stock_batch_id')
+            ->where('csb.product_id', $product->id)
+            ->where('csb.warehouse_id', $warehouse->id)
+            ->where('csb.quantity_on_hand', '>', 0)
+            ->where('sb.status', 'active')
+            ->groupBy('sb.id', 'sb.batch_code', 'sb.expiry_date', 'sb.unit_cost')
+            ->orderBy('sb.expiry_date')
+            ->get(['sb.id', 'sb.batch_code', 'sb.expiry_date', 'sb.unit_cost', DB::raw('SUM(csb.quantity_on_hand) as quantity')]);
+
+        return response()->json($batches);
     }
 
     /**
@@ -241,7 +287,7 @@ class TicketController extends Controller implements HasMiddleware
     {
         $user = $request->user();
         $products = $this->productsFor($request)->orderBy('product_name')
-            ->get(['id', 'product_code', 'product_name', 'is_active', 'unit_sell_price', 'cost_price', 'expiry_price', 'reorder_level']);
+            ->get(['id', 'product_code', 'product_name', 'is_active', 'supplier_id', 'uom_id', 'unit_sell_price', 'cost_price', 'expiry_price', 'reorder_level']);
 
         return [
             'type' => $type,
@@ -250,6 +296,8 @@ class TicketController extends Controller implements HasMiddleware
                 'id' => $p->id,
                 'label' => "{$p->product_code} — {$p->product_name}",
                 'active' => $p->is_active,
+                'supplier_id' => $p->supplier_id,
+                'uom_id' => $p->uom_id,
                 'unit_sell_price' => (float) $p->unit_sell_price,
                 'cost_price' => (float) $p->cost_price,
                 'expiry_price' => (float) $p->expiry_price,
@@ -261,6 +309,8 @@ class TicketController extends Controller implements HasMiddleware
                 ->when(! $user->isTicketAdmin() && $user->supplier_id, fn ($q) => $q->where('id', $user->supplier_id))
                 ->orderBy('supplier_name')->get(['id', 'supplier_name']),
             'valuationMethods' => Product::VALUATION_METHODS,
+            'warehouses' => Warehouse::query()->where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
+            'adjustmentTypes' => TicketRequest::ADJUSTMENT_TYPES,
         ];
     }
 

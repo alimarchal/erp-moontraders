@@ -8,7 +8,12 @@ use App\Models\Product;
 use App\Models\Ticket;
 use App\Models\TicketItem;
 use App\Models\User;
+use App\Notifications\TicketSubmitted;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
 class TicketService
@@ -37,8 +42,28 @@ class TicketService
             $this->syncItems($ticket, $data);
             $this->record($ticket, $user, 'created', null, TicketStatus::Pending, $data['description'] ?? null);
 
+            DB::afterCommit(fn () => $this->notifyApprovers($ticket));
+
             return $ticket;
         });
+    }
+
+    /**
+     * Mail every active approver who may see this ticket. A mail problem must never lose the ticket.
+     */
+    private function notifyApprovers(Ticket $ticket): void
+    {
+        try {
+            $approvers = User::query()
+                ->whereNotNull('email')
+                ->where(fn ($q) => $q->whereNull('is_active')->orWhere('is_active', '!=', 'No'))
+                ->get()
+                ->filter(fn (User $user) => $user->can('ticket-approve') && $ticket->canBeSeenBy($user));
+
+            Notification::send($approvers, new TicketSubmitted($ticket));
+        } catch (\Throwable $e) {
+            Log::warning('Could not mail ticket approvers', ['ticket' => $ticket->ticket_number, 'error' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -79,7 +104,12 @@ class TicketService
                     TicketType::PriceUpdate => $this->applyPriceUpdate($item, $admin),
                     TicketType::NewSku => $this->applyNewSku($item),
                     TicketType::ReactivateSku => $this->applyStatusChange($item),
+                    TicketType::StockAdjustment => $postedAdjustment = $this->applyStockAdjustment($item),
                 };
+            }
+
+            if (isset($postedAdjustment)) {
+                $remarks = trim(($remarks ? $remarks.' — ' : '')."Stock adjustment {$postedAdjustment} created and posted.");
             }
 
             $this->close($ticket, $admin, TicketStatus::Approved, $remarks);
@@ -118,6 +148,10 @@ class TicketService
             return isset($data['sku']['supplier_id']) ? (int) $data['sku']['supplier_id'] : null;
         }
 
+        if ($type === TicketType::StockAdjustment) {
+            return (int) $data['supplier_id'];
+        }
+
         $productId = $data['items'][0]['product_id'] ?? null;
 
         return $productId ? Product::whereKey($productId)->value('supplier_id') : null;
@@ -130,9 +164,10 @@ class TicketService
     {
         match ($ticket->type) {
             TicketType::NewSku => $ticket->items()->create([
-                'new_sku_data' => $data['sku'],
+                'payload' => $data['sku'],
                 'remarks' => $data['sku']['remarks'] ?? null,
             ]),
+            TicketType::StockAdjustment => $ticket->items()->create(['payload' => $this->adjustmentPayload($data)]),
             TicketType::PriceUpdate => collect($data['items'])->each(fn (array $row) => $this->createPriceItem($ticket, $row)),
             TicketType::ReactivateSku => collect($data['items'])->each(function (array $row) use ($ticket) {
                 $product = Product::findOrFail($row['product_id']);
@@ -197,20 +232,30 @@ class TicketService
         }
     }
 
+    /**
+     * Same effect as editing the product's selling price: the product master price always changes
+     * (new stock and every price lookup use it) and the price is pushed to the batches — all batches
+     * with stock, or only the ones the ticket names.
+     */
     private function applySellingPrice(Product $product, TicketItem $item, User $admin): void
     {
         $new = $item->new_unit_sell_price;
         $old = $product->unit_sell_price;
+        $priceChanged = (float) $new !== (float) $old;
 
         if ($item->apply_to_all_batches) {
             // Same behaviour as editing the product: nothing to do when the price is not actually changing.
-            if ((float) $new === (float) $old) {
+            if (! $priceChanged) {
                 return;
             }
 
             $product->update(['unit_sell_price' => $new]);
             $batchIds = $this->pricing->cascadeSellingPrice($product, $new);
         } else {
+            if ($priceChanged) {
+                $product->update(['unit_sell_price' => $new]);
+            }
+
             $batchIds = $this->pricing->cascadeSellingPrice(
                 $product,
                 $new,
@@ -221,10 +266,86 @@ class TicketService
         $this->pricing->logChange($product, 'selling_price', $old, $new, $admin->id, $batchIds);
     }
 
+    /**
+     * Header and lines of a stock adjustment request. System quantities are taken from the live
+     * stock at the moment the ticket is raised, never from the browser.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function adjustmentPayload(array $data): array
+    {
+        return [
+            'adjustment_date' => $data['adjustment_date'],
+            'supplier_id' => (int) $data['supplier_id'],
+            'warehouse_id' => (int) $data['warehouse_id'],
+            'adjustment_type' => $data['adjustment_type'],
+            'reason' => $data['reason'],
+            'notes' => $data['notes'] ?? null,
+            'items' => $this->adjustmentLines((int) $data['warehouse_id'], $data['items'])->all(),
+        ];
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $lines
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function adjustmentLines(int $warehouseId, array $lines): Collection
+    {
+        return collect($lines)->map(function (array $line) use ($warehouseId) {
+            $onHand = (float) DB::table('current_stock_by_batch')
+                ->where('stock_batch_id', $line['stock_batch_id'])->where('warehouse_id', $warehouseId)->sum('quantity_on_hand');
+
+            $line['system_quantity'] = $onHand;
+            $line['adjustment_quantity'] = (float) $line['actual_quantity'] - $onHand;
+            $line['adjustment_value'] = $line['adjustment_quantity'] * (float) $line['unit_cost'];
+
+            return $line;
+        })->values();
+    }
+
+    /**
+     * Creates the draft stock adjustment and posts it with the very same service the
+     * Stock Adjustments screen uses (stock movements, valuation layers, current stock, journal entry).
+     * System quantities are refreshed first, so a count taken against old stock cannot post a wrong difference.
+     *
+     * @return string the posted adjustment number
+     */
+    private function applyStockAdjustment(TicketItem $item): string
+    {
+        $payload = $item->payload;
+        $service = app(StockAdjustmentService::class);
+
+        $lines = $this->adjustmentLines((int) $payload['warehouse_id'], $payload['items'])
+            ->reject(fn (array $line) => abs($line['adjustment_quantity']) < 0.0005)
+            ->values();
+
+        if ($lines->isEmpty()) {
+            throw ValidationException::withMessages(['ticket' => 'Stock has moved since the count: the counted quantities now match the system, so there is nothing left to adjust.']);
+        }
+
+        $created = $service->createAdjustment(Arr::except($payload, 'items') + ['items' => $lines->all()]);
+
+        if (! $created['success']) {
+            throw ValidationException::withMessages(['ticket' => $created['message']]);
+        }
+
+        $adjustment = $created['data'];
+        $posted = $service->postAdjustment($adjustment);
+
+        if (! $posted['success']) {
+            throw ValidationException::withMessages(['ticket' => $posted['message']]);
+        }
+
+        $item->update(['payload' => $payload + ['stock_adjustment_id' => $adjustment->id, 'stock_adjustment_number' => $adjustment->adjustment_number]]);
+
+        return $adjustment->adjustment_number;
+    }
+
     private function applyNewSku(TicketItem $item): void
     {
         // Blank optional fields fall back to the column defaults (several are NOT NULL).
-        $payload = collect($item->new_sku_data)
+        $payload = collect($item->payload)
             ->except('remarks')
             ->reject(fn ($value) => $value === null || $value === '')
             ->all();

@@ -67,7 +67,7 @@ return new class extends Migration
             $table->boolean('old_is_active')->nullable();
             $table->boolean('new_is_active')->nullable();
 
-            $table->json('new_sku_data')->nullable()->comment('Full product payload for a New SKU ticket');
+            $table->json('payload')->nullable()->comment('Type specific payload: New SKU product data, or the stock adjustment header and lines');
             $table->text('remarks')->nullable();
             $table->timestamps();
 

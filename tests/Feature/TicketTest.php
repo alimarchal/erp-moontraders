@@ -10,7 +10,9 @@ use App\Models\Supplier;
 use App\Models\Ticket;
 use App\Models\Uom;
 use App\Models\User;
+use App\Notifications\TicketSubmitted;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
@@ -169,7 +171,7 @@ it('changes only the selected batches when a ticket targets specific batches', f
 
     expect($batchA->fresh()->selling_price)->toBe('130.00')
         ->and($batchB->fresh()->selling_price)->toBe('100.00')
-        ->and($this->product->fresh()->unit_sell_price)->toBe('100.00');
+        ->and($this->product->fresh()->unit_sell_price)->toBe('130.00');
 });
 
 it('lists only batches with stock for the batch drop-down', function () {
@@ -377,9 +379,9 @@ it('ships a ready company-user role from the migration that can raise tickets bu
     $this->actingAs($user)->post(route('tickets.approve', $ticket))->assertForbidden();
 });
 
-it('renders the issue-style create form with its submit action', function () {
+it('renders the create form with its select2 product picker and submit action', function () {
     $this->actingAs($this->companyUser)->get(route('tickets.create'))
-        ->assertOk()->assertSee('data-product-picker', false)->assertSee('Submit for approval');
+        ->assertOk()->assertSee('tk-product-select', false)->assertSee('Submit for approval');
 });
 
 it('identifies tickets by uuid in every URL so ids cannot be guessed', function () {
@@ -420,4 +422,97 @@ it('hides other companies tickets completely, even when their uuid is known', fu
 
     expect($foreign->fresh()->status)->toBe(TicketStatus::Pending)
         ->and($this->product->fresh()->unit_sell_price)->toBe('100.00');
+});
+
+it('offers inactive SKUs of the company in the re-activate form, even though the products list hides them', function () {
+    $inactive = Product::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => false, 'product_name' => 'Sleeping SKU']);
+    $foreignInactive = Product::factory()->create(['supplier_id' => $this->otherSupplier->id, 'is_active' => false, 'product_name' => 'Foreign sleeping SKU']);
+
+    $user = User::factory()->create(['supplier_id' => $this->supplier->id]);
+    $user->assignRole('company-user');
+
+    $response = $this->actingAs($user)->get(route('tickets.create', ['type' => 'reactivate_sku']))->assertOk();
+    $offered = collect($response->viewData('products'))->where('active', false)->pluck('id')->all();
+
+    expect($offered)->toContain($inactive->id)->not->toContain($foreignInactive->id);
+
+    $this->actingAs($user)->post(route('tickets.store'), [
+        'type' => 'reactivate_sku', 'title' => 'Wake it up',
+        'items' => [['product_id' => $inactive->id, 'new_is_active' => '1']],
+    ])->assertRedirect();
+
+    $this->actingAs($this->admin)->post(route('tickets.approve', Ticket::firstWhere('title', 'Wake it up')))->assertRedirect();
+    expect($inactive->fresh()->is_active)->toBeTrue();
+});
+
+it('supports 500 and All rows per page on the ticket list', function () {
+    Ticket::factory()->count(30)->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id]);
+
+    $this->actingAs($this->companyUser);
+
+    expect($this->get(route('tickets.index', ['per_page' => 15]))->viewData('tickets')->count())->toBe(15)
+        ->and($this->get(route('tickets.index', ['per_page' => 'all']))->viewData('tickets')->count())->toBe(30)
+        ->and($this->get(route('tickets.index', ['per_page' => 500]))->viewData('tickets')->count())->toBe(30)
+        ->and($this->get(route('tickets.index', ['per_page' => 'bogus']))->viewData('perPage'))->toBe('25');
+    $this->get(route('tickets.index', ['per_page' => 'all']))->assertSee('value="all" selected', false);
+});
+
+it('links an approved price ticket to the price change log only for users who may open that report', function () {
+    $ticket = Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id]);
+    $ticket->items()->create(['product_id' => $this->product->id, 'old_unit_sell_price' => 100, 'new_unit_sell_price' => 120]);
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket));
+
+    $link = route('reports.product-price-change-log.index', ['product_id' => $this->product->id]);
+
+    $this->actingAs($this->companyUser)->get(route('tickets.show', $ticket))->assertOk()->assertDontSee($link, false);
+
+    Permission::findOrCreate('report-audit-product-price-change-log');
+    $this->companyUser->givePermissionTo('report-audit-product-price-change-log');
+    $this->actingAs($this->companyUser->fresh())->get(route('tickets.show', $ticket))->assertSee('View in price change log')->assertSee($link, false);
+});
+
+it('emails every approver who may see the ticket with the details needed to decide, and nobody else', function () {
+    Notification::fake();
+
+    $scopedApprover = User::factory()->create(['supplier_id' => $this->otherSupplier->id]);
+    $scopedApprover->givePermissionTo(['ticket-list', 'ticket-approve']);
+    $inactiveAdmin = User::factory()->create(['is_active' => 'No']);
+    $inactiveAdmin->assignRole('admin');
+    $inactiveAdmin->givePermissionTo('ticket-approve');
+
+    $batch = makeBatch($this->product, 100);
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'price_update', 'title' => 'Revised trade prices',
+        'description' => 'Head office circular',
+        'items' => [['product_id' => $this->product->id, 'batch_scope' => 'selected', 'batch_ids' => [$batch->id], 'unit_sell_price' => '120', 'reorder_level' => '30']],
+    ])->assertRedirect();
+
+    $ticket = Ticket::firstOrFail();
+
+    Notification::assertSentTo($this->admin, TicketSubmitted::class);
+    Notification::assertNotSentTo([$this->companyUser, $scopedApprover, $inactiveAdmin], TicketSubmitted::class);
+
+    $mail = (new TicketSubmitted($ticket))->toMail($this->admin);
+    $text = $mail->render()->toHtml();
+
+    expect($mail->subject)->toContain($ticket->ticket_number)->toContain('Revised trade prices')
+        ->and($text)->toContain('Head office circular')
+        ->toContain($this->product->product_name)
+        ->toContain('Selling Price 100.00')
+        ->toContain('120.00')
+        ->toContain('Reorder Level')
+        ->toContain($batch->batch_code)
+        ->toContain(route('tickets.show', $ticket));
+});
+
+it('still saves the ticket when mailing the approvers fails', function () {
+    Notification::shouldReceive('send')->andThrow(new RuntimeException('smtp down'));
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'price_update', 'title' => 'Mail broken',
+        'items' => [['product_id' => $this->product->id, 'batch_scope' => 'all', 'unit_sell_price' => '120']],
+    ])->assertRedirect();
+
+    expect(Ticket::firstWhere('title', 'Mail broken'))->not->toBeNull();
 });

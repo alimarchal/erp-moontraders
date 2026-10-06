@@ -67,7 +67,7 @@
                 @foreach ($ticket->items as $item)
                     <section class="uf-card" aria-label="Requested change {{ $loop->iteration }}">
                         @if ($ticket->type === TicketType::NewSku)
-                            @php $data = $item->new_sku_data; @endphp
+                            @php $data = $item->payload; @endphp
                             <header class="uf-card-head">
                                 <h2 class="uf-card-title"><span class="uf-step">{{ $loop->iteration }}</span> {{ $data['product_code'] ?? '' }} — {{ $data['product_name'] ?? '' }}</h2>
                                 <span class="ak-pill">New SKU</span>
@@ -92,6 +92,48 @@
                                     @endforeach
                                 </dl>
                             </div>
+                        @elseif ($ticket->type === TicketType::StockAdjustment)
+                            @php $data = $item->payload; $lines = collect($data['items'] ?? []); $products = \App\Models\Product::whereIn('id', $lines->pluck('product_id'))->pluck('product_name', 'id'); $batchCodes = \Illuminate\Support\Facades\DB::table('stock_batches')->whereIn('id', $lines->pluck('stock_batch_id'))->pluck('batch_code', 'id'); @endphp
+                            <header class="uf-card-head">
+                                <h2 class="uf-card-title"><span class="uf-step">{{ $loop->iteration }}</span> {{ Str::headline($data['adjustment_type'] ?? '') }} — {{ \Carbon\Carbon::parse($data['adjustment_date'])->format('d M Y') }}</h2>
+                                @if (! empty($data['stock_adjustment_id']))
+                                    @can('stock-adjustment-list')
+                                        <a href="{{ route('stock-adjustments.show', $data['stock_adjustment_id']) }}" class="ak-btn ak-btn-outline ak-btn-sm">Open {{ $data['stock_adjustment_number'] }}</a>
+                                    @else
+                                        <span class="ak-pill">{{ $data['stock_adjustment_number'] }} posted</span>
+                                    @endcan
+                                @endif
+                            </header>
+                            <div class="uf-body" style="padding-bottom:6px">
+                                <dl class="tk-list" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); column-gap:24px">
+                                    <div><dt>Company</dt><dd>{{ $suppliers[$data['supplier_id']] ?? '—' }}</dd></div>
+                                    <div><dt>Warehouse</dt><dd>{{ \App\Models\Warehouse::whereKey($data['warehouse_id'])->value('warehouse_name') ?? '—' }}</dd></div>
+                                    <div><dt>Reason</dt><dd>{{ $data['reason'] }}</dd></div>
+                                    @if (! empty($data['notes']))<div><dt>Notes</dt><dd>{{ $data['notes'] }}</dd></div>@endif
+                                </dl>
+                            </div>
+                            <div class="ak-dt-scroll">
+                                <table class="ak-dt">
+                                    <thead><tr><th>Product</th><th>Batch</th><th class="ak-num">System</th><th class="ak-num">Counted</th><th class="ak-num">Difference</th><th class="ak-num">Unit cost</th><th class="ak-num">Value</th></tr></thead>
+                                    <tbody>
+                                        @foreach ($lines as $line)
+                                            <tr>
+                                                <td class="ak-strong">{{ $products[$line['product_id']] ?? '—' }}</td>
+                                                <td>{{ $batchCodes[$line['stock_batch_id']] ?? '—' }}</td>
+                                                <td class="ak-num ak-muted">{{ number_format((float) $line['system_quantity'], 3) }}</td>
+                                                <td class="ak-num">{{ number_format((float) $line['actual_quantity'], 3) }}</td>
+                                                <td class="ak-num {{ $line['adjustment_quantity'] > 0 ? 'tk-up' : ($line['adjustment_quantity'] < 0 ? 'tk-down' : 'tk-flat') }}">{{ $signed($line['adjustment_quantity']) }}</td>
+                                                <td class="ak-num">{{ $money($line['unit_cost']) }}</td>
+                                                <td class="ak-num ak-strong {{ $line['adjustment_value'] < 0 ? 'tk-down' : 'tk-up' }}">{{ $signed($line['adjustment_value']) }}</td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                    <tfoot><tr><td colspan="6" class="ak-strong">Total value</td><td class="ak-num ak-strong">{{ $signed($lines->sum('adjustment_value')) }}</td></tr></tfoot>
+                                </table>
+                            </div>
+                            @if ($ticket->isPending())
+                                <div class="tk-warn">System quantities are re-read from live stock when the ticket is approved, so a count taken against old stock never posts a wrong difference.</div>
+                            @endif
                         @elseif ($ticket->type === TicketType::ReactivateSku)
                             <header class="uf-card-head">
                                 <h2 class="uf-card-title"><span class="uf-step">{{ $loop->iteration }}</span> {{ $item->product->product_code ?? '' }} — {{ $item->product->product_name ?? 'Deleted product' }}</h2>
@@ -104,6 +146,11 @@
                         @else
                             <header class="uf-card-head">
                                 <h2 class="uf-card-title"><span class="uf-step">{{ $loop->iteration }}</span> {{ $item->product->product_code ?? '' }} — {{ $item->product->product_name ?? 'Deleted product' }}</h2>
+                                @if ($ticket->status === \App\Enums\TicketStatus::Approved && $item->product_id)
+                                    @can('report-audit-product-price-change-log')
+                                        <a href="{{ route('reports.product-price-change-log.index', ['product_id' => $item->product_id]) }}" class="ak-btn ak-btn-outline ak-btn-sm">View in price change log</a>
+                                    @endcan
+                                @endif
                             </header>
                             <div class="ak-dt-scroll">
                                 <table class="ak-dt">
@@ -156,15 +203,54 @@
 
             <div class="tk-stack">
                 @if ($canReview)
+                    @php $isAdjustment = $ticket->type === TicketType::StockAdjustment; @endphp
                     <section class="uf-card" aria-label="Review" style="border-color:var(--ak-navy)">
                         <header class="uf-card-head"><h2 class="uf-card-title">Review</h2></header>
-                        <form method="POST" action="{{ route('tickets.approve', $ticket) }}" class="uf-body">
+                        <form method="POST" action="{{ route('tickets.approve', $ticket) }}" class="uf-body" x-data="{ modal: null, remarksMissing: false }">
                             @csrf
-                            <p class="ak-muted" style="margin:0 0 10px; font-size:13px">Approving applies the change to live data immediately, exactly like editing the product.</p>
-                            <textarea name="review_remarks" rows="3" class="tk-textarea" placeholder="Remarks (required to reject)">{{ old('review_remarks') }}</textarea>
+                            <p class="ak-muted" style="margin:0 0 10px; font-size:13px">
+                                @if ($isAdjustment)
+                                    Approving creates the stock adjustment and <b>posts it</b> (stock, valuation and journal entry), exactly like posting it on the Stock Adjustments screen.
+                                @else
+                                    Approving applies the change to live data immediately, exactly like editing the product.
+                                @endif
+                            </p>
+                            <textarea name="review_remarks" x-ref="remarks" rows="3" class="tk-textarea" placeholder="Remarks (required to reject)" @input="remarksMissing = false">{{ old('review_remarks') }}</textarea>
+                            <p x-show="remarksMissing" x-cloak style="margin:6px 0 0; color:#b91c1c; font-size:13px">Write the reason before rejecting.</p>
                             <div style="display:flex; gap:8px; margin-top:12px">
-                                <button type="submit" formaction="{{ route('tickets.reject', $ticket) }}" class="ak-btn ak-btn-danger-outline" style="flex:1" onclick="return confirm('Reject this ticket?')">Reject</button>
-                                <button type="submit" class="ak-btn ak-btn-success" style="flex:1" onclick="return confirm('Approve and apply these changes to the system?')">Approve</button>
+                                <button type="button" class="ak-btn ak-btn-danger-outline" style="flex:1"
+                                    @click="if (! $refs.remarks.value.trim()) { remarksMissing = true; $refs.remarks.focus(); } else { modal = 'reject' }">Reject</button>
+                                <button type="button" class="ak-btn ak-btn-success" style="flex:1" @click="modal = 'approve'">{{ $isAdjustment ? 'Approve & post' : 'Approve' }}</button>
+                            </div>
+
+                            {{-- Confirmation modals (same look as the other screens) --}}
+                            <div class="uf-modal" x-show="modal" x-cloak style="display:none" @keydown.escape.window="modal = null" role="dialog" aria-modal="true">
+                                <div class="uf-modal-bg" x-show="modal" x-transition.opacity @click="modal = null"></div>
+                                <div class="uf-modal-box" x-show="modal" x-transition>
+                                    <div class="uf-modal-body">
+                                        <span class="uf-modal-icon" :class="modal === 'reject' ? 'ak-pill-red' : 'ak-pill'" aria-hidden="true">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.01" /></svg>
+                                        </span>
+                                        <div style="flex:1">
+                                            <h3 x-text="modal === 'reject' ? 'Reject {{ $ticket->ticket_number }}?' : '{{ $isAdjustment ? 'Approve and post' : 'Approve' }} {{ $ticket->ticket_number }}?'"></h3>
+                                            <p style="margin:8px 0 0; font-size:14px; color:#334155" x-show="modal === 'reject'">Nothing in the system changes. The requester sees your remarks.</p>
+                                            <p style="margin:8px 0 0; font-size:14px; color:#334155" x-show="modal === 'approve'">
+                                                {{ $isAdjustment ? 'The stock adjustment is created and posted now. This moves stock and creates a journal entry.' : 'The change is applied to the system now and written to the price change log.' }}
+                                            </p>
+                                            @if ($isAdjustment)
+                                                <div class="uf-field" style="margin-top:12px" x-show="modal === 'approve'">
+                                                    <label for="tk-password">Confirm with your password</label>
+                                                    <input id="tk-password" type="password" name="password" autocomplete="current-password" :required="modal === 'approve'" :disabled="modal !== 'approve'">
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="uf-modal-foot">
+                                        <button type="button" class="ak-btn ak-btn-outline" @click="modal = null">Cancel</button>
+                                        <button type="submit" x-show="modal === 'approve'" class="ak-btn ak-btn-success">{{ $isAdjustment ? 'Approve & post' : 'Approve' }}</button>
+                                        <button type="submit" x-show="modal === 'reject'" formaction="{{ route('tickets.reject', $ticket) }}" class="ak-btn ak-btn-danger-outline">Reject ticket</button>
+                                    </div>
+                                </div>
                             </div>
                         </form>
                     </section>

@@ -12,6 +12,7 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Permission;
 
 /*
@@ -166,10 +167,11 @@ it('limits a selected-batch approval to those batches and their own GRN lines', 
 
     $state = parityState($scenario);
 
+    // The product master price follows the ticket (like editing the product); only the named batches are repriced.
     expect($state['batches'])->toBe(['layerBatch' => 100.0, 'currentOnlyBatch' => 130.0, 'depletedBatch' => 100.0, 'promoBatch' => 100.0])
         ->and($state['currentStock'])->toBe(['currentOnlyBatch' => 130.0, 'layerBatch' => 100.0, 'promoBatch' => 100.0])
         ->and($state['grnItems'])->toBe([1 => 100.0, 2 => 100.0])
-        ->and($state['product']['unit_sell_price'])->toBe('100.00')
+        ->and($state['product']['unit_sell_price'])->toBe('130.00')
         ->and($state['logs'])->toHaveCount(1)
         ->and($state['logs'][0][4])->toBe(['currentOnlyBatch']);
 });
@@ -237,4 +239,67 @@ it('shows ticket approvals in the Product Price Change Log report just like prod
         ->sort()->values()->all();
 
     expect($rows($viaTicket['product']))->toHaveCount(3)->toEqual($rows($viaProduct['product']));
+});
+
+/**
+ * Content fingerprint of every table, so two operations can be compared by what they touched.
+ *
+ * @return array<string, string>
+ */
+function fingerprintAllTables(): array
+{
+    $skip = ['sessions', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'migrations'];
+
+    return collect(Schema::getTableListing())
+        ->map(fn ($name) => str_contains($name, '.') ? substr($name, strrpos($name, '.') + 1) : $name)
+        ->reject(fn ($name) => in_array($name, $skip, true))
+        ->mapWithKeys(fn ($name) => [$name => md5(DB::table($name)->get()->map(fn ($row) => json_encode($row))->sort()->implode('|'))])
+        ->all();
+}
+
+it('touches exactly the same tables as a product edit and leaves quantities, values and accounting balanced', function () {
+    $viaProduct = buildParityProduct($this);
+    $viaTicket = buildParityProduct($this);
+
+    $stock = fn () => [
+        'on_hand' => DB::table('current_stock_by_batch')->selectRaw('stock_batch_id, quantity_on_hand, unit_cost, total_value')->orderBy('stock_batch_id')->get()->toArray(),
+        'layers' => DB::table('stock_valuation_layers')->selectRaw('id, quantity_received, quantity_remaining, unit_cost, total_value, value_remaining, is_depleted')->orderBy('id')->get()->toArray(),
+        'batch_cost' => DB::table('stock_batches')->selectRaw('id, unit_cost, status, is_active')->orderBy('id')->get()->toArray(),
+        'movements' => DB::table('stock_movements')->count(),
+        'journals' => [DB::table('journal_entries')->count(), DB::table('journal_entry_details')->count()],
+        'inventory_value' => (float) DB::table('current_stock_by_batch')->sum('total_value'),
+    ];
+
+    $balanceBefore = $stock();
+    $beforeProductEdit = fingerprintAllTables();
+
+    $this->actingAs($this->admin)->put(route('products.update', $viaProduct['product']), [
+        'product_code' => $viaProduct['product']->product_code, 'product_name' => $viaProduct['product']->product_name,
+        'uom_id' => $this->uom->id, 'valuation_method' => 'FIFO', 'supplier_id' => $this->supplier->id,
+        'unit_sell_price' => 125, 'cost_price' => 90, 'expiry_price' => 40, 'reorder_level' => 25, 'is_active' => 1,
+    ])->assertRedirect(route('products.index'));
+
+    $afterProductEdit = fingerprintAllTables();
+
+    $ticket = Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->admin->id]);
+    $ticket->items()->create([
+        'product_id' => $viaTicket['product']->id, 'apply_to_all_batches' => true,
+        'new_unit_sell_price' => 125, 'new_cost_price' => 90, 'new_expiry_price' => 40, 'new_reorder_level' => 25,
+    ]);
+    $beforeTicket = fingerprintAllTables();
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket))->assertRedirect();
+    $afterTicket = fingerprintAllTables();
+
+    $changed = fn (array $before, array $after) => collect($after)->filter(fn ($hash, $table) => ($before[$table] ?? null) !== $hash)->keys()->sort()->values()->all();
+
+    $touchedByProductEdit = $changed($beforeProductEdit, $afterProductEdit);
+    $touchedByTicket = collect($changed($beforeTicket, $afterTicket))->reject(fn ($t) => in_array($t, ['tickets', 'ticket_items', 'ticket_histories'], true))->values()->all();
+
+    // Same tables hit, and it really is the full set the product screen updates.
+    expect($touchedByTicket)->toBe($touchedByProductEdit)
+        ->and($touchedByProductEdit)->toContain('products', 'stock_batches', 'current_stock_by_batch', 'goods_receipt_note_items', 'product_price_change_logs');
+
+    // Balance: only prices moved. Quantities, costs, layer values, movements and accounting are untouched.
+    $balanceAfter = $stock();
+    expect($balanceAfter)->toEqual($balanceBefore);
 });

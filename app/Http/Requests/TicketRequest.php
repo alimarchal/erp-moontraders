@@ -8,11 +8,14 @@ use App\Models\StockBatch;
 use App\Models\Ticket;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
 
 class TicketRequest extends FormRequest
 {
+    public const ADJUSTMENT_TYPES = ['damage', 'theft', 'count_variance', 'expiry', 'recall', 'other'];
+
     public function authorize(): bool
     {
         return auth()->check();
@@ -53,6 +56,7 @@ class TicketRequest extends FormRequest
         return match ($this->ticketType()) {
             TicketType::NewSku => $rules + $this->newSkuRules(),
             TicketType::ReactivateSku => $rules + $this->reactivateRules(),
+            TicketType::StockAdjustment => $rules + $this->stockAdjustmentRules(),
             default => $rules + $this->priceUpdateRules(),
         };
     }
@@ -117,6 +121,32 @@ class TicketRequest extends FormRequest
     }
 
     /**
+     * Same rules as the Stock Adjustments screen, plus the company scope.
+     *
+     * @return array<string, mixed>
+     */
+    private function stockAdjustmentRules(): array
+    {
+        $supplierId = $this->scopedSupplierId();
+
+        return [
+            'adjustment_date' => ['required', 'date', 'before_or_equal:today'],
+            'supplier_id' => ['required', 'exists:suppliers,id', Rule::when($supplierId !== null, Rule::in([$supplierId]))],
+            'warehouse_id' => ['required', Rule::exists('warehouses', 'id')->using(fn ($query) => $query->where('disabled', false))],
+            'adjustment_type' => ['required', Rule::in(self::ADJUSTMENT_TYPES)],
+            'reason' => ['required', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.product_id' => ['required', 'integer', Rule::exists('products', 'id')->whereNull('deleted_at')->where('supplier_id', $this->input('supplier_id'))],
+            'items.*.stock_batch_id' => ['required', 'integer', 'exists:stock_batches,id'],
+            'items.*.system_quantity' => ['required', 'numeric', 'min:0'],
+            'items.*.actual_quantity' => ['required', 'numeric', 'min:0'],
+            'items.*.unit_cost' => ['required', 'numeric', 'min:0'],
+            'items.*.uom_id' => ['required', 'exists:uoms,id'],
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function newSkuRules(): array
@@ -157,7 +187,17 @@ class TicketRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            if ($this->ticketType() !== TicketType::PriceUpdate || $validator->errors()->isNotEmpty()) {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            if ($this->ticketType() === TicketType::StockAdjustment) {
+                $this->validateAdjustmentRows($validator);
+
+                return;
+            }
+
+            if ($this->ticketType() !== TicketType::PriceUpdate) {
                 return;
             }
 
@@ -201,6 +241,39 @@ class TicketRequest extends FormRequest
 
             if ($valid !== count(array_unique($row['batch_ids'] ?? []))) {
                 $validator->errors()->add("items.$index.batch_ids", "Selected batches do not belong to {$product->product_name}.");
+            }
+        }
+    }
+
+    /**
+     * Every line needs a batch of its own product that really sits in the chosen warehouse,
+     * and must actually change the quantity.
+     */
+    private function validateAdjustmentRows(Validator $validator): void
+    {
+        $warehouseId = (int) $this->input('warehouse_id');
+        $seen = [];
+
+        foreach ($this->input('items', []) as $index => $row) {
+            $batch = StockBatch::query()->whereKey($row['stock_batch_id'])->where('product_id', $row['product_id'])->first();
+
+            if (! $batch) {
+                $validator->errors()->add("items.$index.stock_batch_id", 'The batch does not belong to the selected product.');
+
+                continue;
+            }
+
+            if (isset($seen[$batch->id])) {
+                $validator->errors()->add("items.$index.stock_batch_id", 'The same batch is listed twice.');
+            }
+            $seen[$batch->id] = true;
+
+            $onHand = (float) DB::table('current_stock_by_batch')->where('stock_batch_id', $batch->id)->where('warehouse_id', $warehouseId)->sum('quantity_on_hand');
+
+            if ($onHand <= 0) {
+                $validator->errors()->add("items.$index.stock_batch_id", "Batch {$batch->batch_code} has no stock in the selected warehouse.");
+            } elseif (abs((float) $row['actual_quantity'] - $onHand) < 0.0005) {
+                $validator->errors()->add("items.$index.actual_quantity", "Batch {$batch->batch_code}: the counted quantity equals the system quantity, so there is nothing to adjust.");
             }
         }
     }

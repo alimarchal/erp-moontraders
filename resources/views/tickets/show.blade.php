@@ -7,7 +7,9 @@
     $statusTone = ['pending' => 'ak-status-amber', 'approved' => 'ak-status-green', 'rejected' => 'ak-status-red'];
     $historyMeta = ['created' => ['Submitted', ''], 'updated' => ['Edited', 'is-grey'], 'approved' => ['Approved', 'is-green'], 'rejected' => ['Rejected', 'is-red']];
     $authUser = auth()->user();
-    $canReview = $ticket->isPending() && $authUser->can('ticket-approve');
+    $applyPermission = $ticket->type->applyPermission();
+    $missingApplyPermission = $ticket->isPending() && $authUser->can('ticket-approve') && $applyPermission && ! $authUser->can($applyPermission);
+    $canReview = $ticket->isPending() && $authUser->can('ticket-approve') && ! $missingApplyPermission;
     $canEdit = $ticket->isPending() && $authUser->can('ticket-edit') && ($ticket->created_by === $authUser->id || $authUser->isTicketAdmin());
     $canDelete = $ticket->isPending() && $authUser->can('ticket-delete') && ($ticket->created_by === $authUser->id || $authUser->isTicketAdmin());
 @endphp
@@ -45,7 +47,7 @@
     @include('settings.partials.ui-style')
     @include('tickets.partials.style')
 
-    <div class="ak-page" x-data="{ confirmDelete: false }">
+    <div class="ak-page tk-show" x-data="{ confirmDelete: false, deleting: false }">
         <div class="ak-print-head">
             <div class="ak-print-bank">{{ config('app.name') }}</div>
             <div class="ak-print-title">Ticket {{ $ticket->ticket_number }}</div>
@@ -232,11 +234,14 @@
             </div>
 
             <div class="tk-stack">
+                @if ($missingApplyPermission)
+                    <div class="uf-note uf-note-warn">You can review tickets, but approving this type also needs the <b>{{ $applyPermission }}</b> permission. Ask a super admin to add it to your role.</div>
+                @endif
                 @if ($canReview)
                     @php $isAdjustment = $ticket->type === TicketType::StockAdjustment; @endphp
                     <section class="uf-card" aria-label="Review" style="border-color:var(--ak-navy)">
                         <header class="uf-card-head"><h2 class="uf-card-title">Review</h2></header>
-                        <form method="POST" action="{{ route('tickets.approve', $ticket) }}" class="uf-body" x-data="{ modal: null, remarksMissing: false }">
+                        <form method="POST" action="{{ route('tickets.approve', $ticket) }}" class="uf-body" x-data="{ modal: null, remarksMissing: false, submitting: false }" @submit="if (submitting) { $event.preventDefault(); return; } submitting = true" @pageshow.window="submitting = false">
                             @csrf
                             <p class="ak-muted" style="margin:0 0 10px; font-size:13px">
                                 @if ($isAdjustment)
@@ -277,8 +282,8 @@
                                     </div>
                                     <div class="uf-modal-foot">
                                         <button type="button" class="ak-btn ak-btn-outline" @click="modal = null">Cancel</button>
-                                        <button type="submit" x-show="modal === 'approve'" class="ak-btn ak-btn-success">{{ $isAdjustment ? 'Approve & post' : 'Approve' }}</button>
-                                        <button type="submit" x-show="modal === 'reject'" formaction="{{ route('tickets.reject', $ticket) }}" class="ak-btn ak-btn-danger-outline">Reject ticket</button>
+                                        <button type="submit" x-show="modal === 'approve'" class="ak-btn ak-btn-success" :disabled="submitting">{{ $isAdjustment ? 'Approve & post' : 'Approve' }}</button>
+                                        <button type="submit" x-show="modal === 'reject'" :disabled="submitting" formaction="{{ route('tickets.reject', $ticket) }}" class="ak-btn ak-btn-danger-outline">Reject ticket</button>
                                     </div>
                                 </div>
                             </div>
@@ -338,11 +343,11 @@
                         <div><h3>Delete ticket {{ $ticket->ticket_number }}?</h3>
                             <p style="margin:8px 0 0; font-size:14px; color:#334155">The ticket and its history are removed. Nothing in the system was changed by it.</p></div>
                     </div>
-                    <form method="POST" action="{{ route('tickets.destroy', $ticket) }}" class="uf-modal-foot">
+                    <form method="POST" action="{{ route('tickets.destroy', $ticket) }}" class="uf-modal-foot" @submit="if (deleting) { $event.preventDefault(); return; } deleting = true">
                         @csrf
                         @method('DELETE')
                         <button type="button" class="ak-btn ak-btn-outline" @click="confirmDelete = false">Cancel</button>
-                        <button type="submit" class="ak-btn ak-btn-danger-outline">Delete ticket</button>
+                        <button type="submit" class="ak-btn ak-btn-danger-outline" :disabled="deleting">Delete ticket</button>
                     </form>
                 </div>
             </div>

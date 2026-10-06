@@ -174,7 +174,7 @@ it('needs the matching create permission to approve an entry ticket', function (
     $approver->assignRole(Role::findOrCreate('admin', 'web'));
     $approver->givePermissionTo(Permission::findOrCreate('ticket-approve', 'web'));
 
-    $this->actingAs($approver)->post(route('tickets.approve', $ticket))->assertForbidden();
+    $this->actingAs($approver)->post(route('tickets.approve', $ticket))->assertSessionHasErrors('ticket');
     expect(Customer::count())->toBe(0)->and($ticket->fresh()->status)->toBe(TicketStatus::Pending);
 
     $approver->givePermissionTo(Permission::findOrCreate('customer-create', 'web'));
@@ -192,4 +192,33 @@ it('renders the forms and the e-mail summary for every entry type', function () 
     $mail = (new TicketSubmitted($ticket))->toMail($this->admin)->render()->toHtml();
 
     expect($mail)->toContain('Claim Register Entry')->toContain('CLM-77')->toContain('8,000.00')->toContain('not posted');
+});
+
+it('tells an approver who lacks the matching permission instead of showing a bare 403', function () {
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'New customer', 'data' => customerData()]);
+    $ticket = Ticket::firstOrFail();
+
+    $approver = User::factory()->create();
+    $approver->assignRole(Role::findOrCreate('admin', 'web'));
+    $approver->givePermissionTo(Permission::findOrCreate('ticket-approve', 'web'));
+    $approver->givePermissionTo(Permission::findOrCreate('ticket-list', 'web'));
+
+    $this->actingAs($approver)->get(route('tickets.show', $ticket))->assertOk()
+        ->assertSee('also needs the')->assertSee('customer-create')->assertDontSee('name="review_remarks"', false);
+
+    $this->actingAs($approver)->from(route('tickets.show', $ticket))->post(route('tickets.approve', $ticket))
+        ->assertRedirect(route('tickets.show', $ticket))->assertSessionHasErrors('ticket');
+});
+
+it('creates a customer from a ticket with every optional field left blank', function () {
+    $blank = array_fill_keys(['business_name', 'phone', 'email', 'ntn', 'owner_cnic', 'address', 'sub_locality', 'city', 'state', 'country', 'credit_limit', 'payment_terms', 'notes'], '');
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['type' => 'new_customer', 'title' => 'Minimal customer', 'data' => [
+        'customer_code' => 'min-1', 'customer_name' => 'Minimal Store', 'channel_type' => 'General Store', 'customer_category' => 'C',
+    ] + $blank])->assertSessionHasNoErrors()->assertRedirect();
+
+    $this->actingAs($this->admin)->post(route('tickets.approve', Ticket::firstOrFail()))->assertSessionHasNoErrors();
+
+    $customer = Customer::firstWhere('customer_code', 'MIN-1');
+    expect($customer)->not->toBeNull()->and($customer->country)->toBe('Pakistan')->and($customer->payment_terms)->not->toBeNull();
 });

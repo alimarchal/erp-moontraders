@@ -530,3 +530,48 @@ it('confirms success in a modal with an OK button instead of a banner', function
 
     $this->actingAs($this->companyUser)->get(route('tickets.show', $ticket))->assertDontSee('data-flash-modal', false);
 });
+
+it('creates only one ticket when the same form is submitted twice (double click)', function () {
+    $payload = [
+        'type' => 'price_update', 'title' => 'Double click', '_ticket_token' => 'token-abc',
+        'items' => [['product_id' => $this->product->id, 'batch_scope' => 'all', 'unit_sell_price' => '120']],
+    ];
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), $payload)->assertRedirect();
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), $payload)
+        ->assertRedirect(route('tickets.index'))->assertSessionHas('warning');
+
+    expect(Ticket::where('title', 'Double click')->count())->toBe(1);
+
+    // A fresh form (new token) is a new ticket again.
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), ['_ticket_token' => 'token-def'] + $payload)->assertRedirect();
+    expect(Ticket::where('title', 'Double click')->count())->toBe(2);
+});
+
+it('disables the buttons while a ticket form is being sent and plays the status sound', function () {
+    $page = $this->actingAs($this->companyUser)->get(route('tickets.create'))->assertOk();
+    $page->assertSee(':disabled="submitting"', false)->assertSee('name="_ticket_token"', false);
+
+    $ticket = Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id]);
+    $this->actingAs($this->companyUser)->withSession(['success' => 'Done.'])->get(route('tickets.show', $ticket))
+        ->assertSee('data-status-sound="success"', false)->assertSee('AudioContext', false);
+});
+
+it('serves the short Urdu help page (RTL, printable) to ticket users only and links it from the ticket pages', function () {
+    $this->actingAs($this->companyUser)->get(route('tickets.help'))
+        ->assertOk()->assertSee('dir="rtl"', false)->assertSee('lang="ur"', false)->assertSee('window.print()', false)
+        ->assertSee('ٹکٹ کیسے بنائیں', false)->assertSee('icons-images/ticket-help/3-form.jpg', false);
+
+    expect(route('tickets.help', [], false))->toBe('/tickets/help');
+
+    foreach (['1-menu', '2-type', '3-form', '4-success', '5-adjustment', '6-review', '7-approve', '8-password'] as $image) {
+        expect(file_exists(public_path("icons-images/ticket-help/$image.jpg")))->toBeTrue();
+    }
+
+    $this->actingAs($this->companyUser)->get(route('tickets.index'))
+        ->assertSee('href="'.route('tickets.help').'" target="_blank"', false);
+    $this->actingAs($this->companyUser)->get(route('tickets.create'))->assertSee(route('tickets.help'), false);
+
+    $noAccess = User::factory()->create();
+    $this->actingAs($noAccess)->get(route('tickets.help'))->assertForbidden();
+});

@@ -93,5 +93,12 @@
     .select2-dropdown { border-color: var(--ak-border); border-radius: 8px; font-size: 14px; overflow: hidden; }
     .select2-search--dropdown .select2-search__field { border-radius: 6px; padding: 6px 8px; }
     .tk-batch { padding: 5px 10px; font-size: 12px; }
+    .tk-check-cell { display: flex; align-items: flex-end; min-height: 40px; }
+    .tk-check { display: inline-flex; align-items: center; gap: 8px; height: 40px; font-size: 14px; color: var(--ak-text); cursor: pointer; }
+    .tk-check input[type=checkbox] { width: 18px; height: 18px; margin: 0; border-radius: 4px; accent-color: var(--ak-navy); }
+    /* Ticket page: everything visible at once, no sideways scrolling */
+    .tk-show .ak-dt { min-width: 0 !important; width: 100%; table-layout: auto; }
+    .tk-show .ak-dt th, .tk-show .ak-dt td { white-space: normal; word-break: break-word; }
+    .tk-show .ak-dt-scroll { overflow-x: visible; }
     @media print { .uf-actions, .ak-head-actions { display: none !important; } }
 </style>

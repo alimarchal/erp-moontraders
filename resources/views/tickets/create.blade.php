@@ -9,6 +9,7 @@
                 <p class="ak-sub">Ask an admin to change a price, add a new SKU or re-activate one. Nothing changes until it is approved.</p>
             </div>
             <div class="ak-head-actions">
+                <a href="{{ route('tickets.help') }}" target="_blank" rel="noopener" class="ak-btn ak-btn-outline">Help · مدد</a>
                 <a href="{{ route('tickets.index') }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to Tickets</a>
             </div>
         </div>

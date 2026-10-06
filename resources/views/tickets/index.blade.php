@@ -66,6 +66,7 @@
                 <p class="ak-sub">Product change requests (price, new SKU, re-activation) waiting for admin approval &middot; {{ $periodLabel }}</p>
             </div>
             <div class="ak-head-actions">
+                <a href="{{ route('tickets.help') }}" target="_blank" rel="noopener" class="ak-btn ak-btn-outline" title="Urdu user manual">Help · مدد</a>
                 <button type="button" class="ak-btn ak-btn-outline" onclick="window.print()">Print</button>
                 @can('report-audit-product-price-change-log')
                     <a href="{{ route('reports.product-price-change-log.index') }}" class="ak-btn ak-btn-outline">Price change log</a>
@@ -103,7 +104,7 @@
         @media print { .tk-ranges { display: none !important; } .tk-table { min-width: 0 !important; } @page { margin: 10mm; } }
     </style>
 
-    <div class="ak-page" x-data="{ confirm: { open: false, url: '', number: '' } }">
+    <div class="ak-page" x-data="{ confirm: { open: false, url: '', number: '' }, deleting: false }">
         <div class="ak-print-head">
             <div class="ak-print-bank">{{ config('app.name') }}</div>
             <div class="ak-print-title">Tickets &middot; {{ $periodLabel }}</div>
@@ -378,11 +379,11 @@
                         <p style="margin:8px 0 0; font-size:14px; color:#334155">The ticket and its history are removed. Nothing in the system was changed by it. This cannot be undone.</p>
                     </div>
                 </div>
-                <form method="POST" :action="confirm.url" class="uf-modal-foot">
+                <form method="POST" :action="confirm.url" class="uf-modal-foot" @submit="if (deleting) { $event.preventDefault(); return; } deleting = true">
                     @csrf
                     @method('DELETE')
                     <button type="button" class="ak-btn ak-btn-outline" @click="confirm.open = false">Cancel</button>
-                    <button type="submit" class="ak-btn ak-btn-danger-outline">Delete ticket</button>
+                    <button type="submit" class="ak-btn ak-btn-danger-outline" :disabled="deleting">Delete ticket</button>
                 </form>
             </div>
         </div>

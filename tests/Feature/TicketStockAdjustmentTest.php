@@ -221,7 +221,7 @@ it('needs the post permission and the admin password to approve, and changes not
     $approver = User::factory()->create();
     $approver->assignRole(Role::findOrCreate('admin', 'web'));
     $approver->givePermissionTo(['ticket-list', 'ticket-approve']);
-    $this->actingAs($approver)->post(route('tickets.approve', $ticket), ['password' => 'password'])->assertForbidden();
+    $this->actingAs($approver)->post(route('tickets.approve', $ticket), ['password' => 'password'])->assertSessionHasErrors('ticket');
 
     $this->actingAs($this->admin)->post(route('tickets.approve', $ticket))->assertSessionHasErrors('password');
     $this->actingAs($this->admin)->post(route('tickets.approve', $ticket), ['password' => 'wrong'])->assertSessionHasErrors('password');

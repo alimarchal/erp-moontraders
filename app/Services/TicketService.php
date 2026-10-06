@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
+use function Illuminate\Support\defer;
+
 class TicketService
 {
     public function __construct(private ProductPricingService $pricing) {}
@@ -44,7 +46,8 @@ class TicketService
             $this->syncItems($ticket, $data);
             $this->record($ticket, $user, 'created', null, TicketStatus::Pending, $data['description'] ?? null);
 
-            DB::afterCommit(fn () => $this->notifyApprovers($ticket));
+            // Mailing happens after the response is sent, so submitting never waits for the mail server.
+            DB::afterCommit(fn () => defer(fn () => $this->notifyApprovers($ticket)));
 
             return $ticket;
         });
@@ -332,7 +335,8 @@ class TicketService
             throw ValidationException::withMessages(['ticket' => "A customer with code '{$data['customer_code']}' or that e-mail already exists, so this ticket cannot be approved."]);
         }
 
-        $customer = Customer::create($data);
+        // Blank optional fields fall back to the column defaults (payment terms, country, … are NOT NULL).
+        $customer = Customer::create(array_filter($data, fn ($value) => $value !== null && $value !== ''));
         $item->update(['payload' => $item->payload + ['created_id' => $customer->id]]);
 
         return "Customer {$customer->customer_code} created.";

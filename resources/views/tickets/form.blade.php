@@ -51,6 +51,7 @@
             rows: (config.rows.length ? config.rows : [{}]).map((r) => Object.assign(blank(), r)),
             batchUrl: config.batchUrl,
             skuName: config.skuName,
+            submitting: false,
             adj: config.adj || {},
             adjBatchUrl: config.adjBatchUrl,
 
@@ -154,12 +155,15 @@
         skuName: @js($sku['product_name'] ?? ''),
         adj: @js(['supplier_id' => (string) ($adj['supplier_id'] ?? ($suppliers->count() === 1 ? $suppliers->first()->id : '')), 'warehouse_id' => (string) ($adj['warehouse_id'] ?? '')]),
         adjBatchUrl: @js(route('tickets.adjustment-batches', ['product' => '__P__', 'warehouse' => '__W__'])),
-    })" id="ticket-form">
+    })" id="ticket-form" @submit="if (submitting) { $event.preventDefault(); return; } submitting = true" @pageshow.window="submitting = false">
     @csrf
     @if ($httpMethod !== 'POST')
         @method($httpMethod)
     @endif
     <input type="hidden" name="type" value="{{ $type->value }}">
+    @unless ($isEdit)
+        <input type="hidden" name="_ticket_token" value="{{ \Illuminate\Support\Str::uuid() }}">
+    @endunless
 
     {{-- Ticket: type, title, description --}}
     <section class="uf-card" aria-label="Ticket details" style="margin-bottom:16px">
@@ -247,9 +251,7 @@
                     <div><label class="tk-label" for="sku_{{ $field }}">{{ $text }}</label>
                         <input id="sku_{{ $field }}" name="sku[{{ $field }}]" type="number" step="0.01" min="0" value="{{ $sku[$field] ?? '' }}"></div>
                 @endforeach
-                <div style="display:flex; align-items:flex-end"><label style="display:inline-flex; gap:8px; align-items:center; font-size:14px">
-                    <input type="hidden" name="sku[is_powder]" value="0">
-                    <input type="checkbox" name="sku[is_powder]" value="1" style="width:auto; height:auto" @checked(! empty($sku['is_powder']))> Powder product</label></div>
+                <div class="tk-check-cell"><label class="tk-check"><input type="hidden" name="sku[is_powder]" value="0"><input type="checkbox" name="sku[is_powder]" value="1" @checked(! empty($sku['is_powder']))> Powder product</label></div>
                 <div class="tk-span3"><label class="tk-label" for="sku_description">Product description</label>
                     <input id="sku_description" name="sku[description]" type="text" value="{{ $sku['description'] ?? '' }}"></div>
             </div>
@@ -476,7 +478,9 @@
         </p>
         <div>
             <a href="{{ $isEdit ? route('tickets.show', $ticket) : route('tickets.index') }}" class="ak-btn ak-btn-outline">Cancel</a>
-            <button type="submit" class="ak-btn ak-btn-primary">{{ $submitLabel }}</button>
+            <button type="submit" class="ak-btn ak-btn-primary" :disabled="submitting">
+                <span x-show="!submitting">{{ $submitLabel }}</span><span x-show="submitting" x-cloak>Please wait…</span>
+            </button>
         </div>
     </div>
 </form>
@@ -494,7 +498,7 @@
             // Other drop-downs (New SKU form).
             $('.tk-select').each(function () {
                 const $s = $(this);
-                $s.select2({ width: '100%', placeholder: $s.find('option[value=""]').text() || 'Select', allowClear: $s.find('option[value=""]').length > 0 });
+                $s.select2({ width: '100%', placeholder: $s.find('option[value=""]').text() || 'Select', allowClear: $s.find('option[value=""]').length > 0 && ! $s.prop('required') });
             });
         });
     </script>

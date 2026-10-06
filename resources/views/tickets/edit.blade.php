@@ -9,6 +9,7 @@
                 <p class="ak-sub">Only pending tickets can be changed.</p>
             </div>
             <div class="ak-head-actions">
+                <a href="{{ route('tickets.help') }}" target="_blank" rel="noopener" class="ak-btn ak-btn-outline">Help · مدد</a>
                 <a href="{{ route('tickets.show', $ticket) }}" class="ak-btn ak-btn-outline"><span aria-hidden="true">←</span> Back to ticket</a>
             </div>
         </div>

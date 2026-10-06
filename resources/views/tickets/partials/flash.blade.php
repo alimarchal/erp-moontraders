@@ -1,12 +1,12 @@
 {{-- Flash messages for the ticket pages: success opens a confirmation modal with an OK button, problems stay as alerts. --}}
 @if (session('error'))
-    <div class="ak-alert ak-alert-error" role="alert">{{ is_array(session('error')) ? session('error.message') : session('error') }}</div>
+    <div class="ak-alert ak-alert-error" role="alert" data-status-sound="error">{{ is_array(session('error')) ? session('error.message') : session('error') }}</div>
 @endif
 @if (session('warning'))
-    <div class="ak-alert ak-alert-warn" role="status">{{ session('warning') }}</div>
+    <div class="ak-alert ak-alert-warn" role="status" data-status-sound="warning">{{ session('warning') }}</div>
 @endif
 @if (session('success'))
-    <div class="uf-modal" x-data="{ open: true }" x-show="open" x-cloak @keydown.escape.window="open = false" role="alertdialog" aria-modal="true" aria-labelledby="tk-flash-title" data-flash-modal>
+    <div class="uf-modal" x-data="{ open: true }" x-show="open" x-cloak @keydown.escape.window="open = false" role="alertdialog" aria-modal="true" aria-labelledby="tk-flash-title" data-flash-modal data-status-sound="success">
         <div class="uf-modal-bg" x-show="open" x-transition.opacity @click="open = false"></div>
         <div class="uf-modal-box" x-show="open" x-transition>
             <div class="uf-modal-body">
@@ -23,4 +23,7 @@
             </div>
         </div>
     </div>
+@endif
+@if (session('success') || session('error') || session('warning'))
+    <x-status-sound-script />
 @endif

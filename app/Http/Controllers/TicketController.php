@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
@@ -33,7 +34,7 @@ class TicketController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            new Middleware('can:ticket-list', only: ['index', 'show']),
+            new Middleware('can:ticket-list', only: ['index', 'show', 'help']),
             new Middleware('can:ticket-create', only: ['create', 'store', 'batches', 'adjustmentBatches']),
             new Middleware('can:ticket-edit', only: ['edit', 'update']),
             new Middleware('can:ticket-delete', only: ['destroy']),
@@ -109,6 +110,14 @@ class TicketController extends Controller implements HasMiddleware
             });
     }
 
+    /**
+     * Short user manual in Urdu (opens in its own tab, printable).
+     */
+    public function help(): View
+    {
+        return view('tickets.help');
+    }
+
     public function create(Request $request): View
     {
         return view('tickets.create', $this->formData($request, TicketType::tryFrom((string) $request->query('type')) ?? TicketType::PriceUpdate));
@@ -116,7 +125,21 @@ class TicketController extends Controller implements HasMiddleware
 
     public function store(TicketRequest $request): RedirectResponse
     {
-        $ticket = $this->tickets->create($request->user(), $request->validated());
+        // A double click (or a replayed form) carries the same one-time token: only the first one creates a ticket.
+        $token = (string) $request->input('_ticket_token');
+        $tokenKey = 'ticket-submitted:'.$request->user()->id.':'.$token;
+
+        if ($token !== '' && ! Cache::add($tokenKey, true, now()->addMinutes(10))) {
+            return redirect()->route('tickets.index')->with('warning', 'This ticket was already submitted — it is in the list below.');
+        }
+
+        try {
+            $ticket = $this->tickets->create($request->user(), $request->validated());
+        } catch (\Throwable $e) {
+            Cache::forget($tokenKey);
+
+            throw $e;
+        }
 
         return redirect()->route('tickets.show', $ticket)
             ->with('success', "Ticket {$ticket->ticket_number} submitted for approval.");
@@ -200,7 +223,9 @@ class TicketController extends Controller implements HasMiddleware
             return;
         }
 
-        abort_unless($request->user()->can($permission), 403, "Approving this ticket needs the {$permission} permission.");
+        if (! $request->user()->can($permission)) {
+            throw ValidationException::withMessages(['ticket' => "You cannot approve this ticket: it needs the {$permission} permission. Ask a super admin to add it to your role."]);
+        }
 
         if ($ticket->type !== TicketType::StockAdjustment) {
             return;

@@ -298,3 +298,18 @@ it('shows the ticket form for every ticket type and the dashboard pending count'
 
     $this->actingAs($this->companyUser)->get(route('settings.index'))->assertOk()->assertSee('Tickets');
 });
+
+it('filters the ticket list by status tab and shows per-status counts', function () {
+    Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id, 'title' => 'Waiting one']);
+    Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id, 'title' => 'Done one', 'status' => TicketStatus::Approved]);
+
+    $response = $this->actingAs($this->companyUser)->get(route('tickets.index', ['status' => 'approved']));
+
+    $response->assertOk()->assertSee('Done one')->assertDontSee('Waiting one');
+    expect($response->viewData('statusCounts')->all())->toEqual(['pending' => 1, 'approved' => 1]);
+});
+
+it('renders the issue-style create form with its submit action', function () {
+    $this->actingAs($this->companyUser)->get(route('tickets.create'))
+        ->assertOk()->assertSee('data-product-picker', false)->assertSee('Submit for approval');
+});

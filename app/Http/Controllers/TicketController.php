@@ -36,6 +36,9 @@ class TicketController extends Controller implements HasMiddleware
 
     public function index(Request $request): View
     {
+        $statusCounts = Ticket::query()->visibleTo($request->user())
+            ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
+
         $tickets = Ticket::query()
             ->visibleTo($request->user())
             ->with(['supplier', 'creator'])
@@ -53,6 +56,7 @@ class TicketController extends Controller implements HasMiddleware
         return view('tickets.index', [
             'tickets' => $tickets,
             'statuses' => TicketStatus::cases(),
+            'statusCounts' => $statusCounts,
             'types' => TicketType::cases(),
         ]);
     }

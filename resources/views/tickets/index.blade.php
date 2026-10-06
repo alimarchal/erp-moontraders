@@ -1,80 +1,86 @@
+@php
+    $tabClass = fn (bool $active) => $active
+        ? 'border-indigo-600 text-indigo-700'
+        : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300';
+    $current = request('status');
+@endphp
+
 <x-app-layout>
     <x-slot name="header">
         <x-page-header title="Tickets" :createRoute="route('tickets.create')" createLabel="New Ticket"
-            createPermission="ticket-create" :showSearch="true" backRoute="settings.index" />
+            createPermission="ticket-create" :showSearch="false" backRoute="settings.index" />
     </x-slot>
 
-    <x-filter-section :action="route('tickets.index')">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <x-label for="search" value="Ticket # / Title" />
-                <x-input id="search" type="text" name="search" class="block mt-1 w-full" value="{{ request('search') }}" />
-            </div>
-            <div>
-                <x-label for="type" value="Type" />
-                <select id="type" name="type" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Types</option>
-                    @foreach ($types as $type)
-                        <option value="{{ $type->value }}" @selected(request('type') === $type->value)>{{ $type->label() }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <x-label for="status" value="Status" />
-                <select id="status" name="status" class="border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 rounded-md shadow-sm block mt-1 w-full">
-                    <option value="">All Statuses</option>
-                    @foreach ($statuses as $status)
-                        <option value="{{ $status->value }}" @selected(request('status') === $status->value)>{{ $status->label() }}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-    </x-filter-section>
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-4">
+            <x-status-message />
 
-    <x-data-table :headers="[
-        ['label' => 'Ticket #', 'align' => 'text-left'],
-        ['label' => 'Title', 'align' => 'text-left'],
-        ['label' => 'Type', 'align' => 'text-left'],
-        ['label' => 'Company', 'align' => 'text-left'],
-        ['label' => 'Items', 'align' => 'text-center'],
-        ['label' => 'Raised By', 'align' => 'text-left'],
-        ['label' => 'Date', 'align' => 'text-left'],
-        ['label' => 'Status', 'align' => 'text-center'],
-        ['label' => 'Actions', 'align' => 'text-center'],
-    ]" :items="$tickets" emptyMessage="No tickets found." :emptyRoute="route('tickets.create')" emptyLinkText="Raise a Ticket">
-        @foreach ($tickets as $ticket)
-            <tr class="border-b border-gray-200 text-sm hover:bg-gray-50 transition-colors duration-150">
-                <td class="py-1 px-2 font-semibold">{{ $ticket->ticket_number }}</td>
-                <td class="py-1 px-2">{{ $ticket->title }}</td>
-                <td class="py-1 px-2">{{ $ticket->type->label() }}</td>
-                <td class="py-1 px-2">{{ $ticket->supplier->supplier_name ?? '—' }}</td>
-                <td class="py-1 px-2 text-center">{{ $ticket->items_count }}</td>
-                <td class="py-1 px-2">{{ $ticket->creator->name ?? '—' }}</td>
-                <td class="py-1 px-2">{{ $ticket->created_at->format('d-m-Y H:i') }}</td>
-                <td class="py-1 px-2 text-center">
-                    <span class="inline-flex items-center px-2 py-1 text-xs font-semibold rounded-full {{ $ticket->status->badgeClasses() }}">{{ $ticket->status->label() }}</span>
-                </td>
-                <td class="py-1 px-2 text-center">
-                    <div class="flex justify-center space-x-2">
-                        <a href="{{ route('tickets.show', $ticket) }}" class="text-blue-700 hover:underline" title="View">View</a>
-                        @can('ticket-edit')
-                            @if ($ticket->isPending())
-                                <a href="{{ route('tickets.edit', $ticket) }}" class="text-green-700 hover:underline" title="Edit">Edit</a>
-                            @endif
-                        @endcan
-                        @can('ticket-delete')
-                            @if ($ticket->isPending())
-                                <form action="{{ route('tickets.destroy', $ticket) }}" method="POST" class="inline"
-                                    onsubmit="return confirm('Delete this ticket?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="text-red-700 hover:underline">Delete</button>
-                                </form>
-                            @endif
+            <div class="bg-white shadow-xl sm:rounded-xl overflow-hidden">
+                <div class="px-4 pt-4 flex flex-wrap items-center justify-between gap-3 border-b border-gray-200">
+                    <nav class="flex gap-6 -mb-px" aria-label="Status">
+                        <a href="{{ route('tickets.index', request()->except('status', 'page')) }}"
+                            class="pb-3 border-b-2 text-sm font-semibold {{ $tabClass($current === null || $current === '') }}">
+                            All <span class="ml-1 rounded-full bg-gray-100 px-2 py-0.5 text-xs">{{ $statusCounts->sum() }}</span>
+                        </a>
+                        @foreach ($statuses as $status)
+                            <a href="{{ route('tickets.index', array_merge(request()->except('page'), ['status' => $status->value])) }}"
+                                class="pb-3 border-b-2 text-sm font-semibold {{ $tabClass($current === $status->value) }}">
+                                {{ $status->label() }}
+                                <span class="ml-1 rounded-full px-2 py-0.5 text-xs {{ $status->badgeClasses() }}">{{ $statusCounts[$status->value] ?? 0 }}</span>
+                            </a>
+                        @endforeach
+                    </nav>
+
+                    <form method="GET" action="{{ route('tickets.index') }}" class="pb-3 flex flex-wrap gap-2">
+                        @if ($current)
+                            <input type="hidden" name="status" value="{{ $current }}">
+                        @endif
+                        <select name="type" onchange="this.form.submit()"
+                            class="rounded-lg border-gray-300 text-sm py-1.5 focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">All types</option>
+                            @foreach ($types as $type)
+                                <option value="{{ $type->value }}" @selected(request('type') === $type->value)>{{ $type->label() }}</option>
+                            @endforeach
+                        </select>
+                        <input type="search" name="search" value="{{ request('search') }}" placeholder="Search ticket # or title…"
+                            class="rounded-lg border-gray-300 text-sm py-1.5 w-64 focus:border-indigo-500 focus:ring-indigo-500">
+                    </form>
+                </div>
+
+                @forelse ($tickets as $ticket)
+                    <a href="{{ route('tickets.show', $ticket) }}"
+                        class="flex items-start gap-4 px-5 py-4 border-b border-gray-100 last:border-0 hover:bg-indigo-50/40 transition">
+                        <span class="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
+                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $ticket->type->iconPath() }}" /></svg>
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="flex flex-wrap items-center gap-2">
+                                <span class="font-semibold text-gray-900 truncate">{{ $ticket->title }}</span>
+                                <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold {{ $ticket->status->badgeClasses() }}">{{ $ticket->status->label() }}</span>
+                                <span class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-600">{{ $ticket->type->label() }}</span>
+                            </span>
+                            <span class="mt-1 block text-xs text-gray-500">
+                                {{ $ticket->ticket_number }} · raised by {{ $ticket->creator->name ?? '—' }}
+                                {{ $ticket->created_at->diffForHumans() }}
+                                @if ($ticket->supplier) · {{ $ticket->supplier->supplier_name }} @endif
+                                · {{ $ticket->items_count }} {{ \Illuminate\Support\Str::plural('item', $ticket->items_count) }}
+                            </span>
+                        </span>
+                    </a>
+                @empty
+                    <div class="py-16 text-center">
+                        <p class="text-gray-700 font-medium">No tickets found</p>
+                        <p class="text-sm text-gray-500 mt-1">Raise a ticket to request a price change, a new SKU or a re-activation.</p>
+                        @can('ticket-create')
+                            <a href="{{ route('tickets.create') }}" class="mt-4 inline-flex rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700">New Ticket</a>
                         @endcan
                     </div>
-                </td>
-            </tr>
-        @endforeach
-    </x-data-table>
+                @endforelse
+
+                @if ($tickets->hasPages())
+                    <div class="px-4 py-3">{{ $tickets->links() }}</div>
+                @endif
+            </div>
+        </div>
+    </div>
 </x-app-layout>

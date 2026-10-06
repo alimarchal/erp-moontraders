@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Ticket;
 use App\Models\Uom;
+use App\Models\User;
 use App\Services\ProductPricingService;
 use App\Services\TicketService;
 use Illuminate\Http\JsonResponse;
@@ -17,6 +18,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Routing\Controllers\Middleware;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
@@ -35,31 +37,69 @@ class TicketController extends Controller implements HasMiddleware
         ];
     }
 
+    public const PER_PAGE = [15, 25, 50, 100];
+
+    private const SORTS = ['created_at', 'ticket_number', 'title', 'status'];
+
     public function index(Request $request): View
     {
-        $statusCounts = Ticket::query()->visibleTo($request->user())
+        $user = $request->user();
+        $filters = array_filter((array) $request->input('filter', []), fn ($value) => $value !== null && $value !== '');
+
+        $sort = (string) $request->input('sort', '-created_at');
+        if (! in_array(ltrim($sort, '-'), self::SORTS, true)) {
+            $sort = '-created_at';
+        }
+
+        $perPage = in_array((int) $request->input('per_page'), self::PER_PAGE, true) ? (int) $request->input('per_page') : 25;
+
+        $counts = $this->filteredTickets($user, Arr::except($filters, 'status'))
             ->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status');
 
-        $tickets = Ticket::query()
-            ->visibleTo($request->user())
-            ->with(['supplier', 'creator'])
+        $tickets = $this->filteredTickets($user, $filters)
+            ->with(['supplier', 'creator', 'reviewer'])
             ->withCount('items')
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
-            ->when($request->filled('type'), fn ($q) => $q->where('type', $request->input('type')))
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $term = '%'.$request->input('search').'%';
-                $q->where(fn ($q) => $q->where('title', 'like', $term)->orWhere('ticket_number', 'like', $term));
-            })
-            ->latest('id')
-            ->paginate(25)
+            ->orderBy(ltrim($sort, '-'), str_starts_with($sort, '-') ? 'desc' : 'asc')
+            ->orderByDesc('id')
+            ->paginate($perPage)
             ->withQueryString();
 
         return view('tickets.index', [
             'tickets' => $tickets,
-            'statuses' => TicketStatus::cases(),
-            'statusCounts' => $statusCounts,
+            'stats' => [
+                'total' => (int) $counts->sum(),
+                'pending' => (int) ($counts[TicketStatus::Pending->value] ?? 0),
+                'approved' => (int) ($counts[TicketStatus::Approved->value] ?? 0),
+                'rejected' => (int) ($counts[TicketStatus::Rejected->value] ?? 0),
+            ],
             'types' => TicketType::cases(),
+            'suppliers' => Supplier::query()
+                ->when(! $user->isTicketAdmin() && $user->supplier_id, fn ($q) => $q->where('id', $user->supplier_id))
+                ->orderBy('supplier_name')->get(['id', 'supplier_name']),
+            'creators' => User::query()
+                ->whereIn('id', Ticket::query()->visibleTo($user)->select('created_by'))
+                ->orderBy('name')->get(['id', 'name']),
+            'perPage' => $perPage,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $filters
+     */
+    private function filteredTickets(User $user, array $filters)
+    {
+        return Ticket::query()
+            ->visibleTo($user)
+            ->when($filters['status'] ?? null, fn ($q, $value) => $q->where('status', $value))
+            ->when($filters['type'] ?? null, fn ($q, $value) => $q->where('type', $value))
+            ->when($filters['supplier_id'] ?? null, fn ($q, $value) => $q->where('supplier_id', $value))
+            ->when($filters['created_by'] ?? null, fn ($q, $value) => $q->where('created_by', $value))
+            ->when($filters['date_from'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '>=', $value))
+            ->when($filters['date_to'] ?? null, fn ($q, $value) => $q->whereDate('created_at', '<=', $value))
+            ->when($filters['search'] ?? null, function ($q, $value) {
+                $term = '%'.$value.'%';
+                $q->where(fn ($q) => $q->where('title', 'like', $term)->orWhere('ticket_number', 'like', $term));
+            });
     }
 
     public function create(Request $request): View

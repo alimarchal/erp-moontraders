@@ -101,316 +101,276 @@
         rows: @js(array_values($rows)),
         batchUrl: @js(route('tickets.product-batches', ['product' => '__ID__'])),
         skuName: @js($sku['product_name'] ?? ''),
-    })" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    })">
     @csrf
     @if ($httpMethod !== 'POST')
         @method($httpMethod)
     @endif
     <input type="hidden" name="type" value="{{ $type->value }}">
 
-    {{-- ───────────── Main column ───────────── --}}
-    <div class="lg:col-span-2 space-y-6">
+    <div class="uf-grid">
+        <div class="tk-stack">
 
-        {{-- Type picker --}}
-        @unless ($isEdit)
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                @foreach ($types as $option)
-                    <a href="{{ route('tickets.create', ['type' => $option->value]) }}"
-                        class="group rounded-xl border-2 p-4 transition {{ $type === $option ? 'border-indigo-600 bg-indigo-50/60 shadow' : 'border-gray-200 bg-white hover:border-indigo-300' }}">
-                        <span class="flex items-center gap-2 font-semibold {{ $type === $option ? 'text-indigo-700' : 'text-gray-800' }}">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $option->iconPath() }}" /></svg>
-                            {{ $option->label() }}
-                        </span>
-                        <span class="mt-1 block text-xs text-gray-500 leading-snug">{{ $option->description() }}</span>
-                    </a>
-                @endforeach
-            </div>
-        @endunless
-
-        {{-- Title + description (issue style) --}}
-        <div class="bg-white shadow-xl sm:rounded-xl p-5 space-y-4">
-            <div>
-                <label for="title" class="{{ $label }}">Title</label>
-                <input id="title" name="title" type="text" required maxlength="191" autofocus
-                    value="{{ old('title', $ticket?->title) }}"
-                    placeholder="{{ match ($type) { TicketType::PriceUpdate => 'e.g. Revised trade price for Nov', TicketType::NewSku => 'e.g. Add Zeera Biscuit 200g', TicketType::ReactivateSku => 'e.g. Bring back seasonal SKU' } }}"
-                    class="{{ $input }} text-base font-semibold py-2.5">
-            </div>
-            <div>
-                <label for="description" class="{{ $label }}">Description</label>
-                <textarea id="description" name="description" rows="3" placeholder="Why is this change needed? (optional)"
-                    class="{{ $input }}">{{ old('description', $ticket?->description) }}</textarea>
-            </div>
-        </div>
-
-        @if ($type === TicketType::NewSku)
-            {{-- ───────────── New SKU ───────────── --}}
-            <div class="bg-white shadow-xl sm:rounded-xl p-5">
-                <h3 class="font-semibold text-gray-900">Product details</h3>
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {{-- 1. Ticket details --}}
+            <section class="uf-card" aria-labelledby="tk-details">
+                <header class="uf-card-head">
                     <div>
-                        <label class="{{ $label }}" for="sku_product_code">SKU code *</label>
-                        <input id="sku_product_code" name="sku[product_code]" type="text" required value="{{ $sku['product_code'] ?? '' }}" class="{{ $input }} uppercase">
+                        <h2 class="uf-card-title" id="tk-details"><span class="uf-step">1</span> Ticket details</h2>
+                        <p class="uf-card-sub">What do you want changed, and why?</p>
                     </div>
-                    <div class="md:col-span-2">
-                        <label class="{{ $label }}" for="sku_product_name">SKU name *</label>
-                        <input id="sku_product_name" name="sku[product_name]" type="text" required x-model="skuName" value="{{ $sku['product_name'] ?? '' }}" class="{{ $input }}">
-                    </div>
-                    <div>
-                        <label class="{{ $label }}" for="sku_supplier_id">Company / supplier</label>
-                        <select id="sku_supplier_id" name="sku[supplier_id]" class="{{ $input }}">
-                            @if ($suppliers->count() !== 1)<option value="">Select supplier</option>@endif
-                            @foreach ($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}" @selected((string) ($sku['supplier_id'] ?? '') === (string) $supplier->id || $suppliers->count() === 1)>{{ $supplier->supplier_name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="{{ $label }}" for="sku_category_id">Category</label>
-                        <select id="sku_category_id" name="sku[category_id]" class="{{ $input }}">
-                            <option value="">Select category</option>
-                            @foreach ($categories as $category)
-                                <option value="{{ $category->id }}" @selected((string) ($sku['category_id'] ?? '') === (string) $category->id)>{{ $category->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="{{ $label }}" for="sku_brand">Brand</label>
-                        <input id="sku_brand" name="sku[brand]" type="text" value="{{ $sku['brand'] ?? '' }}" class="{{ $input }}">
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white shadow-xl sm:rounded-xl p-5">
-                <h3 class="font-semibold text-gray-900">Units &amp; packaging</h3>
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label class="{{ $label }}" for="sku_uom_id">Base UOM *</label>
-                        <select id="sku_uom_id" name="sku[uom_id]" required class="{{ $input }}">
-                            <option value="">Select UOM</option>
-                            @foreach ($uoms as $uom)
-                                <option value="{{ $uom->id }}" @selected((string) ($sku['uom_id'] ?? '') === (string) $uom->id)>{{ $uom->uom_name }} ({{ $uom->symbol }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="{{ $label }}" for="sku_sales_uom_id">Sales UOM</label>
-                        <select id="sku_sales_uom_id" name="sku[sales_uom_id]" class="{{ $input }}">
-                            <option value="">Select UOM</option>
-                            @foreach ($uoms as $uom)
-                                <option value="{{ $uom->id }}" @selected((string) ($sku['sales_uom_id'] ?? '') === (string) $uom->id)>{{ $uom->uom_name }} ({{ $uom->symbol }})</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div>
-                        <label class="{{ $label }}" for="sku_uom_conversion_factor">Units per sales unit</label>
-                        <input id="sku_uom_conversion_factor" name="sku[uom_conversion_factor]" type="number" step="0.001" value="{{ $sku['uom_conversion_factor'] ?? 1 }}" class="{{ $input }}">
-                    </div>
-                    <div>
-                        <label class="{{ $label }}" for="sku_pack_size">Pack size</label>
-                        <input id="sku_pack_size" name="sku[pack_size]" type="text" placeholder="e.g. 500g" value="{{ $sku['pack_size'] ?? '' }}" class="{{ $input }}">
-                    </div>
-                    <div>
-                        <label class="{{ $label }}" for="sku_weight">Weight (kg)</label>
-                        <input id="sku_weight" name="sku[weight]" type="number" step="0.001" value="{{ $sku['weight'] ?? '' }}" class="{{ $input }}">
-                    </div>
-                    <div>
-                        <label class="{{ $label }}" for="sku_barcode">Barcode</label>
-                        <input id="sku_barcode" name="sku[barcode]" type="text" value="{{ $sku['barcode'] ?? '' }}" class="{{ $input }}">
-                    </div>
-                    <div>
-                        <label class="{{ $label }}" for="sku_valuation_method">Valuation</label>
-                        <select id="sku_valuation_method" name="sku[valuation_method]" class="{{ $input }}">
-                            @foreach ($valuationMethods as $method)
-                                <option value="{{ $method }}" @selected(($sku['valuation_method'] ?? 'FIFO') === $method)>{{ $method }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="flex items-end">
-                        <label class="inline-flex items-center gap-2 text-sm text-gray-700">
-                            <input type="hidden" name="sku[is_powder]" value="0">
-                            <input type="checkbox" name="sku[is_powder]" value="1" class="rounded border-gray-300 text-indigo-600" @checked(! empty($sku['is_powder']))>
-                            Powder product
-                        </label>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white shadow-xl sm:rounded-xl p-5">
-                <h3 class="font-semibold text-gray-900">Pricing &amp; stock</h3>
-                <div class="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                    @foreach (['unit_sell_price' => 'Selling price', 'cost_price' => 'Cost price', 'expiry_price' => 'Expiry price', 'reorder_level' => 'Reorder level'] as $field => $text)
+                </header>
+                <div class="uf-body" style="display:flex; flex-direction:column; gap:16px">
+                    @unless ($isEdit)
                         <div>
-                            <label class="{{ $label }}" for="sku_{{ $field }}">{{ $text }}</label>
-                            <input id="sku_{{ $field }}" name="sku[{{ $field }}]" type="number" step="0.01" min="0" value="{{ $sku[$field] ?? '' }}" class="{{ $input }}">
+                            <span class="tk-label">Ticket type</span>
+                            <div class="tk-types">
+                                @foreach ($types as $option)
+                                    <a href="{{ route('tickets.create', ['type' => $option->value]) }}" class="tk-type{{ $type === $option ? ' is-on' : '' }}" @if ($type === $option) aria-current="true" @endif>
+                                        <b><svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="{{ $option->iconPath() }}" /></svg>{{ $option->label() }}</b>
+                                        <small>{{ $option->description() }}</small>
+                                    </a>
+                                @endforeach
+                            </div>
                         </div>
-                    @endforeach
-                    <div class="col-span-2 md:col-span-4">
-                        <label class="{{ $label }}" for="sku_description">Product description</label>
-                        <textarea id="sku_description" name="sku[description]" rows="2" class="{{ $input }}">{{ $sku['description'] ?? '' }}</textarea>
+                    @endunless
+                    <div class="uf-field">
+                        <label for="title">Title <span class="uf-req">*</span></label>
+                        <input id="title" name="title" type="text" required maxlength="191" autofocus value="{{ old('title', $ticket?->title) }}"
+                            placeholder="{{ match ($type) { TicketType::PriceUpdate => 'e.g. Revised trade prices for November', TicketType::NewSku => 'e.g. Add Zeera Biscuit 200g', TicketType::ReactivateSku => 'e.g. Bring back seasonal SKU' } }}">
+                    </div>
+                    <div>
+                        <label class="tk-label" for="description">Description <span class="ak-muted" style="font-weight:400">(optional)</span></label>
+                        <textarea id="description" name="description" rows="3" class="tk-textarea" placeholder="Why is this change needed?">{{ old('description', $ticket?->description) }}</textarea>
                     </div>
                 </div>
-            </div>
-        @else
-            {{-- ───────────── Product rows ───────────── --}}
-            <template x-for="(row, index) in rows" :key="index">
-                <div class="bg-white shadow-xl sm:rounded-xl overflow-hidden">
-                    <div class="flex items-center gap-3 px-5 py-3 bg-gray-50 border-b border-gray-200">
-                        <span class="flex h-6 w-6 items-center justify-center rounded-full bg-indigo-600 text-xs font-bold text-white" x-text="index + 1"></span>
+            </section>
 
-                        {{-- Searchable product picker --}}
-                        <div class="relative flex-1" data-product-picker x-data="{ open: false, q: '' }" @click.outside="open = false" @keydown.escape="open = false">
-                            <input type="hidden" :name="`items[${index}][product_id]`" :value="row.product_id">
-                            <button type="button" @click="open = !open; $nextTick(() => $refs.search && $refs.search.focus())"
-                                class="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left text-sm shadow-sm hover:border-indigo-400">
-                                <span x-text="product(row) ? product(row).label : (type === 'reactivate_sku' ? 'Select an inactive SKU…' : 'Select a product…')"
-                                    :class="product(row) ? 'font-semibold text-gray-900' : 'text-gray-400'"></span>
-                                <svg class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.17l3.71-3.94a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clip-rule="evenodd"/></svg>
-                            </button>
-                            <div x-show="open" x-transition x-cloak class="absolute z-30 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-xl">
-                                <input x-ref="search" x-model="q" type="text" placeholder="Search code or name…"
-                                    class="w-full rounded-t-lg border-0 border-b border-gray-200 text-sm focus:ring-0">
-                                <ul class="max-h-60 overflow-auto py-1 text-sm">
-                                    <template x-for="p in options().filter((p) => p.label.toLowerCase().includes(q.toLowerCase()))" :key="p.id">
-                                        <li @click="pick(row, p); open = false; q = ''"
-                                            class="cursor-pointer px-3 py-2 hover:bg-indigo-50" x-text="p.label"></li>
-                                    </template>
-                                    <li x-show="options().filter((p) => p.label.toLowerCase().includes(q.toLowerCase())).length === 0" class="px-3 py-2 text-gray-400">No matching product</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                        <button type="button" x-show="rows.length > 1" @click="removeRow(index)" title="Remove"
-                            class="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-600">
-                            <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
+            @if ($type === TicketType::NewSku)
+                <section class="uf-card" aria-labelledby="tk-sku">
+                    <header class="uf-card-head"><div>
+                        <h2 class="uf-card-title" id="tk-sku"><span class="uf-step">2</span> New SKU</h2>
+                        <p class="uf-card-sub">The product is created only when an admin approves this ticket.</p>
+                    </div></header>
+                    <div class="uf-body tk-gen">
+                        <div><label class="tk-label" for="sku_product_code">SKU code <span class="uf-req">*</span></label>
+                            <input id="sku_product_code" name="sku[product_code]" type="text" required value="{{ $sku['product_code'] ?? '' }}" style="text-transform:uppercase"></div>
+                        <div class="tk-2"><label class="tk-label" for="sku_product_name">SKU name <span class="uf-req">*</span></label>
+                            <input id="sku_product_name" name="sku[product_name]" type="text" required x-model="skuName" value="{{ $sku['product_name'] ?? '' }}"></div>
+                        <div><label class="tk-label" for="sku_supplier_id">Company / supplier</label>
+                            <select id="sku_supplier_id" name="sku[supplier_id]">
+                                @if ($suppliers->count() !== 1)<option value="">Select supplier</option>@endif
+                                @foreach ($suppliers as $supplier)
+                                    <option value="{{ $supplier->id }}" @selected((string) ($sku['supplier_id'] ?? '') === (string) $supplier->id || $suppliers->count() === 1)>{{ $supplier->supplier_name }}</option>
+                                @endforeach
+                            </select></div>
+                        <div><label class="tk-label" for="sku_category_id">Category</label>
+                            <select id="sku_category_id" name="sku[category_id]">
+                                <option value="">Select category</option>
+                                @foreach ($categories as $category)
+                                    <option value="{{ $category->id }}" @selected((string) ($sku['category_id'] ?? '') === (string) $category->id)>{{ $category->name }}</option>
+                                @endforeach
+                            </select></div>
+                        <div><label class="tk-label" for="sku_brand">Brand</label>
+                            <input id="sku_brand" name="sku[brand]" type="text" value="{{ $sku['brand'] ?? '' }}"></div>
+                        <div><label class="tk-label" for="sku_uom_id">Base UOM <span class="uf-req">*</span></label>
+                            <select id="sku_uom_id" name="sku[uom_id]" required>
+                                <option value="">Select UOM</option>
+                                @foreach ($uoms as $uom)
+                                    <option value="{{ $uom->id }}" @selected((string) ($sku['uom_id'] ?? '') === (string) $uom->id)>{{ $uom->uom_name }} ({{ $uom->symbol }})</option>
+                                @endforeach
+                            </select></div>
+                        <div><label class="tk-label" for="sku_sales_uom_id">Sales UOM</label>
+                            <select id="sku_sales_uom_id" name="sku[sales_uom_id]">
+                                <option value="">Select UOM</option>
+                                @foreach ($uoms as $uom)
+                                    <option value="{{ $uom->id }}" @selected((string) ($sku['sales_uom_id'] ?? '') === (string) $uom->id)>{{ $uom->uom_name }} ({{ $uom->symbol }})</option>
+                                @endforeach
+                            </select></div>
+                        <div><label class="tk-label" for="sku_uom_conversion_factor">Units per sales unit</label>
+                            <input id="sku_uom_conversion_factor" name="sku[uom_conversion_factor]" type="number" step="0.001" value="{{ $sku['uom_conversion_factor'] ?? 1 }}"></div>
+                        <div><label class="tk-label" for="sku_pack_size">Pack size</label>
+                            <input id="sku_pack_size" name="sku[pack_size]" type="text" placeholder="e.g. 500g" value="{{ $sku['pack_size'] ?? '' }}"></div>
+                        <div><label class="tk-label" for="sku_weight">Weight (kg)</label>
+                            <input id="sku_weight" name="sku[weight]" type="number" step="0.001" value="{{ $sku['weight'] ?? '' }}"></div>
+                        <div><label class="tk-label" for="sku_barcode">Barcode</label>
+                            <input id="sku_barcode" name="sku[barcode]" type="text" value="{{ $sku['barcode'] ?? '' }}"></div>
+                        <div><label class="tk-label" for="sku_valuation_method">Valuation</label>
+                            <select id="sku_valuation_method" name="sku[valuation_method]">
+                                @foreach ($valuationMethods as $method)
+                                    <option value="{{ $method }}" @selected(($sku['valuation_method'] ?? 'FIFO') === $method)>{{ $method }}</option>
+                                @endforeach
+                            </select></div>
+                        <div style="display:flex; align-items:flex-end"><label style="display:inline-flex; gap:8px; align-items:center; font-size:14px">
+                            <input type="hidden" name="sku[is_powder]" value="0">
+                            <input type="checkbox" name="sku[is_powder]" value="1" style="width:auto; height:auto" @checked(! empty($sku['is_powder']))> Powder product</label></div>
                     </div>
+                </section>
 
-                    <div class="p-5 space-y-5" x-show="row.product_id" x-cloak>
-                        @if ($type === TicketType::ReactivateSku)
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                    <span class="{{ $label }}">New status</span>
-                                    <div class="inline-flex rounded-lg border border-gray-300 p-0.5 bg-gray-50">
-                                        <input type="hidden" :name="`items[${index}][new_is_active]`" :value="row.new_is_active">
-                                        <button type="button" @click="row.new_is_active = '1'" class="rounded-md px-4 py-1.5 text-sm font-semibold transition"
-                                            :class="row.new_is_active === '1' ? 'bg-emerald-600 text-white shadow' : 'text-gray-600'">Active</button>
-                                        <button type="button" @click="row.new_is_active = '0'" class="rounded-md px-4 py-1.5 text-sm font-semibold transition"
-                                            :class="row.new_is_active === '0' ? 'bg-gray-700 text-white shadow' : 'text-gray-600'">Inactive</button>
-                                    </div>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label class="{{ $label }}">Remarks</label>
-                                    <input type="text" :name="`items[${index}][remarks]`" x-model="row.remarks" class="{{ $input }}" placeholder="Optional">
-                                </div>
-                            </div>
-                        @else
-                            {{-- Before → after pricing table --}}
-                            <div class="overflow-hidden rounded-lg border border-gray-200">
-                                <table class="w-full text-sm">
-                                    <thead class="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
-                                        <tr><th class="px-3 py-2 text-left">Field</th><th class="px-3 py-2 text-right">Current</th><th class="px-3 py-2 text-left w-44">New value</th><th class="px-3 py-2 text-right">Change</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        <template x-for="f in fields" :key="f[0]">
-                                            <tr class="border-t border-gray-100">
-                                                <td class="px-3 py-2 font-medium text-gray-800" x-text="f[1]"></td>
-                                                <td class="px-3 py-2 text-right text-gray-500 tabular-nums" x-text="fmt(current(row, f[0]))"></td>
-                                                <td class="px-3 py-2">
-                                                    <input type="number" step="0.01" min="0" placeholder="unchanged" :name="`items[${index}][${f[0]}]`" x-model="row[f[0]]"
-                                                        class="w-full rounded-lg border-gray-300 py-1.5 text-sm tabular-nums focus:border-indigo-500 focus:ring-indigo-500">
-                                                    <input type="number" step="0.1" placeholder="or ± %" title="Type a percentage to fill the new value" data-percent
-                                                        @input="applyPercent(row, f[0], $event.target.value)"
-                                                        class="mt-1 w-24 rounded-md border-gray-200 py-0.5 text-xs text-gray-500 focus:border-indigo-400 focus:ring-indigo-400">
-                                                </td>
-                                                <td class="px-3 py-2 text-right">
-                                                    <span x-show="diff(row, f[0]) !== null" class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold tabular-nums"
-                                                        :class="tone(diff(row, f[0]))">
-                                                        <span x-text="signed(diff(row, f[0]))"></span>
-                                                        <span x-show="percent(row, f[0]) !== null" class="opacity-70" x-text="'(' + signed(percent(row, f[0])) + '%)'"></span>
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        </template>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {{-- Batch scope --}}
-                            <div>
-                                <span class="{{ $label }}">Selling price applies to</span>
-                                <input type="hidden" :name="`items[${index}][batch_scope]`" :value="row.batch_scope">
-                                <div class="inline-flex rounded-lg border border-gray-300 p-0.5 bg-gray-50">
-                                    <button type="button" @click="setScope(row, 'all')" class="rounded-md px-4 py-1.5 text-sm font-semibold transition"
-                                        :class="row.batch_scope === 'all' ? 'bg-indigo-600 text-white shadow' : 'text-gray-600'">All batches</button>
-                                    <button type="button" @click="setScope(row, 'selected')" class="rounded-md px-4 py-1.5 text-sm font-semibold transition"
-                                        :class="row.batch_scope === 'selected' ? 'bg-indigo-600 text-white shadow' : 'text-gray-600'">Selected batches</button>
-                                </div>
-
-                                <div class="mt-3" x-show="row.batch_scope === 'selected'" x-cloak>
-                                    <p class="text-xs text-gray-500" x-show="row.loading">Loading batches…</p>
-                                    <p class="text-sm text-gray-500" x-show="!row.loading && row.batches.length === 0">No batches with stock for this product.</p>
-                                    <div x-show="row.batches.length > 0">
-                                        <button type="button" class="mb-2 text-xs font-semibold text-indigo-600 hover:underline" @click="toggleAllBatches(row)"
-                                            x-text="allBatchesPicked(row) ? 'Clear selection' : 'Select all batches'"></button>
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                            <template x-for="batch in row.batches" :key="batch.id">
-                                                <label class="flex cursor-pointer items-center gap-3 rounded-lg border p-3 text-sm transition"
-                                                    :class="row.batch_ids.map(String).includes(String(batch.id)) ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-indigo-300'">
-                                                    <input type="checkbox" class="rounded border-gray-300 text-indigo-600" :name="`items[${index}][batch_ids][]`" :value="batch.id"
-                                                        :checked="row.batch_ids.map(String).includes(String(batch.id))" @change="toggleBatch(row, batch.id)">
-                                                    <span class="min-w-0">
-                                                        <span class="block font-semibold text-gray-900" x-text="batch.batch_code"></span>
-                                                        <span class="block text-xs text-gray-500" x-text="`Qty ${fmt(batch.quantity)} · now ${fmt(batch.selling_price)}` + (batch.expiry_date ? ` · exp ${batch.expiry_date}` : '')"></span>
-                                                    </span>
-                                                </label>
-                                            </template>
+                <section class="uf-card" aria-labelledby="tk-sku-price">
+                    <header class="uf-card-head"><div>
+                        <h2 class="uf-card-title" id="tk-sku-price"><span class="uf-step">3</span> Pricing &amp; stock</h2>
+                    </div></header>
+                    <div class="uf-body tk-gen" style="grid-template-columns: repeat(2, minmax(0,1fr))">
+                        @foreach (['unit_sell_price' => 'Selling price', 'cost_price' => 'Cost price', 'expiry_price' => 'Expiry price', 'reorder_level' => 'Reorder level'] as $field => $text)
+                            <div style="grid-column:auto"><label class="tk-label" for="sku_{{ $field }}">{{ $text }}</label>
+                                <input id="sku_{{ $field }}" name="sku[{{ $field }}]" type="number" step="0.01" min="0" value="{{ $sku[$field] ?? '' }}"></div>
+                        @endforeach
+                        <div class="tk-3" style="grid-column:1 / -1"><label class="tk-label" for="sku_description">Product description</label>
+                            <textarea id="sku_description" name="sku[description]" rows="2" class="tk-textarea">{{ $sku['description'] ?? '' }}</textarea></div>
+                    </div>
+                </section>
+            @else
+                {{-- 2. Products --}}
+                <section class="uf-card" aria-labelledby="tk-products">
+                    <header class="uf-card-head">
+                        <div>
+                            <h2 class="uf-card-title" id="tk-products"><span class="uf-step">2</span> {{ $type === TicketType::ReactivateSku ? 'Inactive SKUs' : 'Products' }}</h2>
+                            <p class="uf-card-sub">{{ $type === TicketType::ReactivateSku ? 'Only inactive SKUs of your company are listed.' : 'Only active products of your company are listed. Leave a value empty to keep it unchanged.' }}</p>
+                        </div>
+                        <span class="ak-pill" x-text="productCount() + ' selected'"></span>
+                    </header>
+                    <div class="uf-body">
+                        <template x-for="(row, index) in rows" :key="index">
+                            <div class="tk-row">
+                                <div class="tk-row-head">
+                                    <span class="uf-step" x-text="index + 1"></span>
+                                    <div class="tk-pick" data-product-picker x-data="{ open: false, q: '' }" @click.outside="open = false" @keydown.escape="open = false">
+                                        <input type="hidden" :name="`items[${index}][product_id]`" :value="row.product_id">
+                                        <button type="button" class="tk-pick-btn" @click="open = !open; $nextTick(() => $refs.search && $refs.search.focus())">
+                                            <span x-text="product(row) ? product(row).label : (type === 'reactivate_sku' ? 'Select an inactive SKU…' : 'Select a product…')"
+                                                :class="product(row) ? 'ak-strong' : 'ak-muted'"></span>
+                                            <span aria-hidden="true" class="ak-muted">▾</span>
+                                        </button>
+                                        <div class="tk-pick-list" x-show="open" x-cloak x-transition>
+                                            <input x-ref="search" x-model="q" type="text" placeholder="Search code or name…">
+                                            <ul>
+                                                <template x-for="p in options().filter((p) => p.label.toLowerCase().includes(q.toLowerCase()))" :key="p.id">
+                                                    <li @click="pick(row, p); open = false; q = ''" x-text="p.label"></li>
+                                                </template>
+                                                <li x-show="options().filter((p) => p.label.toLowerCase().includes(q.toLowerCase())).length === 0" class="ak-muted">No matching product</li>
+                                            </ul>
                                         </div>
                                     </div>
+                                    <button type="button" class="ak-icon ak-icon-danger" x-show="rows.length > 1" @click="removeRow(index)" title="Remove" aria-label="Remove row">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+                                    </button>
                                 </div>
-                                <p class="mt-2 text-xs text-gray-500" x-show="row.batch_scope === 'all'">Applies to the product and every batch that still has stock.</p>
-                            </div>
 
-                            <div>
-                                <label class="{{ $label }}">Remarks</label>
-                                <input type="text" :name="`items[${index}][remarks]`" x-model="row.remarks" class="{{ $input }}" placeholder="Optional note for the approver">
+                                <div class="tk-row-body" x-show="row.product_id" x-cloak>
+                                    @if ($type === TicketType::ReactivateSku)
+                                        <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end">
+                                            <div>
+                                                <span class="tk-label">New status</span>
+                                                <input type="hidden" :name="`items[${index}][new_is_active]`" :value="row.new_is_active">
+                                                <div class="ak-seg" role="group" aria-label="New status">
+                                                    <button type="button" @click="row.new_is_active = '1'" :class="row.new_is_active === '1' && 'is-on'">Active</button>
+                                                    <button type="button" @click="row.new_is_active = '0'" :class="row.new_is_active === '0' && 'is-on'">Inactive</button>
+                                                </div>
+                                            </div>
+                                            <div class="uf-field" style="flex:1; min-width:220px">
+                                                <label>Remarks</label>
+                                                <input type="text" :name="`items[${index}][remarks]`" x-model="row.remarks" placeholder="Optional">
+                                            </div>
+                                        </div>
+                                    @else
+                                        <div style="overflow-x:auto; border:1px solid var(--ak-line); border-radius:8px">
+                                            <table class="tk-tbl">
+                                                <thead><tr><th>Field</th><th style="text-align:right">Current</th><th>New value</th><th style="text-align:right">Change</th></tr></thead>
+                                                <tbody>
+                                                    <template x-for="f in fields" :key="f[0]">
+                                                        <tr>
+                                                            <td class="ak-strong" x-text="f[1]"></td>
+                                                            <td class="ak-muted" style="text-align:right; font-variant-numeric:tabular-nums" x-text="fmt(current(row, f[0]))"></td>
+                                                            <td>
+                                                                <input type="number" step="0.01" min="0" placeholder="unchanged" :name="`items[${index}][${f[0]}]`" x-model="row[f[0]]">
+                                                                <br><input type="number" step="0.1" class="tk-pct" placeholder="or ± %" title="Type a percentage to fill the new value" data-percent @input="applyPercent(row, f[0], $event.target.value)">
+                                                            </td>
+                                                            <td style="text-align:right">
+                                                                <span x-show="diff(row, f[0]) !== null" class="tk-delta"
+                                                                    :class="diff(row, f[0]) > 0 ? 'tk-delta-up' : (diff(row, f[0]) < 0 ? 'tk-delta-down' : 'tk-delta-flat')">
+                                                                    <span x-text="signed(diff(row, f[0]))"></span>
+                                                                    <span x-show="percent(row, f[0]) !== null" x-text="'(' + signed(percent(row, f[0])) + '%)'"></span>
+                                                                </span>
+                                                            </td>
+                                                        </tr>
+                                                    </template>
+                                                </tbody>
+                                            </table>
+                                        </div>
+
+                                        <div>
+                                            <span class="tk-label">Selling price applies to</span>
+                                            <input type="hidden" :name="`items[${index}][batch_scope]`" :value="row.batch_scope">
+                                            <div class="ak-seg" role="group" aria-label="Batch scope">
+                                                <button type="button" @click="setScope(row, 'all')" :class="row.batch_scope === 'all' && 'is-on'">All batches</button>
+                                                <button type="button" @click="setScope(row, 'selected')" :class="row.batch_scope === 'selected' && 'is-on'">Selected batches</button>
+                                            </div>
+                                            <p class="ak-muted" style="margin:8px 0 0; font-size:12.5px" x-show="row.batch_scope === 'all'">Applies to the product and every batch that still has stock.</p>
+                                            <div style="margin-top:10px" x-show="row.batch_scope === 'selected'" x-cloak>
+                                                <p class="ak-muted" style="font-size:13px" x-show="row.loading">Loading batches…</p>
+                                                <p class="ak-muted" style="font-size:13px" x-show="!row.loading && row.batches.length === 0">No batches with stock for this product.</p>
+                                                <div x-show="row.batches.length > 0">
+                                                    <button type="button" class="ak-btn ak-btn-ghost ak-btn-sm" style="margin-bottom:8px" @click="toggleAllBatches(row)"
+                                                        x-text="allBatchesPicked(row) ? 'Clear selection' : 'Select all batches'"></button>
+                                                    <div class="tk-batches">
+                                                        <template x-for="batch in row.batches" :key="batch.id">
+                                                            <label class="tk-batch" :class="row.batch_ids.map(String).includes(String(batch.id)) && 'is-on'">
+                                                                <input type="checkbox" :name="`items[${index}][batch_ids][]`" :value="batch.id"
+                                                                    :checked="row.batch_ids.map(String).includes(String(batch.id))" @change="toggleBatch(row, batch.id)">
+                                                                <span>
+                                                                    <b x-text="batch.batch_code"></b>
+                                                                    <small x-text="`Qty ${fmt(batch.quantity)} · now ${fmt(batch.selling_price)}` + (batch.expiry_date ? ` · exp ${batch.expiry_date}` : '')"></small>
+                                                                </span>
+                                                            </label>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="uf-field">
+                                            <label>Remarks</label>
+                                            <input type="text" :name="`items[${index}][remarks]`" x-model="row.remarks" placeholder="Optional note for the approver">
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
-                        @endif
+                        </template>
+
+                        <button type="button" class="tk-add" @click="addRow()">＋ Add another {{ $type === TicketType::ReactivateSku ? 'SKU' : 'product' }}</button>
                     </div>
-                </div>
-            </template>
+                </section>
+            @endif
+        </div>
 
-            <button type="button" @click="addRow()"
-                class="w-full rounded-xl border-2 border-dashed border-gray-300 py-3 text-sm font-semibold text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition">
-                + Add another {{ $type === TicketType::ReactivateSku ? 'SKU' : 'product' }}
-            </button>
-        @endif
+        {{-- Side: summary --}}
+        <div class="tk-stack">
+            <section class="uf-card uf-summary" aria-label="Summary">
+                <header class="uf-card-head"><h2 class="uf-card-title">Summary</h2></header>
+                <div class="uf-body">
+                    <dl>
+                        <div><dt>Type</dt><dd>{{ $type->label() }}</dd></div>
+                        <div><dt>Company</dt><dd>{{ auth()->user()->supplier->supplier_name ?? 'Any' }}</dd></div>
+                        @if ($type === TicketType::NewSku)
+                            <div><dt>New SKU</dt><dd x-text="skuName || '—'"></dd></div>
+                        @else
+                            <div><dt>Products</dt><dd x-text="productCount()"></dd></div>
+                            @if ($type === TicketType::PriceUpdate)
+                                <div class="uf-total"><dt>Values changing</dt><dd x-text="changeCount()"></dd></div>
+                            @endif
+                        @endif
+                    </dl>
+                </div>
+            </section>
+            <div class="uf-note uf-note-warn">Nothing changes in the system until an admin approves this ticket. You can edit or delete it while it is pending.</div>
+        </div>
     </div>
 
-    {{-- ───────────── Sidebar ───────────── --}}
-    <aside class="lg:sticky lg:top-6 space-y-4">
-        <div class="bg-white shadow-xl sm:rounded-xl p-5">
-            <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-500">Summary</h3>
-            <dl class="mt-3 space-y-3 text-sm">
-                <div class="flex items-center justify-between"><dt class="text-gray-500">Type</dt><dd class="font-semibold text-gray-900">{{ $type->label() }}</dd></div>
-                <div class="flex items-center justify-between"><dt class="text-gray-500">Company</dt><dd class="font-semibold text-gray-900">{{ auth()->user()->supplier->supplier_name ?? 'Any' }}</dd></div>
-                @if ($type === TicketType::NewSku)
-                    <div class="flex items-center justify-between"><dt class="text-gray-500">New SKU</dt><dd class="font-semibold text-gray-900 truncate max-w-[10rem]" x-text="skuName || '—'"></dd></div>
-                @else
-                    <div class="flex items-center justify-between"><dt class="text-gray-500">Products</dt><dd class="font-semibold text-gray-900" x-text="productCount()"></dd></div>
-                    @if ($type === TicketType::PriceUpdate)
-                        <div class="flex items-center justify-between"><dt class="text-gray-500">Values changing</dt><dd class="font-semibold text-gray-900" x-text="changeCount()"></dd></div>
-                    @endif
-                @endif
-            </dl>
-            <button type="submit"
-                class="mt-5 w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                {{ $submitLabel }}
-            </button>
-            <a href="{{ $isEdit ? route('tickets.show', $ticket) : route('tickets.index') }}" class="mt-2 block text-center text-sm text-gray-500 hover:text-gray-800">Cancel</a>
+    <div class="uf-actions" style="margin-top:20px">
+        <p>{{ $isEdit ? 'Editing '.$ticket->ticket_number.'.' : 'The ticket is sent to an admin for approval.' }}</p>
+        <div>
+            <a href="{{ $isEdit ? route('tickets.show', $ticket) : route('tickets.index') }}" class="ak-btn ak-btn-outline">Cancel</a>
+            <button type="submit" class="ak-btn ak-btn-primary">{{ $submitLabel }}</button>
         </div>
-        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-800">
-            Nothing changes in the system until an admin approves this ticket. You can edit or delete it while it is pending.
-        </div>
-    </aside>
+    </div>
 </form>

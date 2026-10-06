@@ -315,14 +315,66 @@ it('gives tickets their own menu item after Settings, only to users with ticket-
     $this->actingAs($noAccess)->get(route('tickets.index'))->assertForbidden();
 });
 
-it('filters the ticket list by status tab and shows per-status counts', function () {
-    Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id, 'title' => 'Waiting one']);
-    Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id, 'title' => 'Done one', 'status' => TicketStatus::Approved]);
+it('filters the ticket list like Goods Issues: status tab, search, type, date, and shows KPI counts', function () {
+    $mine = ['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id];
+    Ticket::factory()->create($mine + ['title' => 'Waiting one']);
+    Ticket::factory()->create($mine + ['title' => 'Done one', 'status' => TicketStatus::Approved]);
+    Ticket::factory()->create($mine + ['title' => 'Brand new biscuit', 'type' => TicketType::NewSku]);
+    Ticket::factory()->create($mine + ['title' => 'Ancient request', 'created_at' => now()->subMonths(3)]);
 
-    $response = $this->actingAs($this->companyUser)->get(route('tickets.index', ['status' => 'approved']));
+    $this->actingAs($this->companyUser);
 
-    $response->assertOk()->assertSee('Done one')->assertDontSee('Waiting one');
-    expect($response->viewData('statusCounts')->all())->toEqual(['pending' => 1, 'approved' => 1]);
+    $approved = $this->get(route('tickets.index', ['filter' => ['status' => 'approved']]))->assertOk();
+    $approved->assertSee('Done one')->assertDontSee('Waiting one');
+    expect($approved->viewData('stats'))->toBe(['total' => 4, 'pending' => 3, 'approved' => 1, 'rejected' => 0]);
+
+    $this->get(route('tickets.index', ['filter' => ['search' => 'biscuit']]))->assertSee('Brand new biscuit')->assertDontSee('Waiting one');
+    $this->get(route('tickets.index', ['filter' => ['type' => 'new_sku']]))->assertSee('Brand new biscuit')->assertDontSee('Done one');
+    $this->get(route('tickets.index', ['filter' => ['date_from' => now()->subMonth()->toDateString()]]))
+        ->assertSee('Waiting one')->assertDontSee('Ancient request');
+    $this->get(route('tickets.index', ['filter' => ['date_to' => now()->subMonth()->toDateString()]]))
+        ->assertSee('Ancient request')->assertDontSee('Waiting one');
+    $this->get(route('tickets.index', ['sort' => 'title']))->assertOk()->assertSeeInOrder(['Ancient request', 'Brand new biscuit']);
+    $this->get(route('tickets.index', ['per_page' => 15]))->assertOk()->assertSee('Showing');
+});
+
+it('only lets an admin filter by other companies and requesters', function () {
+    Ticket::factory()->create(['supplier_id' => $this->otherSupplier->id, 'title' => 'Other company ticket']);
+    Ticket::factory()->create(['supplier_id' => $this->supplier->id, 'created_by' => $this->companyUser->id, 'title' => 'Own company ticket']);
+
+    // A company user cannot widen the scope with filter[supplier_id].
+    $this->actingAs($this->companyUser)
+        ->get(route('tickets.index', ['filter' => ['supplier_id' => $this->otherSupplier->id]]))
+        ->assertOk()->assertDontSee('Other company ticket');
+
+    $this->actingAs($this->admin)
+        ->get(route('tickets.index', ['filter' => ['supplier_id' => $this->otherSupplier->id]]))
+        ->assertSee('Other company ticket')->assertDontSee('Own company ticket');
+    $this->actingAs($this->admin)
+        ->get(route('tickets.index', ['filter' => ['created_by' => $this->companyUser->id]]))
+        ->assertSee('Own company ticket')->assertDontSee('Other company ticket');
+});
+
+it('ships a ready company-user role from the migration that can raise tickets but never approve them', function () {
+    $role = Role::findByName('company-user', 'web');
+
+    expect($role->hasPermissionTo('ticket-list'))->toBeTrue()
+        ->and($role->hasPermissionTo('ticket-create'))->toBeTrue()
+        ->and($role->hasPermissionTo('ticket-edit'))->toBeTrue()
+        ->and($role->hasPermissionTo('ticket-delete'))->toBeTrue()
+        ->and($role->permissions->pluck('name')->contains('ticket-approve'))->toBeFalse();
+
+    $user = User::factory()->create(['supplier_id' => $this->supplier->id]);
+    $user->assignRole('company-user');
+
+    $this->actingAs($user)->get(route('tickets.index'))->assertOk();
+    $this->actingAs($user)->post(route('tickets.store'), [
+        'type' => 'price_update', 'title' => 'By role only',
+        'items' => [['product_id' => $this->product->id, 'batch_scope' => 'all', 'unit_sell_price' => '101']],
+    ])->assertRedirect();
+
+    $ticket = Ticket::firstWhere('title', 'By role only');
+    $this->actingAs($user)->post(route('tickets.approve', $ticket))->assertForbidden();
 });
 
 it('renders the issue-style create form with its submit action', function () {

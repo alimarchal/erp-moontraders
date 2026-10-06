@@ -9,6 +9,12 @@ use Spatie\Permission\PermissionRegistrar;
 return new class extends Migration
 {
     /**
+     * Ready-made role for company (supplier) users: raise, edit and delete their own
+     * tickets but never approve. Created here so production only needs `php artisan migrate`.
+     */
+    private const COMPANY_ROLE = 'company-user';
+
+    /**
      * Ticket permissions. Only super-admin and admin receive them here;
      * company (supplier) users get them through a role on Settings → Roles.
      *
@@ -84,6 +90,8 @@ return new class extends Migration
 
     public function down(): void
     {
+        $this->dropCompanyRole();
+
         $permissionIds = DB::table('permissions')
             ->whereIn('name', $this->permissions)
             ->where('guard_name', 'web')
@@ -120,6 +128,8 @@ return new class extends Migration
             ->where('guard_name', 'web')
             ->pluck('id');
 
+        $this->createCompanyRole($permissionIds->all());
+
         $roleIds = DB::table('roles')
             ->whereIn('name', ['super-admin', 'admin'])
             ->where('guard_name', 'web')
@@ -137,5 +147,44 @@ return new class extends Migration
         }
 
         app()[PermissionRegistrar::class]->forgetCachedPermissions();
+    }
+
+    /**
+     * @param  array<int, int>  $permissionIds
+     */
+    private function createCompanyRole(array $permissionIds): void
+    {
+        $now = now();
+
+        DB::table('roles')->insertOrIgnore([
+            'name' => self::COMPANY_ROLE,
+            'guard_name' => 'web',
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $roleId = DB::table('roles')->where('name', self::COMPANY_ROLE)->where('guard_name', 'web')->value('id');
+
+        $companyPermissionIds = DB::table('permissions')
+            ->whereIn('id', $permissionIds)
+            ->where('name', '!=', 'ticket-approve')
+            ->pluck('id');
+
+        DB::table('role_has_permissions')->insertOrIgnore(
+            $companyPermissionIds->map(fn ($permissionId) => ['permission_id' => $permissionId, 'role_id' => $roleId])->all()
+        );
+    }
+
+    /**
+     * Remove the role only when nobody has been given it, so rolling back never strips users.
+     */
+    private function dropCompanyRole(): void
+    {
+        $roleId = DB::table('roles')->where('name', self::COMPANY_ROLE)->where('guard_name', 'web')->value('id');
+
+        if ($roleId && ! DB::table('model_has_roles')->where('role_id', $roleId)->exists()) {
+            DB::table('role_has_permissions')->where('role_id', $roleId)->delete();
+            DB::table('roles')->where('id', $roleId)->delete();
+        }
     }
 };

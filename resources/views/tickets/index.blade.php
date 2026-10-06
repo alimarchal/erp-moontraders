@@ -110,7 +110,7 @@
             <table class="ak-print-meta"><tr><th>Printed</th><td>{{ now()->format('d.m.Y H:i') }} by {{ $authUser->name }}</td></tr></table>
         </div>
 
-        <x-status-message />
+        @include('tickets.partials.flash')
         @if ($errors->any())
             <div class="ak-alert ak-alert-error" role="alert">{{ $errors->first() }}</div>
         @endif

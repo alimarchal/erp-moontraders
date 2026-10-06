@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\BankAccount;
 use App\Models\ChartOfAccount;
 use App\Models\ClaimRegister;
 use App\Models\JournalEntry;
@@ -279,5 +280,56 @@ class ClaimRegisterService
         Log::error("Failed to create JE for claim #{$claim->id}: ".$result['message']);
 
         return null;
+    }
+
+    /**
+     * Turns the single amount into debit/credit and fills the default accounts, exactly as the claim
+     * register screens do before saving.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    public function withDefaultAccounts(array $data): array
+    {
+        // Convert amount input to debit/credit based on transaction_type
+        if (isset($data['amount'])) {
+            $amount = (float) $data['amount'];
+            $transactionType = $data['transaction_type'] ?? 'claim';
+
+            if ($transactionType === 'claim') {
+                $data['debit'] = $amount;
+                $data['credit'] = 0;
+            } else {
+                // recovery
+                $data['debit'] = 0;
+                $data['credit'] = $amount;
+            }
+
+            // Remove amount field as it's not stored in DB
+            unset($data['amount']);
+        }
+
+        // Set debit account to 1112 (Pending Claims Debtors)
+        $debtorsAccount = ChartOfAccount::where('account_code', '1112')->first();
+        if ($debtorsAccount) {
+            $data['debit_account_id'] = $debtorsAccount->id;
+        }
+
+        // Set credit account to account code 1171 (HBL Main Bank)
+        $bankAccount = ChartOfAccount::where('account_code', '1171')->first();
+        if ($bankAccount) {
+            $data['credit_account_id'] = $bankAccount->id;
+
+            // Also set bank_account_id if BankAccount record exists
+            $hblBank = BankAccount::where('chart_of_account_id', $bankAccount->id)->first();
+            if ($hblBank) {
+                $data['bank_account_id'] = $hblBank->id;
+            }
+        }
+
+        // Default payment method
+        $data['payment_method'] = 'bank_transfer';
+
+        return $data;
     }
 }

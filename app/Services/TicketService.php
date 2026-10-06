@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Enums\TicketStatus;
 use App\Enums\TicketType;
+use App\Models\Customer;
+use App\Models\LedgerRegister;
 use App\Models\Product;
 use App\Models\Ticket;
 use App\Models\TicketItem;
@@ -105,7 +107,14 @@ class TicketService
                     TicketType::NewSku => $this->applyNewSku($item),
                     TicketType::ReactivateSku => $this->applyStatusChange($item),
                     TicketType::StockAdjustment => $postedAdjustment = $this->applyStockAdjustment($item),
+                    TicketType::LedgerEntry => $created = $this->applyLedgerEntry($item),
+                    TicketType::ClaimEntry => $created = $this->applyClaimEntry($item),
+                    TicketType::NewCustomer => $created = $this->applyNewCustomer($item),
                 };
+            }
+
+            if (isset($created)) {
+                $remarks = trim(($remarks ? $remarks.' — ' : '').$created);
             }
 
             if (isset($postedAdjustment)) {
@@ -152,6 +161,14 @@ class TicketService
             return (int) $data['supplier_id'];
         }
 
+        if (in_array($type, [TicketType::LedgerEntry, TicketType::ClaimEntry], true)) {
+            return (int) $data['data']['supplier_id'];
+        }
+
+        if ($type === TicketType::NewCustomer) {
+            return $user->supplier_id ? (int) $user->supplier_id : null;
+        }
+
         $productId = $data['items'][0]['product_id'] ?? null;
 
         return $productId ? Product::whereKey($productId)->value('supplier_id') : null;
@@ -168,6 +185,7 @@ class TicketService
                 'remarks' => $data['sku']['remarks'] ?? null,
             ]),
             TicketType::StockAdjustment => $ticket->items()->create(['payload' => $this->adjustmentPayload($data)]),
+            TicketType::LedgerEntry, TicketType::ClaimEntry, TicketType::NewCustomer => $ticket->items()->create(['payload' => TicketEntryForms::normalize($ticket->type, $data['data'])]),
             TicketType::PriceUpdate => collect($data['items'])->each(fn (array $row) => $this->createPriceItem($ticket, $row)),
             TicketType::ReactivateSku => collect($data['items'])->each(function (array $row) use ($ticket) {
                 $product = Product::findOrFail($row['product_id']);
@@ -264,6 +282,60 @@ class TicketService
         }
 
         $this->pricing->logChange($product, 'selling_price', $old, $new, $admin->id, $batchIds);
+    }
+
+    /**
+     * Creates the supplier ledger register line only — it is not posted — and refreshes the running balances,
+     * exactly like the Ledger Register screen does.
+     */
+    private function applyLedgerEntry(TicketItem $item): string
+    {
+        $data = TicketEntryForms::normalize(TicketType::LedgerEntry, $item->payload);
+
+        $entry = DB::transaction(function () use ($data) {
+            $entry = LedgerRegister::create($data);
+            LedgerRegister::recalculateBalances((int) $data['supplier_id']);
+
+            return $entry;
+        });
+
+        $item->update(['payload' => $item->payload + ['created_id' => $entry->id]]);
+
+        return "Ledger register entry #{$entry->id} created (not posted).";
+    }
+
+    /**
+     * Creates the claim register line with the default accounts, like the Claim Register screen; it is not posted.
+     */
+    private function applyClaimEntry(TicketItem $item): string
+    {
+        $service = app(ClaimRegisterService::class);
+        $result = $service->createClaim($service->withDefaultAccounts(TicketEntryForms::normalize(TicketType::ClaimEntry, $item->payload)));
+
+        if (! $result['success']) {
+            throw ValidationException::withMessages(['ticket' => $result['message']]);
+        }
+
+        $item->update(['payload' => $item->payload + ['created_id' => $result['data']->id]]);
+
+        return "Claim register entry {$result['data']->reference_number} created (not posted).";
+    }
+
+    private function applyNewCustomer(TicketItem $item): string
+    {
+        $data = TicketEntryForms::normalize(TicketType::NewCustomer, $item->payload);
+
+        $taken = Customer::query()->where('customer_code', $data['customer_code'])
+            ->when($data['email'] ?? null, fn ($q, $email) => $q->orWhere('email', $email))->exists();
+
+        if ($taken) {
+            throw ValidationException::withMessages(['ticket' => "A customer with code '{$data['customer_code']}' or that e-mail already exists, so this ticket cannot be approved."]);
+        }
+
+        $customer = Customer::create($data);
+        $item->update(['payload' => $item->payload + ['created_id' => $customer->id]]);
+
+        return "Customer {$customer->customer_code} created.";
     }
 
     /**

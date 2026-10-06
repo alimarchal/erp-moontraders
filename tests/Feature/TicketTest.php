@@ -516,3 +516,17 @@ it('still saves the ticket when mailing the approvers fails', function () {
 
     expect(Ticket::firstWhere('title', 'Mail broken'))->not->toBeNull();
 });
+
+it('confirms success in a modal with an OK button instead of a banner', function () {
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'price_update', 'title' => 'Modal check',
+        'items' => [['product_id' => $this->product->id, 'batch_scope' => 'all', 'unit_sell_price' => '120']],
+    ])->assertRedirect();
+
+    $ticket = Ticket::firstWhere('title', 'Modal check');
+
+    $this->actingAs($this->companyUser)->withSession(['success' => 'Ticket submitted.'])->get(route('tickets.show', $ticket))
+        ->assertOk()->assertSee('data-flash-modal', false)->assertSee('Ticket submitted.')->assertSee('>OK<', false);
+
+    $this->actingAs($this->companyUser)->get(route('tickets.show', $ticket))->assertDontSee('data-flash-modal', false);
+});

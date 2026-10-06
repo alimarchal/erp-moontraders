@@ -4,9 +4,11 @@ namespace App\Notifications;
 
 use App\Enums\TicketType;
 use App\Models\Product;
+use App\Models\Supplier;
 use App\Models\Ticket;
 use App\Models\TicketItem;
 use App\Models\Warehouse;
+use App\Services\TicketEntryForms;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\DB;
@@ -75,6 +77,7 @@ class TicketSubmitted extends Notification
                 );
             })->all(),
             TicketType::StockAdjustment => $ticket->items->flatMap(fn (TicketItem $item) => $this->adjustmentLines($item))->all(),
+            TicketType::LedgerEntry, TicketType::ClaimEntry, TicketType::NewCustomer => $ticket->items->flatMap(fn (TicketItem $item) => $this->entryLines($ticket->type, $item))->all(),
         };
     }
 
@@ -125,6 +128,30 @@ class TicketSubmitted extends Notification
         $out[] = '  **Total value: '.$this->money($lines->sum('adjustment_value')).'** — approving creates and posts the adjustment.';
 
         return $out;
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function entryLines(TicketType $type, TicketItem $item): array
+    {
+        $suppliers = Supplier::pluck('supplier_name', 'id')->all();
+        $lines = [];
+
+        foreach (TicketEntryForms::fields($type, $suppliers) as $field) {
+            $raw = $item->payload[$field['name']] ?? null;
+
+            if ($raw === null || $raw === '' || ($field['type'] === 'number' && (float) $raw === 0.0)) {
+                continue;
+            }
+
+            $shown = $field['type'] === 'select' ? ($field['options'][$raw] ?? $raw) : ($field['type'] === 'number' ? $this->money($raw) : $raw);
+            $lines[] = '• '.$field['label'].': **'.$shown.'**';
+        }
+
+        $lines[] = $type === TicketType::NewCustomer ? 'Approving creates the customer.' : 'Approving only creates the entry; it is not posted.';
+
+        return $lines;
     }
 
     private function productName(?Product $product): string

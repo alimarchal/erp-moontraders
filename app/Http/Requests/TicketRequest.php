@@ -6,6 +6,7 @@ use App\Enums\TicketType;
 use App\Models\Product;
 use App\Models\StockBatch;
 use App\Models\Ticket;
+use App\Services\TicketEntryForms;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
@@ -33,6 +34,12 @@ class TicketRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
+        $type = $this->ticketType();
+
+        if ($type?->isSimpleEntry() && is_array($this->input('data'))) {
+            $this->merge(['data' => TicketEntryForms::normalize($type, $this->input('data'))]);
+        }
+
         $sku = $this->input('sku');
 
         if (is_array($sku)) {
@@ -57,6 +64,7 @@ class TicketRequest extends FormRequest
             TicketType::NewSku => $rules + $this->newSkuRules(),
             TicketType::ReactivateSku => $rules + $this->reactivateRules(),
             TicketType::StockAdjustment => $rules + $this->stockAdjustmentRules(),
+            TicketType::LedgerEntry, TicketType::ClaimEntry, TicketType::NewCustomer => $rules + $this->entryRules(),
             default => $rules + $this->priceUpdateRules(),
         };
     }
@@ -118,6 +126,24 @@ class TicketRequest extends FormRequest
             'items.*.new_is_active' => ['required', Rule::in(['0', '1', 0, 1, true, false])],
             'items.*.remarks' => ['nullable', 'string', 'max:1000'],
         ];
+    }
+
+    /**
+     * Ledger entry, claim entry and new customer use the rules of the screens that create them;
+     * company users are tied to their own supplier.
+     *
+     * @return array<string, mixed>
+     */
+    private function entryRules(): array
+    {
+        $rules = TicketEntryForms::rules($this->ticketType());
+        $supplierId = $this->scopedSupplierId();
+
+        if ($supplierId !== null && isset($rules['data.supplier_id'])) {
+            $rules['data.supplier_id'] = [...(array) $rules['data.supplier_id'], Rule::in([$supplierId])];
+        }
+
+        return $rules;
     }
 
     /**

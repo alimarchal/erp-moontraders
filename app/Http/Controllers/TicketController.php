@@ -13,6 +13,7 @@ use App\Models\Uom;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\ProductPricingService;
+use App\Services\TicketEntryForms;
 use App\Services\TicketService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -133,6 +134,7 @@ class TicketController extends Controller implements HasMiddleware
             'categories' => Category::pluck('name', 'id'),
             'uoms' => Uom::pluck('uom_name', 'id'),
             'suppliers' => Supplier::pluck('supplier_name', 'id'),
+            'entryFields' => TicketEntryForms::fields($ticket->type, Supplier::pluck('supplier_name', 'id')->all()),
         ]);
     }
 
@@ -187,16 +189,22 @@ class TicketController extends Controller implements HasMiddleware
     }
 
     /**
-     * Approving a stock adjustment posts inventory and accounting entries, so it needs the same
-     * right and the same password confirmation as posting it on the Stock Adjustments screen.
+     * Approving performs the real action (posting stock, creating a ledger entry, claim or customer), so the
+     * approver needs that right too; stock adjustments, which move stock and accounts, also ask for the password.
      */
     private function authorizeStockAdjustmentPosting(Request $request, Ticket $ticket): void
     {
-        if ($ticket->type !== TicketType::StockAdjustment) {
+        $permission = $ticket->type->applyPermission();
+
+        if ($permission === null) {
             return;
         }
 
-        abort_unless($request->user()->can('stock-adjustment-post'), 403, 'Approving a stock adjustment needs the stock-adjustment-post permission.');
+        abort_unless($request->user()->can($permission), 403, "Approving this ticket needs the {$permission} permission.");
+
+        if ($ticket->type !== TicketType::StockAdjustment) {
+            return;
+        }
 
         $request->validate(['password' => ['required']]);
 
@@ -311,6 +319,9 @@ class TicketController extends Controller implements HasMiddleware
             'valuationMethods' => Product::VALUATION_METHODS,
             'warehouses' => Warehouse::query()->where('disabled', false)->orderBy('warehouse_name')->get(['id', 'warehouse_name']),
             'adjustmentTypes' => TicketRequest::ADJUSTMENT_TYPES,
+            'entryFields' => TicketEntryForms::fields($type, Supplier::query()
+                ->when(! $user->isTicketAdmin() && $user->supplier_id, fn ($q) => $q->where('id', $user->supplier_id))
+                ->orderBy('supplier_name')->pluck('supplier_name', 'id')->all()),
         ];
     }
 

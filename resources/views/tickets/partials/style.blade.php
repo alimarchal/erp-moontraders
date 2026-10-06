@@ -71,7 +71,7 @@
     @media (min-width: 768px) { .tk-top { grid-template-columns: 240px 1fr; } .tk-top-wide { grid-column: 1 / -1; } }
     .tk-top select { width: 100%; height: 40px; }
     .tk-gen4 { display: grid; gap: 14px 16px; grid-template-columns: 1fr; }
-    @media (min-width: 768px) { .tk-gen4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } .tk-gen4 .tk-span2 { grid-column: span 2; } .tk-gen4 .tk-span3 { grid-column: span 3; } }
+    @media (min-width: 768px) { .tk-gen4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } .tk-gen4 .tk-span2 { grid-column: span 2; } .tk-gen4 .tk-span3 { grid-column: span 3; } .tk-gen4 .tk-span4 { grid-column: 1 / -1; } }
     .tk-gen4 input[type=text], .tk-gen4 input[type=number], .tk-gen4 select { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--ak-border-strong); border-radius: 8px; font-size: 14px; background: #fff; }
     .tk-gen4 input:focus { outline: none; border-color: #4f46e5; box-shadow: 0 0 0 3px rgba(79,70,229,.2); }
     .tk-grid-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }

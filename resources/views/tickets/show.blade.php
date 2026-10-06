@@ -55,7 +55,7 @@
             </table>
         </div>
 
-        <x-status-message />
+        @include('tickets.partials.flash')
         <x-validation-errors class="mb-4" />
 
         @if ($ticket->description)
@@ -113,7 +113,7 @@
                                 </dl>
                             </div>
                             <div class="ak-dt-scroll">
-                                <table class="ak-dt">
+                                <table class="ak-dt" style="min-width:0">
                                     <thead><tr><th>Product</th><th>Batch</th><th class="ak-num">System</th><th class="ak-num">Counted</th><th class="ak-num">Difference</th><th class="ak-num">Unit cost</th><th class="ak-num">Value</th></tr></thead>
                                     <tbody>
                                         @foreach ($lines as $line)
@@ -133,6 +133,36 @@
                             </div>
                             @if ($ticket->isPending())
                                 <div class="tk-warn">System quantities are re-read from live stock when the ticket is approved, so a count taken against old stock never posts a wrong difference.</div>
+                            @endif
+                        @elseif ($ticket->type->isSimpleEntry())
+                            @php
+                                $data = $item->payload;
+                                $createdLink = match ($ticket->type) {
+                                    TicketType::LedgerEntry => auth()->user()->can('report-audit-ledger-register') ? route('reports.ledger-register.index', ['filter' => ['supplier_id' => $data['supplier_id'] ?? null, 'date_from' => $data['transaction_date'] ?? null, 'date_to' => $data['transaction_date'] ?? null]]) : null,
+                                    TicketType::ClaimEntry => auth()->user()->can('claim-register-list') && ! empty($data['created_id']) ? route('claim-registers.show', $data['created_id']) : null,
+                                    TicketType::NewCustomer => auth()->user()->can('customer-list') && ! empty($data['created_id']) ? route('customers.show', $data['created_id']) : null,
+                                    default => null,
+                                };
+                            @endphp
+                            <header class="uf-card-head">
+                                <h2 class="uf-card-title"><span class="uf-step">{{ $loop->iteration }}</span> {{ $ticket->type->label() }}</h2>
+                                @if ($createdLink && ! empty($data['created_id']))
+                                    <a href="{{ $createdLink }}" class="ak-btn ak-btn-outline ak-btn-sm">Open the created record</a>
+                                @elseif (! empty($data['created_id']))
+                                    <span class="ak-pill">record #{{ $data['created_id'] }} created</span>
+                                @endif
+                            </header>
+                            <div class="uf-body">
+                                <dl class="tk-list" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); column-gap:24px">
+                                    @foreach ($entryFields as $field)
+                                        @php $raw = $data[$field['name']] ?? null; $shown = $field['type'] === 'select' ? ($field['options'][$raw] ?? $raw) : ($field['type'] === 'number' && $raw !== null && $raw !== '' ? number_format((float) $raw, 2) : $raw); @endphp
+                                        @continue($raw === null || $raw === '')
+                                        <div><dt>{{ $field['label'] }}</dt><dd>{{ $shown }}</dd></div>
+                                    @endforeach
+                                </dl>
+                            </div>
+                            @if ($ticket->type !== TicketType::NewCustomer)
+                                <div class="tk-warn" style="background:#eff6ff; color:#1e3a8a; border-color:#bfdbfe">Approving only creates this entry. Posting it to the general ledger stays a separate step on its own screen.</div>
                             @endif
                         @elseif ($ticket->type === TicketType::ReactivateSku)
                             <header class="uf-card-head">
@@ -212,7 +242,7 @@
                                 @if ($isAdjustment)
                                     Approving creates the stock adjustment and <b>posts it</b> (stock, valuation and journal entry), exactly like posting it on the Stock Adjustments screen.
                                 @else
-                                    Approving applies the change to live data immediately, exactly like editing the product.
+                                    {{ $ticket->type->isSimpleEntry() ? 'Approving creates the record now, exactly like adding it on its own screen.' : 'Approving applies the change to live data immediately, exactly like editing the product.' }}
                                 @endif
                             </p>
                             <textarea name="review_remarks" x-ref="remarks" rows="3" class="tk-textarea" placeholder="Remarks (required to reject)" @input="remarksMissing = false">{{ old('review_remarks') }}</textarea>

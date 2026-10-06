@@ -28,6 +28,7 @@
             'actual_quantity' => $line['actual_quantity'], 'unit_cost' => $line['unit_cost'], 'uom_id' => $line['uom_id'],
         ])->all();
     }
+    $entry = old('data', $isEdit && $type->isSimpleEntry() ? ($ticket->items->first()->payload ?? []) : []);
     $rows = old('items', $existingRows);
     $sku = old('sku', $isEdit && $type === TicketType::NewSku ? ($ticket->items->first()->payload ?? []) : []);
 @endphp
@@ -178,7 +179,7 @@
             <div class="uf-field">
                 <label for="title">Title <span class="uf-req">*</span></label>
                 <input id="title" name="title" type="text" required maxlength="191" autofocus value="{{ old('title', $ticket?->title) }}"
-                    placeholder="{{ match ($type) { TicketType::PriceUpdate => 'e.g. Revised trade prices for November', TicketType::NewSku => 'e.g. Add Zeera Biscuit 200g', TicketType::ReactivateSku => 'e.g. Bring back seasonal SKU', TicketType::StockAdjustment => 'e.g. Damaged cartons found in rack 4' } }}">
+                    placeholder="{{ match ($type) { TicketType::PriceUpdate => 'e.g. Revised trade prices for November', TicketType::NewSku => 'e.g. Add Zeera Biscuit 200g', TicketType::ReactivateSku => 'e.g. Bring back seasonal SKU', TicketType::StockAdjustment => 'e.g. Damaged cartons found in rack 4', TicketType::LedgerEntry => 'e.g. Nestle invoice 4500123 for October', TicketType::ClaimEntry => 'e.g. Price difference claim October', TicketType::NewCustomer => 'e.g. Add Al-Madina General Store' } }}">
             </div>
             <div class="tk-top-wide">
                 <label class="tk-label" for="description">Description <span class="ak-muted" style="font-weight:400">(optional)</span></label>
@@ -251,6 +252,36 @@
                     <input type="checkbox" name="sku[is_powder]" value="1" style="width:auto; height:auto" @checked(! empty($sku['is_powder']))> Powder product</label></div>
                 <div class="tk-span3"><label class="tk-label" for="sku_description">Product description</label>
                     <input id="sku_description" name="sku[description]" type="text" value="{{ $sku['description'] ?? '' }}"></div>
+            </div>
+        </section>
+    @elseif ($type->isSimpleEntry())
+        <section class="uf-card" aria-labelledby="tk-entry">
+            <header class="uf-card-head"><div>
+                <h2 class="uf-card-title" id="tk-entry"><span class="uf-step">2</span> {{ $type->label() }}</h2>
+                <p class="uf-card-sub">{{ $type === TicketType::NewCustomer ? 'The customer is created when an admin approves this ticket.' : 'Only the entry is created when an admin approves — it is not posted.' }}</p>
+            </div></header>
+            <div class="uf-body tk-gen4">
+                @foreach ($entryFields as $field)
+                    @php
+                        $value = $entry[$field['name']] ?? ($field['default'] ?? '');
+                        $id = 'entry_'.$field['name'];
+                        $span = $field['span'] ?? 1;
+                    @endphp
+                    <div @class(['tk-span2' => $span === 2, 'tk-span3' => $span === 3, 'tk-span4' => $span === 4])>
+                        <label class="tk-label" for="{{ $id }}">{{ $field['label'] }} @if (! empty($field['required']))<span class="uf-req">*</span>@endif</label>
+                        @if ($field['type'] === 'select')
+                            <select id="{{ $id }}" class="tk-select" name="data[{{ $field['name'] }}]" @required(! empty($field['required']))>
+                                @if (count($field['options']) !== 1 || empty($field['required']))<option value="">Select…</option>@endif
+                                @foreach ($field['options'] as $optionValue => $optionLabel)
+                                    <option value="{{ $optionValue }}" @selected((string) $value === (string) $optionValue || (count($field['options']) === 1 && ! empty($field['required'])))>{{ $optionLabel }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input id="{{ $id }}" name="data[{{ $field['name'] }}]" type="{{ $field['type'] === 'number' ? 'number' : ($field['type'] === 'date' ? 'date' : 'text') }}"
+                                @if ($field['type'] === 'number') step="0.01" @endif @required(! empty($field['required'])) value="{{ $value }}">
+                        @endif
+                    </div>
+                @endforeach
             </div>
         </section>
     @elseif ($type === TicketType::StockAdjustment)
@@ -434,6 +465,8 @@
             <b>{{ $type->label() }}</b> &middot;
             @if ($type === TicketType::NewSku)
                 <span x-text="skuName || 'new SKU'"></span>
+            @elseif ($type->isSimpleEntry())
+                one record
             @else
                 <span x-text="productCount() + ' {{ $type === TicketType::ReactivateSku ? 'SKU(s)' : 'product(s)' }}'"></span>
                 @if ($type === TicketType::PriceUpdate) &middot; <span x-text="changeCount() + ' value(s) changing'"></span> @endif

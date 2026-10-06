@@ -18,7 +18,7 @@
     @include('tickets.partials.style')
 
     <div class="ak-page">
-        <x-status-message />
+        @include('tickets.partials.flash')
         <x-validation-errors class="mb-4" />
         @include('tickets.form', ['ticket' => null, 'action' => route('tickets.store'), 'submitLabel' => 'Submit for approval'])
     </div>

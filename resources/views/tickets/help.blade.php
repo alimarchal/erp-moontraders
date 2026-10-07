@@ -83,13 +83,14 @@
                 <tbody>
                     <tr><td><span class="en">Price / Reorder Update</span></td><td>فروخت، لاگت یا ایکسپائری قیمت، یا ری آرڈر لیول بدلنا</td><td>پروڈکٹ اور چنی ہوئی بیچز کی قیمت بدل جاتی ہے اور <span class="en">Price Change Log</span> میں درج ہوتی ہے</td></tr>
                     <tr><td><span class="en">New SKU Add</span></td><td>نیا آئٹم شامل کروانا</td><td>آئٹم بن جاتا ہے</td></tr>
-                    <tr><td><span class="en">Activate / Deactivate SKU</span></td><td>آئٹم کو فعال یا غیر فعال کروانا</td><td>آئٹم کی حالت تبدیل ہو جاتی ہے</td></tr>
+                    <tr><td><span class="en">Activate / Deactivate SKU</span></td><td>آئٹم کو فعال (<span class="en">Active</span>) یا غیر فعال (<span class="en">Inactive</span>) کروانا</td><td>آئٹم کی حالت بدل جاتی ہے: غیر فعال فعال ہو جاتا ہے اور فعال غیر فعال</td></tr>
                     <tr><td><span class="en">Stock Adjustment</span></td><td>نقصان، ایکسپائری، چوری یا گنتی کا فرق</td><td>ایڈجسٹمنٹ بن کر پوسٹ ہو جاتی ہے (اسٹاک اور جرنل انٹری)</td></tr>
                     <tr><td><span class="en">Supplier Ledger Entry</span></td><td>سپلائر لیجر رجسٹر میں اندراج</td><td>صرف اندراج بنتا ہے، پوسٹ نہیں ہوتا</td></tr>
                     <tr><td><span class="en">Claim Register Entry</span></td><td>کلیم یا ریکوری کا اندراج</td><td>صرف اندراج بنتا ہے، پوسٹ نہیں ہوتا</td></tr>
                     <tr><td><span class="en">New Customer</span></td><td>نیا کسٹمر بنوانا</td><td>کسٹمر بن جاتا ہے</td></tr>
                 </tbody>
             </table>
+            <p style="margin-top:10px"><b>آئٹم فعال / غیر فعال:</b> فہرست میں آپ کی کمپنی کے تمام آئٹم نظر آتے ہیں اور ہر نام کے ساتھ اس کی موجودہ حالت (<span class="en">Active</span> یا <span class="en">Inactive</span>) لکھی ہوتی ہے۔ آئٹم چنتے ہی نئی حالت خود الٹ ہو جاتی ہے، یعنی غیر فعال آئٹم پر <span class="en">Active</span> اور فعال آئٹم پر <span class="en">Inactive</span>۔ اگر نئی حالت موجودہ حالت جیسی ہو تو ٹکٹ نہیں بنتا۔</p>
             <p style="margin-top:10px"><b>اسٹاک ایڈجسٹمنٹ:</b> گودام اور بیچ چنیں، پھر گنتی کی مقدار لکھیں۔ فرق اور اس کی مالیت خود نکل آتی ہے۔</p>
             <figure><img src="{{ asset('icons-images/ticket-help/5-adjustment.jpg') }}" alt="اسٹاک ایڈجسٹمنٹ" loading="lazy"><figcaption>اسٹاک ایڈجسٹمنٹ کا ٹکٹ</figcaption></figure>
         </section>

@@ -91,6 +91,7 @@ use App\Http\Controllers\SupplierPaymentController;
 use App\Http\Controllers\TaxCodeController;
 use App\Http\Controllers\TaxRateController;
 use App\Http\Controllers\TaxTransactionController;
+use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UomController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
@@ -614,6 +615,18 @@ Route::middleware(['auth:sanctum', config('jetstream.auth_session'), 'verified']
     });
 
     Route::get('reports/van-stock-batch', [VanStockBatchReportController::class, 'index'])->name('reports.van-stock-batch.index');
+
+    /*
+    |----------------------------------------------------------------------
+    | Tickets — product change requests (own menu item, gated by ticket-* permissions)
+    |----------------------------------------------------------------------
+    */
+    Route::get('tickets/products/{product}/batches', [TicketController::class, 'batches'])->name('tickets.product-batches');
+    Route::get('tickets/help', [TicketController::class, 'help'])->name('tickets.help');
+    Route::get('tickets/stock-adjustment/products/{product}/warehouses/{warehouse}/batches', [TicketController::class, 'adjustmentBatches'])->name('tickets.adjustment-batches');
+    Route::post('tickets/{ticket}/approve', [TicketController::class, 'approve'])->name('tickets.approve');
+    Route::post('tickets/{ticket}/reject', [TicketController::class, 'reject'])->name('tickets.reject');
+    Route::resource('tickets', TicketController::class);
 
     /*
     |----------------------------------------------------------------------

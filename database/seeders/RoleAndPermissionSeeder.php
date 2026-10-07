@@ -63,6 +63,7 @@ class RoleAndPermissionSeeder extends Seeder
             'revenue-detail' => ['create', 'edit', 'delete', 'post'],
             'profit-category' => ['list', 'create', 'edit', 'delete'],
             'profit-after-category' => ['create', 'edit', 'delete', 'post'],
+            'ticket' => ['list', 'create', 'edit', 'delete', 'approve'],
 
             // Employee Salary Management
             'employee-salary' => ['list', 'create', 'edit', 'delete'],
@@ -108,8 +109,14 @@ class RoleAndPermissionSeeder extends Seeder
                 || str_starts_with($name, 'category-revenue-')
                 || str_starts_with($name, 'revenue-detail-')
                 || str_starts_with($name, 'profit-category-')
-                || str_starts_with($name, 'profit-after-category-');
+                || str_starts_with($name, 'profit-after-category-')
+                || str_starts_with($name, 'ticket-');
         }));
+
+        // Company (supplier) user: raises, edits and deletes tickets, never approves them.
+        // Also created by the tickets migration so production does not need to run this seeder.
+        Role::firstOrCreate(['name' => 'company-user', 'guard_name' => 'web'])
+            ->givePermissionTo(['ticket-list', 'ticket-create', 'ticket-edit', 'ticket-delete']);
 
         // Accountant
         $accountantRole = Role::firstOrCreate(['name' => 'accountant', 'guard_name' => 'web']);

@@ -15,6 +15,7 @@ use App\Models\SalesSettlementItem;
 use App\Models\StockMovement;
 use App\Models\Supplier;
 use App\Models\SupplierPayment;
+use App\Models\Ticket;
 use App\Models\User;
 use App\Models\Vehicle;
 use App\Services\CustomerCreditAging;
@@ -805,6 +806,10 @@ class Dashboard extends Component
 
         if ($user->can('journal-entry-list')) {
             $this->pendingItems['draftJournalEntries'] = JournalEntry::query()->where('status', 'draft')->count();
+        }
+
+        if ($user->can('ticket-list')) {
+            $this->pendingItems['pendingTickets'] = Ticket::query()->visibleTo($user)->where('status', 'pending')->count();
         }
 
         if ($user->can('supplier-payment-list')) {

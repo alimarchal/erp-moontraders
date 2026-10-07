@@ -97,6 +97,14 @@ class User extends Authenticatable
             ->join('');
     }
 
+    /**
+     * Super admins and the "admin" role are not tied to one company.
+     */
+    public function isTicketAdmin(): bool
+    {
+        return $this->is_super_admin === 'Yes' || $this->hasRole(['super-admin', 'admin']);
+    }
+
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);

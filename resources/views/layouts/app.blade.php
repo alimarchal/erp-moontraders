@@ -117,7 +117,7 @@
     <script src="{{ url('select2/select2.min.js') }}" defer></script>
     <script>
         $(document).ready(function () {
-            $('.select2').select2({
+            $('select.select2').select2({
                 placeholder: 'Select an option',
                 allowClear: true,
                 width: '100%',

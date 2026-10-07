@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Models\ProductPriceChangeLog;
 use App\Models\Supplier;
 use App\Models\Uom;
+use App\Services\ProductPricingService;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -39,6 +40,8 @@ class ProductController extends Controller implements HasMiddleware
     private const PER_PAGE_OPTIONS = [10, 15, 25, 50, 100, 250];
 
     private const DEFAULT_PER_PAGE = 40;
+
+    public function __construct(private ProductPricingService $pricing) {}
 
     /**
      * Display a listing of the resource.
@@ -217,57 +220,7 @@ class ProductController extends Controller implements HasMiddleware
             if ($product->unit_sell_price !== null && (float) $product->unit_sell_price !== (float) $oldSellingPrice) {
                 $newPrice = $product->unit_sell_price;
 
-                // Find batch IDs with stock from both sources to avoid missing legacy/inconsistent rows.
-                $batchIdsFromValuation = DB::table('stock_valuation_layers')
-                    ->where('product_id', $product->id)
-                    ->where('is_depleted', false)
-                    ->where('quantity_remaining', '>', 0)
-                    ->where('is_promotional', false)
-                    ->whereNotNull('stock_batch_id')
-                    ->pluck('stock_batch_id');
-
-                $batchIdsFromCurrentStock = DB::table('current_stock_by_batch')
-                    ->where('product_id', $product->id)
-                    ->where('quantity_on_hand', '>', 0)
-                    ->where('is_promotional', false)
-                    ->whereNotNull('stock_batch_id')
-                    ->pluck('stock_batch_id');
-
-                $impactedBatchIds = $batchIdsFromValuation
-                    ->merge($batchIdsFromCurrentStock)
-                    ->unique()
-                    ->values();
-
-                if ($impactedBatchIds->isNotEmpty()) {
-                    // Update stock_batches that have available stock
-                    DB::table('stock_batches')
-                        ->whereIn('id', $impactedBatchIds)
-                        ->where('is_promotional', false)
-                        ->update(['selling_price' => $newPrice]);
-
-                    // Update current_stock_by_batch for these batches
-                    DB::table('current_stock_by_batch')
-                        ->whereIn('stock_batch_id', $impactedBatchIds)
-                        ->where('is_promotional', false)
-                        ->update(['selling_price' => $newPrice]);
-                }
-
-                // Update goods_receipt_note_items where stock is still available
-                $activeGrnItemIds = DB::table('stock_valuation_layers')
-                    ->where('product_id', $product->id)
-                    ->where('is_depleted', false)
-                    ->where('quantity_remaining', '>', 0)
-                    ->where('is_promotional', false)
-                    ->whereNotNull('grn_item_id')
-                    ->pluck('grn_item_id')
-                    ->unique();
-
-                if ($activeGrnItemIds->isNotEmpty()) {
-                    DB::table('goods_receipt_note_items')
-                        ->whereIn('id', $activeGrnItemIds)
-                        ->where('is_promotional', false)
-                        ->update(['selling_price' => $newPrice]);
-                }
+                $impactedBatchIds = $this->pricing->cascadeSellingPrice($product, $newPrice);
 
                 ProductPriceChangeLog::create([
                     'product_id' => $product->id,

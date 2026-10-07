@@ -63,7 +63,7 @@
             },
             options() {
                 if (this.type === 'stock_adjustment') { return this.products.filter((p) => p.active && String(p.supplier_id) === String(this.adj.supplier_id)); }
-                return this.products.filter((p) => (this.type === 'reactivate_sku' ? !p.active : p.active));
+                return this.type === 'reactivate_sku' ? this.products : this.products.filter((p) => p.active);
             },
             // Stock adjustment lines
             setAdj(key, value) {
@@ -118,14 +118,14 @@
                     const $el = window.jQuery(el);
                     el.innerHTML = '';
                     el.appendChild(new Option('', '', false, false));
-                    this.options().forEach((p) => el.appendChild(new Option(p.label, p.id, false, String(p.id) === String(row.product_id))));
-                    $el.select2({ width: '100%', placeholder: this.type === 'reactivate_sku' ? 'Select an inactive SKU…' : 'Select a product…', allowClear: false });
+                    this.options().forEach((p) => el.appendChild(new Option(this.type === 'reactivate_sku' ? `${p.label} (${p.active ? 'Active' : 'Inactive'})` : p.label, p.id, false, String(p.id) === String(row.product_id))));
+                    $el.select2({ width: '100%', placeholder: this.type === 'reactivate_sku' ? 'Select a SKU…' : 'Select a product…', allowClear: false });
                     $el.on('select2:select', () => (this.type === 'stock_adjustment' ? this.pickAdjProduct(row, el.value) : this.pick(row, el.value)));
                 };
                 // The layout re-initialises every `.select2` element on DOM ready, so wait until the page has fully loaded.
                 if (document.readyState === 'complete' && window.jQuery && window.jQuery.fn.select2) { start(); } else { window.addEventListener('load', start, { once: true }); }
             },
-            pick(row, id) { row.product_id = id; row.batch_ids = []; row.batches = []; if (row.batch_scope === 'selected') { this.loadBatches(row); } },
+            pick(row, id) { row.product_id = id; if (this.type === 'reactivate_sku') { const p = this.product(row); if (p) { row.new_is_active = p.active ? '0' : '1'; } } row.batch_ids = []; row.batches = []; if (row.batch_scope === 'selected') { this.loadBatches(row); } },
             addRow() { this.rows.push(blank()); },
             removeRow(index) { this.rows.splice(index, 1); },
             async loadBatches(row) {
@@ -371,8 +371,8 @@
         <section class="uf-card" aria-labelledby="tk-products">
             <header class="uf-card-head">
                 <div>
-                    <h2 class="uf-card-title" id="tk-products"><span class="uf-step">2</span> {{ $type === TicketType::ReactivateSku ? 'Inactive SKUs to change' : 'Products to update' }}</h2>
-                    <p class="uf-card-sub">{{ $type === TicketType::ReactivateSku ? 'Only inactive SKUs of your company are listed.' : 'Fill only the values that change — empty means unchanged.' }}</p>
+                    <h2 class="uf-card-title" id="tk-products"><span class="uf-step">2</span> {{ $type === TicketType::ReactivateSku ? 'SKUs to activate or deactivate' : 'Products to update' }}</h2>
+                    <p class="uf-card-sub">{{ $type === TicketType::ReactivateSku ? 'Pick a SKU — an Inactive one is offered to Activate, an Active one to Deactivate.' : 'Fill only the values that change — empty means unchanged.' }}</p>
                 </div>
                 <span class="ak-pill" x-text="productCount() + ' selected'"></span>
             </header>

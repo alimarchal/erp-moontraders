@@ -72,7 +72,7 @@ class TicketRequest extends FormRequest
     /**
      * @return array<string, mixed>
      */
-    private function productRule(bool $onlyInactive = false): array
+    private function productRule(?bool $onlyActive = true): array
     {
         $supplierId = $this->scopedSupplierId();
 
@@ -82,7 +82,7 @@ class TicketRequest extends FormRequest
             Rule::exists('products', 'id')
                 ->whereNull('deleted_at')
                 ->when($supplierId, fn ($rule) => $rule->where('supplier_id', $supplierId))
-                ->using(fn ($query) => $onlyInactive ? $query->whereNot('is_active', true) : $query->where('is_active', true)),
+                ->using(fn ($query) => $onlyActive === null ? $query : $query->where('is_active', $onlyActive)),
         ];
     }
 
@@ -122,7 +122,7 @@ class TicketRequest extends FormRequest
     {
         return [
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => [...$this->productRule(onlyInactive: true), 'distinct'],
+            'items.*.product_id' => [...$this->productRule(onlyActive: null), 'distinct'],
             'items.*.new_is_active' => ['required', Rule::in(['0', '1', 0, 1, true, false])],
             'items.*.remarks' => ['nullable', 'string', 'max:1000'],
         ];
@@ -219,6 +219,18 @@ class TicketRequest extends FormRequest
 
             if ($this->ticketType() === TicketType::StockAdjustment) {
                 $this->validateAdjustmentRows($validator);
+
+                return;
+            }
+
+            if ($this->ticketType() === TicketType::ReactivateSku) {
+                foreach ($this->input('items', []) as $index => $row) {
+                    $product = Product::findOrFail($row['product_id']);
+
+                    if ((bool) $row['new_is_active'] === (bool) $product->is_active) {
+                        $validator->errors()->add("items.$index.new_is_active", "{$product->product_name} is already ".($product->is_active ? 'Active' : 'Inactive').'. Choose the opposite status.');
+                    }
+                }
 
                 return;
             }

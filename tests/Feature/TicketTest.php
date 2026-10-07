@@ -215,13 +215,18 @@ it('creates the product only when an admin approves a New SKU ticket', function 
         ->and($ticket->items()->first()->product_id)->toBe($product->id);
 });
 
-it('re-activates an inactive SKU on approval and only offers inactive products', function () {
+it('re-activates an inactive SKU on approval and rejects a status equal to the current one', function () {
     $inactive = Product::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => false]);
 
     $this->actingAs($this->companyUser)->post(route('tickets.store'), [
         'type' => 'reactivate_sku', 'title' => 'Back on shelf',
         'items' => [['product_id' => $this->product->id, 'new_is_active' => '1']],
-    ])->assertSessionHasErrors('items.0.product_id');
+    ])->assertSessionHasErrors('items.0.new_is_active');
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'reactivate_sku', 'title' => 'Back on shelf',
+        'items' => [['product_id' => $inactive->id, 'new_is_active' => '0']],
+    ])->assertSessionHasErrors('items.0.new_is_active');
 
     $this->actingAs($this->companyUser)->post(route('tickets.store'), [
         'type' => 'reactivate_sku', 'title' => 'Back on shelf',
@@ -231,6 +236,28 @@ it('re-activates an inactive SKU on approval and only offers inactive products',
     $this->actingAs($this->admin)->post(route('tickets.approve', Ticket::firstOrFail()))->assertRedirect();
 
     expect($inactive->fresh()->is_active)->toBeTrue();
+});
+
+it('deactivates an active SKU of the company on approval and blocks foreign SKUs', function () {
+    $foreign = Product::factory()->create(['supplier_id' => $this->otherSupplier->id, 'is_active' => true]);
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'reactivate_sku', 'title' => 'Foreign',
+        'items' => [['product_id' => $foreign->id, 'new_is_active' => '0']],
+    ])->assertSessionHasErrors('items.0.product_id');
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'reactivate_sku', 'title' => 'Retire it',
+        'items' => [['product_id' => $this->product->id, 'new_is_active' => '0']],
+    ])->assertRedirect();
+
+    $ticket = Ticket::firstWhere('title', 'Retire it');
+    expect($ticket->items()->first()->old_is_active)->toBeTrue()
+        ->and($this->product->fresh()->is_active)->toBeTrue();
+
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket))->assertRedirect();
+
+    expect($this->product->fresh()->is_active)->toBeFalse();
 });
 
 it('rejects a ticket with remarks and changes nothing', function () {
@@ -432,9 +459,9 @@ it('offers inactive SKUs of the company in the re-activate form, even though the
     $user->assignRole('company-user');
 
     $response = $this->actingAs($user)->get(route('tickets.create', ['type' => 'reactivate_sku']))->assertOk();
-    $offered = collect($response->viewData('products'))->where('active', false)->pluck('id')->all();
+    $offered = collect($response->viewData('products'))->pluck('id')->all();
 
-    expect($offered)->toContain($inactive->id)->not->toContain($foreignInactive->id);
+    expect($offered)->toContain($inactive->id, $this->product->id)->not->toContain($foreignInactive->id);
 
     $this->actingAs($user)->post(route('tickets.store'), [
         'type' => 'reactivate_sku', 'title' => 'Wake it up',

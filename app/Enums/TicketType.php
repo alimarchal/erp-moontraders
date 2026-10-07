@@ -17,7 +17,7 @@ enum TicketType: string
         return match ($this) {
             self::PriceUpdate => 'Price / Reorder Update',
             self::NewSku => 'New SKU Add',
-            self::ReactivateSku => 'Re-Activate SKU',
+            self::ReactivateSku => 'Activate / Deactivate SKU',
             self::StockAdjustment => 'Stock Adjustment',
             self::LedgerEntry => 'Supplier Ledger Entry',
             self::ClaimEntry => 'Claim Register Entry',
@@ -52,7 +52,7 @@ enum TicketType: string
         return match ($this) {
             self::PriceUpdate => 'Change selling, cost, expiry price or reorder level of active products, for all or selected batches.',
             self::NewSku => 'Ask for a brand new product (SKU) to be added to the catalogue.',
-            self::ReactivateSku => 'Bring an inactive SKU back to Active.',
+            self::ReactivateSku => 'Switch a SKU between Active and Inactive.',
             self::StockAdjustment => 'Damage, expiry, theft or count variance. The entry is created and posted when an admin approves.',
             self::LedgerEntry => 'Add a line to the supplier ledger register. Only the entry is created; it is not posted.',
             self::ClaimEntry => 'Add a claim or recovery to the claim register. Only the entry is created; it is not posted.',

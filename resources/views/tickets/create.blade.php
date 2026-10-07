@@ -6,7 +6,7 @@
                     <a href="{{ route('tickets.index') }}">Tickets</a><span aria-hidden="true">›</span><span>New</span>
                 </nav>
                 <h1 class="ak-title">New Ticket</h1>
-                <p class="ak-sub">Ask an admin to change a price, add a new SKU or re-activate one. Nothing changes until it is approved.</p>
+                <p class="ak-sub">Ask an admin to change a price, add a new SKU or activate/deactivate one. Nothing changes until it is approved.</p>
             </div>
             <div class="ak-head-actions">
                 <a href="{{ route('tickets.help') }}" target="_blank" rel="noopener" class="ak-btn ak-btn-outline">Help · مدد</a>

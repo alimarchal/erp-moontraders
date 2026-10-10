@@ -414,6 +414,9 @@
                                 @if ($type === TicketType::ReactivateSku)
                                     <td>
                                         <input type="hidden" :name="`items[${index}][new_is_active]`" :value="row.new_is_active">
+                                        <p x-show="row.product_id && row.new_is_active === '0' && product(row) && product(row).active && product(row).stock > 0" x-cloak style="margin:0 0 6px; color:#b91c1c; font-size:12px">
+                                            Cannot be made Inactive: <span x-text="fmt(product(row)?.stock)"></span> still in stock. The quantity must be zero first.
+                                        </p>
                                         <div class="ak-seg" role="group" aria-label="New status">
                                             <button type="button" @click="row.new_is_active = '1'" :class="row.new_is_active === '1' && 'is-on'">Active</button>
                                             <button type="button" @click="row.new_is_active = '0'" :class="row.new_is_active === '0' && 'is-on'">Inactive</button>

@@ -322,6 +322,13 @@ class TicketController extends Controller implements HasMiddleware
         $products = $this->productsFor($request)->orderBy('product_name')
             ->get(['id', 'product_code', 'product_name', 'is_active', 'supplier_id', 'uom_id', 'unit_sell_price', 'cost_price', 'expiry_price', 'reorder_level']);
 
+        $stock = $type === TicketType::ReactivateSku
+            ? DB::table('current_stock_by_batch')->whereIn('product_id', $products->pluck('id'))->groupBy('product_id')->selectRaw('product_id, sum(quantity_on_hand) as quantity')->pluck('quantity', 'product_id')
+            : collect();
+        $vanStock = $type === TicketType::ReactivateSku
+            ? DB::table('van_stock_batches')->whereIn('product_id', $products->pluck('id'))->groupBy('product_id')->selectRaw('product_id, sum(quantity_on_hand) as quantity')->pluck('quantity', 'product_id')
+            : collect();
+
         return [
             'type' => $type,
             'types' => TicketType::cases(),
@@ -329,6 +336,7 @@ class TicketController extends Controller implements HasMiddleware
                 'id' => $p->id,
                 'label' => "{$p->product_code} — {$p->product_name}",
                 'active' => $p->is_active,
+                'stock' => (float) ($stock[$p->id] ?? 0) + (float) ($vanStock[$p->id] ?? 0),
                 'supplier_id' => $p->supplier_id,
                 'uom_id' => $p->uom_id,
                 'unit_sell_price' => (float) $p->unit_sell_price,

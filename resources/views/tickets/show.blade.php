@@ -126,11 +126,12 @@
                                                 <td class="ak-num">{{ number_format((float) $line['actual_quantity'], 3) }}</td>
                                                 <td class="ak-num {{ $line['adjustment_quantity'] > 0 ? 'tk-up' : ($line['adjustment_quantity'] < 0 ? 'tk-down' : 'tk-flat') }}">{{ $signed($line['adjustment_quantity']) }}</td>
                                                 <td class="ak-num">{{ $money($line['unit_cost']) }}</td>
-                                                <td class="ak-num ak-strong {{ $line['adjustment_value'] < 0 ? 'tk-down' : 'tk-up' }}">{{ $signed($line['adjustment_value']) }}</td>
+                                                @php $lineValue = $line['adjustment_value'] + ($line['revaluation_value'] ?? 0); @endphp
+                                                <td class="ak-num ak-strong {{ $lineValue < 0 ? 'tk-down' : 'tk-up' }}">{{ $signed($lineValue) }}@if (abs($line['adjustment_quantity']) < 0.0005 && ! empty($line['revaluation_value'])) <small class="ak-muted">cost only</small>@endif</td>
                                             </tr>
                                         @endforeach
                                     </tbody>
-                                    <tfoot><tr><td colspan="6" class="ak-strong">Total value</td><td class="ak-num ak-strong">{{ $signed($lines->sum('adjustment_value')) }}</td></tr></tfoot>
+                                    <tfoot><tr><td colspan="6" class="ak-strong">Total value</td><td class="ak-num ak-strong">{{ $signed($lines->sum('adjustment_value') + $lines->sum('revaluation_value')) }}</td></tr></tfoot>
                                 </table>
                             </div>
                             @if ($ticket->isPending())

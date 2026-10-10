@@ -79,6 +79,8 @@
                     const url = this.adjBatchUrl.replace('__P__', row.product_id).replace('__W__', this.adj.warehouse_id);
                     const response = await fetch(url, { headers: { Accept: 'application/json' } });
                     row.batches = response.ok ? await response.json() : [];
+                    const saved = row.batches.find((b) => String(b.id) === String(row.stock_batch_id));
+                    if (saved && row.batch_cost === undefined) { row.batch_cost = Number(saved.unit_cost); }
                 } finally { row.loading = false; }
             },
             pickAdjProduct(row, id) {
@@ -92,10 +94,19 @@
                 row.stock_batch_id = id;
                 row.system_quantity = batch ? Number(batch.quantity) : '';
                 row.unit_cost = batch ? Number(batch.unit_cost) : '';
-                row.actual_quantity = '';
+                row.batch_cost = row.unit_cost;
+                // Counted quantity starts at the system quantity, so changing only the unit cost needs no quantity.
+                row.actual_quantity = batch ? Number(batch.quantity) : '';
             },
+            costChanged(row) { return row.unit_cost !== '' && row.batch_cost !== undefined && row.batch_cost !== '' && Math.abs(parseFloat(row.unit_cost) - parseFloat(row.batch_cost)) > 0.01; },
+            costOnly(row) { return this.adjDiff(row) === 0 && this.costChanged(row); },
             adjDiff(row) { return row.actual_quantity === '' || row.system_quantity === '' ? null : parseFloat(row.actual_quantity) - parseFloat(row.system_quantity); },
-            adjValue(row) { const d = this.adjDiff(row); return d === null || row.unit_cost === '' ? null : d * parseFloat(row.unit_cost); },
+            adjValue(row) {
+                const d = this.adjDiff(row);
+                if (d === null || row.unit_cost === '') { return null; }
+                const revaluation = this.costChanged(row) ? parseFloat(row.system_quantity) * (parseFloat(row.unit_cost) - parseFloat(row.batch_cost)) : 0;
+                return d * parseFloat(row.unit_cost) + revaluation;
+            },
             adjTotal() { return this.rows.reduce((sum, row) => sum + (this.adjValue(row) || 0), 0); },
             product(row) { return this.products.find((p) => String(p.id) === String(row.product_id)); },
             current(row, field) { const p = this.product(row); return p ? p[field] : null; },
@@ -326,7 +337,7 @@
             <header class="uf-card-head">
                 <div>
                     <h2 class="uf-card-title" id="tk-lines"><span class="uf-step">3</span> Lines</h2>
-                    <p class="uf-card-sub">Pick the product and batch, then enter the counted quantity. The difference and its value are worked out for you.</p>
+                    <p class="uf-card-sub">Pick the product and batch, then enter the counted quantity. To change only the unit cost, leave the counted quantity as it is and type the new unit cost.</p>
                 </div>
                 <span class="ak-pill" x-text="productCount() + ' line(s) · value ' + signed(adjTotal())"></span>
             </header>
@@ -356,7 +367,7 @@
                                 </td>
                                 <td class="tk-cell"><input type="number" step="0.001" readonly tabindex="-1" :name="`items[${index}][system_quantity]`" :value="row.system_quantity" style="background:#f8fafc"></td>
                                 <td class="tk-cell"><input type="number" step="0.001" min="0" :disabled="!row.stock_batch_id" :name="`items[${index}][actual_quantity]`" x-model="row.actual_quantity" placeholder="count"></td>
-                                <td><span x-show="adjDiff(row) !== null" class="tk-delta" :class="adjDiff(row) > 0 ? 'tk-delta-up' : (adjDiff(row) < 0 ? 'tk-delta-down' : 'tk-delta-flat')" x-text="signed(adjDiff(row))"></span></td>
+                                <td><span x-show="adjDiff(row) !== null" class="tk-delta" :class="adjDiff(row) > 0 ? 'tk-delta-up' : (adjDiff(row) < 0 ? 'tk-delta-down' : 'tk-delta-flat')" x-text="signed(adjDiff(row))"></span> <small x-show="costOnly(row)" class="ak-muted">cost only</small></td>
                                 <td class="tk-cell"><input type="number" step="0.01" min="0" :disabled="!row.stock_batch_id" :name="`items[${index}][unit_cost]`" x-model="row.unit_cost"></td>
                                 <td><span x-show="adjValue(row) !== null" class="ak-strong" x-text="signed(adjValue(row))"></span></td>
                                 <td><button type="button" class="ak-icon ak-icon-danger" x-show="rows.length > 1" @click="removeRow(index)" title="Remove" aria-label="Remove line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button></td>

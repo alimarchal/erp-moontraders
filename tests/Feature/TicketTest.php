@@ -10,6 +10,7 @@ use App\Models\Supplier;
 use App\Models\Ticket;
 use App\Models\Uom;
 use App\Models\User;
+use App\Models\Vehicle;
 use App\Notifications\TicketSubmitted;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -258,6 +259,84 @@ it('deactivates an active SKU of the company on approval and blocks foreign SKUs
     $this->actingAs($this->admin)->post(route('tickets.approve', $ticket))->assertRedirect();
 
     expect($this->product->fresh()->is_active)->toBeFalse();
+});
+
+it('refuses to deactivate a SKU while stock remains in a warehouse', function () {
+    makeBatch($this->product, 100);
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'reactivate_sku', 'title' => 'Retire with stock',
+        'items' => [['product_id' => $this->product->id, 'new_is_active' => '0']],
+    ])->assertSessionHasErrors('items.0.product_id');
+
+    expect(session('errors')->first('items.0.product_id'))->toContain('cannot be made Inactive while stock remains in the system (warehouses 10, vans 0)');
+
+    expect(Ticket::count())->toBe(0)->and($this->product->fresh()->is_active)->toBeTrue();
+});
+
+it('refuses to deactivate a SKU whose stock is only on a van', function () {
+    $vehicle = Vehicle::factory()->create();
+    DB::table('van_stock_batches')->insert([
+        'vehicle_id' => $vehicle->id, 'product_id' => $this->product->id, 'goods_issue_number' => 'GI-TEST-1',
+        'quantity_on_hand' => 4, 'unit_cost' => 80, 'selling_price' => 100, 'created_at' => now(), 'updated_at' => now(),
+    ]);
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'reactivate_sku', 'title' => 'Retire van stock',
+        'items' => [['product_id' => $this->product->id, 'new_is_active' => '0']],
+    ])->assertSessionHasErrors('items.0.product_id');
+
+    expect(session('errors')->first('items.0.product_id'))->toContain('warehouses 0, vans 4');
+
+    expect(Ticket::count())->toBe(0);
+});
+
+it('deactivates once the stock is zero, even when emptied batches and van rows still exist', function () {
+    $batch = makeBatch($this->product, 100);
+    DB::table('current_stock_by_batch')->where('stock_batch_id', $batch->id)->update(['quantity_on_hand' => 0, 'total_value' => 0]);
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'reactivate_sku', 'title' => 'Retire emptied',
+        'items' => [['product_id' => $this->product->id, 'new_is_active' => '0']],
+    ])->assertSessionHasNoErrors()->assertRedirect();
+
+    $this->actingAs($this->admin)->post(route('tickets.approve', Ticket::firstOrFail()))->assertRedirect();
+
+    expect($this->product->fresh()->is_active)->toBeFalse();
+});
+
+it('re-checks the stock on approval, so stock received after the ticket was raised blocks the deactivation', function () {
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'reactivate_sku', 'title' => 'Retire it',
+        'items' => [['product_id' => $this->product->id, 'new_is_active' => '0']],
+    ])->assertSessionHasNoErrors();
+    $ticket = Ticket::firstOrFail();
+
+    makeBatch($this->product, 100);
+
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket))->assertSessionHasErrors('ticket');
+
+    expect($ticket->fresh()->status)->toBe(TicketStatus::Pending)
+        ->and($this->product->fresh()->is_active)->toBeTrue();
+
+    DB::table('current_stock_by_batch')->where('product_id', $this->product->id)->update(['quantity_on_hand' => 0, 'total_value' => 0]);
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket))->assertRedirect();
+
+    expect($ticket->fresh()->status)->toBe(TicketStatus::Approved)->and($this->product->fresh()->is_active)->toBeFalse();
+});
+
+it('does not apply the stock rule to activating an inactive SKU, and shows stock to the form', function () {
+    $inactive = Product::factory()->create(['supplier_id' => $this->supplier->id, 'is_active' => false]);
+    makeBatch($inactive, 100);
+    makeBatch($this->product, 100);
+
+    $this->actingAs($this->companyUser)->post(route('tickets.store'), [
+        'type' => 'reactivate_sku', 'title' => 'Wake with stock',
+        'items' => [['product_id' => $inactive->id, 'new_is_active' => '1']],
+    ])->assertSessionHasNoErrors()->assertRedirect();
+
+    $products = collect($this->actingAs($this->companyUser)->get(route('tickets.create', ['type' => 'reactivate_sku']))->assertOk()->viewData('products'));
+    expect($products->firstWhere('id', $this->product->id)['stock'])->toEqual(10);
 });
 
 it('rejects a ticket with remarks and changes nothing', function () {

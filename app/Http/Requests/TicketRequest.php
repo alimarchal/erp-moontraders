@@ -230,6 +230,8 @@ class TicketRequest extends FormRequest
 
                     if ((bool) $row['new_is_active'] === (bool) $product->is_active) {
                         $validator->errors()->add("items.$index.new_is_active", "{$product->product_name} is already ".($product->is_active ? 'Active' : 'Inactive').'. Choose the opposite status.');
+                    } elseif (! (bool) $row['new_is_active'] && ($blocker = TicketService::deactivationBlocker($product))) {
+                        $validator->errors()->add("items.$index.product_id", $blocker);
                     }
                 }
 

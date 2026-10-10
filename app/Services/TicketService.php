@@ -465,12 +465,48 @@ class TicketService
         $item->update(['product_id' => $product->id]);
     }
 
+    /**
+     * Quantity of a product still in the system: warehouse stock plus what is on vans.
+     *
+     * @return array{warehouse: float, vans: float, total: float}
+     */
+    public static function stockInSystem(int $productId): array
+    {
+        $warehouse = (float) DB::table('current_stock_by_batch')->where('product_id', $productId)->sum('quantity_on_hand');
+        $vans = (float) DB::table('van_stock_batches')->where('product_id', $productId)->sum('quantity_on_hand');
+
+        return ['warehouse' => $warehouse, 'vans' => $vans, 'total' => $warehouse + $vans];
+    }
+
+    /**
+     * A product may only be made inactive once none of it is left in the system.
+     */
+    public static function deactivationBlocker(Product $product): ?string
+    {
+        $stock = self::stockInSystem($product->id);
+
+        if ($stock['total'] <= 0.0005) {
+            return null;
+        }
+
+        $format = fn (float $quantity): string => rtrim(rtrim(number_format($quantity, 3, '.', ','), '0'), '.');
+
+        return sprintf(
+            '%s cannot be made Inactive while stock remains in the system (warehouses %s, vans %s). Bring the quantity to zero first.',
+            $product->product_name, $format($stock['warehouse']), $format($stock['vans'])
+        );
+    }
+
     private function applyStatusChange(TicketItem $item): void
     {
         $product = Product::query()->lockForUpdate()->find($item->product_id);
 
         if (! $product) {
             throw ValidationException::withMessages(['ticket' => 'A product on this ticket no longer exists.']);
+        }
+
+        if (! $item->new_is_active && $product->is_active && ($blocker = self::deactivationBlocker($product))) {
+            throw ValidationException::withMessages(['ticket' => $blocker]);
         }
 
         $product->update(['is_active' => $item->new_is_active]);

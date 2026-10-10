@@ -363,6 +363,24 @@ class TicketService
     }
 
     /**
+     * The unit cost the batch is carried at in the warehouse, which a line's unit cost is compared with.
+     */
+    public static function batchCost(int $stockBatchId, int $warehouseId): float
+    {
+        return (float) DB::table('current_stock_by_batch')
+            ->where('stock_batch_id', $stockBatchId)->where('warehouse_id', $warehouseId)->value('unit_cost');
+    }
+
+    /**
+     * Same tolerance as the Stock Adjustments screen: a whole paisa, because the form loads the
+     * batch master's 2-decimal cost while stock carries the receipt's six.
+     */
+    public static function costChanged(int $stockBatchId, int $warehouseId, float $unitCost): bool
+    {
+        return abs($unitCost - self::batchCost($stockBatchId, $warehouseId)) > 0.01;
+    }
+
+    /**
      * @param  array<int, array<string, mixed>>  $lines
      * @return Collection<int, array<string, mixed>>
      */
@@ -375,6 +393,11 @@ class TicketService
             $line['system_quantity'] = $onHand;
             $line['adjustment_quantity'] = (float) $line['actual_quantity'] - $onHand;
             $line['adjustment_value'] = $line['adjustment_quantity'] * (float) $line['unit_cost'];
+            $line['revaluation_value'] = round($onHand * ((float) $line['unit_cost'] - self::batchCost((int) $line['stock_batch_id'], $warehouseId)), 2);
+
+            if (! self::costChanged((int) $line['stock_batch_id'], $warehouseId, (float) $line['unit_cost'])) {
+                $line['revaluation_value'] = 0.0;
+            }
 
             return $line;
         })->values();
@@ -393,11 +416,12 @@ class TicketService
         $service = app(StockAdjustmentService::class);
 
         $lines = $this->adjustmentLines((int) $payload['warehouse_id'], $payload['items'])
-            ->reject(fn (array $line) => abs($line['adjustment_quantity']) < 0.0005)
+            ->reject(fn (array $line) => abs($line['adjustment_quantity']) < 0.0005 && $line['revaluation_value'] == 0.0)
+            ->map(fn (array $line) => Arr::except($line, 'revaluation_value'))
             ->values();
 
         if ($lines->isEmpty()) {
-            throw ValidationException::withMessages(['ticket' => 'Stock has moved since the count: the counted quantities now match the system, so there is nothing left to adjust.']);
+            throw ValidationException::withMessages(['ticket' => 'Stock has moved since the count: the counted quantities and unit costs now match the system, so there is nothing left to adjust.']);
         }
 
         $created = $service->createAdjustment(Arr::except($payload, 'items') + ['items' => $lines->all()]);

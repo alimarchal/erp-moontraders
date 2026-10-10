@@ -121,11 +121,11 @@ class TicketSubmitted extends Notification
             $out[] = sprintf(
                 '  – %s (batch %s): system %s → counted %s, difference %s, value %s',
                 $products[$line['product_id']] ?? '—', $batches[$line['stock_batch_id']] ?? '—',
-                $this->qty($line['system_quantity']), $this->qty($line['actual_quantity']), $this->qty($line['adjustment_quantity']), $this->money($line['adjustment_value'])
-            );
+                $this->qty($line['system_quantity']), $this->qty($line['actual_quantity']), $this->qty($line['adjustment_quantity']), $this->money($line['adjustment_value'] + ($line['revaluation_value'] ?? 0))
+            ).(abs((float) $line['adjustment_quantity']) < 0.0005 && ! empty($line['revaluation_value']) ? ' (unit cost only)' : '');
         }
 
-        $out[] = '  **Total value: '.$this->money($lines->sum('adjustment_value')).'** — approving creates and posts the adjustment.';
+        $out[] = '  **Total value: '.$this->money($lines->sum('adjustment_value') + $lines->sum('revaluation_value')).'** — approving creates and posts the adjustment.';
 
         return $out;
     }

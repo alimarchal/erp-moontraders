@@ -279,3 +279,76 @@ it('renders the stock adjustment form for a company user', function () {
     $this->actingAs($this->companyUser)->get(route('tickets.create', ['type' => 'stock_adjustment']))
         ->assertOk()->assertSee('Adjustment details')->assertSee('name="warehouse_id"', false)->assertSee('Stock Adjustment');
 });
+
+/**
+ * @param  array<string, mixed>  $payload
+ * @return array<string, mixed>
+ */
+function withUnitCost(array $payload, float $unitCost): array
+{
+    $payload['items'][0]['unit_cost'] = $unitCost;
+
+    return $payload;
+}
+
+it('accepts a unit-cost-only line (counted equals system) and rejects one that changes nothing', function () {
+    $stock = adjustableStock($this);
+    $this->actingAs($this->companyUser);
+
+    $this->post(route('tickets.store'), ['type' => 'stock_adjustment', 'title' => 'same'] + adjustmentPayload($this, $stock, 100))->assertSessionHasErrors('items.0.actual_quantity');
+    $this->post(route('tickets.store'), ['type' => 'stock_adjustment', 'title' => 'rounding'] + withUnitCost(adjustmentPayload($this, $stock, 100), 50.004))->assertSessionHasErrors('items.0.actual_quantity');
+
+    $this->post(route('tickets.store'), ['type' => 'stock_adjustment', 'title' => 'cost only'] + withUnitCost(adjustmentPayload($this, $stock, 100), 60))
+        ->assertSessionHasNoErrors()->assertRedirect();
+
+    $line = Ticket::firstWhere('title', 'cost only')->items->first()->payload['items'][0];
+    expect($line['adjustment_quantity'])->toEqual(0)
+        ->and($line['adjustment_value'])->toEqual(0)
+        ->and($line['revaluation_value'])->toEqual(1000)
+        ->and(StockAdjustment::count())->toBe(0)
+        ->and((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('unit_cost'))->toBe(50.0);
+});
+
+it('approving a unit-cost-only ticket revalues the batch exactly like the Stock Adjustments screen', function () {
+    $viaScreen = adjustableStock($this);
+    $viaTicket = adjustableStock($this);
+    $this->actingAs($this->admin);
+
+    $beforeScreen = tableFingerprints();
+    $this->post(route('stock-adjustments.store'), withUnitCost(adjustmentPayload($this, $viaScreen, 100), 60))->assertSessionHasNoErrors()->assertRedirect();
+    $adjustment = StockAdjustment::firstOrFail();
+    $this->post(route('stock-adjustments.post', $adjustment), ['password' => 'password'])->assertRedirect();
+    $touchedByScreen = collect(tableFingerprints())->filter(fn ($hash, $table) => ($beforeScreen[$table] ?? null) !== $hash)->keys()->sort()->values()->all();
+
+    $this->actingAs($this->companyUser)
+        ->post(route('tickets.store'), ['type' => 'stock_adjustment', 'title' => 'Cost fix'] + withUnitCost(adjustmentPayload($this, $viaTicket, 100), 60))->assertSessionHasNoErrors()->assertRedirect();
+    $ticket = Ticket::firstOrFail();
+
+    $beforeTicket = tableFingerprints();
+    $this->actingAs($this->admin)->post(route('tickets.approve', $ticket), ['password' => 'password'])->assertRedirect(route('tickets.show', $ticket));
+    $touchedByTicket = collect(tableFingerprints())->filter(fn ($hash, $table) => ($beforeTicket[$table] ?? null) !== $hash)->keys()
+        ->reject(fn ($table) => in_array($table, ['tickets', 'ticket_items', 'ticket_histories'], true))->sort()->values()->all();
+
+    expect($touchedByTicket)->toBe($touchedByScreen)->and($touchedByScreen)->toContain('current_stock_by_batch', 'stock_valuation_layers', 'stock_batches', 'journal_entries');
+
+    foreach ([$viaScreen, $viaTicket] as $stock) {
+        expect((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('quantity_on_hand'))->toBe(100.0)
+            ->and((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('unit_cost'))->toBe(60.0)
+            ->and((float) CurrentStockByBatch::where('stock_batch_id', $stock['batch']->id)->value('total_value'))->toBe(6000.0)
+            ->and((float) StockValuationLayer::where('stock_batch_id', $stock['batch']->id)->value('value_remaining'))->toBe(6000.0)
+            ->and((float) $stock['batch']->fresh()->unit_cost)->toBe(60.0);
+    }
+
+    $created = StockAdjustment::where('id', '!=', $adjustment->id)->firstOrFail();
+    $totals = DB::table('journal_entry_details')->where('journal_entry_id', $created->journal_entry_id)->selectRaw('sum(debit) as d, sum(credit) as c')->first();
+    expect($created->status)->toBe('posted')
+        ->and((float) $totals->d)->toBe((float) $totals->c)->and((float) $totals->d)->toBe(1000.0)
+        ->and($ticket->fresh()->status)->toBe(TicketStatus::Approved);
+
+    $this->actingAs($this->admin)->get(route('tickets.show', $ticket))->assertOk()->assertSee('cost only');
+});
+
+it('shows the cost-only hint on the stock adjustment form', function () {
+    $this->actingAs($this->companyUser)->get(route('tickets.create', ['type' => 'stock_adjustment']))
+        ->assertOk()->assertSee('To change only the unit cost', false);
+});

@@ -136,23 +136,6 @@ it('lists the active employees of a designation for the create form', function (
         ->assertJsonPath('designations.1', ['name' => 'Salesman', 'count' => 2]);
 });
 
-it('creates the monthly sheet with zero targets for every active salesman, once', function () {
-    Employee::factory()->create(['supplier_id' => $this->nestle->id, 'designation' => 'Salesman', 'is_active' => false]);
-    Employee::factory()->create(['supplier_id' => $this->other->id, 'designation' => 'Driver', 'is_active' => true]);
-
-    $this->artisan('company-targets:generate', ['--month' => '2026-11'])->assertSuccessful();
-    $this->artisan('company-targets:generate', ['--month' => '2026-11'])->assertSuccessful();
-
-    $sheet = CompanyTarget::query()->where('supplier_id', $this->nestle->id)->firstOrFail();
-    expect($sheet->period_start->toDateString())->toBe('2026-11-01')
-        ->and($sheet->period_end->toDateString())->toBe('2026-11-30')
-        ->and($sheet->lines)->toHaveCount(2)
-        ->and($sheet->lines->every(fn ($line) => (float) $line->target_amount === 0.0 && $line->target_label === 'Corporate'))->toBeTrue()
-        ->and(CompanyTarget::query()->where('supplier_id', $this->nestle->id)->count())->toBe(1);
-
-    $this->artisan('company-targets:generate', ['--month' => '2026-13'])->assertFailed();
-});
-
 it('keeps the salesman names and typed values when the form comes back with an error', function () {
     $payload = ($this->payload)(['lines' => [['employee_id' => $this->tayyab->id, 'target_label' => 'Retail', 'target_amount' => '-5']]]);
 

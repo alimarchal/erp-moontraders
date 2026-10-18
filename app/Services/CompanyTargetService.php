@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\CompanyTarget;
 use App\Models\CompanyTargetLine;
 use App\Models\Employee;
-use App\Models\Supplier;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -28,42 +27,6 @@ class CompanyTargetService
             ->where('designation', $designation)
             ->orderBy('name')
             ->get(['id', 'name', 'employee_code', 'designation']);
-    }
-
-    /**
-     * Creates the target sheet of a supplier for a period with one zero-target row per active
-     * salesman. Safe to run again: an existing sheet only receives rows for salesmen it lacks.
-     *
-     * @return array{target: CompanyTarget, created: bool, lines_added: int}
-     */
-    public function generateForPeriod(Supplier $supplier, CarbonInterface $start, CarbonInterface $end, ?int $userId = null): array
-    {
-        return DB::transaction(function () use ($supplier, $start, $end, $userId) {
-            $target = CompanyTarget::query()->firstOrCreate(
-                [
-                    'supplier_id' => $supplier->id,
-                    'period_start' => $start->toDateString(),
-                    'period_end' => $end->toDateString(),
-                ],
-                ['created_by' => $userId, 'updated_by' => $userId],
-            );
-
-            $existing = $target->lines()->pluck('employee_id');
-            $sortOrder = (int) $target->lines()->max('sort_order');
-
-            $missing = $this->eligibleEmployees($supplier->id)->reject(fn (Employee $employee) => $existing->contains($employee->id));
-
-            foreach ($missing as $employee) {
-                $target->lines()->create([
-                    'employee_id' => $employee->id,
-                    'target_label' => CompanyTarget::DEFAULT_LABEL,
-                    'target_amount' => 0,
-                    'sort_order' => ++$sortOrder,
-                ]);
-            }
-
-            return ['target' => $target, 'created' => $target->wasRecentlyCreated, 'lines_added' => $missing->count()];
-        });
     }
 
     /**

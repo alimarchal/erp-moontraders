@@ -43,9 +43,3 @@ Schedule::command('accounting:reconcile-stock-gl')
 // Database backups — twice daily
 // Schedule::command('backup:run --only-db')->dailyAt('06:00')->name('backup-morning')->withoutOverlapping();
 Schedule::command('backup:run --only-db')->dailyAt('23:40')->name('backup-night')->withoutOverlapping();
-
-// New month, new target sheet: every supplier gets a zero-target row per active salesman.
-Schedule::command('company-targets:generate')
-    ->monthlyOn(1, '00:30')
-    ->name('company-targets-monthly')
-    ->withoutOverlapping();

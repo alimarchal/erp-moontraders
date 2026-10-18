@@ -68,9 +68,21 @@
     .db-big em { margin-left: 8px; font-style: normal; font-size: 11.5px; font-weight: 800; padding: 1px 8px; border-radius: 999px; }
     .db-big em.up { background: #dcfce7; color: #166534; }
     .db-big em.down { background: #fee2e2; color: #991b1b; }
-    .db-chart { min-height: 190px; }
+    .db-chart { min-height: 220px; flex: 1; }
     .db-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 160px; text-align: center; color: var(--ak-muted); font-size: 13px; }
     .db-empty b { color: var(--ak-text); font-size: 14px; }
+
+    /* ---- late credit list ---- */
+    .db-aging-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .db-aging-chips button { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border: 1px solid #cbd5e1; border-radius: 999px; background: #fff; font-size: 12.5px; font-weight: 700; color: #0f172a; cursor: pointer; }
+    .db-aging-chips button b { color: #e11d48; }
+    .db-aging-chips button:hover { border-color: var(--navy); }
+    .db-aging-chips button.is-on { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .db-aging-chips button.is-on b { color: #fda4af; }
+    .db-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .db-filters select, .db-filters input { height: 32px; padding: 0 10px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 12.5px; background: #fff; color: #0f172a; max-width: 100%; }
+    .db-filters input { width: 210px; }
+    .db-aging-scroll { max-height: 26rem; overflow: auto; border-top: 1px solid #e2e8f0; }
 
     /* ---- top performers strip ---- */
     .db-strip { display: grid; gap: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); overflow: hidden; border-radius: 14px; background: linear-gradient(110deg, #0b2a6f, #1e3a8a); color: #fff; box-shadow: 0 14px 28px -16px rgba(11,42,111,.8); }

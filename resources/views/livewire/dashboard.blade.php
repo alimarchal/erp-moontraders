@@ -46,6 +46,12 @@
     $margin = ($k['totalSalesThisMonth'] ?? 0) > 0 ? round(($k['grossProfitThisMonth'] ?? 0) / $k['totalSalesThisMonth'] * 100, 1) : 0;
     $canCreditors = auth()->user()->can('report-audit-creditors-ledger');
     $creditUrl = $canCreditors ? route('reports.creditors-ledger.index', ['filter' => array_filter(['supplier_id' => $scope['supplier_id'], 'has_balance' => 'yes'])]) : null;
+    $customerStatement = fn (int $id, ?int $employeeId = null) => $canCreditors
+        ? route('reports.creditors-ledger.customer-ledger', array_filter(['customer' => $id, 'filter' => $employeeId ? ['employee_id' => $employeeId] : null]))
+        : null;
+    $agingReportUrl = $canCreditors ? route('reports.creditors-ledger.aging-report', array_filter(['filter' => array_filter(['supplier_id' => $scope['supplier_id']])])) : null;
+    $bucketNames = [1 => '31-60 days', 2 => '61-90 days', 3 => 'Over 90 days'];
+    $agingSalesmen = collect($agingCustomers)->pluck('salesmen')->filter()->unique()->sort()->values()->all();
     $salesNow = (float) ($k['totalSalesThisMonth'] ?? 0);
     $sD = $delta($salesNow, $lastMonth['sales'] ?? null);
     $pD = $delta((float) ($k['grossProfitThisMonth'] ?? 0), $lastMonth['profit'] ?? null);
@@ -251,7 +257,7 @@
                     <section class="db-card" style="--accent: var(--s4)" aria-label="Investment">
                         <div class="db-card-head"><div><h3>Investment</h3><p class="db-card-sub">as of {{ \Carbon\Carbon::parse($inv['as_of'])->format('d M Y') }}</p></div>{!! $rl('report-audit-investment-summary', 'reports.investment-summary.index', 'Investment summary') !!}</div>
                         <div class="db-big" title="{{ $full($inv['total']) }}"><small>Rs</small>{{ $rs($inv['total']) }}<em class="{{ $invChange >= 0 ? 'up' : 'down' }}">{{ $invChange >= 0 ? '▲' : '▼' }} Rs {{ $rs(abs($invChange)) }} since {{ \Carbon\Carbon::parse($inv['before_on'])->format('d M') }}</em></div>
-                        <div id="db-invest" class="db-chart" style="min-height:170px" role="img" aria-label="Investment by part"></div>
+                        <div id="db-invest" class="db-chart" style="min-height:215px" role="img" aria-label="Investment by part"></div>
                     </section>
                 @endif
                 @if ($hasCredit)
@@ -259,7 +265,7 @@
                         <div class="db-card-head"><div><h3>Credit market analysis</h3><p class="db-card-sub">what customers owe, by age of the unpaid sale</p></div>{!! $canCreditors ? '<a href="'.e($creditUrl).'">Creditors ledger →</a>' : '' !!}</div>
                         <div class="db-big" title="{{ $full($k['creditOwed'] ?? 0) }}"><small>Rs</small>{{ $rs($k['creditOwed'] ?? 0) }}<em class="{{ ($k['creditOverdue'] ?? 0) > 0 ? 'down' : 'up' }}">{{ ($k['creditOwed'] ?? 0) > 0 ? round(($k['creditOverdue'] ?? 0) / $k['creditOwed'] * 100) : 0 }}% over 60 days</em></div>
                         @if (array_sum($creditAging['values'] ?? []) > 0)
-                            <div id="db-aging" class="db-chart" style="min-height:170px" role="img" aria-label="Credit owed by age"></div>
+                            <div id="db-aging" class="db-chart" style="min-height:215px" role="img" aria-label="Credit owed by age"></div>
                         @else
                             <div class="db-empty"><b>No credit outstanding</b></div>
                         @endif
@@ -270,7 +276,7 @@
 
         {{-- ============================== People and stock ============================== --}}
         @php
-            $creditByCustomer = collect($topCreditCustomers)->groupBy('id')->map(fn ($g) => ['name' => $g->first()['name'].($g->first()['city'] ? ' ('.$g->first()['city'].')' : ''), 'used' => $g->sum('used')])->sortByDesc('used')->take(6)->values();
+            $creditByCustomer = collect($topCreditCustomers)->groupBy('id')->map(fn ($g) => ['name' => $g->first()['name'].($g->first()['city'] ? ' ('.$g->first()['city'].')' : ''), 'used' => $g->sum('used')])->sortByDesc('used')->take(8)->values();
             $topCreditChart = ['labels' => $creditByCustomer->pluck('name')->all(), 'values' => $creditByCustomer->pluck('used')->all()];
         @endphp
         @if ($hasCredit || $sections['sales'] || $hasStock)
@@ -299,7 +305,7 @@
                     <section class="db-card" style="--accent: var(--s5)" aria-label="Top stock items">
                         <div class="db-card-head"><div><h3>Top stock items</h3><p class="db-card-sub">by value in stock</p></div><a href="{{ route('inventory.current-stock.index') }}">Current stock →</a></div>
                         <div class="db-big" title="{{ $full($k['totalInventoryValue'] ?? 0) }}"><small>Rs</small>{{ $rs($k['totalInventoryValue'] ?? 0) }}<em class="up">{{ $n($k['productsInStock'] ?? 0) }} products</em></div>
-                        <div id="db-stock" class="db-chart" style="min-height:170px" role="img" aria-label="Products with the most stock value"></div>
+                        <div id="db-stock" class="db-chart" style="min-height:215px" role="img" aria-label="Products with the most stock value"></div>
                     </section>
                 @endif
             </div>
@@ -327,6 +333,87 @@
                         <p>{{ $insight['text'] }}</p>
                     </div>
                 @endforeach
+            </section>
+        @endif
+
+        {{-- ============================== Late credit: aging creditors with filters ============================== --}}
+        @if ($hasCredit && $agingCustomers)
+            <section class="db-card db-aging" id="db-aging-list" aria-label="Late credit, aging creditors" style="--accent: var(--s6); padding: 0; overflow: hidden"
+                x-data="{
+                    aging: 'late', q: '', salesman: '',
+                    inAging(bs) { return this.aging === 'all' ? true : (this.aging === 'late' ? bs.some(b => b >= 2) : bs.includes(this.aging)); },
+                    partOf(parts) { return this.aging === 'all' ? parts.slice(1).reduce((a, b) => a + b, 0) : (this.aging === 'late' ? parts[2] + parts[3] : (parts[this.aging] ?? 0)); },
+                    show(row) { return this.inAging(row.in) && (this.salesman === '' || row.salesmen === this.salesman) && (this.q === '' || row.hay.includes(this.q.toLowerCase())); },
+                    shown: 0,
+                }"
+                @aging-bucket.window="aging = $event.detail; $el.scrollIntoView({ behavior: 'smooth', block: 'start' })">
+                <div class="db-card-head" style="padding: 14px 16px 6px; flex-wrap: wrap; gap: 10px">
+                    <div>
+                        <h3>Late credit: aging creditors</h3>
+                        <p class="db-card-sub">Customers with unpaid credit older than 30 days, biggest first. Payments clear the oldest sales first; "Days" is the age of the oldest unpaid sale.</p>
+                    </div>
+                    <div class="db-filters" aria-label="Filter the list">
+                        <div class="db-aging-chips">
+                            <button type="button" @click="aging = 'late'" :class="aging === 'late' && 'is-on'">60+ days <b>{{ $n($k['creditOverdueAccounts'] ?? 0) }}</b></button>
+                            @foreach ($bucketNames as $i => $label)
+                                <button type="button" @click="aging = {{ $i }}" :class="aging === {{ $i }} && 'is-on'">{{ $label }} <b>{{ $n($creditAging['counts'][$i] ?? 0) }}</b></button>
+                            @endforeach
+                            <button type="button" @click="aging = 'all'" :class="aging === 'all' && 'is-on'">All late</button>
+                        </div>
+                        <select x-model="salesman" aria-label="Salesman">
+                            <option value="">All salesmen</option>
+                            @foreach ($agingSalesmen as $name)<option value="{{ $name }}">{{ $name }}</option>@endforeach
+                        </select>
+                        <input type="search" x-model="q" placeholder="Search customer or city" aria-label="Search customer or city">
+                    </div>
+                </div>
+                <div class="db-aging-scroll">
+                    <table class="ak-dt" style="min-width: 860px">
+                        <thead>
+                            <tr>
+                                <th scope="col">Customer</th>
+                                <th scope="col">{{ $scope['supplier_id'] === null ? 'Company · salesman' : 'Salesman' }}</th>
+                                <th scope="col" class="ak-num">Owes (Rs)</th>
+                                <th scope="col" class="ak-num">In this range</th>
+                                <th scope="col" class="ak-c">Oldest unpaid sale</th>
+                                <th scope="col" class="ak-c">Last paid</th>
+                                <th scope="col" class="ak-c">Days</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($agingCustomers as $cust)
+                                @php
+                                    $row = ['in' => $cust['in'], 'salesmen' => $cust['salesmen'], 'hay' => mb_strtolower($cust['name'].' '.$cust['code'].' '.$cust['city'])];
+                                @endphp
+                                <tr x-show="show({{ \Illuminate\Support\Js::from($row) }})">
+                                    <td data-label="Customer">
+                                        @if ($canCreditors)
+                                            <a href="{{ $customerStatement($cust['id'], $cust['employee_id']) }}" class="ak-primary-link" title="Open {{ $cust['salesmen'] }}'s ledger for this customer">{{ $cust['name'] }}</a>
+                                        @else
+                                            <span class="ak-strong">{{ $cust['name'] }}</span>
+                                        @endif
+                                        <div class="ak-muted">{{ $cust['code'] }}{{ $cust['city'] ? ' · '.$cust['city'] : '' }}@if ($canCreditors) · <a href="{{ $customerStatement($cust['id']) }}" title="All salesmen for this customer">full statement</a>@endif</div>
+                                    </td>
+                                    <td data-label="{{ $scope['supplier_id'] === null ? 'Company · salesman' : 'Salesman' }}">
+                                        @if ($scope['supplier_id'] === null)<div>{{ $cust['suppliers'] ?: '—' }}</div>@endif
+                                        <div class="{{ $scope['supplier_id'] === null ? 'ak-muted' : '' }}">{{ $cust['salesmen'] ?: '—' }}</div>
+                                    </td>
+                                    <td class="ak-num ak-strong" data-label="Owes (Rs)">{{ number_format($cust['used']) }}</td>
+                                    <td class="ak-num" data-label="In this range" x-text="Math.round(partOf({{ \Illuminate\Support\Js::from($cust['buckets']) }})).toLocaleString('en-PK')"></td>
+                                    <td class="ak-c" data-label="Oldest unpaid sale">{{ $cust['oldest_unpaid'] ? \Carbon\Carbon::parse($cust['oldest_unpaid'])->format('d M Y') : '—' }}</td>
+                                    <td class="ak-c" data-label="Last paid">{{ $cust['last_paid_days'] === null ? 'Never' : now()->subDays($cust['last_paid_days'])->format('d M Y') }}</td>
+                                    <td class="ak-c" data-label="Days"><span class="ak-status {{ $cust['bucket'] >= 3 ? 'ak-status-red' : 'ak-status-amber' }}"><i aria-hidden="true"></i>{{ $cust['days'] }}</span></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+                <p class="ak-muted" style="padding: 8px 16px 10px; margin: 0; font-size: 12px">
+                    Totals: 31-60 days Rs {{ $rs($creditAging['values'][1] ?? 0) }} &middot; 61-90 days Rs {{ $rs($creditAging['values'][2] ?? 0) }} &middot; over 90 days Rs {{ $rs($creditAging['values'][3] ?? 0) }}
+                    @if (count($agingCustomers) >= 300) &middot; showing the 300 biggest @endif
+                    @if ($agingReportUrl) &middot; <a href="{{ $agingReportUrl }}">Aging report →</a>@endif
+                    @if ($creditUrl) &middot; <a href="{{ $creditUrl }}">Creditors ledger →</a>@endif
+                </p>
             </section>
         @endif
     </div>
@@ -371,7 +458,7 @@
                     if (el) { new ApexCharts(el, Object.assign({}, base, opts, { chart: Object.assign({}, base.chart, opts.chart) })).render(); }
                 };
                 const donut = (id, labels, values, colors, total, fmt = rupees, legendAt = 'right') => draw(id, {
-                    chart: { type: 'donut', height: legendAt === 'bottom' ? 235 : 205 },
+                    chart: { type: 'donut', height: legendAt === 'bottom' ? 260 : 240 },
                     series: values, labels, colors,
                     stroke: { width: 2, colors: ['#fff'] },
                     tooltip: { y: { formatter: fmt } },
@@ -379,8 +466,8 @@
                     dataLabels: { enabled: true, formatter: v => v >= 6 ? Math.round(v) + '%' : '', dropShadow: { enabled: false }, style: { fontSize: '11px', fontWeight: 700 } },
                     plotOptions: { pie: { donut: { size: '62%', labels: { show: true, name: { fontSize: '11px', color: ink }, value: { fontSize: '16px', fontWeight: 800, color: '#0f172a', formatter: v => 'Rs ' + short(Number(v)) }, total: { show: true, label: total, color: ink, fontSize: '11px', formatter: w => 'Rs ' + short(w.globals.seriesTotals.reduce((a, b) => a + b, 0)) } } } } },
                 });
-                const columns = (id, labels, values, colors, height = 195, fmt = short) => draw(id, {
-                    chart: { type: 'bar', height },
+                const columns = (id, labels, values, colors, height = 230, fmt = short, events = {}) => draw(id, {
+                    chart: { type: 'bar', height, events },
                     series: [{ name: 'Value', data: values }], colors,
                     plotOptions: { bar: { columnWidth: '56%', borderRadius: 5, borderRadiusApplication: 'end', distributed: true, dataLabels: { position: 'top' } } },
                     legend: { show: false },
@@ -390,7 +477,7 @@
                     grid: { show: false, padding: { left: 6, right: 6, top: 12, bottom: 0 } },
                 });
                 const hbars = (id, labels, values, colors, height) => draw(id, {
-                    chart: { type: 'bar', height: height || Math.max(150, labels.length * 31 + 24) },
+                    chart: { type: 'bar', height: height || Math.max(200, labels.length * 34 + 24) },
                     series: [{ name: 'Value', data: values }], colors,
                     plotOptions: { bar: { horizontal: true, barHeight: '66%', borderRadius: 5, borderRadiusApplication: 'end', distributed: true, dataLabels: { position: 'top' } } },
                     legend: { show: false },
@@ -417,7 +504,7 @@
                     donut('db-method', keep.map(p => p[0]), keep.map(p => p[1]), ['#2563eb', '#f97316', '#0891b2'], 'Total sales');
                 }
                 if (data.products) {
-                    hbars('db-products', data.products.labels.slice(0, 7), data.products.values.slice(0, 7), c, 215);
+                    hbars('db-products', data.products.labels.slice(0, 8), data.products.values.slice(0, 8), c);
                 }
                 if (data.supplier) {
                     const head = data.supplier.labels.slice(0, 5), vals = data.supplier.sales.slice(0, 5);
@@ -426,7 +513,7 @@
                     donut('db-supplier', head.map(l => cut(l, 18)), vals, c, 'Total sales', rupees, 'bottom');
                 } else if (data.daily) {
                     draw('db-daily', {
-                        chart: { type: 'bar', height: 205 },
+                        chart: { type: 'bar', height: 240 },
                         series: [{ name: 'Sales', data: data.daily.sales }], colors: ['#f97316'],
                         plotOptions: { bar: { columnWidth: '68%', borderRadius: 2, borderRadiusApplication: 'end' } },
                         legend: { show: false },
@@ -435,7 +522,7 @@
                 }
                 if (data.monthly) {
                     draw('db-trend', {
-                        chart: { type: 'bar', height: 205 },
+                        chart: { type: 'bar', height: 240 },
                         series: [{ name: 'Sales', data: data.monthly.sales }, { name: 'Gross profit', data: data.monthly.profits }],
                         colors: ['#2563eb', '#16a34a'],
                         plotOptions: { bar: { columnWidth: '62%', borderRadius: 4, borderRadiusApplication: 'end' } },
@@ -443,11 +530,11 @@
                         xaxis: Object.assign({}, base.xaxis, { categories: data.monthly.labels.map(l => l.slice(0, 3)) }),
                     });
                 }
-                if (data.invest) { hbars('db-invest', data.invest.labels, data.invest.values, data.invest.colors, 170); }
-                if (data.aging) { columns('db-aging', data.aging.labels, data.aging.values, ['#16a34a', '#f59e0b', '#f97316', '#e11d48'], 170); }
+                if (data.invest) { hbars('db-invest', data.invest.labels, data.invest.values, data.invest.colors, 215); }
+                if (data.aging) { columns('db-aging', data.aging.labels, data.aging.values, ['#16a34a', '#f59e0b', '#f97316', '#e11d48'], 215, short, { dataPointSelection: (e, ctx, o) => { if (o.dataPointIndex > 0) { window.dispatchEvent(new CustomEvent('aging-bucket', { detail: o.dataPointIndex })); } } }); }
                 if (data.topCredit) { hbars('db-topcredit', data.topCredit.labels, data.topCredit.values, ['#e11d48', '#f97316', '#f59e0b', '#7c3aed', '#0891b2', '#64748b']); }
                 if (data.salesmen) { hbars('db-salesmen', data.salesmen.labels, data.salesmen.values, c); }
-                if (data.stock) { hbars('db-stock', data.stock.labels.slice(0, 6), data.stock.values.slice(0, 6), ['#0891b2', '#2563eb', '#7c3aed', '#16a34a', '#f59e0b', '#64748b'], 170); }
+                if (data.stock) { hbars('db-stock', data.stock.labels.slice(0, 8), data.stock.values.slice(0, 8), ['#0891b2', '#2563eb', '#7c3aed', '#16a34a', '#f59e0b', '#64748b', '#e11d48', '#f97316']); }
             });
         </script>
     @endpush

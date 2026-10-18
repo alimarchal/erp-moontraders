@@ -166,6 +166,22 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
             }
         }
 
+        // Posted settlements with sales but no advance tax entry on any customer (no NTN benefit given)
+        // still carry sale and 2.5% advance tax. Without them the totals fall short of the Advance Tax
+        // Sales Register, so they are shown together on one "no customer entry" row.
+        $unassignedSettlements = DB::table('sales_settlements as settlement')
+            ->where('settlement.status', 'posted')
+            ->whereNull('settlement.deleted_at')
+            ->where('settlement.supplier_id', $supplierId)
+            ->whereBetween('settlement.settlement_date', [$startDate, $endDate])
+            ->when($settlementSales !== [], fn ($query) => $query->whereNotIn('settlement.id', array_keys($settlementSales)))
+            ->where('settlement.total_sales_amount', '!=', 0)
+            ->orderBy('settlement.settlement_date')
+            ->orderBy('settlement.id')
+            ->get(['settlement.id', 'settlement.settlement_number', 'settlement.settlement_date', 'settlement.total_sales_amount']);
+
+        $unassignedSales = $unassignedSettlements->pluck('total_sales_amount', 'id')->map(fn ($sale) => (float) $sale);
+
         $customers = Customer::query()->whereIn('id', array_keys($benefits))->get()->keyBy('id');
 
         $rows = collect($benefits)
@@ -185,6 +201,25 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
             ->sortBy(fn (array $row) => mb_strtolower((string) $row['customer']?->customer_name))
             ->values();
 
-        return ['rows' => $rows, 'settlement_sales' => collect($settlementSales)];
+        if ($unassignedSales->isNotEmpty()) {
+            $sale = (float) $unassignedSales->sum();
+            $rows->push([
+                'customer_id' => null,
+                'customer' => null,
+                'unassigned' => true,
+                'settlements' => $unassignedSettlements->map(fn (object $settlement) => [
+                    'id' => $settlement->id,
+                    'number' => $settlement->settlement_number,
+                    'date' => $settlement->settlement_date,
+                    'sale' => (float) $settlement->total_sales_amount,
+                ])->all(),
+                'sale' => $sale,
+                'advance_tax' => $sale * self::ADVANCE_TAX_RATE,
+                'benefits' => 0.0,
+                'received' => $sale * self::ADVANCE_TAX_RATE,
+            ]);
+        }
+
+        return ['rows' => $rows, 'settlement_sales' => collect($settlementSales)->union($unassignedSales->all())];
     }
 }

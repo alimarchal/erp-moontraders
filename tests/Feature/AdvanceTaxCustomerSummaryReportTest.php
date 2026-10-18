@@ -106,6 +106,29 @@ it('adds the advance tax up per customer and takes the sale from the settlements
         ->assertSee('Received From Customer', false)->assertDontSee('Entries')->assertDontSee('Wholesale buyer');
 });
 
+it('shows settlements without any customer entry on their own row so the totals match the sales register', function () {
+    ($this->entry)(($this->settle)($this->nestle->id, '2026-10-03', 'posted', 1000000), $this->customerA, 0, 250);
+    ($this->settle)($this->nestle->id, '2026-10-14', 'posted', 7645.74);
+    ($this->settle)($this->nestle->id, '2026-10-15', 'posted', 0);
+    ($this->settle)($this->nestle->id, '2026-10-16', 'draft', 5000);
+
+    $response = $this->actingAs($this->admin)->get(($this->url)());
+    $rows = $response->viewData('rows');
+
+    expect($rows)->toHaveCount(2)
+        ->and($rows[1]['customer'])->toBeNull()
+        ->and($rows[1]['sale'])->toBe(7645.74)
+        ->and($rows[1]['benefits'])->toBe(0.0)
+        ->and($response->viewData('totalSale'))->toBe(1007645.74);
+
+    $noEntrySettlement = SalesSettlement::query()->where('total_sales_amount', 7645.74)->firstOrFail();
+
+    expect($rows[1]['settlements'])->toHaveCount(1)->and($rows[1]['settlements'][0]['id'])->toBe($noEntrySettlement->id);
+
+    $response->assertSee('No customer entry')->assertSee('Total (1 customers)')
+        ->assertSee(route('sales-settlements.show', $noEntrySettlement), false);
+});
+
 it('reads entries of suppliers that store advance tax as income as well', function () {
     $settlement = ($this->settle)($this->nestle->id, '2026-10-05', 'posted', 80000);
     ($this->entry)($settlement, $this->customerA, 0, 200);

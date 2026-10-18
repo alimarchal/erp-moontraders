@@ -38,7 +38,8 @@ beforeEach(function () {
     ]);
     $this->customerB = Customer::factory()->create(['customer_code' => 'C-1002', 'customer_name' => 'Bilal Traders']);
 
-    $this->settle = fn (int $supplierId, string $date, string $status = 'posted') => SalesSettlement::factory()->create([
+    $this->settle = fn (int $supplierId, string $date, string $status = 'posted', float $sale = 0) => SalesSettlement::factory()->create([
+        'total_sales_amount' => $sale,
         'supplier_id' => $supplierId,
         'employee_id' => $supplierId === $this->nestle->id ? $this->salesman->id : Employee::factory()->create(['supplier_id' => $supplierId])->id,
         'settlement_date' => $date,
@@ -75,49 +76,51 @@ it('asks for a company before showing anything', function () {
         ->assertOk()->assertSee('Please select a company');
 });
 
-it('adds the advance tax up per customer across settlements and works out the three tax columns', function () {
-    $first = ($this->settle)($this->nestle->id, '2026-10-03');
-    $second = ($this->settle)($this->nestle->id, '2026-10-17');
-    ($this->entry)($first, $this->customerA, 100000, 250);
-    ($this->entry)($second, $this->customerA, 60000, 150);
-    ($this->entry)($second, $this->customerB, 40000, 100);
+it('adds the advance tax up per customer and takes the sale from the settlements', function () {
+    $first = ($this->settle)($this->nestle->id, '2026-10-03', 'posted', 1000000);
+    $second = ($this->settle)($this->nestle->id, '2026-10-17', 'posted', 500000);
+    ($this->entry)($first, $this->customerA, 0, 250);
+    ($this->entry)($second, $this->customerA, 0, 150);
+    ($this->entry)($second, $this->customerB, 0, 100);
 
     $response = $this->actingAs($this->admin)->get(($this->url)());
     $rows = $response->viewData('rows');
 
     expect($rows)->toHaveCount(2)
         ->and($rows[0]['customer']->customer_code)->toBe('C-1001')
-        ->and($rows[0]['entries'])->toBe(2)
-        ->and($rows[0]['sale'])->toBe(160000.0)
-        ->and($rows[0]['advance_tax'])->toBe(4000.0)
+        ->and($rows[0]['sale'])->toBe(1500000.0)
+        ->and($rows[0]['advance_tax'])->toBe(37500.0)
         ->and($rows[0]['benefits'])->toBe(400.0)
-        ->and($rows[0]['received'])->toBe(3600.0)
-        ->and($rows[1]['advance_tax'])->toBe(1000.0)
-        ->and($rows[1]['received'])->toBe(900.0)
-        ->and($response->viewData('totalSale'))->toBe(200000.0)
-        ->and($response->viewData('totalAdvanceTax'))->toBe(5000.0)
+        ->and($rows[0]['received'])->toBe(37100.0)
+        ->and($rows[1]['sale'])->toBe(500000.0)
+        ->and($rows[1]['advance_tax'])->toBe(12500.0)
+        ->and($rows[1]['received'])->toBe(12400.0)
+        // The second settlement carries both customers, so it counts once in the totals.
+        ->and($response->viewData('totalSale'))->toBe(1500000.0)
+        ->and($response->viewData('totalAdvanceTax'))->toBe(37500.0)
         ->and($response->viewData('totalBenefits'))->toBe(500.0)
-        ->and($response->viewData('totalReceived'))->toBe(4500.0);
+        ->and($response->viewData('totalReceived'))->toBe(37000.0);
 
-    $response->assertSee('C-1001')->assertSee('Ali Mart')->assertSee('Received From Customer', false)
-        ->assertDontSee('82101-1234567-1')->assertDontSee('Main Bazar');
+    $response->assertSee('C-1001')->assertSee('Ali Mart')->assertSee('Main Bazar, Chattar, Muzaffarabad')
+        ->assertSee('82101-1234567-1')->assertSee('1234567-8')
+        ->assertSee('Received From Customer', false)->assertDontSee('Entries')->assertDontSee('Wholesale buyer');
 });
 
 it('reads entries of suppliers that store advance tax as income as well', function () {
-    $settlement = ($this->settle)($this->nestle->id, '2026-10-05');
-    ($this->entry)($settlement, $this->customerA, 80000, 200);
-    ($this->entry)($settlement, $this->customerA, 20000, 50, SalesSettlementAdvanceTaxIncome::class);
+    $settlement = ($this->settle)($this->nestle->id, '2026-10-05', 'posted', 80000);
+    ($this->entry)($settlement, $this->customerA, 0, 200);
+    ($this->entry)($settlement, $this->customerA, 0, 50, SalesSettlementAdvanceTaxIncome::class);
 
     $rows = $this->actingAs($this->admin)->get(($this->url)())->viewData('rows');
 
-    expect($rows)->toHaveCount(1)->and($rows[0]['benefits'])->toBe(250.0)->and($rows[0]['entries'])->toBe(2);
+    expect($rows)->toHaveCount(1)->and($rows[0]['benefits'])->toBe(250.0)->and($rows[0]['sale'])->toBe(80000.0);
 });
 
 it('leaves out drafts, other dates and other companies', function () {
-    ($this->entry)(($this->settle)($this->nestle->id, '2026-10-05'), $this->customerA, 100000, 250);
-    ($this->entry)(($this->settle)($this->nestle->id, '2026-10-06', 'draft'), $this->customerA, 900000, 2250);
-    ($this->entry)(($this->settle)($this->nestle->id, '2026-09-30'), $this->customerA, 900000, 2250);
-    ($this->entry)(($this->settle)($this->other->id, '2026-10-07'), $this->customerB, 900000, 2250);
+    ($this->entry)(($this->settle)($this->nestle->id, '2026-10-05', 'posted', 100000), $this->customerA, 0, 250);
+    ($this->entry)(($this->settle)($this->nestle->id, '2026-10-06', 'draft', 900000), $this->customerA, 0, 2250);
+    ($this->entry)(($this->settle)($this->nestle->id, '2026-09-30', 'posted', 900000), $this->customerA, 0, 2250);
+    ($this->entry)(($this->settle)($this->other->id, '2026-10-07', 'posted', 900000), $this->customerB, 0, 2250);
 
     $response = $this->actingAs($this->admin)->get(($this->url)());
 

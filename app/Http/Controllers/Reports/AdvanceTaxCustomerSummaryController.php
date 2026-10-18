@@ -76,13 +76,18 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
 
         $selectedSupplier = $supplierId ? $suppliers->firstWhere('id', $supplierId) : null;
         $rows = collect();
+        $settlementSales = collect();
         $benefitsPosted = 0.0;
 
         if ($selectedSupplier) {
-            $rows = $this->customerRows($selectedSupplier->id, $startDate, $endDate);
+            ['rows' => $rows, 'settlement_sales' => $settlementSales] = $this->customerRows($selectedSupplier->id, $startDate, $endDate);
             $benefitsPosted = $this->postedBenefits($selectedSupplier->id, $startDate, $endDate);
         }
 
+        // A settlement can carry several customers, so its sale shows against each of them but is
+        // counted once in the totals, the way the Advance Tax Sales Register counts it.
+        $totalSale = (float) $settlementSales->sum();
+        $totalAdvanceTax = $totalSale * self::ADVANCE_TAX_RATE;
         $totalBenefits = (float) $rows->sum('benefits');
 
         return view('reports.advance-tax-customer-summary.index', [
@@ -93,25 +98,30 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
             'startDate' => $startDate,
             'endDate' => $endDate,
             'hasFilter' => $selectedSupplier !== null,
-            'totalEntries' => (int) $rows->sum('entries'),
-            'totalSale' => (float) $rows->sum('sale'),
-            'totalAdvanceTax' => (float) $rows->sum('advance_tax'),
+            'totalSale' => $totalSale,
+            'totalAdvanceTax' => $totalAdvanceTax,
             'totalBenefits' => $totalBenefits,
-            'totalReceived' => (float) $rows->sum('received'),
+            'totalReceived' => $totalAdvanceTax - $totalBenefits,
             'benefitsPosted' => $benefitsPosted,
             'difference' => round($totalBenefits - $benefitsPosted, 2),
         ]);
     }
 
     /**
-     * One row per customer, added up over the dates: entries, sale, advance tax on that sale (2.5%),
-     * the advance tax benefit given (account 1161) and what was received from the customer.
+     * One row per customer, added up over the dates: the sale of the settlements the customer has
+     * an entry on (each settlement once), the advance tax on that sale (2.5%), the benefit given
+     * (account 1161) and what was received from the customer.
      *
-     * @return Collection<int, array<string, mixed>>
+     * The entries themselves only record the customer and the tax amount, so the sale is the
+     * settlement's Total Sales, the figure the Advance Tax Sales Register shows by date.
+     *
+     * @return array{rows: Collection<int, array<string, mixed>>, settlement_sales: Collection<int, float>}
      */
-    private function customerRows(int $supplierId, string $startDate, string $endDate): Collection
+    private function customerRows(int $supplierId, string $startDate, string $endDate): array
     {
-        $totals = [];
+        $benefits = [];
+        $customerSettlements = [];
+        $settlementSales = [];
 
         foreach (self::ENTRY_TABLES as $table) {
             $entries = DB::table("{$table} as entry")
@@ -120,31 +130,37 @@ class AdvanceTaxCustomerSummaryController extends Controller implements HasMiddl
                 ->whereNull('settlement.deleted_at')
                 ->where('settlement.supplier_id', $supplierId)
                 ->whereBetween('settlement.settlement_date', [$startDate, $endDate])
-                ->groupBy('entry.customer_id')
-                ->selectRaw('entry.customer_id, COUNT(*) as entries, SUM(entry.sale_amount) as sale_amount, SUM(entry.tax_amount) as tax_amount')
+                ->groupBy('entry.customer_id', 'settlement.id', 'settlement.total_sales_amount')
+                ->selectRaw('entry.customer_id, settlement.id as settlement_id, settlement.total_sales_amount as sale, SUM(entry.tax_amount) as tax_amount')
                 ->get();
 
             foreach ($entries as $entry) {
-                $totals[$entry->customer_id]['entries'] = ($totals[$entry->customer_id]['entries'] ?? 0) + (int) $entry->entries;
-                $totals[$entry->customer_id]['sale_amount'] = ($totals[$entry->customer_id]['sale_amount'] ?? 0) + (float) $entry->sale_amount;
-                $totals[$entry->customer_id]['tax_amount'] = ($totals[$entry->customer_id]['tax_amount'] ?? 0) + (float) $entry->tax_amount;
+                $benefits[$entry->customer_id] = ($benefits[$entry->customer_id] ?? 0) + (float) $entry->tax_amount;
+                $customerSettlements[$entry->customer_id][$entry->settlement_id] = (float) $entry->sale;
+                $settlementSales[$entry->settlement_id] = (float) $entry->sale;
             }
         }
 
-        $customers = Customer::query()->whereIn('id', array_keys($totals))->get()->keyBy('id');
+        $customers = Customer::query()->whereIn('id', array_keys($benefits))->get()->keyBy('id');
 
-        return collect($totals)
-            ->map(fn (array $total, int $customerId) => [
-                'customer_id' => $customerId,
-                'customer' => $customers->get($customerId),
-                'entries' => $total['entries'],
-                'sale' => $total['sale_amount'],
-                'advance_tax' => $total['sale_amount'] * self::ADVANCE_TAX_RATE,
-                'benefits' => $total['tax_amount'],
-                'received' => $total['sale_amount'] * self::ADVANCE_TAX_RATE - $total['tax_amount'],
-            ])
+        $rows = collect($benefits)
+            ->map(function (float $benefit, int $customerId) use ($customers, $customerSettlements) {
+                $sale = array_sum($customerSettlements[$customerId]);
+                $advanceTax = $sale * self::ADVANCE_TAX_RATE;
+
+                return [
+                    'customer_id' => $customerId,
+                    'customer' => $customers->get($customerId),
+                    'sale' => $sale,
+                    'advance_tax' => $advanceTax,
+                    'benefits' => $benefit,
+                    'received' => $advanceTax - $benefit,
+                ];
+            })
             ->sortBy(fn (array $row) => mb_strtolower((string) $row['customer']?->customer_name))
             ->values();
+
+        return ['rows' => $rows, 'settlement_sales' => collect($settlementSales)];
     }
 
     /**
